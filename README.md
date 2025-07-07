@@ -39,6 +39,41 @@
 - **异步运行时**: tokio
 - **配置管理**: config crate
 
+## 📚 文档导航
+
+### 🔧 开发文档
+详细的开发指南和技术文档，按模块分类：
+
+- **[📋 开发文档索引](./dev-docs/index.md)** - 完整的开发文档导航
+- **[🦀 后端开发](./dev-docs/backend/README.md)** - Rust + Tauri 后端开发
+  - [环境配置](./dev-docs/backend/environment.md) - PowerShell + Scoop 环境设置
+  - [架构设计](./dev-docs/architecture.md) - 系统架构和模块设计
+  - [API 开发](./dev-docs/backend/api.md) - Tauri 命令开发指南
+  - [部署指南](./dev-docs/deployment.md) - 跨平台构建和部署
+- **[⚛️ 前端开发](./dev-docs/frontend/README.md)** - React + TypeScript 前端开发
+  - [组件开发](./dev-docs/frontend/components.md) - React 组件开发规范
+  - [状态管理](./dev-docs/frontend/state.md) - Zustand 状态管理
+  - [UI 设计](./dev-docs/frontend/ui-design.md) - Ant Design 使用规范
+  - [数据可视化](./dev-docs/frontend/visualization.md) - ECharts 图表开发
+- **[🔗 集成对接](./dev-docs/integration/README.md)** - 前后端集成和系统对接
+  - [通信协议](./dev-docs/integration/communication.md) - 前后端 IPC 通信
+  - [InfluxDB 对接](./dev-docs/integration/influxdb.md) - InfluxDB 1.0 兼容性
+  - [数据流设计](./dev-docs/integration/data-flow.md) - 数据处理流程
+
+### 📖 用户文档
+面向最终用户的使用指南：
+
+- **[📖 用户手册](./user-docs/README.md)** - 完整的用户使用指南
+- **[🚀 快速开始](./user-docs/quick-start.md)** - 快速上手指南
+- **[🔧 安装指南](./user-docs/installation.md)** - 详细安装步骤
+- **[📋 功能介绍](./user-docs/features/README.md)** - 各功能模块详细介绍
+  - [功能特性详解](./user-docs/features/overview.md) - 核心功能和创新特性
+  - [用户体验增强](./user-docs/features/user-experience.md) - 右键快捷操作等
+- **[🎯 使用教程](./user-docs/tutorials/README.md)** - 详细使用教程
+  - [功能演示场景](./user-docs/tutorials/demo-scenarios.md) - 完整使用场景演示
+- **[❓ 常见问题](./user-docs/faq.md)** - 常见问题解答
+- **[🔧 故障排除](./user-docs/troubleshooting.md)** - 问题诊断和解决
+
 ## 📁 项目结构
 
 ```
@@ -67,9 +102,59 @@ influx-gui/
 │   │   └── utils/         # 工具函数
 │   ├── Cargo.toml         # Rust 依赖配置
 │   └── tauri.conf.json    # Tauri 配置
-├── docs/                  # 项目文档
+├── dev-docs/              # 开发文档
+│   ├── backend/           # 后端开发文档
+│   ├── frontend/          # 前端开发文档
+│   └── integration/       # 集成对接文档
+├── user-docs/             # 用户文档
+│   ├── features/          # 功能介绍
+│   └── tutorials/         # 使用教程
+├── scripts/               # 构建脚本
 ├── tests/                 # 测试文件
 └── README.md              # 项目说明
+```
+
+## 🚀 快速开始
+
+### 系统要求
+- **操作系统**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
+- **Node.js**: 18.0+
+- **Rust**: 1.70+ (推荐通过 Scoop 安装)
+- **InfluxDB**: 1.x 服务器
+
+### 自动化环境设置 (Windows)
+```powershell
+# 克隆项目
+git clone <repository-url>
+cd influx-gui
+
+# 运行自动化设置脚本 (PowerShell + Scoop)
+.\scripts\setup-dev.ps1
+
+# 启动开发服务器
+npm run tauri:dev
+```
+
+### 手动安装
+```bash
+# 1. 克隆项目
+git clone <repository-url>
+cd influx-gui
+
+# 2. 安装前端依赖
+npm install
+
+# 3. 启动开发服务器
+npm run tauri:dev
+```
+
+### 生产构建
+```bash
+# Windows 构建
+.\scripts\build.ps1
+
+# 或使用 npm 脚本
+npm run tauri:build
 ```
 
 ## 🎯 开发计划

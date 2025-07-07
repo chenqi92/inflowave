@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Card,
   Button,
@@ -9,15 +9,24 @@ import {
   Tabs,
   message,
   Spin,
+  Tree,
+  Row,
+  Col,
 } from 'antd';
 import {
   PlayCircleOutlined,
   SaveOutlined,
   HistoryOutlined,
   DatabaseOutlined,
+  FolderOutlined,
+  TableOutlined,
+  FieldTimeOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import { useConnectionStore } from '@store/connection';
+import ContextMenu from '@components/common/ContextMenu';
+import QueryOperationsService from '@services/queryOperations';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -30,7 +39,180 @@ const Query: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [databases] = useState<string[]>(['mydb', 'testdb', '_internal']); // 模拟数据
 
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null as any,
+  });
+
   const currentConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+
+  // 模拟数据库结构数据
+  const [databaseStructure] = useState([
+    {
+      title: 'mydb',
+      key: 'mydb',
+      icon: <DatabaseOutlined />,
+      children: [
+        {
+          title: 'temperature',
+          key: 'mydb.temperature',
+          icon: <TableOutlined />,
+          children: [
+            {
+              title: 'Fields',
+              key: 'mydb.temperature.fields',
+              icon: <FieldTimeOutlined />,
+              children: [
+                { title: 'value (float)', key: 'mydb.temperature.fields.value', icon: <FieldTimeOutlined /> },
+                { title: 'status (string)', key: 'mydb.temperature.fields.status', icon: <FieldTimeOutlined /> },
+              ],
+            },
+            {
+              title: 'Tags',
+              key: 'mydb.temperature.tags',
+              icon: <TagsOutlined />,
+              children: [
+                { title: 'host', key: 'mydb.temperature.tags.host', icon: <TagsOutlined /> },
+                { title: 'region', key: 'mydb.temperature.tags.region', icon: <TagsOutlined /> },
+              ],
+            },
+          ],
+        },
+        {
+          title: 'cpu_usage',
+          key: 'mydb.cpu_usage',
+          icon: <TableOutlined />,
+          children: [
+            {
+              title: 'Fields',
+              key: 'mydb.cpu_usage.fields',
+              icon: <FieldTimeOutlined />,
+              children: [
+                { title: 'usage_percent (float)', key: 'mydb.cpu_usage.fields.usage_percent', icon: <FieldTimeOutlined /> },
+              ],
+            },
+            {
+              title: 'Tags',
+              key: 'mydb.cpu_usage.tags',
+              icon: <TagsOutlined />,
+              children: [
+                { title: 'host', key: 'mydb.cpu_usage.tags.host', icon: <TagsOutlined /> },
+                { title: 'cpu', key: 'mydb.cpu_usage.tags.cpu', icon: <TagsOutlined /> },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]);
+
+  // 处理右键菜单
+  const handleRightClick = (event: React.MouseEvent, nodeData: any) => {
+    event.preventDefault();
+
+    const key = nodeData.key;
+    const parts = key.split('.');
+
+    let target: any = { name: '', type: 'database' };
+
+    if (parts.length === 1) {
+      // 数据库级别
+      target = {
+        type: 'database',
+        name: parts[0],
+      };
+    } else if (parts.length === 2) {
+      // 测量级别
+      target = {
+        type: 'measurement',
+        name: parts[1],
+        database: parts[0],
+      };
+    } else if (parts.length === 4) {
+      // 字段或标签级别
+      const isField = parts[2] === 'fields';
+      target = {
+        type: isField ? 'field' : 'tag',
+        name: parts[3].split(' ')[0], // 移除类型信息
+        database: parts[0],
+        measurement: parts[1],
+        fieldType: isField ? parts[3].split(' ')[1]?.replace(/[()]/g, '') : undefined,
+      };
+    }
+
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      target,
+    });
+  };
+
+  // 处理右键菜单操作
+  const handleContextMenuAction = async (action: string, params?: any) => {
+    setContextMenu({ ...contextMenu, visible: false });
+
+    try {
+      switch (action) {
+        case 'previewData':
+          const result = await QueryOperationsService.previewData(params);
+          setQueryResult(result);
+          setSelectedDatabase(params.database);
+          break;
+
+        case 'showFields':
+          const fieldsResult = await QueryOperationsService.showFields(params);
+          setQueryResult(fieldsResult);
+          setQuery(`SHOW FIELD KEYS FROM "${params.measurement}"`);
+          break;
+
+        case 'showTagKeys':
+          const tagKeysResult = await QueryOperationsService.showTagKeys(params);
+          setQueryResult(tagKeysResult);
+          setQuery(`SHOW TAG KEYS FROM "${params.measurement}"`);
+          break;
+
+        case 'showTagValues':
+          const tagValuesResult = await QueryOperationsService.showTagValues(params);
+          setQueryResult(tagValuesResult);
+          setQuery(`SHOW TAG VALUES FROM "${params.measurement}"${params.tagKey ? ` WITH KEY = "${params.tagKey}"` : ''}`);
+          break;
+
+        case 'getRecordCount':
+          await QueryOperationsService.getRecordCount(params);
+          setQuery(`SELECT COUNT(*) FROM "${params.measurement}"`);
+          break;
+
+        case 'getFieldBasicStats':
+          const statsResult = await QueryOperationsService.getFieldBasicStats(params);
+          setQueryResult(statsResult);
+          setQuery(`SELECT MIN("${params.field}"), MAX("${params.field}"), MEAN("${params.field}"), COUNT("${params.field}") FROM "${params.measurement}"`);
+          break;
+
+        case 'exportData':
+          await QueryOperationsService.exportData(params);
+          break;
+
+        case 'deleteMeasurement':
+          await QueryOperationsService.deleteMeasurement(params);
+          // 刷新数据库结构
+          break;
+
+        case 'deleteDatabase':
+          await QueryOperationsService.deleteDatabase(params);
+          // 刷新数据库列表
+          break;
+
+        default:
+          message.info(`执行操作: ${action}`);
+      }
+    } catch (error) {
+      console.error('Context menu action error:', error);
+    }
+  };
 
   // 执行查询
   const handleExecuteQuery = async () => {
@@ -45,12 +227,12 @@ const Query: React.FC = () => {
     }
 
     setLoading(true);
-    
+
     try {
       // 这里应该调用 Tauri 后端的查询接口
       // 暂时模拟查询结果
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const mockResult = {
         series: [
           {
@@ -113,18 +295,18 @@ const Query: React.FC = () => {
   const { columns, dataSource } = queryResult ? formatResultForTable(queryResult) : { columns: [], dataSource: [] };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 h-full">
       {/* 页面标题 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <Title level={2}>数据查询</Title>
+          <Title level={2} className="mb-2">数据查询</Title>
           {currentConnection && (
             <Text type="secondary">
               当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
             </Text>
           )}
         </div>
-        
+
         <Space>
           <Select
             placeholder="选择数据库"
@@ -140,6 +322,36 @@ const Query: React.FC = () => {
           </Select>
         </Space>
       </div>
+
+      {/* 主要内容区域 */}
+      <Row gutter={16} className="h-full">
+        {/* 左侧数据库结构树 */}
+        <Col span={6}>
+          <Card
+            title="数据库结构"
+            className="h-full"
+            bodyStyle={{ padding: '12px', height: 'calc(100% - 57px)', overflow: 'auto' }}
+          >
+            <Tree
+              showIcon
+              defaultExpandAll
+              treeData={databaseStructure}
+              onRightClick={({ event, node }) => handleRightClick(event as React.MouseEvent, node)}
+              titleRender={(nodeData) => (
+                <span
+                  onContextMenu={(e) => handleRightClick(e, nodeData)}
+                  className="cursor-pointer hover:bg-blue-50 px-1 rounded"
+                >
+                  {nodeData.title}
+                </span>
+              )}
+            />
+          </Card>
+        </Col>
+
+        {/* 右侧查询区域 */}
+        <Col span={18}>
+          <div className="space-y-4 h-full flex flex-col">
 
       {/* 查询编辑器 */}
       <Card title="查询编辑器" className="w-full">
@@ -247,7 +459,20 @@ const Query: React.FC = () => {
             请执行查询以查看结果
           </div>
         )}
-      </Card>
+          </Card>
+          </div>
+        </Col>
+      </Row>
+
+      {/* 右键菜单 */}
+      <ContextMenu
+        visible={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        target={contextMenu.target}
+        onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+        onAction={handleContextMenuAction}
+      />
     </div>
   );
 };
