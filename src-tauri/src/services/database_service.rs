@@ -6,7 +6,6 @@ use std::sync::Arc;
 use log::{debug, error, info};
 
 /// 数据库服务
-#[derive(Debug)]
 pub struct DatabaseService {
     connection_service: Arc<ConnectionService>,
 }

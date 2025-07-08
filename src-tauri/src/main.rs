@@ -10,7 +10,7 @@ mod config;
 
 use tauri::Manager;
 use log::info;
-use std::sync::Arc;
+
 
 // Tauri commands
 use commands::{
@@ -21,7 +21,7 @@ use commands::{
 };
 
 // Services
-use services::{ConnectionService, QueryService, DatabaseService};
+use services::ConnectionService;
 use utils::encryption::create_encryption_service;
 
 #[tokio::main]
@@ -37,7 +37,7 @@ async fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_global_shortcut::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             // Connection management

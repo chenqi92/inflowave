@@ -1,132 +1,40 @@
 {
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "InfluxDB GUI Manager",
+  "version": "0.1.0",
+  "identifier": "com.influxdb.gui.manager",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist",
-    "withGlobalTauri": false
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "InfluxDB GUI Manager",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      },
-      "dialog": {
-        "all": false,
-        "open": true,
-        "save": true,
-        "message": true,
-        "ask": true,
-        "confirm": true
-      },
-      "fs": {
-        "all": false,
-        "readFile": true,
-        "writeFile": true,
-        "readDir": true,
-        "copyFile": true,
-        "createDir": true,
-        "removeDir": true,
-        "removeFile": true,
-        "renameFile": true,
-        "exists": true
-      },
-      "path": {
-        "all": true
-      },
-      "os": {
-        "all": true
-      },
-      "notification": {
-        "all": true
-      },
-      "globalShortcut": {
-        "all": true
-      },
-      "clipboard": {
-        "all": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.influxdb.gui.manager",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "externalBin": [],
-      "copyright": "Copyright © 2024 InfluxDB GUI Manager",
-      "category": "DeveloperTool",
-      "shortDescription": "Modern InfluxDB GUI management tool",
-      "longDescription": "A powerful, modern GUI management tool for InfluxDB with advanced querying, visualization, and data management capabilities.",
-      "deb": {
-        "depends": [],
-        "files": {}
-      },
-      "macOS": {
-        "frameworks": [],
-        "minimumSystemVersion": "10.13",
-        "exceptionDomain": "",
-        "signingIdentity": null,
-        "providerShortName": null,
-        "entitlements": null
-      },
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": "",
-        "tsp": false,
-        "wix": {
-          "language": "en-US",
-          "template": "main.wxs"
-        },
-        "nsis": {
-          "displayLanguageSelector": true,
-          "languages": ["English", "SimpChinese"],
-          "installerIcon": "icons/icon.ico",
-          "installMode": "perMachine",
-          "allowDowngrades": false,
-          "allowToChangeInstallationDirectory": true,
-          "createDesktopShortcut": true,
-          "createStartMenuShortcut": true,
-          "license": "LICENSE",
-          "headerImage": "icons/installer-header.bmp",
-          "sidebarImage": "icons/installer-sidebar.bmp"
-        }
-      }
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+  "app": {
     "windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
         "title": "InfluxDB GUI Manager",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
         "minHeight": 600,
         "center": true,
+        "resizable": true,
+        "fullscreen": false,
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
         "theme": "Light"
       }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.icns"
     ]
   }
 }

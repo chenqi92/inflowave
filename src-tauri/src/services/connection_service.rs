@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use log::{debug, error, info};
 
 /// 连接服务
-#[derive(Debug)]
 pub struct ConnectionService {
     manager: Arc<ConnectionManager>,
     encryption: Arc<EncryptionService>,

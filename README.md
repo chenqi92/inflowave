@@ -149,9 +149,15 @@ npm run tauri:dev
 ```
 
 ### 生产构建
-```bash
+```powershell
 # Windows 构建
 .\scripts\build.ps1
+
+# 快速构建
+.\scripts\quick-build.ps1 -Mode build
+
+# 一键构建
+.\scripts\one-click-build.ps1 -Target build
 
 # 或使用 npm 脚本
 npm run tauri:build

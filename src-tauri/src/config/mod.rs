@@ -60,7 +60,7 @@ impl ConfigManager {
     /// 创建新的配置管理器
     pub fn new(app_handle: &tauri::AppHandle) -> Result<Self> {
         let config_dir = app_handle
-            .path_resolver()
+            .path()
             .app_config_dir()
             .context("获取应用配置目录失败")?;
         

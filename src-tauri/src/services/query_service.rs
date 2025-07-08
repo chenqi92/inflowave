@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use log::{debug, error, info};
 
 /// 查询服务
-#[derive(Debug)]
 pub struct QueryService {
     connection_service: Arc<ConnectionService>,
     query_history: Arc<RwLock<Vec<QueryHistory>>>,

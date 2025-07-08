@@ -9,7 +9,6 @@ use std::sync::Arc;
 use log::{debug, error};
 
 /// 加密服务
-#[derive(Debug)]
 pub struct EncryptionService {
     cipher: Aes256Gcm,
 }
