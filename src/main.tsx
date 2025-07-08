@@ -12,7 +12,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
-import { useAppStore } from '@store/app';
+import { useAppStore } from '@/store/app';
 import './styles/index.css';
 
 // 配置 dayjs

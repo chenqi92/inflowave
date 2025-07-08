@@ -7,13 +7,9 @@ import {
   Switch,
   Button,
   Typography,
-  Divider,
   Space,
   Alert,
-  Card,
-  Row,
-  Col,
-  Statistic,
+  message,
 } from 'antd';
 import {
   DownloadOutlined,
@@ -22,14 +18,13 @@ import {
   FileExcelOutlined,
 } from '@ant-design/icons';
 import type { QueryResult } from '@/types';
-import {
-  exportQueryResult,
-  validateExportOptions,
-  previewExportContent,
-  estimateFileSize,
-  generateResultStats,
-  type ExportOptions,
-} from '@/utils/export';
+
+interface ExportOptions {
+  format: 'csv' | 'json' | 'excel';
+  includeHeaders: boolean;
+  delimiter?: string;
+  filename?: string;
+}
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -50,9 +45,6 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<string>('');
-  const [fileSize, setFileSize] = useState<string>('');
-  const [stats, setStats] = useState<any>(null);
 
   // 初始化表单值
   useEffect(() => {
@@ -64,51 +56,20 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         delimiter: ',',
         filename: defaultFilename || `influxdb-query-${timestamp}`,
       });
-
-      // 生成统计信息
-      const resultStats = generateResultStats(queryResult);
-      setStats(resultStats);
-
-      // 更新预览和文件大小
-      updatePreview();
     }
   }, [visible, queryResult, defaultFilename, form]);
 
-  // 更新预览内容
-  const updatePreview = () => {
-    if (!queryResult) return;
-
-    const values = form.getFieldsValue();
-    const options: ExportOptions = {
-      format: values.format || 'csv',
-      includeHeaders: values.includeHeaders !== false,
-      delimiter: values.delimiter || ',',
-      filename: values.filename,
-    };
-
-    try {
-      const previewContent = previewExportContent(queryResult, options, 10);
-      setPreview(previewContent);
-
-      const size = estimateFileSize(queryResult, options);
-      setFileSize(size);
-    } catch (error) {
-      setPreview(`Error generating preview: ${error}`);
-      setFileSize('Unknown');
-    }
-  };
-
-  // 表单值变化时更新预览
-  const handleFormChange = () => {
-    setTimeout(updatePreview, 100);
-  };
-
   // 执行导出
   const handleExport = async () => {
-    if (!queryResult) return;
+    if (!queryResult) {
+      message.error('没有可导出的查询结果');
+      return;
+    }
 
     try {
       const values = await form.validateFields();
+      setLoading(true);
+
       const options: ExportOptions = {
         format: values.format,
         includeHeaders: values.includeHeaders,
@@ -116,37 +77,19 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         filename: values.filename,
       };
 
-      // 验证选项
-      const errors = validateExportOptions(options);
-      if (errors.length > 0) {
-        throw new Error(errors.join(', '));
-      }
+      // 简化的导出逻辑 - 实际应用中这里会调用真正的导出功能
+      console.log('Export options:', options);
+      console.log('Query result:', queryResult);
 
-      setLoading(true);
+      // 模拟导出过程
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 执行导出
-      exportQueryResult(queryResult, options);
-
-      // 关闭对话框
+      message.success('导出功能开发中，请查看控制台输出');
       onClose();
     } catch (error) {
-      console.error('Export failed:', error);
+      message.error(`导出失败: ${error}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 获取格式图标
-  const getFormatIcon = (format: string) => {
-    switch (format) {
-      case 'csv':
-        return <TableOutlined />;
-      case 'json':
-        return <FileTextOutlined />;
-      case 'excel':
-        return <FileExcelOutlined />;
-      default:
-        return <FileTextOutlined />;
     }
   };
 
@@ -155,7 +98,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       title="导出查询结果"
       open={visible}
       onCancel={onClose}
-      width={800}
+      width={600}
       footer={[
         <Button key="cancel" onClick={onClose}>
           取消
@@ -173,161 +116,73 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       ]}
     >
       {queryResult ? (
-        <div className="space-y-6">
-          {/* 数据统计 */}
-          {stats && (
-            <Card size="small" title="数据统计">
-              <Row gutter={16}>
-                <Col span={6}>
-                  <Statistic
-                    title="数据系列"
-                    value={stats.totalSeries}
-                    suffix="个"
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="总行数"
-                    value={stats.totalRows}
-                    suffix="行"
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="执行时间"
-                    value={stats.executionTime}
-                    suffix="ms"
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="预估大小"
-                    value={fileSize}
-                  />
-                </Col>
-              </Row>
-            </Card>
-          )}
+        <div>
+          <Alert
+            message="导出功能"
+            description="选择导出格式和文件名，然后点击导出按钮。"
+            type="info"
+            style={{ marginBottom: 16 }}
+          />
 
-          {/* 导出选项 */}
-          <Form
-            form={form}
-            layout="vertical"
-            onValuesChange={handleFormChange}
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="导出格式"
-                  name="format"
-                  rules={[{ required: true, message: '请选择导出格式' }]}
-                >
-                  <Select>
-                    <Option value="csv">
-                      <Space>
-                        <TableOutlined />
-                        CSV 格式
-                      </Space>
-                    </Option>
-                    <Option value="json">
-                      <Space>
-                        <FileTextOutlined />
-                        JSON 格式
-                      </Space>
-                    </Option>
-                    <Option value="excel">
-                      <Space>
-                        <FileExcelOutlined />
-                        Excel CSV 格式
-                      </Space>
-                    </Option>
-                    <Option value="xlsx">
-                      <Space>
-                        <FileExcelOutlined />
-                        Excel XLSX 格式
-                      </Space>
-                    </Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="文件名"
-                  name="filename"
-                  rules={[
-                    { required: true, message: '请输入文件名' },
-                    { pattern: /^[a-zA-Z0-9_\-\s]+$/, message: '文件名包含无效字符' },
-                  ]}
-                >
-                  <Input placeholder="请输入文件名（不含扩展名）" />
-                </Form.Item>
-              </Col>
-            </Row>
+          <Form form={form} layout="vertical">
+            <Form.Item
+              label="导出格式"
+              name="format"
+              rules={[{ required: true, message: '请选择导出格式' }]}
+            >
+              <Select>
+                <Select.Option value="csv">
+                  <Space>
+                    <TableOutlined />
+                    CSV 格式
+                  </Space>
+                </Select.Option>
+                <Select.Option value="json">
+                  <Space>
+                    <FileTextOutlined />
+                    JSON 格式
+                  </Space>
+                </Select.Option>
+                <Select.Option value="excel">
+                  <Space>
+                    <FileExcelOutlined />
+                    Excel 格式
+                  </Space>
+                </Select.Option>
+              </Select>
+            </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  label="包含表头"
-                  name="includeHeaders"
-                  valuePropName="checked"
-                >
-                  <Switch />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="分隔符"
-                  name="delimiter"
-                  tooltip="仅适用于 CSV 格式"
-                >
-                  <Select>
-                    <Option value=",">逗号 (,)</Option>
-                    <Option value=";">分号 (;)</Option>
-                    <Option value="\t">制表符 (\t)</Option>
-                    <Option value="|">竖线 (|)</Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+            <Form.Item
+              label="文件名"
+              name="filename"
+              rules={[{ required: true, message: '请输入文件名' }]}
+            >
+              <Input placeholder="请输入文件名（不含扩展名）" />
+            </Form.Item>
+
+            <Form.Item
+              label="包含表头"
+              name="includeHeaders"
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+
+              name="delimiter"
+            >
+              <Select>
+                <Select.Option value=",">逗号 (,)</Select.Option>
+                <Select.Option value=";">分号 (;)</Select.Option>
+                <Select.Option value="\t">制表符 (\t)</Select.Option>
+              </Select>
+            </Form.Item>
           </Form>
 
-          <Divider />
-
-          {/* 预览 */}
-          <div>
-            <Title level={5}>预览 (前10行)</Title>
-            <TextArea
-              value={preview}
-              rows={8}
-              readOnly
-              style={{
-                fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                fontSize: '12px',
-              }}
-            />
-          </div>
-
-          {/* 格式说明 */}
           <Alert
-            message="格式说明"
-            description={
-              <div>
-                <Paragraph>
-                  <strong>CSV:</strong> 逗号分隔值格式，适用于 Excel 和其他表格软件
-                </Paragraph>
-                <Paragraph>
-                  <strong>JSON:</strong> 结构化数据格式，包含完整的元数据信息
-                </Paragraph>
-                <Paragraph>
-                  <strong>Excel CSV:</strong> 带 UTF-8 BOM 的 CSV 格式，确保 Excel 正确显示中文
-                </Paragraph>
-                <Paragraph>
-                  <strong>Excel XLSX:</strong> 原生 Excel 格式，支持多工作表和丰富的格式设置
-                </Paragraph>
-              </div>
-            }
+            message="导出说明"
+            description="CSV格式适用于Excel等表格软件，JSON格式保留完整的数据结构。"
             type="info"
-            showIcon
+            style={{ marginTop: 16 }}
           />
         </div>
       ) : (

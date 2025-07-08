@@ -11,7 +11,7 @@ import {
   ApiOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { useConnectionStore } from '@store/connection';
+import { useConnectionStore } from '@/store/connection';
 
 const { Sider } = Layout;
 

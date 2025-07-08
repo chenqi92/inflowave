@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button, Empty } from 'antd';
+import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert } from 'antd';
 import {
   DatabaseOutlined,
   ApiOutlined,
@@ -7,16 +7,16 @@ import {
   ClockCircleOutlined,
   PlusOutlined,
   SearchOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
-import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 
 const { Title, Paragraph } = Typography;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { connections, activeConnectionId, connectionStatuses } = useConnectionStore();
+  const { connections = [], activeConnectionId, connectionStatuses = {} } = useConnectionStore();
 
   // 统计数据
   const stats = {
@@ -55,11 +55,25 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* 欢迎信息 */}
+      <Alert
+        message={
+          <Space>
+            <RocketOutlined />
+            <span>欢迎使用 InfloWave</span>
+          </Space>
+        }
+        description="现代化的时序数据库管理工具，类似 DataGrip 的界面设计，提供连接管理、数据查询、可视化等功能。"
+        type="info"
+        showIcon={false}
+        style={{ marginBottom: 24 }}
+      />
+
       {/* 页面标题 */}
       <div>
         <Title level={2}>仪表板</Title>
         <Paragraph type="secondary">
-          欢迎使用 InfluxDB GUI Manager，这里是您的数据管理中心。
+          这里是您的数据管理中心，可以快速访问各种功能。
         </Paragraph>
       </div>
 
@@ -228,8 +242,44 @@ const Dashboard: React.FC = () => {
         )}
       </Card>
 
-      {/* 性能监控 */}
-      <PerformanceMonitor />
+      {/* 功能介绍 */}
+      <Card title="主要功能" className="w-full">
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small" hoverable>
+              <div className="text-center">
+                <ApiOutlined style={{ fontSize: 32, color: '#1890ff', marginBottom: 16 }} />
+                <Title level={4}>连接管理</Title>
+                <Paragraph type="secondary">
+                  管理多个 InfluxDB 连接，支持连接测试、状态监控等功能。
+                </Paragraph>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small" hoverable>
+              <div className="text-center">
+                <SearchOutlined style={{ fontSize: 32, color: '#52c41a', marginBottom: 16 }} />
+                <Title level={4}>数据查询</Title>
+                <Paragraph type="secondary">
+                  强大的 InfluxQL 查询编辑器，支持语法高亮、自动补全等功能。
+                </Paragraph>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={8}>
+            <Card size="small" hoverable>
+              <div className="text-center">
+                <BarChartOutlined style={{ fontSize: 32, color: '#fa8c16', marginBottom: 16 }} />
+                <Title level={4}>数据可视化</Title>
+                <Paragraph type="secondary">
+                  创建各种图表和仪表板，直观展示时序数据。
+                </Paragraph>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      </Card>
     </div>
   );
 };

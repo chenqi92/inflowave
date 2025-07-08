@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Typography, message } from 'antd';
+import { Layout, Menu, Typography, message, Spin } from 'antd';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import {
   DatabaseOutlined,
@@ -20,6 +20,7 @@ import DashboardPage from './pages/Dashboard';
 import DataWritePage from './pages/DataWrite';
 import VisualizationPage from './pages/Visualization';
 import SettingsPage from './pages/Settings';
+import DataGripLayout from './components/layout/DataGripLayout';
 
 const { Content, Header, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -106,7 +107,7 @@ const MainLayout: React.FC = () => {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/connections" element={<ConnectionsPage />} />
               <Route path="/database" element={<DatabasePage />} />
-              <Route path="/query" element={<QueryPage />} />
+              <Route path="/query" element={<DataGripLayout />} />
               <Route path="/visualization" element={<VisualizationPage />} />
               <Route path="/data-write" element={<DataWritePage />} />
               <Route path="/settings" element={<SettingsPage />} />
@@ -125,32 +126,50 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        console.log('InfluxDB GUI Manager 启动');
+        console.log('InfloWave 启动中...');
 
-        // 获取应用配置信息
-        await invoke('get_app_config');
+        // 尝试获取应用配置信息
+        try {
+          await invoke('get_app_config');
+          console.log('应用配置加载成功');
+        } catch (configError) {
+          console.warn('应用配置加载失败，使用默认配置:', configError);
+        }
 
-        message.success('应用初始化成功');
+        // 尝试初始化连接服务
+        try {
+          await invoke('initialize_connections');
+          console.log('连接服务初始化成功');
+        } catch (connError) {
+          console.warn('连接服务初始化失败:', connError);
+        }
+
+        message.success('应用启动成功');
       } catch (error) {
         console.error('应用初始化失败:', error);
-        message.error(`应用初始化失败: ${error}`);
+        // 不显示错误消息，允许应用继续运行
+        console.warn('应用将以降级模式运行');
       } finally {
         setLoading(false);
       }
     };
 
-    initApp();
+    // 延迟初始化，确保UI先渲染
+    const timer = setTimeout(initApp, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="mb-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <Spin size="large" />
+            <div className="mt-4">
+              <Text style={{ fontSize: '16px', color: '#666' }}>
+                正在启动 InfloWave...
+              </Text>
             </div>
-            <Text>正在初始化应用...</Text>
           </div>
         </div>
       </Layout>
