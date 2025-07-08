@@ -5,6 +5,9 @@ pub mod system;
 pub mod data_write;
 pub mod query_history;
 pub mod settings;
+pub mod context_menu;
+pub mod data_export;
+pub mod dashboard;
 
 pub use connection::*;
 pub use database::*;
@@ -13,3 +16,6 @@ pub use system::*;
 pub use data_write::*;
 pub use query_history::*;
 pub use settings::*;
+pub use context_menu::*;
+pub use data_export::*;
+pub use dashboard::*;

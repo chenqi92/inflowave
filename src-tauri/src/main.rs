@@ -115,6 +115,30 @@ async fn main() {
             export_settings,
             import_settings,
             get_settings_schema,
+
+            // Context menu and SQL generation
+            generate_smart_sql,
+            get_database_context_menu,
+            get_measurement_context_menu,
+            get_field_context_menu,
+
+            // Data export operations
+            export_query_data,
+            get_export_formats,
+            estimate_export_size,
+
+            // Dashboard operations
+            create_dashboard,
+            get_dashboards,
+            get_dashboard,
+            update_dashboard,
+            delete_dashboard,
+            add_widget_to_dashboard,
+            update_dashboard_widget,
+            remove_widget_from_dashboard,
+            get_chart_types,
+            get_color_schemes,
+            duplicate_dashboard,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -135,6 +159,9 @@ async fn main() {
 
             // Initialize settings storage
             app.manage(commands::settings::SettingsStorage::new(commands::settings::AppSettings::default()));
+
+            // Initialize dashboard storage
+            app.manage(commands::dashboard::DashboardStorage::new(std::collections::HashMap::new()));
 
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {

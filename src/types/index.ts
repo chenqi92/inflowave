@@ -392,6 +392,167 @@ export interface SavedQuery {
   favorite: boolean;
 }
 
+// 右键菜单相关类型
+export interface ContextMenuAction {
+  id: string;
+  label: string;
+  icon?: string;
+  disabled?: boolean;
+  children?: ContextMenuAction[];
+  onClick?: () => void;
+}
+
+export interface DatabaseContextMenu {
+  database: string;
+  actions: ContextMenuAction[];
+}
+
+export interface MeasurementContextMenu {
+  database: string;
+  measurement: string;
+  actions: ContextMenuAction[];
+}
+
+export interface FieldContextMenu {
+  database: string;
+  measurement: string;
+  field: string;
+  fieldType: 'tag' | 'field';
+  actions: ContextMenuAction[];
+}
+
+// SQL 生成相关类型
+export interface SqlGenerationRequest {
+  type: 'select' | 'count' | 'show' | 'describe';
+  database?: string;
+  measurement?: string;
+  fields?: string[];
+  tags?: string[];
+  timeRange?: {
+    start: string;
+    end: string;
+  };
+  limit?: number;
+  groupBy?: string[];
+  orderBy?: {
+    field: string;
+    direction: 'ASC' | 'DESC';
+  };
+}
+
+export interface SqlGenerationResult {
+  sql: string;
+  description: string;
+}
+
+// 数据导出相关类型
+export interface DataExportConfig {
+  connectionId: string;
+  database: string;
+  query: string;
+  format: 'csv' | 'excel' | 'json' | 'sql';
+  options?: {
+    includeHeaders?: boolean;
+    delimiter?: string;
+    encoding?: string;
+    compression?: boolean;
+    chunkSize?: number;
+  };
+}
+
+export interface DataExportResult {
+  success: boolean;
+  message: string;
+  filePath?: string;
+  rowCount: number;
+  fileSize: number;
+  duration: number;
+  errors?: string[];
+}
+
+export interface DataExportProgress {
+  total: number;
+  processed: number;
+  percentage: number;
+  currentChunk: number;
+  totalChunks: number;
+  speed: number; // rows per second
+  estimatedTimeRemaining: number; // seconds
+}
+
+// 高级可视化相关类型
+export interface DashboardConfig {
+  id: string;
+  name: string;
+  description?: string;
+  layout: DashboardLayout;
+  widgets: DashboardWidget[];
+  refreshInterval: number;
+  timeRange: TimeRange;
+  variables: DashboardVariable[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DashboardLayout {
+  columns: number;
+  rows: number;
+  gap: number;
+}
+
+export interface DashboardWidget {
+  id: string;
+  type: 'chart' | 'table' | 'metric' | 'text';
+  title: string;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  config: WidgetConfig;
+  query: string;
+  database: string;
+  refreshInterval?: number;
+}
+
+export interface WidgetConfig {
+  chartType?: 'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'gauge';
+  colorScheme?: string;
+  showLegend?: boolean;
+  showGrid?: boolean;
+  yAxisLabel?: string;
+  xAxisLabel?: string;
+  threshold?: {
+    value: number;
+    color: string;
+    label: string;
+  }[];
+  aggregation?: 'sum' | 'avg' | 'max' | 'min' | 'count';
+  groupBy?: string[];
+}
+
+export interface DashboardVariable {
+  name: string;
+  type: 'text' | 'select' | 'multi-select' | 'time';
+  label: string;
+  defaultValue: any;
+  options?: {
+    label: string;
+    value: any;
+  }[];
+  query?: string;
+}
+
+export interface TimeRange {
+  start: string | Date;
+  end: string | Date;
+  relative?: {
+    amount: number;
+    unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
+  };
+}
+
 // 应用设置相关类型
 export interface AppSettings {
   general: {

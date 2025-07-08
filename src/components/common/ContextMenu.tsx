@@ -17,8 +17,17 @@ import {
   SettingOutlined,
   CopyOutlined,
   EditOutlined,
+  SearchOutlined,
+  PlusOutlined,
+  ClockCircleOutlined,
+  NumberOutlined,
+  TagOutlined,
+  CalculatorOutlined,
+  GroupOutlined,
 } from '@ant-design/icons';
+import { invoke } from '@tauri-apps/api/core';
 import type { MenuProps } from 'antd';
+import type { SqlGenerationRequest } from '@/types';
 
 interface ContextMenuProps {
   visible: boolean;
@@ -33,6 +42,8 @@ interface ContextMenuProps {
   };
   onClose: () => void;
   onAction: (action: string, params?: any) => void;
+  onExecuteQuery?: (query: string, description: string) => void;
+  connectionId?: string;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -42,8 +53,36 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   target,
   onClose,
   onAction,
+  onExecuteQuery,
+  connectionId,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 生成智能 SQL
+  const generateSmartSQL = async (sqlType: string, params: any = {}) => {
+    if (!connectionId || !onExecuteQuery) return;
+
+    const request: SqlGenerationRequest = {
+      type: sqlType,
+      database: target.database || target.name,
+      measurement: target.measurement || (target.type === 'measurement' ? target.name : undefined),
+      fields: params.fields,
+      tags: params.tags,
+      timeRange: params.timeRange,
+      limit: params.limit || 100,
+      groupBy: params.groupBy,
+    };
+
+    try {
+      const result = await invoke('generate_smart_sql', { request }) as { sql: string; description: string };
+      onExecuteQuery(result.sql, result.description);
+      onClose();
+      message.success('SQL 已生成并执行');
+    } catch (error) {
+      console.error('SQL 生成失败:', error);
+      message.error('SQL 生成失败');
+    }
+  };
 
   // 点击外部关闭菜单
   useEffect(() => {
@@ -65,16 +104,16 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   // 数据库级别菜单项
   const getDatabaseMenuItems = (): MenuProps['items'] => [
     {
+      key: 'show-measurements',
+      icon: <TableOutlined />,
+      label: '显示所有测量',
+      onClick: () => generateSmartSQL('show_measurements'),
+    },
+    {
       key: 'db-info',
       icon: <InfoCircleOutlined />,
       label: '数据库信息',
       onClick: () => onAction('showDatabaseInfo', { database: target.name }),
-    },
-    {
-      key: 'show-measurements',
-      icon: <TableOutlined />,
-      label: '显示所有测量',
-      onClick: () => onAction('showMeasurements', { database: target.name }),
     },
     {
       key: 'show-retention-policies',
@@ -117,46 +156,35 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   // 测量级别菜单项
   const getMeasurementMenuItems = (): MenuProps['items'] => [
     {
+      key: 'select-all',
+      icon: <SearchOutlined />,
+      label: '查询所有数据',
+      onClick: () => generateSmartSQL('select_all'),
+    },
+    {
       key: 'data-preview',
       icon: <EyeOutlined />,
       label: '数据预览',
       children: [
         {
-          key: 'latest-100',
-          label: '最新 100 条数据',
-          onClick: () => onAction('previewData', {
-            database: target.database,
-            measurement: target.name,
-            limit: 100,
-            orderBy: 'time DESC'
-          }),
-        },
-        {
-          key: 'latest-1000',
-          label: '最新 1000 条数据',
-          onClick: () => onAction('previewData', {
-            database: target.database,
-            measurement: target.name,
-            limit: 1000,
-            orderBy: 'time DESC'
-          }),
-        },
-        {
           key: 'recent-1h',
           label: '最近 1 小时数据',
-          onClick: () => onAction('previewData', {
-            database: target.database,
-            measurement: target.name,
-            timeRange: '1h'
+          onClick: () => generateSmartSQL('time_series', {
+            timeRange: { start: 'now() - 1h', end: 'now()' }
           }),
         },
         {
           key: 'recent-24h',
           label: '最近 24 小时数据',
-          onClick: () => onAction('previewData', {
-            database: target.database,
-            measurement: target.name,
-            timeRange: '24h'
+          onClick: () => generateSmartSQL('time_series', {
+            timeRange: { start: 'now() - 24h', end: 'now()' }
+          }),
+        },
+        {
+          key: 'recent-7d',
+          label: '最近 7 天数据',
+          onClick: () => generateSmartSQL('time_series', {
+            timeRange: { start: 'now() - 7d', end: 'now()' }
           }),
         },
         {
@@ -170,41 +198,30 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       ],
     },
     {
+      key: 'count-records',
+      icon: <NumberOutlined />,
+      label: '统计记录数',
+      onClick: () => generateSmartSQL('count_records'),
+    },
+    {
       key: 'data-structure',
       icon: <TableOutlined />,
       label: '数据结构',
       children: [
         {
-          key: 'show-fields',
-          label: '查看字段信息',
-          onClick: () => onAction('showFields', {
-            database: target.database,
-            measurement: target.name
-          }),
+          key: 'show-field-keys',
+          label: '显示字段键',
+          onClick: () => generateSmartSQL('show_field_keys'),
         },
         {
-          key: 'show-tags',
-          label: '查看标签键',
-          onClick: () => onAction('showTagKeys', {
-            database: target.database,
-            measurement: target.name
-          }),
+          key: 'show-tag-keys',
+          label: '显示标签键',
+          onClick: () => generateSmartSQL('show_tag_keys'),
         },
         {
-          key: 'show-tag-values',
-          label: '查看标签值',
-          onClick: () => onAction('showTagValues', {
-            database: target.database,
-            measurement: target.name
-          }),
-        },
-        {
-          key: 'show-series',
-          label: '查看序列信息',
-          onClick: () => onAction('showSeries', {
-            database: target.database,
-            measurement: target.name
-          }),
+          key: 'describe-measurement',
+          label: '描述测量结构',
+          onClick: () => generateSmartSQL('describe_measurement'),
         },
       ],
     },

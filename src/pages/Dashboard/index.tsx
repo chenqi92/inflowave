@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert } from 'antd';
+import React, { useState } from 'react';
+import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert, Tabs } from 'antd';
 import {
   DatabaseOutlined,
   ApiOutlined,
@@ -8,15 +8,22 @@ import {
   PlusOutlined,
   SearchOutlined,
   RocketOutlined,
+  DashboardOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
+import DashboardManager from '@/components/dashboard/DashboardManager';
+import DataExportDialog from '@/components/common/DataExportDialog';
 
 const { Title, Paragraph } = Typography;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { connections = [], activeConnectionId, connectionStatuses = {} } = useConnectionStore();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [exportDialogVisible, setExportDialogVisible] = useState(false);
+  const [currentDashboard, setCurrentDashboard] = useState<string | null>(null);
 
   // 统计数据
   const stats = {
@@ -48,8 +55,21 @@ const Dashboard: React.FC = () => {
       title: '数据可视化',
       description: '创建图表和仪表板',
       icon: <BarChartOutlined />,
-      action: () => navigate('/visualization'),
+      action: () => setActiveTab('dashboards'),
       disabled: !activeConnectionId,
+    },
+    {
+      title: '数据导出',
+      description: '导出查询结果到文件',
+      icon: <DownloadOutlined />,
+      action: () => setExportDialogVisible(true),
+      disabled: !activeConnectionId,
+    },
+    {
+      title: '仪表板管理',
+      description: '管理和创建仪表板',
+      icon: <DashboardOutlined />,
+      action: () => setActiveTab('dashboards'),
     },
   ];
 
@@ -69,13 +89,15 @@ const Dashboard: React.FC = () => {
         style={{ marginBottom: 24 }}
       />
 
-      {/* 页面标题 */}
-      <div>
-        <Title level={2}>仪表板</Title>
-        <Paragraph type="secondary">
-          这里是您的数据管理中心，可以快速访问各种功能。
-        </Paragraph>
-      </div>
+      <Tabs activeKey={activeTab} onChange={setActiveTab}>
+        <Tabs.TabPane tab="概览" key="overview">
+          {/* 页面标题 */}
+          <div>
+            <Title level={2}>仪表板</Title>
+            <Paragraph type="secondary">
+              这里是您的数据管理中心，可以快速访问各种功能。
+            </Paragraph>
+          </div>
 
       {/* 统计卡片 */}
       <Row gutter={[16, 16]}>
@@ -280,6 +302,29 @@ const Dashboard: React.FC = () => {
           </Col>
         </Row>
       </Card>
+        </Tabs.TabPane>
+
+        <Tabs.TabPane tab="仪表板管理" key="dashboards">
+          <DashboardManager
+            onOpenDashboard={(dashboardId) => {
+              setCurrentDashboard(dashboardId);
+              // 这里可以导航到仪表板详情页面
+              console.log('打开仪表板:', dashboardId);
+            }}
+          />
+        </Tabs.TabPane>
+      </Tabs>
+
+      {/* 数据导出对话框 */}
+      <DataExportDialog
+        visible={exportDialogVisible}
+        onClose={() => setExportDialogVisible(false)}
+        connections={connections}
+        currentConnection={activeConnectionId}
+        onSuccess={(result) => {
+          console.log('导出成功:', result);
+        }}
+      />
     </div>
   );
 };
