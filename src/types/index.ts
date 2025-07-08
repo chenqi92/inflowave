@@ -335,6 +335,100 @@ export interface SortConfig {
   order: 'asc' | 'desc';
 }
 
+// 数据写入相关类型
+export interface DataWriteConfig {
+  connectionId: string;
+  database: string;
+  measurement: string;
+  format: 'line-protocol' | 'csv' | 'json';
+  data: string | File;
+  options?: {
+    precision?: 'ns' | 'u' | 'ms' | 's' | 'm' | 'h';
+    retentionPolicy?: string;
+    consistency?: 'one' | 'quorum' | 'all' | 'any';
+    batchSize?: number;
+  };
+}
+
+export interface DataWriteResult {
+  success: boolean;
+  message: string;
+  pointsWritten: number;
+  errors?: string[];
+  duration: number;
+}
+
+export interface DataWriteProgress {
+  total: number;
+  processed: number;
+  errors: number;
+  percentage: number;
+  currentBatch: number;
+  totalBatches: number;
+}
+
+// 查询历史相关类型
+export interface QueryHistoryItem {
+  id: string;
+  query: string;
+  database: string;
+  connectionId: string;
+  executedAt: Date;
+  duration: number;
+  rowCount: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface SavedQuery {
+  id: string;
+  name: string;
+  description?: string;
+  query: string;
+  database?: string;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  favorite: boolean;
+}
+
+// 应用设置相关类型
+export interface AppSettings {
+  general: {
+    theme: string;
+    language: string;
+    autoSave: boolean;
+    autoConnect: boolean;
+    startupConnection?: string;
+  };
+  editor: {
+    fontSize: number;
+    fontFamily: string;
+    tabSize: number;
+    wordWrap: boolean;
+    lineNumbers: boolean;
+    minimap: boolean;
+  };
+  query: {
+    timeout: number;
+    maxResults: number;
+    autoComplete: boolean;
+    syntaxHighlight: boolean;
+    formatOnSave: boolean;
+  };
+  visualization: {
+    defaultChartType: string;
+    refreshInterval: number;
+    maxDataPoints: number;
+    colorScheme: string;
+  };
+  security: {
+    encryptConnections: boolean;
+    sessionTimeout: number;
+    requireConfirmation: boolean;
+  };
+}
+
 // 过滤类型
 export interface FilterConfig {
   field: string;

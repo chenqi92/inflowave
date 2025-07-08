@@ -86,6 +86,35 @@ async fn main() {
             get_connection_pool_stats,
             cleanup_resources,
             get_app_config,
+
+            // Data write operations
+            write_data,
+            validate_data_format,
+            preview_data_conversion,
+
+            // Query history operations
+            add_query_history,
+            get_query_history,
+            delete_query_history,
+            clear_query_history,
+            save_query,
+            get_saved_queries,
+            update_saved_query,
+            delete_saved_query,
+            get_query_statistics,
+
+            // Settings operations
+            get_app_settings,
+            update_app_settings,
+            reset_app_settings,
+            update_general_settings,
+            update_editor_settings,
+            update_query_settings,
+            update_visualization_settings,
+            update_security_settings,
+            export_settings,
+            import_settings,
+            get_settings_schema,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -99,6 +128,13 @@ async fn main() {
 
             // Store services in app state
             app.manage(connection_service);
+
+            // Initialize storage for query history and saved queries
+            app.manage(commands::query_history::QueryHistoryStorage::new(Vec::new()));
+            app.manage(commands::query_history::SavedQueryStorage::new(std::collections::HashMap::new()));
+
+            // Initialize settings storage
+            app.manage(commands::settings::SettingsStorage::new(commands::settings::AppSettings::default()));
 
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {

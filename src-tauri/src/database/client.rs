@@ -206,8 +206,9 @@ impl InfluxClient {
     }
 
     /// 写入 Line Protocol 数据
-    pub async fn write_line_protocol(&self, database: &str, line_protocol: &str) -> Result<()> {
-        debug!("写入数据到数据库 '{}': {} 行", database, line_protocol.lines().count());
+    pub async fn write_line_protocol(&self, database: &str, line_protocol: &str) -> Result<usize> {
+        let line_count = line_protocol.lines().filter(|line| !line.trim().is_empty()).count();
+        debug!("写入数据到数据库 '{}': {} 行", database, line_count);
 
         // 使用 HTTP POST 请求写入数据
         let url = format!("{}/write?db={}",
@@ -231,8 +232,8 @@ impl InfluxClient {
         match request.send().await {
             Ok(response) => {
                 if response.status().is_success() {
-                    debug!("数据写入成功");
-                    Ok(())
+                    debug!("数据写入成功，写入 {} 个数据点", line_count);
+                    Ok(line_count)
                 } else {
                     let status = response.status();
                     let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
