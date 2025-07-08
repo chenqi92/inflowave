@@ -1,27 +1,79 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::database::ConnectionManager;
 use crate::utils::encryption::EncryptionService;
+use crate::utils::config::ConfigUtils;
 use anyhow::{Context, Result};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use std::collections::HashMap;
-use log::{debug, error, info};
+use std::path::PathBuf;
+use log::{debug, error, info, warn};
+use serde::{Deserialize, Serialize};
+
+/// 连接配置存储结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectionStorage {
+    pub connections: Vec<ConnectionConfig>,
+    pub version: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl Default for ConnectionStorage {
+    fn default() -> Self {
+        let now = chrono::Utc::now();
+        Self {
+            connections: Vec::new(),
+            version: "1.0.0".to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
 
 /// 连接服务
 pub struct ConnectionService {
     manager: Arc<ConnectionManager>,
     encryption: Arc<EncryptionService>,
     configs: Arc<RwLock<HashMap<String, ConnectionConfig>>>,
+    storage_path: PathBuf,
 }
 
 impl ConnectionService {
     /// 创建新的连接服务
     pub fn new(encryption: Arc<EncryptionService>) -> Self {
-        Self {
+        // 获取存储路径
+        let storage_path = Self::get_storage_path().unwrap_or_else(|e| {
+            warn!("获取存储路径失败，使用默认路径: {}", e);
+            PathBuf::from("connections.json")
+        });
+
+        let service = Self {
             manager: Arc::new(ConnectionManager::new()),
             encryption,
             configs: Arc::new(RwLock::new(HashMap::new())),
+            storage_path,
+        };
+
+        service
+    }
+
+    /// 创建并初始化连接服务
+    pub async fn new_with_load(encryption: Arc<EncryptionService>) -> Result<Self> {
+        let service = Self::new(encryption);
+
+        // 自动加载保存的连接
+        if let Err(e) = service.load_from_storage().await {
+            warn!("加载连接配置失败: {}", e);
         }
+
+        Ok(service)
+    }
+
+    /// 获取存储文件路径
+    fn get_storage_path() -> Result<PathBuf> {
+        let config_dir = ConfigUtils::get_config_dir()?;
+        Ok(config_dir.join("connections.json"))
     }
 
     /// 创建连接
@@ -42,7 +94,12 @@ impl ConnectionService {
             let mut configs = self.configs.write().await;
             configs.insert(connection_id.clone(), config.clone());
         }
-        
+
+        // 保存到文件
+        if let Err(e) = self.save_to_storage().await {
+            error!("保存连接配置到文件失败: {}", e);
+        }
+
         // 解密密码用于连接
         let mut runtime_config = config.clone();
         if let Some(encrypted_password) = &config.password {
@@ -119,7 +176,12 @@ impl ConnectionService {
             let mut configs = self.configs.write().await;
             configs.insert(connection_id.clone(), config.clone());
         }
-        
+
+        // 保存到文件
+        if let Err(e) = self.save_to_storage().await {
+            error!("保存连接配置到文件失败: {}", e);
+        }
+
         // 移除旧连接
         self.manager.remove_connection(&connection_id).await
             .context("移除旧连接失败")?;
@@ -153,7 +215,12 @@ impl ConnectionService {
             let mut configs = self.configs.write().await;
             configs.remove(connection_id);
         }
-        
+
+        // 保存到文件
+        if let Err(e) = self.save_to_storage().await {
+            error!("保存连接配置到文件失败: {}", e);
+        }
+
         info!("连接 '{}' 删除成功", connection_id);
         Ok(())
     }
@@ -227,5 +294,66 @@ impl ConnectionService {
     /// 获取连接数量
     pub async fn get_connection_count(&self) -> usize {
         self.manager.connection_count().await
+    }
+
+    /// 保存连接配置到文件
+    async fn save_to_storage(&self) -> Result<()> {
+        debug!("保存连接配置到文件: {:?}", self.storage_path);
+
+        let configs = self.configs.read().await;
+        let connections: Vec<ConnectionConfig> = configs.values().cloned().collect();
+
+        let storage = ConnectionStorage {
+            connections,
+            version: "1.0.0".to_string(),
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
+
+        // 确保目录存在
+        if let Some(parent) = self.storage_path.parent() {
+            tokio::fs::create_dir_all(parent).await
+                .context("创建配置目录失败")?;
+        }
+
+        // 序列化并写入文件
+        let json_data = serde_json::to_string_pretty(&storage)
+            .context("序列化连接配置失败")?;
+
+        tokio::fs::write(&self.storage_path, json_data).await
+            .context("写入连接配置文件失败")?;
+
+        info!("连接配置已保存到: {:?}", self.storage_path);
+        Ok(())
+    }
+
+    /// 从文件加载连接配置
+    async fn load_from_storage(&self) -> Result<()> {
+        debug!("从文件加载连接配置: {:?}", self.storage_path);
+
+        // 检查文件是否存在
+        if !self.storage_path.exists() {
+            info!("连接配置文件不存在，跳过加载");
+            return Ok(());
+        }
+
+        // 读取文件内容
+        let json_data = tokio::fs::read_to_string(&self.storage_path).await
+            .context("读取连接配置文件失败")?;
+
+        // 反序列化
+        let storage: ConnectionStorage = serde_json::from_str(&json_data)
+            .context("解析连接配置文件失败")?;
+
+        info!("从文件加载 {} 个连接配置", storage.connections.len());
+
+        // 加载连接配置
+        for config in storage.connections {
+            if let Err(e) = self.load_single_connection(config).await {
+                error!("加载连接配置失败: {}", e);
+            }
+        }
+
+        Ok(())
     }
 }

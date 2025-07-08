@@ -82,12 +82,12 @@ impl EncryptionService {
     fn generate_or_load_key() -> Result<aes_gcm::Key<Aes256Gcm>> {
         // 在实际应用中，应该从安全的地方加载密钥
         // 这里为了简化，使用固定的密钥生成方式
-        
-        let key_material = b"influxdb_gui_manager_encryption_key_32_bytes";
+
+        let key_material = b"influxdb_gui_manager_key_32bytes";
         if key_material.len() != 32 {
             return Err(anyhow::anyhow!("密钥长度必须为 32 字节"));
         }
-        
+
         Ok(*aes_gcm::Key::<Aes256Gcm>::from_slice(key_material))
     }
 

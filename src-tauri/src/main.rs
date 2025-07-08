@@ -41,6 +41,7 @@ async fn main() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             // Connection management
+            initialize_connections,
             create_connection,
             test_connection,
             get_connections,
@@ -91,7 +92,7 @@ async fn main() {
             let encryption_service = create_encryption_service()
                 .expect("Failed to create encryption service");
 
-            // Initialize connection service
+            // Initialize connection service (without auto-load for now)
             let connection_service = ConnectionService::new(encryption_service);
 
             // Store services in app state
