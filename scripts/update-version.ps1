@@ -15,16 +15,12 @@ if ($Version -notmatch '^\d+\.\d+\.\d+(-[a-zA-Z0-9\-\.]+)?(\+[a-zA-Z0-9\-\.]+)?$
 }
 
 try {
-    # 更新 VERSION 文件
-    Write-Host "📝 更新 VERSION 文件..." -ForegroundColor Yellow
-    Set-Content -Path "VERSION" -Value $Version -NoNewline
-    
     # 更新 package.json
     Write-Host "📝 更新 package.json..." -ForegroundColor Yellow
     $packageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
     $packageJson.version = $Version
     $packageJson | ConvertTo-Json -Depth 100 | Set-Content "package.json"
-    
+
     # 更新 src-tauri/tauri.conf.json
     Write-Host "📝 更新 tauri.conf.json..." -ForegroundColor Yellow
     $tauriConfig = Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json

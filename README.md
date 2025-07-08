@@ -331,7 +331,7 @@ npm run lint
 ## 🚀 版本发布
 
 ### 自动化发布流程
-项目支持基于 VERSION 文件的自动化发布：
+项目支持基于 package.json 版本的自动化发布：
 
 ```powershell
 # Windows - 更新版本并触发发布

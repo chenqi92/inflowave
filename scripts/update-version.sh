@@ -21,10 +21,6 @@ if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\-\.]+)?(\+[a-zA-Z0-9\-\.
     exit 1
 fi
 
-# 更新 VERSION 文件
-echo "📝 更新 VERSION 文件..."
-echo -n "$VERSION" > VERSION
-
 # 更新 package.json
 echo "📝 更新 package.json..."
 if command -v jq >/dev/null 2>&1; then

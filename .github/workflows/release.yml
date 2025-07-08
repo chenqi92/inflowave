@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, master ]
     paths:
-      - 'VERSION'
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -23,17 +23,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read version
+      - name: Read version from package.json
         id: version
         run: |
-          VERSION=$(cat VERSION | tr -d '\n\r')
+          VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
       - name: Check if tag exists
         id: check
         run: |
-          VERSION=$(cat VERSION | tr -d '\n\r')
+          VERSION=$(node -p "require('./package.json').version")
           if git rev-parse "v$VERSION" >/dev/null 2>&1; then
             echo "Tag v$VERSION already exists"
             echo "should-release=false" >> $GITHUB_OUTPUT
@@ -97,6 +97,8 @@ jobs:
           cache: 'npm'
 
       - name: Install frontend dependencies
+        env:
+          HUSKY: 0
         run: npm ci
 
       - name: Update Tauri config version

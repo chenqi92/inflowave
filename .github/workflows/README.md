@@ -7,11 +7,11 @@
 ### 🚀 `release.yml` - 自动发布工作流
 
 **触发条件**:
-- 当 `VERSION` 文件发生变化并推送到 `main` 或 `master` 分支时
+- 当 `package.json` 文件发生变化并推送到 `main` 或 `master` 分支时
 - 手动触发 (`workflow_dispatch`)
 
 **功能**:
-1. **版本检查** - 读取 VERSION 文件并检查对应的 Git tag 是否已存在
+1. **版本检查** - 读取 package.json 中的版本并检查对应的 Git tag 是否已存在
 2. **创建标签** - 如果版本不存在，自动创建 Git tag
 3. **多平台构建** - 并行构建 Windows、macOS、Linux 版本
 4. **自动发布** - 创建 GitHub Release 并上传安装包
@@ -62,7 +62,7 @@
    ```
 
 3. **自动化流程**:
-   - GitHub Actions 检测到 VERSION 文件变化
+   - GitHub Actions 检测到 package.json 文件变化
    - 自动创建 `v1.0.1` 标签
    - 并行构建所有平台的安装包
    - 创建 GitHub Release 并上传文件

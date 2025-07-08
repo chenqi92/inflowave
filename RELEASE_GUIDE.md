@@ -28,8 +28,7 @@
 ### 步骤 2: 检查更改
 
 脚本会自动更新以下文件：
-- `VERSION` - 主版本文件
-- `package.json` - 前端项目版本
+- `package.json` - 前端项目版本（主版本文件）
 - `src-tauri/tauri.conf.json` - Tauri 应用版本
 
 检查更改是否正确：
@@ -50,7 +49,7 @@ git push origin main
 推送后，GitHub Actions 会自动执行以下流程：
 
 #### 🔍 版本检查阶段
-1. **读取版本号** - 从 VERSION 文件读取新版本号
+1. **读取版本号** - 从 package.json 文件读取新版本号
 2. **检查标签冲突** - 验证对应的 Git tag 是否已存在
 3. **决定是否发布** - 如果版本号未使用过，继续发布流程
 

@@ -17,8 +17,8 @@ jobs:
 
       - name: Test version reading
         run: |
-          echo "Current VERSION file content:"
-          cat VERSION
+          echo "Current package.json version:"
+          node -p "require('./package.json').version"
           echo "Test version: ${{ github.event.inputs.test_version }}"
 
       - name: Test tag check
