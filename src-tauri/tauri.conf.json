@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "InfluxDB GUI Manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "identifier": "com.influxdb.gui.manager",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -13,17 +13,19 @@
     "windows": [
       {
         "title": "InfluxDB GUI Manager",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
         "center": true,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "Light"
+        "theme": "Light",
+        "maximized": false,
+        "visible": true
       }
     ],
     "security": {
@@ -31,10 +33,28 @@
     }
   },
   "bundle": {
-    "active": false,
+    "active": true,
+    "targets": "all",
     "icon": [
       "icons/icon.ico",
       "icons/icon.icns"
-    ]
+    ],
+    "identifier": "com.influxdb.gui.manager",
+    "publisher": "InfluxDB GUI Team",
+    "copyright": "Copyright © 2024 InfluxDB GUI Manager",
+    "category": "DeveloperTool",
+    "shortDescription": "Modern InfluxDB database management tool",
+    "longDescription": "A modern, secure, and user-friendly GUI tool for managing InfluxDB time-series databases. Features include connection management, database operations, query execution, data visualization, and more.",
+    "externalBin": [],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "",
+      "exceptionDomain": ""
+    }
   }
 }

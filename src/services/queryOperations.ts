@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import { message } from 'antd';
-import type { QueryResult } from '@types/index';
+import type { QueryResult } from '@/types';
 
 /**
  * 查询操作服务 - 处理右键菜单触发的各种查询操作

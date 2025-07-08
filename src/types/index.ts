@@ -131,6 +131,17 @@ export interface WriteError {
   line?: number;
 }
 
+export interface SavedQuery {
+  id: string;
+  name: string;
+  query: string;
+  database: string;
+  tags: string[];
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface CsvImportConfig {
   measurement: string;
   timestampColumn: string;

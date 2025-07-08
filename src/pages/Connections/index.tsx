@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -14,6 +14,8 @@ import {
   Tag,
   Typography,
   Tooltip,
+  Badge,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,27 +24,77 @@ import {
   PlayCircleOutlined,
   StopOutlined,
   ApiOutlined,
+  ReloadOutlined,
+  ExportOutlined,
+  ImportOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { useConnectionStore, connectionUtils } from '@store/connection';
-import type { ConnectionConfig } from '@types/index';
+import { invoke } from '@tauri-apps/api/core';
+import { useConnectionStore, connectionUtils } from '@/store/connection';
+import type { ConnectionConfig, ConnectionStatus } from '@/types';
+
+interface ConnectionListItem extends ConnectionConfig {
+  status?: ConnectionStatus;
+}
 
 const { Title } = Typography;
 
 const Connections: React.FC = () => {
   const {
-    connections,
+    connections: storeConnections,
     connectionStatuses,
     activeConnectionId,
     addConnection,
     updateConnection,
     removeConnection,
     setActiveConnection,
+    setConnectionStatus,
   } = useConnectionStore();
 
+  const [loading, setLoading] = useState(false);
+  const [connections, setConnections] = useState<ConnectionListItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
   const [form] = Form.useForm();
+
+  // 加载连接列表
+  const loadConnections = async () => {
+    setLoading(true);
+    try {
+      const connectionList = await invoke<ConnectionConfig[]>('get_connections');
+      const connectionsWithStatus: ConnectionListItem[] = [];
+
+      // 获取每个连接的状态
+      for (const conn of connectionList) {
+        try {
+          const status = await invoke<ConnectionStatus>('get_connection_status', {
+            connectionId: conn.id
+          });
+          connectionsWithStatus.push({ ...conn, status });
+          setConnectionStatus(conn.id!, status);
+        } catch (error) {
+          const errorStatus: ConnectionStatus = {
+            id: conn.id!,
+            status: 'disconnected' as const,
+            error: String(error)
+          };
+          connectionsWithStatus.push({ ...conn, status: errorStatus });
+          setConnectionStatus(conn.id!, errorStatus);
+        }
+      }
+
+      setConnections(connectionsWithStatus);
+    } catch (error) {
+      message.error(`加载连接列表失败: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 组件挂载时加载连接列表
+  useEffect(() => {
+    loadConnections();
+  }, []);
 
   // 打开新建/编辑连接对话框
   const handleOpenModal = (connection?: ConnectionConfig) => {
@@ -68,60 +120,86 @@ const Connections: React.FC = () => {
     try {
       const values = await form.validateFields();
       const errors = connectionUtils.validateConnection(values);
-      
+
       if (errors.length > 0) {
         message.error(errors[0]);
         return;
       }
 
+      const config: ConnectionConfig = {
+        ...values,
+        id: editingConnection?.id || `conn_${Date.now()}`,
+        createdAt: editingConnection?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
+
       if (editingConnection) {
         // 更新现有连接
-        updateConnection(editingConnection.id!, values);
+        await invoke('update_connection', {
+          connectionId: config.id,
+          config
+        });
+        updateConnection(config.id!, config);
         message.success('连接配置已更新');
       } else {
         // 创建新连接
-        addConnection(values);
+        const connectionId = await invoke<string>('create_connection', { config });
+        addConnection({ ...config, id: connectionId });
         message.success('连接配置已创建');
       }
 
       handleCloseModal();
+      await loadConnections(); // 重新加载连接列表
     } catch (error) {
       console.error('保存连接配置失败:', error);
+      message.error(`保存连接配置失败: ${error}`);
     }
   };
 
   // 删除连接
-  const handleDeleteConnection = (id: string) => {
-    removeConnection(id);
-    message.success('连接已删除');
+  const handleDeleteConnection = async (id: string) => {
+    try {
+      await invoke('delete_connection', { connectionId: id });
+      removeConnection(id);
+      message.success('连接已删除');
+      await loadConnections();
+    } catch (error) {
+      message.error(`删除连接失败: ${error}`);
+    }
   };
 
   // 测试连接
   const handleTestConnection = async (connection: ConnectionConfig) => {
-    message.loading('正在测试连接...', 0);
-    
-    // 这里应该调用 Tauri 后端的测试连接接口
-    // 暂时模拟测试结果
-    setTimeout(() => {
-      message.destroy();
-      const success = Math.random() > 0.3; // 70% 成功率
-      
-      if (success) {
-        message.success('连接测试成功');
-      } else {
-        message.error('连接测试失败');
-      }
-    }, 2000);
+    const hide = message.loading('正在测试连接...', 0);
+
+    try {
+      const result = await invoke('test_connection', {
+        connectionId: connection.id
+      });
+      hide();
+      message.success('连接测试成功');
+      await loadConnections(); // 刷新状态
+    } catch (error) {
+      hide();
+      message.error(`连接测试失败: ${error}`);
+    }
   };
 
   // 激活/停用连接
-  const handleToggleConnection = (connection: ConnectionConfig) => {
-    if (activeConnectionId === connection.id) {
-      setActiveConnection(null);
-      message.info('已断开连接');
-    } else {
-      setActiveConnection(connection.id!);
-      message.success(`已连接到 ${connection.name}`);
+  const handleToggleConnection = async (connection: ConnectionConfig) => {
+    try {
+      if (activeConnectionId === connection.id) {
+        await invoke('disconnect_from_database', { connectionId: connection.id });
+        setActiveConnection(null);
+        message.info('已断开连接');
+      } else {
+        await invoke('connect_to_database', { connectionId: connection.id });
+        setActiveConnection(connection.id!);
+        message.success(`已连接到 ${connection.name}`);
+      }
+      await loadConnections();
+    } catch (error) {
+      message.error(`连接操作失败: ${error}`);
     }
   };
 
@@ -172,8 +250,8 @@ const Connections: React.FC = () => {
       title: '状态',
       key: 'status',
       width: 100,
-      render: (_, record: ConnectionConfig) => {
-        const status = connectionStatuses[record.id!];
+      render: (_, record: ConnectionListItem) => {
+        const status = record.status || connectionStatuses[record.id!];
         if (!status) {
           return <Tag color="default">未知</Tag>;
         }
@@ -187,9 +265,15 @@ const Connections: React.FC = () => {
 
         return (
           <Tooltip title={status.error || `延迟: ${status.latency || 0}ms`}>
-            <Tag color={statusConfig.color}>
-              {statusConfig.text}
-            </Tag>
+            <Badge
+              status={status.status === 'connected' ? 'success' :
+                     status.status === 'connecting' ? 'processing' : 'error'}
+              text={
+                <Tag color={statusConfig.color}>
+                  {statusConfig.text}
+                </Tag>
+              }
+            />
           </Tooltip>
         );
       },
@@ -247,29 +331,60 @@ const Connections: React.FC = () => {
     <div className="p-6">
       {/* 页面标题和操作 */}
       <div className="flex items-center justify-between mb-6">
-        <Title level={2}>连接管理</Title>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => handleOpenModal()}
-        >
-          新建连接
-        </Button>
+        <div>
+          <Title level={2}>连接管理</Title>
+          <p className="text-gray-600 mt-1">
+            管理 InfluxDB 数据库连接配置
+          </p>
+        </div>
+        <Space>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={loadConnections}
+            loading={loading}
+          >
+            刷新
+          </Button>
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => message.info('导入功能开发中...')}
+          >
+            导入
+          </Button>
+          <Button
+            icon={<ExportOutlined />}
+            onClick={() => message.info('导出功能开发中...')}
+          >
+            导出
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => handleOpenModal()}
+          >
+            新建连接
+          </Button>
+        </Space>
       </div>
 
       {/* 连接列表 */}
       <Card>
-        <Table
-          columns={columns}
-          dataSource={connections}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 个连接`,
-          }}
-        />
+        <Spin spinning={loading}>
+          <Table
+            columns={columns}
+            dataSource={connections}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 个连接`,
+            }}
+            locale={{
+              emptyText: loading ? '加载中...' : '暂无连接配置，点击"新建连接"开始使用',
+            }}
+          />
+        </Spin>
       </Card>
 
       {/* 新建/编辑连接对话框 */}

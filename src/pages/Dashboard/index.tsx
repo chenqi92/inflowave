@@ -9,7 +9,8 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useConnectionStore } from '@store/connection';
+import { useConnectionStore } from '@/store/connection';
+import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 
 const { Title, Paragraph } = Typography;
 
@@ -226,6 +227,9 @@ const Dashboard: React.FC = () => {
           </Empty>
         )}
       </Card>
+
+      {/* 性能监控 */}
+      <PerformanceMonitor />
     </div>
   );
 };

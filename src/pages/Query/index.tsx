@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -12,6 +12,7 @@ import {
   Tree,
   Row,
   Col,
+  Alert,
 } from 'antd';
 import {
   PlayCircleOutlined,
@@ -22,11 +23,16 @@ import {
   TableOutlined,
   FieldTimeOutlined,
   TagsOutlined,
+  ExclamationCircleOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import { useConnectionStore } from '@store/connection';
-import ContextMenu from '@components/common/ContextMenu';
-import QueryOperationsService from '@services/queryOperations';
+import * as monaco from 'monaco-editor';
+import { invoke } from '@tauri-apps/api/core';
+import { useConnectionStore } from '@/store/connection';
+import { registerInfluxQLLanguage, createInfluxQLCompletionProvider } from '@/utils/influxql-language';
+import ExportDialog from '@/components/common/ExportDialog';
+import type { QueryResult, QueryRequest } from '@/types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -35,182 +41,193 @@ const Query: React.FC = () => {
   const { activeConnectionId, getConnection } = useConnectionStore();
   const [query, setQuery] = useState('SELECT * FROM measurement_name LIMIT 10');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
-  const [queryResult, setQueryResult] = useState<any>(null);
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [databases] = useState<string[]>(['mydb', 'testdb', '_internal']); // 模拟数据
-
-  // 右键菜单状态
-  const [contextMenu, setContextMenu] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-    target: null as any,
-  });
+  const [databases, setDatabases] = useState<string[]>([]);
+  const [measurements, setMeasurements] = useState<string[]>([]);
+  const [fields, setFields] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [loadingDatabases, setLoadingDatabases] = useState(false);
+  const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const [exportDialogVisible, setExportDialogVisible] = useState(false);
 
   const currentConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
-  // 模拟数据库结构数据
-  const [databaseStructure] = useState([
-    {
-      title: 'mydb',
-      key: 'mydb',
-      icon: <DatabaseOutlined />,
-      children: [
-        {
-          title: 'temperature',
-          key: 'mydb.temperature',
-          icon: <TableOutlined />,
-          children: [
-            {
-              title: 'Fields',
-              key: 'mydb.temperature.fields',
-              icon: <FieldTimeOutlined />,
-              children: [
-                { title: 'value (float)', key: 'mydb.temperature.fields.value', icon: <FieldTimeOutlined /> },
-                { title: 'status (string)', key: 'mydb.temperature.fields.status', icon: <FieldTimeOutlined /> },
-              ],
-            },
-            {
-              title: 'Tags',
-              key: 'mydb.temperature.tags',
-              icon: <TagsOutlined />,
-              children: [
-                { title: 'host', key: 'mydb.temperature.tags.host', icon: <TagsOutlined /> },
-                { title: 'region', key: 'mydb.temperature.tags.region', icon: <TagsOutlined /> },
-              ],
-            },
-          ],
-        },
-        {
-          title: 'cpu_usage',
-          key: 'mydb.cpu_usage',
-          icon: <TableOutlined />,
-          children: [
-            {
-              title: 'Fields',
-              key: 'mydb.cpu_usage.fields',
-              icon: <FieldTimeOutlined />,
-              children: [
-                { title: 'usage_percent (float)', key: 'mydb.cpu_usage.fields.usage_percent', icon: <FieldTimeOutlined /> },
-              ],
-            },
-            {
-              title: 'Tags',
-              key: 'mydb.cpu_usage.tags',
-              icon: <TagsOutlined />,
-              children: [
-                { title: 'host', key: 'mydb.cpu_usage.tags.host', icon: <TagsOutlined /> },
-                { title: 'cpu', key: 'mydb.cpu_usage.tags.cpu', icon: <TagsOutlined /> },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ]);
+  // 加载数据库列表
+  const loadDatabases = async () => {
+    if (!activeConnectionId) return;
 
-  // 处理右键菜单
-  const handleRightClick = (event: React.MouseEvent, nodeData: any) => {
-    event.preventDefault();
+    setLoadingDatabases(true);
+    try {
+      const dbList = await invoke<string[]>('get_databases', {
+        connectionId: activeConnectionId,
+      });
+      setDatabases(dbList);
 
-    const key = nodeData.key;
-    const parts = key.split('.');
-
-    let target: any = { name: '', type: 'database' };
-
-    if (parts.length === 1) {
-      // 数据库级别
-      target = {
-        type: 'database',
-        name: parts[0],
-      };
-    } else if (parts.length === 2) {
-      // 测量级别
-      target = {
-        type: 'measurement',
-        name: parts[1],
-        database: parts[0],
-      };
-    } else if (parts.length === 4) {
-      // 字段或标签级别
-      const isField = parts[2] === 'fields';
-      target = {
-        type: isField ? 'field' : 'tag',
-        name: parts[3].split(' ')[0], // 移除类型信息
-        database: parts[0],
-        measurement: parts[1],
-        fieldType: isField ? parts[3].split(' ')[1]?.replace(/[()]/g, '') : undefined,
-      };
+      // 如果有数据库且没有选中的，选择第一个
+      if (dbList.length > 0 && !selectedDatabase) {
+        setSelectedDatabase(dbList[0]);
+      }
+    } catch (error) {
+      message.error(`加载数据库列表失败: ${error}`);
+    } finally {
+      setLoadingDatabases(false);
     }
+  };
 
-    setContextMenu({
-      visible: true,
-      x: event.clientX,
-      y: event.clientY,
-      target,
+  // 加载测量列表
+  const loadMeasurements = async (database: string) => {
+    if (!activeConnectionId || !database) return;
+
+    try {
+      const measurementList = await invoke<string[]>('get_measurements', {
+        connectionId: activeConnectionId,
+        database,
+      });
+      setMeasurements(measurementList);
+
+      // 加载第一个测量的字段和标签信息（用于自动补全）
+      if (measurementList.length > 0) {
+        loadFieldsAndTags(database, measurementList[0]);
+      }
+    } catch (error) {
+      console.error('加载测量列表失败:', error);
+      setMeasurements([]);
+    }
+  };
+
+  // 加载字段和标签信息
+  const loadFieldsAndTags = async (database: string, measurement: string) => {
+    if (!activeConnectionId) return;
+
+    try {
+      const [fieldList, tagList] = await Promise.all([
+        invoke<string[]>('get_field_keys', {
+          connectionId: activeConnectionId,
+          database,
+          measurement,
+        }).catch(() => []),
+        invoke<string[]>('get_tag_keys', {
+          connectionId: activeConnectionId,
+          database,
+          measurement,
+        }).catch(() => []),
+      ]);
+
+      setFields(fieldList);
+      setTags(tagList);
+    } catch (error) {
+      console.error('加载字段和标签失败:', error);
+    }
+  };
+
+  // 初始化编辑器
+  const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    setEditorInstance(editor);
+
+    // 注册 InfluxQL 语言
+    registerInfluxQLLanguage();
+
+    // 注册自动补全提供器
+    const completionProvider = createInfluxQLCompletionProvider(
+      databases,
+      measurements,
+      fields,
+      tags
+    );
+
+    monaco.languages.registerCompletionItemProvider('influxql', completionProvider);
+
+    // 设置编辑器选项
+    editor.updateOptions({
+      fontSize: 14,
+      lineHeight: 20,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      wordWrap: 'on',
+      automaticLayout: true,
+    });
+
+    // 添加快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      handleExecuteQuery();
+    });
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      handleSaveQuery();
     });
   };
 
-  // 处理右键菜单操作
-  const handleContextMenuAction = async (action: string, params?: any) => {
-    setContextMenu({ ...contextMenu, visible: false });
+  // 更新自动补全数据
+  useEffect(() => {
+    if (editorInstance) {
+      // 重新注册自动补全提供器
+      const completionProvider = createInfluxQLCompletionProvider(
+        databases,
+        measurements,
+        fields,
+        tags
+      );
 
-    try {
-      switch (action) {
-        case 'previewData':
-          const result = await QueryOperationsService.previewData(params);
-          setQueryResult(result);
-          setSelectedDatabase(params.database);
-          break;
+      monaco.languages.registerCompletionItemProvider('influxql', completionProvider);
+    }
+  }, [databases, measurements, fields, tags, editorInstance]);
 
-        case 'showFields':
-          const fieldsResult = await QueryOperationsService.showFields(params);
-          setQueryResult(fieldsResult);
-          setQuery(`SHOW FIELD KEYS FROM "${params.measurement}"`);
-          break;
+  // 组件挂载时加载数据
+  useEffect(() => {
+    if (activeConnectionId) {
+      loadDatabases();
+    }
+  }, [activeConnectionId]);
 
-        case 'showTagKeys':
-          const tagKeysResult = await QueryOperationsService.showTagKeys(params);
-          setQueryResult(tagKeysResult);
-          setQuery(`SHOW TAG KEYS FROM "${params.measurement}"`);
-          break;
+  // 选中数据库变化时加载测量
+  useEffect(() => {
+    if (selectedDatabase) {
+      loadMeasurements(selectedDatabase);
+    }
+  }, [selectedDatabase]);
 
-        case 'showTagValues':
-          const tagValuesResult = await QueryOperationsService.showTagValues(params);
-          setQueryResult(tagValuesResult);
-          setQuery(`SHOW TAG VALUES FROM "${params.measurement}"${params.tagKey ? ` WITH KEY = "${params.tagKey}"` : ''}`);
-          break;
+  // 构建数据库结构树数据
+  const buildDatabaseStructure = () => {
+    return databases.map(db => ({
+      title: db,
+      key: db,
+      icon: <DatabaseOutlined />,
+      children: measurements.map(measurement => ({
+        title: measurement,
+        key: `${db}.${measurement}`,
+        icon: <TableOutlined />,
+        children: [
+          {
+            title: 'Fields',
+            key: `${db}.${measurement}.fields`,
+            icon: <FieldTimeOutlined />,
+            children: [], // 可以在这里加载字段信息
+          },
+          {
+            title: 'Tags',
+            key: `${db}.${measurement}.tags`,
+            icon: <TagsOutlined />,
+            children: [], // 可以在这里加载标签信息
+          },
+        ],
+      })),
+    }));
+  };
 
-        case 'getRecordCount':
-          await QueryOperationsService.getRecordCount(params);
-          setQuery(`SELECT COUNT(*) FROM "${params.measurement}"`);
-          break;
+  const databaseStructure = buildDatabaseStructure();
 
-        case 'getFieldBasicStats':
-          const statsResult = await QueryOperationsService.getFieldBasicStats(params);
-          setQueryResult(statsResult);
-          setQuery(`SELECT MIN("${params.field}"), MAX("${params.field}"), MEAN("${params.field}"), COUNT("${params.field}") FROM "${params.measurement}"`);
-          break;
+  // 处理树节点点击
+  const handleTreeNodeClick = (selectedKeys: React.Key[], info: any) => {
+    const key = selectedKeys[0] as string;
+    const parts = key.split('.');
 
-        case 'exportData':
-          await QueryOperationsService.exportData(params);
-          break;
-
-        case 'deleteMeasurement':
-          await QueryOperationsService.deleteMeasurement(params);
-          // 刷新数据库结构
-          break;
-
-        case 'deleteDatabase':
-          await QueryOperationsService.deleteDatabase(params);
-          // 刷新数据库列表
-          break;
-
-        default:
-          message.info(`执行操作: ${action}`);
-      }
-    } catch (error) {
-      console.error('Context menu action error:', error);
+    if (parts.length === 2) {
+      // 点击测量，生成预览查询
+      const database = parts[0];
+      const measurement = parts[1];
+      setSelectedDatabase(database);
+      setQuery(`SELECT * FROM "${measurement}" LIMIT 10`);
     }
   };
 
@@ -226,35 +243,25 @@ const Query: React.FC = () => {
       return;
     }
 
+    if (!activeConnectionId) {
+      message.warning('请先选择一个连接');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // 这里应该调用 Tauri 后端的查询接口
-      // 暂时模拟查询结果
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const mockResult = {
-        series: [
-          {
-            name: 'temperature',
-            columns: ['time', 'host', 'region', 'value'],
-            values: [
-              ['2023-01-01T00:00:00Z', 'server01', 'us-west', 23.5],
-              ['2023-01-01T00:01:00Z', 'server01', 'us-west', 24.1],
-              ['2023-01-01T00:02:00Z', 'server01', 'us-west', 23.8],
-              ['2023-01-01T00:03:00Z', 'server02', 'us-east', 22.3],
-              ['2023-01-01T00:04:00Z', 'server02', 'us-east', 21.9],
-            ],
-          },
-        ],
-        executionTime: 156,
-        rowCount: 5,
+      const request: QueryRequest = {
+        connectionId: activeConnectionId,
+        database: selectedDatabase,
+        query: query.trim(),
       };
 
-      setQueryResult(mockResult);
-      message.success(`查询完成，返回 ${mockResult.rowCount} 行数据`);
+      const result = await invoke<QueryResult>('execute_query', { request });
+      setQueryResult(result);
+      message.success(`查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms`);
     } catch (error) {
-      message.error('查询执行失败');
+      message.error(`查询执行失败: ${error}`);
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -262,9 +269,29 @@ const Query: React.FC = () => {
   };
 
   // 保存查询
-  const handleSaveQuery = () => {
-    // 这里应该实现保存查询的逻辑
-    message.success('查询已保存');
+  const handleSaveQuery = async () => {
+    if (!query.trim()) {
+      message.warning('请输入查询语句');
+      return;
+    }
+
+    try {
+      const savedQuery = {
+        id: `query_${Date.now()}`,
+        name: `查询_${new Date().toLocaleString()}`,
+        query: query.trim(),
+        database: selectedDatabase,
+        tags: [],
+        description: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await invoke('save_query', { query: savedQuery });
+      message.success('查询已保存');
+    } catch (error) {
+      message.error(`保存查询失败: ${error}`);
+    }
   };
 
   // 格式化查询结果为表格数据
@@ -294,6 +321,25 @@ const Query: React.FC = () => {
 
   const { columns, dataSource } = queryResult ? formatResultForTable(queryResult) : { columns: [], dataSource: [] };
 
+  if (!activeConnectionId) {
+    return (
+      <div className="p-6">
+        <Alert
+          message="请先连接到 InfluxDB"
+          description="在连接管理页面选择一个连接并激活后，才能执行查询。"
+          type="warning"
+          showIcon
+          icon={<ExclamationCircleOutlined />}
+          action={
+            <Button size="small" type="primary">
+              去连接
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 h-full">
       {/* 页面标题 */}
@@ -308,11 +354,19 @@ const Query: React.FC = () => {
         </div>
 
         <Space>
+          <Button
+            icon={<DatabaseOutlined />}
+            onClick={loadDatabases}
+            loading={loadingDatabases}
+          >
+            刷新数据库
+          </Button>
           <Select
             placeholder="选择数据库"
             value={selectedDatabase}
             onChange={setSelectedDatabase}
             style={{ width: 200 }}
+            loading={loadingDatabases}
           >
             {databases.map(db => (
               <Option key={db} value={db}>
@@ -336,12 +390,9 @@ const Query: React.FC = () => {
               showIcon
               defaultExpandAll
               treeData={databaseStructure}
-              onRightClick={({ event, node }) => handleRightClick(event as React.MouseEvent, node)}
+              onSelect={handleTreeNodeClick}
               titleRender={(nodeData) => (
-                <span
-                  onContextMenu={(e) => handleRightClick(e, nodeData)}
-                  className="cursor-pointer hover:bg-blue-50 px-1 rounded"
-                >
+                <span className="cursor-pointer hover:bg-blue-50 px-1 rounded">
                   {nodeData.title}
                 </span>
               )}
@@ -393,11 +444,12 @@ const Query: React.FC = () => {
           {/* 编辑器 */}
           <div className="query-editor">
             <Editor
-              height="200px"
-              language="sql"
+              height="300px"
+              language="influxql"
               theme="vs-light"
               value={query}
               onChange={(value) => setQuery(value || '')}
+              onMount={handleEditorDidMount}
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
@@ -410,6 +462,11 @@ const Query: React.FC = () => {
                 },
                 wordWrap: 'on',
                 automaticLayout: true,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: true,
+                parameterHints: { enabled: true },
+                formatOnPaste: true,
+                formatOnType: true,
               }}
             />
           </div>
@@ -417,7 +474,20 @@ const Query: React.FC = () => {
       </Card>
 
       {/* 查询结果 */}
-      <Card title="查询结果" className="w-full">
+      <Card
+        title="查询结果"
+        className="w-full"
+        extra={
+          queryResult && (
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={() => setExportDialogVisible(true)}
+            >
+              导出
+            </Button>
+          )
+        }
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Spin size="large" tip="执行查询中..." />
@@ -464,14 +534,12 @@ const Query: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 右键菜单 */}
-      <ContextMenu
-        visible={contextMenu.visible}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        target={contextMenu.target}
-        onClose={() => setContextMenu({ ...contextMenu, visible: false })}
-        onAction={handleContextMenuAction}
+      {/* 导出对话框 */}
+      <ExportDialog
+        visible={exportDialogVisible}
+        onClose={() => setExportDialogVisible(false)}
+        queryResult={queryResult}
+        defaultFilename={`query-${selectedDatabase}`}
       />
     </div>
   );

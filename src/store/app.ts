@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppConfig, Theme, Language } from '@types/index';
+import type { AppConfig } from '@/types';
 
 interface AppState {
   // 应用配置
