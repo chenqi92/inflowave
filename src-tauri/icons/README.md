@@ -14,8 +14,9 @@
 ```json
 "bundle": {
   "icon": [
-    "icons/windows/256x256.ico",
-    "icons/mac/1024x1024.icns"
+    "icons/windows/32x32.ico",
+    "icons/windows/128x128.ico",
+    "icons/mac/512x512.icns"
   ]
 }
 ```

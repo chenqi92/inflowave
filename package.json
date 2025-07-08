@@ -1,6 +1,6 @@
 {
   "name": "influx-gui",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A modern InfluxDB GUI management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
