@@ -2,6 +2,5 @@ pub mod client;
 pub mod connection;
 pub mod pool;
 
-pub use client::*;
-pub use connection::*;
-pub use pool::*;
+pub use client::InfluxClient;
+pub use connection::ConnectionManager;

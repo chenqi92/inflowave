@@ -1,9 +1,8 @@
-use crate::models::{DatabaseInfo, RetentionPolicy, DatabaseCreateConfig, RetentionPolicyConfig};
+use crate::models::{RetentionPolicy, RetentionPolicyConfig};
 use crate::services::ConnectionService;
 use tauri::State;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// 获取数据库列表
 #[tauri::command]
@@ -502,7 +501,7 @@ fn convert_row_to_line_protocol(
     measurement: &str,
     row: &[serde_json::Value],
     field_mappings: &[FieldMapping],
-    time_field_index: usize,
+    _time_field_index: usize,
 ) -> Result<String, String> {
     let mut tags = Vec::new();
     let mut fields = Vec::new();
@@ -558,7 +557,7 @@ fn convert_row_to_line_protocol(
 }
 
 /// 转换值为字符串
-fn convert_value_to_string(value: &serde_json::Value, data_type: &Option<String>) -> Result<String, String> {
+fn convert_value_to_string(value: &serde_json::Value, _data_type: &Option<String>) -> Result<String, String> {
     match value {
         serde_json::Value::Null => Ok(String::new()),
         serde_json::Value::String(s) => Ok(s.clone()),
@@ -602,7 +601,7 @@ fn escape_tag_value(value: &str) -> String {
 /// 解析时间戳
 fn parse_timestamp(value: &str) -> Result<i64, String> {
     if value.is_empty() {
-        return Ok(chrono::Utc::now().timestamp_nanos());
+        return Ok(chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0));
     }
 
     // 尝试解析为纳秒时间戳
@@ -619,7 +618,7 @@ fn parse_timestamp(value: &str) -> Result<i64, String> {
 
     // 尝试解析 ISO 8601 格式
     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(value) {
-        return Ok(dt.timestamp_nanos());
+        return Ok(dt.timestamp_nanos_opt().unwrap_or(0));
     }
 
     // 尝试解析常见日期格式
@@ -633,7 +632,7 @@ fn parse_timestamp(value: &str) -> Result<i64, String> {
 
     for format in &formats {
         if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(value, format) {
-            return Ok(dt.timestamp_nanos());
+            return Ok(dt.and_utc().timestamp_nanos_opt().unwrap_or(0));
         }
     }
 

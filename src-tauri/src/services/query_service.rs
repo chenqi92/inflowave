@@ -33,7 +33,7 @@ impl QueryService {
         let client = manager.get_connection(&request.connection_id).await
             .context("获取连接失败")?;
         
-        let start_time = std::time::Instant::now();
+        let _start_time = std::time::Instant::now();
         
         match client.execute_query(&request.query).await {
             Ok(result) => {

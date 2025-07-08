@@ -193,7 +193,7 @@ impl ConfigUtils {
     }
 
     /// 检查配置目录磁盘空间
-    pub fn check_disk_space(config_dir: &PathBuf) -> Result<(u64, u64)> {
+    pub fn check_disk_space(_config_dir: &PathBuf) -> Result<(u64, u64)> {
         // 简单实现，返回固定值
         // 在实际应用中，可以使用 statvfs 等系统调用获取真实磁盘空间
         Ok((1024 * 1024 * 1024, 512 * 1024 * 1024)) // (总空间, 可用空间)

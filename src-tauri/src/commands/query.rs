@@ -1,6 +1,6 @@
 use crate::models::{QueryRequest, QueryResult, QueryHistory, SavedQuery, QueryValidationResult};
 use crate::services::ConnectionService;
-use crate::utils::ValidationUtils;
+use crate::utils::validation::ValidationUtils;
 use tauri::State;
 use log::{debug, error};
 
@@ -71,8 +71,8 @@ pub async fn validate_query(
 /// 获取查询历史
 #[tauri::command]
 pub async fn get_query_history(
-    connection_id: Option<String>,
-    limit: Option<usize>,
+    _connection_id: Option<String>,
+    _limit: Option<usize>,
 ) -> Result<Vec<QueryHistory>, String> {
     debug!("处理获取查询历史命令");
     
@@ -96,7 +96,7 @@ pub async fn save_query(
 /// 获取保存的查询列表
 #[tauri::command]
 pub async fn get_saved_queries(
-    tags: Option<Vec<String>>,
+    _tags: Option<Vec<String>>,
 ) -> Result<Vec<SavedQuery>, String> {
     debug!("处理获取保存查询列表命令");
     
@@ -205,7 +205,7 @@ pub async fn format_query(
 /// 解释查询执行计划
 #[tauri::command]
 pub async fn explain_query(
-    connection_service: State<'_, ConnectionService>,
+    _connection_service: State<'_, ConnectionService>,
     connection_id: String,
     query: String,
 ) -> Result<String, String> {

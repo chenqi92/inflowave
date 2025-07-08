@@ -70,7 +70,7 @@ impl InfluxClient {
         let query = influxdb::ReadQuery::new(query_str);
         
         match self.client.query(query).await {
-            Ok(result) => {
+            Ok(_result) => {
                 let execution_time = start.elapsed().as_millis() as u64;
                 
                 // 临时实现：返回简单结果

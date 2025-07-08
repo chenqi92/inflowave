@@ -1,4 +1,4 @@
-use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionState, ConnectionTestResult};
+use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::database::InfluxClient;
 use anyhow::{Context, Result};
 use std::collections::HashMap;

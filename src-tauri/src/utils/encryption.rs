@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use base64::{Engine as _, engine::general_purpose};
 use rand::RngCore;
 use std::sync::Arc;
-use log::{debug, error};
+use log::debug;
 
 /// 加密服务
 pub struct EncryptionService {

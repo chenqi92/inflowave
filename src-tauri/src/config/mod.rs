@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::Manager;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
 /// 应用配置
 #[derive(Debug, Clone, Serialize, Deserialize)]

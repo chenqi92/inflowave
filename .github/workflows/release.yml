@@ -80,7 +80,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
@@ -125,49 +125,49 @@ jobs:
           tagName: v${{ needs.check-version.outputs.version }}
           releaseName: 'InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}'
           releaseBody: |
-            ## ?? InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}
+            ## 🚀 InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}
+
+            A modern, cross-platform GUI management tool for InfluxDB 1.x databases, providing comprehensive database management, query execution, and data visualization capabilities.
+
+            ### 📦 Download & Installation
+
+            Choose the appropriate installer for your operating system:
+
+            - **Windows**: Download the .msi installer
+            - **macOS**: Download the .dmg disk image (supports Intel & Apple Silicon)
+            - **Linux**: Download the .deb or .AppImage package
+
+            ### 🔧 Installation Instructions
+
+            1. Download the installer for your platform
+            2. Run the installer and follow the setup wizard
+            3. Launch "InfluxDB GUI Manager" from your applications
+            4. Configure your InfluxDB server connection to get started
+
+            ### 💻 System Requirements
             
-            һ���ִ����� InfluxDB 1.x ��������ߣ��ṩ���������ݿ������ѯ���������ݿ��ӻ����ܡ�
+            - **Windows**: Windows 10 or later
+            - **macOS**: macOS 10.13 or later
+            - **Linux**: Linux distributions with GTK 3.0+ support
             
-            ### ?? ���ذ�װ
+            ### 🌟 Key Features
             
-            ��������Ĳ���ϵͳѡ���Ӧ�İ�װ����
+            - 🔗 **Multi-Connection Management** - Support for multiple InfluxDB instances
+            - 🗄️ **Database Operations** - Complete database CRUD operations
+            - 📝 **Advanced Query Editor** - Monaco editor with syntax highlighting and auto-completion
+            - 📊 **Data Visualization** - Multiple chart types with real-time data monitoring
+            - 📤📥 **Data Import/Export** - Support for multiple data formats
+            - ⚙️ **System Monitoring** - Performance metrics and health monitoring
             
-            - **Windows**: ���� .msi ��װ����
-            - **macOS**: ���� .dmg ����ӳ�� (֧�� Intel �� Apple Silicon)
-            - **Linux**: ���� .deb �� .AppImage ��
+            ### 📚 Documentation
             
-            ### ?? ��װ˵��
-            
-            1. �����ʺ���ƽ̨�İ�װ��
-            2. ���а�װ���򲢰�������ɰ�װ
-            3. ��Ӧ�ó���˵����� InfluxDB GUI Manager
-            4. ������� InfluxDB �������ü��ɿ�ʼʹ��
-            
-            ### ?? ϵͳҪ��
-            
-            - **Windows**: Windows 10 ����߰汾
-            - **macOS**: macOS 10.13 ����߰汾
-            - **Linux**: ֧�� GTK 3.0+ ���ִ� Linux ���а�
-            
-            ### ? ��Ҫ����
-            
-            - ?? **�����ӹ���** - ֧�ֶ�� InfluxDB ʵ������
-            - ??? **���ݿ����** - ���������ݿ� CRUD ����
-            - ?? **�߼���ѯ** - Monaco �༭�����﷨������������ʾ
-            - ?? **���ݿ��ӻ�** - ����ͼ�����ͣ�ʵʱ���ݼ��
-            - ???? **���ݹ���** - ���ݵ��뵼�������ʽ֧��
-            - ?? **ϵͳ���** - ���ܼ�غͽ������
-            
-            ### ?? �ĵ�
-            
-            - [�û��ֲ�](https://github.com/your-username/influx-gui/blob/main/user-docs/README.md)
-            - [���ٿ�ʼ](https://github.com/your-username/influx-gui/blob/main/user-docs/quick-start.md)
-            - [���ܽ���](https://github.com/your-username/influx-gui/blob/main/user-docs/features/README.md)
+            - [User Manual](https://github.com/your-username/influx-gui/blob/main/user-docs/README.md)
+            - [Quick Start Guide](https://github.com/your-username/influx-gui/blob/main/user-docs/quick-start.md)
+            - [Feature Overview](https://github.com/your-username/influx-gui/blob/main/user-docs/features/README.md)
             
             ---
             
-            ����������飬����� [GitHub Issues](https://github.com/your-username/influx-gui/issues)
+            For issues and feedback, please visit [GitHub Issues](https://github.com/your-username/influx-gui/issues)
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}

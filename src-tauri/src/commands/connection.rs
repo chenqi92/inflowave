@@ -41,7 +41,7 @@ pub async fn test_connection(
 /// 初始化连接服务（加载保存的连接）
 #[tauri::command]
 pub async fn initialize_connections(
-    connection_service: State<'_, ConnectionService>,
+    _connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("初始化连接服务，加载保存的连接");
     // 暂时返回成功，在后续版本中实现完整的加载机制

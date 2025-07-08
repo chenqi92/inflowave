@@ -1,10 +1,9 @@
 use crate::database::InfluxClient;
 use crate::models::ConnectionConfig;
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore};
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
 /// 连接池配置
 #[derive(Debug, Clone)]

@@ -1,5 +1,5 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
-use crate::database::ConnectionManager;
+use crate::database::connection::ConnectionManager;
 use crate::utils::encryption::EncryptionService;
 use crate::utils::config::ConfigUtils;
 use anyhow::{Context, Result};

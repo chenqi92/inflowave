@@ -1,6 +1,6 @@
 use crate::models::ConnectionConfig;
-use anyhow::{Context, Result};
-use std::net::{IpAddr, SocketAddr};
+use anyhow::Result;
+use std::net::IpAddr;
 use std::str::FromStr;
 use log::debug;
 

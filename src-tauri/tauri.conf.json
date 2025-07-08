@@ -36,6 +36,7 @@
     "active": true,
     "targets": "all",
     "icon": [
+      "icons/icon.png",
       "icons/windows/32x32.ico",
       "icons/windows/128x128.ico",
       "icons/mac/512x512.icns"
