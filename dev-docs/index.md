@@ -1,8 +1,8 @@
-# InfluxDB GUI Manager - 开发文档索引
+# InfloWave - 开发文档索引
 
 ## 📚 文档导航
 
-本项目采用 **Tauri + React + TypeScript** 混合开发架构，为 InfluxDB 1.0 提供现代化的图形界面管理工具。
+本项目采用 **Tauri + React + TypeScript** 混合开发架构，为时序数据库提供现代化的图形界面管理工具。
 
 ### 🏗️ 架构概览
 
@@ -65,7 +65,7 @@ React + TypeScript 前端开发相关文档
 ```powershell
 # 克隆项目
 git clone <repository-url>
-cd influx-gui
+cd inflowave
 
 # 运行开发环境设置脚本
 .\scripts\setup-dev.ps1

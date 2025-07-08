@@ -74,10 +74,10 @@ const MainLayout: React.FC = () => {
       <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0' }}>
         <div className="flex items-center justify-between h-full">
           <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
-            InfluxDB GUI Manager
+            InfloWave
           </Title>
           <Text type="secondary">
-            现代化的 InfluxDB 管理工具
+            现代化的时序数据库管理工具
           </Text>
         </div>
       </Header>

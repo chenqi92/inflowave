@@ -3,4 +3,4 @@ pub mod connection;
 pub mod pool;
 
 pub use client::InfluxClient;
-pub use connection::ConnectionManager;
+pub(crate) use connection::ConnectionManager;

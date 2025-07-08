@@ -2,7 +2,7 @@
 
 ## 概述
 
-本文档详细介绍 InfluxDB GUI Manager 中前后端集成、InfluxDB 对接以及各系统间的数据流设计。
+本文档详细介绍 InfloWave 中前后端集成、InfluxDB 对接以及各系统间的数据流设计。
 
 ## 🏗️ 集成架构
 

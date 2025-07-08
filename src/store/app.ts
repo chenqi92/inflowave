@@ -101,7 +101,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'influx-gui-app-store',
+      name: 'inflowave-app-store',
       partialize: (state) => ({
         config: state.config,
         sidebarCollapsed: state.sidebarCollapsed,

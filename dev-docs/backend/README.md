@@ -2,7 +2,7 @@
 
 ## 概述
 
-InfluxDB GUI Manager 的后端基于 **Rust + Tauri 2.0** 架构，提供高性能、内存安全的 InfluxDB 1.0 管理功能。
+InfloWave 的后端基于 **Rust + Tauri 2.0** 架构，提供高性能、内存安全的 InfluxDB 1.0 管理功能。
 
 ## 🏗️ 后端架构
 

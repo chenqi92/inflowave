@@ -1,10 +1,10 @@
 [package]
-name = "influx-gui"
+name = "inflowave"
 version = "0.1.0"
-description = "A modern InfluxDB GUI management tool"
-authors = ["InfluxDB GUI Team"]
+description = "A modern time-series database management tool"
+authors = ["Kkape Team"]
 license = "MIT"
-repository = "https://github.com/your-username/influx-gui"
+repository = "https://github.com/kkape/inflowave"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

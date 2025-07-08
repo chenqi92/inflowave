@@ -1,8 +1,8 @@
-# 📖 InfluxDB GUI Manager - 用户手册
+# 📖 InfloWave - 用户手册
 
-## 欢迎使用 InfluxDB GUI Manager
+## 欢迎使用 InfloWave
 
-InfluxDB GUI Manager 是一款现代化的 InfluxDB 1.0 图形界面管理工具，提供直观易用的数据库管理、查询执行和数据可视化功能。
+InfloWave 是一款现代化的时序数据库图形界面管理工具，提供直观易用的数据库管理、查询执行和数据可视化功能。
 
 ## 🌟 主要特性
 
@@ -234,8 +234,8 @@ sudo rpm -i influx-gui.rpm
 
 - [InfluxDB 官方文档](https://docs.influxdata.com/influxdb/v1.8/)
 - [InfluxQL 语法参考](https://docs.influxdata.com/influxdb/v1.8/query_language/)
-- [项目 GitHub 仓库](https://github.com/your-username/influx-gui)
-- [问题反馈](https://github.com/your-username/influx-gui/issues)
+- [项目 GitHub 仓库](https://github.com/kkape/inflowave)
+- [问题反馈](https://github.com/kkape/inflowave/issues)
 
 ---
 

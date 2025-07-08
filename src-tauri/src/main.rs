@@ -27,7 +27,7 @@ async fn main() {
     // Initialize logger
     env_logger::init();
 
-    info!("Starting InfluxDB GUI Manager");
+    info!("Starting InfloWave");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

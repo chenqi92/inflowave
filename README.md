@@ -1,6 +1,6 @@
-# InfluxDB GUI Manager
+# InfloWave
 
-一个现代化的 InfluxDB 1.x 桌面管理工具，基于 Tauri + React + TypeScript + Rust 开发，提供完整的数据库管理、查询分析和数据可视化功能。
+一个现代化的时序数据库桌面管理工具，基于 Tauri + React + TypeScript + Rust 开发，提供完整的数据库管理、查询分析和数据可视化功能。
 
 ## 🎯 项目状态
 
@@ -119,7 +119,7 @@
 ## 📁 项目结构
 
 ```
-influx-gui/
+inflowave/
 ├── src/                    # React 前端源码
 │   ├── components/         # 可复用组件
 │   │   ├── common/        # 通用组件
@@ -161,7 +161,7 @@ influx-gui/
 ### 📦 安装使用
 
 #### 方式一：下载预构建版本 (推荐)
-1. 访问 [Releases 页面](https://github.com/your-username/influx-gui/releases)
+1. 访问 [Releases 页面](https://github.com/kkape/inflowave/releases)
 2. 下载适合您系统的安装包：
    - **Windows**: `.msi` 安装程序
    - **macOS**: `.dmg` 磁盘映像
@@ -179,8 +179,8 @@ influx-gui/
 **Windows 自动化设置**
 ```powershell
 # 克隆项目
-git clone https://github.com/your-username/influx-gui.git
-cd influx-gui
+git clone https://github.com/kkape/inflowave.git
+cd inflowave
 
 # 运行自动化设置脚本 (PowerShell + Scoop)
 .\scripts\setup-dev.ps1
@@ -192,8 +192,8 @@ npm run tauri:dev
 **手动安装**
 ```bash
 # 1. 克隆项目
-git clone https://github.com/your-username/influx-gui.git
-cd influx-gui
+git clone https://github.com/kkape/inflowave.git
+cd inflowave
 
 # 2. 安装前端依赖
 npm install
@@ -373,7 +373,7 @@ git push origin main
 我们欢迎任何形式的贡献！
 
 ### 贡献方式
-1. **报告问题** - 在 [Issues](https://github.com/your-username/influx-gui/issues) 中报告 bug 或提出功能建议
+1. **报告问题** - 在 [Issues](https://github.com/kkape/inflowave/issues) 中报告 bug 或提出功能建议
 2. **改进文档** - 帮助完善文档和使用指南
 3. **代码贡献** - 提交代码修复或新功能
 

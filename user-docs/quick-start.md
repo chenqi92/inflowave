@@ -1,8 +1,8 @@
 # 🚀 快速开始指南
 
-## 欢迎使用 InfluxDB GUI Manager
+## 欢迎使用 InfloWave
 
-本指南将帮助您在 5 分钟内快速上手 InfluxDB GUI Manager，从安装到创建第一个连接并执行查询。
+本指南将帮助您在 5 分钟内快速上手 InfloWave，从安装到创建第一个连接并执行查询。
 
 ## 📋 准备工作
 
@@ -22,13 +22,13 @@
 ## 📥 第一步：下载和安装
 
 ### Windows 用户
-1. 访问 [发布页面](https://github.com/your-username/influx-gui/releases)
-2. 下载最新版本的 `influx-gui-setup.exe`
+1. 访问 [发布页面](https://github.com/kkape/inflowave/releases)
+2. 下载最新版本的 `inflowave-setup.exe`
 3. 双击运行安装程序
 4. 按照安装向导完成安装
 
 ### macOS 用户
-1. 下载 `influx-gui.dmg` 文件
+1. 下载 `inflowave.dmg` 文件
 2. 双击打开 DMG 文件
 3. 将应用拖拽到 `Applications` 文件夹
 4. 在启动台中找到并启动应用
@@ -36,7 +36,7 @@
 ### Linux 用户
 ```bash
 # Ubuntu/Debian
-sudo dpkg -i influx-gui.deb
+sudo dpkg -i inflowave.deb
 
 # CentOS/RHEL/Fedora
 sudo rpm -i influx-gui.rpm
@@ -49,7 +49,7 @@ chmod +x influx-gui.AppImage
 ## 🔌 第二步：创建第一个连接
 
 ### 1. 启动应用
-- 双击桌面图标或从开始菜单启动 InfluxDB GUI Manager
+- 双击桌面图标或从开始菜单启动 InfloWave
 - 首次启动会显示欢迎界面
 
 ### 2. 添加新连接
@@ -218,7 +218,7 @@ A: 查询会自动保存到历史记录中，您也可以：
 
 ## 🔗 下一步
 
-恭喜！您已经成功完成了 InfluxDB GUI Manager 的快速入门。接下来您可以：
+恭喜！您已经成功完成了 InfloWave 的快速入门。接下来您可以：
 
 1. **深入学习**: 阅读 [功能介绍](./features/README.md) 了解更多功能
 2. **高级查询**: 学习 [InfluxQL 语法](https://docs.influxdata.com/influxdb/v1.8/query_language/)

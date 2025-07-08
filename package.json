@@ -1,7 +1,7 @@
 {
-  "name": "influx-gui",
-  "version": "1.0.0",
-  "description": "A modern InfluxDB GUI management tool built with Tauri + React + TypeScript",
+  "name": "inflowave",
+  "version": "1.0.1",
+  "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -70,23 +70,25 @@
     "vitest": "^1.0.4"
   },
   "keywords": [
-    "influxdb",
+    "inflowave",
+    "time-series",
+    "database",
     "gui",
     "tauri",
     "react",
     "typescript",
-    "database",
-    "time-series",
-    "visualization"
+    "influxdb",
+    "visualization",
+    "analytics"
   ],
-  "author": "Your Name",
+  "author": "Kkape",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/influx-gui.git"
+    "url": "https://github.com/chenqi92/inflowave.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/influx-gui/issues"
+    "url": "https://github.com/chenqi92/inflowave/issues"
   },
-  "homepage": "https://github.com/your-username/influx-gui#readme"
+  "homepage": "https://allbs.cn"
 }

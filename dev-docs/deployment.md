@@ -1,4 +1,4 @@
-# InfluxDB GUI Manager - 跨平台部署指南
+# InfloWave - 跨平台部署指南
 
 ## 🎯 支持的平台
 
@@ -163,27 +163,25 @@ tauri build --target aarch64-unknown-linux-gnu
     "distDir": "../dist"
   },
   "package": {
-    "productName": "InfluxDB GUI Manager",
+    "productName": "InfloWave",
     "version": "1.0.0"
   },
   "tauri": {
     "bundle": {
       "active": true,
       "targets": ["msi", "nsis", "deb", "rpm", "dmg", "appimage"],
-      "identifier": "com.influxgui.app",
+      "identifier": "com.kkape.inflowave",
       "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
+        "icons/windows/32x32.ico",
+        "icons/windows/128x128.ico",
+        "icons/mac/512x512.icns"
       ],
       "resources": [],
       "externalBin": [],
       "copyright": "",
       "category": "DeveloperTool",
-      "shortDescription": "Modern InfluxDB GUI Manager",
-      "longDescription": "A modern, cross-platform GUI management tool for InfluxDB built with Tauri + React + TypeScript."
+      "shortDescription": "Modern time-series database management tool",
+      "longDescription": "A modern, cross-platform GUI management tool for time-series databases built with Tauri + React + TypeScript."
     }
   }
 }

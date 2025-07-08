@@ -163,7 +163,7 @@ const AppHeader: React.FC = () => {
         <div className="flex items-center space-x-2">
           <DatabaseOutlined className="text-xl text-primary-600" />
           <Text strong className="text-lg">
-            InfluxDB GUI Manager
+            InfloWave
           </Text>
         </div>
       </div>

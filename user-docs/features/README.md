@@ -1,6 +1,6 @@
 # 📋 功能介绍
 
-本目录包含 InfluxDB GUI Manager 各功能模块的详细介绍。
+本目录包含 InfloWave 各功能模块的详细介绍。
 
 ## 📚 功能模块
 

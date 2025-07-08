@@ -11,7 +11,7 @@ impl ConfigUtils {
     pub fn get_config_dir() -> Result<PathBuf> {
         let config_dir = dirs::config_dir()
             .context("无法获取系统配置目录")?
-            .join("influx-gui");
+            .join("inflowave");
         
         // 确保目录存在
         std::fs::create_dir_all(&config_dir)
@@ -25,7 +25,7 @@ impl ConfigUtils {
     pub fn get_data_dir() -> Result<PathBuf> {
         let data_dir = dirs::data_dir()
             .context("无法获取系统数据目录")?
-            .join("influx-gui");
+            .join("inflowave");
         
         // 确保目录存在
         std::fs::create_dir_all(&data_dir)
@@ -39,7 +39,7 @@ impl ConfigUtils {
     pub fn get_cache_dir() -> Result<PathBuf> {
         let cache_dir = dirs::cache_dir()
             .context("无法获取系统缓存目录")?
-            .join("influx-gui");
+            .join("inflowave");
         
         // 确保目录存在
         std::fs::create_dir_all(&cache_dir)

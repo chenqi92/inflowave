@@ -17,23 +17,23 @@
 ## 📥 下载安装包
 
 ### 官方下载
-访问 [GitHub Releases](https://github.com/your-username/influx-gui/releases) 页面下载最新版本。
+访问 [GitHub Releases](https://github.com/kkape/inflowave/releases) 页面下载最新版本。
 
 ### 选择合适的安装包
-- **Windows**: `influx-gui-setup.exe` (推荐) 或 `influx-gui-portable.exe`
-- **macOS**: `influx-gui.dmg` (通用版本，支持 Intel 和 Apple Silicon)
-- **Linux**: `influx-gui.deb`, `influx-gui.rpm`, 或 `influx-gui.AppImage`
+- **Windows**: `inflowave-setup.exe` (推荐) 或 `inflowave-portable.exe`
+- **macOS**: `inflowave.dmg` (通用版本，支持 Intel 和 Apple Silicon)
+- **Linux**: `inflowave.deb`, `inflowave.rpm`, 或 `inflowave.AppImage`
 
 ## 🖥️ Windows 安装
 
 ### 方法一：使用安装程序 (推荐)
-1. 下载 `influx-gui-setup.exe`
+1. 下载 `inflowave-setup.exe`
 2. 双击运行安装程序
 3. 按照安装向导完成安装
 4. 从开始菜单或桌面快捷方式启动应用
 
 ### 方法二：便携版
-1. 下载 `influx-gui-portable.exe`
+1. 下载 `inflowave-portable.exe`
 2. 将文件放置到任意目录
 3. 双击运行即可使用
 
@@ -43,9 +43,9 @@
 ## 🍎 macOS 安装
 
 ### 安装步骤
-1. 下载 `influx-gui.dmg`
+1. 下载 `inflowave.dmg`
 2. 双击打开 DMG 文件
-3. 将 InfluxDB GUI Manager 拖拽到 Applications 文件夹
+3. 将 InfloWave 拖拽到 Applications 文件夹
 4. 从启动台或应用程序文件夹启动应用
 
 ### 首次运行
@@ -59,10 +59,10 @@
 ### Ubuntu/Debian (.deb)
 ```bash
 # 下载 deb 包
-wget https://github.com/your-username/influx-gui/releases/latest/download/influx-gui.deb
+wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.deb
 
 # 安装
-sudo dpkg -i influx-gui.deb
+sudo dpkg -i inflowave.deb
 
 # 如果有依赖问题，运行
 sudo apt-get install -f
@@ -71,25 +71,25 @@ sudo apt-get install -f
 ### CentOS/RHEL/Fedora (.rpm)
 ```bash
 # 下载 rpm 包
-wget https://github.com/your-username/influx-gui/releases/latest/download/influx-gui.rpm
+wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.rpm
 
 # 安装
-sudo rpm -i influx-gui.rpm
+sudo rpm -i inflowave.rpm
 
 # 或使用 dnf (Fedora)
-sudo dnf install influx-gui.rpm
+sudo dnf install inflowave.rpm
 ```
 
 ### AppImage (通用)
 ```bash
 # 下载 AppImage
-wget https://github.com/your-username/influx-gui/releases/latest/download/influx-gui.AppImage
+wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.AppImage
 
 # 添加执行权限
-chmod +x influx-gui.AppImage
+chmod +x inflowave.AppImage
 
 # 运行
-./influx-gui.AppImage
+./inflowave.AppImage
 ```
 
 ### Linux 依赖
@@ -119,9 +119,9 @@ sudo dnf install -y webkit2gtk3 gtk3
 ### 配置迁移
 - 用户配置和连接信息会自动保留
 - 如需手动备份，配置文件位置：
-  - **Windows**: `%APPDATA%\influx-gui\`
-  - **macOS**: `~/Library/Application Support/influx-gui/`
-  - **Linux**: `~/.config/influx-gui/`
+  - **Windows**: `%APPDATA%\inflowave\`
+  - **macOS**: `~/Library/Application Support/inflowave/`
+  - **Linux**: `~/.config/inflowave/`
 
 ## 🗑️ 卸载指南
 
@@ -130,16 +130,16 @@ sudo dnf install -y webkit2gtk3 gtk3
 - **便携版**: 直接删除可执行文件
 
 ### macOS
-1. 从应用程序文件夹删除 InfluxDB GUI Manager
-2. 删除配置文件（可选）：`~/Library/Application Support/influx-gui/`
+1. 从应用程序文件夹删除 InfloWave
+2. 删除配置文件（可选）：`~/Library/Application Support/inflowave/`
 
 ### Linux
 ```bash
 # Ubuntu/Debian
-sudo apt remove influx-gui
+sudo apt remove inflowave
 
 # CentOS/RHEL/Fedora
-sudo rpm -e influx-gui
+sudo rpm -e inflowave
 
 # AppImage
 # 直接删除 AppImage 文件
@@ -155,7 +155,7 @@ sudo rpm -e influx-gui
 - **权限问题**: 以管理员身份运行
 
 #### macOS
-- **"应用已损坏"**: 在终端运行 `sudo xattr -rd com.apple.quarantine /Applications/InfluxDB\ GUI\ Manager.app`
+- **"应用已损坏"**: 在终端运行 `sudo xattr -rd com.apple.quarantine /Applications/InfloWave.app`
 - **权限问题**: 在"系统偏好设置" → "安全性与隐私"中允许应用运行
 
 #### Linux
@@ -166,7 +166,7 @@ sudo rpm -e influx-gui
 ### 获取帮助
 如果遇到安装问题：
 1. 查看 [常见问题](./faq.md)
-2. 搜索 [GitHub Issues](https://github.com/your-username/influx-gui/issues)
+2. 搜索 [GitHub Issues](https://github.com/kkape/inflowave/issues)
 3. 提交新的 Issue 报告问题
 
 ---

@@ -1,4 +1,4 @@
-# InfluxDB GUI Manager - 详细设计文档
+# InfloWave - 详细设计文档
 
 ## 1. 系统架构设计
 
