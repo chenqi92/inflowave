@@ -1,0 +1,162 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'VERSION'
+  workflow_dispatch:
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-release: ${{ steps.check.outputs.should-release }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(cat VERSION | tr -d '\n\r')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Check if tag exists
+        id: check
+        run: |
+          VERSION=$(cat VERSION | tr -d '\n\r')
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists"
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag v$VERSION does not exist, will create release"
+            echo "should-release=true" >> $GITHUB_OUTPUT
+          fi
+
+  create-tag:
+    needs: check-version
+    runs-on: ubuntu-latest
+    if: needs.check-version.outputs.should-release == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
+  build-and-release:
+    needs: [check-version, create-tag]
+    if: needs.check-version.outputs.should-release == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Update Tauri config version
+        shell: bash
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          if command -v jq >/dev/null 2>&1; then
+            jq ".version = \"$VERSION\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp
+            mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          else
+            if [[ "${{ runner.os }}" == "Windows" ]]; then
+              powershell -Command "(Get-Content src-tauri/tauri.conf.json) -replace '\"version\": \".*\"', '\"version\": \"$VERSION\"' | Set-Content src-tauri/tauri.conf.json"
+            else
+              sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+              rm -f src-tauri/tauri.conf.json.bak
+            fi
+          fi
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v${{ needs.check-version.outputs.version }}
+          releaseName: 'InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}'
+          releaseBody: |
+            ## ?? InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}
+            
+            一个现代化的 InfluxDB 1.x 桌面管理工具，提供完整的数据库管理、查询分析和数据可视化功能。
+            
+            ### ?? 下载安装
+            
+            请根据您的操作系统选择对应的安装包：
+            
+            - **Windows**: 下载 .msi 安装程序
+            - **macOS**: 下载 .dmg 磁盘映像 (支持 Intel 和 Apple Silicon)
+            - **Linux**: 下载 .deb 或 .AppImage 包
+            
+            ### ?? 安装说明
+            
+            1. 下载适合您平台的安装包
+            2. 运行安装程序并按照向导完成安装
+            3. 从应用程序菜单启动 InfluxDB GUI Manager
+            4. 添加您的 InfluxDB 连接配置即可开始使用
+            
+            ### ?? 系统要求
+            
+            - **Windows**: Windows 10 或更高版本
+            - **macOS**: macOS 10.13 或更高版本
+            - **Linux**: 支持 GTK 3.0+ 的现代 Linux 发行版
+            
+            ### ? 主要功能
+            
+            - ?? **多连接管理** - 支持多个 InfluxDB 实例连接
+            - ??? **数据库操作** - 完整的数据库 CRUD 操作
+            - ?? **高级查询** - Monaco 编辑器，语法高亮，智能提示
+            - ?? **数据可视化** - 多种图表类型，实时数据监控
+            - ???? **数据管理** - 数据导入导出，多格式支持
+            - ?? **系统监控** - 性能监控和健康检查
+            
+            ### ?? 文档
+            
+            - [用户手册](https://github.com/your-username/influx-gui/blob/main/user-docs/README.md)
+            - [快速开始](https://github.com/your-username/influx-gui/blob/main/user-docs/quick-start.md)
+            - [功能介绍](https://github.com/your-username/influx-gui/blob/main/user-docs/features/README.md)
+            
+            ---
+            
+            如有问题或建议，请访问 [GitHub Issues](https://github.com/your-username/influx-gui/issues)
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
