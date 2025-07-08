@@ -47,11 +47,30 @@ git push origin main
 
 ### 步骤 4: 等待自动构建
 
-推送后，GitHub Actions 会自动：
-1. 检测 VERSION 文件变化
-2. 创建对应的 Git tag (例如: v1.0.1)
-3. 构建多平台安装包
-4. 创建 GitHub Release
+推送后，GitHub Actions 会自动执行以下流程：
+
+#### 🔍 版本检查阶段
+1. **读取版本号** - 从 VERSION 文件读取新版本号
+2. **检查标签冲突** - 验证对应的 Git tag 是否已存在
+3. **决定是否发布** - 如果版本号未使用过，继续发布流程
+
+#### 🏷️ 标签创建阶段
+1. **创建 Git tag** - 自动创建 `v1.0.1` 格式的标签
+2. **推送标签** - 将标签推送到远程仓库
+
+#### 🔨 多平台构建阶段
+并行构建三个平台的安装包：
+- **Windows** (windows-latest)
+- **macOS** (macos-latest) - Universal Binary
+- **Linux** (ubuntu-20.04)
+
+每个平台的构建步骤：
+1. 设置构建环境 (Rust + Node.js)
+2. 安装系统依赖
+3. 安装项目依赖
+4. 更新 Tauri 配置中的版本号
+5. 执行 Tauri 构建
+6. 上传构建产物到 GitHub Release
 
 ## 📦 构建产物
 
@@ -70,9 +89,29 @@ git push origin main
 
 ## 🔍 监控构建状态
 
+### 查看构建进度
 1. 访问 GitHub 仓库的 **Actions** 标签页
-2. 查看 "Auto Release" 工作流状态
-3. 构建完成后，在 **Releases** 页面查看新发布的版本
+2. 找到 "Auto Release" 工作流
+3. 点击最新的运行实例查看详细状态
+
+### 构建阶段说明
+- **check-version** ✅ - 版本检查和验证
+- **create-tag** ✅ - Git 标签创建
+- **build-and-release** (3个并行任务) - 多平台构建
+  - **macos-latest** - macOS 构建
+  - **ubuntu-20.04** - Linux 构建
+  - **windows-latest** - Windows 构建
+
+### 完成标志
+- 所有构建任务显示绿色 ✅
+- **Releases** 页面出现新版本
+- 每个平台的安装包都已上传
+
+### 构建时间预估
+- **总时间**: 约 15-30 分钟
+- **版本检查**: 1-2 分钟
+- **标签创建**: 1 分钟
+- **多平台构建**: 10-25 分钟 (并行执行)
 
 ## 📝 版本号规范
 
