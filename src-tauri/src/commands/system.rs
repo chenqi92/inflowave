@@ -1,4 +1,4 @@
-use crate::models::{SystemInfo, DatabaseStats, DiskUsage, NetworkStats};
+use crate::models::{SystemInfo, DiskUsage, NetworkStats};
 use crate::services::ConnectionService;
 use tauri::State;
 use log::{debug, error};
