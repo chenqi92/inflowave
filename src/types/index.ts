@@ -553,6 +553,238 @@ export interface TimeRange {
   };
 }
 
+// 性能监控相关类型
+export interface PerformanceMetrics {
+  queryPerformance: QueryPerformanceMetrics;
+  connectionHealth: ConnectionHealthMetrics;
+  systemResources: SystemResourceMetrics;
+  slowQueries: SlowQueryInfo[];
+  storageAnalysis: StorageAnalysisInfo;
+}
+
+export interface QueryPerformanceMetrics {
+  totalQueries: number;
+  averageExecutionTime: number;
+  slowQueryThreshold: number;
+  slowQueryCount: number;
+  errorRate: number;
+  queriesPerSecond: number;
+  peakQPS: number;
+  timeRange: string;
+}
+
+export interface ConnectionHealthMetrics {
+  connectionId: string;
+  status: 'healthy' | 'warning' | 'critical';
+  responseTime: number;
+  uptime: number;
+  lastCheck: Date;
+  errorCount: number;
+  warningCount: number;
+  memoryUsage: number;
+  cpuUsage: number;
+}
+
+export interface SystemResourceMetrics {
+  memory: {
+    total: number;
+    used: number;
+    available: number;
+    percentage: number;
+  };
+  cpu: {
+    cores: number;
+    usage: number;
+    loadAverage: number[];
+  };
+  disk: {
+    total: number;
+    used: number;
+    available: number;
+    percentage: number;
+  };
+  network: {
+    bytesIn: number;
+    bytesOut: number;
+    packetsIn: number;
+    packetsOut: number;
+  };
+}
+
+export interface SlowQueryInfo {
+  id: string;
+  query: string;
+  database: string;
+  executionTime: number;
+  timestamp: Date;
+  rowsReturned: number;
+  connectionId: string;
+  optimization?: QueryOptimization;
+}
+
+export interface QueryOptimization {
+  suggestions: string[];
+  estimatedImprovement: number;
+  optimizedQuery?: string;
+  indexRecommendations?: string[];
+}
+
+export interface StorageAnalysisInfo {
+  databases: DatabaseStorageInfo[];
+  totalSize: number;
+  compressionRatio: number;
+  retentionPolicyEffectiveness: number;
+  recommendations: StorageRecommendation[];
+}
+
+export interface DatabaseStorageInfo {
+  name: string;
+  size: number;
+  measurementCount: number;
+  seriesCount: number;
+  pointCount: number;
+  oldestPoint: Date;
+  newestPoint: Date;
+  compressionRatio: number;
+}
+
+export interface StorageRecommendation {
+  type: 'retention' | 'compression' | 'sharding' | 'cleanup';
+  description: string;
+  estimatedSavings: number;
+  priority: 'high' | 'medium' | 'low';
+  action: string;
+}
+
+// 用户体验增强相关类型
+export interface KeyboardShortcut {
+  id: string;
+  name: string;
+  description: string;
+  keys: string[];
+  category: string;
+  action: () => void;
+  enabled: boolean;
+}
+
+export interface UserPreferences {
+  shortcuts: KeyboardShortcut[];
+  notifications: NotificationSettings;
+  accessibility: AccessibilitySettings;
+  workspace: WorkspaceSettings;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  queryCompletion: boolean;
+  connectionStatus: boolean;
+  systemAlerts: boolean;
+  exportCompletion: boolean;
+  sound: boolean;
+  desktop: boolean;
+  position: 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft';
+}
+
+export interface AccessibilitySettings {
+  highContrast: boolean;
+  fontSize: 'small' | 'medium' | 'large' | 'extraLarge';
+  reducedMotion: boolean;
+  screenReader: boolean;
+  keyboardNavigation: boolean;
+}
+
+export interface WorkspaceSettings {
+  layout: 'default' | 'compact' | 'wide';
+  panelSizes: Record<string, number>;
+  openTabs: string[];
+  pinnedQueries: string[];
+  recentFiles: string[];
+}
+
+// 扩展和集成相关类型
+export interface Plugin {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  enabled: boolean;
+  config: Record<string, any>;
+  permissions: PluginPermission[];
+  hooks: PluginHook[];
+}
+
+export interface PluginPermission {
+  type: 'database' | 'file' | 'network' | 'system';
+  scope: string;
+  description: string;
+}
+
+export interface PluginHook {
+  event: string;
+  handler: string;
+  priority: number;
+}
+
+export interface APIIntegration {
+  id: string;
+  name: string;
+  type: 'rest' | 'graphql' | 'webhook';
+  endpoint: string;
+  authentication: APIAuthentication;
+  headers: Record<string, string>;
+  enabled: boolean;
+}
+
+export interface APIAuthentication {
+  type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2';
+  credentials: Record<string, string>;
+}
+
+export interface WebhookConfig {
+  id: string;
+  name: string;
+  url: string;
+  events: string[];
+  headers: Record<string, string>;
+  secret?: string;
+  enabled: boolean;
+  retryPolicy: {
+    maxRetries: number;
+    backoffMultiplier: number;
+    maxBackoffTime: number;
+  };
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  trigger: AutomationTrigger;
+  conditions: AutomationCondition[];
+  actions: AutomationAction[];
+  enabled: boolean;
+  lastExecuted?: Date;
+  executionCount: number;
+}
+
+export interface AutomationTrigger {
+  type: 'schedule' | 'event' | 'threshold' | 'manual';
+  config: Record<string, any>;
+}
+
+export interface AutomationCondition {
+  type: 'query' | 'metric' | 'time' | 'custom';
+  operator: 'equals' | 'greater' | 'less' | 'contains' | 'regex';
+  value: any;
+  field?: string;
+}
+
+export interface AutomationAction {
+  type: 'query' | 'export' | 'notification' | 'webhook' | 'script';
+  config: Record<string, any>;
+}
+
 // 应用设置相关类型
 export interface AppSettings {
   general: {

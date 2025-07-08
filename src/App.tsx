@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Typography, message, Spin } from 'antd';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Layout, Menu, Typography, message, Spin, Button } from 'antd';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   DatabaseOutlined,
   SearchOutlined,
@@ -8,9 +8,12 @@ import {
   SettingOutlined,
   DashboardOutlined,
   EditOutlined,
-  BarChartOutlined
+  BarChartOutlined,
+  ThunderboltOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { invoke } from '@tauri-apps/api/core';
+import GlobalSearch from './components/common/GlobalSearch';
 
 // 页面组件
 import ConnectionsPage from './pages/Connections';
@@ -19,6 +22,8 @@ import QueryPage from './pages/Query';
 import DashboardPage from './pages/Dashboard';
 import DataWritePage from './pages/DataWrite';
 import VisualizationPage from './pages/Visualization';
+import PerformancePage from './pages/Performance';
+import ExtensionsPage from './pages/Extensions';
 import SettingsPage from './pages/Settings';
 import DataGripLayout from './components/layout/DataGripLayout';
 
@@ -58,6 +63,16 @@ const menuItems = [
     label: <Link to="/data-write">数据写入</Link>,
   },
   {
+    key: '/performance',
+    icon: <ThunderboltOutlined />,
+    label: <Link to="/performance">性能监控</Link>,
+  },
+  {
+    key: '/extensions',
+    icon: <AppstoreOutlined />,
+    label: <Link to="/extensions">扩展管理</Link>,
+  },
+  {
     key: '/settings',
     icon: <SettingOutlined />,
     label: <Link to="/settings">设置</Link>,
@@ -67,7 +82,28 @@ const menuItems = [
 // 主布局组件
 const MainLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
+
+  // 键盘快捷键处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+P 打开全局搜索
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setGlobalSearchVisible(true);
+      }
+      // Ctrl+B 切换侧边栏
+      if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        setCollapsed(!collapsed);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [collapsed]);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -77,9 +113,19 @@ const MainLayout: React.FC = () => {
           <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
             InfloWave
           </Title>
-          <Text type="secondary">
-            现代化的时序数据库管理工具
-          </Text>
+          <div className="flex items-center gap-4">
+            <Button
+              type="text"
+              icon={<SearchOutlined />}
+              onClick={() => setGlobalSearchVisible(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              搜索 (Ctrl+Shift+P)
+            </Button>
+            <Text type="secondary">
+              现代化的时序数据库管理工具
+            </Text>
+          </div>
         </div>
       </Header>
 
@@ -110,11 +156,25 @@ const MainLayout: React.FC = () => {
               <Route path="/query" element={<DataGripLayout />} />
               <Route path="/visualization" element={<VisualizationPage />} />
               <Route path="/data-write" element={<DataWritePage />} />
+              <Route path="/performance" element={<PerformancePage />} />
+              <Route path="/extensions" element={<ExtensionsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Content>
         </Layout>
       </Layout>
+
+      {/* 全局搜索 */}
+      <GlobalSearch
+        visible={globalSearchVisible}
+        onClose={() => setGlobalSearchVisible(false)}
+        onNavigate={(path, params) => {
+          navigate(path, { state: params });
+        }}
+        onExecuteQuery={(query) => {
+          navigate('/query', { state: { query } });
+        }}
+      />
     </Layout>
   );
 };

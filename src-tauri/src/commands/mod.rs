@@ -8,6 +8,9 @@ pub mod settings;
 pub mod context_menu;
 pub mod data_export;
 pub mod dashboard;
+pub mod performance;
+pub mod user_experience;
+pub mod extensions;
 
 pub use connection::*;
 pub use database::*;
@@ -19,3 +22,6 @@ pub use settings::*;
 pub use context_menu::*;
 pub use data_export::*;
 pub use dashboard::*;
+pub use performance::*;
+pub use user_experience::*;
+pub use extensions::*;

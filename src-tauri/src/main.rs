@@ -139,6 +139,42 @@ async fn main() {
             get_chart_types,
             get_color_schemes,
             duplicate_dashboard,
+
+            // Performance monitoring
+            get_performance_metrics,
+            record_query_performance,
+            get_slow_query_analysis,
+            get_storage_analysis_report,
+            get_query_optimization_suggestions,
+            perform_health_check,
+
+            // User experience
+            get_user_preferences,
+            update_user_preferences,
+            get_default_shortcuts,
+            send_notification,
+            get_workspace_layout,
+            save_workspace_layout,
+            add_recent_file,
+            get_app_statistics,
+            record_user_action,
+            get_help_content,
+
+            // Extensions and integrations
+            get_installed_plugins,
+            install_plugin,
+            toggle_plugin,
+            uninstall_plugin,
+            create_api_integration,
+            get_api_integrations,
+            test_api_integration,
+            create_webhook,
+            get_webhooks,
+            trigger_webhook,
+            create_automation_rule,
+            get_automation_rules,
+            execute_automation_rule,
+            get_integration_templates,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -162,6 +198,18 @@ async fn main() {
 
             // Initialize dashboard storage
             app.manage(commands::dashboard::DashboardStorage::new(std::collections::HashMap::new()));
+
+            // Initialize performance monitoring storage
+            app.manage(commands::performance::QueryMetricsStorage::new(Vec::new()));
+
+            // Initialize user experience storage
+            app.manage(commands::user_experience::UserPreferencesStorage::new(commands::user_experience::UserPreferences::default()));
+
+            // Initialize extensions storage
+            app.manage(commands::extensions::PluginStorage::new(std::collections::HashMap::new()));
+            app.manage(commands::extensions::APIIntegrationStorage::new(std::collections::HashMap::new()));
+            app.manage(commands::extensions::WebhookStorage::new(std::collections::HashMap::new()));
+            app.manage(commands::extensions::AutomationStorage::new(std::collections::HashMap::new()));
 
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {

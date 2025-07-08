@@ -27,6 +27,7 @@ import {
 import { invoke } from '@tauri-apps/api/core';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
+import UserPreferences from '@/components/settings/UserPreferences';
 import type { AppConfig } from '@/types';
 
 const { Title, Text, Paragraph } = Typography;
@@ -410,6 +411,11 @@ const Settings: React.FC = () => {
                   />
                 </Card>
               ),
+            },
+            {
+              key: 'preferences',
+              label: '用户偏好',
+              children: <UserPreferences />,
             },
           ]}
         />

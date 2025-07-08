@@ -29,6 +29,7 @@ dirs = "5.0"
 base64 = "0.21"
 aes-gcm = "0.10"
 rand = "0.8"
+sysinfo = "0.29"
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
