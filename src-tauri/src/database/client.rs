@@ -3,11 +3,13 @@ use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
 use log::{debug, error, info};
+use reqwest;
 
 /// InfluxDB 客户端封装
 #[derive(Debug, Clone)]
 pub struct InfluxClient {
     client: Client,
+    http_client: reqwest::Client,
     config: ConnectionConfig,
 }
 
@@ -30,9 +32,11 @@ impl InfluxClient {
         // 设置默认数据库 (InfluxDB 0.7 不支持 with_database 方法)
         // 数据库将在查询时指定
 
+        let http_client = reqwest::Client::new();
+
         info!("创建 InfluxDB 客户端: {}:{}", config.host, config.port);
 
-        Ok(Self { client, config })
+        Ok(Self { client, http_client, config })
     }
 
     /// 测试连接
@@ -197,6 +201,48 @@ impl InfluxClient {
             Err(e) => {
                 error!("获取测量列表失败: {}", e);
                 Err(anyhow::anyhow!("获取测量列表失败: {}", e))
+            }
+        }
+    }
+
+    /// 写入 Line Protocol 数据
+    pub async fn write_line_protocol(&self, database: &str, line_protocol: &str) -> Result<()> {
+        debug!("写入数据到数据库 '{}': {} 行", database, line_protocol.lines().count());
+
+        // 使用 HTTP POST 请求写入数据
+        let url = format!("{}/write?db={}",
+            if self.config.ssl {
+                format!("https://{}:{}", self.config.host, self.config.port)
+            } else {
+                format!("http://{}:{}", self.config.host, self.config.port)
+            },
+            database
+        );
+
+        let mut request = self.http_client.post(&url)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(line_protocol.to_string());
+
+        // 添加认证信息
+        if let (Some(username), Some(password)) = (&self.config.username, &self.config.password) {
+            request = request.basic_auth(username, Some(password));
+        }
+
+        match request.send().await {
+            Ok(response) => {
+                if response.status().is_success() {
+                    debug!("数据写入成功");
+                    Ok(())
+                } else {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                    error!("数据写入失败: HTTP {}, {}", status, error_text);
+                    Err(anyhow::anyhow!("数据写入失败: {}", error_text))
+                }
+            }
+            Err(e) => {
+                error!("数据写入请求失败: {}", e);
+                Err(anyhow::anyhow!("数据写入请求失败: {}", e))
             }
         }
     }

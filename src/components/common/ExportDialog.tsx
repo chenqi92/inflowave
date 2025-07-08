@@ -241,6 +241,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                         Excel CSV 格式
                       </Space>
                     </Option>
+                    <Option value="xlsx">
+                      <Space>
+                        <FileExcelOutlined />
+                        Excel XLSX 格式
+                      </Space>
+                    </Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -314,6 +320,9 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                 </Paragraph>
                 <Paragraph>
                   <strong>Excel CSV:</strong> 带 UTF-8 BOM 的 CSV 格式，确保 Excel 正确显示中文
+                </Paragraph>
+                <Paragraph>
+                  <strong>Excel XLSX:</strong> 原生 Excel 格式，支持多工作表和丰富的格式设置
                 </Paragraph>
               </div>
             }

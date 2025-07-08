@@ -2,29 +2,28 @@
 
 这个目录包含了 InfluxDB GUI Manager 的应用图标，用于不同平台的安装包和应用程序。
 
-## 图标文件
+## 图标文件结构
 
-### 必需的图标文件
-- ✅ `icon.ico` - Windows 图标文件 (已配置)
-- ✅ `icon.icns` - macOS 图标文件 (已配置)
-- 📝 `32x32.png` - 32x32 像素 PNG 图标 (可选)
-- 📝 `128x128.png` - 128x128 像素 PNG 图标 (可选)
-- 📝 `128x128@2x.png` - 256x256 像素 PNG 图标 (可选)
+### 平台特定图标目录
+- 📁 `windows/` - Windows 平台图标文件 (.ico 格式)
+- 📁 `mac/` - macOS 平台图标文件 (.icns 格式)  
+- 📁 `web/` - Web 平台图标文件 (.ico 格式)
 
 ### 当前配置状态
 在 `tauri.conf.json` 中已配置：
 ```json
 "bundle": {
   "icon": [
-    "icons/icon.ico",
-    "icons/icon.icns"
+    "icons/windows/256x256.ico",
+    "icons/mac/1024x1024.icns"
   ]
 }
 ```
 
-### 安装程序图标 (可选)
-- `installer-header.bmp` - Windows 安装程序头部图像 (493x58 像素)
-- `installer-sidebar.bmp` - Windows 安装程序侧边栏图像 (164x314 像素)
+### 图标特性
+- **Windows (.ico)**: 多尺寸图标文件，支持透明背景
+- **macOS (.icns)**: 高分辨率图标文件，支持 Retina 显示屏
+- **Web (.ico)**: 用于 Web 应用的图标文件
 
 ## 图标设计规范
 
@@ -50,55 +49,38 @@
 - 支持 Retina 显示屏
 - 遵循 macOS 设计指南
 
-#### Linux (.png)
-- 标准尺寸: 32x32, 48x48, 64x64, 128x128, 256x256
+#### Web (.ico)
+- 标准尺寸: 16x16, 32x32, 48x48
 - PNG 格式，透明背景
-- 遵循 freedesktop.org 图标规范
+- 用于浏览器标签页和收藏夹
 
-## 生成图标
+## 使用说明
 
-### 使用在线工具
-推荐使用以下在线工具生成多平台图标：
-- [Tauri Icon Generator](https://tauri.app/v1/guides/features/icons)
-- [App Icon Generator](https://appicon.co/)
-- [Icon Generator](https://icon.kitchen/)
+### 添加图标文件
+请将对应平台的图标文件放入相应目录：
+- Windows 图标文件放入 `windows/` 目录
+- macOS 图标文件放入 `mac/` 目录
+- Web 图标文件放入 `web/` 目录
 
-### 使用命令行工具
-
-#### ImageMagick
-```bash
-# 生成不同尺寸的 PNG 图标
-convert icon-source.png -resize 32x32 32x32.png
-convert icon-source.png -resize 128x128 128x128.png
-convert icon-source.png -resize 256x256 128x128@2x.png
-
-# 生成 Windows ICO 文件
-convert icon-source.png -define icon:auto-resize=256,128,64,48,32,16 icon.ico
-```
-
-#### 使用 Tauri CLI
-```bash
-# 从源图像生成所有需要的图标
-tauri icon path/to/source-icon.png
-```
+### 构建时的图标应用
+图标会在构建时自动应用到：
+- Windows 可执行文件和安装程序
+- macOS 应用程序包
+- 任务栏和桌面快捷方式
+- 系统托盘图标
 
 ## 当前状态
 
 ⚠️ **需要添加图标文件**
 
-请添加以下图标文件到此目录：
-- [ ] 32x32.png
-- [ ] 128x128.png
-- [ ] 128x128@2x.png
-- [ ] icon.icns
-- [ ] icon.ico
+请将您的图标文件重新放入以下目录：
+- [ ] `windows/` - Windows 平台图标
+- [ ] `mac/` - macOS 平台图标
+- [ ] `web/` - Web 平台图标
 
-### 临时解决方案
-在开发阶段，可以使用 Tauri 提供的默认图标，或者创建简单的占位符图标。
-
-### 图标设计建议
-对于 InfluxDB GUI Manager，建议图标设计包含：
+### 图标设计特点
+当前图标设计应包含：
 - 数据库相关的视觉元素
 - 现代化的设计风格
 - 与 InfluxDB 品牌色彩协调
-- 在小尺寸下仍然清晰可见
+- 在各种尺寸下都清晰可见

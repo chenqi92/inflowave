@@ -30,6 +30,7 @@ import {
 } from '@ant-design/icons';
 import { invoke } from '@tauri-apps/api/core';
 import { useConnectionStore } from '@/store/connection';
+import ImportDialog from '@/components/common/ImportDialog';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 import dayjs from 'dayjs';
 
@@ -47,6 +48,7 @@ const DataWrite: React.FC = () => {
   const [databases, setDatabases] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [dataPoints, setDataPoints] = useState<DataPointForm[]>([]);
+  const [importDialogVisible, setImportDialogVisible] = useState(false);
   const [form] = Form.useForm();
   const [batchForm] = Form.useForm();
 
@@ -594,37 +596,85 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
             key: 'import',
             label: '文件导入',
             children: (
-              <Card title="文件导入">
-                <Alert
-                  message="文件导入功能"
-                  description="支持导入 CSV 和 JSON 格式的数据文件，功能正在开发中..."
-                  type="info"
-                  showIcon
-                />
-
-                <div className="mt-6">
-                  <Upload.Dragger
-                    name="file"
-                    multiple={false}
-                    accept=".csv,.json"
-                    beforeUpload={() => {
-                      message.info('文件导入功能正在开发中...');
-                      return false;
-                    }}
+              <Card
+                title="文件导入"
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<UploadOutlined />}
+                    onClick={() => setImportDialogVisible(true)}
+                    disabled={!selectedDatabase}
                   >
-                    <p className="ant-upload-drag-icon">
-                      <UploadOutlined />
-                    </p>
-                    <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                    <p className="ant-upload-hint">
-                      支持 CSV 和 JSON 格式文件
-                    </p>
-                  </Upload.Dragger>
+                    导入文件
+                  </Button>
+                }
+              >
+                <div className="space-y-4">
+                  <Alert
+                    message="文件导入功能"
+                    description="支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库。"
+                    type="info"
+                    showIcon
+                  />
+
+                  <Row gutter={16}>
+                    <Col span={8}>
+                      <Card size="small" title="CSV 格式">
+                        <Paragraph>
+                          • 第一行为表头<br/>
+                          • 数据用逗号分隔<br/>
+                          • 支持时间戳字段<br/>
+                          • 自动推断数据类型
+                        </Paragraph>
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card size="small" title="JSON 格式">
+                        <Paragraph>
+                          • 对象数组格式<br/>
+                          • 每个对象一行数据<br/>
+                          • 支持嵌套字段<br/>
+                          • 灵活的数据结构
+                        </Paragraph>
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card size="small" title="字段映射">
+                        <Paragraph>
+                          • 自动字段映射<br/>
+                          • 支持标签和字段<br/>
+                          • 时间字段识别<br/>
+                          • 数据类型转换
+                        </Paragraph>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {!selectedDatabase && (
+                    <Alert
+                      message="请先选择数据库"
+                      description="在开始导入之前，请先选择要导入数据的目标数据库。"
+                      type="warning"
+                      showIcon
+                    />
+                  )}
                 </div>
               </Card>
             ),
           },
         ]}
+      />
+
+      {/* 导入对话框 */}
+      <ImportDialog
+        visible={importDialogVisible}
+        onClose={() => setImportDialogVisible(false)}
+        connectionId={activeConnectionId}
+        database={selectedDatabase}
+        onSuccess={() => {
+          message.success('数据导入成功');
+          setImportDialogVisible(false);
+        }}
       />
     </div>
   );

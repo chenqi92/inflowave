@@ -36,10 +36,9 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/icon.ico",
-      "icons/icon.icns"
+      "icons/windows/256x256.ico",
+      "icons/mac/1024x1024.icns"
     ],
-    "identifier": "com.influxdb.gui.manager",
     "publisher": "InfluxDB GUI Team",
     "copyright": "Copyright © 2024 InfluxDB GUI Manager",
     "category": "DeveloperTool",

@@ -28,10 +28,13 @@ import {
   ReloadOutlined,
   BarChartOutlined,
   ExclamationCircleOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { invoke } from '@tauri-apps/api/core';
 import { useConnectionStore } from '@/store/connection';
+import ContextMenu from '@/components/common/ContextMenu';
+import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
 import type { RetentionPolicy } from '@/types';
 
 const { Title, Text } = Typography;
@@ -55,6 +58,26 @@ const Database: React.FC = () => {
   const [retentionPolicies, setRetentionPolicies] = useState<RetentionPolicy[]>([]);
   const [databaseStats, setDatabaseStats] = useState<DatabaseStats | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [retentionPolicyDialog, setRetentionPolicyDialog] = useState<{
+    visible: boolean;
+    mode: 'create' | 'edit';
+    policy?: RetentionPolicy;
+  }>({
+    visible: false,
+    mode: 'create',
+    policy: undefined,
+  });
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    target: any;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null,
+  });
   const [form] = Form.useForm();
 
   // 加载数据库列表
@@ -315,6 +338,21 @@ const Database: React.FC = () => {
                 locale={{
                   emptyText: '暂无测量数据',
                 }}
+                onRow={(record) => ({
+                  onContextMenu: (event) => {
+                    event.preventDefault();
+                    setContextMenu({
+                      visible: true,
+                      x: event.clientX,
+                      y: event.clientY,
+                      target: {
+                        type: 'measurement',
+                        name: record.name,
+                        database: selectedDatabase,
+                      },
+                    });
+                  },
+                })}
               >
                 <Table.Column
                   title="测量名称"
@@ -362,7 +400,22 @@ const Database: React.FC = () => {
           </Card>
 
           {/* 保留策略 */}
-          <Card title="保留策略">
+          <Card
+            title="保留策略"
+            extra={
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setRetentionPolicyDialog({
+                  visible: true,
+                  mode: 'create',
+                  policy: undefined,
+                })}
+              >
+                创建策略
+              </Button>
+            }
+          >
             <Spin spinning={loading}>
               <Table
                 dataSource={retentionPolicies}
@@ -407,16 +460,34 @@ const Database: React.FC = () => {
                       <Tooltip title="编辑">
                         <Button
                           type="text"
-                          icon={<InfoCircleOutlined />}
-                          onClick={() => message.info('编辑保留策略功能开发中...')}
+                          icon={<EditOutlined />}
+                          onClick={() => setRetentionPolicyDialog({
+                            visible: true,
+                            mode: 'edit',
+                            policy: record,
+                          })}
                         />
                       </Tooltip>
                       {!record.default && (
                         <Popconfirm
                           title="确定要删除这个保留策略吗？"
-                          onConfirm={() => message.info('删除保留策略功能开发中...')}
+                          description="删除后数据将无法恢复！"
+                          onConfirm={async () => {
+                            try {
+                              await invoke('drop_retention_policy', {
+                                connectionId: activeConnectionId,
+                                database: selectedDatabase,
+                                policyName: record.name,
+                              });
+                              message.success(`保留策略 "${record.name}" 删除成功`);
+                              loadDatabaseDetails(selectedDatabase);
+                            } catch (error) {
+                              message.error(`删除保留策略失败: ${error}`);
+                            }
+                          }}
                           okText="确定"
                           cancelText="取消"
+                          okType="danger"
                         >
                           <Tooltip title="删除">
                             <Button
@@ -435,6 +506,137 @@ const Database: React.FC = () => {
           </Card>
         </>
       )}
+
+      {/* 上下文菜单处理函数 */}
+      {React.useMemo(() => {
+        const handleContextMenuAction = async (action: string, params?: any) => {
+          setContextMenu({ visible: false, x: 0, y: 0, target: null });
+
+          try {
+            switch (action) {
+              case 'showMeasurements':
+                // 已经在当前页面显示
+                message.info('测量列表已在当前页面显示');
+                break;
+
+              case 'showRetentionPolicies':
+                // 已经在当前页面显示
+                message.info('保留策略已在当前页面显示');
+                break;
+
+              case 'showDatabaseInfo':
+                message.info(`数据库 "${params.database}" 的详细信息功能开发中...`);
+                break;
+
+              case 'showDatabaseStats':
+                message.info(`数据库 "${params.database}" 的统计信息功能开发中...`);
+                break;
+
+              case 'exportDatabaseStructure':
+                message.info(`导出数据库 "${params.database}" 结构功能开发中...`);
+                break;
+
+              case 'deleteDatabase':
+                Modal.confirm({
+                  title: '确认删除数据库',
+                  content: `确定要删除数据库 "${params.database}" 吗？此操作不可撤销！`,
+                  okText: '删除',
+                  okType: 'danger',
+                  cancelText: '取消',
+                  onOk: () => deleteDatabase(params.database),
+                });
+                break;
+
+              case 'previewData':
+                message.info(`预览测量 "${params.measurement}" 数据功能开发中...`);
+                break;
+
+              case 'showFields':
+                message.info(`查看测量 "${params.measurement}" 字段信息功能开发中...`);
+                break;
+
+              case 'showTagKeys':
+                message.info(`查看测量 "${params.measurement}" 标签键功能开发中...`);
+                break;
+
+              case 'showTagValues':
+                message.info(`查看测量 "${params.measurement}" 标签值功能开发中...`);
+                break;
+
+              case 'showSeries':
+                message.info(`查看测量 "${params.measurement}" 序列信息功能开发中...`);
+                break;
+
+              case 'getRecordCount':
+                message.info(`获取测量 "${params.measurement}" 记录数功能开发中...`);
+                break;
+
+              case 'getTimeRange':
+                message.info(`获取测量 "${params.measurement}" 时间范围功能开发中...`);
+                break;
+
+              case 'getFieldStats':
+                message.info(`获取测量 "${params.measurement}" 字段统计功能开发中...`);
+                break;
+
+              case 'getTagDistribution':
+                message.info(`获取测量 "${params.measurement}" 标签分布功能开发中...`);
+                break;
+
+              case 'createChart':
+                message.info(`为测量 "${params.measurement}" 创建 ${params.chartType} 图表功能开发中...`);
+                break;
+
+              case 'customChart':
+                message.info(`为测量 "${params.measurement}" 创建自定义图表功能开发中...`);
+                break;
+
+              case 'exportData':
+                message.info(`导出测量 "${params.measurement}" 为 ${params.format} 格式功能开发中...`);
+                break;
+
+              case 'deleteMeasurement':
+                Modal.confirm({
+                  title: '确认删除测量',
+                  content: `确定要删除测量 "${params.measurement}" 吗？此操作将删除所有相关数据！`,
+                  okText: '删除',
+                  okType: 'danger',
+                  cancelText: '取消',
+                  onOk: async () => {
+                    try {
+                      await invoke('drop_measurement', {
+                        connectionId: activeConnectionId,
+                        database: params.database,
+                        measurement: params.measurement,
+                      });
+                      message.success(`测量 "${params.measurement}" 删除成功`);
+                      loadDatabaseDetails(selectedDatabase);
+                    } catch (error) {
+                      message.error(`删除测量失败: ${error}`);
+                    }
+                  },
+                });
+                break;
+
+              default:
+                message.info(`功能 "${action}" 开发中...`);
+            }
+          } catch (error) {
+            message.error(`操作失败: ${error}`);
+          }
+        };
+
+        return (
+          <ContextMenu
+            visible={contextMenu.visible}
+            x={contextMenu.x}
+            y={contextMenu.y}
+            target={contextMenu.target}
+            onClose={() => setContextMenu({ visible: false, x: 0, y: 0, target: null })}
+            onAction={handleContextMenuAction}
+          />
+        );
+      }, [contextMenu, activeConnectionId, selectedDatabase])}
 
       {/* 创建数据库模态框 */}
       <Modal
@@ -473,6 +675,23 @@ const Database: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 保留策略管理对话框 */}
+      <RetentionPolicyDialog
+        visible={retentionPolicyDialog.visible}
+        mode={retentionPolicyDialog.mode}
+        policy={retentionPolicyDialog.policy}
+        database={selectedDatabase}
+        connectionId={activeConnectionId || ''}
+        onClose={() => setRetentionPolicyDialog({
+          visible: false,
+          mode: 'create',
+          policy: undefined,
+        })}
+        onSuccess={() => {
+          loadDatabaseDetails(selectedDatabase);
+        }}
+      />
     </div>
   );
 };

@@ -1,7 +1,8 @@
+import * as XLSX from 'xlsx';
 import type { QueryResult } from '@/types';
 
 export interface ExportOptions {
-  format: 'csv' | 'json' | 'excel';
+  format: 'csv' | 'json' | 'excel' | 'xlsx';
   includeHeaders: boolean;
   delimiter?: string;
   filename?: string;
@@ -85,20 +86,65 @@ export const convertToExcelCSV = (result: QueryResult, options: ExportOptions): 
   return bom + csv;
 };
 
+// 将查询结果转换为真正的 Excel 格式
+export const convertToXLSX = (result: QueryResult, options: ExportOptions): ArrayBuffer => {
+  if (!result.series || result.series.length === 0) {
+    // 创建空工作簿
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([['No Data']]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  for (let i = 0; i < result.series.length; i++) {
+    const series = result.series[i];
+    const sheetName = series.name || `Sheet${i + 1}`;
+
+    // 准备数据
+    const data: any[][] = [];
+
+    // 添加标题行
+    if (options.includeHeaders && series.columns) {
+      data.push(series.columns);
+    }
+
+    // 添加数据行
+    if (series.values) {
+      data.push(...series.values);
+    }
+
+    // 创建工作表
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // 设置列宽
+    if (series.columns) {
+      const colWidths = series.columns.map(() => ({ wch: 15 }));
+      ws['!cols'] = colWidths;
+    }
+
+    // 添加到工作簿
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  }
+
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+};
+
 // 下载文件
-export const downloadFile = (content: string, filename: string, mimeType: string) => {
+export const downloadFile = (content: string | ArrayBuffer, filename: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   link.style.display = 'none';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   // 清理 URL 对象
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
@@ -108,7 +154,7 @@ export const exportQueryResult = (result: QueryResult, options: ExportOptions) =
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const baseFilename = options.filename || `influxdb-query-${timestamp}`;
 
-  let content: string;
+  let content: string | ArrayBuffer;
   let filename: string;
   let mimeType: string;
 
@@ -129,6 +175,12 @@ export const exportQueryResult = (result: QueryResult, options: ExportOptions) =
       content = convertToExcelCSV(result, options);
       filename = `${baseFilename}.csv`;
       mimeType = 'text/csv;charset=utf-8';
+      break;
+
+    case 'xlsx':
+      content = convertToXLSX(result, options);
+      filename = `${baseFilename}.xlsx`;
+      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       break;
 
     default:
@@ -179,8 +231,8 @@ export const generateResultStats = (result: QueryResult) => {
 export const validateExportOptions = (options: ExportOptions): string[] => {
   const errors: string[] = [];
 
-  if (!['csv', 'json', 'excel'].includes(options.format)) {
-    errors.push('Invalid export format. Must be csv, json, or excel.');
+  if (!['csv', 'json', 'excel', 'xlsx'].includes(options.format)) {
+    errors.push('Invalid export format. Must be csv, json, excel, or xlsx.');
   }
 
   if (options.delimiter && options.delimiter.length !== 1) {
@@ -206,13 +258,31 @@ export const previewExportContent = (result: QueryResult, options: ExportOptions
     case 'json':
       content = convertToJSON(result);
       break;
+    case 'xlsx':
+      // 对于 XLSX 格式，显示表格结构预览
+      if (!result.series || result.series.length === 0) {
+        return 'No data to preview';
+      }
+      const series = result.series[0];
+      const previewData = [];
+      if (options.includeHeaders && series.columns) {
+        previewData.push(series.columns.join('\t'));
+      }
+      if (series.values) {
+        const previewRows = series.values.slice(0, maxLines - 1);
+        previewData.push(...previewRows.map(row => row.join('\t')));
+      }
+      if (series.values && series.values.length > maxLines - 1) {
+        previewData.push(`... (${series.values.length - (maxLines - 1)} more rows)`);
+      }
+      return previewData.join('\n');
     default:
       return 'Unsupported format for preview';
   }
 
   const lines = content.split('\n');
   const previewLines = lines.slice(0, maxLines);
-  
+
   if (lines.length > maxLines) {
     previewLines.push(`... (${lines.length - maxLines} more lines)`);
   }
@@ -222,7 +292,7 @@ export const previewExportContent = (result: QueryResult, options: ExportOptions
 
 // 估算文件大小
 export const estimateFileSize = (result: QueryResult, options: ExportOptions): string => {
-  let content: string;
+  let content: string | ArrayBuffer;
 
   switch (options.format) {
     case 'csv':
@@ -232,12 +302,15 @@ export const estimateFileSize = (result: QueryResult, options: ExportOptions): s
     case 'json':
       content = convertToJSON(result);
       break;
+    case 'xlsx':
+      content = convertToXLSX(result, options);
+      break;
     default:
       return 'Unknown';
   }
 
   const sizeInBytes = new Blob([content]).size;
-  
+
   if (sizeInBytes < 1024) {
     return `${sizeInBytes} B`;
   } else if (sizeInBytes < 1024 * 1024) {

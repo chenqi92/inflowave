@@ -59,10 +59,14 @@ async fn main() {
             drop_database,
             get_retention_policies,
             create_retention_policy,
+            drop_retention_policy,
+            alter_retention_policy,
             get_measurements,
+            drop_measurement,
             get_field_keys,
             get_tag_keys,
             get_tag_values,
+            import_data,
 
             // Query operations
             execute_query,

@@ -176,6 +176,43 @@
 .\scripts\quick-build.ps1 -Clean -Mode build
 ```
 
+### 场景 5: 版本发布
+```powershell
+# Windows - 更新版本号并触发自动发布
+.\scripts\update-version.ps1 -Version "1.0.1"
+
+# Linux/macOS
+./scripts/update-version.sh 1.0.1
+
+# 然后提交并推送
+git add .
+git commit -m "chore: bump version to 1.0.1"
+git push origin main
+```
+
+## 🏷️ 版本管理
+
+### **版本更新脚本**
+
+#### `update-version.ps1` (Windows) / `update-version.sh` (Linux/macOS)
+- **功能**: 统一更新所有配置文件中的版本号
+- **用法**:
+  - Windows: `.\scripts\update-version.ps1 -Version "1.0.1"`
+  - Linux/macOS: `./scripts/update-version.sh 1.0.1`
+- **更新文件**:
+  - `VERSION` - 主版本文件
+  - `package.json` - 前端项目版本
+  - `src-tauri/tauri.conf.json` - Tauri 应用版本
+- **自动发布**: 推送到 GitHub 后自动触发 release 构建
+
+### **自动发布流程**
+1. 使用版本更新脚本更新版本号
+2. 提交并推送到 main 分支
+3. GitHub Actions 自动检测 VERSION 文件变化
+4. 创建对应的 Git tag
+5. 构建多平台安装包 (Windows .msi, macOS .dmg, Linux .deb/.AppImage)
+6. 创建 GitHub Release 并上传安装包
+
 ## 📊 脚本功能对比
 
 | 脚本 | 环境设置 | 网络修复 | 快速构建 | 生产构建 | 开发模式 | 快速验证 |
