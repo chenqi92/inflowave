@@ -20,6 +20,9 @@ export interface ConnectionStatus {
   latency?: number;
 }
 
+// Type alias for backward compatibility
+export type Connection = ConnectionConfig;
+
 // 数据库相关类型
 export interface Database {
   name: string;
@@ -131,16 +134,7 @@ export interface WriteError {
   line?: number;
 }
 
-export interface SavedQuery {
-  id: string;
-  name: string;
-  query: string;
-  database: string;
-  tags: string[];
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Removed duplicate SavedQuery interface - using the one below with optional properties
 
 export interface CsvImportConfig {
   measurement: string;
@@ -316,7 +310,7 @@ export interface TabItem {
 }
 
 // 通用类型
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'auto';
 export type Language = 'zh-CN' | 'en-US';
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 

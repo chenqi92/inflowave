@@ -25,7 +25,7 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import { invoke } from '@tauri-apps/api/core';
-import { save } from '@tauri-apps/api/dialog';
+// import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
 
 const { TextArea } = Input;
@@ -128,15 +128,8 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const formatInfo = exportFormats.find(f => f.id === format);
       const extension = formatInfo?.extension || '.txt';
 
-      const filePath = await save({
-        defaultPath: `export_${Date.now()}${extension}`,
-        filters: [
-          {
-            name: formatInfo?.name || 'All Files',
-            extensions: [extension.substring(1)],
-          },
-        ],
-      });
+      // TODO: Update to Tauri v2 API for file dialog
+      const filePath = `export_${Date.now()}${extension}`; // Temporary placeholder
 
       if (filePath) {
         form.setFieldValue('filePath', filePath);

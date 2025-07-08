@@ -82,6 +82,4 @@ root.render(
 );
 
 // 开发环境热更新
-if (import.meta.hot) {
-  import.meta.hot.accept();
-}
+// Hot module replacement is handled by Vite automatically in development mode

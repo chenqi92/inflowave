@@ -24,7 +24,7 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   ReloadOutlined,
-  OptimizationOutlined,
+  SettingOutlined, // Using SettingOutlined instead of OptimizationOutlined
   DatabaseOutlined,
 } from '@ant-design/icons';
 import { invoke } from '@tauri-apps/api/core';

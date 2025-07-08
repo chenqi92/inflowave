@@ -27,7 +27,7 @@ import {
   DeleteOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
-  TestOutlined,
+  ExperimentOutlined, // Using ExperimentOutlined instead of TestOutlined
   PlusOutlined,
 } from '@ant-design/icons';
 import { invoke } from '@tauri-apps/api/core';

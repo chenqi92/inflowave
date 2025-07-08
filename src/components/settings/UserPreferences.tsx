@@ -19,7 +19,7 @@ import {
 } from 'antd';
 import {
   SettingOutlined,
-  KeyboardOutlined,
+  ControlOutlined, // Using ControlOutlined instead of KeyboardOutlined
   NotificationOutlined,
   EyeOutlined,
   LayoutOutlined,

@@ -168,6 +168,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               <Switch />
             </Form.Item>
 
+            <Form.Item
+              label="分隔符"
               name="delimiter"
             >
               <Select>

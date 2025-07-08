@@ -285,7 +285,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
                     title={
                       <Space>
                         <span>{item.title}</span>
-                        <Tag color={getTagColor(item.type)} size="small">
+                        <Tag color={getTagColor(item.type)}>
                           {item.category}
                         </Tag>
                       </Space>
@@ -300,7 +300,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
                         {item.metadata && (
                           <div style={{ marginTop: 4 }}>
                             {Object.entries(item.metadata).map(([key, value]) => (
-                              <Tag key={key} size="small" style={{ fontSize: 10 }}>
+                              <Tag key={key} style={{ fontSize: 10 }}>
                                 {key}: {value}
                               </Tag>
                             ))}
