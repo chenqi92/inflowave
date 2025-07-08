@@ -1,147 +1,102 @@
-import React, { useEffect } from 'react';
-import { Layout, Spin } from 'antd';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAppStore } from '@store/app';
-import { useConnectionStore } from '@store/connection';
+import React, { useEffect, useState } from 'react';
+import { Layout, Card, Typography, Button, message } from 'antd';
+import { invoke } from '@tauri-apps/api/core';
+import ConnectionTest from './components/ConnectionTest';
 
-// 组件导入
-import AppHeader from '@components/layout/AppHeader';
-import AppSidebar from '@components/layout/AppSidebar';
-import AppFooter from '@components/layout/AppFooter';
-
-// 页面导入 (懒加载)
-const Dashboard = React.lazy(() => import('@pages/Dashboard'));
-const Connections = React.lazy(() => import('@pages/Connections'));
-const Query = React.lazy(() => import('@pages/Query'));
-const Database = React.lazy(() => import('@pages/Database'));
-const Visualization = React.lazy(() => import('@pages/Visualization'));
-const DataWrite = React.lazy(() => import('@pages/DataWrite'));
-const Settings = React.lazy(() => import('@pages/Settings'));
-
-const { Content } = Layout;
+const { Content, Header } = Layout;
+const { Title, Text } = Typography;
 
 const App: React.FC = () => {
-  const { loading, sidebarCollapsed } = useAppStore();
-  const { activeConnectionId } = useConnectionStore();
+  const [appInfo, setAppInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // 初始化应用
   useEffect(() => {
-    // 这里可以添加应用初始化逻辑
-    // 比如检查 Tauri 环境、加载配置等
-    console.log('InfluxDB GUI Manager 启动');
+    const initApp = async () => {
+      try {
+        console.log('InfluxDB GUI Manager 启动');
+
+        // 获取应用配置信息
+        const config = await invoke('get_app_config');
+        setAppInfo(config);
+
+        message.success('应用初始化成功');
+      } catch (error) {
+        console.error('应用初始化失败:', error);
+        message.error(`应用初始化失败: ${error}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initApp();
   }, []);
 
-  return (
-    <Layout className="app-layout">
-      {/* 头部 */}
-      <AppHeader />
-      
-      <Layout>
-        {/* 侧边栏 */}
-        <AppSidebar collapsed={sidebarCollapsed} />
-        
-        {/* 主内容区 */}
-        <Layout>
-          <Content className="app-content">
-            <React.Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  <Spin size="large" tip="加载中..." />
-                </div>
-              }
-            >
-              <Routes>
-                {/* 默认路由 */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                
-                {/* 仪表板 */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                
-                {/* 连接管理 */}
-                <Route path="/connections" element={<Connections />} />
-                
-                {/* 查询页面 - 需要活跃连接 */}
-                <Route 
-                  path="/query" 
-                  element={
-                    activeConnectionId ? (
-                      <Query />
-                    ) : (
-                      <Navigate to="/connections" replace />
-                    )
-                  } 
-                />
-                
-                {/* 数据库管理 - 需要活跃连接 */}
-                <Route 
-                  path="/database" 
-                  element={
-                    activeConnectionId ? (
-                      <Database />
-                    ) : (
-                      <Navigate to="/connections" replace />
-                    )
-                  } 
-                />
-                
-                {/* 数据可视化 - 需要活跃连接 */}
-                <Route 
-                  path="/visualization" 
-                  element={
-                    activeConnectionId ? (
-                      <Visualization />
-                    ) : (
-                      <Navigate to="/connections" replace />
-                    )
-                  } 
-                />
-                
-                {/* 数据写入 - 需要活跃连接 */}
-                <Route 
-                  path="/write" 
-                  element={
-                    activeConnectionId ? (
-                      <DataWrite />
-                    ) : (
-                      <Navigate to="/connections" replace />
-                    )
-                  } 
-                />
-                
-                {/* 设置页面 */}
-                <Route path="/settings" element={<Settings />} />
-                
-                {/* 404 页面 */}
-                <Route 
-                  path="*" 
-                  element={
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-600 mb-4">
-                          页面未找到
-                        </h2>
-                        <p className="text-gray-500">
-                          请检查 URL 是否正确，或返回首页。
-                        </p>
-                      </div>
-                    </div>
-                  } 
-                />
-              </Routes>
-            </React.Suspense>
-          </Content>
-          
-          {/* 底部状态栏 */}
-          <AppFooter />
-        </Layout>
-      </Layout>
-      
-      {/* 全局加载遮罩 */}
-      {loading && (
-        <div className="loading-overlay">
-          <Spin size="large" tip="处理中..." />
+  if (loading) {
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <Text>正在初始化应用...</Text>
+          </div>
         </div>
-      )}
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      {/* 头部 */}
+      <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0' }}>
+        <div className="flex items-center justify-between h-full">
+          <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
+            InfluxDB GUI Manager
+          </Title>
+          {appInfo && (
+            <Text type="secondary">
+              v{appInfo.version}
+            </Text>
+          )}
+        </div>
+      </Header>
+
+      {/* 主内容区 */}
+      <Content style={{ padding: '24px' }}>
+        <div className="max-w-6xl mx-auto">
+          {/* 欢迎信息 */}
+          <Card className="mb-6">
+            <div className="text-center py-8">
+              <Title level={2}>欢迎使用 InfluxDB GUI Manager</Title>
+              <Text className="text-lg text-gray-600">
+                一个现代化的 InfluxDB 数据库管理工具
+              </Text>
+              {appInfo && (
+                <div className="mt-4 space-y-2">
+                  <div>
+                    <Text strong>版本: </Text>
+                    <Text>{appInfo.version}</Text>
+                  </div>
+                  <div>
+                    <Text strong>功能特性: </Text>
+                    <Text>
+                      {Object.entries(appInfo.features || {})
+                        .filter(([_, enabled]) => enabled)
+                        .map(([feature, _]) => feature)
+                        .join(', ')}
+                    </Text>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* 连接测试组件 */}
+          <ConnectionTest />
+        </div>
+      </Content>
     </Layout>
   );
 };
