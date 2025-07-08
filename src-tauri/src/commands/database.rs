@@ -638,3 +638,73 @@ fn parse_timestamp(value: &str) -> Result<i64, String> {
 
     Err(format!("无法解析时间戳: {}", value))
 }
+
+/// 数据库统计信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DatabaseStats {
+    pub name: String,
+    pub measurement_count: usize,
+    pub series_count: usize,
+    pub point_count: usize,
+    pub disk_size: f64, // MB
+    pub last_update: String,
+}
+
+/// 获取数据库统计信息
+#[tauri::command]
+pub async fn get_database_stats(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+) -> Result<DatabaseStats, String> {
+    debug!("处理获取数据库统计命令: {} - {}", connection_id, database);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取测量列表
+    let measurements = client.get_measurements(&database).await
+        .map_err(|e| {
+            error!("获取测量列表失败: {}", e);
+            format!("获取测量列表失败: {}", e)
+        })?;
+
+    let measurement_count = measurements.len();
+
+    // 估算序列数量和数据点数量
+    // 注意：这是一个简化的实现，实际的统计可能需要更复杂的查询
+    let mut total_series = 0;
+    let mut total_points = 0;
+
+    for measurement in &measurements {
+        // 尝试获取序列数量
+        if let Ok(series_result) = client.execute_query(&format!("SHOW SERIES FROM \"{}\"", measurement)).await {
+            total_series += series_result.row_count;
+        }
+
+        // 尝试获取数据点数量（限制查询以避免性能问题）
+        if let Ok(count_result) = client.execute_query(&format!("SELECT COUNT(*) FROM \"{}\" WHERE time >= now() - 7d", measurement)).await {
+            // 简化实现：使用 row_count 作为估算
+            total_points += count_result.row_count;
+        }
+    }
+
+    // 估算磁盘使用量（简化实现）
+    let estimated_disk_size = (total_points as f64 * 0.001).max(1.0); // 假设每个点约1KB
+
+    let stats = DatabaseStats {
+        name: database,
+        measurement_count,
+        series_count: total_series,
+        point_count: total_points,
+        disk_size: estimated_disk_size,
+        last_update: chrono::Utc::now().to_rfc3339(),
+    };
+
+    info!("数据库统计获取成功: {:?}", stats);
+    Ok(stats)
+}

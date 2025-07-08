@@ -21,55 +21,7 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
     Ok(system_info)
 }
 
-/// 获取数据库统计信息
-#[tauri::command]
-pub async fn get_database_stats(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
-    database: String,
-) -> Result<DatabaseStats, String> {
-    debug!("处理获取数据库统计信息命令: {} - {}", connection_id, database);
-    
-    let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
-        .map_err(|e| {
-            error!("获取连接失败: {}", e);
-            format!("获取连接失败: {}", e)
-        })?;
-    
-    // 获取保留策略
-    let retention_policies = client.get_retention_policies(&database).await
-        .map_err(|e| {
-            error!("获取保留策略失败: {}", e);
-            format!("获取保留策略失败: {}", e)
-        })?;
-    
-    // 获取测量数量
-    let measurements = client.get_measurements(&database).await
-        .map_err(|e| {
-            error!("获取测量列表失败: {}", e);
-            format!("获取测量列表失败: {}", e)
-        })?;
-    
-    let measurement_count = measurements.len() as u64;
-    
-    // 尝试获取序列数量（这可能需要特殊权限）
-    let series_count = match get_series_count(&client, &database).await {
-        Ok(count) => count,
-        Err(_) => 0, // 如果无法获取，设为 0
-    };
-    
-    let stats = DatabaseStats {
-        name: database,
-        size: 0, // InfluxDB 1.x 难以直接获取数据库大小
-        series_count,
-        measurement_count,
-        retention_policies,
-        last_write: None, // 需要额外查询获取
-    };
-    
-    Ok(stats)
-}
+
 
 /// 获取性能指标
 #[tauri::command]

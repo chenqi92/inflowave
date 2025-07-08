@@ -36,9 +36,52 @@ import { useConnectionStore } from '@/store/connection';
 import ContextMenu from '@/components/common/ContextMenu';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
 import type { RetentionPolicy } from '@/types';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+// 生成图表查询的辅助函数
+const generateChartQuery = (params: any): string => {
+  const { database, measurement, chartType } = params;
+
+  switch (chartType) {
+    case 'timeSeries':
+      return `SELECT * FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+    case 'fieldDistribution':
+      return `SELECT * FROM "${measurement}" WHERE time >= now() - 24h ORDER BY time DESC LIMIT 1000`;
+    case 'tagStats':
+      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY *`;
+    default:
+      return `SELECT * FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC LIMIT 100`;
+  }
+};
+
+const generateFieldChartQuery = (params: any): string => {
+  const { database, measurement, field, chartType } = params;
+
+  switch (chartType) {
+    case 'timeSeries':
+      return `SELECT time, "${field}" FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+    case 'histogram':
+      return `SELECT "${field}" FROM "${measurement}" WHERE time >= now() - 24h AND "${field}" IS NOT NULL LIMIT 10000`;
+    case 'boxplot':
+      return `SELECT MIN("${field}"), MAX("${field}"), MEAN("${field}"), PERCENTILE("${field}", 25), PERCENTILE("${field}", 75) FROM "${measurement}" WHERE time >= now() - 24h`;
+    default:
+      return `SELECT time, "${field}" FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+  }
+};
+
+const generateTagChartQuery = (params: any): string => {
+  const { database, measurement, tagKey, chartType } = params;
+
+  switch (chartType) {
+    case 'distribution':
+      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY "${tagKey}"`;
+    default:
+      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY "${tagKey}"`;
+  }
+};
 
 interface DatabaseStats {
   name: string;
@@ -51,6 +94,7 @@ interface DatabaseStats {
 
 const Database: React.FC = () => {
   const { activeConnectionId } = useConnectionStore();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [databases, setDatabases] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -525,15 +569,81 @@ const Database: React.FC = () => {
                 break;
 
               case 'showDatabaseInfo':
-                message.info(`数据库 "${params.database}" 的详细信息功能开发中...`);
+                // 显示数据库详细信息对话框
+                Modal.info({
+                  title: `数据库信息 - ${params.database}`,
+                  width: 600,
+                  content: (
+                    <div className="space-y-4">
+                      <Descriptions column={1} bordered size="small">
+                        <Descriptions.Item label="数据库名称">{params.database}</Descriptions.Item>
+                        <Descriptions.Item label="测量数量">{measurements.length}</Descriptions.Item>
+                        <Descriptions.Item label="保留策略数量">{retentionPolicies.length}</Descriptions.Item>
+                        {databaseStats && (
+                          <>
+                            <Descriptions.Item label="序列数量">{databaseStats.seriesCount}</Descriptions.Item>
+                            <Descriptions.Item label="数据点数量">{databaseStats.pointCount}</Descriptions.Item>
+                            <Descriptions.Item label="磁盘使用">{databaseStats.diskSize} MB</Descriptions.Item>
+                          </>
+                        )}
+                      </Descriptions>
+                    </div>
+                  ),
+                });
                 break;
 
               case 'showDatabaseStats':
-                message.info(`数据库 "${params.database}" 的统计信息功能开发中...`);
+                // 显示数据库统计信息
+                if (databaseStats) {
+                  Modal.info({
+                    title: `数据库统计 - ${params.database}`,
+                    width: 700,
+                    content: (
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Statistic title="测量数量" value={databaseStats.measurementCount} />
+                        </Col>
+                        <Col span={12}>
+                          <Statistic title="序列数量" value={databaseStats.seriesCount} />
+                        </Col>
+                        <Col span={12}>
+                          <Statistic title="数据点数量" value={databaseStats.pointCount} />
+                        </Col>
+                        <Col span={12}>
+                          <Statistic title="磁盘使用" value={databaseStats.diskSize} suffix="MB" />
+                        </Col>
+                      </Row>
+                    ),
+                  });
+                } else {
+                  message.info('正在加载数据库统计信息...');
+                  loadDatabaseDetails(params.database);
+                }
                 break;
 
               case 'exportDatabaseStructure':
-                message.info(`导出数据库 "${params.database}" 结构功能开发中...`);
+                // 导出数据库结构
+                try {
+                  const structure = {
+                    database: params.database,
+                    measurements: measurements,
+                    retentionPolicies: retentionPolicies,
+                    exportTime: new Date().toISOString(),
+                  };
+
+                  const dataStr = JSON.stringify(structure, null, 2);
+                  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                  const url = URL.createObjectURL(dataBlob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `${params.database}_structure.json`;
+                  link.click();
+                  URL.revokeObjectURL(url);
+
+                  message.success('数据库结构导出成功');
+                } catch (error) {
+                  message.error(`导出失败: ${error}`);
+                }
                 break;
 
               case 'deleteDatabase':
@@ -548,47 +658,393 @@ const Database: React.FC = () => {
                 break;
 
               case 'previewData':
-                message.info(`预览测量 "${params.measurement}" 数据功能开发中...`);
+                // 预览测量数据
+                try {
+                  let query = `SELECT * FROM "${params.measurement}"`;
+
+                  if (params.timeRange) {
+                    query += ` WHERE time >= now() - ${params.timeRange}`;
+                  }
+
+                  if (params.limit) {
+                    query += ` LIMIT ${params.limit}`;
+                  }
+
+                  if (params.orderBy) {
+                    query += ` ORDER BY ${params.orderBy}`;
+                  }
+
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  // 在新窗口或对话框中显示结果
+                  Modal.info({
+                    title: `数据预览 - ${params.measurement}`,
+                    width: 1000,
+                    content: (
+                      <div>
+                        <Text type="secondary">查询: {query}</Text>
+                        <div className="mt-4">
+                          {/* 这里可以添加一个简单的表格来显示结果 */}
+                          <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`数据预览失败: ${error}`);
+                }
                 break;
 
               case 'showFields':
-                message.info(`查看测量 "${params.measurement}" 字段信息功能开发中...`);
+                // 查看字段信息
+                try {
+                  const fields = await invoke('get_field_keys', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                  });
+
+                  Modal.info({
+                    title: `字段信息 - ${params.measurement}`,
+                    width: 600,
+                    content: (
+                      <div>
+                        <Text strong>字段列表:</Text>
+                        <ul className="mt-2">
+                          {Array.isArray(fields) ? fields.map((field: any, index: number) => (
+                            <li key={index} className="py-1">
+                              <Text code>{field.fieldKey || field}</Text>
+                              {field.fieldType && <Text type="secondary"> ({field.fieldType})</Text>}
+                            </li>
+                          )) : (
+                            <li><Text type="secondary">无字段信息</Text></li>
+                          )}
+                        </ul>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取字段信息失败: ${error}`);
+                }
                 break;
 
               case 'showTagKeys':
-                message.info(`查看测量 "${params.measurement}" 标签键功能开发中...`);
+                // 查看标签键
+                try {
+                  const tagKeys = await invoke('get_tag_keys', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                  });
+
+                  Modal.info({
+                    title: `标签键 - ${params.measurement}`,
+                    width: 500,
+                    content: (
+                      <div>
+                        <Text strong>标签键列表:</Text>
+                        <ul className="mt-2">
+                          {Array.isArray(tagKeys) ? tagKeys.map((tagKey: string, index: number) => (
+                            <li key={index} className="py-1">
+                              <Text code>{tagKey}</Text>
+                            </li>
+                          )) : (
+                            <li><Text type="secondary">无标签键</Text></li>
+                          )}
+                        </ul>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取标签键失败: ${error}`);
+                }
                 break;
 
               case 'showTagValues':
-                message.info(`查看测量 "${params.measurement}" 标签值功能开发中...`);
+                // 查看标签值
+                try {
+                  const tagKeys = await invoke('get_tag_keys', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                  });
+
+                  if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
+                    message.info('该测量没有标签键');
+                    return;
+                  }
+
+                  // 获取第一个标签键的值作为示例
+                  const tagValues = await invoke('get_tag_values', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                    tagKey: tagKeys[0],
+                  });
+
+                  Modal.info({
+                    title: `标签值 - ${params.measurement}`,
+                    width: 600,
+                    content: (
+                      <div>
+                        <Text strong>标签键 "{tagKeys[0]}" 的值:</Text>
+                        <ul className="mt-2 max-h-64 overflow-auto">
+                          {Array.isArray(tagValues) ? tagValues.map((tagValue: string, index: number) => (
+                            <li key={index} className="py-1">
+                              <Text code>{tagValue}</Text>
+                            </li>
+                          )) : (
+                            <li><Text type="secondary">无标签值</Text></li>
+                          )}
+                        </ul>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取标签值失败: ${error}`);
+                }
                 break;
 
               case 'showSeries':
-                message.info(`查看测量 "${params.measurement}" 序列信息功能开发中...`);
+                // 查看序列信息
+                try {
+                  const query = `SHOW SERIES FROM "${params.measurement}"`;
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  Modal.info({
+                    title: `序列信息 - ${params.measurement}`,
+                    width: 800,
+                    content: (
+                      <div>
+                        <Text type="secondary">查询: {query}</Text>
+                        <div className="mt-4">
+                          <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取序列信息失败: ${error}`);
+                }
                 break;
 
               case 'getRecordCount':
-                message.info(`获取测量 "${params.measurement}" 记录数功能开发中...`);
+                // 获取记录总数
+                try {
+                  const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  Modal.info({
+                    title: `记录统计 - ${params.measurement}`,
+                    content: (
+                      <div>
+                        <Statistic
+                          title="总记录数"
+                          value={result.rowCount || 0}
+                          prefix={<DatabaseOutlined />}
+                        />
+                        <div className="mt-4">
+                          <Text type="secondary">查询: {query}</Text>
+                        </div>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取记录数失败: ${error}`);
+                }
                 break;
 
               case 'getTimeRange':
-                message.info(`获取测量 "${params.measurement}" 时间范围功能开发中...`);
+                // 获取时间范围
+                try {
+                  const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  Modal.info({
+                    title: `时间范围 - ${params.measurement}`,
+                    content: (
+                      <div>
+                        <Descriptions column={1} bordered>
+                          <Descriptions.Item label="查询">
+                            <Text code>{query}</Text>
+                          </Descriptions.Item>
+                          <Descriptions.Item label="结果">
+                            <pre className="bg-gray-100 p-2 rounded">
+                              {JSON.stringify(result, null, 2)}
+                            </pre>
+                          </Descriptions.Item>
+                        </Descriptions>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取时间范围失败: ${error}`);
+                }
                 break;
 
               case 'getFieldStats':
-                message.info(`获取测量 "${params.measurement}" 字段统计功能开发中...`);
+                // 获取字段统计
+                try {
+                  const fields = await invoke('get_field_keys', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                  });
+
+                  if (!Array.isArray(fields) || fields.length === 0) {
+                    message.info('该测量没有字段');
+                    return;
+                  }
+
+                  // 为第一个字段生成统计查询
+                  const firstField = typeof fields[0] === 'string' ? fields[0] : fields[0].fieldKey;
+                  const query = `SELECT MIN("${firstField}"), MAX("${firstField}"), MEAN("${firstField}") FROM "${params.measurement}"`;
+
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  Modal.info({
+                    title: `字段统计 - ${params.measurement}`,
+                    width: 600,
+                    content: (
+                      <div>
+                        <Alert
+                          message={`字段 "${firstField}" 的统计信息`}
+                          type="info"
+                          className="mb-4"
+                        />
+                        <Text type="secondary">查询: {query}</Text>
+                        <div className="mt-4">
+                          <pre className="bg-gray-100 p-4 rounded">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取字段统计失败: ${error}`);
+                }
                 break;
 
               case 'getTagDistribution':
-                message.info(`获取测量 "${params.measurement}" 标签分布功能开发中...`);
+                // 获取标签分布
+                try {
+                  const tagKeys = await invoke('get_tag_keys', {
+                    connectionId: activeConnectionId,
+                    database: params.database,
+                    measurement: params.measurement,
+                  });
+
+                  if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
+                    message.info('该测量没有标签');
+                    return;
+                  }
+
+                  // 获取第一个标签的分布
+                  const firstTagKey = tagKeys[0];
+                  const query = `SELECT COUNT(*) FROM "${params.measurement}" GROUP BY "${firstTagKey}"`;
+
+                  const result = await invoke('execute_query', {
+                    connectionId: activeConnectionId,
+                    query,
+                  });
+
+                  Modal.info({
+                    title: `标签分布 - ${params.measurement}`,
+                    width: 700,
+                    content: (
+                      <div>
+                        <Alert
+                          message={`标签 "${firstTagKey}" 的分布统计`}
+                          type="info"
+                          className="mb-4"
+                        />
+                        <Text type="secondary">查询: {query}</Text>
+                        <div className="mt-4">
+                          <pre className="bg-gray-100 p-4 rounded max-h-64 overflow-auto">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    ),
+                  });
+                } catch (error) {
+                  message.error(`获取标签分布失败: ${error}`);
+                }
                 break;
 
               case 'createChart':
-                message.info(`为测量 "${params.measurement}" 创建 ${params.chartType} 图表功能开发中...`);
+                // 跳转到可视化页面并预填充查询
+                const chartQuery = generateChartQuery(params);
+                navigate('/visualization', {
+                  state: {
+                    presetQuery: chartQuery,
+                    database: params.database,
+                    measurement: params.measurement,
+                    chartType: params.chartType
+                  }
+                });
+                message.success('正在跳转到可视化页面...');
+                break;
+
+              case 'createFieldChart':
+                // 为字段创建图表
+                const fieldChartQuery = generateFieldChartQuery(params);
+                navigate('/visualization', {
+                  state: {
+                    presetQuery: fieldChartQuery,
+                    database: params.database,
+                    measurement: params.measurement,
+                    field: params.field,
+                    chartType: params.chartType
+                  }
+                });
+                message.success('正在跳转到可视化页面...');
+                break;
+
+              case 'createTagChart':
+                // 为标签创建图表
+                const tagChartQuery = generateTagChartQuery(params);
+                navigate('/visualization', {
+                  state: {
+                    presetQuery: tagChartQuery,
+                    database: params.database,
+                    measurement: params.measurement,
+                    tagKey: params.tagKey,
+                    chartType: params.chartType
+                  }
+                });
+                message.success('正在跳转到可视化页面...');
                 break;
 
               case 'customChart':
-                message.info(`为测量 "${params.measurement}" 创建自定义图表功能开发中...`);
+                // 跳转到可视化页面创建自定义图表
+                navigate('/visualization', {
+                  state: {
+                    database: params.database,
+                    measurement: params.measurement
+                  }
+                });
+                message.success('正在跳转到可视化页面...');
                 break;
 
               case 'exportData':
