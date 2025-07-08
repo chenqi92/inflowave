@@ -32,7 +32,7 @@ jobs:
           fi
 
   test-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,6 +52,8 @@ jobs:
           cache: 'npm'
 
       - name: Install frontend dependencies
+        env:
+          HUSKY: 0
         run: npm ci
 
       - name: Test Tauri build (without release)
