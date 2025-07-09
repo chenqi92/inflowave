@@ -144,7 +144,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
 
     const { xAxisData, seriesData } = chartData;
 
-    let option: echarts.EChartsOption = {
+    const option: echarts.EChartsOption = {
       title: {
         text: config.title,
         left: 'center',

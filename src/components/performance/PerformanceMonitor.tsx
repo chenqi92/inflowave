@@ -127,7 +127,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       render: (text: string) => (
         <Tooltip title={text}>
           <Text code style={{ fontSize: 12 }}>
-            {text.length > 50 ? text.substring(0, 50) + '...' : text}
+            {text.length > 50 ? `${text.substring(0, 50)  }...` : text}
           </Text>
         </Tooltip>
       ),

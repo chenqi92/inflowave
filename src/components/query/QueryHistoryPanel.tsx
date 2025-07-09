@@ -193,7 +193,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
     if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
     
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return `${date.toLocaleDateString()  } ${  date.toLocaleTimeString()}`;
   };
 
   // 过滤数据
@@ -334,7 +334,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 description={
                   <div>
                     <Text code style={{ fontSize: 12 }}>
-                      {item.query.length > 100 ? item.query.substring(0, 100) + '...' : item.query}
+                      {item.query.length > 100 ? `${item.query.substring(0, 100)  }...` : item.query}
                     </Text>
                     <div style={{ marginTop: 4 }}>
                       <Space size="small">
@@ -412,7 +412,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     )}
                     <div style={{ marginTop: 4 }}>
                       <Text code style={{ fontSize: 12 }}>
-                        {item.query.length > 80 ? item.query.substring(0, 80) + '...' : item.query}
+                        {item.query.length > 80 ? `${item.query.substring(0, 80)  }...` : item.query}
                       </Text>
                     </div>
                     <div style={{ marginTop: 4 }}>

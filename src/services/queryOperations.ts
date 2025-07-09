@@ -36,7 +36,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current', // 当前活跃连接
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -62,7 +62,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -87,7 +87,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -116,7 +116,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -141,7 +141,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -168,7 +168,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -194,7 +194,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -220,7 +220,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -248,7 +248,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -305,13 +305,13 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
 
       // 调用导出功能
       await safeTauriInvoke('export_query_result', {
-        result: result,
+        result,
         format: params.format,
         filename: `${params.measurement}_export_${Date.now()}.${params.format}`
       });
@@ -337,7 +337,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
 
@@ -361,7 +361,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
 
@@ -404,7 +404,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       
@@ -428,7 +428,7 @@ export class QueryOperationsService {
         request: {
           connectionId: 'current',
           database: params.database,
-          query: query
+          query
         }
       });
       

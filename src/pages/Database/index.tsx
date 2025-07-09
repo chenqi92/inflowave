@@ -661,8 +661,8 @@ const Database: React.FC = () => {
                 try {
                   const structure = {
                     database: params.database,
-                    measurements: measurements,
-                    retentionPolicies: retentionPolicies,
+                    measurements,
+                    retentionPolicies,
                     exportTime: new Date().toISOString(),
                   };
 

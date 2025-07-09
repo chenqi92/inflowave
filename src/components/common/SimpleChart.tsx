@@ -206,7 +206,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       ref={chartRef}
       style={{
         width: '100%',
-        height: height,
+        height,
         minHeight: 300,
       }}
     />

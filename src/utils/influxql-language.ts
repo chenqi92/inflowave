@@ -128,7 +128,7 @@ export const createInfluxQLCompletionProvider = (
         label: keyword,
         kind: monaco.languages.CompletionItemKind.Keyword,
         insertText: keyword,
-        range: range,
+        range,
         documentation: `InfluxQL keyword: ${keyword}`
       });
     });
@@ -140,7 +140,7 @@ export const createInfluxQLCompletionProvider = (
         kind: monaco.languages.CompletionItemKind.Function,
         insertText: `${func}()`,
         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-        range: range,
+        range,
         documentation: `InfluxQL function: ${func}`
       });
     });
@@ -151,7 +151,7 @@ export const createInfluxQLCompletionProvider = (
         label: db,
         kind: monaco.languages.CompletionItemKind.Module,
         insertText: `"${db}"`,
-        range: range,
+        range,
         documentation: `Database: ${db}`
       });
     });
@@ -162,7 +162,7 @@ export const createInfluxQLCompletionProvider = (
         label: measurement,
         kind: monaco.languages.CompletionItemKind.Class,
         insertText: `"${measurement}"`,
-        range: range,
+        range,
         documentation: `Measurement: ${measurement}`
       });
     });
@@ -173,7 +173,7 @@ export const createInfluxQLCompletionProvider = (
         label: field,
         kind: monaco.languages.CompletionItemKind.Field,
         insertText: `"${field}"`,
-        range: range,
+        range,
         documentation: `Field: ${field}`
       });
     });
@@ -184,7 +184,7 @@ export const createInfluxQLCompletionProvider = (
         label: tag,
         kind: monaco.languages.CompletionItemKind.Property,
         insertText: `"${tag}"`,
-        range: range,
+        range,
         documentation: `Tag: ${tag}`
       });
     });

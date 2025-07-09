@@ -62,7 +62,7 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
       });
     } else {
       items.push({
-        title: title,
+        title,
       });
     }
 

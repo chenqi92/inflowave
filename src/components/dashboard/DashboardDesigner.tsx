@@ -84,7 +84,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         id: dashboard?.id || `dashboard_${Date.now()}`,
         name: values.name,
         description: values.description,
-        widgets: widgets,
+        widgets,
         layout: widgets.map(w => w.layout),
         createdAt: dashboard?.createdAt || new Date(),
         updatedAt: new Date(),
