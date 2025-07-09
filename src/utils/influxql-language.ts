@@ -38,7 +38,7 @@ export const influxqlLanguageDefinition: monaco.languages.IMonarchLanguage = {
     '=~', '!~'
   ],
 
-  symbols: /[=><!~?:&|+\-*\/\^%]+/,
+  symbols: /[=><!~?:&|+\-*/^%]+/,
   escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
 
   tokenizer: {
@@ -53,7 +53,7 @@ export const influxqlLanguageDefinition: monaco.languages.IMonarchLanguage = {
       }],
 
       // 数字
-      [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+      [/\d*\.\d+([eE][-+]?\d+)?/, 'number.float'],
       [/0[xX][0-9a-fA-F]+/, 'number.hex'],
       [/\d+/, 'number'],
 
@@ -64,7 +64,7 @@ export const influxqlLanguageDefinition: monaco.languages.IMonarchLanguage = {
       [/"/, 'string', '@string_double'],
 
       // 正则表达式
-      [/\/([^\/\\]|\\.)*\//, 'regexp'],
+      [/\/([^/\\]|\\.)*\//, 'regexp'],
 
       // 时间字面量
       [/\d+[a-z]+/, 'number.time'],
