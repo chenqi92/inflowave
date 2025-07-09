@@ -64,7 +64,7 @@ $BuildTargets = @{
     "windows" = @{
         "x64" = "x86_64-pc-windows-msvc"
         "x86" = "i686-pc-windows-msvc"
-        "arm64" = "aarch64-pc-windows-msvc"
+        # "arm64" = "aarch64-pc-windows-msvc"  # 暂时禁用，等待 ring 库支持改善
     }
     "macos" = @{
         "x64" = "x86_64-apple-darwin"
@@ -131,18 +131,26 @@ function Build-Target {
         [string]$ArchName,
         [string]$BuildType
     )
-    
+
     Write-Step "构建目标: $Target ($PlatformName-$ArchName)"
-    
+
     $buildArgs = @("tauri", "build", "--target", $Target)
+
+    # 为 Windows ARM64 使用 native-tls 以避免 ring 库问题
+    if ($Target -eq "aarch64-pc-windows-msvc") {
+        $buildArgs += @("--features", "default-tls")
+        $buildArgs += @("--no-default-features")
+        Write-Info "Windows ARM64 目标使用 native-tls 后端"
+    }
+
     if ($BuildType -eq "debug") {
         # Debug 构建不需要 --release 参数
     } else {
         # Release 构建（默认）
     }
-    
+
     Write-Info "执行命令: cargo $($buildArgs -join ' ')"
-    
+
     $env:RUST_BACKTRACE = "1"
     & cargo @buildArgs
     

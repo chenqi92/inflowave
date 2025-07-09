@@ -23,10 +23,11 @@ jobs:
             target: i686-pc-windows-msvc
             arch: x86
             os: windows
-          - platform: windows-latest
-            target: aarch64-pc-windows-msvc
-            arch: arm64
-            os: windows
+          # TODO: Windows ARM64 暂时禁用，等待 ring 库支持改善
+          # - platform: windows-latest
+          #   target: aarch64-pc-windows-msvc
+          #   arch: arm64
+          #   os: windows
 
           # macOS builds
           - platform: macos-latest

@@ -54,8 +54,8 @@ function Write-Step { param([string]$Message) Write-ColorOutput "🔄 $Message" 
 $TargetGroups = @{
     "windows-all" = @(
         "x86_64-pc-windows-msvc",
-        "i686-pc-windows-msvc",
-        "aarch64-pc-windows-msvc"
+        "i686-pc-windows-msvc"
+        # "aarch64-pc-windows-msvc"  # 暂时禁用，等待 ring 库支持改善
     )
     "macos-all" = @(
         "x86_64-apple-darwin",
@@ -73,7 +73,7 @@ $TargetGroups = @{
         "x86_64-unknown-linux-gnu"
     )
     "arm64-all" = @(
-        "aarch64-pc-windows-msvc",
+        # "aarch64-pc-windows-msvc",  # 暂时禁用
         "aarch64-apple-darwin",
         "aarch64-unknown-linux-gnu"
     )

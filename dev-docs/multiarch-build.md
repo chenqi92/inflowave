@@ -4,12 +4,14 @@
 
 本文档描述了 InfloWave 项目的多架构构建系统，该系统支持为多个平台和 CPU 架构构建应用程序。
 
+> **⚠️ 重要提示**: Windows ARM64 构建暂时禁用，原因是 `ring` 密码学库在该平台上的编译问题。详见 [Windows ARM64 构建解决方案](./windows-arm64-build.md)。
+
 ## 🎯 支持的平台和架构
 
 ### Windows
 - **x64** (x86_64-pc-windows-msvc) - 64位 Intel/AMD 处理器
-- **x86** (i686-pc-windows-msvc) - 32位 Intel/AMD 处理器  
-- **ARM64** (aarch64-pc-windows-msvc) - ARM64 处理器
+- **x86** (i686-pc-windows-msvc) - 32位 Intel/AMD 处理器
+- ~~**ARM64** (aarch64-pc-windows-msvc) - ARM64 处理器~~ (暂时禁用)
 
 ### macOS
 - **x64** (x86_64-apple-darwin) - Intel 处理器

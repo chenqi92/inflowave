@@ -167,7 +167,7 @@ inflowave/
    **Windows**
    - x64 (64位): `InfloWave_x.x.x_x64_en-US.msi`
    - x86 (32位): `InfloWave_x.x.x_x86_en-US.msi`
-   - ARM64: `InfloWave_x.x.x_arm64_en-US.msi`
+   - ~~ARM64: 暂时不支持~~ (等待依赖库支持改善)
 
    **macOS**
    - Intel (x64): `InfloWave_x.x.x_x64.dmg`
