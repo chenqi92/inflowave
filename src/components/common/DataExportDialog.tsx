@@ -5,10 +5,8 @@ import {
   Input,
   Select,
   Button,
-  Progress,
   Alert,
   Space,
-  Typography,
   Row,
   Col,
   Switch,
@@ -30,7 +28,6 @@ import type { DataExportConfig, DataExportResult, Connection } from '@/types';
 
 const { TextArea } = Input;
 const { Option } = Select;
-const { Text } = Typography;
 
 interface DataExportDialogProps {
   visible: boolean;

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Layout, Card, Tree, Typography, Space, Button, Tag, Tooltip, message, Row, Col } from 'antd';
+import { Layout, Card, Tree, Typography, Space, Button, Tag, Tooltip, message, Row, Col, Tabs } from 'antd';
 import {
   DatabaseOutlined,
   TableOutlined,
@@ -10,16 +10,33 @@ import {
   PlayCircleOutlined,
   StopOutlined,
   SettingOutlined,
+  HistoryOutlined,
+  BookOutlined,
+  DashboardOutlined,
+  MonitorOutlined,
+  ImportOutlined,
+  LineChartOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import QueryEditor from '@/components/query/QueryEditor';
 import QueryResults from '@/components/query/QueryResults';
+import QueryHistory from '@/components/query/QueryHistory';
+import SavedQueries from '@/components/query/SavedQueries';
+import PerformanceMonitor from '@/components/performance/PerformanceMonitor';
+import DatabaseManager from '@/components/database/DatabaseManager';
+import RealTimeMonitor from '@/components/monitoring/RealTimeMonitor';
+import DashboardDesigner from '@/components/dashboard/DashboardDesigner';
+import DataImportWizard from '@/components/data/DataImportWizard';
 import type { DataNode } from 'antd/es/tree';
 import type { QueryResult } from '@/types';
 
-const { Sider, Content } = Layout;
-const { Title, Text } = Typography;
+// Fix for invoke function
+const invoke = safeTauriInvoke;
+
+
+const { Text } = Typography;
 
 interface DatabaseStructure {
   databases: string[];
@@ -41,6 +58,9 @@ const DataGripLayout: React.FC = () => {
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryLoading, setQueryLoading] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState('database');
+  const [mainContentTab, setMainContentTab] = useState('query');
+  const [showImportWizard, setShowImportWizard] = useState(false);
 
   // 加载数据库结构
   const loadDatabaseStructure = async (connectionId: string) => {
@@ -273,6 +293,16 @@ const DataGripLayout: React.FC = () => {
     setQueryLoading(loading);
   };
 
+  // 处理从历史记录选择查询
+  const handleQuerySelect = (query: string, database?: string) => {
+    if (database && structure.databases.includes(database)) {
+      setSelectedDatabase(database);
+    }
+    // 这里需要将查询传递给 QueryEditor，暂时通过事件或状态管理
+    // 可以考虑使用 ref 或者状态提升
+    message.info('查询已选择，请在编辑器中查看');
+  };
+
   return (
     <Layout style={{ height: '100vh', background: '#f5f5f5' }}>
       <Row style={{ height: '100%' }} gutter={8}>
@@ -280,58 +310,211 @@ const DataGripLayout: React.FC = () => {
         <Col span={6} style={{ height: '100%' }}>
           <Card
             title={
-              <Space>
-                <DatabaseOutlined />
-                <span>数据库结构</span>
-              </Space>
+              <Tabs
+                activeKey={leftPanelTab}
+                onChange={setLeftPanelTab}
+                size="small"
+                items={[
+                  {
+                    key: 'database',
+                    label: (
+                      <Space>
+                        <DatabaseOutlined />
+                        <span>数据库</span>
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: 'history',
+                    label: (
+                      <Space>
+                        <HistoryOutlined />
+                        <span>历史</span>
+                      </Space>
+                    ),
+                  },
+                  {
+                    key: 'saved',
+                    label: (
+                      <Space>
+                        <BookOutlined />
+                        <span>收藏</span>
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
             }
             extra={
-              <Button
-                type="text"
-                icon={<ReloadOutlined />}
-                size="small"
-                loading={loading}
-                onClick={() => activeConnectionId && loadDatabaseStructure(activeConnectionId)}
-              />
+              leftPanelTab === 'database' && (
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  size="small"
+                  loading={loading}
+                  onClick={() => activeConnectionId && loadDatabaseStructure(activeConnectionId)}
+                />
+              )
             }
             styles={{ body: { padding: 0, height: 'calc(100vh - 57px)', overflow: 'auto' } }}
             style={{ height: '100%' }}
           >
-            <Tree
-              showIcon
-              treeData={treeData}
-              expandedKeys={expandedKeys}
-              onExpand={setExpandedKeys}
-              onSelect={handleTreeSelect}
-              style={{ padding: '8px' }}
-            />
+            {leftPanelTab === 'database' && (
+              <Tree
+                showIcon
+                treeData={treeData}
+                expandedKeys={expandedKeys}
+                onExpand={setExpandedKeys}
+                onSelect={handleTreeSelect}
+                style={{ padding: '8px' }}
+              />
+            )}
+            {leftPanelTab === 'history' && (
+              <div style={{ height: '100%' }}>
+                <QueryHistory
+                  onQuerySelect={handleQuerySelect}
+                  visible={true}
+                />
+              </div>
+            )}
+            {leftPanelTab === 'saved' && (
+              <div style={{ height: '100%' }}>
+                <SavedQueries
+                  onQuerySelect={handleQuerySelect}
+                  visible={true}
+                  databases={structure.databases}
+                />
+              </div>
+            )}
           </Card>
         </Col>
 
-        {/* 右侧：查询编辑器和结果 */}
+        {/* 右侧：主内容区域 */}
         <Col span={18} style={{ height: '100%' }}>
-          <Row style={{ height: '100%' }} gutter={[0, 8]}>
-            {/* 查询编辑器 */}
-            <Col span={24} style={{ height: '50%' }}>
-              <QueryEditor
-                selectedDatabase={selectedDatabase}
-                onDatabaseChange={setSelectedDatabase}
-                databases={structure.databases}
-                onQueryResult={handleQueryResult}
-                onLoadingChange={handleQueryLoading}
-              />
-            </Col>
+          <Card
+            style={{ height: '100%' }}
+            styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
+            tabList={[
+              {
+                key: 'query',
+                tab: (
+                  <Space>
+                    <PlayCircleOutlined />
+                    <span>查询工作台</span>
+                  </Space>
+                ),
+              },
+              {
+                key: 'dashboard',
+                tab: (
+                  <Space>
+                    <DashboardOutlined />
+                    <span>仪表板</span>
+                  </Space>
+                ),
+              },
+              {
+                key: 'monitor',
+                tab: (
+                  <Space>
+                    <LineChartOutlined />
+                    <span>实时监控</span>
+                  </Space>
+                ),
+              },
+              {
+                key: 'performance',
+                tab: (
+                  <Space>
+                    <ThunderboltOutlined />
+                    <span>性能分析</span>
+                  </Space>
+                ),
+              },
+              {
+                key: 'database',
+                tab: (
+                  <Space>
+                    <DatabaseOutlined />
+                    <span>数据库管理</span>
+                  </Space>
+                ),
+              },
+            ]}
+            activeTabKey={mainContentTab}
+            onTabChange={setMainContentTab}
+            tabBarExtraContent={
+              <Space>
+                <Button
+                  icon={<ImportOutlined />}
+                  onClick={() => setShowImportWizard(true)}
+                  size="small"
+                >
+                  导入数据
+                </Button>
+                <Button
+                  icon={<SettingOutlined />}
+                  size="small"
+                >
+                  设置
+                </Button>
+              </Space>
+            }
+          >
+            {mainContentTab === 'query' && (
+              <Row style={{ height: '100%' }} gutter={[0, 8]}>
+                <Col span={24} style={{ height: '50%' }}>
+                  <QueryEditor
+                    selectedDatabase={selectedDatabase}
+                    onDatabaseChange={setSelectedDatabase}
+                    databases={structure.databases}
+                    onQueryResult={handleQueryResult}
+                    onLoadingChange={handleQueryLoading}
+                  />
+                </Col>
+                <Col span={24} style={{ height: '50%' }}>
+                  <QueryResults
+                    result={queryResult}
+                    loading={queryLoading}
+                  />
+                </Col>
+              </Row>
+            )}
 
-            {/* 查询结果 */}
-            <Col span={24} style={{ height: '50%' }}>
-              <QueryResults
-                result={queryResult}
-                loading={queryLoading}
+            {mainContentTab === 'dashboard' && (
+              <DashboardDesigner />
+            )}
+
+            {mainContentTab === 'monitor' && (
+              <RealTimeMonitor
+                connectionId={activeConnectionId}
+                database={selectedDatabase}
               />
-            </Col>
-          </Row>
+            )}
+
+            {mainContentTab === 'performance' && (
+              <PerformanceMonitor
+                connectionId={activeConnectionId}
+              />
+            )}
+
+            {mainContentTab === 'database' && (
+              <DatabaseManager
+                connectionId={activeConnectionId}
+                database={selectedDatabase}
+              />
+            )}
+          </Card>
         </Col>
       </Row>
+
+      {/* 数据导入向导 */}
+      <DataImportWizard
+        visible={showImportWizard}
+        onClose={() => setShowImportWizard(false)}
+        connectionId={activeConnectionId}
+        database={selectedDatabase}
+      />
     </Layout>
   );
 };

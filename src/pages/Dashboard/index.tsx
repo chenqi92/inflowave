@@ -18,7 +18,7 @@ import DashboardManager from '@/components/dashboard/DashboardManager';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
-const { Title, Paragraph } = Typography;
+
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();

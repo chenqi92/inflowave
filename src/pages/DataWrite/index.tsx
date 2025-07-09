@@ -12,7 +12,6 @@ import {
   Table,
   message,
   Tabs,
-  Upload,
   Alert,
   Row,
   Col,
@@ -57,7 +56,7 @@ const DataWrite: React.FC = () => {
     if (!activeConnectionId) return;
 
     try {
-      const dbList = await invoke<string[]>('get_databases', {
+      const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
       setDatabases(dbList);
@@ -124,7 +123,7 @@ const DataWrite: React.FC = () => {
         precision: values.precision || 'ms',
       };
 
-      const result = await invoke<WriteResult>('write_data_points', { request });
+      const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
 
       if (result.success) {
         message.success(`数据写入成功，写入 ${result.pointsWritten} 个数据点`);
@@ -167,7 +166,7 @@ const DataWrite: React.FC = () => {
         precision: 'ms',
       };
 
-      const result = await invoke<WriteResult>('write_data_points', { request });
+      const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
 
       if (result.success) {
         message.success(`批量写入成功，写入 ${result.pointsWritten} 个数据点`);

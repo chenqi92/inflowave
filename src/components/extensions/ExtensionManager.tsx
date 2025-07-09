@@ -329,7 +329,7 @@ const ExtensionManager: React.FC = () => {
                   actions={[
                     <Button
                       type="text"
-                      icon={<TestOutlined />}
+                      icon={<ExperimentOutlined />}
                       onClick={() => testApiIntegration(integration)}
                       loading={loading}
                     >

@@ -173,7 +173,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Button
               type="text"
               size="small"
-              icon={<OptimizationOutlined />}
+              icon={<SettingOutlined />}
               style={{ color: 'orange' }}
             />
           </Tooltip>
@@ -188,7 +188,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   }, [connectionId, timeRange]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: number;
     if (autoRefresh) {
       interval = setInterval(() => {
         loadMetrics();

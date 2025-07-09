@@ -30,7 +30,7 @@ import {
   ExclamationCircleOutlined,
   EditOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ContextMenu from '@/components/common/ContextMenu';
@@ -134,7 +134,7 @@ const Database: React.FC = () => {
 
     setLoading(true);
     try {
-      const dbList = await invoke<string[]>('get_databases', {
+      const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
       setDatabases(dbList);
@@ -158,15 +158,15 @@ const Database: React.FC = () => {
     try {
       // 并行加载测量、保留策略和统计信息
       const [measurementList, retentionPolicyList, stats] = await Promise.all([
-        invoke<string[]>('get_measurements', {
+        safeTauriInvoke<string[]>('get_measurements', {
           connectionId: activeConnectionId,
           database,
         }).catch(() => []),
-        invoke<RetentionPolicy[]>('get_retention_policies', {
+        safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
           connectionId: activeConnectionId,
           database,
         }).catch(() => []),
-        invoke<DatabaseStats>('get_database_stats', {
+        safeTauriInvoke<DatabaseStats>('get_database_stats', {
           connectionId: activeConnectionId,
           database,
         }).catch(() => null),
@@ -433,7 +433,7 @@ const Database: React.FC = () => {
                             }
                           });
                         } else if (action === 'refresh_table') {
-                          loadMeasurements(selectedDatabase);
+                          loadDatabaseDetails(selectedDatabase);
                         }
                       }}
                     >

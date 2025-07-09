@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Menu, Modal, message } from 'antd';
 import {
   EyeOutlined,
@@ -8,7 +8,6 @@ import {
   InfoCircleOutlined,
   TableOutlined,
   TagsOutlined,
-  FieldTimeOutlined,
   FunctionOutlined,
   DownloadOutlined,
   LineChartOutlined,
@@ -16,14 +15,8 @@ import {
   AreaChartOutlined,
   SettingOutlined,
   CopyOutlined,
-  EditOutlined,
   SearchOutlined,
-  PlusOutlined,
-  ClockCircleOutlined,
   NumberOutlined,
-  TagOutlined,
-  CalculatorOutlined,
-  GroupOutlined,
 } from '@ant-design/icons';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { MenuProps } from 'antd';

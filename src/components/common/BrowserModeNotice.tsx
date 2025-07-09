@@ -1,11 +1,10 @@
 import React from 'react';
 import { Alert, Card, Typography, Button, Space, Divider } from 'antd';
-import { 
-  InfoCircleOutlined, 
-  RocketOutlined, 
+import {
+  InfoCircleOutlined,
   CodeOutlined,
   GlobalOutlined,
-  DesktopOutlined 
+  DesktopOutlined
 } from '@ant-design/icons';
 import { isBrowserEnvironment } from '@/utils/tauri';
 

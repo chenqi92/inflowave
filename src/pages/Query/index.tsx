@@ -19,7 +19,6 @@ import {
   SaveOutlined,
   HistoryOutlined,
   DatabaseOutlined,
-  FolderOutlined,
   TableOutlined,
   FieldTimeOutlined,
   TagsOutlined,
@@ -60,7 +59,7 @@ const Query: React.FC = () => {
 
     setLoadingDatabases(true);
     try {
-      const dbList = await invoke<string[]>('get_databases', {
+      const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
       setDatabases(dbList);
@@ -81,7 +80,7 @@ const Query: React.FC = () => {
     if (!activeConnectionId || !database) return;
 
     try {
-      const measurementList = await invoke<string[]>('get_measurements', {
+      const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId: activeConnectionId,
         database,
       });
@@ -103,12 +102,12 @@ const Query: React.FC = () => {
 
     try {
       const [fieldList, tagList] = await Promise.all([
-        invoke<string[]>('get_field_keys', {
+        safeTauriInvoke<string[]>('get_field_keys', {
           connectionId: activeConnectionId,
           database,
           measurement,
         }).catch(() => []),
-        invoke<string[]>('get_tag_keys', {
+        safeTauriInvoke<string[]>('get_tag_keys', {
           connectionId: activeConnectionId,
           database,
           measurement,
@@ -258,7 +257,7 @@ const Query: React.FC = () => {
         query: query.trim(),
       };
 
-      const result = await invoke<QueryResult>('execute_query', { request });
+      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       setQueryResult(result);
       message.success(`查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms`);
     } catch (error) {

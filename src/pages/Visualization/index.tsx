@@ -11,7 +11,6 @@ import {
   Space,
   Modal,
   message,
-  Tabs,
   Alert,
   Spin,
 } from 'antd';
@@ -58,7 +57,7 @@ const Visualization: React.FC = () => {
     if (!activeConnectionId) return;
 
     try {
-      const dbList = await invoke<string[]>('get_databases', {
+      const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
       setDatabases(dbList);
@@ -78,7 +77,7 @@ const Visualization: React.FC = () => {
         query: chartConfig.query,
       };
 
-      const result = await invoke<QueryResult>('execute_query', { request });
+      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       return result;
     } catch (error) {
       console.error('查询执行失败:', error);

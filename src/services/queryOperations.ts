@@ -32,7 +32,7 @@ export class QueryOperationsService {
     }
 
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current', // 当前活跃连接
           database: params.database,
@@ -58,7 +58,7 @@ export class QueryOperationsService {
     const query = `SHOW FIELD KEYS FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -83,7 +83,7 @@ export class QueryOperationsService {
     const query = `SHOW TAG KEYS FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -112,7 +112,7 @@ export class QueryOperationsService {
     }
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -137,7 +137,7 @@ export class QueryOperationsService {
     const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -164,7 +164,7 @@ export class QueryOperationsService {
     const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -190,7 +190,7 @@ export class QueryOperationsService {
     const query = `SELECT MIN("${params.field}"), MAX("${params.field}"), MEAN("${params.field}"), COUNT("${params.field}") FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -216,7 +216,7 @@ export class QueryOperationsService {
     const query = `SELECT PERCENTILE("${params.field}", 50), PERCENTILE("${params.field}", 90), PERCENTILE("${params.field}", 95), PERCENTILE("${params.field}", 99) FROM "${params.measurement}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -244,7 +244,7 @@ export class QueryOperationsService {
     const query = `SELECT * FROM "${params.measurement}" WHERE "${params.tagKey}" = '${params.tagValue}' ORDER BY time DESC LIMIT ${params.limit || 100}`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -301,7 +301,7 @@ export class QueryOperationsService {
     
     try {
       // 首先执行查询获取数据
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -400,7 +400,7 @@ export class QueryOperationsService {
     const query = `SHOW RETENTION POLICIES ON "${params.database}"`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -424,7 +424,7 @@ export class QueryOperationsService {
     const query = `SHOW MEASUREMENTS`;
     
     try {
-      const result = await invoke<QueryResult>('execute_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,

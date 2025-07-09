@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { Card, Table, Tabs, Button, Space, Typography, Empty, Spin, Tag } from 'antd';
+import { Card, Table, Tabs, Button, Space, Typography, Empty, Spin, Tag, Modal, Select, message, Dropdown, Menu } from 'antd';
 import {
   TableOutlined,
   FileTextOutlined,
   DownloadOutlined,
   BarChartOutlined,
   InfoCircleOutlined,
+  LineChartOutlined,
+  AreaChartOutlined,
+  PieChartOutlined,
+  MoreOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { QueryResult } from '@/types';
+import { safeTauriInvoke } from '@/utils/tauri';
+import SimpleChart from '../common/SimpleChart';
 
 const { Text } = Typography;
 
@@ -19,6 +25,9 @@ interface QueryResultsProps {
 
 const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) => {
   const [activeTab, setActiveTab] = useState('table');
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'excel'>('csv');
+  const [chartType, setChartType] = useState<'line' | 'bar' | 'area' | 'pie'>('line');
 
   // 格式化查询结果为表格数据
   const formatResultForTable = (queryResult: QueryResult) => {
@@ -79,6 +88,65 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
       seriesCount,
       executionTime,
       columns: queryResult.series[0]?.columns?.length || 0,
+    };
+  };
+
+  // 导出数据
+  const handleExport = async () => {
+    if (!result) return;
+
+    try {
+      const exportData = {
+        format: exportFormat,
+        data: result,
+        filename: `query_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`,
+      };
+
+      await safeTauriInvoke('export_query_data', exportData);
+      message.success(`数据已导出为 ${exportFormat.toUpperCase()} 格式`);
+      setExportModalVisible(false);
+    } catch (error) {
+      message.error(`导出失败: ${error}`);
+    }
+  };
+
+  // 检查数据是否适合图表显示
+  const isChartable = (queryResult: QueryResult) => {
+    if (!queryResult || !queryResult.series || queryResult.series.length === 0) {
+      return false;
+    }
+
+    const series = queryResult.series[0];
+    return series.columns.length >= 2 && series.values.length > 0;
+  };
+
+  // 准备图表数据
+  const prepareChartData = (queryResult: QueryResult) => {
+    if (!isChartable(queryResult)) return null;
+
+    const series = queryResult.series[0];
+    const timeColumn = series.columns.find(col =>
+      col.toLowerCase().includes('time') ||
+      col.toLowerCase().includes('timestamp')
+    );
+
+    const valueColumns = series.columns.filter(col =>
+      col !== timeColumn &&
+      typeof series.values[0]?.[series.columns.indexOf(col)] === 'number'
+    );
+
+    if (valueColumns.length === 0) return null;
+
+    return {
+      timeColumn,
+      valueColumns,
+      data: series.values.map(row => {
+        const record: any = {};
+        series.columns.forEach((col, index) => {
+          record[col] = row[index];
+        });
+        return record;
+      }),
     };
   };
 
@@ -166,10 +234,44 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
       ),
       children: (
         <div style={{ height: '100%', padding: '16px' }}>
-          <Empty
-            description="图表功能开发中..."
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+          {result && isChartable(result) ? (
+            <div style={{ height: '100%' }}>
+              <div style={{ marginBottom: 16 }}>
+                <Space>
+                  <span>图表类型:</span>
+                  <Select
+                    value={chartType}
+                    onChange={setChartType}
+                    style={{ width: 120 }}
+                  >
+                    <Select.Option value="line">
+                      <Space><LineChartOutlined />折线图</Space>
+                    </Select.Option>
+                    <Select.Option value="bar">
+                      <Space><BarChartOutlined />柱状图</Space>
+                    </Select.Option>
+                    <Select.Option value="area">
+                      <Space><AreaChartOutlined />面积图</Space>
+                    </Select.Option>
+                    <Select.Option value="pie">
+                      <Space><PieChartOutlined />饼图</Space>
+                    </Select.Option>
+                  </Select>
+                </Space>
+              </div>
+              <div style={{ height: 'calc(100% - 50px)' }}>
+                <SimpleChart
+                  data={prepareChartData(result)}
+                  type={chartType}
+                />
+              </div>
+            </div>
+          ) : (
+            <Empty
+              description={result ? "当前数据不适合图表显示" : "暂无查询结果"}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          )}
         </div>
       ),
     },
@@ -193,22 +295,41 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
       extra={
         result && (
           <Space>
-            <Button
-              icon={<DownloadOutlined />}
-              size="small"
-              onClick={() => {
-                // 导出功能
-                console.log('Export result:', result);
-              }}
+            <Dropdown
+              overlay={
+                <Menu
+                  onClick={({ key }) => {
+                    setExportFormat(key as any);
+                    setExportModalVisible(true);
+                  }}
+                  items={[
+                    { key: 'csv', label: 'CSV 格式', icon: <FileTextOutlined /> },
+                    { key: 'json', label: 'JSON 格式', icon: <FileTextOutlined /> },
+                    { key: 'excel', label: 'Excel 格式', icon: <FileTextOutlined /> },
+                  ]}
+                />
+              }
+              trigger={['click']}
             >
-              导出
-            </Button>
+              <Button icon={<DownloadOutlined />} size="small">
+                导出
+              </Button>
+            </Dropdown>
             <Button
               icon={<InfoCircleOutlined />}
               size="small"
               onClick={() => {
-                // 显示详细信息
-                console.log('Show details:', stats);
+                Modal.info({
+                  title: '查询结果详情',
+                  content: (
+                    <div>
+                      <p><strong>总行数:</strong> {stats?.totalRows}</p>
+                      <p><strong>列数:</strong> {stats?.columns}</p>
+                      <p><strong>序列数:</strong> {stats?.seriesCount}</p>
+                      <p><strong>执行时间:</strong> {stats?.executionTime}ms</p>
+                    </div>
+                  ),
+                });
               }}
             >
               详情
@@ -237,6 +358,38 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
           tabBarStyle={{ margin: 0, paddingLeft: 16, paddingRight: 16 }}
         />
       )}
+
+      {/* 导出模态框 */}
+      <Modal
+        title="导出查询结果"
+        open={exportModalVisible}
+        onOk={handleExport}
+        onCancel={() => setExportModalVisible(false)}
+        okText="导出"
+        cancelText="取消"
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <Typography.Text strong>导出格式:</Typography.Text>
+            <Select
+              value={exportFormat}
+              onChange={setExportFormat}
+              style={{ width: '100%', marginTop: 8 }}
+            >
+              <Select.Option value="csv">CSV - 逗号分隔值</Select.Option>
+              <Select.Option value="json">JSON - JavaScript 对象表示法</Select.Option>
+              <Select.Option value="excel">Excel - Microsoft Excel 格式</Select.Option>
+            </Select>
+          </div>
+          {stats && (
+            <div>
+              <Typography.Text type="secondary">
+                将导出 {stats.totalRows} 行 × {stats.columns} 列数据
+              </Typography.Text>
+            </div>
+          )}
+        </Space>
+      </Modal>
     </Card>
   );
 };

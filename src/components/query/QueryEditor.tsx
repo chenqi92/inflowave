@@ -14,6 +14,9 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, QueryRequest } from '@/types';
 
+// Fix for invoke function
+const invoke = safeTauriInvoke;
+
 const { Text } = Typography;
 const { Option } = Select;
 

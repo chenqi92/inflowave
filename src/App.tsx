@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Typography, Spin } from 'antd';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { DatabaseOutlined } from '@ant-design/icons';
+
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
@@ -13,7 +13,7 @@ import NativeMenuHandler from './components/layout/NativeMenuHandler';
 // 页面组件
 import ConnectionsPage from './pages/Connections';
 import DatabasePage from './pages/Database';
-import QueryPage from './pages/Query';
+
 import DashboardPage from './pages/Dashboard';
 import DataWritePage from './pages/DataWrite';
 import VisualizationPage from './pages/Visualization';

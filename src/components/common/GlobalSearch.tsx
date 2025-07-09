@@ -16,11 +16,8 @@ import {
   TableOutlined,
   FileTextOutlined,
   SettingOutlined,
-  HistoryOutlined,
-  StarOutlined,
   FunctionOutlined,
 } from '@ant-design/icons';
-import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Text } = Typography;
 

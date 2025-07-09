@@ -123,7 +123,7 @@ export const createInfluxQLCompletionProvider = (
     const suggestions: monaco.languages.CompletionItem[] = [];
 
     // 关键字建议
-    influxqlLanguageDefinition.keywords?.forEach(keyword => {
+    influxqlLanguageDefinition.keywords?.forEach((keyword: string) => {
       suggestions.push({
         label: keyword,
         kind: monaco.languages.CompletionItemKind.Keyword,
@@ -134,7 +134,7 @@ export const createInfluxQLCompletionProvider = (
     });
 
     // 函数建议
-    influxqlLanguageDefinition.functions?.forEach(func => {
+    influxqlLanguageDefinition.functions?.forEach((func: string) => {
       suggestions.push({
         label: func,
         kind: monaco.languages.CompletionItemKind.Function,

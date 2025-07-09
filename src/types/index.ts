@@ -380,10 +380,10 @@ export interface SavedQuery {
   description?: string;
   query: string;
   database?: string;
-  tags: string[];
+  tags?: string[];
   createdAt: Date;
   updatedAt: Date;
-  favorite: boolean;
+  favorite?: boolean;
 }
 
 // 右键菜单相关类型
@@ -498,16 +498,181 @@ export interface DashboardWidget {
   id: string;
   type: 'chart' | 'table' | 'metric' | 'text';
   title: string;
-  position: {
+  layout: {
     x: number;
     y: number;
-    width: number;
-    height: number;
+    w: number;
+    h: number;
+    minW?: number;
+    minH?: number;
   };
-  config: WidgetConfig;
+  config: {
+    query: string;
+    database: string;
+    connectionId: string;
+    refreshInterval?: number;
+  };
+  data?: any;
+  lastUpdated?: Date;
+}
+
+export interface Dashboard {
+  id: string;
+  name: string;
+  description?: string;
+  widgets: DashboardWidget[];
+  layout?: any[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 性能监控相关类型
+
+
+export interface SlowQueryInfo {
+  id: string;
   query: string;
   database: string;
-  refreshInterval?: number;
+  executionTime: number;
+  rowsReturned: number;
+  timestamp: Date;
+}
+
+export interface ConnectionHealthMetrics {
+  connectionId: string;
+  status: 'healthy' | 'warning' | 'critical';
+  responseTime: number;
+  uptime: number;
+  errorCount: number;
+  warningCount: number;
+}
+
+export interface SystemResourceMetrics {
+  cpu: {
+    usage: number;
+    cores: number;
+  };
+  memory: {
+    used: number;
+    total: number;
+    percentage: number;
+  };
+  disk: {
+    used: number;
+    total: number;
+    percentage: number;
+  };
+  network: {
+    bytesIn: number;
+    bytesOut: number;
+  };
+}
+
+// 数据库管理相关类型
+export interface RetentionPolicy {
+  name: string;
+  duration: string;
+  shardGroupDuration: string;
+  replicationFactor: number;
+  default: boolean;
+}
+
+export interface RetentionPolicyConfig {
+  name: string;
+  duration: string;
+  shardGroupDuration?: string;
+  replicaN?: number;
+  default?: boolean;
+}
+
+export interface DatabaseStorageInfo {
+  size: number;
+  measurementCount: number;
+  seriesCount: number;
+  compressionRatio: number;
+  oldestPoint: Date;
+  newestPoint: Date;
+}
+
+// 用户体验设置相关类型
+export interface UserPreferences {
+  shortcuts: KeyboardShortcut[];
+  notifications: NotificationSettings;
+  accessibility: AccessibilitySettings;
+  workspace: WorkspaceSettings;
+}
+
+export interface KeyboardShortcut {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  keys: string[];
+  enabled: boolean;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  queryCompletion: boolean;
+  connectionStatus: boolean;
+  systemAlerts: boolean;
+  sound: boolean;
+  desktop: boolean;
+  position: 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft';
+}
+
+export interface AccessibilitySettings {
+  highContrast: boolean;
+  fontSize: 'small' | 'medium' | 'large' | 'extraLarge';
+  reducedMotion: boolean;
+  screenReader: boolean;
+  keyboardNavigation: boolean;
+}
+
+export interface WorkspaceSettings {
+  layout: 'default' | 'compact' | 'wide';
+  openTabs: boolean;
+  pinnedQueries: boolean;
+  recentFiles: boolean;
+}
+
+// 扩展和集成相关类型
+export interface Plugin {
+  id: string;
+  name: string;
+  version: string;
+  author: string;
+  description: string;
+  enabled: boolean;
+  config: Record<string, any>;
+}
+
+export interface APIIntegration {
+  id: string;
+  name: string;
+  type: 'rest' | 'graphql' | 'webhook';
+  endpoint: string;
+  enabled: boolean;
+  config: Record<string, any>;
+}
+
+
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  trigger: {
+    type: 'schedule' | 'event' | 'condition';
+    config: Record<string, any>;
+  };
+  actions: {
+    type: 'query' | 'notification' | 'webhook' | 'export';
+    config: Record<string, any>;
+  }[];
+  executionCount: number;
+  lastExecuted?: Date;
 }
 
 export interface WidgetConfig {

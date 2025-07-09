@@ -41,7 +41,7 @@ const { Title } = Typography;
 
 const Connections: React.FC = () => {
   const {
-    connections: storeConnections,
+    connections,
     connectionStatuses,
     activeConnectionId,
     addConnection,
@@ -52,7 +52,7 @@ const Connections: React.FC = () => {
   } = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
-  const [connections, setConnections] = useState<ConnectionListItem[]>([]);
+  const [connectionList, setConnectionList] = useState<ConnectionListItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
   const [form] = Form.useForm();
@@ -61,13 +61,13 @@ const Connections: React.FC = () => {
   const loadConnections = async () => {
     setLoading(true);
     try {
-      const connectionList = await invoke<ConnectionConfig[]>('get_connections');
+      const connectionList = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
       const connectionsWithStatus: ConnectionListItem[] = [];
 
       // 获取每个连接的状态
       for (const conn of connectionList) {
         try {
-          const status = await invoke<ConnectionStatus>('get_connection_status', {
+          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', {
             connectionId: conn.id
           });
           connectionsWithStatus.push({ ...conn, status });
@@ -83,7 +83,7 @@ const Connections: React.FC = () => {
         }
       }
 
-      setConnections(connectionsWithStatus);
+      setConnectionList(connectionsWithStatus);
     } catch (error) {
       showMessage.error(`加载连接列表失败: ${error}`);
     } finally {
@@ -173,7 +173,7 @@ const Connections: React.FC = () => {
     const hide = showMessage.loading('正在测试连接...', 0);
 
     try {
-      const result = await safeTauriInvoke('test_connection', {
+      await safeTauriInvoke('test_connection', {
         connectionId: connection.id
       });
       hide();
@@ -372,7 +372,7 @@ const Connections: React.FC = () => {
         <Spin spinning={loading}>
           <Table
             columns={columns}
-            dataSource={connections}
+            dataSource={connectionList}
             rowKey="id"
             pagination={{
               pageSize: 10,

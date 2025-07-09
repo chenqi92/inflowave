@@ -26,7 +26,7 @@ interface ExportOptions {
   filename?: string;
 }
 
-const { Title, Text, Paragraph } = Typography;
+
 const { Option } = Select;
 const { TextArea } = Input;
 

@@ -30,7 +30,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 
-const { Title, Text } = Typography;
+
 const { Option } = Select;
 
 const UserPreferencesComponent: React.FC = () => {
@@ -296,7 +296,7 @@ const UserPreferencesComponent: React.FC = () => {
 
         {/* 键盘快捷键 */}
         <Card
-          title={<><KeyboardOutlined /> 键盘快捷键</>}
+          title={<><ControlOutlined /> 键盘快捷键</>}
           extra={
             <Space>
               <Button onClick={loadDefaultShortcuts}>

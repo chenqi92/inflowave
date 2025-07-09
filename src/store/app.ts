@@ -36,7 +36,7 @@ const defaultConfig: AppConfig = {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // 初始状态
       config: defaultConfig,
       sidebarCollapsed: false,

@@ -321,10 +321,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   const previewDataSource = importData?.preview.map((row, index) => ({
     key: index,
-    ...row.reduce((acc, cell, cellIndex) => {
+    ...row.reduce((acc: Record<string, any>, cell: any, cellIndex: number) => {
       acc[cellIndex] = cell;
       return acc;
-    }, {} as any),
+    }, {} as Record<string, any>),
   })) || [];
 
   return (
