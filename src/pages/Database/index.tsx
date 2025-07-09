@@ -35,6 +35,8 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ContextMenu from '@/components/common/ContextMenu';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
+import DatabaseContextMenu from '@/components/database/DatabaseContextMenu';
+import TableContextMenu from '@/components/database/TableContextMenu';
 import type { RetentionPolicy } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -308,10 +310,23 @@ const Database: React.FC = () => {
           >
             {databases.map(db => (
               <Option key={db} value={db}>
-                <Space>
-                  <DatabaseOutlined />
-                  {db}
-                </Space>
+                <DatabaseContextMenu
+                  databaseName={db}
+                  onAction={(action, dbName) => {
+                    console.log('数据库操作:', action, dbName);
+                    // 根据操作类型执行相应的处理
+                    if (action === 'refresh_database') {
+                      loadDatabaseDetails(dbName);
+                    } else if (action === 'drop_database') {
+                      loadDatabases(); // 重新加载数据库列表
+                    }
+                  }}
+                >
+                  <Space>
+                    <DatabaseOutlined />
+                    {db}
+                  </Space>
+                </DatabaseContextMenu>
               </Option>
             ))}
           </Select>
@@ -403,10 +418,30 @@ const Database: React.FC = () => {
                   dataIndex="name"
                   key="name"
                   render={(name: string) => (
-                    <Space>
-                      <BarChartOutlined />
-                      <Text strong>{name}</Text>
-                    </Space>
+                    <TableContextMenu
+                      tableName={name}
+                      databaseName={selectedDatabase}
+                      onAction={(action, tableName) => {
+                        console.log('表操作:', action, tableName);
+                        // 根据操作类型执行相应的处理
+                        if (action === 'view_data') {
+                          // 跳转到查询页面并执行查看数据的查询
+                          navigate('/query', {
+                            state: {
+                              query: `SELECT * FROM "${tableName}" LIMIT 100`,
+                              database: selectedDatabase
+                            }
+                          });
+                        } else if (action === 'refresh_table') {
+                          loadMeasurements(selectedDatabase);
+                        }
+                      }}
+                    >
+                      <Space>
+                        <BarChartOutlined />
+                        <Text strong>{name}</Text>
+                      </Space>
+                    </TableContextMenu>
                   )}
                 />
                 <Table.Column

@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listen } from '@tauri-apps/api/event';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
+import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
+import AboutDialog from '@/components/common/AboutDialog';
 
 interface NativeMenuHandlerProps {
   onToggleSidebar?: () => void;
@@ -17,6 +19,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 }) => {
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
+  const [shortcutsVisible, setShortcutsVisible] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
     const unlisten = listen('menu-action', (event) => {
@@ -201,8 +205,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       // 工具菜单
       case 'keyboard_shortcuts':
-        // TODO: 实现键盘快捷键帮助
-        showMessage.info('键盘快捷键帮助开发中...');
+        setShortcutsVisible(true);
         break;
 
       // 帮助菜单
@@ -217,8 +220,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'shortcuts_help':
-        // TODO: 显示快捷键帮助
-        showMessage.info('快捷键帮助开发中...');
+        setShortcutsVisible(true);
         break;
 
       case 'check_updates':
@@ -232,8 +234,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'about':
-        // TODO: 显示关于对话框
-        showMessage.info('关于 InfloWave 对话框开发中...');
+        setAboutVisible(true);
         break;
 
       default:
@@ -242,7 +243,18 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     }
   };
 
-  return null; // 这是一个逻辑组件，不渲染任何内容
+  return (
+    <>
+      <KeyboardShortcuts
+        visible={shortcutsVisible}
+        onClose={() => setShortcutsVisible(false)}
+      />
+      <AboutDialog
+        visible={aboutVisible}
+        onClose={() => setAboutVisible(false)}
+      />
+    </>
+  );
 };
 
 export default NativeMenuHandler;

@@ -240,14 +240,23 @@ async fn main() {
         .setup(|app| {
             info!("Application setup started");
 
-            // TODO: 暂时禁用原生菜单，先测试工具栏功能
-            // let menu = create_native_menu(app.handle())?;
-            // app.set_menu(menu)?;
+            // 创建并设置原生菜单
+            match create_native_menu(app.handle()) {
+                Ok(menu) => {
+                    if let Err(e) = app.set_menu(menu) {
+                        eprintln!("设置菜单失败: {}", e);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("创建菜单失败: {}", e);
+                }
+            }
 
-            // let app_handle = app.handle().clone();
-            // app.on_menu_event(move |app, event| {
-            //     handle_menu_event(&app_handle, event);
-            // });
+            // 设置菜单事件处理器
+            let app_handle = app.handle().clone();
+            app.on_menu_event(move |_app, event| {
+                handle_menu_event(&app_handle, event);
+            });
 
             // Initialize encryption service
             let encryption_service = create_encryption_service()

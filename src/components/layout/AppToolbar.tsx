@@ -107,43 +107,74 @@ const AppToolbar: React.FC = () => {
     navigate(path);
   };
 
+  // 处理文件操作
+  const handleFileOperation = async (operation: string) => {
+    try {
+      switch (operation) {
+        case 'open':
+          // TODO: 实现打开文件功能
+          console.log('打开文件');
+          break;
+        case 'save':
+          // TODO: 实现保存功能
+          console.log('保存');
+          break;
+        case 'import':
+          // TODO: 实现导入数据功能
+          console.log('导入数据');
+          break;
+        case 'export':
+          // TODO: 实现导出数据功能
+          console.log('导出数据');
+          break;
+        case 'refresh':
+          // TODO: 实现刷新功能
+          console.log('刷新结构');
+          break;
+      }
+    } catch (error) {
+      console.error('文件操作失败:', error);
+    }
+  };
+
   // 工具栏按钮配置
   const toolbarButtons = [
+    // 文件操作组
     {
       key: 'new-query',
       icon: <PlusOutlined />,
       tooltip: '新建查询 (Ctrl+N)',
       onClick: () => handleNavigate('/query'),
       disabled: !activeConnectionId,
+      text: '新建',
     },
     {
       key: 'open-file',
       icon: <FolderOpenOutlined />,
       tooltip: '打开文件 (Ctrl+O)',
-      onClick: () => {
-        // TODO: 实现打开文件功能
-        console.log('打开文件');
-      },
+      onClick: () => handleFileOperation('open'),
+      text: '打开',
     },
     {
       key: 'save',
       icon: <SaveOutlined />,
       tooltip: '保存 (Ctrl+S)',
-      onClick: () => {
-        // TODO: 实现保存功能
-        console.log('保存');
-      },
+      onClick: () => handleFileOperation('save'),
+      text: '保存',
     },
     {
       key: 'divider-1',
       type: 'divider',
     },
+
+    // 导航组
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
       tooltip: '仪表板 (Ctrl+1)',
       onClick: () => handleNavigate('/dashboard'),
       active: location.pathname === '/dashboard' || location.pathname === '/',
+      text: '仪表板',
     },
     {
       key: 'connections',
@@ -151,6 +182,7 @@ const AppToolbar: React.FC = () => {
       tooltip: '连接管理 (Ctrl+2)',
       onClick: () => handleNavigate('/connections'),
       active: location.pathname === '/connections',
+      text: '连接',
     },
     {
       key: 'query',
@@ -159,6 +191,7 @@ const AppToolbar: React.FC = () => {
       onClick: () => handleNavigate('/query'),
       disabled: !activeConnectionId,
       active: location.pathname === '/query',
+      text: '查询',
     },
     {
       key: 'database',
@@ -167,18 +200,14 @@ const AppToolbar: React.FC = () => {
       onClick: () => handleNavigate('/database'),
       disabled: !activeConnectionId,
       active: location.pathname === '/database',
+      text: '数据库',
     },
     {
       key: 'divider-2',
       type: 'divider',
     },
-    {
-      key: 'tables',
-      icon: <TableOutlined />,
-      tooltip: '查看所有表',
-      onClick: () => handleNavigate('/database'),
-      disabled: !activeConnectionId,
-    },
+
+    // 功能组
     {
       key: 'visualization',
       icon: <BarChartOutlined />,
@@ -186,6 +215,7 @@ const AppToolbar: React.FC = () => {
       onClick: () => handleNavigate('/visualization'),
       disabled: !activeConnectionId,
       active: location.pathname === '/visualization',
+      text: '可视化',
     },
     {
       key: 'performance',
@@ -194,40 +224,37 @@ const AppToolbar: React.FC = () => {
       onClick: () => handleNavigate('/performance'),
       disabled: !activeConnectionId,
       active: location.pathname === '/performance',
+      text: '性能',
     },
     {
       key: 'divider-3',
       type: 'divider',
     },
+
+    // 数据操作组
     {
       key: 'import',
       icon: <ImportOutlined />,
       tooltip: '导入数据',
-      onClick: () => {
-        // TODO: 实现导入数据功能
-        console.log('导入数据');
-      },
+      onClick: () => handleFileOperation('import'),
       disabled: !activeConnectionId,
+      text: '导入',
     },
     {
       key: 'export',
       icon: <ExportOutlined />,
       tooltip: '导出数据',
-      onClick: () => {
-        // TODO: 实现导出数据功能
-        console.log('导出数据');
-      },
+      onClick: () => handleFileOperation('export'),
       disabled: !activeConnectionId,
+      text: '导出',
     },
     {
       key: 'refresh',
       icon: <ReloadOutlined />,
       tooltip: '刷新结构 (F5)',
-      onClick: () => {
-        // TODO: 实现刷新功能
-        console.log('刷新结构');
-      },
+      onClick: () => handleFileOperation('refresh'),
       disabled: !activeConnectionId,
+      text: '刷新',
     },
   ];
 
@@ -244,9 +271,11 @@ const AppToolbar: React.FC = () => {
           icon={button.icon}
           onClick={button.onClick}
           disabled={button.disabled}
-          className="toolbar-button"
+          className={`toolbar-button ${button.text ? 'toolbar-button-with-text' : ''}`}
           size="small"
-        />
+        >
+          {button.text && <span className="toolbar-button-text">{button.text}</span>}
+        </Button>
       </Tooltip>
     );
   };

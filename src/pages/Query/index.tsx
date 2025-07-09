@@ -32,6 +32,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { registerInfluxQLLanguage, createInfluxQLCompletionProvider } from '@/utils/influxql-language';
 import ExportDialog from '@/components/common/ExportDialog';
+import QueryResultContextMenu from '@/components/query/QueryResultContextMenu';
 import type { QueryResult, QueryRequest } from '@/types';
 
 const { Title, Text } = Typography;
@@ -306,6 +307,29 @@ const Query: React.FC = () => {
       dataIndex: col,
       key: col,
       width: index === 0 ? 200 : 120, // 时间列宽一些
+      render: (text: any, record: any) => (
+        <QueryResultContextMenu
+          selectedData={text}
+          columnName={col}
+          rowData={record}
+          onAction={(action, data) => {
+            console.log('查询结果操作:', action, data);
+            // 处理上下文菜单操作
+            if (action === 'filter_by_value') {
+              const newQuery = `${query} WHERE "${col}" = '${text}'`;
+              setQuery(newQuery);
+            } else if (action === 'sort_asc') {
+              const newQuery = `${query} ORDER BY "${col}" ASC`;
+              setQuery(newQuery);
+            } else if (action === 'sort_desc') {
+              const newQuery = `${query} ORDER BY "${col}" DESC`;
+              setQuery(newQuery);
+            }
+          }}
+        >
+          <span style={{ cursor: 'pointer' }}>{text}</span>
+        </QueryResultContextMenu>
+      ),
     }));
 
     const dataSource = series.values.map((row: any[], index: number) => {

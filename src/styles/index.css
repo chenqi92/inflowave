@@ -120,12 +120,24 @@ pre,
 
 .toolbar-button {
   height: 32px !important;
-  width: 32px !important;
+  min-width: 32px !important;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s;
+  padding: 0 8px !important;
+}
+
+.toolbar-button-with-text {
+  width: auto !important;
+  min-width: 60px !important;
+  gap: 4px;
+}
+
+.toolbar-button-text {
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .toolbar-button:hover {
