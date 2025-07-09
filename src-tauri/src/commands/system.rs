@@ -23,38 +23,7 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
 
 
 
-/// 获取性能指标
-#[tauri::command]
-pub async fn get_performance_metrics(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
-) -> Result<serde_json::Value, String> {
-    debug!("处理获取性能指标命令: {}", connection_id);
-    
-    let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
-        .map_err(|e| {
-            error!("获取连接失败: {}", e);
-            format!("获取连接失败: {}", e)
-        })?;
-    
-    // 执行 SHOW STATS 查询获取性能指标
-    let result = client.execute_query("SHOW STATS").await
-        .map_err(|e| {
-            error!("获取性能指标失败: {}", e);
-            format!("获取性能指标失败: {}", e)
-        })?;
-    
-    // 将结果转换为 JSON
-    let metrics = serde_json::json!({
-        "query_execution_time": result.execution_time,
-        "row_count": result.row_count,
-        "columns": result.columns,
-        "timestamp": result.timestamp
-    });
-    
-    Ok(metrics)
-}
+
 
 /// 获取应用运行时间
 fn get_uptime() -> String {

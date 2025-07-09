@@ -56,7 +56,7 @@ pub struct SecuritySettings {
     pub require_confirmation: bool,
 }
 
-type SettingsStorage = Mutex<AppSettings>;
+pub type SettingsStorage = Mutex<AppSettings>;
 
 impl Default for AppSettings {
     fn default() -> Self {

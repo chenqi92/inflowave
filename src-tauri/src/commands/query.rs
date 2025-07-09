@@ -68,64 +68,7 @@ pub async fn validate_query(
     Ok(result)
 }
 
-/// 获取查询历史
-#[tauri::command]
-pub async fn get_query_history(
-    _connection_id: Option<String>,
-    _limit: Option<usize>,
-) -> Result<Vec<QueryHistory>, String> {
-    debug!("处理获取查询历史命令");
-    
-    // TODO: 实现查询历史存储和检索
-    // 这里返回空列表作为占位符
-    Ok(vec![])
-}
 
-/// 保存查询
-#[tauri::command]
-pub async fn save_query(
-    query: SavedQuery,
-) -> Result<String, String> {
-    debug!("处理保存查询命令: {}", query.name);
-    
-    // TODO: 实现查询保存功能
-    // 这里返回查询 ID 作为占位符
-    Ok(query.id)
-}
-
-/// 获取保存的查询列表
-#[tauri::command]
-pub async fn get_saved_queries(
-    _tags: Option<Vec<String>>,
-) -> Result<Vec<SavedQuery>, String> {
-    debug!("处理获取保存查询列表命令");
-    
-    // TODO: 实现保存查询的存储和检索
-    // 这里返回空列表作为占位符
-    Ok(vec![])
-}
-
-/// 删除保存的查询
-#[tauri::command]
-pub async fn delete_saved_query(
-    query_id: String,
-) -> Result<(), String> {
-    debug!("处理删除保存查询命令: {}", query_id);
-    
-    // TODO: 实现删除保存查询功能
-    Ok(())
-}
-
-/// 更新保存的查询
-#[tauri::command]
-pub async fn update_saved_query(
-    query: SavedQuery,
-) -> Result<(), String> {
-    debug!("处理更新保存查询命令: {}", query.name);
-    
-    // TODO: 实现更新保存查询功能
-    Ok(())
-}
 
 /// 获取查询建议
 #[tauri::command]

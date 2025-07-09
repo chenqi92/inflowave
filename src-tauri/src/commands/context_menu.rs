@@ -401,23 +401,26 @@ pub async fn get_field_context_menu(
 
 // SQL 生成辅助函数
 fn generate_select_all_sql(request: &SqlGenerationRequest) -> String {
-    let database = request.database.as_ref().unwrap_or(&"".to_string());
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let _database = request.database.as_ref().unwrap_or(&String::new());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let limit = request.limit.unwrap_or(100);
-    
+
     format!("SELECT * FROM \"{}\" LIMIT {}", measurement, limit)
 }
 
 fn generate_select_fields_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let fields = request.fields.as_ref().map(|f| f.join(", ")).unwrap_or("*".to_string());
     let limit = request.limit.unwrap_or(100);
-    
+
     format!("SELECT {} FROM \"{}\" LIMIT {}", fields, measurement, limit)
 }
 
 fn generate_count_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     format!("SELECT COUNT(*) FROM \"{}\"", measurement)
 }
 
@@ -426,12 +429,14 @@ fn generate_show_measurements_sql(_request: &SqlGenerationRequest) -> String {
 }
 
 fn generate_show_tag_keys_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     format!("SHOW TAG KEYS FROM \"{}\"", measurement)
 }
 
 fn generate_show_tag_values_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     if let Some(tags) = &request.tags {
         if !tags.is_empty() {
             return format!("SHOW TAG VALUES FROM \"{}\" WITH KEY = \"{}\"", measurement, tags[0]);
@@ -441,19 +446,22 @@ fn generate_show_tag_values_sql(request: &SqlGenerationRequest) -> String {
 }
 
 fn generate_show_field_keys_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     format!("SHOW FIELD KEYS FROM \"{}\"", measurement)
 }
 
 fn generate_describe_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     format!("SHOW SERIES FROM \"{}\" LIMIT 1", measurement)
 }
 
 fn generate_time_series_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let limit = request.limit.unwrap_or(100);
-    
+
     if let Some(time_range) = &request.time_range {
         format!(
             "SELECT * FROM \"{}\" WHERE time >= '{}' AND time <= '{}' LIMIT {}",
@@ -465,17 +473,18 @@ fn generate_time_series_sql(request: &SqlGenerationRequest) -> String {
 }
 
 fn generate_aggregation_sql(request: &SqlGenerationRequest) -> String {
-    let measurement = request.measurement.as_ref().unwrap_or(&"".to_string());
+    let default_measurement = String::new();
+    let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let fields = request.fields.as_ref().map(|f| f.join(", ")).unwrap_or("COUNT(*)".to_string());
-    
+
     let mut sql = format!("SELECT {} FROM \"{}\"", fields, measurement);
-    
+
     if let Some(group_by) = &request.group_by {
         if !group_by.is_empty() {
             sql.push_str(&format!(" GROUP BY {}", group_by.join(", ")));
         }
     }
-    
+
     sql
 }
 

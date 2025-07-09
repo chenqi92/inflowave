@@ -130,8 +130,8 @@ pub struct StorageRecommendation {
 }
 
 // 性能数据存储
-type PerformanceStorage = Mutex<HashMap<String, Vec<PerformanceMetrics>>>;
-type QueryMetricsStorage = Mutex<Vec<SlowQueryInfo>>;
+pub type PerformanceStorage = Mutex<HashMap<String, Vec<PerformanceMetrics>>>;
+pub type QueryMetricsStorage = Mutex<Vec<SlowQueryInfo>>;
 
 /// 获取性能指标
 #[tauri::command]
@@ -148,7 +148,7 @@ pub async fn get_performance_metrics(
     let query_performance = get_query_performance_metrics(&time_range).await?;
     
     // 获取连接健康状态
-    let connection_health = get_connection_health_metrics(connection_service, connection_id).await?;
+    let connection_health = get_connection_health_metrics(connection_service.clone(), connection_id).await?;
     
     // 获取系统资源指标
     let system_resources = get_system_resource_metrics().await?;
@@ -269,7 +269,7 @@ pub async fn perform_health_check(
         Ok(client) => {
             // 执行简单的健康检查查询
             let health_query = "SHOW DATABASES";
-            match client.execute_query("", health_query).await {
+            match client.execute_query(health_query).await {
                 Ok(_) => {
                     let response_time = start_time.elapsed().as_millis() as u64;
                     Ok(ConnectionHealthMetrics {

@@ -6,8 +6,8 @@ use std::sync::Mutex;
 use uuid::Uuid;
 
 // 简单的内存存储，实际应用中应该使用数据库
-type QueryHistoryStorage = Mutex<Vec<QueryHistoryItem>>;
-type SavedQueryStorage = Mutex<HashMap<String, SavedQueryItem>>;
+pub type QueryHistoryStorage = Mutex<Vec<QueryHistoryItem>>;
+pub type SavedQueryStorage = Mutex<HashMap<String, SavedQueryItem>>;
 
 /// 添加查询历史记录
 #[tauri::command]

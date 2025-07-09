@@ -43,7 +43,7 @@ pub struct DataWriteResult {
     pub duration: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHistoryItem {
     pub id: String,
     pub query: String,
@@ -56,7 +56,7 @@ pub struct QueryHistoryItem {
     pub error: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SavedQueryItem {
     pub id: String,
     pub name: String,

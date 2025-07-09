@@ -17,6 +17,15 @@ use commands::connection::*;
 use commands::database::*;
 use commands::query::*;
 use commands::system::*;
+use commands::data_write::*;
+use commands::query_history::*;
+use commands::settings::*;
+use commands::context_menu::*;
+use commands::data_export::*;
+use commands::dashboard::*;
+use commands::performance::*;
+use commands::user_experience::*;
+use commands::extensions::*;
 
 // Services
 use services::ConnectionService;
@@ -69,11 +78,6 @@ async fn main() {
             // Query operations
             execute_query,
             validate_query,
-            get_query_history,
-            save_query,
-            get_saved_queries,
-            delete_saved_query,
-            update_saved_query,
             get_query_suggestions,
             format_query,
             explain_query,
@@ -81,7 +85,6 @@ async fn main() {
             // System operations
             get_system_info,
             get_database_stats,
-            get_performance_metrics,
             health_check,
             get_connection_pool_stats,
             cleanup_resources,
@@ -101,7 +104,6 @@ async fn main() {
             get_saved_queries,
             update_saved_query,
             delete_saved_query,
-            get_query_statistics,
 
             // Settings operations
             get_app_settings,
@@ -141,7 +143,6 @@ async fn main() {
             duplicate_dashboard,
 
             // Performance monitoring
-            get_performance_metrics,
             record_query_performance,
             get_slow_query_analysis,
             get_storage_analysis_report,

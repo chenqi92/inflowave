@@ -102,10 +102,10 @@ pub struct AutomationAction {
 }
 
 // 存储
-type PluginStorage = Mutex<HashMap<String, Plugin>>;
-type APIIntegrationStorage = Mutex<HashMap<String, APIIntegration>>;
-type WebhookStorage = Mutex<HashMap<String, WebhookConfig>>;
-type AutomationStorage = Mutex<HashMap<String, AutomationRule>>;
+pub type PluginStorage = Mutex<HashMap<String, Plugin>>;
+pub type APIIntegrationStorage = Mutex<HashMap<String, APIIntegration>>;
+pub type WebhookStorage = Mutex<HashMap<String, WebhookConfig>>;
+pub type AutomationStorage = Mutex<HashMap<String, AutomationRule>>;
 
 /// 获取已安装的插件列表
 #[tauri::command]
@@ -280,15 +280,19 @@ pub async fn trigger_webhook(
 ) -> Result<(), String> {
     debug!("触发 Webhook: {} -> {}", webhook_id, event);
     
-    let storage = webhook_storage.lock().map_err(|e| {
-        error!("获取 Webhook 存储锁失败: {}", e);
-        "存储访问失败".to_string()
-    })?;
-    
-    if let Some(webhook) = storage.get(&webhook_id) {
-        if webhook.enabled && webhook.events.contains(&event) {
-            send_webhook(webhook, &event, &payload).await?;
-        }
+    let webhook_to_send = {
+        let storage = webhook_storage.lock().map_err(|e| {
+            error!("获取 Webhook 存储锁失败: {}", e);
+            "存储访问失败".to_string()
+        })?;
+
+        storage.get(&webhook_id)
+            .filter(|webhook| webhook.enabled && webhook.events.contains(&event))
+            .cloned()
+    };
+
+    if let Some(webhook) = webhook_to_send {
+        send_webhook(&webhook, &event, &payload).await?;
     }
     
     Ok(())
@@ -338,27 +342,40 @@ pub async fn execute_automation_rule(
 ) -> Result<serde_json::Value, String> {
     debug!("执行自动化规则: {}", rule_id);
     
-    let mut storage = automation_storage.lock().map_err(|e| {
-        error!("获取自动化存储锁失败: {}", e);
-        "存储访问失败".to_string()
-    })?;
-    
-    if let Some(rule) = storage.get_mut(&rule_id) {
+    let rule_to_execute = {
+        let storage = automation_storage.lock().map_err(|e| {
+            error!("获取自动化存储锁失败: {}", e);
+            "存储访问失败".to_string()
+        })?;
+
+        storage.get(&rule_id).cloned()
+    };
+
+    if let Some(rule) = rule_to_execute {
         if !rule.enabled {
             return Err("自动化规则已禁用".to_string());
         }
-        
+
         // 检查条件
         if !evaluate_conditions(&rule.conditions, &context) {
             return Ok(serde_json::json!({"executed": false, "reason": "条件不满足"}));
         }
-        
+
         // 执行动作
         let results = execute_actions(&rule.actions, &context).await?;
-        
+
         // 更新执行统计
-        rule.last_executed = Some(chrono::Utc::now());
-        rule.execution_count += 1;
+        {
+            let mut storage = automation_storage.lock().map_err(|e| {
+                error!("获取自动化存储锁失败: {}", e);
+                "存储访问失败".to_string()
+            })?;
+
+            if let Some(rule) = storage.get_mut(&rule_id) {
+                rule.last_executed = Some(chrono::Utc::now());
+                rule.execution_count += 1;
+            }
+        }
         
         info!("自动化规则执行完成: {}", rule_id);
         Ok(serde_json::json!({
@@ -516,10 +533,10 @@ async fn send_webhook(
 
 fn evaluate_conditions(
     conditions: &[AutomationCondition],
-    context: &serde_json::Value,
+    _context: &serde_json::Value,
 ) -> bool {
     // 简单的条件评估逻辑
-    for condition in conditions {
+    for _condition in conditions {
         // 这里应该实现更复杂的条件评估
         // 暂时返回 true
     }
@@ -528,7 +545,7 @@ fn evaluate_conditions(
 
 async fn execute_actions(
     actions: &[AutomationAction],
-    context: &serde_json::Value,
+    _context: &serde_json::Value,
 ) -> Result<Vec<serde_json::Value>, String> {
     let mut results = Vec::new();
     

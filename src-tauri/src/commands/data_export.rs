@@ -73,13 +73,13 @@ pub async fn export_query_data(
         })?;
 
     // 执行查询获取数据
-    let query_result = client.execute_query(&request.database, &request.query).await
+    let query_result = client.execute_query(&request.query).await
         .map_err(|e| {
             error!("查询执行失败: {}", e);
             format!("查询执行失败: {}", e)
         })?;
 
-    let row_count = query_result.data.len() as u64;
+    let row_count = query_result.rows.len() as u64;
     let mut errors = Vec::new();
 
     // 根据格式导出数据
@@ -176,11 +176,19 @@ pub async fn estimate_export_size(
         format!("SELECT COUNT(*) FROM \"{}\"", query) // 假设 query 是测量名
     };
 
-    let count_result = client.execute_query(&database, &count_query).await
+    let count_result = client.execute_query(&count_query).await
         .map_err(|e| format!("统计查询失败: {}", e))?;
 
-    let row_count = if let Some(first_row) = count_result.data.first() {
-        if let Some(count_value) = first_row.get("count") {
+    let row_count = if let Some(first_row) = count_result.rows.first() {
+        // Find the index of the count column
+        if let Some(count_index) = count_result.columns.iter().position(|col| col.contains("count")) {
+            if let Some(count_value) = first_row.get(count_index) {
+                count_value.as_f64().unwrap_or(0.0) as u64
+            } else {
+                0
+            }
+        } else if let Some(count_value) = first_row.get(0) {
+            // If no count column found, try first column
             count_value.as_f64().unwrap_or(0.0) as u64
         } else {
             0
@@ -232,10 +240,10 @@ fn export_to_csv(
     }
 
     // 写入数据行
-    for row in &query_result.data {
+    for row in &query_result.rows {
         let mut values = Vec::new();
-        for column in &query_result.columns {
-            let value = row.get(column)
+        for (index, _column) in query_result.columns.iter().enumerate() {
+            let value = row.get(index)
                 .map(|v| format_csv_value(v))
                 .unwrap_or_default();
             values.push(value);
@@ -260,7 +268,7 @@ fn export_to_json(
     file_path: &str,
     _options: &Option<ExportOptions>,
 ) -> Result<u64, String> {
-    let json_data = serde_json::to_string_pretty(&query_result.data)
+    let json_data = serde_json::to_string_pretty(&query_result.rows)
         .map_err(|e| format!("JSON 序列化失败: {}", e))?;
 
     std::fs::write(file_path, json_data)
@@ -273,8 +281,8 @@ fn export_to_json(
 }
 
 fn export_to_excel(
-    query_result: &crate::models::QueryResult,
-    file_path: &str,
+    _query_result: &crate::models::QueryResult,
+    _file_path: &str,
     _options: &Option<ExportOptions>,
 ) -> Result<u64, String> {
     // 这里需要使用 Excel 库，暂时返回错误
@@ -291,10 +299,10 @@ fn export_to_sql(
     let mut writer = BufWriter::new(file);
 
     // 写入 SQL 插入语句
-    for row in &query_result.data {
+    for row in &query_result.rows {
         let mut values = Vec::new();
-        for column in &query_result.columns {
-            let value = row.get(column)
+        for (index, _column) in query_result.columns.iter().enumerate() {
+            let value = row.get(index)
                 .map(|v| format_sql_value(v))
                 .unwrap_or("NULL".to_string());
             values.push(value);

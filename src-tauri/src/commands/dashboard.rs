@@ -140,7 +140,7 @@ pub struct UpdateWidgetRequest {
 }
 
 // 简单的内存存储，实际应用中应该使用数据库
-type DashboardStorage = Mutex<HashMap<String, DashboardConfig>>;
+pub type DashboardStorage = Mutex<HashMap<String, DashboardConfig>>;
 
 /// 创建仪表板
 #[tauri::command]

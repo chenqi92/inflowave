@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tauri::{State, Manager, Window};
+use tauri::{Emitter, State, Manager, Window};
 use log::{debug, error, info};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -69,8 +69,8 @@ pub struct NotificationAction {
 }
 
 // 存储
-type UserPreferencesStorage = Mutex<UserPreferences>;
-type NotificationQueue = Mutex<Vec<NotificationRequest>>;
+pub type UserPreferencesStorage = Mutex<UserPreferences>;
+pub type NotificationQueue = Mutex<Vec<NotificationRequest>>;
 
 /// 获取用户偏好设置
 #[tauri::command]
