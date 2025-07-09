@@ -47,3 +47,34 @@ tauri-plugin-os = "2.0"
 tauri-plugin-notification = "2.0"
 tauri-plugin-global-shortcut = "2.0"
 tauri-plugin-clipboard-manager = "2.0"
+
+# 构建配置优化
+[profile.dev]
+opt-level = 1
+debug = true
+split-debuginfo = "unpacked"
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+rpath = false
+
+[profile.release]
+opt-level = 3
+debug = false
+split-debuginfo = "packed"
+debug-assertions = false
+overflow-checks = false
+lto = "thin"
+panic = 'abort'
+incremental = false
+codegen-units = 1
+rpath = false
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false

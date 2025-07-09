@@ -16,7 +16,6 @@ incremental = true
 rustflags = [
     "-C", "target-cpu=native",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -26,7 +25,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=pentium4",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -36,7 +34,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=generic",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -46,7 +43,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=native",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -56,7 +52,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=apple-a14",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -66,7 +61,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=native",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -76,7 +70,6 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=generic",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -88,7 +81,6 @@ linker = "aarch64-linux-gnu-gcc"
 rustflags = [
     "-C", "target-cpu=pentium4",
     "-C", "opt-level=3",
-    "-C", "lto=thin",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
 ]
@@ -122,8 +114,6 @@ CARGO_INCREMENTAL = "1"
 [http]
 # 超时设置（秒）
 timeout = 30
-# 重试次数
-retry = 3
 # 用户代理
 user-agent = "cargo"
 
@@ -132,35 +122,8 @@ user-agent = "cargo"
 # Git 获取并行数
 git-fetch-with-cli = true
 
-# 构建缓存配置
-[profile.dev]
-# 开发模式优化
-opt-level = 0
-debug = true
-debug-assertions = true
-overflow-checks = true
-lto = false
-panic = 'unwind'
-incremental = true
-codegen-units = 256
-rpath = false
-
-[profile.release]
-# 发布模式优化
-opt-level = 3
-debug = false
-debug-assertions = false
-overflow-checks = false
-lto = "thin"
-panic = 'abort'
-incremental = false
-codegen-units = 1
-rpath = false
-
-[profile.release-with-debug]
-# 带调试信息的发布模式
-inherits = "release"
-debug = true
+# 构建优化配置
+# 注意：profile 配置已移至 Cargo.toml 中，避免重复定义
 
 # 特定依赖优化
 [profile.dev.package."*"]
