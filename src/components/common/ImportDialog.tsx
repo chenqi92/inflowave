@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   Form,
@@ -15,6 +15,7 @@ import {
   Table,
   message,
   Steps,
+  Typography,
 } from 'antd';
 import {
   UploadOutlined,
@@ -26,6 +27,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Option } = Select;
 const { Step } = Steps;
+const { Title, Paragraph } = Typography;
 
 interface ImportDialogProps {
   visible: boolean;
@@ -37,8 +39,8 @@ interface ImportDialogProps {
 
 interface ImportData {
   headers: string[];
-  rows: any[][];
-  preview: any[];
+  rows: (string | number)[][];
+  preview: (string | number)[];
 }
 
 interface FieldMapping {
@@ -64,16 +66,16 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   const [measurements, setMeasurements] = useState<string[]>([]);
 
   // 重置状态
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setCurrentStep(0);
     setFileList([]);
     setImportData(null);
     setFieldMappings([]);
     form.resetFields();
-  };
+  }, [form]);
 
   // 加载测量列表
-  const loadMeasurements = async () => {
+  const loadMeasurements = useCallback(async () => {
     if (!connectionId || !database) return;
 
     try {
@@ -85,7 +87,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     } catch (error) {
       console.error('加载测量列表失败:', error);
     }
-  };
+  }, [connectionId, database]);
 
   useEffect(() => {
     if (visible) {
@@ -93,7 +95,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     } else {
       resetState();
     }
-  }, [visible, connectionId, database]);
+  }, [visible, connectionId, database, loadMeasurements, resetState]);
 
   // 文件上传配置
   const uploadProps: UploadProps = {
@@ -183,7 +185,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   };
 
   // 推断数据类型
-  const inferDataType = (rows: any[][], columnIndex: number): 'string' | 'number' | 'boolean' | 'timestamp' => {
+  const inferDataType = (rows: (string | number)[][], columnIndex: number): 'string' | 'number' | 'boolean' | 'timestamp' => {
     const samples = rows.slice(0, 10).map(row => row[columnIndex]);
     
     // 检查是否为时间戳
@@ -205,7 +207,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   };
 
   // 更新字段映射
-  const updateFieldMapping = (index: number, field: keyof FieldMapping, value: any) => {
+  const updateFieldMapping = (index: number, field: keyof FieldMapping, value: string) => {
     const newMappings = [...fieldMappings];
     newMappings[index] = { ...newMappings[index], [field]: value };
     setFieldMappings(newMappings);
@@ -314,10 +316,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   const previewDataSource = importData?.preview.map((row, index) => ({
     key: index,
-    ...row.reduce((acc: Record<string, any>, cell: any, cellIndex: number) => {
+    ...row.reduce((acc: Record<string, string | number>, cell: string | number, cellIndex: number) => {
       acc[cellIndex] = cell;
       return acc;
-    }, {} as Record<string, any>),
+    }, {} as Record<string, string | number>),
   })) || [];
 
   return (
