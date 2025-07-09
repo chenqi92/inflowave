@@ -5,7 +5,7 @@ import {
   BarChartOutlined,
   AreaChartOutlined,
   PieChartOutlined,
-  ScatterChartOutlined,
+  DotChartOutlined,
   SettingOutlined,
   FullscreenOutlined,
   DownloadOutlined,
@@ -367,7 +367,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                     <Space><PieChartOutlined />饼图</Space>
                   </Select.Option>
                   <Select.Option value="scatter">
-                    <Space><ScatterChartOutlined />散点图</Space>
+                    <Space><DotChartOutlined />散点图</Space>
                   </Select.Option>
                 </Select>
               </div>
