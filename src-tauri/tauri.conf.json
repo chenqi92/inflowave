@@ -44,9 +44,17 @@
       "app"
     ],
     "icon": [
+      "icons/windows/16x16.ico",
       "icons/windows/32x32.ico",
+      "icons/windows/48x48.ico",
+      "icons/windows/64x64.ico",
       "icons/windows/128x128.ico",
-      "icons/mac/512x512.icns"
+      "icons/windows/256x256.ico",
+      "icons/mac/32x32.icns",
+      "icons/mac/64x64.icns",
+      "icons/mac/256x256.icns",
+      "icons/mac/512x512.icns",
+      "icons/mac/1024x1024.icns"
     ],
     "publisher": "Kkape Team",
     "copyright": "Copyright © 2024 InfloWave",

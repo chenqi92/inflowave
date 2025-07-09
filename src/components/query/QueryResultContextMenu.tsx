@@ -9,7 +9,6 @@ import {
   SortDescendingOutlined,
   BarChartOutlined,
   EditOutlined,
-  DeleteOutlined,
   EyeOutlined,
   FileTextOutlined,
   TableOutlined,
