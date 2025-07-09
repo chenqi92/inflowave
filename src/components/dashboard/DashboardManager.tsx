@@ -23,7 +23,6 @@ import {
   DeleteOutlined,
   CopyOutlined,
   BarChartOutlined,
-  SettingOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
 import { safeTauriInvoke } from '@/utils/tauri';

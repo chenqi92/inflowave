@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Space, Typography, Divider, Breadcrumb, Button, Tooltip } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Breadcrumb, Button, Divider, Space, Tooltip, Typography } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  DatabaseOutlined,
-  WifiOutlined,
   ClockCircleOutlined,
+  GlobalOutlined,
   HddOutlined,
   HomeOutlined,
   RightOutlined,
-  GlobalOutlined,
   ThunderboltOutlined,
+  WifiOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useConnectionStore } from '@/store/connection';
@@ -20,7 +19,8 @@ const AppStatusBar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(dayjs());
-  const { activeConnectionId, connectionStatuses, connections } = useConnectionStore();
+  const { activeConnectionId, connectionStatuses, connections } =
+    useConnectionStore();
 
   // 更新时间
   useEffect(() => {
@@ -32,11 +32,11 @@ const AppStatusBar: React.FC = () => {
   }, []);
 
   // 获取当前连接信息
-  const currentConnection = activeConnectionId 
+  const currentConnection = activeConnectionId
     ? connections.find(conn => conn.id === activeConnectionId)
     : null;
-    
-  const currentStatus = activeConnectionId 
+
+  const currentStatus = activeConnectionId
     ? connectionStatuses[activeConnectionId]
     : null;
 
@@ -65,9 +65,9 @@ const AppStatusBar: React.FC = () => {
     const items = [
       {
         title: (
-          <Button 
-            type="text" 
-            size="small" 
+          <Button
+            type='text'
+            size='small'
             icon={<HomeOutlined />}
             onClick={() => navigate('/dashboard')}
             style={{ padding: '0 4px', height: '20px' }}
@@ -87,10 +87,10 @@ const AppStatusBar: React.FC = () => {
   };
 
   return (
-    <div className="desktop-status-bar">
-      <div className="flex items-center justify-between h-full px-4">
+    <div className='desktop-status-bar'>
+      <div className='flex items-center justify-between h-full px-4'>
         {/* 左侧 - 面包屑导航 */}
-        <div className="flex items-center space-x-4">
+        <div className='flex items-center space-x-4'>
           <Breadcrumb
             items={generateBreadcrumb()}
             separator={<RightOutlined style={{ fontSize: '10px' }} />}
@@ -98,30 +98,31 @@ const AppStatusBar: React.FC = () => {
         </div>
 
         {/* 中间 - 连接信息 */}
-        <div className="flex items-center space-x-4">
+        <div className='flex items-center space-x-4'>
           {activeConnectionId && currentConnection && currentStatus ? (
-            <Space split={<Divider type="vertical" />}>
-              <Tooltip title={`${currentConnection.host}:${currentConnection.port}`}>
+            <Space split={<Divider type='vertical' />}>
+              <Tooltip
+                title={`${currentConnection.host}:${currentConnection.port}`}
+              >
                 <Space>
-                  <WifiOutlined 
-                    style={{ 
-                      color: currentStatus.status === 'connected' ? '#52c41a' : '#ff4d4f',
-                      fontSize: '12px'
-                    }} 
+                  <WifiOutlined
+                    style={{
+                      color:
+                        currentStatus.status === 'connected'
+                          ? '#52c41a'
+                          : '#ff4d4f',
+                      fontSize: '12px',
+                    }}
                   />
-                  <Text className="text-xs">
-                    {currentConnection.name}
-                  </Text>
+                  <Text className='text-xs'>{currentConnection.name}</Text>
                 </Space>
               </Tooltip>
-              
+
               {currentStatus.latency && (
-                <Tooltip title="连接延迟">
+                <Tooltip title='连接延迟'>
                   <Space>
                     <ThunderboltOutlined style={{ fontSize: '12px' }} />
-                    <Text className="text-xs">
-                      {currentStatus.latency}ms
-                    </Text>
+                    <Text className='text-xs'>{currentStatus.latency}ms</Text>
                   </Space>
                 </Tooltip>
               )}
@@ -129,7 +130,7 @@ const AppStatusBar: React.FC = () => {
           ) : (
             <Space>
               <WifiOutlined style={{ color: '#d9d9d9', fontSize: '12px' }} />
-              <Text className="text-xs" type="secondary">
+              <Text className='text-xs' type='secondary'>
                 无活跃连接
               </Text>
             </Space>
@@ -137,33 +138,29 @@ const AppStatusBar: React.FC = () => {
         </div>
 
         {/* 右侧 - 系统信息 */}
-        <div className="flex items-center space-x-4">
-          <Space split={<Divider type="vertical" />}>
+        <div className='flex items-center space-x-4'>
+          <Space split={<Divider type='vertical' />}>
             {/* 内存使用 */}
-            <Tooltip title="内存使用情况">
+            <Tooltip title='内存使用情况'>
               <Space>
                 <HddOutlined style={{ fontSize: '12px' }} />
-                <Text className="text-xs">
-                  {getMemoryUsage()}MB
-                </Text>
+                <Text className='text-xs'>{getMemoryUsage()}MB</Text>
               </Space>
             </Tooltip>
 
             {/* 应用版本 */}
-            <Tooltip title="应用版本">
+            <Tooltip title='应用版本'>
               <Space>
                 <GlobalOutlined style={{ fontSize: '12px' }} />
-                <Text className="text-xs">
-                  v0.1.0
-                </Text>
+                <Text className='text-xs'>v0.1.0</Text>
               </Space>
             </Tooltip>
 
             {/* 当前时间 */}
-            <Tooltip title="当前时间">
+            <Tooltip title='当前时间'>
               <Space>
                 <ClockCircleOutlined style={{ fontSize: '12px' }} />
-                <Text className="text-xs">
+                <Text className='text-xs'>
                   {currentTime.format('HH:mm:ss')}
                 </Text>
               </Space>

@@ -6,7 +6,6 @@ import {
   Select,
   Button,
   Upload,
-  Progress,
   Alert,
   Space,
   Typography,
@@ -16,7 +15,6 @@ import {
   Col,
 } from 'antd';
 import {
-  UploadOutlined,
   CheckOutlined,
   EyeOutlined,
   InboxOutlined,

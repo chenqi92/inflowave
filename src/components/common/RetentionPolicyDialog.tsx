@@ -5,7 +5,6 @@ import {
   Input,
   Switch,
   Button,
-  Typography,
   Space,
   Alert,
   Select,
@@ -20,7 +19,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
-const { Title, Text, Paragraph } = Typography;
+
 const { Option } = Select;
 
 interface RetentionPolicyDialogProps {

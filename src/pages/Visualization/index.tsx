@@ -31,7 +31,7 @@ import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, QueryRequest } from '@/types';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
-const { Title, Text } = Typography;
+
 const { Option } = Select;
 
 interface ChartConfig {
@@ -123,7 +123,7 @@ const Visualization: React.FC = () => {
           yAxis: {
             type: 'value',
           },
-          series: valueColumns.map((col, index) => ({
+          series: valueColumns.map((col) => ({
             name: col,
             type: chartConfig.type,
             data: series.values.map(row => {

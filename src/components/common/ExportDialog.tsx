@@ -6,7 +6,6 @@ import {
   Select,
   Switch,
   Button,
-  Typography,
   Space,
   Alert,
   message,
@@ -27,8 +26,7 @@ interface ExportOptions {
 }
 
 
-const { Option } = Select;
-const { TextArea } = Input;
+
 
 interface ExportDialogProps {
   visible: boolean;

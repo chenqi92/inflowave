@@ -38,7 +38,6 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
     if (type === 'pie') {
       // 饼图配置
       const pieData = data.valueColumns.slice(0, 1).map(col => {
-        const total = data.data.reduce((sum: number, item: any) => sum + (Number(item[col]) || 0), 0);
         return data.data.map((item: any, index: number) => ({
           name: item[data.timeColumn || 'index'] || `Item ${index}`,
           value: Number(item[col]) || 0,

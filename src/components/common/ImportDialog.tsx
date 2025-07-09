@@ -6,8 +6,6 @@ import {
   Select,
   Switch,
   Button,
-  Typography,
-  Divider,
   Space,
   Alert,
   Card,
@@ -20,18 +18,13 @@ import {
 } from 'antd';
 import {
   UploadOutlined,
-  FileTextOutlined,
-  TableOutlined,
   DatabaseOutlined,
   CheckCircleOutlined,
-  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import { safeTauriInvoke } from '@/utils/tauri';
 
-const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
 const { Step } = Steps;
 
 interface ImportDialogProps {
@@ -266,7 +259,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       title: '目标字段',
       dataIndex: 'targetField',
       key: 'targetField',
-      render: (value: string, record: FieldMapping, index: number) => (
+      render: (value: string, _: FieldMapping, index: number) => (
         <Input
           value={value}
           onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
@@ -278,7 +271,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       title: '字段类型',
       dataIndex: 'fieldType',
       key: 'fieldType',
-      render: (value: string, record: FieldMapping, index: number) => (
+      render: (value: string, _: FieldMapping, index: number) => (
         <Select
           value={value}
           onChange={(val) => updateFieldMapping(index, 'fieldType', val)}

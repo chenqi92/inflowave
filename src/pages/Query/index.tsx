@@ -218,7 +218,7 @@ const Query: React.FC = () => {
   const databaseStructure = buildDatabaseStructure();
 
   // 处理树节点点击
-  const handleTreeNodeClick = (selectedKeys: React.Key[], info: any) => {
+  const handleTreeNodeClick = (selectedKeys: React.Key[], _: any) => {
     const key = selectedKeys[0] as string;
     const parts = key.split('.');
 

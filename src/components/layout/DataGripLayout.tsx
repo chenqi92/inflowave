@@ -1,21 +1,33 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Layout, Card, Tree, Typography, Space, Button, Tag, Tooltip, message, Row, Col, Tabs } from 'antd';
+﻿import React, { useEffect, useState } from 'react';
 import {
-  DatabaseOutlined,
-  TableOutlined,
-  FieldTimeOutlined,
-  TagsOutlined,
+  Button,
+  Card,
+  Col,
+  Layout,
+  message,
+  Row,
+  Space,
+  Tabs,
+  Tag,
+  Tooltip,
+  Tree,
+  Typography,
+} from 'antd';
+import {
   ApiOutlined,
-  ReloadOutlined,
-  PlayCircleOutlined,
-  StopOutlined,
-  SettingOutlined,
-  HistoryOutlined,
   BookOutlined,
   DashboardOutlined,
-  MonitorOutlined,
+  DatabaseOutlined,
+  FieldTimeOutlined,
+  HistoryOutlined,
   ImportOutlined,
   LineChartOutlined,
+  PlayCircleOutlined,
+  ReloadOutlined,
+  SettingOutlined,
+  StopOutlined,
+  TableOutlined,
+  TagsOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -35,7 +47,6 @@ import type { QueryResult } from '@/types';
 // Fix for invoke function
 const invoke = safeTauriInvoke;
 
-
 const { Text } = Typography;
 
 interface DatabaseStructure {
@@ -46,7 +57,12 @@ interface DatabaseStructure {
 }
 
 const DataGripLayout: React.FC = () => {
-  const { connections, activeConnectionId, connectionStatuses, setActiveConnection } = useConnectionStore();
+  const {
+    connections,
+    activeConnectionId,
+    connectionStatuses,
+    setActiveConnection,
+  } = useConnectionStore();
   const [structure, setStructure] = useState<DatabaseStructure>({
     databases: [],
     measurements: {},
@@ -69,8 +85,10 @@ const DataGripLayout: React.FC = () => {
     setLoading(true);
     try {
       // 获取数据库列表
-      const databases = await invoke<string[]>('get_databases', { connectionId });
-      
+      const databases = await invoke<string[]>('get_databases', {
+        connectionId,
+      });
+
       const newStructure: DatabaseStructure = {
         databases,
         measurements: {},
@@ -103,11 +121,14 @@ const DataGripLayout: React.FC = () => {
                   measurement,
                 }).catch(() => []),
               ]);
-              
+
               newStructure.fields[`${db}.${measurement}`] = fields;
               newStructure.tags[`${db}.${measurement}`] = tags;
             } catch (error) {
-              console.warn(`Failed to load fields/tags for ${db}.${measurement}:`, error);
+              console.warn(
+                `Failed to load fields/tags for ${db}.${measurement}:`,
+                error
+              );
             }
           }
         } catch (error) {
@@ -139,19 +160,25 @@ const DataGripLayout: React.FC = () => {
 
       const connectionNode: DataNode = {
         title: (
-          <div className="flex items-center justify-between w-full">
+          <div className='flex items-center justify-between w-full'>
             <Space>
-              <ApiOutlined style={{ color: isConnected ? '#52c41a' : '#ff4d4f' }} />
+              <ApiOutlined
+                style={{ color: isConnected ? '#52c41a' : '#ff4d4f' }}
+              />
               <span className={isActive ? 'font-bold' : ''}>{conn.name}</span>
-              {isActive && <Tag color="blue" size="small">活跃</Tag>}
+              {isActive && (
+                <Tag color='blue' size='small'>
+                  活跃
+                </Tag>
+              )}
             </Space>
             <Space>
               <Tooltip title={isConnected ? '断开连接' : '连接'}>
                 <Button
-                  type="text"
-                  size="small"
+                  type='text'
+                  size='small'
                   icon={isConnected ? <StopOutlined /> : <PlayCircleOutlined />}
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     handleConnectionToggle(conn.id!);
                   }}
@@ -178,7 +205,9 @@ const DataGripLayout: React.FC = () => {
         <Space>
           <DatabaseOutlined />
           <span>{db}</span>
-          <Text type="secondary">({structure.measurements[db]?.length || 0})</Text>
+          <Text type='secondary'>
+            ({structure.measurements[db]?.length || 0})
+          </Text>
         </Space>
       ),
       key: `db-${db}`,
@@ -205,34 +234,42 @@ const DataGripLayout: React.FC = () => {
             <Space>
               <FieldTimeOutlined />
               <span>Fields</span>
-              <Text type="secondary">({structure.fields[`${database}.${measurement}`]?.length || 0})</Text>
+              <Text type='secondary'>
+                ({structure.fields[`${database}.${measurement}`]?.length || 0})
+              </Text>
             </Space>
           ),
           key: `fields-${database}-${measurement}`,
           icon: <FieldTimeOutlined />,
-          children: (structure.fields[`${database}.${measurement}`] || []).map(field => ({
-            title: field,
-            key: `field-${database}-${measurement}-${field}`,
-            icon: <FieldTimeOutlined />,
-            isLeaf: true,
-          })),
+          children: (structure.fields[`${database}.${measurement}`] || []).map(
+            field => ({
+              title: field,
+              key: `field-${database}-${measurement}-${field}`,
+              icon: <FieldTimeOutlined />,
+              isLeaf: true,
+            })
+          ),
         },
         {
           title: (
             <Space>
               <TagsOutlined />
               <span>Tags</span>
-              <Text type="secondary">({structure.tags[`${database}.${measurement}`]?.length || 0})</Text>
+              <Text type='secondary'>
+                ({structure.tags[`${database}.${measurement}`]?.length || 0})
+              </Text>
             </Space>
           ),
           key: `tags-${database}-${measurement}`,
           icon: <TagsOutlined />,
-          children: (structure.tags[`${database}.${measurement}`] || []).map(tag => ({
-            title: tag,
-            key: `tag-${database}-${measurement}-${tag}`,
-            icon: <TagsOutlined />,
-            isLeaf: true,
-          })),
+          children: (structure.tags[`${database}.${measurement}`] || []).map(
+            tag => ({
+              title: tag,
+              key: `tag-${database}-${measurement}-${tag}`,
+              icon: <TagsOutlined />,
+              isLeaf: true,
+            })
+          ),
         },
       ],
     }));
@@ -261,7 +298,7 @@ const DataGripLayout: React.FC = () => {
   // 处理树节点选择
   const handleTreeSelect = (selectedKeys: React.Key[], info: any) => {
     const key = selectedKeys[0] as string;
-    
+
     if (key?.startsWith('db-')) {
       const database = key.replace('db-', '');
       setSelectedDatabase(database);
@@ -313,7 +350,7 @@ const DataGripLayout: React.FC = () => {
               <Tabs
                 activeKey={leftPanelTab}
                 onChange={setLeftPanelTab}
-                size="small"
+                size='small'
                 items={[
                   {
                     key: 'database',
@@ -348,15 +385,24 @@ const DataGripLayout: React.FC = () => {
             extra={
               leftPanelTab === 'database' && (
                 <Button
-                  type="text"
+                  type='text'
                   icon={<ReloadOutlined />}
-                  size="small"
+                  size='small'
                   loading={loading}
-                  onClick={() => activeConnectionId && loadDatabaseStructure(activeConnectionId)}
+                  onClick={() =>
+                    activeConnectionId &&
+                    loadDatabaseStructure(activeConnectionId)
+                  }
                 />
               )
             }
-            styles={{ body: { padding: 0, height: 'calc(100vh - 57px)', overflow: 'auto' } }}
+            styles={{
+              body: {
+                padding: 0,
+                height: 'calc(100vh - 57px)',
+                overflow: 'auto',
+              },
+            }}
             style={{ height: '100%' }}
           >
             {leftPanelTab === 'database' && (
@@ -448,14 +494,11 @@ const DataGripLayout: React.FC = () => {
                 <Button
                   icon={<ImportOutlined />}
                   onClick={() => setShowImportWizard(true)}
-                  size="small"
+                  size='small'
                 >
                   导入数据
                 </Button>
-                <Button
-                  icon={<SettingOutlined />}
-                  size="small"
-                >
+                <Button icon={<SettingOutlined />} size='small'>
                   设置
                 </Button>
               </Space>
@@ -473,17 +516,12 @@ const DataGripLayout: React.FC = () => {
                   />
                 </Col>
                 <Col span={24} style={{ height: '50%' }}>
-                  <QueryResults
-                    result={queryResult}
-                    loading={queryLoading}
-                  />
+                  <QueryResults result={queryResult} loading={queryLoading} />
                 </Col>
               </Row>
             )}
 
-            {mainContentTab === 'dashboard' && (
-              <DashboardDesigner />
-            )}
+            {mainContentTab === 'dashboard' && <DashboardDesigner />}
 
             {mainContentTab === 'monitor' && (
               <RealTimeMonitor
@@ -493,9 +531,7 @@ const DataGripLayout: React.FC = () => {
             )}
 
             {mainContentTab === 'performance' && (
-              <PerformanceMonitor
-                connectionId={activeConnectionId}
-              />
+              <PerformanceMonitor connectionId={activeConnectionId} />
             )}
 
             {mainContentTab === 'database' && (

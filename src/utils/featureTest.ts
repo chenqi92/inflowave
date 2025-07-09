@@ -91,8 +91,8 @@ export class FeatureTester {
     // 测试数据库结构获取
     await this.runTest(suite, '数据库结构', async () => {
       // 这里需要一个有效的连接ID
-      const result = await safeTauriInvoke('get_database_structure', { 
-        connectionId: 'test-connection' 
+      void await safeTauriInvoke('get_database_structure', {
+        connectionId: 'test-connection'
       });
       return '数据库结构获取功能正常';
     });
@@ -115,7 +115,7 @@ export class FeatureTester {
 
     // 测试查询执行
     await this.runTest(suite, '查询执行', async () => {
-      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+      void await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connectionId: 'test-connection',
           database: 'test-db',
@@ -127,13 +127,13 @@ export class FeatureTester {
 
     // 测试查询历史
     await this.runTest(suite, '查询历史', async () => {
-      const history = await safeTauriInvoke('get_query_history');
+      void await safeTauriInvoke('get_query_history');
       return '查询历史功能正常';
     });
 
     // 测试保存的查询
     await this.runTest(suite, '保存的查询', async () => {
-      const savedQueries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
+      void await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
       return '保存的查询功能正常';
     });
 
@@ -155,7 +155,7 @@ export class FeatureTester {
 
     // 测试仪表板管理
     await this.runTest(suite, '仪表板管理', async () => {
-      const dashboards = await safeTauriInvoke<Dashboard[]>('get_dashboards');
+      void await safeTauriInvoke<Dashboard[]>('get_dashboards');
       return '仪表板管理功能正常';
     });
 
@@ -187,7 +187,7 @@ export class FeatureTester {
     // 测试数据导入
     await this.runTest(suite, '数据导入', async () => {
       // 测试数据预览功能
-      const preview = await safeTauriInvoke('preview_data_conversion', {
+      void await safeTauriInvoke('preview_data_conversion', {
         filePath: 'test.csv',
         config: { format: 'csv', delimiter: ',' },
       });
@@ -206,7 +206,7 @@ export class FeatureTester {
 
     // 测试保留策略管理
     await this.runTest(suite, '保留策略管理', async () => {
-      const policies = await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
+      void await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
         connectionId: 'test-connection',
         database: 'test-db',
       });
@@ -231,7 +231,7 @@ export class FeatureTester {
 
     // 测试性能指标获取
     await this.runTest(suite, '性能指标', async () => {
-      const metrics = await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
+      void await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
         connectionId: 'test-connection',
       });
       return '性能指标获取功能正常';
@@ -239,7 +239,7 @@ export class FeatureTester {
 
     // 测试慢查询分析
     await this.runTest(suite, '慢查询分析', async () => {
-      const slowQueries = await safeTauriInvoke('get_slow_query_analysis', {
+      void await safeTauriInvoke('get_slow_query_analysis', {
         connectionId: 'test-connection',
       });
       return '慢查询分析功能正常';
@@ -247,7 +247,7 @@ export class FeatureTester {
 
     // 测试系统资源监控
     await this.runTest(suite, '系统资源监控', async () => {
-      const resources = await safeTauriInvoke('get_system_resources', {
+      void await safeTauriInvoke('get_system_resources', {
         connectionId: 'test-connection',
       });
       return '系统资源监控功能正常';
@@ -271,7 +271,7 @@ export class FeatureTester {
 
     // 测试用户偏好设置
     await this.runTest(suite, '用户偏好设置', async () => {
-      const preferences = await safeTauriInvoke<UserPreferences>('get_user_preferences');
+      void await safeTauriInvoke<UserPreferences>('get_user_preferences');
       return '用户偏好设置功能正常';
     });
 
@@ -312,19 +312,19 @@ export class FeatureTester {
 
     // 测试插件系统
     await this.runTest(suite, '插件系统', async () => {
-      const plugins = await safeTauriInvoke('get_installed_plugins');
+      void await safeTauriInvoke('get_installed_plugins');
       return '插件系统功能正常';
     });
 
     // 测试API集成
     await this.runTest(suite, 'API集成', async () => {
-      const integrations = await safeTauriInvoke('get_api_integrations');
+      void await safeTauriInvoke('get_api_integrations');
       return 'API集成功能正常';
     });
 
     // 测试自动化规则
     await this.runTest(suite, '自动化规则', async () => {
-      const rules = await safeTauriInvoke('get_automation_rules');
+      void await safeTauriInvoke('get_automation_rules');
       return '自动化规则功能正常';
     });
 

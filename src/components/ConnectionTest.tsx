@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Button, Form, Input, InputNumber, Switch, Card, message, Spin } from 'antd';
+import { Button, Form, Input, InputNumber, Switch, Card, message } from 'antd';
 
 interface ConnectionConfig {
   id: string;

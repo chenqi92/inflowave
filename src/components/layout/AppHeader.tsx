@@ -1,41 +1,46 @@
 import React from 'react';
-import { Layout, Button, Space, Dropdown, Avatar, Typography, Badge } from 'antd';
+import type { MenuProps } from 'antd';
 import {
+  Avatar,
+  Badge,
+  Button,
+  Dropdown,
+  Layout,
+  Space,
+  Typography,
+} from 'antd';
+import {
+  BulbOutlined,
+  DatabaseOutlined,
+  GlobalOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  DatabaseOutlined,
   SettingOutlined,
   UserOutlined,
-  BulbOutlined,
-  GlobalOutlined,
 } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
 import { useAppStore } from '@store/app';
-import { useConnectionStore, connectionUtils } from '@store/connection';
+import { useConnectionStore } from '@store/connection';
 
 const { Header } = Layout;
 const { Text } = Typography;
 
 const AppHeader: React.FC = () => {
-  const { 
-    sidebarCollapsed, 
-    setSidebarCollapsed, 
-    config, 
-    setTheme, 
-    setLanguage 
+  const {
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    config,
+    setTheme,
+    setLanguage,
   } = useAppStore();
-  
-  const { 
-    activeConnectionId, 
-    connectionStatuses 
-  } = useConnectionStore();
+
+  const { activeConnectionId, connectionStatuses } = useConnectionStore();
 
   // 获取当前连接信息
-  const currentConnection = activeConnectionId 
+  const currentConnection = activeConnectionId
     ? useConnectionStore.getState().getConnection(activeConnectionId)
     : null;
-    
-  const currentStatus = activeConnectionId 
+
+  const currentStatus = activeConnectionId
     ? connectionStatuses[activeConnectionId]
     : null;
 
@@ -110,8 +115,8 @@ const AppHeader: React.FC = () => {
     if (!currentConnection || !currentStatus) {
       return (
         <Space>
-          <DatabaseOutlined className="text-gray-400" />
-          <Text type="secondary">未连接</Text>
+          <DatabaseOutlined className='text-gray-400' />
+          <Text type='secondary'>未连接</Text>
         </Space>
       );
     }
@@ -134,11 +139,11 @@ const AppHeader: React.FC = () => {
       <Space>
         <Badge color={statusColor} />
         <DatabaseOutlined style={{ color: statusColor }} />
-        <div className="flex flex-col">
-          <Text strong className="text-sm">
+        <div className='flex flex-col'>
+          <Text strong className='text-sm'>
             {currentConnection.name}
           </Text>
-          <Text type="secondary" className="text-xs">
+          <Text type='secondary' className='text-xs'>
             {statusText}
             {currentStatus.latency && ` (${currentStatus.latency}ms)`}
           </Text>
@@ -148,44 +153,43 @@ const AppHeader: React.FC = () => {
   };
 
   return (
-    <Header className="app-header">
+    <Header className='app-header'>
       {/* 左侧 */}
-      <div className="flex items-center space-x-4">
+      <div className='flex items-center space-x-4'>
         {/* 菜单折叠按钮 */}
         <Button
-          type="text"
-          icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          type='text'
+          icon={
+            sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+          }
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="text-lg"
+          className='text-lg'
         />
-        
+
         {/* 应用标题 */}
-        <div className="flex items-center space-x-2">
-          <DatabaseOutlined className="text-xl text-primary-600" />
-          <Text strong className="text-lg">
+        <div className='flex items-center space-x-2'>
+          <DatabaseOutlined className='text-xl text-primary-600' />
+          <Text strong className='text-lg'>
             InfloWave
           </Text>
         </div>
       </div>
 
       {/* 中间 - 连接状态 */}
-      <div className="flex-1 flex justify-center">
+      <div className='flex-1 flex justify-center'>
         {renderConnectionStatus()}
       </div>
 
       {/* 右侧 */}
-      <div className="flex items-center space-x-2">
+      <div className='flex items-center space-x-2'>
         {/* 用户菜单 */}
         <Dropdown
           menu={{ items: userMenuItems }}
-          placement="bottomRight"
+          placement='bottomRight'
           trigger={['click']}
         >
-          <Button
-            type="text"
-            className="flex items-center space-x-1"
-          >
-            <Avatar size="small" icon={<UserOutlined />} />
+          <Button type='text' className='flex items-center space-x-1'>
+            <Avatar size='small' icon={<UserOutlined />} />
             <Text>用户</Text>
           </Button>
         </Dropdown>
