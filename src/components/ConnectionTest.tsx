@@ -28,7 +28,7 @@ const ConnectionTest: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
 
-  const handleTest = async (values: any) => {
+  const handleTest = async (values: Record<string, string | number>) => {
     setLoading(true);
     setTestResult(null);
 

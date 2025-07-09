@@ -1,3 +1,5 @@
+import React from 'react';
+
 // 连接相关类型
 export interface ConnectionConfig {
   id?: string;
@@ -86,7 +88,7 @@ export interface QueryResult {
 export interface Series {
   name: string;
   columns: string[];
-  values: any[][];
+  values: (string | number | boolean | null)[][];
   tags?: Record<string, string>;
 }
 
@@ -110,7 +112,7 @@ export interface QueryHistory {
 export interface DataPoint {
   measurement: string;
   tags: Record<string, string>;
-  fields: Record<string, any>;
+  fields: Record<string, string | number | boolean>;
   timestamp?: Date;
 }
 
@@ -165,7 +167,7 @@ export interface ImportResult {
 export interface ImportError {
   row: number;
   error: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 // 图表相关类型
@@ -269,7 +271,7 @@ export interface AppConfig {
 export interface ErrorResponse {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -512,7 +514,7 @@ export interface DashboardWidget {
     connectionId: string;
     refreshInterval?: number;
   };
-  data?: any;
+  data?: Record<string, unknown>;
   lastUpdated?: Date;
 }
 
@@ -521,7 +523,7 @@ export interface Dashboard {
   name: string;
   description?: string;
   widgets: DashboardWidget[];
-  layout?: any[];
+  layout?: Record<string, unknown>[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -568,22 +570,7 @@ export interface SystemResourceMetrics {
   };
 }
 
-// 数据库管理相关类型
-export interface RetentionPolicy {
-  name: string;
-  duration: string;
-  shardGroupDuration: string;
-  replicationFactor: number;
-  default: boolean;
-}
-
-export interface RetentionPolicyConfig {
-  name: string;
-  duration: string;
-  shardGroupDuration?: string;
-  replicaN?: number;
-  default?: boolean;
-}
+// 数据库管理相关类型 (types already defined above)
 
 export interface DatabaseStorageInfo {
   size: number;
@@ -644,7 +631,7 @@ export interface Plugin {
   author: string;
   description: string;
   enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 export interface APIIntegration {
@@ -653,7 +640,7 @@ export interface APIIntegration {
   type: 'rest' | 'graphql' | 'webhook';
   endpoint: string;
   enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 
@@ -665,11 +652,11 @@ export interface AutomationRule {
   enabled: boolean;
   trigger: {
     type: 'schedule' | 'event' | 'condition';
-    config: Record<string, any>;
+    config: Record<string, unknown>;
   };
   actions: {
     type: 'query' | 'notification' | 'webhook' | 'export';
-    config: Record<string, any>;
+    config: Record<string, unknown>;
   }[];
   executionCount: number;
   lastExecuted?: Date;
@@ -695,10 +682,10 @@ export interface DashboardVariable {
   name: string;
   type: 'text' | 'select' | 'multi-select' | 'time';
   label: string;
-  defaultValue: any;
+  defaultValue: string | number | boolean;
   options?: {
     label: string;
-    value: any;
+    value: string | number | boolean;
   }[];
   query?: string;
 }
@@ -712,237 +699,15 @@ export interface TimeRange {
   };
 }
 
-// 性能监控相关类型
-export interface PerformanceMetrics {
-  queryPerformance: QueryPerformanceMetrics;
-  connectionHealth: ConnectionHealthMetrics;
-  systemResources: SystemResourceMetrics;
-  slowQueries: SlowQueryInfo[];
-  storageAnalysis: StorageAnalysisInfo;
-}
+// 性能监控相关类型 (types already defined above)
 
-export interface QueryPerformanceMetrics {
-  totalQueries: number;
-  averageExecutionTime: number;
-  slowQueryThreshold: number;
-  slowQueryCount: number;
-  errorRate: number;
-  queriesPerSecond: number;
-  peakQPS: number;
-  timeRange: string;
-}
+// Storage and optimization types (already defined above)
 
-export interface ConnectionHealthMetrics {
-  connectionId: string;
-  status: 'healthy' | 'warning' | 'critical';
-  responseTime: number;
-  uptime: number;
-  lastCheck: Date;
-  errorCount: number;
-  warningCount: number;
-  memoryUsage: number;
-  cpuUsage: number;
-}
+// User experience types (already defined above)
 
-export interface SystemResourceMetrics {
-  memory: {
-    total: number;
-    used: number;
-    available: number;
-    percentage: number;
-  };
-  cpu: {
-    cores: number;
-    usage: number;
-    loadAverage: number[];
-  };
-  disk: {
-    total: number;
-    used: number;
-    available: number;
-    percentage: number;
-  };
-  network: {
-    bytesIn: number;
-    bytesOut: number;
-    packetsIn: number;
-    packetsOut: number;
-  };
-}
+// Extensions and integrations types (already defined above)
 
-export interface SlowQueryInfo {
-  id: string;
-  query: string;
-  database: string;
-  executionTime: number;
-  timestamp: Date;
-  rowsReturned: number;
-  connectionId: string;
-  optimization?: QueryOptimization;
-}
-
-export interface QueryOptimization {
-  suggestions: string[];
-  estimatedImprovement: number;
-  optimizedQuery?: string;
-  indexRecommendations?: string[];
-}
-
-export interface StorageAnalysisInfo {
-  databases: DatabaseStorageInfo[];
-  totalSize: number;
-  compressionRatio: number;
-  retentionPolicyEffectiveness: number;
-  recommendations: StorageRecommendation[];
-}
-
-export interface DatabaseStorageInfo {
-  name: string;
-  size: number;
-  measurementCount: number;
-  seriesCount: number;
-  pointCount: number;
-  oldestPoint: Date;
-  newestPoint: Date;
-  compressionRatio: number;
-}
-
-export interface StorageRecommendation {
-  type: 'retention' | 'compression' | 'sharding' | 'cleanup';
-  description: string;
-  estimatedSavings: number;
-  priority: 'high' | 'medium' | 'low';
-  action: string;
-}
-
-// 用户体验增强相关类型
-export interface KeyboardShortcut {
-  id: string;
-  name: string;
-  description: string;
-  keys: string[];
-  category: string;
-  action: () => void;
-  enabled: boolean;
-}
-
-export interface UserPreferences {
-  shortcuts: KeyboardShortcut[];
-  notifications: NotificationSettings;
-  accessibility: AccessibilitySettings;
-  workspace: WorkspaceSettings;
-}
-
-export interface NotificationSettings {
-  enabled: boolean;
-  queryCompletion: boolean;
-  connectionStatus: boolean;
-  systemAlerts: boolean;
-  exportCompletion: boolean;
-  sound: boolean;
-  desktop: boolean;
-  position: 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft';
-}
-
-export interface AccessibilitySettings {
-  highContrast: boolean;
-  fontSize: 'small' | 'medium' | 'large' | 'extraLarge';
-  reducedMotion: boolean;
-  screenReader: boolean;
-  keyboardNavigation: boolean;
-}
-
-export interface WorkspaceSettings {
-  layout: 'default' | 'compact' | 'wide';
-  panelSizes: Record<string, number>;
-  openTabs: string[];
-  pinnedQueries: string[];
-  recentFiles: string[];
-}
-
-// 扩展和集成相关类型
-export interface Plugin {
-  id: string;
-  name: string;
-  version: string;
-  description: string;
-  author: string;
-  enabled: boolean;
-  config: Record<string, any>;
-  permissions: PluginPermission[];
-  hooks: PluginHook[];
-}
-
-export interface PluginPermission {
-  type: 'database' | 'file' | 'network' | 'system';
-  scope: string;
-  description: string;
-}
-
-export interface PluginHook {
-  event: string;
-  handler: string;
-  priority: number;
-}
-
-export interface APIIntegration {
-  id: string;
-  name: string;
-  type: 'rest' | 'graphql' | 'webhook';
-  endpoint: string;
-  authentication: APIAuthentication;
-  headers: Record<string, string>;
-  enabled: boolean;
-}
-
-export interface APIAuthentication {
-  type: 'none' | 'basic' | 'bearer' | 'apikey' | 'oauth2';
-  credentials: Record<string, string>;
-}
-
-export interface WebhookConfig {
-  id: string;
-  name: string;
-  url: string;
-  events: string[];
-  headers: Record<string, string>;
-  secret?: string;
-  enabled: boolean;
-  retryPolicy: {
-    maxRetries: number;
-    backoffMultiplier: number;
-    maxBackoffTime: number;
-  };
-}
-
-export interface AutomationRule {
-  id: string;
-  name: string;
-  description: string;
-  trigger: AutomationTrigger;
-  conditions: AutomationCondition[];
-  actions: AutomationAction[];
-  enabled: boolean;
-  lastExecuted?: Date;
-  executionCount: number;
-}
-
-export interface AutomationTrigger {
-  type: 'schedule' | 'event' | 'threshold' | 'manual';
-  config: Record<string, any>;
-}
-
-export interface AutomationCondition {
-  type: 'query' | 'metric' | 'time' | 'custom';
-  operator: 'equals' | 'greater' | 'less' | 'contains' | 'regex';
-  value: any;
-  field?: string;
-}
-
-export interface AutomationAction {
-  type: 'query' | 'export' | 'notification' | 'webhook' | 'script';
-  config: Record<string, any>;
-}
+// Automation types (already defined above)
 
 // 应用设置相关类型
 export interface AppSettings {
@@ -985,5 +750,5 @@ export interface AppSettings {
 export interface FilterConfig {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in';
-  value: any;
+  value: string | number | boolean | Date;
 }
