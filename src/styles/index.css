@@ -73,6 +73,83 @@ pre,
   flex-direction: column;
 }
 
+/* 应用工具栏样式 */
+.app-toolbar {
+  height: 48px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toolbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 16px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-button {
+  height: 32px !important;
+  width: 32px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.toolbar-button:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.toolbar-button.ant-btn-primary {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.toolbar-button.ant-btn-primary:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background-color: #e8e8e8;
+  margin: 0 4px;
+}
+
+/* 兼容旧的菜单栏样式 */
 .desktop-menu-bar {
   height: 48px;
   background: #fff;
@@ -330,6 +407,19 @@ pre,
 }
 
 /* 暗色主题样式 */
+.dark .app-toolbar {
+  background: #1f2937;
+  border-bottom-color: #374151;
+}
+
+.dark .toolbar-button:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .toolbar-divider {
+  background-color: #374151;
+}
+
 .dark .desktop-menu-bar {
   background: #1f2937;
   border-bottom-color: #374151;

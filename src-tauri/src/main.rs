@@ -8,7 +8,7 @@ mod services;
 mod utils;
 mod config;
 
-use tauri::Manager;
+use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}};
 use log::info;
 
 
@@ -30,6 +30,66 @@ use commands::extensions::*;
 // Services
 use services::ConnectionService;
 use utils::encryption::create_encryption_service;
+
+// 创建原生菜单 - 简化版本
+fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+    let file_menu = SubmenuBuilder::new(app, "文件")
+        .text("new_query", "新建查询")
+        .text("save", "保存")
+        .separator()
+        .text("quit", "退出")
+        .build()?;
+
+    let view_menu = SubmenuBuilder::new(app, "查看")
+        .text("view_dashboard", "仪表板")
+        .text("view_connections", "连接管理")
+        .text("view_query", "数据查询")
+        .build()?;
+
+    let help_menu = SubmenuBuilder::new(app, "帮助")
+        .text("about", "关于 InfloWave")
+        .build()?;
+
+    MenuBuilder::new(app)
+        .items(&[&file_menu, &view_menu, &help_menu])
+        .build()
+}
+
+// 处理菜单事件 - 简化版本
+fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
+    let window = app.get_webview_window("main").unwrap();
+
+    match event.id().as_ref() {
+        // 文件菜单
+        "new_query" => {
+            let _ = window.emit("menu-action", "new_query");
+        }
+        "save" => {
+            let _ = window.emit("menu-action", "save");
+        }
+        "quit" => {
+            std::process::exit(0);
+        }
+
+        // 查看菜单
+        "view_dashboard" => {
+            let _ = window.emit("menu-action", "navigate:/dashboard");
+        }
+        "view_connections" => {
+            let _ = window.emit("menu-action", "navigate:/connections");
+        }
+        "view_query" => {
+            let _ = window.emit("menu-action", "navigate:/query");
+        }
+
+        // 帮助菜单
+        "about" => {
+            let _ = window.emit("menu-action", "about");
+        }
+
+        _ => {}
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -179,6 +239,15 @@ async fn main() {
         ])
         .setup(|app| {
             info!("Application setup started");
+
+            // TODO: 暂时禁用原生菜单，先测试工具栏功能
+            // let menu = create_native_menu(app.handle())?;
+            // app.set_menu(menu)?;
+
+            // let app_handle = app.handle().clone();
+            // app.on_menu_event(move |app, event| {
+            //     handle_menu_event(&app_handle, event);
+            // });
 
             // Initialize encryption service
             let encryption_service = create_encryption_service()

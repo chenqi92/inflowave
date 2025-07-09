@@ -6,8 +6,9 @@ import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './
 import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import BrowserModeNotice from './components/common/BrowserModeNotice';
-import AppMenuBar from './components/layout/AppMenuBar';
+import AppToolbar from './components/layout/AppToolbar';
 import AppStatusBar from './components/layout/AppStatusBar';
+import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
 // 页面组件
 import ConnectionsPage from './pages/Connections';
@@ -28,6 +29,8 @@ const { Text } = Typography;
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [statusbarVisible, setStatusbarVisible] = useState(true);
 
   // 键盘快捷键处理
   useEffect(() => {
@@ -45,8 +48,15 @@ const MainLayout: React.FC = () => {
 
   return (
     <Layout className="desktop-layout">
-      {/* 顶部菜单栏 */}
-      <AppMenuBar />
+      {/* 原生菜单处理器 */}
+      <NativeMenuHandler
+        onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
+        onToggleStatusbar={() => setStatusbarVisible(!statusbarVisible)}
+        onGlobalSearch={() => setGlobalSearchVisible(true)}
+      />
+
+      {/* 应用工具栏 */}
+      <AppToolbar />
 
       {/* 主内容区 */}
       <Content className="desktop-content">
@@ -70,7 +80,7 @@ const MainLayout: React.FC = () => {
       </Content>
 
       {/* 底部状态栏 */}
-      <AppStatusBar />
+      {statusbarVisible && <AppStatusBar />}
 
       {/* 全局搜索 */}
       <GlobalSearch
