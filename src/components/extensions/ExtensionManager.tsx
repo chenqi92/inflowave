@@ -30,7 +30,7 @@ import {
   ExperimentOutlined, // Using ExperimentOutlined instead of TestOutlined
   PlusOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
 
 const { Title, Text } = Typography;
@@ -58,8 +58,8 @@ const ExtensionManager: React.FC = () => {
   // 加载数据
   const loadPlugins = async () => {
     try {
-      const result = await invoke('get_installed_plugins') as Plugin[];
-      setPlugins(result);
+      const result = await safeTauriInvoke<Plugin[]>('get_installed_plugins');
+      setPlugins(result || []);
     } catch (error) {
       console.error('加载插件失败:', error);
     }
@@ -67,8 +67,8 @@ const ExtensionManager: React.FC = () => {
 
   const loadApiIntegrations = async () => {
     try {
-      const result = await invoke('get_api_integrations') as APIIntegration[];
-      setApiIntegrations(result);
+      const result = await safeTauriInvoke<APIIntegration[]>('get_api_integrations');
+      setApiIntegrations(result || []);
     } catch (error) {
       console.error('加载API集成失败:', error);
     }
@@ -76,8 +76,8 @@ const ExtensionManager: React.FC = () => {
 
   const loadWebhooks = async () => {
     try {
-      const result = await invoke('get_webhooks') as WebhookConfig[];
-      setWebhooks(result);
+      const result = await safeTauriInvoke<WebhookConfig[]>('get_webhooks');
+      setWebhooks(result || []);
     } catch (error) {
       console.error('加载Webhook失败:', error);
     }
@@ -85,8 +85,8 @@ const ExtensionManager: React.FC = () => {
 
   const loadAutomationRules = async () => {
     try {
-      const result = await invoke('get_automation_rules') as AutomationRule[];
-      setAutomationRules(result);
+      const result = await safeTauriInvoke<AutomationRule[]>('get_automation_rules');
+      setAutomationRules(result || []);
     } catch (error) {
       console.error('加载自动化规则失败:', error);
     }
@@ -95,7 +95,7 @@ const ExtensionManager: React.FC = () => {
   // 插件操作
   const togglePlugin = async (pluginId: string, enabled: boolean) => {
     try {
-      await invoke('toggle_plugin', { pluginId, enabled });
+      await safeTauriInvoke('toggle_plugin', { pluginId, enabled });
       message.success(`插件已${enabled ? '启用' : '禁用'}`);
       loadPlugins();
     } catch (error) {
@@ -106,7 +106,7 @@ const ExtensionManager: React.FC = () => {
 
   const uninstallPlugin = async (pluginId: string) => {
     try {
-      await invoke('uninstall_plugin', { pluginId });
+      await safeTauriInvoke('uninstall_plugin', { pluginId });
       message.success('插件已卸载');
       loadPlugins();
     } catch (error) {
@@ -118,7 +118,7 @@ const ExtensionManager: React.FC = () => {
   // API 集成操作
   const createApiIntegration = async (values: any) => {
     try {
-      await invoke('create_api_integration', {
+      await safeTauriInvoke('create_api_integration', {
         integration: {
           id: Date.now().toString(),
           name: values.name,
@@ -145,7 +145,7 @@ const ExtensionManager: React.FC = () => {
   const testApiIntegration = async (integration: APIIntegration) => {
     setLoading(true);
     try {
-      const result = await invoke('test_api_integration', { integration });
+      const result = await safeTauriInvoke('test_api_integration', { integration });
       Modal.info({
         title: 'API 测试结果',
         content: (
@@ -173,7 +173,7 @@ const ExtensionManager: React.FC = () => {
   // Webhook 操作
   const createWebhook = async (values: any) => {
     try {
-      await invoke('create_webhook', {
+      await safeTauriInvoke('create_webhook', {
         webhook: {
           id: Date.now().toString(),
           name: values.name,
@@ -202,7 +202,7 @@ const ExtensionManager: React.FC = () => {
   // 自动化规则操作
   const createAutomationRule = async (values: any) => {
     try {
-      await invoke('create_automation_rule', {
+      await safeTauriInvoke('create_automation_rule', {
         rule: {
           id: Date.now().toString(),
           name: values.name,
@@ -229,7 +229,7 @@ const ExtensionManager: React.FC = () => {
 
   const executeAutomationRule = async (ruleId: string) => {
     try {
-      const result = await invoke('execute_automation_rule', {
+      const result = await safeTauriInvoke('execute_automation_rule', {
         ruleId,
         context: {},
       });

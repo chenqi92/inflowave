@@ -29,7 +29,7 @@ import {
   ImportOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
@@ -135,7 +135,7 @@ const Connections: React.FC = () => {
 
       if (editingConnection) {
         // 更新现有连接
-        await invoke('update_connection', {
+        await safeTauriInvoke('update_connection', {
           connectionId: config.id,
           config
         });
@@ -159,7 +159,7 @@ const Connections: React.FC = () => {
   // 删除连接
   const handleDeleteConnection = async (id: string) => {
     try {
-      await invoke('delete_connection', { connectionId: id });
+      await safeTauriInvoke('delete_connection', { connectionId: id });
       removeConnection(id);
       message.success('连接已删除');
       await loadConnections();
@@ -173,7 +173,7 @@ const Connections: React.FC = () => {
     const hide = message.loading('正在测试连接...', 0);
 
     try {
-      const result = await invoke('test_connection', {
+      const result = await safeTauriInvoke('test_connection', {
         connectionId: connection.id
       });
       hide();
@@ -189,11 +189,11 @@ const Connections: React.FC = () => {
   const handleToggleConnection = async (connection: ConnectionConfig) => {
     try {
       if (activeConnectionId === connection.id) {
-        await invoke('disconnect_from_database', { connectionId: connection.id });
+        await safeTauriInvoke('disconnect_from_database', { connectionId: connection.id });
         setActiveConnection(null);
         message.info('已断开连接');
       } else {
-        await invoke('connect_to_database', { connectionId: connection.id });
+        await safeTauriInvoke('connect_to_database', { connectionId: connection.id });
         setActiveConnection(connection.id!);
         message.success(`已连接到 ${connection.name}`);
       }

@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, QueryRequest } from '@/types';
 
@@ -205,7 +205,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         updatedAt: new Date(),
       };
 
-      await invoke('save_query', { query: savedQuery });
+      await safeTauriInvoke('save_query', { query: savedQuery });
       message.success('查询已保存');
     } catch (error) {
       message.error(`保存查询失败: ${error}`);

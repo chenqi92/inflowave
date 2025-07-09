@@ -123,7 +123,97 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
           usage: 25.5
         }
       } as T;
-      
+
+    // 扩展管理模拟数据
+    case 'get_installed_plugins':
+      return [
+        {
+          id: 'plugin-1',
+          name: 'InfluxDB 数据导出器',
+          version: '1.2.0',
+          description: '支持多种格式的数据导出功能',
+          enabled: true,
+          author: 'InfloWave Team'
+        },
+        {
+          id: 'plugin-2',
+          name: 'Grafana 集成',
+          version: '2.1.0',
+          description: '与 Grafana 仪表板的无缝集成',
+          enabled: false,
+          author: 'Community'
+        }
+      ] as T;
+
+    case 'get_api_integrations':
+      return [
+        {
+          id: 'api-1',
+          name: 'Slack 通知',
+          integration_type: 'webhook',
+          endpoint: 'https://hooks.slack.com/services/...',
+          enabled: true,
+          created_at: '2024-01-01T00:00:00Z'
+        }
+      ] as T;
+
+    case 'get_webhooks':
+      return [
+        {
+          id: 'webhook-1',
+          name: '数据异常告警',
+          url: 'https://api.example.com/webhook',
+          events: ['data_anomaly', 'connection_lost'],
+          enabled: true
+        }
+      ] as T;
+
+    case 'get_automation_rules':
+      return [
+        {
+          id: 'rule-1',
+          name: '自动备份规则',
+          description: '每日凌晨自动备份数据库',
+          enabled: true,
+          trigger: { type: 'schedule', cron: '0 0 * * *' },
+          actions: [{ type: 'backup', config: {} }]
+        }
+      ] as T;
+
+    // 性能监控模拟数据
+    case 'get_performance_metrics':
+      return {
+        cpu_usage: Math.random() * 100,
+        memory_usage: Math.random() * 100,
+        disk_usage: Math.random() * 100,
+        network_io: {
+          bytes_in: Math.floor(Math.random() * 1000000),
+          bytes_out: Math.floor(Math.random() * 1000000)
+        },
+        query_performance: {
+          avg_response_time: Math.random() * 1000,
+          queries_per_second: Math.random() * 100
+        },
+        connection_count: Math.floor(Math.random() * 50),
+        uptime: Math.floor(Math.random() * 86400)
+      } as T;
+
+    case 'get_slow_query_analysis':
+      return [
+        {
+          query: 'SELECT * FROM cpu WHERE time > now() - 1h',
+          duration: 2500,
+          timestamp: '2024-01-01T12:00:00Z',
+          database: 'telegraf'
+        },
+        {
+          query: 'SELECT mean(usage_idle) FROM cpu GROUP BY time(1m)',
+          duration: 1800,
+          timestamp: '2024-01-01T11:30:00Z',
+          database: 'monitoring'
+        }
+      ] as T;
+
     default:
       console.warn(`No mock data available for command: ${command}`);
       return null;

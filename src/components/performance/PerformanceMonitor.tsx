@@ -27,7 +27,7 @@ import {
   SettingOutlined, // Using SettingOutlined instead of OptimizationOutlined
   DatabaseOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';
 
 const { Title, Text } = Typography;
@@ -50,11 +50,19 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   const loadMetrics = async () => {
     setLoading(true);
     try {
-      const result = await invoke('get_performance_metrics', {
+      const result = await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
         connectionId,
         timeRange,
-      }) as PerformanceMetrics;
-      setMetrics(result);
+      });
+      setMetrics(result || {
+        cpu_usage: 0,
+        memory_usage: 0,
+        disk_usage: 0,
+        network_io: { bytes_in: 0, bytes_out: 0 },
+        query_performance: { avg_response_time: 0, queries_per_second: 0 },
+        connection_count: 0,
+        uptime: 0
+      });
     } catch (error) {
       console.error('加载性能指标失败:', error);
     } finally {
@@ -65,10 +73,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   // 加载慢查询分析
   const loadSlowQueries = async () => {
     try {
-      const result = await invoke('get_slow_query_analysis', {
+      const result = await safeTauriInvoke<SlowQueryInfo[]>('get_slow_query_analysis', {
         limit: 20,
-      }) as SlowQueryInfo[];
-      setSlowQueries(result);
+      });
+      setSlowQueries(result || []);
     } catch (error) {
       console.error('加载慢查询失败:', error);
     }
@@ -77,7 +85,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   // 执行健康检查
   const performHealthCheck = async (connId: string) => {
     try {
-      await invoke('perform_health_check', { connectionId: connId });
+      await safeTauriInvoke('perform_health_check', { connectionId: connId });
       loadMetrics();
     } catch (error) {
       console.error('健康检查失败:', error);

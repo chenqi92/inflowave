@@ -20,7 +20,7 @@ import {
   StarOutlined,
   FunctionOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Text } = Typography;
 
