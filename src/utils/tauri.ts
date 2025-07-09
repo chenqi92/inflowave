@@ -16,7 +16,7 @@ export const isBrowserEnvironment = (): boolean => {
 
 // 安全的 Tauri API 调用包装器
 export const safeTauriInvoke = async <T = any>(
-  command: string, 
+  command: string,
   args?: Record<string, any>
 ): Promise<T | null> => {
   if (!isTauriEnvironment()) {
@@ -30,6 +30,28 @@ export const safeTauriInvoke = async <T = any>(
   } catch (error) {
     console.error(`Tauri invoke error for command "${command}":`, error);
     throw error;
+  }
+};
+
+// 安全的 Tauri 事件监听包装器
+export const safeTauriListen = async <T = any>(
+  event: string,
+  handler: (event: { payload: T }) => void
+): Promise<() => void> => {
+  if (!isTauriEnvironment()) {
+    console.warn(`Tauri event listener "${event}" called in browser environment, using mock handler`);
+    // 返回一个空的取消监听函数
+    return () => {};
+  }
+
+  try {
+    const { listen } = await import('@tauri-apps/api/event');
+    const unlisten = await listen<T>(event, handler);
+    return unlisten;
+  } catch (error) {
+    console.error(`Tauri event listener error for event "${event}":`, error);
+    // 返回一个空的取消监听函数
+    return () => {};
   }
 };
 

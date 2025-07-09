@@ -49,11 +49,11 @@ const ConnectionTest: React.FC = () => {
       };
 
       // 调用后端创建连接
-      const connectionId = await invoke<string>('create_connection', { config });
-      
+      const connectionId = await safeTauriInvoke<string>('create_connection', { config });
+
       // 测试连接
-      const result = await invoke<ConnectionTestResult>('test_connection', { 
-        connectionId 
+      const result = await safeTauriInvoke<ConnectionTestResult>('test_connection', {
+        connectionId
       });
       
       setTestResult(result);

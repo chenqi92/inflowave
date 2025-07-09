@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listen } from '@tauri-apps/api/event';
+import { safeTauriListen } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
@@ -23,13 +23,21 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
-    const unlisten = listen('menu-action', (event) => {
-      const action = event.payload as string;
-      handleMenuAction(action);
-    });
+    let unlistenFn: (() => void) | null = null;
+
+    const setupListener = async () => {
+      unlistenFn = await safeTauriListen<string>('menu-action', (event) => {
+        const action = event.payload;
+        handleMenuAction(action);
+      });
+    };
+
+    setupListener();
 
     return () => {
-      unlisten.then(fn => fn());
+      if (unlistenFn) {
+        unlistenFn();
+      }
     };
   }, [navigate, activeConnectionId]);
 

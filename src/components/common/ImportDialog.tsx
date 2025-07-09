@@ -84,7 +84,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     if (!connectionId || !database) return;
 
     try {
-      const measurementList = await invoke<string[]>('get_measurements', {
+      const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
         database,
       });
