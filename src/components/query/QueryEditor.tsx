@@ -277,7 +277,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </Select>
         </Space>
       }
-      bodyStyle={{ padding: 0, height: 'calc(100% - 57px)' }}
+      styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
       style={{ height: '100%', border: 'none' }}
     >
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

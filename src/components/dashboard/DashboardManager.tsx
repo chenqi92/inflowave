@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -26,7 +26,7 @@ import {
   SettingOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig, DashboardLayout, TimeRange } from '@/types';
 
 const { TextArea } = Input;
@@ -51,7 +51,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   const loadDashboards = async () => {
     setLoading(true);
     try {
-      const result = await invoke('get_dashboards') as DashboardConfig[];
+      const result = await safeTauriInvoke('get_dashboards') as DashboardConfig[];
       setDashboards(result);
     } catch (error) {
       console.error('加载仪表板失败:', error);
@@ -64,7 +64,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   // 创建仪表板
   const createDashboard = async (values: any) => {
     try {
-      const dashboardId = await invoke('create_dashboard', {
+      const dashboardId = await safeTauriInvoke('create_dashboard', {
         request: {
           name: values.name,
           description: values.description,
@@ -99,7 +99,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
     if (!selectedDashboard) return;
 
     try {
-      await invoke('update_dashboard', {
+      await safeTauriInvoke('update_dashboard', {
         request: {
           id: selectedDashboard.id,
           name: values.name,
@@ -131,7 +131,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   // 删除仪表板
   const deleteDashboard = async (dashboardId: string) => {
     try {
-      await invoke('delete_dashboard', { dashboardId });
+      await safeTauriInvoke('delete_dashboard', { dashboardId });
       message.success('仪表板删除成功');
       loadDashboards();
     } catch (error) {
@@ -144,7 +144,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   const duplicateDashboard = async (dashboard: DashboardConfig) => {
     try {
       const newName = `${dashboard.name} - 副本`;
-      const newDashboardId = await invoke('duplicate_dashboard', {
+      const newDashboardId = await safeTauriInvoke('duplicate_dashboard', {
         dashboardId: dashboard.id,
         newName,
       }) as string;

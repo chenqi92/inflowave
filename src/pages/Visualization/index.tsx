@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -22,13 +22,15 @@ import {
   AreaChartOutlined,
   PlusOutlined,
   PlayCircleOutlined,
-  SaveOutlined,
   ExclamationCircleOutlined,
+  ReloadOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, QueryRequest } from '@/types';
+import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -287,9 +289,39 @@ const Visualization: React.FC = () => {
     }
   }, [activeConnectionId]);
 
+  // 工具栏
+  const toolbar = (
+    <Space>
+      <Button
+        icon={<ReloadOutlined />}
+        onClick={() => loadDatabases()}
+        loading={loading}
+      >
+        刷新
+      </Button>
+      <Button
+        icon={<SettingOutlined />}
+      >
+        设置
+      </Button>
+      <Button
+        type="primary"
+        icon={<PlusOutlined />}
+        onClick={() => setCreateModalVisible(true)}
+        disabled={!activeConnectionId}
+      >
+        创建图表
+      </Button>
+    </Space>
+  );
+
   if (!activeConnectionId) {
     return (
-      <div className="p-6">
+      <DesktopPageWrapper
+        title="数据可视化"
+        description="创建图表和仪表板来可视化您的时序数据"
+        toolbar={toolbar}
+      >
         <Alert
           message="请先连接到 InfluxDB"
           description="在连接管理页面选择一个连接并激活后，才能创建数据可视化。"
@@ -302,83 +334,79 @@ const Visualization: React.FC = () => {
             </Button>
           }
         />
-      </div>
+      </DesktopPageWrapper>
     );
   }
 
   return (
-    <div className="p-6">
-      {/* 页面标题和操作 */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Title level={2}>数据可视化</Title>
-          <Text type="secondary">
-            创建图表和仪表板来可视化您的时序数据
-          </Text>
-        </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setCreateModalVisible(true)}
-        >
-          创建图表
-        </Button>
-      </div>
+    <DesktopPageWrapper
+      title="数据可视化"
+      description="创建图表和仪表板来可视化您的时序数据"
+      toolbar={toolbar}
+    >
 
       {/* 图表网格 */}
-      {charts.length > 0 ? (
-        <Row gutter={[16, 16]}>
-          {charts.map(chart => (
-            <Col xs={24} lg={12} xl={8} key={chart.id}>
-              <Card
-                title={chart.title}
-                extra={
-                  <Space>
-                    <Button
-                      type="text"
-                      icon={<PlayCircleOutlined />}
-                      onClick={() => refreshChart(chart)}
-                      title="刷新数据"
-                    />
-                    <Button
-                      type="text"
-                      danger
-                      onClick={() => deleteChart(chart.id)}
-                      title="删除图表"
-                    >
-                      删除
-                    </Button>
-                  </Space>
-                }
-              >
-                {chart.options ? (
-                  <ReactECharts
-                    option={chart.options}
-                    style={{ height: '300px' }}
-                    opts={{ renderer: 'canvas' }}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-64">
-                    <Spin tip="加载图表数据..." />
-                  </div>
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      ) : (
-        <Card>
-          <div className="text-center py-12">
-            <BarChartOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />
-            <Title level={4} type="secondary">
-              暂无图表
-            </Title>
-            <Text type="secondary">
-              点击"创建图表"开始可视化您的数据
-            </Text>
-          </div>
-        </Card>
-      )}
+      <div className="desktop-panel">
+        <div className="desktop-panel-header">
+          图表列表 ({charts.length})
+        </div>
+        <div className="desktop-panel-content">
+          {charts.length > 0 ? (
+            <Row gutter={[16, 16]}>
+              {charts.map(chart => (
+                <Col xs={24} lg={12} xl={8} key={chart.id}>
+                  <Card
+                    size="small"
+                    title={chart.title}
+                    extra={
+                      <Space>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<PlayCircleOutlined />}
+                          onClick={() => refreshChart(chart)}
+                          title="刷新数据"
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          onClick={() => deleteChart(chart.id)}
+                          title="删除图表"
+                        >
+                          删除
+                        </Button>
+                      </Space>
+                    }
+                  >
+                    {chart.options ? (
+                      <ReactECharts
+                        option={chart.options}
+                        style={{ height: '280px' }}
+                        opts={{ renderer: 'canvas' }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-64">
+                        <Spin tip="加载图表数据..." />
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <div className="text-center py-12">
+              <BarChartOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+              <div className="mt-4 text-gray-500">
+                暂无图表
+              </div>
+              <div className="text-sm text-gray-400 mt-2">
+                点击"创建图表"开始可视化您的数据
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 创建图表模态框 */}
       <Modal
@@ -481,7 +509,7 @@ const Visualization: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </DesktopPageWrapper>
   );
 };
 

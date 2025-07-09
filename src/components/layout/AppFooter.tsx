@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Space, Typography, Divider } from 'antd';
-import { 
-  ClockCircleOutlined, 
-  DatabaseOutlined, 
+import {
+  ClockCircleOutlined,
+  DatabaseOutlined,
   WifiOutlined,
-  MemoryOutlined 
+  HddOutlined
 } from '@ant-design/icons';
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';
@@ -46,7 +46,7 @@ const AppFooter: React.FC = () => {
           </Text>
           
           <Space>
-            <MemoryOutlined />
+            <HddOutlined />
             <Text className="text-xs">
               内存: {getMemoryUsage()}MB
             </Text>

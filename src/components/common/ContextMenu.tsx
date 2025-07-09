@@ -25,7 +25,7 @@ import {
   CalculatorOutlined,
   GroupOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { MenuProps } from 'antd';
 import type { SqlGenerationRequest } from '@/types';
 
@@ -74,7 +74,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     };
 
     try {
-      const result = await invoke('generate_smart_sql', { request }) as { sql: string; description: string };
+      const result = await safeTauriInvoke('generate_smart_sql', { request }) as { sql: string; description: string };
       onExecuteQuery(result.sql, result.description);
       onClose();
       message.success('SQL 已生成并执行');

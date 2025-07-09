@@ -110,7 +110,7 @@ const BrowserModeNotice: React.FC = () => {
               icon={<CodeOutlined />}
               size="large"
               onClick={() => {
-                window.open('https://github.com/your-username/inflowave', '_blank');
+                window.open('https://github.com/chenqi92/inflowave', '_blank');
               }}
             >
               查看源码

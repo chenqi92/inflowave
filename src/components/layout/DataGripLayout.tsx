@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Layout, Card, Tree, Typography, Space, Button, Tag, Tooltip, message, Row, Col } from 'antd';
 import {
   DatabaseOutlined,
@@ -11,7 +11,7 @@ import {
   StopOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import QueryEditor from '@/components/query/QueryEditor';
 import QueryResults from '@/components/query/QueryResults';
@@ -223,12 +223,12 @@ const DataGripLayout: React.FC = () => {
     try {
       const status = connectionStatuses[connectionId];
       if (status?.status === 'connected') {
-        await invoke('disconnect_from_database', { connectionId });
+        await safeTauriInvoke('disconnect_from_database', { connectionId });
         setActiveConnection(null);
         setStructure({ databases: [], measurements: {}, fields: {}, tags: {} });
         message.info('已断开连接');
       } else {
-        await invoke('connect_to_database', { connectionId });
+        await safeTauriInvoke('connect_to_database', { connectionId });
         setActiveConnection(connectionId);
         await loadDatabaseStructure(connectionId);
         message.success('连接成功');
@@ -294,7 +294,7 @@ const DataGripLayout: React.FC = () => {
                 onClick={() => activeConnectionId && loadDatabaseStructure(activeConnectionId)}
               />
             }
-            bodyStyle={{ padding: 0, height: 'calc(100vh - 57px)', overflow: 'auto' }}
+            styles={{ body: { padding: 0, height: 'calc(100vh - 57px)', overflow: 'auto' } }}
             style={{ height: '100%' }}
           >
             <Tree

@@ -241,8 +241,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
       footer={null}
       width={600}
       centered
-      bodyStyle={{ padding: 0 }}
-      destroyOnClose
+      styles={{ body: { padding: 0 } }}
+      destroyOnHidden
     >
       <div className="global-search">
         {/* 搜索输入框 */}

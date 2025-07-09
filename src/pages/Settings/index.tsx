@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -24,7 +24,7 @@ import {
   DeleteOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import UserPreferences from '@/components/settings/UserPreferences';
@@ -59,7 +59,7 @@ const Settings: React.FC = () => {
 
       // 保存到后端（如果需要）
       try {
-        await invoke('save_app_config', { config: values });
+        await safeTauriInvoke('save_app_config', { config: values });
       } catch (error) {
         console.warn('保存配置到后端失败:', error);
       }
@@ -90,7 +90,7 @@ const Settings: React.FC = () => {
       };
 
       // 这里应该调用 Tauri 的文件保存对话框
-      await invoke('export_settings', { settings });
+      await safeTauriInvoke('export_settings', { settings });
       message.success('设置已导出');
     } catch (error) {
       message.error(`导出设置失败: ${error}`);
@@ -101,7 +101,7 @@ const Settings: React.FC = () => {
   const importSettings = async () => {
     try {
       // 这里应该调用 Tauri 的文件选择对话框
-      const settings = await invoke('import_settings');
+      const settings = await safeTauriInvoke('import_settings');
 
       if (settings) {
         // 应用导入的设置

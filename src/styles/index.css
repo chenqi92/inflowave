@@ -65,7 +65,39 @@ pre,
   background: #9ca3af;
 }
 
-/* 自定义组件样式 */
+/* 桌面应用布局样式 */
+.desktop-layout {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-menu-bar {
+  height: 48px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  flex-shrink: 0;
+}
+
+.desktop-content {
+  flex: 1;
+  background: #f5f5f5;
+  overflow: auto;
+  padding: 0;
+}
+
+.desktop-status-bar {
+  height: 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e8e8e8;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+/* 兼容旧样式 */
 .app-layout {
   height: 100vh;
   overflow: hidden;
@@ -238,7 +270,92 @@ pre,
   }
 }
 
+/* 桌面应用页面样式 */
+.desktop-page-container {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+}
+
+.desktop-page-header {
+  margin-bottom: 16px;
+}
+
+.desktop-page-toolbar {
+  flex-shrink: 0;
+}
+
+.desktop-page-content {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 减少卡片阴影，更适合桌面应用 */
+.ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e8e8;
+}
+
+.ant-card-small > .ant-card-head {
+  padding: 8px 12px;
+  min-height: 36px;
+}
+
+.ant-card-small > .ant-card-body {
+  padding: 12px;
+}
+
+/* 桌面应用表格样式 */
+.desktop-table {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+}
+
+.desktop-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.desktop-table .ant-table-tbody > tr > td {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.desktop-table .ant-table-tbody > tr:hover > td {
+  background: #f5f5f5;
+}
+
 /* 暗色主题样式 */
+.dark .desktop-menu-bar {
+  background: #1f2937;
+  border-bottom-color: #374151;
+}
+
+.dark .desktop-content {
+  background: #1f2937;
+}
+
+.dark .desktop-status-bar {
+  background: #111827;
+  border-top-color: #374151;
+  color: #9ca3af;
+}
+
+.dark .desktop-panel {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.dark .desktop-panel-header {
+  background: #2d3748;
+  border-bottom-color: #4b5563;
+  color: #e2e8f0;
+}
+
 .dark .app-header {
   background: #1f2937;
   border-bottom-color: #374151;
@@ -303,6 +420,64 @@ pre,
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* 桌面应用菜单栏样式 */
+.desktop-menu-bar .ant-menu-horizontal {
+  line-height: 46px;
+}
+
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-item,
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-submenu {
+  border-bottom: 2px solid transparent;
+  margin: 0 4px;
+}
+
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-item-selected,
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-submenu-selected {
+  border-bottom-color: #1890ff;
+  background: transparent;
+}
+
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-item:hover,
+.desktop-menu-bar .ant-menu-horizontal > .ant-menu-submenu:hover {
+  border-bottom-color: #40a9ff;
+  background: rgba(24, 144, 255, 0.06);
+}
+
+/* 桌面应用页面内容样式 */
+.desktop-page-container {
+  padding: 16px;
+  height: 100%;
+  overflow: auto;
+}
+
+.desktop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 16px;
+}
+
+.desktop-panel {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.desktop-panel-header {
+  padding: 8px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  font-weight: 500;
+}
+
+.desktop-panel-content {
+  padding: 16px;
 }
 
 /* 自定义 Ant Design 组件样式 */

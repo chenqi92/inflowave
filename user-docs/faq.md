@@ -153,9 +153,9 @@
 如果以上解答没有解决您的问题：
 
 1. **查看文档**: 阅读完整的 [用户手册](./README.md)
-2. **搜索问题**: 在 [GitHub Issues](https://github.com/your-username/influx-gui/issues) 中搜索相似问题
+2. **搜索问题**: 在 [GitHub Issues](https://github.com/chenqi92/influx-gui/issues) 中搜索相似问题
 3. **提交问题**: 创建新的 Issue 详细描述问题
-4. **社区讨论**: 参与 [GitHub Discussions](https://github.com/your-username/influx-gui/discussions)
+4. **社区讨论**: 参与 [GitHub Discussions](https://github.com/chenqi92/influx-gui/discussions)
 
 ### 提交问题时请包含：
 - 操作系统和版本

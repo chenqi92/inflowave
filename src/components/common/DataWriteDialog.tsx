@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -21,7 +21,7 @@ import {
   EyeOutlined,
   InboxOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 
 const { TextArea } = Input;
@@ -83,7 +83,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     if (!connectionId) return;
     
     try {
-      const dbList = await invoke('get_databases', { connectionId }) as string[];
+      const dbList = await safeTauriInvoke('get_databases', { connectionId }) as string[];
       setDatabases(dbList);
     } catch (error) {
       console.error('获取数据库列表失败:', error);
@@ -107,7 +107,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       }
 
       setValidating(true);
-      const isValid = await invoke('validate_data_format', {
+      const isValid = await safeTauriInvoke('validate_data_format', {
         data: values.data,
         format: values.format,
         measurement: values.measurement,
@@ -133,7 +133,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       }
 
       setPreviewing(true);
-      const preview = await invoke('preview_data_conversion', {
+      const preview = await safeTauriInvoke('preview_data_conversion', {
         data: values.data,
         format: values.format,
         measurement: values.measurement,
@@ -165,7 +165,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         options: values.options,
       };
 
-      const result = await invoke('write_data', { request: writeConfig }) as DataWriteResult;
+      const result = await safeTauriInvoke('write_data', { request: writeConfig }) as DataWriteResult;
       setWriteResult(result);
 
       if (result.success) {

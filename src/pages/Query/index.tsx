@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -28,7 +28,7 @@ import {
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { registerInfluxQLLanguage, createInfluxQLCompletionProvider } from '@/utils/influxql-language';
 import ExportDialog from '@/components/common/ExportDialog';
@@ -287,7 +287,7 @@ const Query: React.FC = () => {
         updatedAt: new Date(),
       };
 
-      await invoke('save_query', { query: savedQuery });
+      await safeTauriInvoke('save_query', { query: savedQuery });
       message.success('查询已保存');
     } catch (error) {
       message.error(`保存查询失败: ${error}`);
@@ -384,7 +384,7 @@ const Query: React.FC = () => {
           <Card
             title="数据库结构"
             className="h-full"
-            bodyStyle={{ padding: '12px', height: 'calc(100% - 57px)', overflow: 'auto' }}
+            styles={{ body: { padding: '12px', height: 'calc(100% - 57px)', overflow: 'auto' } }}
           >
             <Tree
               showIcon

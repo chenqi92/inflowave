@@ -216,7 +216,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
           </Space>
         )
       }
-      bodyStyle={{ padding: 0, height: 'calc(100% - 57px)' }}
+      styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
       style={{ height: '100%', border: 'none' }}
     >
       {loading ? (

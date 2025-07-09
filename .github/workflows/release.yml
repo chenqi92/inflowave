@@ -221,13 +221,13 @@ jobs:
             
             ### 📚 Documentation
             
-            - [User Manual](https://github.com/your-username/influx-gui/blob/main/user-docs/README.md)
-            - [Quick Start Guide](https://github.com/your-username/influx-gui/blob/main/user-docs/quick-start.md)
-            - [Feature Overview](https://github.com/your-username/influx-gui/blob/main/user-docs/features/README.md)
+            - [User Manual](https://github.com/chenqi92/influx-gui/blob/main/user-docs/README.md)
+            - [Quick Start Guide](https://github.com/chenqi92/influx-gui/blob/main/user-docs/quick-start.md)
+            - [Feature Overview](https://github.com/chenqi92/influx-gui/blob/main/user-docs/features/README.md)
             
             ---
             
-            For issues and feedback, please visit [GitHub Issues](https://github.com/your-username/influx-gui/issues)
+            For issues and feedback, please visit [GitHub Issues](https://github.com/chenqi92/influx-gui/issues)
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }}

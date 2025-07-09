@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { message } from 'antd';
 import type { QueryResult } from '@/types';
 
@@ -310,7 +310,7 @@ export class QueryOperationsService {
       });
 
       // 调用导出功能
-      await invoke('export_query_result', {
+      await safeTauriInvoke('export_query_result', {
         result: result,
         format: params.format,
         filename: `${params.measurement}_export_${Date.now()}.${params.format}`
@@ -333,7 +333,7 @@ export class QueryOperationsService {
     const query = `DROP MEASUREMENT "${params.measurement}"`;
     
     try {
-      await invoke('execute_query', {
+      await safeTauriInvoke('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -357,7 +357,7 @@ export class QueryOperationsService {
     const query = `DROP DATABASE "${params.database}"`;
     
     try {
-      await invoke('execute_query', {
+      await safeTauriInvoke('execute_query', {
         request: {
           connectionId: 'current',
           database: params.database,
@@ -379,7 +379,7 @@ export class QueryOperationsService {
     database: string;
   }): Promise<any> {
     try {
-      const info = await invoke('get_database_stats', {
+      const info = await safeTauriInvoke('get_database_stats', {
         connectionId: 'current',
         database: params.database
       });

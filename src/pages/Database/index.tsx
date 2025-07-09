@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Table,
@@ -31,7 +31,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ContextMenu from '@/components/common/ContextMenu';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
@@ -188,7 +188,7 @@ const Database: React.FC = () => {
     }
 
     try {
-      await invoke('create_database', {
+      await safeTauriInvoke('create_database', {
         connectionId: activeConnectionId,
         config: {
           name: values.name,
@@ -213,7 +213,7 @@ const Database: React.FC = () => {
     }
 
     try {
-      await invoke('drop_database', {
+      await safeTauriInvoke('drop_database', {
         connectionId: activeConnectionId,
         database,
       });
@@ -518,7 +518,7 @@ const Database: React.FC = () => {
                           description="删除后数据将无法恢复！"
                           onConfirm={async () => {
                             try {
-                              await invoke('drop_retention_policy', {
+                              await safeTauriInvoke('drop_retention_policy', {
                                 connectionId: activeConnectionId,
                                 database: selectedDatabase,
                                 policyName: record.name,
@@ -674,7 +674,7 @@ const Database: React.FC = () => {
                     query += ` ORDER BY ${params.orderBy}`;
                   }
 
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -703,7 +703,7 @@ const Database: React.FC = () => {
               case 'showFields':
                 // 查看字段信息
                 try {
-                  const fields = await invoke('get_field_keys', {
+                  const fields = await safeTauriInvoke('get_field_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -736,7 +736,7 @@ const Database: React.FC = () => {
               case 'showTagKeys':
                 // 查看标签键
                 try {
-                  const tagKeys = await invoke('get_tag_keys', {
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -768,7 +768,7 @@ const Database: React.FC = () => {
               case 'showTagValues':
                 // 查看标签值
                 try {
-                  const tagKeys = await invoke('get_tag_keys', {
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -780,7 +780,7 @@ const Database: React.FC = () => {
                   }
 
                   // 获取第一个标签键的值作为示例
-                  const tagValues = await invoke('get_tag_values', {
+                  const tagValues = await safeTauriInvoke('get_tag_values', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -814,7 +814,7 @@ const Database: React.FC = () => {
                 // 查看序列信息
                 try {
                   const query = `SHOW SERIES FROM "${params.measurement}"`;
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -842,7 +842,7 @@ const Database: React.FC = () => {
                 // 获取记录总数
                 try {
                   const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -871,7 +871,7 @@ const Database: React.FC = () => {
                 // 获取时间范围
                 try {
                   const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -901,7 +901,7 @@ const Database: React.FC = () => {
               case 'getFieldStats':
                 // 获取字段统计
                 try {
-                  const fields = await invoke('get_field_keys', {
+                  const fields = await safeTauriInvoke('get_field_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -916,7 +916,7 @@ const Database: React.FC = () => {
                   const firstField = typeof fields[0] === 'string' ? fields[0] : fields[0].fieldKey;
                   const query = `SELECT MIN("${firstField}"), MAX("${firstField}"), MEAN("${firstField}") FROM "${params.measurement}"`;
 
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -948,7 +948,7 @@ const Database: React.FC = () => {
               case 'getTagDistribution':
                 // 获取标签分布
                 try {
-                  const tagKeys = await invoke('get_tag_keys', {
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
@@ -963,7 +963,7 @@ const Database: React.FC = () => {
                   const firstTagKey = tagKeys[0];
                   const query = `SELECT COUNT(*) FROM "${params.measurement}" GROUP BY "${firstTagKey}"`;
 
-                  const result = await invoke('execute_query', {
+                  const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
                     query,
                   });
@@ -1060,7 +1060,7 @@ const Database: React.FC = () => {
                   cancelText: '取消',
                   onOk: async () => {
                     try {
-                      await invoke('drop_measurement', {
+                      await safeTauriInvoke('drop_measurement', {
                         connectionId: activeConnectionId,
                         database: params.database,
                         measurement: params.measurement,

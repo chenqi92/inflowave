@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -9,7 +9,6 @@ import {
   Input,
   InputNumber,
   Switch,
-  message,
   Popconfirm,
   Tag,
   Typography,
@@ -30,6 +29,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { showMessage } from '@/utils/message';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
@@ -85,7 +85,7 @@ const Connections: React.FC = () => {
 
       setConnections(connectionsWithStatus);
     } catch (error) {
-      message.error(`加载连接列表失败: ${error}`);
+      showMessage.error(`加载连接列表失败: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ const Connections: React.FC = () => {
       const errors = connectionUtils.validateConnection(values);
 
       if (errors.length > 0) {
-        message.error(errors[0]);
+        showMessage.error(errors[0]);
         return;
       }
 
@@ -140,19 +140,19 @@ const Connections: React.FC = () => {
           config
         });
         updateConnection(config.id!, config);
-        message.success('连接配置已更新');
+        showMessage.success('连接配置已更新');
       } else {
         // 创建新连接
-        const connectionId = await invoke<string>('create_connection', { config });
+        const connectionId = await safeTauriInvoke<string>('create_connection', { config });
         addConnection({ ...config, id: connectionId });
-        message.success('连接配置已创建');
+        showMessage.success('连接配置已创建');
       }
 
       handleCloseModal();
       await loadConnections(); // 重新加载连接列表
     } catch (error) {
       console.error('保存连接配置失败:', error);
-      message.error(`保存连接配置失败: ${error}`);
+      showMessage.error(`保存连接配置失败: ${error}`);
     }
   };
 
@@ -161,27 +161,27 @@ const Connections: React.FC = () => {
     try {
       await safeTauriInvoke('delete_connection', { connectionId: id });
       removeConnection(id);
-      message.success('连接已删除');
+      showMessage.success('连接已删除');
       await loadConnections();
     } catch (error) {
-      message.error(`删除连接失败: ${error}`);
+      showMessage.error(`删除连接失败: ${error}`);
     }
   };
 
   // 测试连接
   const handleTestConnection = async (connection: ConnectionConfig) => {
-    const hide = message.loading('正在测试连接...', 0);
+    const hide = showMessage.loading('正在测试连接...', 0);
 
     try {
       const result = await safeTauriInvoke('test_connection', {
         connectionId: connection.id
       });
       hide();
-      message.success('连接测试成功');
+      showMessage.success('连接测试成功');
       await loadConnections(); // 刷新状态
     } catch (error) {
       hide();
-      message.error(`连接测试失败: ${error}`);
+      showMessage.error(`连接测试失败: ${error}`);
     }
   };
 
@@ -191,15 +191,15 @@ const Connections: React.FC = () => {
       if (activeConnectionId === connection.id) {
         await safeTauriInvoke('disconnect_from_database', { connectionId: connection.id });
         setActiveConnection(null);
-        message.info('已断开连接');
+        showMessage.info('已断开连接');
       } else {
         await safeTauriInvoke('connect_to_database', { connectionId: connection.id });
         setActiveConnection(connection.id!);
-        message.success(`已连接到 ${connection.name}`);
+        showMessage.success(`已连接到 ${connection.name}`);
       }
       await loadConnections();
     } catch (error) {
-      message.error(`连接操作失败: ${error}`);
+      showMessage.error(`连接操作失败: ${error}`);
     }
   };
 
@@ -347,13 +347,13 @@ const Connections: React.FC = () => {
           </Button>
           <Button
             icon={<ImportOutlined />}
-            onClick={() => message.info('导入功能开发中...')}
+            onClick={() => showMessage.info('导入功能开发中...')}
           >
             导入
           </Button>
           <Button
             icon={<ExportOutlined />}
-            onClick={() => message.info('导出功能开发中...')}
+            onClick={() => showMessage.info('导出功能开发中...')}
           >
             导出
           </Button>

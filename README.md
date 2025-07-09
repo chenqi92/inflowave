@@ -437,8 +437,8 @@ git push origin main
 
 ## 📞 获取帮助
 
-- **问题报告**: [GitHub Issues](https://github.com/your-username/influx-gui/issues)
-- **功能建议**: [GitHub Discussions](https://github.com/your-username/influx-gui/discussions)
+- **问题报告**: [GitHub Issues](https://github.com/chenqi92/influx-gui/issues)
+- **功能建议**: [GitHub Discussions](https://github.com/chenqi92/influx-gui/discussions)
 - **文档**: 查看 [用户文档](./user-docs/README.md) 和 [开发文档](./dev-docs/index.md)
 
 ---

@@ -1,21 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Typography, message, Spin, Button } from 'antd';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  DatabaseOutlined,
-  SearchOutlined,
-  ApiOutlined,
-  SettingOutlined,
-  DashboardOutlined,
-  EditOutlined,
-  BarChartOutlined,
-  ThunderboltOutlined,
-  AppstoreOutlined,
-} from '@ant-design/icons';
+import { Layout, Typography, Spin } from 'antd';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { DatabaseOutlined } from '@ant-design/icons';
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import BrowserModeNotice from './components/common/BrowserModeNotice';
+import AppMenuBar from './components/layout/AppMenuBar';
+import AppStatusBar from './components/layout/AppStatusBar';
 
 // 页面组件
 import ConnectionsPage from './pages/Connections';
@@ -29,63 +21,12 @@ import ExtensionsPage from './pages/Extensions';
 import SettingsPage from './pages/Settings';
 import DataGripLayout from './components/layout/DataGripLayout';
 
-const { Content, Header, Sider } = Layout;
-const { Title, Text } = Typography;
-
-// 菜单项配置
-const menuItems = [
-  {
-    key: '/',
-    icon: <DashboardOutlined />,
-    label: <Link to="/">仪表板</Link>,
-  },
-  {
-    key: '/connections',
-    icon: <ApiOutlined />,
-    label: <Link to="/connections">连接管理</Link>,
-  },
-  {
-    key: '/database',
-    icon: <DatabaseOutlined />,
-    label: <Link to="/database">数据库管理</Link>,
-  },
-  {
-    key: '/query',
-    icon: <SearchOutlined />,
-    label: <Link to="/query">数据查询</Link>,
-  },
-  {
-    key: '/visualization',
-    icon: <BarChartOutlined />,
-    label: <Link to="/visualization">数据可视化</Link>,
-  },
-  {
-    key: '/data-write',
-    icon: <EditOutlined />,
-    label: <Link to="/data-write">数据写入</Link>,
-  },
-  {
-    key: '/performance',
-    icon: <ThunderboltOutlined />,
-    label: <Link to="/performance">性能监控</Link>,
-  },
-  {
-    key: '/extensions',
-    icon: <AppstoreOutlined />,
-    label: <Link to="/extensions">扩展管理</Link>,
-  },
-  {
-    key: '/settings',
-    icon: <SettingOutlined />,
-    label: <Link to="/settings">设置</Link>,
-  },
-];
+const { Content } = Layout;
+const { Text } = Typography;
 
 // 主布局组件
 const MainLayout: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
   const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
 
   // 键盘快捷键处理
@@ -96,77 +37,40 @@ const MainLayout: React.FC = () => {
         e.preventDefault();
         setGlobalSearchVisible(true);
       }
-      // Ctrl+B 切换侧边栏
-      if (e.ctrlKey && e.key === 'b') {
-        e.preventDefault();
-        setCollapsed(!collapsed);
-      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [collapsed]);
+  }, []);
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      {/* 头部 */}
-      <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0' }}>
-        <div className="flex items-center justify-between h-full">
-          <Title level={3} style={{ margin: 0, color: '#1890ff' }}>
-            InfloWave
-          </Title>
-          <div className="flex items-center gap-4">
-            <Button
-              type="text"
-              icon={<SearchOutlined />}
-              onClick={() => setGlobalSearchVisible(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-            >
-              搜索 (Ctrl+Shift+P)
-            </Button>
-            <Text type="secondary">
-              现代化的时序数据库管理工具
-            </Text>
-          </div>
-        </div>
-      </Header>
+    <Layout className="desktop-layout">
+      {/* 顶部菜单栏 */}
+      <AppMenuBar />
 
-      <Layout>
-        {/* 侧边栏 */}
-        <Sider
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          style={{ background: '#fff' }}
-          width={200}
-        >
-          <Menu
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            style={{ height: '100%', borderRight: 0 }}
-            items={menuItems}
-          />
-        </Sider>
+      {/* 主内容区 */}
+      <Content className="desktop-content">
+        <Routes>
+          <Route path="/" element={
+            isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
+          } />
+          <Route path="/dashboard" element={
+            isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
+          } />
+          <Route path="/connections" element={<ConnectionsPage />} />
+          <Route path="/database" element={<DatabasePage />} />
+          <Route path="/query" element={<DataGripLayout />} />
+          <Route path="/visualization" element={<VisualizationPage />} />
+          <Route path="/data-write" element={<DataWritePage />} />
+          <Route path="/write" element={<DataWritePage />} />
+          <Route path="/performance" element={<PerformancePage />} />
+          <Route path="/extensions" element={<ExtensionsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
+      </Content>
 
-        {/* 主内容区 */}
-        <Layout style={{ padding: '0' }}>
-          <Content style={{ background: '#f0f2f5', minHeight: 'calc(100vh - 64px)' }}>
-            <Routes>
-              <Route path="/" element={
-                isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
-              } />
-              <Route path="/connections" element={<ConnectionsPage />} />
-              <Route path="/database" element={<DatabasePage />} />
-              <Route path="/query" element={<DataGripLayout />} />
-              <Route path="/visualization" element={<VisualizationPage />} />
-              <Route path="/data-write" element={<DataWritePage />} />
-              <Route path="/performance" element={<PerformancePage />} />
-              <Route path="/extensions" element={<ExtensionsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </Content>
-        </Layout>
-      </Layout>
+      {/* 底部状态栏 */}
+      <AppStatusBar />
 
       {/* 全局搜索 */}
       <GlobalSearch

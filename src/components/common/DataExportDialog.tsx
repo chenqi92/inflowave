@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -24,7 +24,7 @@ import {
   CodeOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
 
@@ -91,7 +91,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 加载导出格式
   const loadExportFormats = async () => {
     try {
-      const formats = await invoke('get_export_formats') as any[];
+      const formats = await safeTauriInvoke('get_export_formats') as any[];
       setExportFormats(formats);
     } catch (error) {
       console.error('加载导出格式失败:', error);
@@ -104,7 +104,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const values = await form.validateFields(['connectionId', 'database', 'query', 'format']);
       setEstimating(true);
 
-      const estimate = await invoke('estimate_export_size', {
+      const estimate = await safeTauriInvoke('estimate_export_size', {
         connectionId: values.connectionId,
         database: values.database,
         query: values.query,
@@ -161,7 +161,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         options: values.options,
       };
 
-      const result = await invoke('export_query_data', {
+      const result = await safeTauriInvoke('export_query_data', {
         request: {
           ...exportConfig,
           file_path: values.filePath,

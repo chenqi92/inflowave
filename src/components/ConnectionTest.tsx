@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+﻿import React, { useState } from 'react';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { Button, Form, Input, InputNumber, Switch, Card, message, Spin } from 'antd';
 
 interface ConnectionConfig {
@@ -65,7 +65,7 @@ const ConnectionTest: React.FC = () => {
       }
 
       // 清理测试连接
-      await invoke('delete_connection', { connectionId });
+      await safeTauriInvoke('delete_connection', { connectionId });
       
     } catch (error) {
       console.error('连接测试失败:', error);

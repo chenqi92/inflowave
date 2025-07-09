@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -27,7 +27,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -240,7 +240,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       };
 
       // 调用后端导入接口
-      await invoke('import_data', importRequest);
+      await safeTauriInvoke('import_data', importRequest);
 
       message.success('数据导入成功');
       setCurrentStep(2);

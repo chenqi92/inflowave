@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -27,7 +27,7 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 
 const { Title, Text } = Typography;
@@ -45,7 +45,7 @@ const UserPreferencesComponent: React.FC = () => {
   const loadPreferences = async () => {
     setLoading(true);
     try {
-      const result = await invoke('get_user_preferences') as UserPreferences;
+      const result = await safeTauriInvoke('get_user_preferences') as UserPreferences;
       setPreferences(result);
       form.setFieldsValue(result);
     } catch (error) {
@@ -61,7 +61,7 @@ const UserPreferencesComponent: React.FC = () => {
     setLoading(true);
     try {
       const updatedPreferences = { ...preferences, ...values };
-      await invoke('update_user_preferences', { preferences: updatedPreferences });
+      await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
       message.success('偏好设置已保存');
     } catch (error) {
@@ -75,7 +75,7 @@ const UserPreferencesComponent: React.FC = () => {
   // 加载默认快捷键
   const loadDefaultShortcuts = async () => {
     try {
-      const shortcuts = await invoke('get_default_shortcuts') as KeyboardShortcut[];
+      const shortcuts = await safeTauriInvoke('get_default_shortcuts') as KeyboardShortcut[];
       if (preferences) {
         const updatedPreferences = { ...preferences, shortcuts };
         setPreferences(updatedPreferences);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -17,7 +17,7 @@ import {
   InfoCircleOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
 const { Title, Text, Paragraph } = Typography;
@@ -92,13 +92,13 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       };
 
       if (mode === 'create') {
-        await invoke('create_retention_policy', {
+        await safeTauriInvoke('create_retention_policy', {
           connectionId,
           config,
         });
         message.success(`保留策略 "${values.name}" 创建成功`);
       } else {
-        await invoke('alter_retention_policy', {
+        await safeTauriInvoke('alter_retention_policy', {
           connectionId,
           config,
         });
@@ -129,7 +129,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       onOk: async () => {
         try {
           setLoading(true);
-          await invoke('drop_retention_policy', {
+          await safeTauriInvoke('drop_retention_policy', {
             connectionId,
             database,
             policyName: policy.name,

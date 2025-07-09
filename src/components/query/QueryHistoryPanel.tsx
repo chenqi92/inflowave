@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Card,
   List,
@@ -24,7 +24,7 @@ import {
   FileTextOutlined,
   ClearOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery, Connection } from '@/types';
 
 const { Text } = Typography;
@@ -55,7 +55,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const result = await invoke('get_query_history', {
+      const result = await safeTauriInvoke('get_query_history', {
         connectionId: filterConnection || null,
         limit: 50,
         offset: 0,
@@ -73,7 +73,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const loadSavedQueries = async () => {
     setLoading(true);
     try {
-      const result = await invoke('get_saved_queries', {
+      const result = await safeTauriInvoke('get_saved_queries', {
         tags: null,
         search: searchKeyword || null,
       }) as SavedQuery[];
@@ -97,7 +97,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
     error?: string
   ) => {
     try {
-      await invoke('add_query_history', {
+      await safeTauriInvoke('add_query_history', {
         query,
         database,
         connectionId,
@@ -122,7 +122,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   // 确认保存查询
   const handleSaveQuery = async (values: any) => {
     try {
-      await invoke('save_query', {
+      await safeTauriInvoke('save_query', {
         name: values.name,
         description: values.description || null,
         query: selectedQuery,
@@ -142,7 +142,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   // 删除历史记录
   const deleteHistoryItem = async (historyId: string) => {
     try {
-      await invoke('delete_query_history', { historyId });
+      await safeTauriInvoke('delete_query_history', { historyId });
       message.success('历史记录已删除');
       loadHistory();
     } catch (error) {
@@ -154,7 +154,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   // 删除保存的查询
   const deleteSavedQuery = async (queryId: string) => {
     try {
-      await invoke('delete_saved_query', { queryId });
+      await safeTauriInvoke('delete_saved_query', { queryId });
       message.success('查询已删除');
       loadSavedQueries();
     } catch (error) {
@@ -166,7 +166,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   // 清空历史记录
   const clearHistory = async () => {
     try {
-      const deletedCount = await invoke('clear_query_history', {
+      const deletedCount = await safeTauriInvoke('clear_query_history', {
         connectionId: filterConnection || null,
       }) as number;
       message.success(`已清空 ${deletedCount} 条历史记录`);

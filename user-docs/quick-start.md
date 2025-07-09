@@ -232,8 +232,8 @@ A: 查询会自动保存到历史记录中，您也可以：
 1. **查看文档**: 浏览 [用户手册](./README.md) 获取详细信息
 2. **常见问题**: 查看 [FAQ](./faq.md) 寻找解决方案
 3. **故障排除**: 参考 [故障排除指南](./troubleshooting.md)
-4. **提交问题**: 在 [GitHub Issues](https://github.com/your-username/influx-gui/issues) 报告 Bug
-5. **社区讨论**: 参与 [GitHub Discussions](https://github.com/your-username/influx-gui/discussions)
+4. **提交问题**: 在 [GitHub Issues](https://github.com/chenqi92/influx-gui/issues) 报告 Bug
+5. **社区讨论**: 参与 [GitHub Discussions](https://github.com/chenqi92/influx-gui/discussions)
 
 ---
 
