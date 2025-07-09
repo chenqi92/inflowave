@@ -162,10 +162,22 @@ inflowave/
 
 #### 方式一：下载预构建版本 (推荐)
 1. 访问 [Releases 页面](https://github.com/kkape/inflowave/releases)
-2. 下载适合您系统的安装包：
-   - **Windows**: `.msi` 安装程序
-   - **macOS**: `.dmg` 磁盘映像
-   - **Linux**: `.deb` 或 `.AppImage` 包
+2. 根据您的系统和架构选择合适的安装包：
+
+   **Windows**
+   - x64 (64位): `InfloWave_x.x.x_x64_en-US.msi`
+   - x86 (32位): `InfloWave_x.x.x_x86_en-US.msi`
+   - ARM64: `InfloWave_x.x.x_arm64_en-US.msi`
+
+   **macOS**
+   - Intel (x64): `InfloWave_x.x.x_x64.dmg`
+   - Apple Silicon (ARM64): `InfloWave_x.x.x_aarch64.dmg`
+
+   **Linux**
+   - x64: `inflowave_x.x.x_amd64.deb` 或 `inflowave_x.x.x_amd64.AppImage`
+   - ARM64: `inflowave_x.x.x_arm64.deb` 或 `inflowave_x.x.x_aarch64.AppImage`
+   - x86: `inflowave_x.x.x_i386.deb`
+
 3. 运行安装程序并按照向导完成安装
 
 #### 方式二：从源码构建
@@ -209,6 +221,25 @@ npm run tauri:dev
 
 # 或使用 npm 脚本
 npm run tauri:build
+```
+
+**多架构构建**
+```powershell
+# 检测当前系统架构和构建建议
+.\scripts\detect-arch.ps1
+
+# 构建当前平台的所有架构
+.\scripts\build-multiarch.ps1 -Platform windows -Architecture all
+
+# 构建所有平台和架构
+.\scripts\build-multiarch.ps1 -Platform all -Architecture all
+
+# 构建特定目标
+.\scripts\build-multiarch.ps1 -Platform linux -Architecture arm64
+
+# 管理 Rust 构建目标
+.\scripts\manage-targets.ps1 -Action install -Targets "common"
+.\scripts\manage-targets.ps1 -Action list
 ```
 
 ### 🔧 首次使用

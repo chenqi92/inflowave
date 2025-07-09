@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use log::{debug, error, info};
+use log::{debug, error};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::Instant;
 use crate::services::ConnectionService;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

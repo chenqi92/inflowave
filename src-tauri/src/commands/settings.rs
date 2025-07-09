@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use log::{debug, error, info};
 use std::sync::Mutex;
-use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppSettings {

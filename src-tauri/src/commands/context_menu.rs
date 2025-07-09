@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use log::{debug, error, info};
+use log::debug;
 use crate::services::ConnectionService;
 
 #[derive(Debug, Serialize, Deserialize)]

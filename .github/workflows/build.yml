@@ -13,7 +13,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-24.04, windows-latest]
+        include:
+          # Windows builds
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            os: windows
+          - platform: windows-latest
+            target: i686-pc-windows-msvc
+            arch: x86
+            os: windows
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+            arch: arm64
+            os: windows
+
+          # macOS builds
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            os: macos
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
+            os: macos
+
+          # Linux builds
+          - platform: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            arch: x64
+            os: linux
+          - platform: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+            arch: arm64
+            os: linux
+          - platform: ubuntu-24.04
+            target: i686-unknown-linux-gnu
+            arch: x86
+            os: linux
 
     runs-on: ${{ matrix.platform }}
     
@@ -22,14 +59,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.os == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # Add universe repository for latest packages
           sudo add-apt-repository universe -y
           sudo apt-get update
-          # Install WebKit2GTK and other dependencies
+
+          # Install base dependencies
           sudo apt-get install -y \
             libgtk-3-dev \
             libwebkit2gtk-4.1-dev \
@@ -45,13 +83,26 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
+          # Install cross-compilation tools for different architectures
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+            echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          elif [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo apt-get install -y gcc-multilib g++-multilib
+            sudo apt-get install -y libgtk-3-dev:i386 || true
+          fi
+
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          key: ${{ matrix.target }}
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
@@ -74,7 +125,7 @@ jobs:
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
+          args: --target ${{ matrix.target }}
 
   release:
     needs: build

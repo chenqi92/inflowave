@@ -1,4 +1,4 @@
-use crate::models::{QueryRequest, QueryResult, QueryHistory, SavedQuery, QueryValidationResult};
+use crate::models::{QueryRequest, QueryResult, QueryValidationResult};
 use crate::services::ConnectionService;
 use crate::utils::validation::ValidationUtils;
 use tauri::State;

@@ -3,7 +3,6 @@ use tauri::State;
 use log::{debug, error, info};
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::Path;
 use std::time::Instant;
 use crate::services::ConnectionService;
 

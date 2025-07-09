@@ -69,7 +69,45 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-24.04, windows-latest]
+        include:
+          # Windows builds
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            os: windows
+          - platform: windows-latest
+            target: i686-pc-windows-msvc
+            arch: x86
+            os: windows
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+            arch: arm64
+            os: windows
+
+          # macOS builds
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            os: macos
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
+            os: macos
+
+          # Linux builds
+          - platform: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            arch: x64
+            os: linux
+          - platform: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+            arch: arm64
+            os: linux
+          - platform: ubuntu-24.04
+            target: i686-unknown-linux-gnu
+            arch: x86
+            os: linux
+
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -77,18 +115,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.os == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository universe -y
+          sudo apt-get update
+
+          # Install base dependencies
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            pkg-config \
+            libayatana-appindicator3-dev
+
+          # Install cross-compilation tools for different architectures
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+            echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+            echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          elif [ "${{ matrix.arch }}" = "x86" ]; then
+            sudo apt-get install -y gcc-multilib g++-multilib
+            sudo apt-get install -y libgtk-3-dev:i386 || true
+          fi
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          key: ${{ matrix.target }}
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
@@ -121,6 +190,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v${{ needs.check-version.outputs.version }}
           releaseName: 'InfluxDB GUI Manager v${{ needs.check-version.outputs.version }}'
@@ -131,11 +202,21 @@ jobs:
 
             ### 📦 Download & Installation
 
-            Choose the appropriate installer for your operating system:
+            Choose the appropriate installer for your operating system and architecture:
 
-            - **Windows**: Download the .msi installer
-            - **macOS**: Download the .dmg disk image (supports Intel & Apple Silicon)
-            - **Linux**: Download the .deb or .AppImage package
+            #### Windows
+            - **x64 (64-bit Intel/AMD)**: `InfloWave_${{ needs.check-version.outputs.version }}_x64_en-US.msi`
+            - **x86 (32-bit)**: `InfloWave_${{ needs.check-version.outputs.version }}_x86_en-US.msi`
+            - **ARM64**: `InfloWave_${{ needs.check-version.outputs.version }}_arm64_en-US.msi`
+
+            #### macOS
+            - **Intel (x64)**: `InfloWave_${{ needs.check-version.outputs.version }}_x64.dmg`
+            - **Apple Silicon (ARM64)**: `InfloWave_${{ needs.check-version.outputs.version }}_aarch64.dmg`
+
+            #### Linux
+            - **x64 (64-bit)**: `inflowave_${{ needs.check-version.outputs.version }}_amd64.deb` or `inflowave_${{ needs.check-version.outputs.version }}_amd64.AppImage`
+            - **ARM64**: `inflowave_${{ needs.check-version.outputs.version }}_arm64.deb` or `inflowave_${{ needs.check-version.outputs.version }}_aarch64.AppImage`
+            - **x86 (32-bit)**: `inflowave_${{ needs.check-version.outputs.version }}_i386.deb`
 
             ### 🔧 Installation Instructions
 
@@ -170,4 +251,4 @@ jobs:
             For issues and feedback, please visit [GitHub Issues](https://github.com/your-username/influx-gui/issues)
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
+          args: --target ${{ matrix.target }}

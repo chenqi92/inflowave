@@ -34,7 +34,15 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "msi",
+      "nsis",
+      "deb",
+      "rpm",
+      "appimage",
+      "dmg",
+      "app"
+    ],
     "icon": [
       "icons/windows/32x32.ico",
       "icons/windows/128x128.ico",

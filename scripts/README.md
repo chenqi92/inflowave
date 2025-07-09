@@ -205,24 +205,67 @@ git push origin main
   - `src-tauri/tauri.conf.json` - Tauri 应用版本
 - **自动发布**: 推送到 GitHub 后自动触发 release 构建
 
+### **多架构构建支持**
+项目现在支持为多个平台和架构构建：
+
+#### **支持的平台和架构**
+- **Windows**: x64, x86, ARM64
+- **macOS**: x64 (Intel), ARM64 (Apple Silicon)
+- **Linux**: x64, ARM64, x86
+
+#### **新增脚本**
+- `build-multiarch.ps1` - 多架构构建脚本
+- `detect-arch.ps1` - 架构检测和优化建议脚本
+- `manage-targets.ps1` - Rust 构建目标管理脚本
+- `check-build-status.ps1` - 构建状态检查脚本
+
+#### **使用示例**
+```powershell
+# 检测当前系统架构
+.\scripts\detect-arch.ps1
+
+# 构建当前平台的所有架构
+.\scripts\build-multiarch.ps1 -Platform windows -Architecture all
+
+# 构建所有平台和架构
+.\scripts\build-multiarch.ps1 -Platform all -Architecture all
+
+# 构建特定目标
+.\scripts\build-multiarch.ps1 -Platform linux -Architecture arm64
+
+# 管理构建目标
+.\scripts\manage-targets.ps1 -Action install -Targets "common"
+.\scripts\manage-targets.ps1 -Action list
+
+# 检查构建状态
+.\scripts\check-build-status.ps1 -ShowDetails
+```
+
 ### **自动发布流程**
 1. 使用版本更新脚本更新版本号
 2. 提交并推送到 main 分支
-3. GitHub Actions 自动检测 VERSION 文件变化
+3. GitHub Actions 自动检测 package.json 版本变化
 4. 创建对应的 Git tag
-5. 构建多平台安装包 (Windows .msi, macOS .dmg, Linux .deb/.AppImage)
-6. 创建 GitHub Release 并上传安装包
+5. 构建多平台多架构安装包：
+   - Windows: x64/x86/ARM64 (.msi)
+   - macOS: x64/ARM64 (.dmg)
+   - Linux: x64/ARM64/x86 (.deb/.AppImage)
+6. 创建 GitHub Release 并上传所有安装包
 
 ## 📊 脚本功能对比
 
-| 脚本 | 环境设置 | 网络修复 | 快速构建 | 生产构建 | 开发模式 | 快速验证 |
-|------|----------|----------|----------|----------|----------|----------|
-| `setup-dev.ps1` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `fix-network.ps1` | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `quick-test.ps1` | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| `quick-build.ps1` | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
-| `build.ps1` | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-| `one-click-build.ps1` | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 脚本 | 环境设置 | 网络修复 | 快速构建 | 生产构建 | 开发模式 | 快速验证 | 多架构 | 架构检测 |
+|------|----------|----------|----------|----------|----------|----------|--------|----------|
+| `setup-dev.ps1` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `fix-network.ps1` | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `quick-test.ps1` | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
+| `quick-build.ps1` | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `build.ps1` | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `one-click-build.ps1` | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| `build-multiarch.ps1` | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| `detect-arch.ps1` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| `manage-targets.ps1` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `check-build-status.ps1` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 
 ## 🎨 自定义配置
 

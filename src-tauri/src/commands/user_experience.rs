@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, State, Manager, Window};
+use tauri::{Emitter, State, Window};
 use log::{debug, error, info};
 use std::collections::HashMap;
 use std::sync::Mutex;
