@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, App as AntdApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 import dayjs from 'dayjs';
@@ -13,6 +13,7 @@ import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
 import { useAppStore } from '@/store/app';
+import { setMessageInstance, setNotificationInstance } from '@/utils/message';
 import './styles/index.css';
 
 // 配置 dayjs
@@ -21,6 +22,18 @@ dayjs.extend(duration);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('zh-cn');
+
+// 内部应用组件
+const InnerApp: React.FC = () => {
+  const { message, notification } = AntdApp.useApp();
+
+  React.useEffect(() => {
+    setMessageInstance(message);
+    setNotificationInstance(notification);
+  }, [message, notification]);
+
+  return <App />;
+};
 
 // 主应用组件
 const AppWrapper: React.FC = () => {
@@ -65,9 +78,16 @@ const AppWrapper: React.FC = () => {
   
   return (
     <ConfigProvider theme={themeConfig} locale={locale}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <AntdApp>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
+          <InnerApp />
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 };

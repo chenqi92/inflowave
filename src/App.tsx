@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Typography, message, Spin, Button } from 'antd';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   DatabaseOutlined,
   SearchOutlined,
@@ -12,8 +12,10 @@ import {
   ThunderboltOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
+import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
+import BrowserModeNotice from './components/common/BrowserModeNotice';
 
 // 页面组件
 import ConnectionsPage from './pages/Connections';
@@ -150,7 +152,9 @@ const MainLayout: React.FC = () => {
         <Layout style={{ padding: '0' }}>
           <Content style={{ background: '#f0f2f5', minHeight: 'calc(100vh - 64px)' }}>
             <Routes>
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/" element={
+                isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
+              } />
               <Route path="/connections" element={<ConnectionsPage />} />
               <Route path="/database" element={<DatabasePage />} />
               <Route path="/query" element={<DataGripLayout />} />
@@ -188,9 +192,12 @@ const App: React.FC = () => {
       try {
         console.log('InfloWave 启动中...');
 
+        // 初始化环境检测
+        initializeEnvironment();
+
         // 尝试获取应用配置信息
         try {
-          await invoke('get_app_config');
+          await safeTauriInvoke('get_app_config');
           console.log('应用配置加载成功');
         } catch (configError) {
           console.warn('应用配置加载失败，使用默认配置:', configError);
@@ -198,13 +205,13 @@ const App: React.FC = () => {
 
         // 尝试初始化连接服务
         try {
-          await invoke('initialize_connections');
+          await safeTauriInvoke('initialize_connections');
           console.log('连接服务初始化成功');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
         }
 
-        message.success('应用启动成功');
+        showMessage.success('应用启动成功');
       } catch (error) {
         console.error('应用初始化失败:', error);
         // 不显示错误消息，允许应用继续运行
@@ -236,11 +243,7 @@ const App: React.FC = () => {
     );
   }
 
-  return (
-    <Router>
-      <MainLayout />
-    </Router>
-  );
+  return <MainLayout />;
 };
 
 export default App;
