@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dropdown, Menu, message, Modal, Button } from 'antd';
+import { Dropdown, message, Modal, Button } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   TableOutlined,
@@ -12,9 +12,7 @@ import {
   ReloadOutlined,
   InfoCircleOutlined,
   BarChartOutlined,
-  DatabaseOutlined,
   FileTextOutlined,
-  SettingOutlined,
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -135,12 +133,13 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           message.success(`已复制表名: ${tableName}`);
           break;
 
-        case 'copy_select':
+        case 'copy_select': {
           // 复制 SELECT 语句
           const selectQuery = `SELECT * FROM "${tableName}" LIMIT 100;`;
           await navigator.clipboard.writeText(selectQuery);
           message.success('已复制 SELECT 语句到剪贴板');
           break;
+        }
 
         case 'export_data':
           // 导出表数据
@@ -163,7 +162,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             table: tableName,
                             format: 'csv',
                             limit: 10000,
-                            filePath: filePath,
+                            filePath,
                           });
                           message.success(result);
                         } catch (error) {
@@ -185,7 +184,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             table: tableName,
                             format: 'json',
                             limit: 10000,
-                            filePath: filePath,
+                            filePath,
                           });
                           message.success(result);
                         } catch (error) {
@@ -247,7 +246,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           message.success(`正在为表 ${tableName} 创建数据可视化`);
           break;
 
-        case 'drop_table':
+        case 'drop_table': {
           // 删除表 - 需要确认
           const confirmed = window.confirm(`确定要删除表 "${tableName}" 吗？此操作不可撤销！`);
           if (confirmed) {
@@ -259,9 +258,10 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             message.success(`表 ${tableName} 已删除`);
           }
           break;
+        }
 
         default:
-          console.log('未处理的菜单动作:', action);
+          console.warn('未处理的菜单动作:', action);
           break;
       }
 

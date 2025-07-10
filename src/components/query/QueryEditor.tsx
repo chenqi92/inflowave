@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, Button, Space, Select, Typography, message, Tooltip } from 'antd';
+import React, { useState } from 'react';
+import { Card, Button, Space, Select, Typography, message } from 'antd';
 import {
   PlayCircleOutlined,
   SaveOutlined,
@@ -88,17 +88,17 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           [/"([^"\\]|\\.)*"/, 'string'],
           [/\d+(\.\d+)?/, 'number'],
           [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
-          [/[{}()\[\]]/, '@brackets'],
+          [/[{}()[\]]/, '@brackets'],
           [/[<>]=?|[!=]=|<>/, 'operator'],
-          [/[+\-*\/=]/, 'operator'],
+          [/[+\-*/=]/, 'operator'],
           [/[,;]/, 'delimiter'],
           [/--.*$/, 'comment'],
           [/\/\*/, 'comment', '@comment'],
         ],
         comment: [
-          [/[^\/*]+/, 'comment'],
+          [/[^/*]+/, 'comment'],
           [/\*\//, 'comment', '@pop'],
-          [/[\/*]/, 'comment'],
+          [/[/*]/, 'comment'],
         ],
       },
     });

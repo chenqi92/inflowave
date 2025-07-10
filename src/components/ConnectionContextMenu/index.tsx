@@ -7,11 +7,8 @@ import {
   DeleteOutlined,
   EyeOutlined,
   ReloadOutlined,
-  SettingOutlined,
-  DatabaseOutlined,
-  TableOutlined,
   ExportOutlined,
-  ImportOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';

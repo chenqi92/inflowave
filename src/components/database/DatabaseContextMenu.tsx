@@ -2,18 +2,14 @@ import React from 'react';
 import { Dropdown, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import {
-  DatabaseOutlined,
   PlusOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
   ExportOutlined,
-  ImportOutlined,
-  SettingOutlined,
   DeleteOutlined,
   CopyOutlined,
-  TableOutlined,
-  BarChartOutlined,
   FileTextOutlined,
+  TableOutlined,
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -121,12 +117,13 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           message.success(`已复制数据库名: ${databaseName}`);
           break;
 
-        case 'copy_use_statement':
+        case 'copy_use_statement': {
           // 复制 USE 语句
           const useStatement = `USE "${databaseName}";`;
           await navigator.clipboard.writeText(useStatement);
           message.success('已复制 USE 语句到剪贴板');
           break;
+        }
 
         case 'export_database':
           // 导出整个数据库
@@ -137,7 +134,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           message.success(`正在导出数据库 ${databaseName}`);
           break;
 
-        case 'drop_database':
+        case 'drop_database': {
           // 删除数据库 - 需要确认
           const confirmed = window.confirm(
             `确定要删除数据库 "${databaseName}" 吗？此操作将删除所有数据且不可撤销！`
@@ -150,9 +147,10 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             message.success(`数据库 ${databaseName} 已删除`);
           }
           break;
+        }
 
         default:
-          console.log('未处理的菜单动作:', action);
+          console.warn('未处理的菜单动作:', action);
           break;
       }
 

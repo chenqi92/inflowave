@@ -11,6 +11,7 @@ import {
   InputNumber,
   Tooltip,
   message,
+  Typography,
 } from 'antd';
 import {
   InfoCircleOutlined,
@@ -21,6 +22,7 @@ import type { RetentionPolicy } from '@/types';
 
 
 const { Option } = Select;
+const { Paragraph } = Typography;
 
 interface RetentionPolicyDialogProps {
   visible: boolean;
