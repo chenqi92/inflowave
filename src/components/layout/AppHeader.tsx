@@ -1,23 +1,10 @@
 import React from 'react';
 import type { MenuProps } from 'antd';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Dropdown,
-  Layout,
-  Space,
-  Typography,
-} from 'antd';
-import {
-  BulbOutlined,
-  DatabaseOutlined,
-  GlobalOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  SettingOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { Button, Layout, Space, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Avatar, Badge, Dropdown, 
+import { DatabaseOutlined, SettingOutlined } from '@/components/ui';
+// TODO: Replace these icons: BulbOutlined, GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined
+// You may need to find alternatives or create custom icons
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';
 

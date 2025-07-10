@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Table, Tabs, Button, Space, Typography, Empty, Spin, Tag, Modal, Select, message, Dropdown, Menu } from 'antd';
-import {
-  TableOutlined,
-  FileTextOutlined,
-  DownloadOutlined,
-  BarChartOutlined,
-  InfoCircleOutlined,
-  LineChartOutlined,
-  AreaChartOutlined,
-  PieChartOutlined,
-  MoreOutlined,
-} from '@ant-design/icons';
+import { Card, Table, Tabs, Button, Space, Typography, Empty, Spin, Tag, Modal, Select, message } from '@/components/ui';
+// TODO: Replace these Ant Design components: Dropdown, Menu
+import { TableOutlined, DownloadOutlined, BarChartOutlined, InfoCircleOutlined, LineChartOutlined, PieChartOutlined } from '@/components/ui';
+// TODO: Replace these icons: FileTextOutlined, AreaChartOutlined, MoreOutlined
+// You may need to find alternatives or create custom icons
 import type { ColumnsType } from 'antd/es/table';
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';

@@ -1,35 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Button,
-  Space,
-  Typography,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Row,
-  Col,
-  message,
-  Dropdown,
-  Menu,
-  Empty,
-  Grid,
-} from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SettingOutlined,
-  DashboardOutlined,
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
-  TableOutlined,
-  MoreOutlined,
-  SaveOutlined,
-  EyeOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Space, Typography, Modal, Form, Input, Select, Row, Col, message, Empty } from '@/components/ui';
+// TODO: Replace these Ant Design components: Dropdown, Menu, Grid, 
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, DashboardOutlined, BarChartOutlined, LineChartOutlined, PieChartOutlined, TableOutlined, SaveOutlined, EyeOutlined } from '@/components/ui';
+// TODO: Replace these icons: MoreOutlined
+// You may need to find alternatives or create custom icons
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

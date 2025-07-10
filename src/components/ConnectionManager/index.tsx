@@ -1,35 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Tooltip,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  message,
-  Dropdown,
-  Progress,
-  Statistic,
-  Row,
-  Col,
-  Badge,
-} from 'antd';
-import {
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  SettingOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  EyeOutlined,
-  MoreOutlined,
-  WifiOutlined,
-  DisconnectOutlined,
-} from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, message, Statistic, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, InputNumber, Switch, Dropdown, Progress, Badge, 
+import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined } from '@/components/ui';
+// TODO: Replace these icons: MoreOutlined
+// You may need to find alternatives or create custom icons
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -266,62 +240,89 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   }));
 
   return (
-    <div className="connection-manager">
+    <div style={{ width: '100%', height: '100%' }}>
       <Card
+        title="连接管理"
         extra={
-          <Space>
-            <Button
-              type={monitoringActive ? 'default' : 'primary'}
-              icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-              onClick={handleMonitoringToggle}
-              size="small"
-            >
-              {monitoringActive ? '停止监控' : '启动监控'}
-            </Button>
-          </Space>
+          <Button
+            type={monitoringActive ? 'default' : 'primary'}
+            icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+            onClick={handleMonitoringToggle}
+            size="small"
+          >
+            {monitoringActive ? '停止监控' : '启动监控'}
+          </Button>
         }
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+        }}
+        bodyStyle={{
+          height: 'calc(100% - 65px)',
+          overflow: 'auto',
+          padding: '24px'
+        }}
       >
         {/* 统计信息 */}
-        <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col span={6}>
-            <Statistic
-              title="总连接数"
-              value={connections.length}
-              prefix={<SettingOutlined />}
-            />
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={12} sm={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Statistic
+                title="总连接数"
+                value={connections.length}
+                prefix={<SettingOutlined />}
+              />
+            </div>
           </Col>
-          <Col span={6}>
-            <Statistic
-              title="已连接"
-              value={Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
-              valueStyle={{ color: '#3f8600' }}
-              prefix={<WifiOutlined />}
-            />
+          <Col xs={12} sm={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Statistic
+                title="已连接"
+                value={Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
+                valueStyle={{ color: '#3f8600' }}
+                prefix={<WifiOutlined />}
+              />
+            </div>
           </Col>
-          <Col span={6}>
-            <Statistic
-              title="监控状态"
-              value={monitoringActive ? '运行中' : '已停止'}
-              valueStyle={{ color: monitoringActive ? '#3f8600' : '#cf1322' }}
-            />
+          <Col xs={12} sm={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Statistic
+                title="监控状态"
+                value={monitoringActive ? '运行中' : '已停止'}
+                valueStyle={{ color: monitoringActive ? '#3f8600' : '#cf1322' }}
+              />
+            </div>
           </Col>
-          <Col span={6}>
-            <Statistic
-              title="监控间隔"
-              value={monitoringInterval}
-              suffix="秒"
-            />
+          <Col xs={12} sm={6}>
+            <div style={{ textAlign: 'center' }}>
+              <Statistic
+                title="监控间隔"
+                value={monitoringInterval}
+                suffix="秒"
+              />
+            </div>
           </Col>
         </Row>
 
         {/* 连接表格 */}
-        <Table
-          columns={columns}
-          dataSource={dataSource}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          loading={loading}
-        />
+        <div style={{ marginTop: '16px' }}>
+          <Table
+            columns={columns}
+            dataSource={dataSource}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+            }}
+            loading={loading}
+            scroll={{ x: 'max-content' }}
+            size="middle"
+          />
+        </div>
       </Card>
 
       {/* 连接配置模态框 */}

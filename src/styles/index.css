@@ -2,51 +2,6 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Ant Design 样式修复 */
-@import './antd-fixes.css';
-@import './antd-dev-fixes.css';
-
-/* 全局 Ant Design 组件样式保护 */
-.ant-typography,
-.ant-typography *,
-.ant-btn,
-.ant-btn *,
-.ant-input,
-.ant-input *,
-.ant-select,
-.ant-select *,
-.ant-table,
-.ant-table *,
-.ant-card,
-.ant-card *,
-.ant-form,
-.ant-form *,
-.ant-menu,
-.ant-menu *,
-.ant-layout,
-.ant-layout * {
-  /* 防止 Tailwind 的 preflight 样式影响 Ant Design 组件 */
-  box-sizing: border-box;
-}
-
-/* 特别保护 Typography 组件 */
-.ant-typography {
-  /* 确保 Typography 组件的基础样式不被覆盖 */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  font-variant: tabular-nums;
-  line-height: 1.5715;
-  font-feature-settings: 'tnum';
-  color: rgba(0, 0, 0, 0.85);
-  font-size: 14px;
-}
-
-.ant-typography * {
-  /* 重置所有子元素的样式继承 */
-  font-family: inherit;
-  line-height: inherit;
-  color: inherit;
-}
-
 /* 全局样式重置 */
 * {
   box-sizing: border-box;
@@ -294,8 +249,11 @@ pre,
 .desktop-content {
   flex: 1;
   background: #f5f5f5;
-  overflow: auto;
+  overflow: hidden;
   padding: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .desktop-status-bar {
@@ -463,36 +421,78 @@ pre,
   .app-header {
     padding: 0 8px;
   }
-  
+
   .app-content {
     padding: 8px;
   }
-  
+
   .toolbar {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .toolbar-left,
   .toolbar-right {
     justify-content: center;
+  }
+
+  /* 移动端连接页面优化 */
+  .desktop-page-container {
+    padding: 8px;
+  }
+
+  .desktop-page-header .ant-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .desktop-page-header .ant-space {
+    flex-wrap: wrap;
+  }
+
+  /* 移动端连接管理器优化 */
+  .connection-manager .ant-row {
+    flex-wrap: wrap;
+  }
+
+  .connection-manager .ant-col {
+    margin-bottom: 16px;
+  }
+
+  .connection-manager .ant-table {
+    font-size: 12px;
+  }
+
+  .connection-manager .ant-table-thead > tr > th,
+  .connection-manager .ant-table-tbody > tr > td {
+    padding: 8px 4px;
+  }
+
+  /* 移动端表格滚动优化 */
+  .connection-manager .ant-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .connection-manager .ant-table {
+    min-width: 600px;
   }
 }
 
 /* 桌面应用页面样式 */
 .desktop-page-container {
+  width: 100%;
   height: 100%;
-  overflow: auto;
-  padding: 16px;
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .desktop-page-header {
-  margin-bottom: 16px;
   flex-shrink: 0;
+  margin-bottom: 20px;
 }
 
 .desktop-page-toolbar {
@@ -695,49 +695,68 @@ pre,
   background: rgba(24, 144, 255, 0.06);
 }
 
-/* 连接页面特定样式 */
-.connections-page {
-  height: 100%;
-}
-
-.connections-page .ant-card {
-  height: 100%;
-}
-
-.connections-page .ant-card-body {
-  height: calc(100% - 57px);
-  overflow: auto;
-}
-
 /* 连接管理器样式 */
 .connection-manager {
+  width: 100%;
   height: 100%;
 }
 
 .connection-manager .ant-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 .connection-manager .ant-card-body {
-  flex: 1;
+  height: calc(100% - 65px);
   overflow: auto;
-  padding: 16px;
 }
 
+.connection-manager .ant-statistic {
+  text-align: center;
+}
+
+.connection-manager .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.connection-manager .ant-table-tbody > tr:hover > td {
+  background: #f5f5f5;
+}
+
+/* 确保表格正常显示 */
 .connection-manager .ant-table-wrapper {
-  height: 100%;
+  margin-top: 16px;
 }
 
 .connection-manager .ant-table {
-  height: 100%;
+  background: #fff;
 }
 
-.connection-manager .ant-table-tbody {
-  height: calc(100% - 55px);
-  overflow: auto;
+/* 分页样式 */
+.connection-manager .ant-pagination {
+  margin-top: 16px;
+  text-align: right;
 }
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .connection-manager .ant-card-body {
+    padding: 16px;
+  }
+
+  .connection-manager .ant-table {
+    font-size: 12px;
+  }
+
+  .connection-manager .ant-table-thead > tr > th,
+  .connection-manager .ant-table-tbody > tr > td {
+    padding: 8px 4px;
+  }
+}
+
+
 
 .desktop-toolbar {
   display: flex;

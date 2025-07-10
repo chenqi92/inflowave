@@ -1,16 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, Select, Button, Space, Typography, Row, Col, Slider, ColorPicker, Switch, InputNumber } from 'antd';
-import {
-  LineChartOutlined,
-  BarChartOutlined,
-  AreaChartOutlined,
-  PieChartOutlined,
-  DotChartOutlined,
-  SettingOutlined,
-  FullscreenOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { Card, Select, Button, Space, Typography, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
+import { LineChartOutlined, BarChartOutlined, PieChartOutlined, SettingOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
+// TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, FullscreenOutlined
+// You may need to find alternatives or create custom icons
 import * as echarts from 'echarts';
 import type { QueryResult } from '@/types';
 

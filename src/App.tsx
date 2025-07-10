@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Typography, Spin } from 'antd';
+import { Layout, Typography, Spin } from '@/components/ui';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
@@ -23,6 +23,7 @@ import SettingsPage from './pages/Settings';
 import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
+import UITest from './pages/UITest';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -80,6 +81,7 @@ const MainLayout: React.FC = () => {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/debug" element={<ConnectionDebug />} />
           <Route path="/typography-test" element={<TypographyTest />} />
+          <Route path="/ui-test" element={<UITest />} />
         </Routes>
       </Content>
 
@@ -149,7 +151,7 @@ const App: React.FC = () => {
       <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <Spin size="large" />
+            <Spin size="lg" />
             <div className="mt-4">
               <Text style={{ fontSize: '16px', color: '#666' }}>
                 正在启动 InfloWave...

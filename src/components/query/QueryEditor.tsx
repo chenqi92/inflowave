@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Button, Space, Select, Typography, message } from 'antd';
-import {
-  PlayCircleOutlined,
-  SaveOutlined,
-  HistoryOutlined,
-  FormatPainterOutlined,
-  DatabaseOutlined,
-  ClockCircleOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Space, Select, Typography, message } from '@/components/ui';
+import { PlayCircleOutlined, SaveOutlined, DatabaseOutlined } from '@/components/ui';
+// TODO: Replace these icons: HistoryOutlined, FormatPainterOutlined, ClockCircleOutlined
+// You may need to find alternatives or create custom icons
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';

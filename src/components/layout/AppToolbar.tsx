@@ -1,20 +1,10 @@
 import React from 'react';
-import { Button, Space, Tooltip, Badge, Typography, Dropdown } from 'antd';
+import { Button, Space, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Badge, Dropdown
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  DatabaseOutlined,
-  SearchOutlined,
-  PlusOutlined,
-  BarChartOutlined,
-  SettingOutlined,
-  WifiOutlined,
-  ThunderboltOutlined,
-  DashboardOutlined,
-  ApiOutlined,
-  UserOutlined,
-  BulbOutlined,
-  GlobalOutlined,
-} from '@ant-design/icons';
+import { DatabaseOutlined, SearchOutlined, PlusOutlined, BarChartOutlined, SettingOutlined, WifiOutlined, DashboardOutlined } from '@/components/ui';
+// TODO: Replace these icons: ThunderboltOutlined, ApiOutlined, UserOutlined, BulbOutlined, GlobalOutlined
+// You may need to find alternatives or create custom icons
 import type { MenuProps } from 'antd';
 import { useConnectionStore } from '@/store/connection';
 import { useAppStore } from '@/store/app';

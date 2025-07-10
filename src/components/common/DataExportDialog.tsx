@@ -1,27 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Form,
-  Input,
-  Select,
-  Button,
-  Alert,
-  Space,
-  Row,
-  Col,
-  Switch,
-  InputNumber,
-  message,
-  Divider,
-} from 'antd';
-import {
-  DownloadOutlined,
-  FileTextOutlined,
-  TableOutlined,
-  FileExcelOutlined,
-  CodeOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons';
+import { Modal, Form, Input, Select, Button, Alert, Space, Row, Col, message } from '@/components/ui';
+// TODO: Replace these Ant Design components: Switch, InputNumber, Divider, 
+import { DownloadOutlined, TableOutlined, InfoCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: FileTextOutlined, FileExcelOutlined, CodeOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';

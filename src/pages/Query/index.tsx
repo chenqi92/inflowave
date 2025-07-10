@@ -1,30 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Button,
-  Space,
-  Typography,
-  Select,
-  Table,
-  Tabs,
-  message,
-  Spin,
-  Tree,
-  Row,
-  Col,
-  Alert,
-} from 'antd';
-import {
-  PlayCircleOutlined,
-  SaveOutlined,
-  HistoryOutlined,
-  DatabaseOutlined,
-  TableOutlined,
-  FieldTimeOutlined,
-  TagsOutlined,
-  ExclamationCircleOutlined,
-  DownloadOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Space, Typography, Select, Table, Tabs, message, Spin, Row, Col, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tree, 
+import { PlayCircleOutlined, SaveOutlined, DatabaseOutlined, TableOutlined, ExclamationCircleOutlined, DownloadOutlined } from '@/components/ui';
+// TODO: Replace these icons: HistoryOutlined, FieldTimeOutlined, TagsOutlined
+// You may need to find alternatives or create custom icons
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';

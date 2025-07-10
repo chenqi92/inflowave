@@ -61,7 +61,6 @@ export default defineConfig(async () => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          antd: ['antd', '@ant-design/icons'],
           charts: ['echarts', 'echarts-for-react'],
           editor: ['@monaco-editor/react'],
           utils: ['lodash-es', 'dayjs', 'classnames'],
@@ -101,8 +100,6 @@ export default defineConfig(async () => ({
       'react',
       'react-dom',
       'react-router-dom',
-      'antd',
-      '@ant-design/icons',
       'echarts',
       'echarts-for-react',
       'zustand',

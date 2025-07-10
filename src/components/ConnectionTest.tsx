@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Button, Form, Input, InputNumber, Switch, Card, message } from 'antd';
+import { Button, Form, Input, Card, message } from '@/components/ui';
+// TODO: Replace these Ant Design components: InputNumber, Switch
 
 interface ConnectionConfig {
   id: string;

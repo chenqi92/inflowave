@@ -1,28 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Form,
-  InputNumber,
-  Switch,
-  Select,
-  Button,
-  Typography,
-  Divider,
-  Space,
-  message,
-  Row,
-  Col,
-  Alert,
-  Tabs,
-} from 'antd';
-import {
-  SaveOutlined,
-  ReloadOutlined,
-  ExportOutlined,
-  ImportOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons';
+import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs } from '@/components/ui';
+// TODO: Replace these Ant Design components: InputNumber, Switch, Divider, 
+import { SaveOutlined, ReloadOutlined, DeleteOutlined, InfoCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: ExportOutlined, ImportOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';

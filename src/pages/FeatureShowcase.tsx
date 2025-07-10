@@ -1,33 +1,9 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Typography,
-  Button,
-  Space,
-  Tag,
-  Timeline,
-  Collapse,
-  Alert,
-  Statistic,
-  Progress,
-  List,
-  Avatar,
-  Badge,
-} from 'antd';
-import {
-  CheckCircleOutlined,
-  RocketOutlined,
-  StarOutlined,
-  ThunderboltOutlined,
-  DatabaseOutlined,
-  LineChartOutlined,
-  SettingOutlined,
-  ImportOutlined,
-  MonitorOutlined,
-  AppstoreOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Typography, Button, Space, Tag, Alert, Statistic } from '@/components/ui';
+// TODO: Replace these Ant Design components: Timeline, Collapse, Progress, List, Avatar, Badge, 
+import { CheckCircleOutlined, DatabaseOutlined, LineChartOutlined, SettingOutlined } from '@/components/ui';
+// TODO: Replace these icons: RocketOutlined, StarOutlined, ThunderboltOutlined, ImportOutlined, MonitorOutlined, AppstoreOutlined
+// You may need to find alternatives or create custom icons
 import { featureTester } from '../utils/featureTest';
 
 const { Title, Text, Paragraph } = Typography;

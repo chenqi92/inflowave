@@ -1,35 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Typography,
-  Tag,
-  Tooltip,
-  Modal,
-  Form,
-  Input,
-  message,
-  Popconfirm,
-  Spin,
-  Select,
-  Descriptions,
-  Statistic,
-  Row,
-  Col,
-  Alert,
-} from 'antd';
-import {
-  DatabaseOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-  ReloadOutlined,
-  BarChartOutlined,
-  ExclamationCircleOutlined,
-  EditOutlined,
-} from '@ant-design/icons';
+import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Spin, Select, Statistic, Row, Col, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Popconfirm, Descriptions, 
+import { DatabaseOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined, ReloadOutlined, BarChartOutlined, ExclamationCircleOutlined, EditOutlined } from '@/components/ui';
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

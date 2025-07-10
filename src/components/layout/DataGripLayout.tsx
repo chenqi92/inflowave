@@ -1,35 +1,9 @@
 ﻿import React, { useEffect, useState } from 'react';
-import {
-  Button,
-  Card,
-  Col,
-  Layout,
-  message,
-  Row,
-  Space,
-  Tabs,
-  Tag,
-  Tooltip,
-  Tree,
-  Typography,
-} from 'antd';
-import {
-  ApiOutlined,
-  BookOutlined,
-  DashboardOutlined,
-  DatabaseOutlined,
-  FieldTimeOutlined,
-  HistoryOutlined,
-  ImportOutlined,
-  LineChartOutlined,
-  PlayCircleOutlined,
-  ReloadOutlined,
-  SettingOutlined,
-  StopOutlined,
-  TableOutlined,
-  TagsOutlined,
-  ThunderboltOutlined,
-} from '@ant-design/icons';
+import { Button, Card, Col, Layout, message, Row, Space, Tabs, Tag, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Tree, 
+import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined } from '@/components/ui';
+// TODO: Replace these icons: ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import QueryEditor from '@/components/query/QueryEditor';

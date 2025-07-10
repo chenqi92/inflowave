@@ -1,32 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Form,
-  Switch,
-  Select,
-  Button,
-  Table,
-  Input,
-  Space,
-  Typography,
-  Divider,
-  Tag,
-  Modal,
-  message,
-  Row,
-  Col,
-  Slider,
-} from 'antd';
-import {
-  SettingOutlined,
-  ControlOutlined, // Using ControlOutlined instead of KeyboardOutlined
-  NotificationOutlined,
-  EyeOutlined,
-  LayoutOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-} from '@ant-design/icons';
+import { Card, Form, Select, Button, Table, Input, Space, Typography, Tag, Modal, message, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: Switch, Divider, Slider, 
+import { SettingOutlined, EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@/components/ui';
+// TODO: Replace these icons: ControlOutlined, // Using ControlOutlined instead of KeyboardOutlined
+  NotificationOutlined, LayoutOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 

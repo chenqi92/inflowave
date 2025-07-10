@@ -1,100 +1,48 @@
 /**
- * 消息服务 - 解决 Antd 静态方法上下文警告
+ * 消息服务 - 使用自定义消息系统
  */
 
-import { message, notification } from 'antd';
-import type { MessageInstance } from 'antd/es/message/interface';
-import type { NotificationInstance } from 'antd/es/notification/interface';
+import { message } from '@/components/ui';
 
-// 全局消息实例
-let messageApi: MessageInstance;
-let notificationApi: NotificationInstance;
+// 为了向后兼容，保留这些空函数
+export const setMessageInstance = () => {};
+export const setNotificationInstance = () => {};
+export const getMessageInstance = () => message;
+export const getNotificationInstance = () => ({
+  success: (config: any) => message.success(typeof config === 'string' ? config : `${config.message}: ${config.description || ''}`),
+  error: (config: any) => message.error(typeof config === 'string' ? config : `${config.message}: ${config.description || ''}`),
+  info: (config: any) => message.info(typeof config === 'string' ? config : `${config.message}: ${config.description || ''}`),
+  warning: (config: any) => message.warning(typeof config === 'string' ? config : `${config.message}: ${config.description || ''}`),
+});
 
-// 设置消息实例
-export const setMessageInstance = (instance: MessageInstance) => {
-  messageApi = instance;
-};
-
-// 设置通知实例
-export const setNotificationInstance = (instance: NotificationInstance) => {
-  notificationApi = instance;
-};
-
-// 安全的消息方法
+// 便捷的消息方法
 export const showMessage = {
-  success: (content: string, duration?: number) => {
-    if (messageApi) {
-      messageApi.success(content, duration);
-    } else {
-      // 降级到静态方法
-      message.success(content, duration);
-    }
-  },
-  
-  error: (content: string, duration?: number) => {
-    if (messageApi) {
-      messageApi.error(content, duration);
-    } else {
-      message.error(content, duration);
-    }
-  },
-  
-  warning: (content: string, duration?: number) => {
-    if (messageApi) {
-      messageApi.warning(content, duration);
-    } else {
-      message.warning(content, duration);
-    }
-  },
-  
-  info: (content: string, duration?: number) => {
-    if (messageApi) {
-      messageApi.info(content, duration);
-    } else {
-      message.info(content, duration);
-    }
-  },
-  
-  loading: (content: string, duration?: number) => {
-    if (messageApi) {
-      return messageApi.loading(content, duration);
-    } else {
-      return message.loading(content, duration);
-    }
-  }
+  success: (content: string, duration?: number) => message.success(content, duration),
+  error: (content: string, duration?: number) => message.error(content, duration),
+  warning: (content: string, duration?: number) => message.warning(content, duration),
+  info: (content: string, duration?: number) => message.info(content, duration),
+  loading: (content: string, duration?: number) => message.loading(content, duration),
 };
 
-// 安全的通知方法
+// 便捷的通知方法 (使用消息系统)
 export const showNotification = {
-  success: (config: { message: string; description?: string; duration?: number }) => {
-    if (notificationApi) {
-      notificationApi.success(config);
-    } else {
-      notification.success(config);
-    }
+  success: (config: { message: string; description?: string; duration?: number } | string) => {
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    return message.success(content, typeof config === 'object' ? config.duration : undefined);
   },
-  
-  error: (config: { message: string; description?: string; duration?: number }) => {
-    if (notificationApi) {
-      notificationApi.error(config);
-    } else {
-      notification.error(config);
-    }
+
+  error: (config: { message: string; description?: string; duration?: number } | string) => {
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    return message.error(content, typeof config === 'object' ? config.duration : undefined);
   },
-  
-  warning: (config: { message: string; description?: string; duration?: number }) => {
-    if (notificationApi) {
-      notificationApi.warning(config);
-    } else {
-      notification.warning(config);
-    }
+
+  warning: (config: { message: string; description?: string; duration?: number } | string) => {
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    return message.warning(content, typeof config === 'object' ? config.duration : undefined);
   },
-  
-  info: (config: { message: string; description?: string; duration?: number }) => {
-    if (notificationApi) {
-      notificationApi.info(config);
-    } else {
-      notification.info(config);
-    }
+
+  info: (config: { message: string; description?: string; duration?: number } | string) => {
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    return message.info(content, typeof config === 'object' ? config.duration : undefined);
   }
 };

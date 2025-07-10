@@ -1,23 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Modal,
-  Input,
-  List,
-  Typography,
-  Space,
-  Tag,
-  Empty,
-  Spin,
-  Divider,
-} from 'antd';
-import {
-  SearchOutlined,
-  DatabaseOutlined,
-  TableOutlined,
-  FileTextOutlined,
-  SettingOutlined,
-  FunctionOutlined,
-} from '@ant-design/icons';
+import { Modal, Input, Typography, Space, Tag, Empty, Spin } from '@/components/ui';
+// TODO: Replace these Ant Design components: List, Divider, 
+import { SearchOutlined, DatabaseOutlined, TableOutlined, SettingOutlined } from '@/components/ui';
+// TODO: Replace these icons: FileTextOutlined, FunctionOutlined
+// You may need to find alternatives or create custom icons
 
 const { Text } = Typography;
 

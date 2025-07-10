@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography } from 'antd';
+import { Typography } from '@/components/ui';
 import PerformanceMonitor from '@/components/performance/PerformanceMonitor';
 import { useConnectionStore } from '@/store/connection';
 

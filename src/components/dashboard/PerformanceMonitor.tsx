@@ -1,25 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Progress,
-  Typography,
-  Space,
-  Tag,
-  Button,
-  Tooltip,
-  Alert,
-} from 'antd';
-import {
-  ThunderboltOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  ApiOutlined,
-  ReloadOutlined,
-  WarningOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Typography, Space, Tag, Button, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Progress, Tooltip, 
+import { DatabaseOutlined, ReloadOutlined } from '@/components/ui';
+// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, ApiOutlined, WarningOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 

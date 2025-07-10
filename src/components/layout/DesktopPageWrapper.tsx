@@ -1,6 +1,7 @@
 import React from 'react';
-import { Typography, Button, Breadcrumb } from 'antd';
-import { HomeOutlined, RightOutlined } from '@ant-design/icons';
+import { Typography, Button } from '@/components/ui';
+// TODO: Replace these Ant Design components: Breadcrumb
+import { HomeOutlined, RightOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Space, Typography, Divider } from 'antd';
-import {
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  WifiOutlined,
-  HddOutlined
-} from '@ant-design/icons';
+import { Layout, Space, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Divider
+import { DatabaseOutlined, WifiOutlined } from '@/components/ui';
+// TODO: Replace these icons: ClockCircleOutlined, HddOutlined
+// You may need to find alternatives or create custom icons
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';
 

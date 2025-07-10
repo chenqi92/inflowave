@@ -1,5 +1,5 @@
 import { safeTauriInvoke } from '@/utils/tauri';
-import { message } from 'antd';
+import { message } from '@/components/ui';
 import type { QueryResult } from '@/types';
 
 /**

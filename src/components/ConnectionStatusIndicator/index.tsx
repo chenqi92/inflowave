@@ -1,12 +1,9 @@
 import React from 'react';
-import { Badge, Tooltip, Tag, Space, Typography } from 'antd';
-import {
-  WifiOutlined,
-  DisconnectOutlined,
-  LoadingOutlined,
-  ExclamationCircleOutlined,
-  ClockCircleOutlined,
-} from '@ant-design/icons';
+import { Tag, Space, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Badge, Tooltip
+import { WifiOutlined, DisconnectOutlined, ExclamationCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: LoadingOutlined, ClockCircleOutlined
+// You may need to find alternatives or create custom icons
 import type { ConnectionStatus } from '@/types';
 
 const { Text } = Typography;

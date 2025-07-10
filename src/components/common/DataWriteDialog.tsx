@@ -1,24 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Form,
-  Input,
-  Select,
-  Button,
-  Upload,
-  Alert,
-  Space,
-  Typography,
-  Tabs,
-  message,
-  Row,
-  Col,
-} from 'antd';
-import {
-  CheckOutlined,
-  EyeOutlined,
-  InboxOutlined,
-} from '@ant-design/icons';
+import { Modal, Form, Input, Select, Button, Alert, Space, Typography, Tabs, message, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: Upload, 
+import { CheckOutlined, EyeOutlined } from '@/components/ui';
+// TODO: Replace these icons: InboxOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 

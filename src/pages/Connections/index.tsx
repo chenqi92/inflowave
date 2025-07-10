@@ -1,22 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Typography,
-  Button,
-  Space,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Switch,
-  Row,
-  Col,
-} from 'antd';
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  ImportOutlined,
-  ExportOutlined,
-} from '@ant-design/icons';
+import { Typography, Button, Space, Modal, Form, Input, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: InputNumber, Switch, 
+import { PlusOutlined, ReloadOutlined } from '@/components/ui';
+// TODO: Replace these icons: ImportOutlined, ExportOutlined
+// You may need to find alternatives or create custom icons
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -154,13 +141,26 @@ const Connections: React.FC = () => {
   };
 
   return (
-    <div className="desktop-page-container">
+    <div style={{
+      width: '100%',
+      height: '100%',
+      padding: '20px',
+      backgroundColor: '#f5f5f5',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* 页面标题和操作 */}
-      <div className="desktop-page-header">
+      <div style={{ marginBottom: '20px' }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Title level={2} style={{ margin: 0 }}>连接管理</Title>
-            <p className="text-gray-600 mt-1 mb-0">
+            <Title level={2} style={{ margin: 0, marginBottom: '8px' }}>
+              连接管理
+            </Title>
+            <p style={{
+              color: '#666',
+              margin: 0,
+              fontSize: '14px'
+            }}>
               管理 InfluxDB 数据库连接配置
             </p>
           </Col>
@@ -198,7 +198,7 @@ const Connections: React.FC = () => {
       </div>
 
       {/* 连接管理器 */}
-      <div className="desktop-page-content">
+      <div style={{ flex: 1, minHeight: 0 }}>
         <ConnectionManager onConnectionSelect={handleConnectionSelect} />
       </div>
 

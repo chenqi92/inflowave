@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography } from 'antd';
+import { Typography } from '@/components/ui';
 import ExtensionManager from '@/components/extensions/ExtensionManager';
 
 const { Title } = Typography;

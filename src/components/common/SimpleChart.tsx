@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Empty } from 'antd';
+import { Empty } from '@/components/ui';
 import * as echarts from 'echarts';
 
 interface ChartData {

@@ -1,32 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Steps,
-  Button,
-  Upload,
-  Select,
-  Table,
-  Form,
-  Input,
-  Space,
-  Typography,
-  Card,
-  Row,
-  Col,
-  message,
-  Progress,
-  Alert,
-  Checkbox,
-  InputNumber,
-} from 'antd';
-import {
-  UploadOutlined,
-  FileTextOutlined,
-  DatabaseOutlined,
-  CheckCircleOutlined,
-  SettingOutlined,
-  ImportOutlined,
-} from '@ant-design/icons';
+import { Modal, Button, Select, Table, Form, Input, Space, Typography, Card, Row, Col, message, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Steps, Upload, Progress, Checkbox, InputNumber, 
+import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined } from '@/components/ui';
+// TODO: Replace these icons: FileTextOutlined, ImportOutlined
+// You may need to find alternatives or create custom icons
 import type { UploadFile, UploadProps } from 'antd/es/upload';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

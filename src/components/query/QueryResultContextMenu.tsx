@@ -1,18 +1,10 @@
 import React from 'react';
-import { Dropdown, message } from 'antd';
+import { message } from '@/components/ui';
+// TODO: Replace these Ant Design components: Dropdown
 import type { MenuProps } from 'antd';
-import {
-  CopyOutlined,
-  ExportOutlined,
-  FilterOutlined,
-  SortAscendingOutlined,
-  SortDescendingOutlined,
-  BarChartOutlined,
-  EditOutlined,
-  EyeOutlined,
-  FileTextOutlined,
-  TableOutlined,
-} from '@ant-design/icons';
+import { CopyOutlined, BarChartOutlined, EditOutlined, EyeOutlined, TableOutlined } from '@/components/ui';
+// TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
+// You may need to find alternatives or create custom icons
 
 interface QueryResultContextMenuProps {
   children: React.ReactNode;

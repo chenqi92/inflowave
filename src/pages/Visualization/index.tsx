@@ -1,30 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Button,
-  Select,
-  Form,
-  Input,
-  Typography,
-  Space,
-  Modal,
-  message,
-  Alert,
-  Spin,
-} from 'antd';
-import {
-  LineChartOutlined,
-  BarChartOutlined,
-  PieChartOutlined,
-  AreaChartOutlined,
-  PlusOutlined,
-  PlayCircleOutlined,
-  ExclamationCircleOutlined,
-  ReloadOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Button, Select, Form, Input, Typography, Space, Modal, message, Alert, Spin } from '@/components/ui';
+// TODO: Replace these Ant Design components: 
+import { LineChartOutlined, BarChartOutlined, PieChartOutlined, PlusOutlined, PlayCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SettingOutlined } from '@/components/ui';
+// TODO: Replace these icons: AreaChartOutlined
+// You may need to find alternatives or create custom icons
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

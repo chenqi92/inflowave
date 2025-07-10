@@ -1,15 +1,9 @@
 import React from 'react';
-import { Modal, Typography, Space, Divider, Row, Col, Card, Tag } from 'antd';
-import {
-  DatabaseOutlined,
-  GithubOutlined,
-  BugOutlined,
-  HeartOutlined,
-  InfoCircleOutlined,
-  RocketOutlined,
-  TeamOutlined,
-  ToolOutlined,
-} from '@ant-design/icons';
+import { Modal, Typography, Space, Row, Col, Card, Tag } from '@/components/ui';
+// TODO: Replace these Ant Design components: Divider
+import { DatabaseOutlined, InfoCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: GithubOutlined, BugOutlined, HeartOutlined, RocketOutlined, TeamOutlined, ToolOutlined
+// You may need to find alternatives or create custom icons
 
 const { Title, Text, Paragraph, Link } = Typography;
 

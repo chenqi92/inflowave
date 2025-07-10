@@ -1,32 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Select,
-  DatePicker,
-  InputNumber,
-  Space,
-  Typography,
-  Table,
-  message,
-  Tabs,
-  Alert,
-  Row,
-  Col,
-  Tag,
-  Divider,
-} from 'antd';
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  UploadOutlined,
-  SaveOutlined,
-  ClearOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons';
+import { Card, Form, Input, Button, Select, Space, Typography, Table, message, Tabs, Alert, Row, Col, Tag } from '@/components/ui';
+// TODO: Replace these Ant Design components: DatePicker, InputNumber, Divider, 
+import { PlusOutlined, DeleteOutlined, UploadOutlined, SaveOutlined, ExclamationCircleOutlined, InfoCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: ClearOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ImportDialog from '@/components/common/ImportDialog';

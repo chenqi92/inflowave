@@ -1,11 +1,9 @@
 import React from 'react';
-import { Alert, Card, Typography, Button, Space, Divider } from 'antd';
-import {
-  InfoCircleOutlined,
-  CodeOutlined,
-  GlobalOutlined,
-  DesktopOutlined
-} from '@ant-design/icons';
+import { Alert, Card, Typography, Button, Space } from '@/components/ui';
+// TODO: Replace these Ant Design components: Divider
+import { InfoCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: CodeOutlined, GlobalOutlined, DesktopOutlined
+// You may need to find alternatives or create custom icons
 import { isBrowserEnvironment } from '@/utils/tauri';
 
 const { Title, Text, Paragraph } = Typography;

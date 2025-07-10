@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Breadcrumb, Button, Divider, Space, Tooltip, Typography } from 'antd';
+import { Button, Space, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Breadcrumb, Divider, Tooltip
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  ClockCircleOutlined,
-  GlobalOutlined,
-  HddOutlined,
-  HomeOutlined,
-  RightOutlined,
-  ThunderboltOutlined,
-  WifiOutlined,
-} from '@ant-design/icons';
+import { HomeOutlined, RightOutlined, WifiOutlined } from '@/components/ui';
+// TODO: Replace these icons: ClockCircleOutlined, GlobalOutlined, HddOutlined, ThunderboltOutlined
+// You may need to find alternatives or create custom icons
 import dayjs from 'dayjs';
 import { useConnectionStore } from '@/store/connection';
 

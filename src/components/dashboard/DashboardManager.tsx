@@ -1,31 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Button,
-  List,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Space,
-  Typography,
-  Tag,
-  Popconfirm,
-  message,
-  Row,
-  Col,
-  Divider,
-  InputNumber,
-} from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  CopyOutlined,
-  BarChartOutlined,
-  SettingOutlined,
-  EyeOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Modal, Form, Input, Select, Space, Typography, Tag, message, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: List, Popconfirm, Divider, InputNumber, 
+import { PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, BarChartOutlined, SettingOutlined, EyeOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig, DashboardLayout, TimeRange } from '@/types';
 

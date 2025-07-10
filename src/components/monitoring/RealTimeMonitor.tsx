@@ -1,38 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Button,
-  Space,
-  Typography,
-  Select,
-  InputNumber,
-  Switch,
-  Alert,
-  Badge,
-  Tag,
-  Progress,
-  List,
-  Modal,
-  Form,
-  Input,
-  message,
-  Tooltip,
-} from 'antd';
-import {
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  ReloadOutlined,
-  SettingOutlined,
-  BellOutlined,
-  LineChartOutlined,
-  ExclamationCircleOutlined,
-  CheckCircleOutlined,
-  WarningOutlined,
-  CloseCircleOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Button, Space, Typography, Select, Alert, Tag, Modal, Form, Input, message } from '@/components/ui';
+// TODO: Replace these Ant Design components: InputNumber, Switch, Badge, Progress, List, Tooltip, 
+import { PlayCircleOutlined, PauseCircleOutlined, ReloadOutlined, SettingOutlined, LineChartOutlined, ExclamationCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@/components/ui';
+// TODO: Replace these icons: BellOutlined, WarningOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import AdvancedChart from '../visualization/AdvancedChart';

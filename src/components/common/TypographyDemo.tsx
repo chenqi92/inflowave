@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Space } from 'antd';
+import { Typography, Space } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -8,7 +8,7 @@ const TypographyDemo: React.FC = () => {
     <div className="p-4 bg-white rounded-lg border">
       <h3 className="mb-4 text-lg font-semibold">Typography 样式测试</h3>
       
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Space direction="vertical" size="md" style={{ width: '100%' }}>
         <div>
           <Text strong>基础文本样式：</Text>
           <br />

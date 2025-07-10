@@ -1,34 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  List,
-  Button,
-  Space,
-  Typography,
-  Input,
-  Select,
-  Tag,
-  Tooltip,
-  Modal,
-  Form,
-  message,
-  Popconfirm,
-  Empty,
-  Row,
-  Col,
-} from 'antd';
-import {
-  BookOutlined,
-  PlayCircleOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  SearchOutlined,
-  TagOutlined,
-  DatabaseOutlined,
-  SaveOutlined,
-  CloseOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Space, Typography, Input, Select, Tag, Modal, Form, message, Empty, Row, Col } from '@/components/ui';
+// TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
+import { PlayCircleOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, DatabaseOutlined, SaveOutlined, CloseOutlined } from '@/components/ui';
+// TODO: Replace these icons: BookOutlined, TagOutlined
+// You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { SavedQuery } from '@/types';
 

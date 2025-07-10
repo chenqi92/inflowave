@@ -1,17 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert, Tabs } from 'antd';
-import {
-  DatabaseOutlined,
-  ApiOutlined,
-  BarChartOutlined,
-  ClockCircleOutlined,
-  PlusOutlined,
-  SearchOutlined,
-  RocketOutlined,
-  DashboardOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert, Tabs } from '@/components/ui';
+import { DatabaseOutlined, BarChartOutlined, PlusOutlined, SearchOutlined, DashboardOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
+// TODO: Replace these icons: ApiOutlined, ClockCircleOutlined, RocketOutlined
+// You may need to find alternatives or create custom icons
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import DashboardManager from '@/components/dashboard/DashboardManager';
@@ -115,8 +106,14 @@ const Dashboard: React.FC = () => {
         style={{ marginBottom: 24 }}
       />
 
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <Tabs.TabPane tab="概览" key="overview">
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={[
+          {
+            key: 'overview',
+            label: '概览',
+            children: (
           <div className="space-y-6">
             {/* 统计卡片 */}
             <div className="desktop-panel">
@@ -351,9 +348,12 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
-        </Tabs.TabPane>
-
-        <Tabs.TabPane tab="仪表板管理" key="dashboards">
+            )
+          },
+          {
+            key: 'dashboards',
+            label: '仪表板管理',
+            children: (
           <div className="desktop-panel">
             <div className="desktop-panel-content">
               <DashboardManager
@@ -365,8 +365,10 @@ const Dashboard: React.FC = () => {
               />
             </div>
           </div>
-        </Tabs.TabPane>
-      </Tabs>
+            )
+          }
+        ]}
+      />
 
       {/* 数据导出对话框 */}
       <DataExportDialog

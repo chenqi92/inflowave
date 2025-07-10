@@ -1,15 +1,9 @@
 import React from 'react';
-import { Menu, Modal, message } from 'antd';
-import {
-  WifiOutlined,
-  DisconnectOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  ReloadOutlined,
-  ExportOutlined,
-  DatabaseOutlined,
-} from '@ant-design/icons';
+import { Modal, message } from '@/components/ui';
+// TODO: Replace these Ant Design components: Menu
+import { WifiOutlined, DisconnectOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, DatabaseOutlined } from '@/components/ui';
+// TODO: Replace these icons: ExportOutlined
+// You may need to find alternatives or create custom icons
 import type { MenuProps } from 'antd';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
