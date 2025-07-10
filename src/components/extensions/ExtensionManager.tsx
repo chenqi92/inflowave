@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Tabs, Button, Modal, Form, Input, Select, Space, Typography, Tag, Alert, message, Row, Col } from '@/components/ui';
 // TODO: Replace these Ant Design components: List, Switch, Divider, 
-import { SettingOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined, // Using ExperimentOutlined instead of TestOutlined
-  PlusOutlined
+import { SettingOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, PlusOutlined } from '@/components/ui';
+// TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';

@@ -90,6 +90,19 @@ export type { CheckboxProps } from './Checkbox';
 export { Steps } from './Steps';
 export type { StepsProps, StepProps } from './Steps';
 
+// Export new components for QueryHistory
+export { DatePicker, RangePicker } from './DatePicker';
+export type { DatePickerProps, RangePickerProps } from './DatePicker';
+
+export { List, ListItem, ListItemMeta } from './List';
+export type { ListProps, ListItemProps, ListItemMetaProps } from './List';
+
+export { Popconfirm } from './Popconfirm';
+export type { PopconfirmProps } from './Popconfirm';
+
+export { Divider } from './Divider';
+export type { DividerProps } from './Divider';
+
 export { Upload } from './Upload';
 export type { UploadProps, UploadFile } from './Upload';
 
