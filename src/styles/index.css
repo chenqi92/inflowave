@@ -485,19 +485,25 @@ pre,
   height: 100%;
   overflow: auto;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
 }
 
 .desktop-page-header {
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .desktop-page-toolbar {
   flex-shrink: 0;
+  margin-bottom: 16px;
 }
 
 .desktop-page-content {
   flex: 1;
   min-height: 0;
+  overflow: auto;
 }
 
 /* 减少卡片阴影，更适合桌面应用 */
@@ -689,10 +695,47 @@ pre,
   background: rgba(24, 144, 255, 0.06);
 }
 
-/* 桌面应用页面内容样式 */
-.desktop-page-container {
-  padding: 16px;
+/* 连接页面特定样式 */
+.connections-page {
   height: 100%;
+}
+
+.connections-page .ant-card {
+  height: 100%;
+}
+
+.connections-page .ant-card-body {
+  height: calc(100% - 57px);
+  overflow: auto;
+}
+
+/* 连接管理器样式 */
+.connection-manager {
+  height: 100%;
+}
+
+.connection-manager .ant-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.connection-manager .ant-card-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.connection-manager .ant-table-wrapper {
+  height: 100%;
+}
+
+.connection-manager .ant-table {
+  height: 100%;
+}
+
+.connection-manager .ant-table-tbody {
+  height: calc(100% - 55px);
   overflow: auto;
 }
 

@@ -22,7 +22,6 @@ import {
 import {
   PlayCircleOutlined,
   PauseCircleOutlined,
-  ReloadOutlined,
   SettingOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -31,10 +30,10 @@ import {
   WifiOutlined,
   DisconnectOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType, MenuProps } from 'antd/es/table';
+import type { ColumnsType } from 'antd/es/table';
+import type { MenuProps } from 'antd';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
-import { invoke } from '@tauri-apps/api/tauri';
 
 interface ConnectionManagerProps {
   onConnectionSelect?: (connectionId: string) => void;
@@ -269,32 +268,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   return (
     <div className="connection-manager">
       <Card
-        title="连接管理"
         extra={
           <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={refreshAllStatuses}
-              loading={loading}
-            >
-              刷新状态
-            </Button>
             <Button
               type={monitoringActive ? 'default' : 'primary'}
               icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
               onClick={handleMonitoringToggle}
+              size="small"
             >
               {monitoringActive ? '停止监控' : '启动监控'}
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setEditingConnection(null);
-                form.resetFields();
-                setModalVisible(true);
-              }}
-            >
-              新建连接
             </Button>
           </Space>
         }
