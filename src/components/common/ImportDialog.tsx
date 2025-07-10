@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Alert, Card, Row, Col, Table, message, Typography } from '@/components/ui';
-// TODO: Replace these Ant Design components: Switch, Upload, Steps, 
+import { Modal, Form, Input, Select, Button, Space, Alert, Card, Row, Col, Table, message, Typography, Switch, Upload, Steps } from '@/components/ui';
 import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined } from '@/components/ui';
-import type { UploadFile, UploadProps } from 'antd';
+import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Option } = Select;

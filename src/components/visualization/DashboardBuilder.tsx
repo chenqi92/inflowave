@@ -1,0 +1,466 @@
+import React, { useState, useCallback, useRef } from 'react';
+import { Card, Button, Space, Tooltip, Modal, Form, Input, Select, Grid, Empty } from '@/components/ui';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  DragOutlined,
+  SaveOutlined,
+  EyeOutlined,
+  CopyOutlined,
+  LayoutOutlined,
+  SettingOutlined
+} from '@/components/ui';
+import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useVisualizationStore } from '@/store/visualization';
+import { InteractiveChart } from './InteractiveChart';
+import { ChartBuilder } from './ChartBuilder';
+import type { Dashboard, ChartConfig, QueryResult } from '@/types';
+
+interface DashboardBuilderProps {
+  dashboard?: Dashboard;
+  onSave?: (dashboard: Dashboard) => void;
+  onPreview?: (dashboard: Dashboard) => void;
+  charts?: ChartConfig[];
+  chartData?: Record<string, QueryResult>;
+  className?: string;
+}
+
+interface GridItem {
+  id: string;
+  chartId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
+  dashboard,
+  onSave,
+  onPreview,
+  charts = [],
+  chartData = {},
+  className,
+}) => {
+  const [currentDashboard, setCurrentDashboard] = useState<Partial<Dashboard>>(
+    dashboard || {
+      id: '',
+      name: '新仪表板',
+      description: '',
+      layout: [],
+      settings: {
+        theme: 'default',
+        refreshInterval: 30,
+        autoRefresh: false,
+        showHeader: true,
+        showGrid: true,
+        gridSize: 12,
+      },
+    }
+  );
+
+  const [gridItems, setGridItems] = useState<GridItem[]>(
+    dashboard?.layout || []
+  );
+  const [selectedChart, setSelectedChart] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(true);
+  const [showChartModal, setShowChartModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [draggedItem, setDraggedItem] = useState<GridItem | null>(null);
+
+  const { createDashboard, updateDashboard, getCharts } = useVisualizationStore();
+  const [form] = Form.useForm();
+
+  // 网格布局配置
+  const gridConfig = {
+    cols: currentDashboard.settings?.gridSize || 12,
+    rowHeight: 100,
+    margin: [16, 16],
+  };
+
+  const handleAddChart = (chartId: string) => {
+    const newItem: GridItem = {
+      id: `item_${Date.now()}`,
+      chartId,
+      x: 0,
+      y: getNextAvailablePosition().y,
+      w: 6,
+      h: 3,
+    };
+
+    setGridItems([...gridItems, newItem]);
+    setShowChartModal(false);
+  };
+
+  const handleRemoveChart = (itemId: string) => {
+    setGridItems(gridItems.filter(item => item.id !== itemId));
+  };
+
+  const handleResizeChart = (itemId: string, w: number, h: number) => {
+    setGridItems(gridItems.map(item => 
+      item.id === itemId ? { ...item, w, h } : item
+    ));
+  };
+
+  const handleMoveChart = (itemId: string, x: number, y: number) => {
+    setGridItems(gridItems.map(item => 
+      item.id === itemId ? { ...item, x, y } : item
+    ));
+  };
+
+  const getNextAvailablePosition = () => {
+    if (gridItems.length === 0) return { x: 0, y: 0 };
+
+    const maxY = Math.max(...gridItems.map(item => item.y + item.h));
+    return { x: 0, y: maxY };
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = gridItems.findIndex(item => item.id === active.id);
+      const newIndex = gridItems.findIndex(item => item.id === over.id);
+      
+      setGridItems(arrayMove(gridItems, oldIndex, newIndex));
+    }
+    
+    setDraggedItem(null);
+  };
+
+  const handleSaveDashboard = async () => {
+    try {
+      const values = await form.validateFields();
+      const dashboardData: Dashboard = {
+        ...currentDashboard,
+        ...values,
+        id: currentDashboard.id || `dashboard_${Date.now()}`,
+        layout: gridItems,
+        updatedAt: new Date(),
+      } as Dashboard;
+
+      if (currentDashboard.id) {
+        await updateDashboard(dashboardData);
+      } else {
+        await createDashboard(dashboardData);
+      }
+
+      setCurrentDashboard(dashboardData);
+      onSave?.(dashboardData);
+    } catch (error) {
+      console.error('保存仪表板失败:', error);
+    }
+  };
+
+  const handlePreviewDashboard = () => {
+    const previewData: Dashboard = {
+      ...currentDashboard,
+      layout: gridItems,
+    } as Dashboard;
+    
+    onPreview?.(previewData);
+    setIsEditMode(false);
+  };
+
+  const renderGridItem = (item: GridItem) => {
+    const chart = charts.find(c => c.id === item.chartId);
+    const data = chartData[item.chartId];
+
+    if (!chart) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded">
+          <div className="text-center text-gray-500">
+            <div>图表不存在</div>
+            <div className="text-sm">Chart ID: {item.chartId}</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative w-full h-full group">
+        {isEditMode && (
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Space>
+              <Tooltip title="编辑图表">
+                <Button
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={() => setSelectedChart(chart.id)}
+                />
+              </Tooltip>
+              
+              <Tooltip title="删除图表">
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleRemoveChart(item.id)}
+                />
+              </Tooltip>
+            </Space>
+          </div>
+        )}
+
+        {data ? (
+          <InteractiveChart
+            config={chart}
+            data={data}
+            height="100%"
+            allowEdit={isEditMode}
+            autoRefresh={currentDashboard.settings?.autoRefresh}
+            refreshInterval={(currentDashboard.settings?.refreshInterval || 30) * 1000}
+          />
+        ) : (
+          <Card className="w-full h-full flex items-center justify-center">
+            <Empty
+              description="暂无数据"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </Card>
+        )}
+      </div>
+    );
+  };
+
+  const DraggableGridItem: React.FC<{ item: GridItem }> = ({ item }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      isDragging,
+    } = useDraggable({
+      id: item.id,
+      data: item,
+    });
+
+    const style = {
+      transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`grid-item ${isDragging ? 'dragging' : ''}`}
+        {...attributes}
+        {...listeners}
+      >
+        {isEditMode && (
+          <div className="absolute top-0 left-0 z-10 cursor-move">
+            <DragOutlined className="text-gray-400 hover:text-gray-600" />
+          </div>
+        )}
+        {renderGridItem(item)}
+      </div>
+    );
+  };
+
+  const DroppableGrid: React.FC = () => {
+    const { setNodeRef } = useDroppable({
+      id: 'dashboard-grid',
+    });
+
+    return (
+      <div ref={setNodeRef} className="dashboard-grid min-h-96 p-4 border-2 border-dashed border-gray-200 rounded-lg">
+        {gridItems.length === 0 ? (
+          <Empty
+            description="暂无图表，点击添加图表开始构建仪表板"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        ) : (
+          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${gridConfig.cols}, 1fr)` }}>
+            {gridItems.map(item => (
+              <div
+                key={item.id}
+                className="grid-item"
+                style={{
+                  gridColumn: `span ${item.w}`,
+                  gridRow: `span ${item.h}`,
+                  minHeight: item.h * gridConfig.rowHeight,
+                }}
+              >
+                <DraggableGridItem item={item} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className={`h-full flex flex-col ${className}`}>
+      <Card
+        title={
+          <Space>
+            <LayoutOutlined />
+            <span>{isEditMode ? '编辑仪表板' : '预览仪表板'}</span>
+            <span className="text-sm text-gray-500">
+              ({gridItems.length} 个图表)
+            </span>
+          </Space>
+        }
+        extra={
+          <Space>
+            {isEditMode ? (
+              <>
+                <Button
+                  icon={<PlusOutlined />}
+                  onClick={() => setShowChartModal(true)}
+                  disabled={charts.length === 0}
+                >
+                  添加图表
+                </Button>
+
+                <Tooltip title="仪表板设置">
+                  <Button
+                    icon={<SettingOutlined />}
+                    onClick={() => setShowSettingsModal(true)}
+                  />
+                </Tooltip>
+
+                <Button
+                  icon={<EyeOutlined />}
+                  onClick={handlePreviewDashboard}
+                >
+                  预览
+                </Button>
+
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={handleSaveDashboard}
+                >
+                  保存仪表板
+                </Button>
+              </>
+            ) : (
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => setIsEditMode(true)}
+              >
+                编辑模式
+              </Button>
+            )}
+          </Space>
+        }
+        className="flex-shrink-0"
+      >
+        <DndContext onDragEnd={handleDragEnd}>
+          <SortableContext items={gridItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+            <DroppableGrid />
+          </SortableContext>
+          
+          <DragOverlay>
+            {draggedItem ? renderGridItem(draggedItem) : null}
+          </DragOverlay>
+        </DndContext>
+      </Card>
+
+      {/* 添加图表模态框 */}
+      <Modal
+        title="添加图表"
+        open={showChartModal}
+        onCancel={() => setShowChartModal(false)}
+        footer={null}
+        width={600}
+      >
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600 mb-4">选择一个已创建的图表添加到仪表板</div>
+          
+          {charts.length === 0 ? (
+            <Empty
+              description="暂无可用图表，请先创建图表"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {charts.map(chart => (
+                <Card
+                  key={chart.id}
+                  size="small"
+                  hoverable
+                  onClick={() => handleAddChart(chart.id)}
+                  className="cursor-pointer hover:border-blue-500"
+                >
+                  <div className="text-center">
+                    <div className="font-medium">{chart.title}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {chart.type} · {chart.xAxis?.field} / {chart.yAxis?.field}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* 仪表板设置模态框 */}
+      <Modal
+        title="仪表板设置"
+        open={showSettingsModal}
+        onCancel={() => setShowSettingsModal(false)}
+        onOk={() => {
+          form.validateFields().then(values => {
+            setCurrentDashboard({
+              ...currentDashboard,
+              ...values,
+            });
+            setShowSettingsModal(false);
+          });
+        }}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={currentDashboard}
+        >
+          <Form.Item
+            name="name"
+            label="仪表板名称"
+            rules={[{ required: true, message: '请输入仪表板名称' }]}
+          >
+            <Input placeholder="输入仪表板名称" />
+          </Form.Item>
+
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={3} placeholder="输入仪表板描述" />
+          </Form.Item>
+
+          <Form.Item name={['settings', 'theme']} label="主题">
+            <Select>
+              <Select.Option value="default">默认</Select.Option>
+              <Select.Option value="dark">深色</Select.Option>
+              <Select.Option value="light">浅色</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name={['settings', 'gridSize']} label="网格列数">
+            <Select>
+              <Select.Option value={8}>8 列</Select.Option>
+              <Select.Option value={12}>12 列</Select.Option>
+              <Select.Option value={16}>16 列</Select.Option>
+              <Select.Option value={24}>24 列</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name={['settings', 'refreshInterval']} label="刷新间隔（秒）">
+            <Select>
+              <Select.Option value={10}>10 秒</Select.Option>
+              <Select.Option value={30}>30 秒</Select.Option>
+              <Select.Option value={60}>1 分钟</Select.Option>
+              <Select.Option value={300}>5 分钟</Select.Option>
+              <Select.Option value={600}>10 分钟</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
-import { safeTauriInvoke } from '@/utils/tauri';
+import { ConnectionAPI } from '@/services/api';
 
 interface ConnectionState {
   // 连接配置列表

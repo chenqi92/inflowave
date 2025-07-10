@@ -8,6 +8,7 @@ export interface ConnectionConfig {
   port: number;
   username: string;
   password: string;
+  database?: string;
   ssl: boolean;
   timeout: number;
   createdAt?: Date;
@@ -20,6 +21,16 @@ export interface ConnectionStatus {
   lastConnected?: Date;
   error?: string;
   latency?: number;
+  poolSize?: number;
+  activeConnections?: number;
+}
+
+export interface ConnectionTestResult {
+  success: boolean;
+  latency?: number;
+  error?: string;
+  serverVersion?: string;
+  databases?: string[];
 }
 
 // Type alias for backward compatibility
@@ -751,4 +762,151 @@ export interface FilterConfig {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in';
   value: string | number | boolean | Date;
+}
+
+// 查询相关增强类型
+export interface QueryRequest {
+  connectionId: string;
+  database?: string;
+  query: string;
+  timeout?: number;
+  format?: 'json' | 'csv' | 'table';
+}
+
+export interface QueryValidationResult {
+  valid: boolean;
+  errors: QueryError[];
+  warnings: QueryError[];
+  suggestions: string[];
+}
+
+export interface QueryError {
+  line: number;
+  column: number;
+  message: string;
+  errorType: QueryErrorType;
+}
+
+export enum QueryErrorType {
+  SyntaxError = 'syntax_error',
+  TypeError = 'type_error',
+  ReferenceError = 'reference_error',
+  ValidationError = 'validation_error'
+}
+
+// 数据库结构类型
+export interface DatabaseInfo {
+  name: string;
+  retentionPolicies: RetentionPolicy[];
+  measurementCount?: number;
+  size?: number;
+  createdAt?: Date;
+}
+
+export interface MeasurementInfo {
+  name: string;
+  database: string;
+  fieldCount?: number;
+  tagCount?: number;
+  seriesCount?: number;
+  firstTime?: Date;
+  lastTime?: Date;
+}
+
+export interface FieldInfo {
+  name: string;
+  type: 'integer' | 'float' | 'string' | 'boolean';
+  measurement: string;
+  database: string;
+}
+
+export interface TagInfo {
+  name: string;
+  values?: string[];
+  valueCount?: number;
+  measurement: string;
+  database: string;
+}
+
+// 数据写入相关类型增强
+export interface WritePoint {
+  measurement: string;
+  fields: Record<string, any>;
+  tags?: Record<string, string>;
+  timestamp?: number | string | Date;
+}
+
+export interface WriteBatch {
+  points: WritePoint[];
+  database: string;
+  retentionPolicy?: string;
+  precision?: 'ns' | 'u' | 'ms' | 's' | 'm' | 'h';
+}
+
+// 系统信息增强类型
+export interface SystemHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  uptime: number;
+  version: string;
+  connections: {
+    active: number;
+    total: number;
+    failed: number;
+  };
+  performance: {
+    avgQueryTime: number;
+    queriesPerSecond: number;
+    errorRate: number;
+  };
+  resources: SystemResourceMetrics;
+}
+
+// API响应类型
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  code?: string;
+  timestamp: string;
+}
+
+// 分页响应类型
+export interface PaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    current: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// 文件操作类型
+export interface FileInfo {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  lastModified: Date;
+}
+
+export interface ImportOptions {
+  delimiter?: string;
+  encoding?: string;
+  skipHeader?: boolean;
+  timestampColumn?: string;
+  timestampFormat?: string;
+  measurementColumn?: string;
+  tagColumns?: string[];
+  fieldColumns?: string[];
+}
+
+export interface ExportOptions {
+  format: 'csv' | 'json' | 'excel' | 'xml';
+  includeHeaders?: boolean;
+  delimiter?: string;
+  encoding?: string;
+  compression?: boolean;
+  splitFiles?: boolean;
+  maxRowsPerFile?: number;
 }

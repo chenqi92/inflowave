@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, message, Statistic, Row, Col } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, InputNumber, Switch, Dropdown, Progress, Badge, 
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, message, Statistic, Row, Col, Tooltip, InputNumber, Switch, Dropdown, Progress, Badge } from '@/components/ui';
 import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined } from '@/components/ui';
 // TODO: Replace these icons: MoreOutlined
 // You may need to find alternatives or create custom icons
 import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
+import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 

@@ -56,5 +56,39 @@ export type { StatisticProps } from './Statistic';
 export { Row, Col } from './Grid';
 export type { RowProps, ColProps } from './Grid';
 
+// Export new components
+export { Tooltip } from './Tooltip';
+export type { TooltipProps } from './Tooltip';
+
+export { Badge } from './Badge';
+export type { BadgeProps } from './Badge';
+
+export { InputNumber } from './InputNumber';
+export type { InputNumberProps } from './InputNumber';
+
+export { Switch } from './Switch';
+export type { SwitchProps } from './Switch';
+
+export { Progress } from './Progress';
+export type { ProgressProps } from './Progress';
+
+export { Menu } from './Menu';
+export type { MenuProps, MenuItemProps, SubMenuProps } from './Menu';
+
+export { Tree } from './Tree';
+export type { TreeProps, TreeNodeData } from './Tree';
+
+export { Avatar } from './Avatar';
+export type { AvatarProps } from './Avatar';
+
+export { Checkbox } from './Checkbox';
+export type { CheckboxProps } from './Checkbox';
+
+export { Steps } from './Steps';
+export type { StepsProps, StepProps } from './Steps';
+
+export { Upload } from './Upload';
+export type { UploadProps, UploadFile } from './Upload';
+
 // 导出所有图标
 export * from './Icons';
