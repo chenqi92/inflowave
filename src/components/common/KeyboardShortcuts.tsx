@@ -1,9 +1,15 @@
 import React from 'react';
 import { Modal, Table, Typography, Space, Tag } from '@/components/ui';
-// TODO: Replace these Ant Design components: Divider
-import { SettingOutlined, FileOutlined, EditOutlined, EyeOutlined, DatabaseOutlined } from '@/components/ui';
-// TODO: Replace these icons: ToolOutlined, AppstoreOutlined, QuestionCircleOutlined
-// You may need to find alternatives or create custom icons
+import {
+  SettingOutlined,
+  FileOutlined,
+  EditOutlined,
+  EyeOutlined,
+  DatabaseOutlined,
+  ToolOutlined,
+  AppstoreOutlined,
+  QuestionCircleOutlined
+} from '@/components/ui';
 
 const { Title, Text } = Typography;
 

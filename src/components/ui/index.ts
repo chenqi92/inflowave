@@ -106,5 +106,8 @@ export type { DividerProps } from './Divider';
 export { Upload } from './Upload';
 export type { UploadProps, UploadFile } from './Upload';
 
+export { Breadcrumb } from './Breadcrumb';
+export type { BreadcrumbProps, BreadcrumbItem } from './Breadcrumb';
+
 // 导出所有图标
 export * from './Icons';
