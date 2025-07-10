@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Table, Alert, Button, Select, Space, Typography, Tag } from '@/components/ui';
 // TODO: Replace these Ant Design components: Progress, Tooltip, List, Divider, 
-import { DashboardOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ReloadOutlined, SettingOutlined } from '@/components/ui';
-// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, WarningOutlined, // Using SettingOutlined instead of OptimizationOutlined
-  DatabaseOutlined
+import { DashboardOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ReloadOutlined, SettingOutlined, DatabaseOutlined } from '@/components/ui';
+// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, WarningOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';

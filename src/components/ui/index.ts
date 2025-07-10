@@ -47,6 +47,9 @@ export type { SpaceProps } from './Space';
 export { Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownMenuItem, DropdownMenuProps } from './Dropdown';
 
+export { Drawer } from './Drawer';
+export type { DrawerProps } from './Drawer';
+
 export { message, MessageProvider } from './Message';
 export type { MessageInstance } from './Message';
 

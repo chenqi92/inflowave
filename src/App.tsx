@@ -25,7 +25,8 @@ import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
 import UITest from './pages/UITest';
 
-const { Content } = Layout;
+// Layout 组件直接导入
+import { Content } from '@/components/ui';
 const { Text } = Typography;
 
 // 主布局组件
