@@ -140,6 +140,90 @@ pub async fn get_connection_count(
     connection_service: State<'_, ConnectionService>,
 ) -> Result<usize, String> {
     debug!("处理获取连接数量命令");
-    
+
     Ok(connection_service.get_connection_count().await)
+}
+
+/// 连接到数据库
+#[tauri::command]
+pub async fn connect_to_database(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<(), String> {
+    debug!("处理连接数据库命令: {}", connection_id);
+
+    connection_service
+        .connect_to_database(&connection_id)
+        .await
+        .map_err(|e| {
+            error!("连接数据库失败: {}", e);
+            format!("连接数据库失败: {}", e)
+        })
+}
+
+/// 断开数据库连接
+#[tauri::command]
+pub async fn disconnect_from_database(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<(), String> {
+    debug!("处理断开数据库连接命令: {}", connection_id);
+
+    connection_service
+        .disconnect_from_database(&connection_id)
+        .await
+        .map_err(|e| {
+            error!("断开数据库连接失败: {}", e);
+            format!("断开数据库连接失败: {}", e)
+        })
+}
+
+/// 启动连接健康监控
+#[tauri::command]
+pub async fn start_connection_monitoring(
+    connection_service: State<'_, ConnectionService>,
+    interval_seconds: Option<u64>,
+) -> Result<(), String> {
+    debug!("启动连接健康监控，间隔: {:?}秒", interval_seconds);
+
+    connection_service
+        .start_health_monitoring(interval_seconds.unwrap_or(30))
+        .await
+        .map_err(|e| {
+            error!("启动连接健康监控失败: {}", e);
+            format!("启动连接健康监控失败: {}", e)
+        })
+}
+
+/// 停止连接健康监控
+#[tauri::command]
+pub async fn stop_connection_monitoring(
+    connection_service: State<'_, ConnectionService>,
+) -> Result<(), String> {
+    debug!("停止连接健康监控");
+
+    connection_service
+        .stop_health_monitoring()
+        .await
+        .map_err(|e| {
+            error!("停止连接健康监控失败: {}", e);
+            format!("停止连接健康监控失败: {}", e)
+        })
+}
+
+/// 获取连接池统计信息
+#[tauri::command]
+pub async fn get_connection_pool_stats(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<serde_json::Value, String> {
+    debug!("获取连接池统计信息: {}", connection_id);
+
+    connection_service
+        .get_pool_stats(&connection_id)
+        .await
+        .map_err(|e| {
+            error!("获取连接池统计信息失败: {}", e);
+            format!("获取连接池统计信息失败: {}", e)
+        })
 }

@@ -1,14 +1,17 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::database::connection::ConnectionManager;
+use crate::database::pool::{ConnectionPool, PoolConfig};
 use crate::utils::encryption::EncryptionService;
 use crate::utils::config::ConfigUtils;
 use anyhow::{Context, Result};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, Mutex};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
+use tokio::time::{interval, Duration};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// 连接配置存储结构
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +40,9 @@ pub struct ConnectionService {
     encryption: Arc<EncryptionService>,
     configs: Arc<RwLock<HashMap<String, ConnectionConfig>>>,
     storage_path: PathBuf,
+    pools: Arc<RwLock<HashMap<String, Arc<ConnectionPool>>>>,
+    monitoring_active: Arc<AtomicBool>,
+    monitoring_handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
 
 impl ConnectionService {
@@ -53,6 +59,9 @@ impl ConnectionService {
             encryption,
             configs: Arc::new(RwLock::new(HashMap::new())),
             storage_path,
+            pools: Arc::new(RwLock::new(HashMap::new())),
+            monitoring_active: Arc::new(AtomicBool::new(false)),
+            monitoring_handle: Arc::new(Mutex::new(None)),
         };
 
         service
@@ -355,5 +364,142 @@ impl ConnectionService {
         }
 
         Ok(())
+    }
+
+    /// 连接到数据库
+    pub async fn connect_to_database(&self, connection_id: &str) -> Result<()> {
+        debug!("连接到数据库: {}", connection_id);
+
+        // 检查连接是否存在
+        if !self.manager.connection_exists(connection_id).await {
+            return Err(anyhow::anyhow!("连接 '{}' 不存在", connection_id));
+        }
+
+        // 测试连接
+        let test_result = self.manager.test_connection(connection_id).await?;
+        if !test_result.success {
+            return Err(anyhow::anyhow!("连接测试失败: {}", test_result.error.unwrap_or_default()));
+        }
+
+        // 创建连接池
+        let config = {
+            let configs = self.configs.read().await;
+            configs.get(connection_id)
+                .ok_or_else(|| anyhow::anyhow!("连接配置不存在: {}", connection_id))?
+                .clone()
+        };
+
+        // 解密密码
+        let mut runtime_config = config.clone();
+        if let Some(encrypted_password) = &config.password {
+            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
+                .context("密码解密失败")?;
+            runtime_config.password = Some(decrypted_password);
+        }
+
+        let pool_config = PoolConfig::default();
+        let pool = Arc::new(ConnectionPool::new(runtime_config, pool_config));
+
+        // 存储连接池
+        {
+            let mut pools = self.pools.write().await;
+            pools.insert(connection_id.to_string(), pool);
+        }
+
+        info!("成功连接到数据库: {}", connection_id);
+        Ok(())
+    }
+
+    /// 断开数据库连接
+    pub async fn disconnect_from_database(&self, connection_id: &str) -> Result<()> {
+        debug!("断开数据库连接: {}", connection_id);
+
+        // 移除连接池
+        {
+            let mut pools = self.pools.write().await;
+            if let Some(pool) = pools.remove(connection_id) {
+                pool.close().await;
+            }
+        }
+
+        info!("成功断开数据库连接: {}", connection_id);
+        Ok(())
+    }
+
+    /// 启动健康监控
+    pub async fn start_health_monitoring(&self, interval_seconds: u64) -> Result<()> {
+        debug!("启动健康监控，间隔: {}秒", interval_seconds);
+
+        // 检查是否已经在运行
+        if self.monitoring_active.load(Ordering::Relaxed) {
+            warn!("健康监控已经在运行");
+            return Ok(());
+        }
+
+        self.monitoring_active.store(true, Ordering::Relaxed);
+
+        let manager = self.manager.clone();
+        let monitoring_active = self.monitoring_active.clone();
+
+        let handle = tokio::spawn(async move {
+            let mut interval = interval(Duration::from_secs(interval_seconds));
+
+            while monitoring_active.load(Ordering::Relaxed) {
+                interval.tick().await;
+
+                // 执行健康检查
+                let _health_results = manager.health_check_all().await;
+
+                // 这里可以发送事件到前端
+                // TODO: 实现事件发送机制
+            }
+        });
+
+        // 存储任务句柄
+        {
+            let mut monitoring_handle = self.monitoring_handle.lock().await;
+            *monitoring_handle = Some(handle);
+        }
+
+        info!("健康监控已启动");
+        Ok(())
+    }
+
+    /// 停止健康监控
+    pub async fn stop_health_monitoring(&self) -> Result<()> {
+        debug!("停止健康监控");
+
+        self.monitoring_active.store(false, Ordering::Relaxed);
+
+        // 取消监控任务
+        {
+            let mut monitoring_handle = self.monitoring_handle.lock().await;
+            if let Some(handle) = monitoring_handle.take() {
+                handle.abort();
+            }
+        }
+
+        info!("健康监控已停止");
+        Ok(())
+    }
+
+    /// 获取连接池统计信息
+    pub async fn get_pool_stats(&self, connection_id: &str) -> Result<serde_json::Value> {
+        debug!("获取连接池统计信息: {}", connection_id);
+
+        let pools = self.pools.read().await;
+        if let Some(pool) = pools.get(connection_id) {
+            let stats = pool.get_stats().await;
+            Ok(serde_json::json!({
+                "connection_id": connection_id,
+                "total_connections": stats.total_connections,
+                "active_connections": stats.active_connections,
+                "idle_connections": stats.idle_connections,
+                "available_permits": stats.available_permits,
+                "max_connections": stats.max_connections
+            }))
+        } else {
+            Err(anyhow::anyhow!("连接池不存在: {}", connection_id))
+        }
     }
 }

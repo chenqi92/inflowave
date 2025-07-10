@@ -143,26 +143,42 @@ impl ConnectionManager {
     /// 健康检查所有连接
     pub async fn health_check_all(&self) -> HashMap<String, ConnectionTestResult> {
         debug!("执行所有连接的健康检查");
-        
+
         let connections = {
             let connections = self.connections.read().await;
             connections.keys().cloned().collect::<Vec<_>>()
         };
-        
+
         let mut results = HashMap::new();
-        
+
         for connection_id in connections {
             match self.test_connection(&connection_id).await {
                 Ok(result) => {
+                    // 更新连接状态
+                    if result.success {
+                        if let Some(latency) = result.latency {
+                            self.update_status(&connection_id, |status| {
+                                status.connected(latency)
+                            }).await;
+                        }
+                    } else {
+                        self.update_status(&connection_id, |status| {
+                            status.error(result.error.clone().unwrap_or_default())
+                        }).await;
+                    }
                     results.insert(connection_id, result);
                 }
                 Err(e) => {
                     error!("健康检查失败: {} - {}", connection_id, e);
-                    results.insert(connection_id, ConnectionTestResult::error(e.to_string()));
+                    let error_msg = e.to_string();
+                    self.update_status(&connection_id, |status| {
+                        status.error(error_msg.clone())
+                    }).await;
+                    results.insert(connection_id, ConnectionTestResult::error(error_msg));
                 }
             }
         }
-        
+
         info!("健康检查完成，检查了 {} 个连接", results.len());
         results
     }

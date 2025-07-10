@@ -119,6 +119,11 @@ async fn main() {
             get_all_connection_statuses,
             health_check_all_connections,
             get_connection_count,
+            connect_to_database,
+            disconnect_from_database,
+            start_connection_monitoring,
+            stop_connection_monitoring,
+            get_connection_pool_stats,
 
             // Database operations
             get_databases,

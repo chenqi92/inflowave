@@ -1,19 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
+import { invoke } from '@tauri-apps/api/tauri';
 
 interface ConnectionState {
   // 连接配置列表
   connections: ConnectionConfig[];
-  
+
   // 连接状态映射
   connectionStatuses: Record<string, ConnectionStatus>;
-  
+
   // 当前活跃的连接
   activeConnectionId: string | null;
-  
+
+  // 监控状态
+  monitoringActive: boolean;
+  monitoringInterval: number;
+
+  // 连接池统计信息
+  poolStats: Record<string, any>;
+
   // 操作方法
-  addConnection: (config: ConnectionConfig) => void;
+  addConnection: (config: ConnectionConfig) => string;
   updateConnection: (id: string, config: Partial<ConnectionConfig>) => void;
   removeConnection: (id: string) => void;
   setConnectionStatus: (id: string, status: ConnectionStatus) => void;
@@ -21,6 +29,19 @@ interface ConnectionState {
   getConnection: (id: string) => ConnectionConfig | undefined;
   getConnectionStatus: (id: string) => ConnectionStatus | undefined;
   clearConnections: () => void;
+
+  // 连接管理方法
+  connectToDatabase: (id: string) => Promise<void>;
+  disconnectFromDatabase: (id: string) => Promise<void>;
+
+  // 监控方法
+  startMonitoring: (intervalSeconds?: number) => Promise<void>;
+  stopMonitoring: () => Promise<void>;
+  refreshAllStatuses: () => Promise<void>;
+
+  // 连接池方法
+  getPoolStats: (id: string) => Promise<void>;
+  setPoolStats: (id: string, stats: any) => void;
 }
 
 export const useConnectionStore = create<ConnectionState>()(
@@ -30,6 +51,9 @@ export const useConnectionStore = create<ConnectionState>()(
       connections: [],
       connectionStatuses: {},
       activeConnectionId: null,
+      monitoringActive: false,
+      monitoringInterval: 30,
+      poolStats: {},
       
       // 添加连接
       addConnection: (config) => {
@@ -104,7 +128,144 @@ export const useConnectionStore = create<ConnectionState>()(
           connections: [],
           connectionStatuses: {},
           activeConnectionId: null,
+          poolStats: {},
         });
+      },
+
+      // 连接到数据库
+      connectToDatabase: async (id: string) => {
+        try {
+          // 更新状态为连接中
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'connecting',
+              },
+            },
+          }));
+
+          await invoke('connect_to_database', { connectionId: id });
+
+          // 更新状态为已连接
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'connected',
+                lastConnected: new Date(),
+                error: undefined,
+              },
+            },
+            activeConnectionId: id,
+          }));
+        } catch (error) {
+          // 更新状态为错误
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'error',
+                error: String(error),
+              },
+            },
+          }));
+          throw error;
+        }
+      },
+
+      // 断开数据库连接
+      disconnectFromDatabase: async (id: string) => {
+        try {
+          await invoke('disconnect_from_database', { connectionId: id });
+
+          // 更新状态为已断开
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'disconnected',
+                error: undefined,
+              },
+            },
+            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
+          }));
+        } catch (error) {
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'error',
+                error: String(error),
+              },
+            },
+          }));
+          throw error;
+        }
+      },
+
+      // 启动监控
+      startMonitoring: async (intervalSeconds = 30) => {
+        try {
+          await invoke('start_connection_monitoring', { intervalSeconds });
+          set({ monitoringActive: true, monitoringInterval: intervalSeconds });
+        } catch (error) {
+          console.error('启动监控失败:', error);
+          throw error;
+        }
+      },
+
+      // 停止监控
+      stopMonitoring: async () => {
+        try {
+          await invoke('stop_connection_monitoring');
+          set({ monitoringActive: false });
+        } catch (error) {
+          console.error('停止监控失败:', error);
+          throw error;
+        }
+      },
+
+      // 刷新所有连接状态
+      refreshAllStatuses: async () => {
+        try {
+          const statuses = await invoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
+          set({ connectionStatuses: statuses });
+        } catch (error) {
+          console.error('刷新连接状态失败:', error);
+          throw error;
+        }
+      },
+
+      // 获取连接池统计信息
+      getPoolStats: async (id: string) => {
+        try {
+          const stats = await invoke('get_connection_pool_stats', { connectionId: id });
+          set((state) => ({
+            poolStats: {
+              ...state.poolStats,
+              [id]: stats,
+            },
+          }));
+        } catch (error) {
+          console.error('获取连接池统计信息失败:', error);
+          throw error;
+        }
+      },
+
+      // 设置连接池统计信息
+      setPoolStats: (id: string, stats: any) => {
+        set((state) => ({
+          poolStats: {
+            ...state.poolStats,
+            [id]: stats,
+          },
+        }));
       },
     }),
     {

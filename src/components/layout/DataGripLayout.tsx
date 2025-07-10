@@ -62,6 +62,8 @@ const DataGripLayout: React.FC = () => {
     activeConnectionId,
     connectionStatuses,
     setActiveConnection,
+    connectToDatabase,
+    disconnectFromDatabase,
   } = useConnectionStore();
   const [structure, setStructure] = useState<DatabaseStructure>({
     databases: [],
@@ -280,15 +282,15 @@ const DataGripLayout: React.FC = () => {
     try {
       const status = connectionStatuses[connectionId];
       if (status?.status === 'connected') {
-        await safeTauriInvoke('disconnect_from_database', { connectionId });
-        setActiveConnection(null);
-        setStructure({ databases: [], measurements: {}, fields: {}, tags: {} });
-        message.info('已断开连接');
-      } else {
-        await safeTauriInvoke('connect_to_database', { connectionId });
+        await connectToDatabase(connectionId);
         setActiveConnection(connectionId);
         await loadDatabaseStructure(connectionId);
         message.success('连接成功');
+      } else {
+        await disconnectFromDatabase(connectionId);
+        setActiveConnection(null);
+        setStructure({ databases: [], measurements: {}, fields: {}, tags: {} });
+        message.info('已断开连接');
       }
     } catch (error) {
       message.error(`连接操作失败: ${error}`);
