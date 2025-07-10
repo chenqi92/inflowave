@@ -44,6 +44,8 @@
       "app"
     ],
     "icon": [
+      "icons/icon.png",
+      "icons/linux/icon.png",
       "icons/windows/16x16.ico",
       "icons/windows/32x32.ico",
       "icons/windows/48x48.ico",
@@ -79,6 +81,10 @@
           "libgtk-3-0",
           "libayatana-appindicator3-1"
         ]
+      },
+      "appimage": {
+        "bundleMediaFramework": true,
+        "files": {}
       }
     }
   }

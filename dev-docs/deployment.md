@@ -223,11 +223,34 @@ tauri build --target aarch64-unknown-linux-gnu
 {
   "linux": {
     "deb": {
-      "depends": ["libwebkit2gtk-4.0-37"]
+      "depends": [
+        "libwebkit2gtk-4.1-0",
+        "libgtk-3-0",
+        "libayatana-appindicator3-1"
+      ]
     },
     "rpm": {
       "depends": ["webkit2gtk3"]
+    },
+    "appimage": {
+      "bundleMediaFramework": true,
+      "files": {}
     }
+  }
+}
+```
+
+**重要提示**: AppImage 打包需要 PNG 格式的图标文件。确保在 `bundle.icon` 配置中包含 PNG 文件：
+
+```json
+{
+  "bundle": {
+    "icon": [
+      "icons/icon.png",
+      "icons/linux/icon.png",
+      "icons/windows/32x32.ico",
+      "icons/mac/512x512.icns"
+    ]
   }
 }
 ```
