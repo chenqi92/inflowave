@@ -23,7 +23,10 @@ const config = {
   ssl: false,
   timeout: 5000
 };
-const connectionId = await invoke('create_connection', { config });
+// 使用安全包装器调用后端命令
+import { safeTauriInvoke } from '@/utils/tauri';
+
+const connectionId = await safeTauriInvoke('create_connection', { config });
 ```
 
 #### 测试连接

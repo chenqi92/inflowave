@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface ConnectionState {
   // 连接配置列表
@@ -146,7 +146,7 @@ export const useConnectionStore = create<ConnectionState>()(
             },
           }));
 
-          await invoke('connect_to_database', { connectionId: id });
+          await safeTauriInvoke('connect_to_database', { connectionId: id });
 
           // 更新状态为已连接
           set((state) => ({
@@ -180,7 +180,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 断开数据库连接
       disconnectFromDatabase: async (id: string) => {
         try {
-          await invoke('disconnect_from_database', { connectionId: id });
+          await safeTauriInvoke('disconnect_from_database', { connectionId: id });
 
           // 更新状态为已断开
           set((state) => ({
@@ -212,7 +212,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 启动监控
       startMonitoring: async (intervalSeconds = 30) => {
         try {
-          await invoke('start_connection_monitoring', { intervalSeconds });
+          await safeTauriInvoke('start_connection_monitoring', { intervalSeconds });
           set({ monitoringActive: true, monitoringInterval: intervalSeconds });
         } catch (error) {
           console.error('启动监控失败:', error);
@@ -223,7 +223,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 停止监控
       stopMonitoring: async () => {
         try {
-          await invoke('stop_connection_monitoring');
+          await safeTauriInvoke('stop_connection_monitoring');
           set({ monitoringActive: false });
         } catch (error) {
           console.error('停止监控失败:', error);
@@ -234,8 +234,10 @@ export const useConnectionStore = create<ConnectionState>()(
       // 刷新所有连接状态
       refreshAllStatuses: async () => {
         try {
-          const statuses = await invoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
-          set({ connectionStatuses: statuses });
+          const statuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
+          if (statuses) {
+            set({ connectionStatuses: statuses });
+          }
         } catch (error) {
           console.error('刷新连接状态失败:', error);
           throw error;
@@ -245,7 +247,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 获取连接池统计信息
       getPoolStats: async (id: string) => {
         try {
-          const stats = await invoke('get_connection_pool_stats', { connectionId: id });
+          const stats = await safeTauriInvoke('get_connection_pool_stats', { connectionId: id });
           set((state) => ({
             poolStats: {
               ...state.poolStats,

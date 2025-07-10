@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Card, Typography, Space, message } from 'antd';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Title, Text } = Typography;
 

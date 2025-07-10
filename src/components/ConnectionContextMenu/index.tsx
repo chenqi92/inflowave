@@ -13,7 +13,7 @@ import {
 import type { MenuProps } from 'antd';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
-import { invoke } from '@tauri-apps/api/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface ConnectionContextMenuProps {
   connection: ConnectionConfig;
@@ -62,7 +62,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
 
   const handleTestConnection = async () => {
     try {
-      const result = await invoke('test_connection', { connectionId: connection.id });
+      const result = await safeTauriInvoke('test_connection', { connectionId: connection.id });
       if (result) {
         message.success('连接测试成功');
       } else {

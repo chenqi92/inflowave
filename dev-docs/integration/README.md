@@ -81,17 +81,39 @@
 - 插件注册和加载
 - 插件通信接口
 
+## ⚠️ 重要提醒
+
+**不要直接使用 `invoke` 函数！**
+
+为了确保浏览器兼容性和错误处理，所有前端代码必须使用 `safeTauriInvoke` 包装器：
+
+```typescript
+// ❌ 错误 - 不要这样做
+import { invoke } from '@tauri-apps/api/core';
+const result = await invoke('command_name', args);
+
+// ✅ 正确 - 使用安全包装器
+import { safeTauriInvoke } from '@/utils/tauri';
+const result = await safeTauriInvoke('command_name', args);
+```
+
+**为什么使用 safeTauriInvoke？**
+- 🌐 **浏览器兼容性**：在浏览器开发模式下提供模拟数据
+- 🛡️ **错误处理**：统一的错误处理和日志记录
+- 🔧 **调试支持**：更好的开发体验和调试信息
+- 📱 **环境检测**：自动检测运行环境并适配
+
 ## 🚀 快速开始
 
 ### 1. 理解通信流程
 ```typescript
-// 前端调用后端命令
-import { invoke } from '@tauri-apps/api/tauri';
+// 前端调用后端命令 - 使用安全包装器
+import { safeTauriInvoke } from '@/utils/tauri';
 
 // 执行数据库查询
 const executeQuery = async (query: string) => {
   try {
-    const result = await invoke<QueryResult>('execute_query', {
+    const result = await safeTauriInvoke<QueryResult>('execute_query', {
       connectionId: 'conn-123',
       query: 'SHOW DATABASES'
     });
@@ -177,18 +199,20 @@ pub struct QueryResult {
 
 ### 1. 命令-响应模式
 ```typescript
-// 前端服务层
+// 前端服务层 - 使用安全包装器
 export class ConnectionService {
   async testConnection(config: ConnectionConfig): Promise<boolean> {
-    return await invoke<boolean>('test_connection', { config });
+    const result = await safeTauriInvoke<boolean>('test_connection', { config });
+    return result || false;
   }
-  
+
   async getConnections(): Promise<Connection[]> {
-    return await invoke<Connection[]>('get_connections');
+    const result = await safeTauriInvoke<Connection[]>('get_connections');
+    return result || [];
   }
-  
+
   async saveConnection(connection: Connection): Promise<void> {
-    await invoke('save_connection', { connection });
+    await safeTauriInvoke('save_connection', { connection });
   }
 }
 ```
