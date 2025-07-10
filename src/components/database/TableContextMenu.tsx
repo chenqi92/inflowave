@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dropdown, Menu, message } from 'antd';
+import { Dropdown, Menu, message, Modal, Button } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   TableOutlined,
@@ -57,22 +57,56 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'view_structure':
           // 查看表结构
-          await safeTauriInvoke('get_table_structure', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-            table: tableName,
-          });
-          message.success(`正在查看表 ${tableName} 的结构`);
+          try {
+            const structure = await safeTauriInvoke('get_table_structure', {
+              connectionId: activeConnectionId,
+              database: databaseName,
+              table: tableName,
+            });
+
+            // 显示结构信息
+            Modal.info({
+              title: `表结构 - ${tableName}`,
+              width: 800,
+              content: (
+                <div>
+                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                    {JSON.stringify(structure, null, 2)}
+                  </pre>
+                </div>
+              ),
+            });
+            message.success(`已获取表 ${tableName} 的结构信息`);
+          } catch (error) {
+            message.error(`获取表结构失败: ${error}`);
+          }
           break;
 
         case 'insert_data':
           // 插入数据 - 生成 INSERT 模板
-          await safeTauriInvoke('generate_insert_template', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-            table: tableName,
-          });
-          message.success(`已生成表 ${tableName} 的插入模板`);
+          try {
+            const template = await safeTauriInvoke('generate_insert_template', {
+              connectionId: activeConnectionId,
+              database: databaseName,
+              table: tableName,
+            });
+
+            // 显示插入模板
+            Modal.info({
+              title: `插入数据模板 - ${tableName}`,
+              width: 800,
+              content: (
+                <div>
+                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
+                    {template}
+                  </pre>
+                </div>
+              ),
+            });
+            message.success(`已生成表 ${tableName} 的插入模板`);
+          } catch (error) {
+            message.error(`生成插入模板失败: ${error}`);
+          }
           break;
 
         case 'update_data':
@@ -110,12 +144,67 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'export_data':
           // 导出表数据
-          await safeTauriInvoke('export_table_data', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-            table: tableName,
-          });
-          message.success(`正在导出表 ${tableName} 的数据`);
+          try {
+            // 显示导出选项对话框
+            Modal.confirm({
+              title: `导出表数据 - ${tableName}`,
+              content: (
+                <div>
+                  <p>选择导出格式和选项：</p>
+                  <div className="mt-4">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          // 使用默认文件路径，避免动态导入问题
+                          const filePath = `${tableName}_${Date.now()}.csv`;
+                          const result = await safeTauriInvoke('export_table_data', {
+                            connectionId: activeConnectionId,
+                            database: databaseName,
+                            table: tableName,
+                            format: 'csv',
+                            limit: 10000,
+                            filePath: filePath,
+                          });
+                          message.success(result);
+                        } catch (error) {
+                          message.error(`导出CSV失败: ${error}`);
+                        }
+                      }}
+                      className="mr-2"
+                    >
+                      导出为 CSV
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        try {
+                          // 使用默认文件路径，避免动态导入问题
+                          const filePath = `${tableName}_${Date.now()}.json`;
+                          const result = await safeTauriInvoke('export_table_data', {
+                            connectionId: activeConnectionId,
+                            database: databaseName,
+                            table: tableName,
+                            format: 'json',
+                            limit: 10000,
+                            filePath: filePath,
+                          });
+                          message.success(result);
+                        } catch (error) {
+                          message.error(`导出JSON失败: ${error}`);
+                        }
+                      }}
+                    >
+                      导出为 JSON
+                    </Button>
+                  </div>
+                </div>
+              ),
+              onOk() {
+                // 对话框确认后的操作
+              },
+            });
+          } catch (error) {
+            message.error(`导出数据失败: ${error}`);
+          }
           break;
 
         case 'import_data':

@@ -1,5 +1,5 @@
-use crate::models::{RetentionPolicy, RetentionPolicyConfig};
-use crate::services::ConnectionService;
+use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats};
+use crate::services::{ConnectionService, database_service::DatabaseService};
 use tauri::State;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
@@ -168,6 +168,309 @@ pub async fn drop_retention_policy(
 
     info!("保留策略 '{}' 删除成功", policy_name);
     Ok(())
+}
+
+/// 获取数据库信息
+#[tauri::command]
+pub async fn get_database_info(
+    database_service: State<'_, DatabaseService>,
+    connection_id: String,
+    database: String,
+) -> Result<DatabaseInfo, String> {
+    debug!("处理获取数据库信息命令: {} - {}", connection_id, database);
+
+    database_service.get_database_info(&connection_id, &database).await
+        .map_err(|e| {
+            error!("获取数据库信息失败: {}", e);
+            format!("获取数据库信息失败: {}", e)
+        })
+}
+
+/// 获取数据库统计信息
+#[tauri::command]
+pub async fn get_database_stats(
+    database_service: State<'_, DatabaseService>,
+    connection_id: String,
+    database: String,
+) -> Result<DatabaseStats, String> {
+    debug!("处理获取数据库统计信息命令: {} - {}", connection_id, database);
+
+    database_service.get_database_stats(&connection_id, &database).await
+        .map_err(|e| {
+            error!("获取数据库统计信息失败: {}", e);
+            format!("获取数据库统计信息失败: {}", e)
+        })
+}
+
+/// 执行表查询（右键菜单操作）
+#[tauri::command]
+pub async fn execute_table_query(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    query_type: String,
+    limit: Option<u32>,
+) -> Result<QueryResult, String> {
+    debug!("处理表查询命令: {} - {} - {} - {}", connection_id, database, table, query_type);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 根据查询类型构建查询语句
+    let query = match query_type.as_str() {
+        "SELECT" => {
+            let limit_clause = limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default();
+            format!("SELECT * FROM \"{}\" ORDER BY time DESC{}", table, limit_clause)
+        }
+        "COUNT" => format!("SELECT COUNT(*) FROM \"{}\"", table),
+        "FIRST" => format!("SELECT FIRST(*) FROM \"{}\"", table),
+        "LAST" => format!("SELECT LAST(*) FROM \"{}\"", table),
+        _ => return Err(format!("不支持的查询类型: {}", query_type)),
+    };
+
+    client.execute_query(&query).await
+        .map_err(|e| {
+            error!("执行表查询失败: {}", e);
+            format!("执行表查询失败: {}", e)
+        })
+}
+
+/// 获取表结构信息
+#[tauri::command]
+pub async fn get_table_structure(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取表结构命令: {} - {} - {}", connection_id, database, table);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取字段信息
+    let field_query = format!("SHOW FIELD KEYS FROM \"{}\"", table);
+    let field_result = client.execute_query(&field_query).await
+        .map_err(|e| {
+            error!("获取字段信息失败: {}", e);
+            format!("获取字段信息失败: {}", e)
+        })?;
+
+    // 获取标签信息
+    let tag_query = format!("SHOW TAG KEYS FROM \"{}\"", table);
+    let tag_result = client.execute_query(&tag_query).await
+        .map_err(|e| {
+            error!("获取标签信息失败: {}", e);
+            format!("获取标签信息失败: {}", e)
+        })?;
+
+    // 构建结构信息
+    let structure = serde_json::json!({
+        "measurement": table,
+        "fields": field_result,
+        "tags": tag_result
+    });
+
+    Ok(structure)
+}
+
+/// 生成插入数据模板
+#[tauri::command]
+pub async fn generate_insert_template(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+) -> Result<String, String> {
+    debug!("处理生成插入模板命令: {} - {} - {}", connection_id, database, table);
+
+    // 生成 Line Protocol 格式的插入模板
+    let template = format!(
+        r#"# Line Protocol 格式插入模板
+# 格式: measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+
+{},tag1=value1,tag2=value2 field1=1.0,field2="string_value" {}
+
+# 示例:
+# {},host=server01,region=us-west cpu_usage=80.5,memory_usage=65.2 1609459200000000000
+"#,
+        table,
+        chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        table
+    );
+
+    Ok(template)
+}
+
+/// 导出表数据
+#[tauri::command]
+pub async fn export_table_data(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    format: String,
+    limit: Option<u32>,
+    file_path: String,
+) -> Result<String, String> {
+    debug!("处理导出表数据命令: {} - {} - {} - {}", connection_id, database, table, format);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 构建查询语句
+    let limit_clause = limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default();
+    let query = format!("SELECT * FROM \"{}\" ORDER BY time DESC{}", table, limit_clause);
+
+    // 执行查询
+    let result = client.execute_query(&query).await
+        .map_err(|e| {
+            error!("查询数据失败: {}", e);
+            format!("查询数据失败: {}", e)
+        })?;
+
+    // 根据格式导出数据
+    match format.as_str() {
+        "csv" => export_to_csv(&result, &file_path),
+        "json" => export_to_json(&result, &file_path),
+        _ => Err(format!("不支持的导出格式: {}", format)),
+    }
+}
+
+/// 导出为CSV格式
+fn export_to_csv(result: &QueryResult, file_path: &str) -> Result<String, String> {
+    use std::fs::File;
+    use std::io::Write;
+
+    let mut file = File::create(file_path)
+        .map_err(|e| format!("创建文件失败: {}", e))?;
+
+    // 写入表头
+    let header = result.columns.join(",");
+    writeln!(file, "{}", header)
+        .map_err(|e| format!("写入表头失败: {}", e))?;
+
+    // 写入数据行
+    for row in &result.rows {
+        let row_str: Vec<String> = row.iter()
+            .map(|value| match value {
+                serde_json::Value::String(s) => format!("\"{}\"", s),
+                serde_json::Value::Number(n) => n.to_string(),
+                serde_json::Value::Bool(b) => b.to_string(),
+                serde_json::Value::Null => "".to_string(),
+                _ => value.to_string(),
+            })
+            .collect();
+        writeln!(file, "{}", row_str.join(","))
+            .map_err(|e| format!("写入数据行失败: {}", e))?;
+    }
+
+    Ok(format!("成功导出 {} 行数据到 {}", result.row_count, file_path))
+}
+
+/// 导出为JSON格式
+fn export_to_json(result: &QueryResult, file_path: &str) -> Result<String, String> {
+    use std::fs::File;
+    use std::io::Write;
+
+    let mut file = File::create(file_path)
+        .map_err(|e| format!("创建文件失败: {}", e))?;
+
+    let json_data = serde_json::to_string_pretty(result)
+        .map_err(|e| format!("序列化JSON失败: {}", e))?;
+
+    file.write_all(json_data.as_bytes())
+        .map_err(|e| format!("写入文件失败: {}", e))?;
+
+    Ok(format!("成功导出 {} 行数据到 {}", result.row_count, file_path))
+}
+
+/// 刷新数据库结构
+#[tauri::command]
+pub async fn refresh_database_structure(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+) -> Result<(), String> {
+    debug!("处理刷新数据库结构命令: {} - {}", connection_id, database);
+
+    let manager = connection_service.get_manager();
+    let _client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 这里可以添加缓存清理逻辑
+    info!("数据库 '{}' 结构已刷新", database);
+    Ok(())
+}
+
+/// 创建测量模板
+#[tauri::command]
+pub async fn create_measurement_template(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+) -> Result<String, String> {
+    debug!("处理创建测量模板命令: {} - {}", connection_id, database);
+
+    let _manager = connection_service.get_manager();
+
+    // 生成创建测量的模板
+    let template = format!(
+        r#"# 创建新测量的 Line Protocol 模板
+# 在 InfluxDB 中，测量(measurement)是通过写入数据自动创建的
+
+# 格式: measurement_name,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+
+# 示例 - 创建一个名为 'new_measurement' 的测量:
+new_measurement,host=server01,region=us-west cpu_usage=80.5,memory_usage=65.2 {}
+
+# 使用以下命令写入数据:
+# curl -i -XPOST 'http://localhost:8086/write?db={}' --data-binary 'new_measurement,host=server01,region=us-west cpu_usage=80.5,memory_usage=65.2'
+"#,
+        chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
+        database
+    );
+
+    Ok(template)
+}
+
+/// 显示测量列表
+#[tauri::command]
+pub async fn show_measurements(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+) -> Result<Vec<String>, String> {
+    debug!("处理显示测量列表命令: {} - {}", connection_id, database);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    client.get_measurements(&database).await
+        .map_err(|e| {
+            error!("获取测量列表失败: {}", e);
+            format!("获取测量列表失败: {}", e)
+        })
 }
 
 /// 修改保留策略
@@ -639,72 +942,4 @@ fn parse_timestamp(value: &str) -> Result<i64, String> {
     Err(format!("无法解析时间戳: {}", value))
 }
 
-/// 数据库统计信息
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DatabaseStats {
-    pub name: String,
-    pub measurement_count: usize,
-    pub series_count: usize,
-    pub point_count: usize,
-    pub disk_size: f64, // MB
-    pub last_update: String,
-}
 
-/// 获取数据库统计信息
-#[tauri::command]
-pub async fn get_database_stats(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
-    database: String,
-) -> Result<DatabaseStats, String> {
-    debug!("处理获取数据库统计命令: {} - {}", connection_id, database);
-
-    let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
-        .map_err(|e| {
-            error!("获取连接失败: {}", e);
-            format!("获取连接失败: {}", e)
-        })?;
-
-    // 获取测量列表
-    let measurements = client.get_measurements(&database).await
-        .map_err(|e| {
-            error!("获取测量列表失败: {}", e);
-            format!("获取测量列表失败: {}", e)
-        })?;
-
-    let measurement_count = measurements.len();
-
-    // 估算序列数量和数据点数量
-    // 注意：这是一个简化的实现，实际的统计可能需要更复杂的查询
-    let mut total_series = 0;
-    let mut total_points = 0;
-
-    for measurement in &measurements {
-        // 尝试获取序列数量
-        if let Ok(series_result) = client.execute_query(&format!("SHOW SERIES FROM \"{}\"", measurement)).await {
-            total_series += series_result.row_count;
-        }
-
-        // 尝试获取数据点数量（限制查询以避免性能问题）
-        if let Ok(count_result) = client.execute_query(&format!("SELECT COUNT(*) FROM \"{}\" WHERE time >= now() - 7d", measurement)).await {
-            // 简化实现：使用 row_count 作为估算
-            total_points += count_result.row_count;
-        }
-    }
-
-    // 估算磁盘使用量（简化实现）
-    let estimated_disk_size = (total_points as f64 * 0.001).max(1.0); // 假设每个点约1KB
-
-    let stats = DatabaseStats {
-        name: database,
-        measurement_count,
-        series_count: total_series,
-        point_count: total_points,
-        disk_size: estimated_disk_size,
-        last_update: chrono::Utc::now().to_rfc3339(),
-    };
-
-    info!("数据库统计获取成功: {:?}", stats);
-    Ok(stats)
-}

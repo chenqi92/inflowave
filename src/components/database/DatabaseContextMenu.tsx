@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dropdown, message } from 'antd';
+import { Dropdown, message, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   DatabaseOutlined,
@@ -42,29 +42,68 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
       switch (action) {
         case 'create_measurement':
           // 创建新的 measurement (InfluxDB 中的表)
-          await safeTauriInvoke('create_measurement_template', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-          });
-          message.success(`正在为数据库 ${databaseName} 创建新的 measurement`);
+          try {
+            const template = await safeTauriInvoke('create_measurement_template', {
+              connectionId: activeConnectionId,
+              database: databaseName,
+            });
+
+            // 显示创建模板
+            Modal.info({
+              title: `创建 Measurement - ${databaseName}`,
+              width: 800,
+              content: (
+                <div>
+                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
+                    {template}
+                  </pre>
+                </div>
+              ),
+            });
+            message.success(`已生成数据库 ${databaseName} 的 measurement 创建模板`);
+          } catch (error) {
+            message.error(`生成创建模板失败: ${error}`);
+          }
           break;
 
         case 'refresh_database':
           // 刷新数据库结构
-          await safeTauriInvoke('refresh_database_structure', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-          });
-          message.success(`已刷新数据库 ${databaseName} 的结构`);
+          try {
+            await safeTauriInvoke('refresh_database_structure', {
+              connectionId: activeConnectionId,
+              database: databaseName,
+            });
+            message.success(`已刷新数据库 ${databaseName} 的结构`);
+            onAction?.('refresh_database', databaseName);
+          } catch (error) {
+            message.error(`刷新数据库结构失败: ${error}`);
+          }
           break;
 
         case 'database_info':
           // 显示数据库信息
-          await safeTauriInvoke('get_database_info', {
-            connectionId: activeConnectionId,
-            database: databaseName,
-          });
-          message.success(`正在获取数据库 ${databaseName} 的详细信息`);
+          try {
+            const info = await safeTauriInvoke('get_database_info', {
+              connectionId: activeConnectionId,
+              database: databaseName,
+            });
+
+            // 显示数据库信息
+            Modal.info({
+              title: `数据库信息 - ${databaseName}`,
+              width: 800,
+              content: (
+                <div>
+                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                    {JSON.stringify(info, null, 2)}
+                  </pre>
+                </div>
+              ),
+            });
+            message.success(`已获取数据库 ${databaseName} 的详细信息`);
+          } catch (error) {
+            message.error(`获取数据库信息失败: ${error}`);
+          }
           break;
 
         case 'show_measurements':

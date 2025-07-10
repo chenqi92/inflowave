@@ -140,6 +140,17 @@ async fn main() {
             get_tag_values,
             import_data,
 
+            // New database operations
+            get_database_info,
+            get_database_stats,
+            execute_table_query,
+            get_table_structure,
+            generate_insert_template,
+            export_table_data,
+            refresh_database_structure,
+            create_measurement_template,
+            show_measurements,
+
             // Query operations
             execute_query,
             validate_query,
