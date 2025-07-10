@@ -151,7 +151,6 @@ async fn main() {
             get_system_info,
             get_database_stats,
             health_check,
-            get_connection_pool_stats,
             cleanup_resources,
             get_app_config,
 

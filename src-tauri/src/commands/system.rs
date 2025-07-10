@@ -105,29 +105,7 @@ pub async fn health_check(
     Ok(health_status)
 }
 
-/// 获取连接池统计信息
-#[tauri::command]
-pub async fn get_connection_pool_stats(
-    connection_service: State<'_, ConnectionService>,
-) -> Result<serde_json::Value, String> {
-    debug!("处理获取连接池统计信息命令");
-    
-    let connection_count = connection_service.get_connection_count().await;
-    let statuses = connection_service.get_all_connection_statuses().await;
-    
-    let connected_count = statuses.values()
-        .filter(|status| matches!(status.status, crate::models::ConnectionState::Connected))
-        .count();
-    
-    let stats = serde_json::json!({
-        "total_connections": connection_count,
-        "connected_connections": connected_count,
-        "disconnected_connections": connection_count - connected_count,
-        "connection_statuses": statuses
-    });
-    
-    Ok(stats)
-}
+
 
 /// 清理资源
 #[tauri::command]
