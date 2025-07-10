@@ -17,6 +17,7 @@ import { useConnectionStore } from '@/store/connection';
 import DashboardManager from '@/components/dashboard/DashboardManager';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
+import TypographyDemo from '@/components/common/TypographyDemo';
 
 
 
@@ -337,6 +338,16 @@ const Dashboard: React.FC = () => {
                     </Card>
                   </Col>
                 </Row>
+              </div>
+            </div>
+
+            {/* Typography 样式测试 */}
+            <div className="desktop-panel">
+              <div className="desktop-panel-header">
+                样式测试
+              </div>
+              <div className="desktop-panel-content">
+                <TypographyDemo />
               </div>
             </div>
           </div>

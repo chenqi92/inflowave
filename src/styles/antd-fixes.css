@@ -1,0 +1,371 @@
+/* Ant Design Typography 组件样式修复 */
+
+/* 修复 Typography.Text 组件的样式冲突 */
+.ant-typography {
+  /* 重置可能被 Tailwind 覆盖的样式 */
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+  text-decoration: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  white-space: inherit;
+  text-align: inherit;
+  vertical-align: inherit;
+  display: inline;
+}
+
+/* 修复 Typography.Text 的特定样式 */
+.ant-typography.ant-typography-caption,
+.ant-typography .ant-typography-caption {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  line-height: 1.5;
+}
+
+.ant-typography.ant-typography-secondary,
+.ant-typography .ant-typography-secondary {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-typography.ant-typography-success,
+.ant-typography .ant-typography-success {
+  color: #52c41a;
+}
+
+.ant-typography.ant-typography-warning,
+.ant-typography .ant-typography-warning {
+  color: #faad14;
+}
+
+.ant-typography.ant-typography-danger,
+.ant-typography .ant-typography-danger {
+  color: #ff4d4f;
+}
+
+/* 修复 Typography 的尺寸样式 */
+.ant-typography h1,
+.ant-typography .ant-typography h1 {
+  font-size: 38px;
+  line-height: 1.23;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+.ant-typography h2,
+.ant-typography .ant-typography h2 {
+  font-size: 30px;
+  line-height: 1.35;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+.ant-typography h3,
+.ant-typography .ant-typography h3 {
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+.ant-typography h4,
+.ant-typography .ant-typography h4 {
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+.ant-typography h5,
+.ant-typography .ant-typography h5 {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+.ant-typography p,
+.ant-typography .ant-typography p {
+  margin: 0 0 1em 0;
+  line-height: 1.5715;
+}
+
+/* 修复 Typography.Text 的内联样式 */
+.ant-typography span,
+.ant-typography .ant-typography span {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+/* 修复可能的 Tailwind 冲突 */
+.ant-typography strong,
+.ant-typography .ant-typography strong {
+  font-weight: 600;
+}
+
+.ant-typography em,
+.ant-typography .ant-typography em {
+  font-style: italic;
+}
+
+.ant-typography u,
+.ant-typography .ant-typography u {
+  text-decoration: underline;
+}
+
+.ant-typography del,
+.ant-typography .ant-typography del {
+  text-decoration: line-through;
+}
+
+.ant-typography code,
+.ant-typography .ant-typography code {
+  margin: 0 0.2em;
+  padding: 0.2em 0.4em 0.1em;
+  font-size: 85%;
+  background: rgba(150, 150, 150, 0.1);
+  border: 1px solid rgba(100, 100, 100, 0.2);
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.ant-typography mark,
+.ant-typography .ant-typography mark {
+  padding: 0;
+  background-color: #ffe58f;
+}
+
+/* 修复 Typography 链接样式 */
+.ant-typography a,
+.ant-typography .ant-typography a {
+  color: #1890ff;
+  text-decoration: none;
+  outline: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.ant-typography a:hover,
+.ant-typography .ant-typography a:hover {
+  color: #40a9ff;
+}
+
+.ant-typography a:active,
+.ant-typography .ant-typography a:active {
+  color: #096dd9;
+}
+
+/* 修复 Typography 列表样式 */
+.ant-typography ul,
+.ant-typography ol,
+.ant-typography .ant-typography ul,
+.ant-typography .ant-typography ol {
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+
+.ant-typography ul li,
+.ant-typography ol li,
+.ant-typography .ant-typography ul li,
+.ant-typography .ant-typography ol li {
+  margin: 0 0 0.5em 20px;
+  padding: 0;
+  list-style-position: outside;
+}
+
+.ant-typography ul li,
+.ant-typography .ant-typography ul li {
+  list-style-type: disc;
+}
+
+.ant-typography ol li,
+.ant-typography .ant-typography ol li {
+  list-style-type: decimal;
+}
+
+/* 修复 Typography 引用样式 */
+.ant-typography blockquote,
+.ant-typography .ant-typography blockquote {
+  margin: 1em 0;
+  padding-left: 0.8em;
+  border-left: 4px solid #d9d9d9;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* 修复 Typography 表格样式 */
+.ant-typography table,
+.ant-typography .ant-typography table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin: 1em 0;
+}
+
+.ant-typography table th,
+.ant-typography table td,
+.ant-typography .ant-typography table th,
+.ant-typography .ant-typography table td {
+  padding: 8px 16px;
+  border: 1px solid #f0f0f0;
+  text-align: left;
+}
+
+.ant-typography table th,
+.ant-typography .ant-typography table th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+/* 暗色主题下的 Typography 样式 */
+.dark .ant-typography {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .ant-typography.ant-typography-secondary,
+.dark .ant-typography .ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dark .ant-typography code,
+.dark .ant-typography .ant-typography code {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .ant-typography blockquote,
+.dark .ant-typography .ant-typography blockquote {
+  border-left-color: #434343;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.dark .ant-typography table th,
+.dark .ant-typography table td,
+.dark .ant-typography .ant-typography table th,
+.dark .ant-typography .ant-typography table td {
+  border-color: #434343;
+}
+
+.dark .ant-typography table th,
+.dark .ant-typography .ant-typography table th {
+  background: #1f1f1f;
+}
+
+/* 修复特定的 CSS 类名冲突 */
+.text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75 !important;
+}
+
+/* 确保 Ant Design Typography 组件不被 Tailwind 覆盖 */
+.ant-typography.text-lg,
+.ant-typography .text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75 !important;
+}
+
+/* 修复 Ant Design 开发模式下的 CSS 类名冲突 */
+[class*="css-dev-only-do-not-override"] {
+  /* 重置可能被覆盖的样式 */
+  position: relative !important;
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  text-decoration: inherit !important;
+  text-align: inherit !important;
+  vertical-align: baseline !important;
+  white-space: inherit !important;
+  word-wrap: inherit !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* 特别修复 Typography.Text 组件的开发模式样式 */
+.ant-typography[class*="css-dev-only-do-not-override"],
+.ant-typography [class*="css-dev-only-do-not-override"] {
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  text-decoration: inherit !important;
+  vertical-align: baseline !important;
+}
+
+/* 修复特定的 l5gwu 类名问题 */
+[class*="l5gwu"],
+.css-dev-only-do-not-override-l5gwu {
+  display: inline !important;
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  text-align: inherit !important;
+  vertical-align: baseline !important;
+  white-space: normal !important;
+  word-wrap: normal !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 确保 Typography 组件在开发模式下正常显示 */
+.ant-typography[class*="css-dev-only-do-not-override"] .text-lg,
+.ant-typography .text-lg[class*="css-dev-only-do-not-override"] {
+  font-size: 1.125rem !important;
+  line-height: 1.75 !important;
+}
+
+/* 修复可能的布局问题 */
+.ant-typography {
+  box-sizing: border-box;
+}
+
+.ant-typography *,
+.ant-typography *::before,
+.ant-typography *::after {
+  box-sizing: border-box;
+}
+
+/* 修复 Typography 组件的响应式样式 */
+@media (max-width: 768px) {
+  .ant-typography h1,
+  .ant-typography .ant-typography h1 {
+    font-size: 32px;
+  }
+  
+  .ant-typography h2,
+  .ant-typography .ant-typography h2 {
+    font-size: 24px;
+  }
+  
+  .ant-typography h3,
+  .ant-typography .ant-typography h3 {
+    font-size: 20px;
+  }
+}

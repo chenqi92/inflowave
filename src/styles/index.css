@@ -2,6 +2,51 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Ant Design 样式修复 */
+@import './antd-fixes.css';
+@import './antd-dev-fixes.css';
+
+/* 全局 Ant Design 组件样式保护 */
+.ant-typography,
+.ant-typography *,
+.ant-btn,
+.ant-btn *,
+.ant-input,
+.ant-input *,
+.ant-select,
+.ant-select *,
+.ant-table,
+.ant-table *,
+.ant-card,
+.ant-card *,
+.ant-form,
+.ant-form *,
+.ant-menu,
+.ant-menu *,
+.ant-layout,
+.ant-layout * {
+  /* 防止 Tailwind 的 preflight 样式影响 Ant Design 组件 */
+  box-sizing: border-box;
+}
+
+/* 特别保护 Typography 组件 */
+.ant-typography {
+  /* 确保 Typography 组件的基础样式不被覆盖 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-variant: tabular-nums;
+  line-height: 1.5715;
+  font-feature-settings: 'tnum';
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+}
+
+.ant-typography * {
+  /* 重置所有子元素的样式继承 */
+  font-family: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
 /* 全局样式重置 */
 * {
   box-sizing: border-box;

@@ -22,6 +22,7 @@ import ExtensionsPage from './pages/Extensions';
 import SettingsPage from './pages/Settings';
 import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
+import TypographyTest from './components/test/TypographyTest';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -78,6 +79,7 @@ const MainLayout: React.FC = () => {
           <Route path="/extensions" element={<ExtensionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/debug" element={<ConnectionDebug />} />
+          <Route path="/typography-test" element={<TypographyTest />} />
         </Routes>
       </Content>
 
