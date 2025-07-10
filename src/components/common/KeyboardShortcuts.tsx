@@ -28,11 +28,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
       title: '文件操作',
       icon: <FileOutlined />,
       shortcuts: [
-        { key: 'Ctrl+N', description: '新建查询' },
-        { key: 'Ctrl+O', description: '打开文件' },
-        { key: 'Ctrl+S', description: '保存' },
-        { key: 'Ctrl+Shift+S', description: '另存为' },
-        { key: 'Ctrl+E', description: '导出数据' },
+        { key: 'Ctrl+N', description: '新建SQL查询' },
         { key: 'Ctrl+Q', description: '退出应用' },
       ],
     },
