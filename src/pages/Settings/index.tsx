@@ -1,9 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs } from '@/components/ui';
-// TODO: Replace these Ant Design components: InputNumber, Switch, Divider, 
-import { SaveOutlined, ReloadOutlined, DeleteOutlined, InfoCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: ExportOutlined, ImportOutlined
-// You may need to find alternatives or create custom icons
+import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs, InputNumber, Switch, Divider } from '@/components/ui';
+import { SaveOutlined, ReloadOutlined, DeleteOutlined, InfoCircleOutlined, ExportOutlined, ImportOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
@@ -102,20 +99,26 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <Title level={2}>应用设置</Title>
-      <Text type="secondary">
-        配置应用程序的行为和外观
-      </Text>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-6">
+        <Title level={2} className="mb-2">应用设置</Title>
+        <Text type="secondary" className="text-base">
+          配置应用程序的行为和外观，个性化您的使用体验
+        </Text>
+      </div>
 
-      <div className="mt-6">
+      <div className="space-y-6">
         <Tabs
           items={[
             {
               key: 'general',
               label: '常规设置',
               children: (
-                <Card>
+                <Card className="shadow-sm">
+                  <div className="mb-4">
+                    <Title level={4} className="mb-2">基础配置</Title>
+                    <Text type="secondary">设置应用程序的基本行为和外观</Text>
+                  </div>
                   <Form
                     form={form}
                     layout="vertical"
@@ -204,39 +207,47 @@ const Settings: React.FC = () => {
                       </Col>
                     </Row>
 
-                    <Form.Item
-                      label="日志级别"
-                      name="logLevel"
-                      tooltip="设置应用程序的日志详细程度"
-                    >
-                      <Select>
-                        <Option value="debug">调试 (Debug)</Option>
-                        <Option value="info">信息 (Info)</Option>
-                        <Option value="warn">警告 (Warn)</Option>
-                        <Option value="error">错误 (Error)</Option>
-                      </Select>
-                    </Form.Item>
+                    <Row gutter={24}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="日志级别"
+                          name="logLevel"
+                          tooltip="设置应用程序的日志详细程度"
+                        >
+                          <Select>
+                            <Option value="debug">调试 (Debug)</Option>
+                            <Option value="info">信息 (Info)</Option>
+                            <Option value="warn">警告 (Warn)</Option>
+                            <Option value="error">错误 (Error)</Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    </Row>
 
                     <Divider />
 
-                    <Form.Item>
-                      <Space>
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          loading={loading}
-                          icon={<SaveOutlined />}
-                        >
-                          保存设置
-                        </Button>
-                        <Button
-                          icon={<ReloadOutlined />}
-                          onClick={handleResetSettings}
-                        >
-                          重置为默认
-                        </Button>
-                      </Space>
-                    </Form.Item>
+                    <div className="pt-4 border-t border-gray-200">
+                      <Form.Item className="mb-0">
+                        <Space size="middle">
+                          <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}
+                            icon={<SaveOutlined />}
+                            size="large"
+                          >
+                            保存设置
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={handleResetSettings}
+                            size="large"
+                          >
+                            重置为默认
+                          </Button>
+                        </Space>
+                      </Form.Item>
+                    </div>
                   </Form>
                 </Card>
               ),
@@ -246,35 +257,45 @@ const Settings: React.FC = () => {
               label: '数据管理',
               children: (
                 <div className="space-y-6">
-                  <Card title="导入/导出">
-                    <Paragraph>
-                      您可以导出当前的应用设置和连接配置，或从文件中导入设置。
-                    </Paragraph>
+                  <Card title="导入/导出" className="shadow-sm">
+                    <div className="mb-4">
+                      <Title level={5} className="mb-2">数据备份与恢复</Title>
+                      <Paragraph className="text-gray-600">
+                        您可以导出当前的应用设置和连接配置，或从文件中导入设置。
+                      </Paragraph>
+                    </div>
 
-                    <Space>
+                    <Space size="large">
                       <Button
                         icon={<ExportOutlined />}
                         onClick={exportSettings}
+                        size="large"
+                        type="dashed"
                       >
                         导出设置
                       </Button>
                       <Button
                         icon={<ImportOutlined />}
                         onClick={importSettings}
+                        size="large"
+                        type="dashed"
                       >
                         导入设置
                       </Button>
                     </Space>
                   </Card>
 
-                  <Card title="数据清理" className="border-red-200">
-                    <Alert
-                      message="危险操作"
-                      description="以下操作将永久删除数据，请谨慎操作。"
-                      type="warning"
-                      showIcon
-                      className="mb-4"
-                    />
+                  <Card title="数据清理" className="border-red-200 shadow-sm">
+                    <div className="mb-4">
+                      <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
+                      <Alert
+                        message="危险操作"
+                        description="以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。"
+                        type="warning"
+                        showIcon
+                        className="mb-4"
+                      />
+                    </div>
 
                     <Space direction="vertical" style={{ width: '100%' }}>
                       <div>
@@ -292,6 +313,7 @@ const Settings: React.FC = () => {
                             message.success('连接配置已清除');
                           }}
                           className="mt-2"
+                          size="large"
                         >
                           清除连接配置
                         </Button>
@@ -311,6 +333,7 @@ const Settings: React.FC = () => {
                           icon={<DeleteOutlined />}
                           onClick={clearAllData}
                           className="mt-2"
+                          size="large"
                         >
                           重置所有设置
                         </Button>
@@ -324,26 +347,26 @@ const Settings: React.FC = () => {
               key: 'about',
               label: '关于',
               children: (
-                <Card title="关于 InfluxDB GUI Manager">
+                <Card title="关于 InfluxDB GUI Manager" className="shadow-sm">
                   <Row gutter={24}>
                     <Col span={12}>
                       <div className="space-y-4">
                         <div>
-                          <Text strong>版本信息</Text>
+                          <Text strong className="text-lg">版本信息</Text>
                           <br />
-                          <Text>v0.1.0-alpha</Text>
+                          <Text className="text-base">v0.1.0-alpha</Text>
                         </div>
 
                         <div>
-                          <Text strong>构建时间</Text>
+                          <Text strong className="text-lg">构建时间</Text>
                           <br />
-                          <Text>{new Date().toLocaleDateString()}</Text>
+                          <Text className="text-base">{new Date().toLocaleDateString()}</Text>
                         </div>
 
                         <div>
-                          <Text strong>技术栈</Text>
+                          <Text strong className="text-lg">技术栈</Text>
                           <br />
-                          <Text>React + TypeScript + Rust + Tauri</Text>
+                          <Text className="text-base">React + TypeScript + Rust + Tauri</Text>
                         </div>
                       </div>
                     </Col>
@@ -351,21 +374,21 @@ const Settings: React.FC = () => {
                     <Col span={12}>
                       <div className="space-y-4">
                         <div>
-                          <Text strong>支持的 InfluxDB 版本</Text>
+                          <Text strong className="text-lg">支持的 InfluxDB 版本</Text>
                           <br />
-                          <Text>InfluxDB 1.x</Text>
+                          <Text className="text-base">InfluxDB 1.x</Text>
                         </div>
 
                         <div>
-                          <Text strong>开源协议</Text>
+                          <Text strong className="text-lg">开源协议</Text>
                           <br />
-                          <Text>MIT License</Text>
+                          <Text className="text-base">MIT License</Text>
                         </div>
 
                         <div>
-                          <Text strong>项目地址</Text>
+                          <Text strong className="text-lg">项目地址</Text>
                           <br />
-                          <Text>GitHub Repository</Text>
+                          <Text className="text-base text-blue-600 hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
                         </div>
                       </div>
                     </Col>

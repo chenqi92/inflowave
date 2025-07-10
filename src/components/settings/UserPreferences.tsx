@@ -1,10 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Form, Select, Button, Table, Input, Space, Typography, Tag, Modal, message, Row, Col } from '@/components/ui';
-// TODO: Replace these Ant Design components: Switch, Divider, Slider, 
-import { SettingOutlined, EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@/components/ui';
-// TODO: Replace these icons: ControlOutlined, // Using ControlOutlined instead of KeyboardOutlined
-  NotificationOutlined, LayoutOutlined
-// You may need to find alternatives or create custom icons
+import { Card, Form, Select, Button, Table, Input, Space, Typography, Tag, Modal, message, Row, Col, Switch, Divider, Slider } from '@/components/ui';
+import { SettingOutlined, EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ControlOutlined, NotificationOutlined, LayoutOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 
@@ -152,7 +148,14 @@ const UserPreferencesComponent: React.FC = () => {
   }
 
   return (
-    <div className="user-preferences">
+    <div className="user-preferences p-4">
+      <div className="mb-6">
+        <Typography.Title level={3} className="mb-2">用户偏好设置</Typography.Title>
+        <Typography.Text type="secondary" className="text-base">
+          个性化您的工作环境，提高使用效率和舒适度
+        </Typography.Text>
+      </div>
+      
       <Form
         form={form}
         layout="vertical"
@@ -160,7 +163,11 @@ const UserPreferencesComponent: React.FC = () => {
         initialValues={preferences}
       >
         {/* 通知设置 */}
-        <Card title={<><NotificationOutlined /> 通知设置</>} style={{ marginBottom: 16 }}>
+        <Card 
+          title={<><NotificationOutlined /> 通知设置</>} 
+          className="mb-6 shadow-sm hover:shadow-md transition-shadow"
+          extra={<Typography.Text type="secondary">管理各类提醒和通知</Typography.Text>}
+        >
           <Row gutter={[16, 16]}>
             <Col span={12}>
               <Form.Item name={['notifications', 'enabled']} label="启用通知" valuePropName="checked">
@@ -220,7 +227,11 @@ const UserPreferencesComponent: React.FC = () => {
         </Card>
 
         {/* 无障碍设置 */}
-        <Card title={<><EyeOutlined /> 无障碍设置</>} style={{ marginBottom: 16 }}>
+        <Card 
+          title={<><EyeOutlined /> 无障碍设置</>} 
+          className="mb-6 shadow-sm hover:shadow-md transition-shadow"
+          extra={<Typography.Text type="secondary">优化界面可访问性</Typography.Text>}
+        >
           <Row gutter={[16, 16]}>
             <Col span={12}>
               <Form.Item name={['accessibility', 'highContrast']} label="高对比度" valuePropName="checked">
@@ -258,7 +269,11 @@ const UserPreferencesComponent: React.FC = () => {
         </Card>
 
         {/* 工作区设置 */}
-        <Card title={<><LayoutOutlined /> 工作区设置</>} style={{ marginBottom: 16 }}>
+        <Card 
+          title={<><LayoutOutlined /> 工作区设置</>} 
+          className="mb-6 shadow-sm hover:shadow-md transition-shadow"
+          extra={<Typography.Text type="secondary">自定义工作区布局</Typography.Text>}
+        >
           <Row gutter={[16, 16]}>
             <Col span={12}>
               <Form.Item name={['workspace', 'layout']} label="布局模式">
@@ -269,20 +284,39 @@ const UserPreferencesComponent: React.FC = () => {
                 </Select>
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item name={['workspace', 'openTabs']} label="启动时恢复标签页" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Row gutter={[16, 16]}>
+            <Col span={12}>
+              <Form.Item name={['workspace', 'pinnedQueries']} label="固定常用查询" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name={['workspace', 'recentFiles']} label="显示最近文件" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
           </Row>
         </Card>
 
         {/* 键盘快捷键 */}
         <Card
           title={<><ControlOutlined /> 键盘快捷键</>}
+          className="mb-6 shadow-sm hover:shadow-md transition-shadow"
           extra={
             <Space>
-              <Button onClick={loadDefaultShortcuts}>
+              <Typography.Text type="secondary">自定义快捷键</Typography.Text>
+              <Button onClick={loadDefaultShortcuts} size="small">
                 重置为默认
               </Button>
             </Space>
           }
-          style={{ marginBottom: 16 }}
         >
           <Table
             dataSource={preferences.shortcuts}
@@ -294,15 +328,17 @@ const UserPreferencesComponent: React.FC = () => {
         </Card>
 
         {/* 保存按钮 */}
-        <div style={{ textAlign: 'right' }}>
-          <Space>
-            <Button onClick={() => form.resetFields()}>
-              重置
-            </Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              保存设置
-            </Button>
-          </Space>
+        <div className="pt-6 border-t border-gray-200">
+          <div className="flex justify-end">
+            <Space size="large">
+              <Button onClick={() => form.resetFields()} size="large">
+                重置
+              </Button>
+              <Button type="primary" htmlType="submit" loading={loading} size="large" icon={<SettingOutlined />}>
+                保存设置
+              </Button>
+            </Space>
+          </div>
         </div>
       </Form>
 
@@ -318,6 +354,8 @@ const UserPreferencesComponent: React.FC = () => {
         onOk={() => shortcutForm.submit()}
         okText="保存"
         cancelText="取消"
+        width={600}
+        centered
       >
         <Form
           form={shortcutForm}
@@ -332,18 +370,33 @@ const UserPreferencesComponent: React.FC = () => {
             <Input.TextArea rows={2} />
           </Form.Item>
 
-          <Form.Item name="keys" label="快捷键" rules={[{ required: true }]}>
+          <Form.Item 
+            name="keys" 
+            label="快捷键" 
+            rules={[{ required: true }]}
+            extra="示例: ['Ctrl', 'Shift', 'P'] 或 ['F5']"
+          >
             <Select mode="tags" placeholder="输入快捷键组合">
               <Option value="Ctrl">Ctrl</Option>
               <Option value="Shift">Shift</Option>
               <Option value="Alt">Alt</Option>
+              <Option value="Cmd">Cmd</Option>
               <Option value="Enter">Enter</Option>
               <Option value="Space">Space</Option>
+              <Option value="Tab">Tab</Option>
+              <Option value="Escape">Escape</Option>
               <Option value="F1">F1</Option>
               <Option value="F2">F2</Option>
               <Option value="F3">F3</Option>
               <Option value="F4">F4</Option>
               <Option value="F5">F5</Option>
+              <Option value="F6">F6</Option>
+              <Option value="F7">F7</Option>
+              <Option value="F8">F8</Option>
+              <Option value="F9">F9</Option>
+              <Option value="F10">F10</Option>
+              <Option value="F11">F11</Option>
+              <Option value="F12">F12</Option>
             </Select>
           </Form.Item>
 

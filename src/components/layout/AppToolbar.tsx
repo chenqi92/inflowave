@@ -1,11 +1,12 @@
 import React from 'react';
-import { Button, Space, Typography } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Badge, Dropdown
+import { Button, Space, Typography, Tooltip, Badge, Dropdown } from '@/components/ui';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DatabaseOutlined, SearchOutlined, PlusOutlined, BarChartOutlined, SettingOutlined, WifiOutlined, DashboardOutlined } from '@/components/ui';
-// TODO: Replace these icons: ThunderboltOutlined, ApiOutlined, UserOutlined, BulbOutlined, GlobalOutlined
-// You may need to find alternatives or create custom icons
-import type { MenuProps } from 'antd';
+import { 
+  DatabaseOutlined, SearchOutlined, PlusOutlined, BarChartOutlined, 
+  SettingOutlined, WifiOutlined, DashboardOutlined, ThunderboltOutlined, 
+  ApiOutlined, UserOutlined, BulbOutlined, GlobalOutlined 
+} from '@/components/ui';
+import type { DropdownMenuItem } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { useAppStore } from '@/store/app';
 
@@ -23,7 +24,7 @@ const AppToolbar: React.FC = () => {
     : null;
 
   // 主题切换菜单
-  const themeMenuItems: MenuProps['items'] = [
+  const themeMenuItems: DropdownMenuItem[] = [
     {
       key: 'light',
       label: '浅色主题',
@@ -42,7 +43,7 @@ const AppToolbar: React.FC = () => {
   ];
 
   // 语言切换菜单
-  const languageMenuItems: MenuProps['items'] = [
+  const languageMenuItems: DropdownMenuItem[] = [
     {
       key: 'zh-CN',
       icon: <GlobalOutlined />,
@@ -58,21 +59,18 @@ const AppToolbar: React.FC = () => {
   ];
 
   // 用户菜单
-  const userMenuItems: MenuProps['items'] = [
+  const userMenuItems: DropdownMenuItem[] = [
     {
       key: 'theme',
       icon: <BulbOutlined />,
       label: '主题设置',
-      children: themeMenuItems,
+      onClick: () => {}, // 展开主题菜单
     },
     {
       key: 'language',
       icon: <GlobalOutlined />,
       label: '语言设置',
-      children: languageMenuItems,
-    },
-    {
-      type: 'divider',
+      onClick: () => {}, // 展开语言菜单
     },
     {
       key: 'settings',

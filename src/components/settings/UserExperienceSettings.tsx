@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tabs, Form, Input, Select, Button, Space, Typography, Table, Modal, message, Row, Col, Tag } from '@/components/ui';
-// TODO: Replace these Ant Design components: Switch, Slider, Radio, Divider, Tooltip, 
-import { SettingOutlined, EyeOutlined, SaveOutlined, ReloadOutlined, EditOutlined, PlusOutlined } from '@/components/ui';
-// TODO: Replace these icons: KeyOutlined, BellOutlined, LayoutOutlined
-// You may need to find alternatives or create custom icons
+import { Card, Tabs, Form, Input, Select, Button, Space, Typography, Table, Modal, message, Row, Col, Tag, Switch, Slider, Radio, Divider, Tooltip } from '@/components/ui';
+import { SettingOutlined, EyeOutlined, SaveOutlined, ReloadOutlined, EditOutlined, PlusOutlined, KeyOutlined, BellOutlined, LayoutOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { 
   UserPreferences, 
