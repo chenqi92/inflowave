@@ -1,11 +1,10 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Alert, Card, Row, Col, Table, message, Typography, Switch, Upload, Steps } from '@/components/ui';
+import { Modal, Form, Input, Select, Button, Space, Alert, Card, Row, Col, Table, message, Typography, Switch, Upload, Steps, Step } from '@/components/ui';
 import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined } from '@/components/ui';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Option } = Select;
-const { Step } = Steps;
 const { Title, Paragraph } = Typography;
 
 interface ImportDialogProps {

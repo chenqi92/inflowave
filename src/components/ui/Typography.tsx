@@ -148,11 +148,49 @@ const Paragraph = forwardRef<HTMLParagraphElement, ParagraphProps>(
 
 Paragraph.displayName = 'Paragraph';
 
+// Link component
+export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  type?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+  underline?: boolean;
+  disabled?: boolean;
+}
+
+const Link = forwardRef<HTMLAnchorElement, LinkProps>(
+  ({ className, type = 'primary', underline = true, disabled = false, children, ...props }, ref) => {
+    const typeStyles = {
+      primary: 'text-blue-600 hover:text-blue-800',
+      secondary: 'text-gray-600 hover:text-gray-800',
+      success: 'text-green-600 hover:text-green-800',
+      warning: 'text-yellow-600 hover:text-yellow-800',
+      danger: 'text-red-600 hover:text-red-800',
+    };
+
+    return (
+      <a
+        ref={ref}
+        className={cn(
+          'transition-colors cursor-pointer',
+          typeStyles[type],
+          underline && 'underline',
+          disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  }
+);
+
+Link.displayName = 'Link';
+
 // Typography namespace object (similar to Ant Design)
 const Typography = {
   Title,
   Text,
   Paragraph,
+  Link,
 };
 
-export { Typography, Title, Text, Paragraph };
+export { Typography, Title, Text, Paragraph, Link };

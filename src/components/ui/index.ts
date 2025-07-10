@@ -87,7 +87,7 @@ export type { AvatarProps } from './Avatar';
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 
-export { Steps } from './Steps';
+export { Steps, Step } from './Steps';
 export type { StepsProps, StepProps } from './Steps';
 
 // Export new components for QueryHistory

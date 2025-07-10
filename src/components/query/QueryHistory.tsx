@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Typography, Input, Select, Tag, Modal, message, Empty, Row, Col } from '@/components/ui';
-// TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, DatePicker, 
-import { PlayCircleOutlined, DeleteOutlined, SearchOutlined, DatabaseOutlined, EditOutlined } from '@/components/ui';
-// TODO: Replace these icons: HistoryOutlined, ClockCircleOutlined, ClearOutlined, ExportOutlined, BookOutlined
-// You may need to find alternatives or create custom icons
+import {
+  Card, Button, Space, Typography, Input, Select, Tag, Modal, message, Empty, Row, Col,
+  List, Tooltip, Popconfirm, DatePicker, RangePicker
+} from '@/components/ui';
+import {
+  PlayCircleOutlined, DeleteOutlined, SearchOutlined, DatabaseOutlined, EditOutlined,
+  HistoryOutlined, ClockCircleOutlined, ClearOutlined, ExportOutlined, BookOutlined
+} from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 
 const { Text, Paragraph } = Typography;
 const { Search } = Input;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 interface QueryHistoryProps {
   onQuerySelect?: (query: string, database?: string) => void;

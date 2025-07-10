@@ -240,4 +240,4 @@ const Steps: React.FC<StepsProps> = ({
   );
 };
 
-export { Steps };
+export { Steps, Step };

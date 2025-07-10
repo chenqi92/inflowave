@@ -1,9 +1,15 @@
 import React from 'react';
-import { Modal, Typography, Space, Row, Col, Card, Tag } from '@/components/ui';
-// TODO: Replace these Ant Design components: Divider
-import { DatabaseOutlined, InfoCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: GithubOutlined, BugOutlined, HeartOutlined, RocketOutlined, TeamOutlined, ToolOutlined
-// You may need to find alternatives or create custom icons
+import { Modal, Typography, Space, Row, Col, Card, Tag, Divider } from '@/components/ui';
+import {
+  DatabaseOutlined,
+  InfoCircleOutlined,
+  GithubOutlined,
+  BugOutlined,
+  HeartOutlined,
+  RocketOutlined,
+  TeamOutlined,
+  ToolOutlined
+} from '@/components/ui';
 
 const { Title, Text, Paragraph, Link } = Typography;
 
