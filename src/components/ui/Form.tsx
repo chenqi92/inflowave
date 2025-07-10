@@ -19,6 +19,8 @@ export interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {
   onFinish?: (values: Record<string, any>) => void;
   onFinishFailed?: (errorInfo: any) => void;
   layout?: 'horizontal' | 'vertical' | 'inline';
+  form?: FormInstance;
+  preserve?: boolean;
 }
 
 const Form: React.FC<FormProps> = ({
@@ -29,11 +31,31 @@ const Form: React.FC<FormProps> = ({
   layout = 'vertical',
   className,
   onSubmit,
+  form,
+  preserve = true,
   ...props
 }) => {
-  const [values, setValues] = useState(initialValues);
+  const [internalValues, setInternalValues] = useState(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Use form instance values if provided, otherwise use internal state
+  const values = form ? (form as any)._values || internalValues : internalValues;
+  const setValues = form ? (form as any)._setValues || setInternalValues : setInternalValues;
+
+  // Set up form instance callbacks if form is provided
+  useEffect(() => {
+    if (form && onFinish) {
+      (form as any)._setSubmitCallback(onFinish);
+    }
+  }, [form, onFinish]);
+
+  // Sync initial values with form instance
+  useEffect(() => {
+    if (form && initialValues) {
+      form.setFieldsValue(initialValues);
+    }
+  }, [form, initialValues]);
 
   const setFieldValue = useCallback((name: string, value: any) => {
     setValues(prev => ({ ...prev, [name]: value }));
@@ -41,7 +63,7 @@ const Form: React.FC<FormProps> = ({
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  }, [errors]);
+  }, [errors, setValues]);
 
   const setFieldError = useCallback((name: string, error: string) => {
     setErrors(prev => ({ ...prev, [name]: error }));
@@ -106,6 +128,7 @@ export interface FormItemProps extends React.HTMLAttributes<HTMLDivElement> {
   }>;
   help?: string;
   validateStatus?: 'success' | 'warning' | 'error' | 'validating';
+  valuePropName?: string;
 }
 
 const FormItem: React.FC<FormItemProps> = ({
@@ -116,6 +139,7 @@ const FormItem: React.FC<FormItemProps> = ({
   rules = [],
   help,
   validateStatus,
+  valuePropName = 'value',
   className,
   ...props
 }) => {
@@ -155,19 +179,31 @@ const FormItem: React.FC<FormItemProps> = ({
   // Clone children to add form control props
   const enhancedChildren = React.Children.map(children, (child) => {
     if (React.isValidElement(child) && name && formContext) {
-      return React.cloneElement(child as any, {
-        value: formContext.values[name] || '',
-        onChange: (e: any) => {
-          const value = e.target ? e.target.value : e;
-          formContext.setFieldValue(name, value);
-          validateField(value);
-        },
+      const childProps: any = {
         onBlur: () => {
           formContext.setFieldTouched(name, true);
           validateField(formContext.values[name]);
         },
         variant: showError ? 'error' : undefined,
-      });
+      };
+
+      // Set the value using the appropriate prop name
+      if (valuePropName === 'checked') {
+        childProps.checked = formContext.values[name] || false;
+        childProps.onChange = (checked: boolean) => {
+          formContext.setFieldValue(name, checked);
+          validateField(checked);
+        };
+      } else {
+        childProps[valuePropName] = formContext.values[name] || '';
+        childProps.onChange = (e: any) => {
+          const value = e.target ? e.target.value : e;
+          formContext.setFieldValue(name, value);
+          validateField(value);
+        };
+      }
+
+      return React.cloneElement(child as any, childProps);
     }
     return child;
   });
@@ -206,6 +242,62 @@ export const useForm = () => {
   return context;
 };
 
+// Form instance interface
+export interface FormInstance {
+  setFieldsValue: (values: Record<string, any>) => void;
+  getFieldsValue: () => Record<string, any>;
+  resetFields: () => void;
+  submit: () => void;
+  validateFields: () => Promise<Record<string, any>>;
+}
+
+// Hook to create form instance (similar to Ant Design's Form.useForm)
+export const useFormInstance = (): [FormInstance] => {
+  const [values, setValues] = useState<Record<string, any>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitCallback, setSubmitCallback] = useState<((values: Record<string, any>) => void) | null>(null);
+
+  const formInstance: FormInstance = {
+    setFieldsValue: (newValues: Record<string, any>) => {
+      setValues(prev => ({ ...prev, ...newValues }));
+    },
+    getFieldsValue: () => values,
+    resetFields: () => {
+      setValues({});
+      setErrors({});
+    },
+    submit: () => {
+      if (submitCallback) {
+        submitCallback(values);
+      }
+    },
+    validateFields: async () => {
+      // Basic validation - can be enhanced
+      const hasErrors = Object.values(errors).some(error => error);
+      if (hasErrors) {
+        throw new Error('Validation failed');
+      }
+      return values;
+    },
+  };
+
+  // Store submit callback reference
+  const setSubmitCallback_ = useCallback((callback: (values: Record<string, any>) => void) => {
+    setSubmitCallback(() => callback);
+  }, []);
+
+  // Enhance form instance with internal methods
+  (formInstance as any)._setSubmitCallback = setSubmitCallback_;
+  (formInstance as any)._values = values;
+  (formInstance as any)._setValues = setValues;
+  (formInstance as any)._errors = errors;
+  (formInstance as any)._setErrors = setErrors;
+
+  return [formInstance];
+};
+
+// Attach useForm to Form component
+Form.useForm = useFormInstance;
 Form.Item = FormItem;
 
 export { Form, FormItem };

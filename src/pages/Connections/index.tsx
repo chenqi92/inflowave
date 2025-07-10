@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Space, Modal, Form, Input, Row, Col } from '@/components/ui';
-// TODO: Replace these Ant Design components: InputNumber, Switch, 
+import { Typography, Button, Space, Modal, Form, Input, Row, Col, InputNumber, Switch } from '@/components/ui';
 import { PlusOutlined, ReloadOutlined } from '@/components/ui';
 // TODO: Replace these icons: ImportOutlined, ExportOutlined
 // You may need to find alternatives or create custom icons
