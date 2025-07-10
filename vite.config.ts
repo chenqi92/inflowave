@@ -14,9 +14,16 @@ export default defineConfig(async () => ({
   server: {
     port: 1421,
     strictPort: false,
+    // 增加服务器超时配置
+    hmr: {
+      timeout: 60000, // 1 minute for HMR
+    },
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ['**/src-tauri/**'],
+      // 优化文件监听
+      usePolling: false,
+      interval: 100,
     },
   },
 
@@ -43,15 +50,27 @@ export default defineConfig(async () => ({
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
+    // 增加构建超时时间
+    timeout: 300000, // 5 minutes
+    // 优化构建性能
+    chunkSizeWarningLimit: 1000,
     // 分包策略
     rollupOptions: {
+      // 增加 Rollup 超时时间
+      maxParallelFileOps: 5,
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           antd: ['antd', '@ant-design/icons'],
           charts: ['echarts', 'echarts-for-react'],
           editor: ['@monaco-editor/react'],
+          utils: ['lodash-es', 'dayjs', 'classnames'],
+          tauri: ['@tauri-apps/api', '@tauri-apps/plugin-shell'],
         },
+        // 优化输出文件名
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
   },
