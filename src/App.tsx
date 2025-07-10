@@ -21,6 +21,7 @@ import PerformancePage from './pages/Performance';
 import ExtensionsPage from './pages/Extensions';
 import SettingsPage from './pages/Settings';
 import DataGripLayout from './components/layout/DataGripLayout';
+import ConnectionDebug from './components/debug/ConnectionDebug';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -76,6 +77,7 @@ const MainLayout: React.FC = () => {
           <Route path="/performance" element={<PerformancePage />} />
           <Route path="/extensions" element={<ExtensionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/debug" element={<ConnectionDebug />} />
         </Routes>
       </Content>
 

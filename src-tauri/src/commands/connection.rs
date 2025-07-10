@@ -227,3 +227,24 @@ pub async fn get_connection_pool_stats(
             format!("获取连接池统计信息失败: {}", e)
         })
 }
+
+/// 调试：获取连接管理器状态
+#[tauri::command]
+pub async fn debug_connection_manager(
+    connection_service: State<'_, ConnectionService>,
+) -> Result<serde_json::Value, String> {
+    debug!("处理调试连接管理器命令");
+
+    let connection_count = connection_service.get_connection_count().await;
+    let connections = connection_service.get_connections().await;
+    let statuses = connection_service.get_all_connection_statuses().await;
+
+    let debug_info = serde_json::json!({
+        "connection_count": connection_count,
+        "connections": connections,
+        "statuses": statuses,
+        "timestamp": chrono::Utc::now().to_rfc3339()
+    });
+
+    Ok(debug_info)
+}
