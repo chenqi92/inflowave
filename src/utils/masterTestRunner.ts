@@ -104,7 +104,7 @@ class MasterTestRunner {
    * 打印最终报告
    */
   private printFinalReport(report: MasterTestReport): void {
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 INFLOWAVE 测试报告 📊');
     console.log('='.repeat(60));
     
@@ -149,7 +149,7 @@ class MasterTestRunner {
     }
     
     // 最终结论
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     if (report.summary.failedTests === 0) {
       console.log('🎉 所有测试通过！InfloWave 功能正常运行！');
     } else if (report.summary.successRate >= 90) {
@@ -208,14 +208,15 @@ class MasterTestRunner {
     try {
       // 如果在Tauri环境中，保存到文件
       if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-        const { writeTextFile } = await import('@tauri-apps/api/fs');
-        const { join, appDataDir } = await import('@tauri-apps/api/path');
+        // 在 Tauri 2.0 中，这些 API 已经被重组，暂时跳过文件写入
+        // const { writeTextFile } = await import('@tauri-apps/api/fs');
+        // const { join, appDataDir } = await import('@tauri-apps/api/path');
         
-        const appDataPath = await appDataDir();
-        const reportPath = await join(appDataPath, 'test-reports', `test-report-${Date.now()}.json`);
+        // const appDataPath = await appDataDir();
+        // const reportPath = await join(appDataPath, 'test-reports', `test-report-${Date.now()}.json`);
         
-        await writeTextFile(reportPath, reportContent);
-        console.log(`📄 测试报告已保存到: ${reportPath}`);
+        // await writeTextFile(reportPath, reportContent);
+        console.log(`📄 测试报告准备就绪，但因为 Tauri 2.0 API 变更，暂时无法保存到文件`);
       } else {
         // 浏览器环境，下载文件
         const blob = new Blob([reportContent], { type: 'application/json' });

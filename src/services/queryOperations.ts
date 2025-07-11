@@ -40,7 +40,13 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       message.success(`查询完成，返回 ${result.rowCount} 行数据`);
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`查询失败: ${error}`);
@@ -66,6 +72,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取字段信息失败: ${error}`);
@@ -91,6 +100,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取标签键失败: ${error}`);
@@ -120,6 +132,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取标签值失败: ${error}`);
@@ -145,6 +160,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       const count = result.series[0]?.values[0]?.[1] || 0;
       message.info(`测量 "${params.measurement}" 共有 ${count} 条记录`);
       return result;
@@ -172,6 +190,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取时间范围失败: ${error}`);
@@ -198,6 +219,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取字段统计失败: ${error}`);
@@ -224,6 +248,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取分位数统计失败: ${error}`);
@@ -252,6 +279,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`按标签查询失败: ${error}`);
@@ -309,6 +339,10 @@ export class QueryOperationsService {
         }
       });
 
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
+      
       // 调用导出功能
       await safeTauriInvoke('export_query_result', {
         result,
@@ -408,6 +442,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取保留策略失败: ${error}`);
@@ -432,6 +469,9 @@ export class QueryOperationsService {
         }
       });
       
+      if (!result) {
+        throw new Error('查询返回结果为空');
+      }
       return result;
     } catch (error) {
       message.error(`获取测量列表失败: ${error}`);

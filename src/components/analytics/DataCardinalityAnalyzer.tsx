@@ -151,7 +151,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
   };
 
   // 获取基数类型标签
-  const getCardinalityLabel = (stat: DataCardinalityStats): { text: string; color: string } => {
+  const getCardinalityLabel = (stat: DataCardinalityStats): { text: string; color: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'processing' } => {
     if (stat.cardinality === stat.totalRows) return { text: '唯一', color: 'success' };
     if (stat.cardinalityRatio >= 0.8) return { text: '高基数', color: 'processing' };
     if (stat.cardinalityRatio >= 0.4) return { text: '中基数', color: 'warning' };
@@ -159,8 +159,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
   };
 
   // 获取异常严重程度颜色
-  const getAnomalySeverityColor = (severity: string): string => {
-    const colorMap: Record<string, string> = {
+  const getAnomalySeverityColor = (severity: string): 'default' | 'primary' | 'success' | 'warning' | 'error' | 'processing' => {
+    const colorMap: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'error' | 'processing'> = {
       'low': 'success',
       'medium': 'warning',
       'high': 'error',
@@ -217,7 +217,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       key: 'totalRows',
       width: 100,
       render: (value: number) => formatNumber(value),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.totalRows - b.totalRows,
+      sorter: true,
     },
     {
       title: '不重复值',
@@ -225,7 +225,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       key: 'distinctValues',
       width: 100,
       render: (value: number) => formatNumber(value),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.distinctValues - b.distinctValues,
+      sorter: true,
     },
     {
       title: '基数',
@@ -233,7 +233,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       key: 'cardinality',
       width: 80,
       render: (value: number) => formatNumber(value),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.cardinality - b.cardinality,
+      sorter: true,
     },
     {
       title: '基数比例',
@@ -247,14 +247,14 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
             <Progress
               percent={value * 100}
               size="small"
-              strokeColor={label.color}
+              strokeColor={getQualityScoreColor(0.5)}
               style={{ width: '60px' }}
             />
-            <Tag color={label.color}>{label.text}</Tag>
+            <Tag color={label.color as 'default' | 'primary' | 'success' | 'warning' | 'error' | 'processing'}>{label.text}</Tag>
           </Space>
         );
       },
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.cardinalityRatio - b.cardinalityRatio,
+      sorter: true,
     },
     {
       title: '空值数',
@@ -267,7 +267,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
           <Text type="secondary">({formatPercentage(value / record.totalRows)})</Text>
         </Space>
       ),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.nullCount - b.nullCount,
+      sorter: true,
     },
     {
       title: '质量分数',
@@ -282,7 +282,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
           format={(percent) => `${(percent! / 100).toFixed(2)}`}
         />
       ),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.qualityScore - b.qualityScore,
+      sorter: true,
     },
     {
       title: '异常数',
@@ -296,7 +296,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
           style={{ backgroundColor: anomalies.length > 0 ? '#ff4d4f' : '#52c41a' }}
         />
       ),
-      sorter: (a: DataCardinalityStats, b: DataCardinalityStats) => a.anomalies.length - b.anomalies.length,
+      sorter: true,
     },
     {
       title: '操作',
@@ -306,14 +306,14 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       render: (_text: string, record: DataCardinalityStats) => (
         <Space>
           <Button
-            size="sm"
+            size="small"
             icon={<EyeOutlined />}
             onClick={() => setSelectedStats(record)}
           >
             详情
           </Button>
           <Button
-            size="sm"
+            size="small"
             icon={<BarChartOutlined />}
             onClick={() => {
               setSelectedStats(record);
@@ -428,7 +428,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 <Switch
                   checked={showAnomalies}
                   onChange={setShowAnomalies}
-                  size="small"
+                  size="sm"
                 />
                 <Text type="secondary">显示异常</Text>
               </Space>
@@ -454,15 +454,9 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
           columns={columns}
           dataSource={filteredStats}
           rowKey={(record) => `${record.table}-${record.column}`}
-          pagination={{
-            total: filteredStats.length,
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-          }}
-          scroll={{ x: 1200 }}
-          rowClassName={(record) => record.anomalies.length > 0 ? 'anomaly-row' : ''}
+          pagination={true}
+          // scroll={{ x: 1200 }}
+          // rowClassName={(record) => record.anomalies.length > 0 ? 'anomaly-row' : ''}
         />
 
         {/* 异常列表 */}
@@ -476,11 +470,10 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                     title={`${stat.table}.${stat.column}`}
                     description={
                       <Space wrap>
-                        {stat.anomalies.map((anomaly, index) => (
+                        {stat.anomalies.map((anomaly: any, index: number) => (
                           <Tag
                             key={index}
                             color={getAnomalySeverityColor(anomaly.severity)}
-                            icon={getAnomalyIcon(anomaly.type)}
                           >
                             {anomaly.description}
                           </Tag>
@@ -509,7 +502,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       <div>
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="最频繁值" size="small">
+            <Card title="最频繁值">
               <Table
                 columns={[
                   {
@@ -533,7 +526,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                     render: (percentage: number) => (
                       <Progress
                         percent={percentage}
-                        size="small"
+                        size="sm"
                         format={(percent) => `${percent}%`}
                       />
                     ),
@@ -541,13 +534,13 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 ]}
                 dataSource={mostFrequentValues}
                 pagination={false}
-                size="small"
-                rowKey={(record, index) => `${record.value}-${index}`}
+                size="sm"
+                rowKey={(record) => `${record.value}`}
               />
             </Card>
           </Col>
           <Col span={12}>
-            <Card title="数据分布直方图" size="small">
+            <Card title="数据分布直方图">
               <Table
                 columns={[
                   {
@@ -569,7 +562,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                     render: (percentage: number) => (
                       <Progress
                         percent={percentage}
-                        size="small"
+                        size="sm"
                         format={(percent) => `${percent}%`}
                       />
                     ),
@@ -577,8 +570,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 ]}
                 dataSource={distributionHistogram}
                 pagination={false}
-                size="small"
-                rowKey={(record, index) => `${record.bucket}-${index}`}
+                size="sm"
+                rowKey={(record) => `${record.bucket}`}
               />
             </Card>
           </Col>
@@ -651,7 +644,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                     render: (score: number) => (
                       <Progress
                         percent={score * 100}
-                        size="small"
+                        size="sm"
                         strokeColor={getQualityScoreColor(score)}
                         format={(percent) => `${(percent! / 100).toFixed(2)}`}
                       />
@@ -672,7 +665,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 ]}
                 dataSource={columnScores}
                 pagination={false}
-                size="small"
+                size="sm"
                 rowKey={(record) => record.column}
               />
             </Card>
@@ -719,7 +712,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               }))}
             />
             <Button
-              size="sm"
+              size="small"
               icon={<ReloadOutlined />}
               onClick={getCardinalityStats}
               loading={loading}
@@ -727,7 +720,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               刷新
             </Button>
             <Button
-              size="sm"
+              size="small"
               icon={<DownloadOutlined />}
               onClick={() => {
                 if (cardinalityStats.length > 0) {

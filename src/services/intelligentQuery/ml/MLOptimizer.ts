@@ -423,7 +423,7 @@ export class MLOptimizer {
       features.systemLoad * 0.25;
 
     const techniques: OptimizationTechnique[] = [];
-    let optimizedQuery = originalQuery;
+    const optimizedQuery = originalQuery;
 
     // 根据分数应用优化技术
     if (optimizationScore > 0.7) {
@@ -468,7 +468,7 @@ export class MLOptimizer {
     const selectedStrategy = strategies[Math.floor(Math.random() * strategies.length)];
 
     const techniques: OptimizationTechnique[] = [];
-    let optimizedQuery = originalQuery;
+    const optimizedQuery = originalQuery;
 
     switch (selectedStrategy) {
       case 'index_optimization':

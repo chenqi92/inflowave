@@ -1,8 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Typography, Button, Space, Modal, Form, Input, Row, Col, InputNumber, Switch } from '@/components/ui';
-import { PlusOutlined, ReloadOutlined } from '@/components/ui';
-// TODO: Replace these icons: ImportOutlined, ExportOutlined
-// You may need to find alternatives or create custom icons
+import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';

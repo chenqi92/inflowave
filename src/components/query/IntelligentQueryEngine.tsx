@@ -340,7 +340,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                           <List.Item.Meta
                             avatar={
                               <Badge
-                                count={technique.estimatedGain + '%'}
+                                count={`${technique.estimatedGain  }%`}
                                 style={{ backgroundColor: 
                                   technique.impact === 'high' ? '#52c41a' :
                                   technique.impact === 'medium' ? '#faad14' : '#d9d9d9'
@@ -658,7 +658,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <List.Item.Meta
               avatar={
                 <Badge
-                  count={item.estimatedPerformanceGain + '%'}
+                  count={`${item.estimatedPerformanceGain  }%`}
                   style={{ backgroundColor: '#52c41a' }}
                 />
               }

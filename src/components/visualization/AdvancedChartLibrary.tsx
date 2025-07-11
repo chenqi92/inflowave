@@ -558,8 +558,8 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
       },
       markPoint: {
         label: {
-          formatter: function (param: any) {
-            return param != null ? Math.round(param.value) + '' : '';
+          formatter (param: any) {
+            return param != null ? `${Math.round(param.value)  }` : '';
           }
         },
         data: [

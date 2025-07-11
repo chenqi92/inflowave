@@ -2,6 +2,13 @@
  * Tauri 环境检测和兼容性工具
  */
 
+// 扩展 Window 接口以包含 Tauri 特定的属性
+declare global {
+  interface Window {
+    __TAURI__?: any;
+  }
+}
+
 // 检查是否在 Tauri 环境中运行
 export const isTauriEnvironment = (): boolean => {
   return typeof window !== 'undefined' && 

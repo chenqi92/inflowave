@@ -30,10 +30,6 @@ import {
   DownloadOutlined,
   SettingOutlined,
   ClockCircleOutlined,
-  MemoryOutlined,
-  HddOutlined,
-  CpuOutlined,
-  NetworkOutlined,
   FireOutlined,
   BugOutlined,
   TrophyOutlined,
@@ -45,21 +41,21 @@ import {
   ClearOutlined,
   BulbOutlined,
   ApiOutlined,
-  ConsoleSqlOutlined,
   MinusCircleOutlined,
   InfoCircleOutlined,
   CheckCircleOutlined,
+  WarningOutlined,
+  ExclamationCircleOutlined,
 } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
-import { PerformanceBottleneckService, type PerformanceBottleneck, type BottleneckMetrics } from '@/services/analyticsService';
+import { PerformanceBottleneckService, type PerformanceBottleneck } from '@/services/analyticsService';
 import { showMessage } from '@/utils/message';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 const { TabPane } = Tabs;
 const { Option } = Select;
 const { Search } = Input;
-const { RangePicker } = DatePicker;
 
 interface PerformanceBottleneckDiagnosticsProps {
   className?: string;
@@ -73,15 +69,36 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
   const [loading, setLoading] = useState(false);
   const [selectedBottleneck, setSelectedBottleneck] = useState<PerformanceBottleneck | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [timeRange, setTimeRange] = useState<[moment.Moment, moment.Moment] | null>(null);
+  const [timeRange, setTimeRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [severityFilter, setSeverityFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'query' | 'connection' | 'memory' | 'disk' | 'network' | 'cpu' | 'lock'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'ignored'>('all');
   const [searchText, setSearchText] = useState('');
-  const [systemMetrics, setSystemMetrics] = useState<any>(null);
-  const [slowQueries, setSlowQueries] = useState<any>(null);
-  const [lockWaits, setLockWaits] = useState<any>(null);
-  const [performanceReport, setPerformanceReport] = useState<any>(null);
+  const [systemMetrics, setSystemMetrics] = useState<{
+    cpuUsage: number;
+    memoryUsage: number;
+    diskIo: number;
+    networkIo: number;
+  } | null>(null);
+  const [slowQueries, setSlowQueries] = useState<{
+    queries: Array<{
+      query: string;
+      executionTime: number;
+      timestamp: Date;
+    }>;
+  } | null>(null);
+  const [lockWaits, setLockWaits] = useState<{
+    locks: Array<{
+      type: string;
+      duration: number;
+      blockedBy: string;
+    }>;
+  } | null>(null);
+  const [performanceReport, setPerformanceReport] = useState<{
+    summary: string;
+    recommendations: string[];
+    score: number;
+  } | null>(null);
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
   const [diagnosticsModalVisible, setDiagnosticsModalVisible] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -127,7 +144,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       setSystemMetrics(systemMetricsData);
       setSlowQueries(slowQueriesData);
       setLockWaits(lockWaitsData);
-      setConnectionPoolStats(connectionPoolData);
+      // setConnectionPoolStats(connectionPoolData);
       setPerformanceReport(performanceReportData);
     } catch (error) {
       console.error('获取性能瓶颈数据失败:', error);
@@ -163,18 +180,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
   // 获取严重程度图标
   const getSeverityIcon = (severity: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'low': <InfoIcon style={{ color: '#52c41a' }} />,
-      'medium': <WarningIcon style={{ color: '#faad14' }} />,
-      'high': <ExclamationIcon style={{ color: '#ff4d4f' }} />,
-      'critical': <CloseIcon style={{ color: '#ff4d4f' }} />,
+      'low': <InfoCircleOutlined style={{ color: '#52c41a' }} />,
+      'medium': <WarningOutlined style={{ color: '#faad14' }} />,
+      'high': <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+      'critical': <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
     };
-    return iconMap[severity] || <InfoIcon />;
+    return iconMap[severity] || <InfoCircleOutlined />;
   };
 
   // 获取类型图标
   const getTypeIcon = (type: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'query': <ConsoleSqlOutlined />,
+      'query': <BugOutlined />,
       'connection': <ApiOutlined />,
       'memory': <MemoryOutlined />,
       'disk': <HddOutlined />,
@@ -182,7 +199,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       'cpu': <CpuOutlined />,
       'lock': <LockOutlined />,
     };
-    return iconMap[type] || <InfoIcon />;
+    return iconMap[type] || <InfoCircleOutlined />;
   };
 
   // 获取状态图标
@@ -205,9 +222,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
   };
 
   // 格式化百分比
-  const formatPercentage = (ratio: number): string => {
-    return `${(ratio * 100).toFixed(1)}%`;
-  };
+  // const formatPercentage = (ratio: number): string => {
+  //   return `${(ratio * 100).toFixed(1)}%`;
+  // };
 
   // 过滤瓶颈数据
   const filteredBottlenecks = bottlenecks.filter(bottleneck => {

@@ -441,7 +441,7 @@ export class QueryAnalyzer {
     let estimatedMemory = 64; // 基础内存 MB
     let estimatedCpu = 10; // 基础CPU使用
     let estimatedIo = 50; // 基础IO操作
-    let estimatedNetwork = 10; // 基础网络使用
+    const estimatedNetwork = 10; // 基础网络使用
     
     // 基于表数量调整
     estimatedMemory += pattern.tables.length * 32;

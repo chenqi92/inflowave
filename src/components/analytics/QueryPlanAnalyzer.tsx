@@ -257,9 +257,9 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
   // 格式化数字
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return `${(num / 1000000).toFixed(1)  }M`;
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return `${(num / 1000).toFixed(1)  }K`;
     }
     return num.toString();
   };
@@ -267,9 +267,9 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
   // 格式化时间
   const formatTime = (ms: number): string => {
     if (ms >= 1000) {
-      return (ms / 1000).toFixed(2) + 's';
+      return `${(ms / 1000).toFixed(2)  }s`;
     }
-    return ms.toFixed(2) + 'ms';
+    return `${ms.toFixed(2)  }ms`;
   };
 
   // 获取推荐严重程度颜色
@@ -660,7 +660,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 </Descriptions.Item>
                 <Descriptions.Item label="缓存命中率">
                   {stats.bufferHits > 0 
-                    ? ((stats.bufferHits / (stats.bufferHits + stats.bufferMisses)) * 100).toFixed(1) + '%'
+                    ? `${((stats.bufferHits / (stats.bufferHits + stats.bufferMisses)) * 100).toFixed(1)  }%`
                     : '0%'
                   }
                 </Descriptions.Item>
