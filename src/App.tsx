@@ -104,7 +104,7 @@ const MainLayout: React.FC = () => {
       />
       
       {/* 测试按钮 - 仅在开发环境显示 */}
-      {process.env.NODE_ENV === 'development' && <TestButton />}
+      {(import.meta as any).env?.DEV && <TestButton />}
     </Layout>
   );
 };
@@ -146,9 +146,9 @@ const App: React.FC = () => {
         setLoading(false);
         
         // 在开发模式下加载测试工具
-        if (process.env.NODE_ENV === 'development') {
+        if ((import.meta as any).env?.DEV) {
           try {
-            import('./utils/masterTestRunner').then(({ masterTestRunner }) => {
+            import('./utils/masterTestRunner').then(({ masterTestRunner: _testRunner }) => {
               console.log('🧪 测试工具已加载');
               console.log('使用以下命令运行测试:');
               console.log('- runCompleteTests() // 运行完整测试套件');
