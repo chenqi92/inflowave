@@ -79,3 +79,4 @@ export const Descriptions: React.FC<DescriptionsProps> = ({
 
 // Add static property for easier usage
 Descriptions.Item = DescriptionsItem;
+
