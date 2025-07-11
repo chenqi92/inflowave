@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Switch, Button, Space, Alert, Steps, Tooltip } from '@/components/ui';
+import { Modal, Form, Input, InputNumber, Switch, Button, Space, Alert, Steps } from '@/components/ui';
 import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@/components/ui';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
@@ -114,9 +114,6 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     }
   };
 
-  const validateForm = (_: any, value: any) => {
-    return Promise.resolve();
-  };
 
   const renderConnectionForm = () => (
     <div className="space-y-4">

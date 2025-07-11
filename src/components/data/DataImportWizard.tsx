@@ -7,7 +7,7 @@ import {
   UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined,
   FileTextOutlined, ImportOutlined
 } from '@/components/ui';
-import type { UploadFile, UploadProps } from 'antd/es/upload';
+import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 const { Title, Text } = Typography;

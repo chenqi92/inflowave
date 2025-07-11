@@ -1,8 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Layout, message, Row, Space, Tabs, Tag, Typography, Tooltip, Tree } from '@/components/ui';
-import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined } from '@/components/ui';
-// TODO: Replace these icons: ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined
-// You may need to find alternatives or create custom icons
+import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined, ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import QueryEditor from '@/components/query/QueryEditor';
@@ -14,8 +12,15 @@ import DatabaseManager from '@/components/database/DatabaseManager';
 import RealTimeMonitor from '@/components/monitoring/RealTimeMonitor';
 import DashboardDesigner from '@/components/dashboard/DashboardDesigner';
 import DataImportWizard from '@/components/data/DataImportWizard';
-import type { DataNode } from 'antd/es/tree';
 import type { QueryResult } from '@/types';
+
+// Define DataNode type for Tree component
+type DataNode = {
+  key: string;
+  title: string;
+  icon?: React.ReactNode;
+  children?: DataNode[];
+};
 
 // Fix for invoke function
 const invoke = safeTauriInvoke;

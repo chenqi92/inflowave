@@ -1,10 +1,7 @@
 import React from 'react';
-import type { MenuProps } from 'antd';
-import { Button, Layout, Space, Typography } from '@/components/ui';
-// TODO: Replace these Ant Design components: Avatar, Badge, Dropdown, 
-import { DatabaseOutlined, SettingOutlined } from '@/components/ui';
-// TODO: Replace these icons: BulbOutlined, GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined
-// You may need to find alternatives or create custom icons
+import type { MenuProps } from '@/components/ui';
+import { Button, Layout, Space, Typography, Avatar, Badge, Dropdown } from '@/components/ui';
+import { DatabaseOutlined, SettingOutlined, BulbOutlined, GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@/components/ui';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';
 
@@ -15,7 +12,6 @@ const AppHeader: React.FC = () => {
   const {
     sidebarCollapsed,
     setSidebarCollapsed,
-    config,
     setTheme,
     setLanguage,
   } = useAppStore();

@@ -765,13 +765,7 @@ export interface FilterConfig {
 }
 
 // 查询相关增强类型
-export interface QueryRequest {
-  connectionId: string;
-  database?: string;
-  query: string;
-  timeout?: number;
-  format?: 'json' | 'csv' | 'table';
-}
+// QueryRequest is already defined above
 
 export interface QueryValidationResult {
   valid: boolean;
@@ -813,12 +807,7 @@ export interface MeasurementInfo {
   lastTime?: Date;
 }
 
-export interface FieldInfo {
-  name: string;
-  type: 'integer' | 'float' | 'string' | 'boolean';
-  measurement: string;
-  database: string;
-}
+// FieldInfo is already defined above
 
 export interface TagInfo {
   name: string;

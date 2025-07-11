@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Alert, message } from '@/components/ui';
-// TODO: Replace these Ant Design components: Switch, 
-import { DownloadOutlined, TableOutlined } from '@/components/ui';
-// TODO: Replace these icons: FileTextOutlined, FileExcelOutlined
-// You may need to find alternatives or create custom icons
+import { Modal, Form, Input, Select, Button, Space, Alert, message, Switch } from '@/components/ui';
+import { DownloadOutlined, TableOutlined, FileTextOutlined, FileExcelOutlined } from '@/components/ui';
 import type { QueryResult } from '@/types';
 
 interface ExportOptions {

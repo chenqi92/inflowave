@@ -50,7 +50,7 @@ const regexReplacements = [
         result += `import { ${supported.join(', ')} } from '@/components/ui';`;
       }
       if (unsupported.length > 0) {
-        result += (result ? '\n' : '') + `// TODO: Replace these Ant Design components: ${unsupported.join(', ')}`;
+        result += `${result ? '\n' : ''}// TODO: Replace these Ant Design components: ${unsupported.join(', ')}`;
       }
       
       return result;

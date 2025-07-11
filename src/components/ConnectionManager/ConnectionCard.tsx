@@ -6,7 +6,6 @@ import {
   SettingOutlined, 
   DeleteOutlined, 
   EditOutlined, 
-  EyeOutlined, 
   WifiOutlined, 
   DisconnectOutlined,
   CopyOutlined,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { message } from '@/components/ui';
 // TODO: Replace these Ant Design components: Dropdown
-import type { MenuProps } from 'antd';
+import type { MenuProps } from '@/components/ui';
 import { CopyOutlined, BarChartOutlined, EditOutlined, EyeOutlined, TableOutlined } from '@/components/ui';
 // TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
 // You may need to find alternatives or create custom icons

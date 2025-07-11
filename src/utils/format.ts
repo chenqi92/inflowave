@@ -16,7 +16,7 @@ export class FormatUtils {
 
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 
   /**
@@ -46,7 +46,7 @@ export class FormatUtils {
     const isNegative = value < 0;
     const absValue = Math.abs(value);
     
-    let formatted = absValue.toFixed(decimals);
+    const formatted = absValue.toFixed(decimals);
     
     // 分离整数和小数部分
     const parts = formatted.split('.');
@@ -81,7 +81,7 @@ export class FormatUtils {
   ): string {
     try {
       return dayjs(value).format(format);
-    } catch (error) {
+    } catch {
       return String(value);
     }
   }
@@ -108,7 +108,7 @@ export class FormatUtils {
       } else {
         return target.format('YYYY-MM-DD');
       }
-    } catch (error) {
+    } catch {
       return String(value);
     }
   }

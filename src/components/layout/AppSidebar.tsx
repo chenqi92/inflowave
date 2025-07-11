@@ -1,11 +1,8 @@
 import React from 'react';
-import { Layout } from '@/components/ui';
-// TODO: Replace these Ant Design components: Menu
+import { Layout, Menu } from '@/components/ui';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined } from '@/components/ui';
-// TODO: Replace these icons: ApiOutlined
-// You may need to find alternatives or create custom icons
-import type { MenuProps } from 'antd';
+import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined, ApiOutlined } from '@/components/ui';
+import type { MenuProps } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 
 const { Sider } = Layout;

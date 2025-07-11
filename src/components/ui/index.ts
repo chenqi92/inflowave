@@ -103,11 +103,27 @@ export type { PopconfirmProps } from './Popconfirm';
 export { Divider } from './Divider';
 export type { DividerProps } from './Divider';
 
+export { Collapse } from './Collapse';
+export type { CollapseProps, CollapsePanelProps } from './Collapse';
+
+export { Timeline, TimelineItem } from './Timeline';
+export type { TimelineProps, TimelineItemProps } from './Timeline';
+
 export { Upload } from './Upload';
 export type { UploadProps, UploadFile } from './Upload';
 
 export { Breadcrumb } from './Breadcrumb';
 export type { BreadcrumbProps, BreadcrumbItem } from './Breadcrumb';
+
+// Export missing components
+export { Radio, RadioGroup } from './Radio';
+export type { RadioProps, RadioGroupProps } from './Radio';
+
+export { Slider } from './Slider';
+export type { SliderProps } from './Slider';
+
+export { Descriptions } from './Descriptions';
+export type { DescriptionsProps, DescriptionsItemProps } from './Descriptions';
 
 // 导出所有图标
 export * from './Icons';

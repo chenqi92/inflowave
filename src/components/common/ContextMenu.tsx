@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Modal, message, Menu } from '@/components/ui';
-import { EyeOutlined, BarChartOutlined, DeleteOutlined, InfoCircleOutlined, TableOutlined, DownloadOutlined, LineChartOutlined, PieChartOutlined, SettingOutlined, CopyOutlined, SearchOutlined } from '@/components/ui';
-// TODO: Replace these icons: ExportOutlined, TagsOutlined, FunctionOutlined, AreaChartOutlined, NumberOutlined
-// You may need to find alternatives or create custom icons
+import { EyeOutlined, BarChartOutlined, DeleteOutlined, InfoCircleOutlined, TableOutlined, DownloadOutlined, LineChartOutlined, PieChartOutlined, SettingOutlined, CopyOutlined, SearchOutlined, ExportOutlined, TagsOutlined, FunctionOutlined, AreaChartOutlined, NumberOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { MenuProps } from '@/components/ui';
 import type { SqlGenerationRequest } from '@/types';

@@ -1,10 +1,7 @@
 import React from 'react';
-import { message, Modal } from '@/components/ui';
-// TODO: Replace these Ant Design components: Dropdown
-import type { MenuProps } from 'antd';
-import { PlusOutlined, ReloadOutlined, InfoCircleOutlined, DeleteOutlined, CopyOutlined, TableOutlined } from '@/components/ui';
-// TODO: Replace these icons: ExportOutlined, FileTextOutlined
-// You may need to find alternatives or create custom icons
+import { message, Modal, Dropdown } from '@/components/ui';
+import type { MenuProps } from '@/components/ui';
+import { PlusOutlined, ReloadOutlined, InfoCircleOutlined, DeleteOutlined, CopyOutlined, TableOutlined, ExportOutlined, FileTextOutlined } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 

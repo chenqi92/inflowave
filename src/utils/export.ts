@@ -258,7 +258,7 @@ export const previewExportContent = (result: QueryResult, options: ExportOptions
     case 'json':
       content = convertToJSON(result);
       break;
-    case 'xlsx':
+    case 'xlsx': {
       // 对于 XLSX 格式，显示表格结构预览
       if (!result.series || result.series.length === 0) {
         return 'No data to preview';
@@ -276,6 +276,7 @@ export const previewExportContent = (result: QueryResult, options: ExportOptions
         previewData.push(`... (${series.values.length - (maxLines - 1)} more rows)`);
       }
       return previewData.join('\n');
+    }
     default:
       return 'Unsupported format for preview';
   }

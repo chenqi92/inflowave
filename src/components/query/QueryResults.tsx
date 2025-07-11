@@ -4,7 +4,7 @@ import { Card, Table, Tabs, Button, Space, Typography, Empty, Spin, Tag, Modal, 
 import { TableOutlined, DownloadOutlined, BarChartOutlined, InfoCircleOutlined, LineChartOutlined, PieChartOutlined } from '@/components/ui';
 // TODO: Replace these icons: FileTextOutlined, AreaChartOutlined, MoreOutlined
 // You may need to find alternatives or create custom icons
-import type { ColumnsType } from 'antd/es/table';
+import type { TableColumn } from '@/components/ui';
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';

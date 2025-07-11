@@ -127,10 +127,6 @@ export const CodeOutlined = createIcon('M9.4,16.6L4.8,12L9.4,7.4L8,6L2,12L8,18L9
 
 export const DesktopOutlined = createIcon('M21,14H3V4H21M21,2H3C1.89,2 1,2.89 1,4V16A2,2 0 0,0 3,18H10V20H8V22H16V20H14V18H21A2,2 0 0,0 23,16V4C23,2.89 22.1,2 21,2Z');
 
-export const Divider: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
-  <div className={cn('w-full h-px bg-gray-200 my-4', className)} style={style} />
-);
-
 // 添加缺少的图标
 export const HistoryOutlined = createIcon('M13.5,8H12V13L16.28,15.54L17,14.33L13.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3');
 
@@ -181,5 +177,61 @@ export const BookOutlined = createIcon('M18,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H
 export const StarOutlined = createIcon('M12,15.39L8.24,17.66L9.23,13.38L5.91,10.5L10.29,10.13L12,6.09L13.71,10.13L18.09,10.5L14.77,13.38L15.76,17.66M22,9.24L14.81,8.63L12,2L9.19,8.63L2,9.24L7.45,13.97L5.82,21L12,17.27L18.18,21L16.54,13.97L22,9.24Z');
 
 export const HddOutlined = createIcon('M6,2H18A2,2 0 0,1 20,4V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2M6,4V20H18V4H6M7,6H17V8H7V6M7,10H17V12H7V10M7,14H17V16H7V14Z');
+
+// 修复 Cannot find variable 错误 - 添加缺失的关键图标
+
+// 最紧急修复 - MoreOutlined 被多个核心组件使用
+export const MoreOutlined = createIcon('M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z');
+
+// 加载和状态图标
+export const LoadingOutlined = createIcon(
+  <>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
+    <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor" className="animate-spin" />
+  </>
+);
+
+export const WarningOutlined = createIcon('M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z');
+
+// 数据处理图标
+export const FilterOutlined = createIcon('M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z');
+
+export const SortAscendingOutlined = createIcon('M3 18h6v-2H3v2zM3 6v2h6V6H3zm0 7h10v-2H3v2zm0 7h14v-2H3v2zM21 6v12l-4-4h3V6h1z');
+
+export const SortDescendingOutlined = createIcon('M3 18h6v-2H3v2zM3 6v2h6V6H3zm0 7h10v-2H3v2zm0 7h14v-2H3v2zM21 18V6l-4 4h3v8h1z');
+
+// 时间和监控图标
+export const FieldTimeOutlined = createIcon('M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z');
+
+export const MonitorOutlined = createIcon('M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3v2h2v-2h6v2h2v-2h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z');
+
+// 图表和可视化图标
+export const DotChartOutlined = createIcon('M7 14c1.66 0 3-1.34 3-3S8.66 8 7 8s-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM13 8c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM19 16c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z');
+
+// 增加更多必需的图标
+export const CaretRightOutlined = createIcon('M8 5v14l11-7z');
+export const CaretDownOutlined = createIcon('M7 10l5 5 5-5z');
+export const CaretLeftOutlined = createIcon('M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z');
+export const CaretUpOutlined = createIcon('M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z');
+
+export const MenuFoldOutlined = createIcon('M4 6h16v2H4zm0 5h16v2H4zm11 5h5v2h-5z');
+export const MenuUnfoldOutlined = createIcon('M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z');
+
+export const CloudUploadOutlined = createIcon('M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z');
+export const CloudDownloadOutlined = createIcon('M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z');
+
+export const SwapOutlined = createIcon('M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z');
+export const SyncOutlined = createIcon('M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z');
+
+// 添加更多缺失的图标
+export const LinkOutlined = createIcon('M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z');
+
+export const RobotOutlined = createIcon('M12 2c-1.1 0-2 .9-2 2v1.5c-1.5.3-3 1.2-3 2.5v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V8c0-1.3-1.5-2.2-3-2.5V4c0-1.1-.9-2-2-2zm0 2c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm-3 4h6v8H9V8zm1 1v2h1V9h-1zm3 0v2h1V9h-1z');
+
+export const ExperimentOutlined = createIcon('M9 2v5.5L4.5 12c-.83.83-.83 2.17 0 3l2.5 2.5c.83.83 2.17.83 3 0l5-5c.83-.83.83-2.17 0-3L12.5 7.5 11 6V2H9zm2 2v2.5l1.5 1.5L15 10.5 10.5 15l-2.5-2.5L11 9.5 9.5 8V4h1.5z');
+
+export const ZoomOutlined = createIcon('M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z');
+
+export const TagOutlined = createIcon('M5.5,7A1.5,1.5 0 0,1 4,5.5A1.5,1.5 0 0,1 5.5,4A1.5,1.5 0 0,1 7,5.5A1.5,1.5 0 0,1 5.5,7M21.41,11.58L12.41,2.58C12.05,2.22 11.55,2 11,2H4C2.9,2 2,2.9 2,4V11C2,11.55 2.22,12.05 2.59,12.41L11.58,21.41C11.95,21.78 12.45,22 13,22C13.55,22 14.05,21.78 14.41,21.41L21.41,14.41C21.78,14.05 22,13.55 22,13C22,12.45 21.78,11.95 21.41,11.58Z');
 
 // 更多图标可以根据需要添加...

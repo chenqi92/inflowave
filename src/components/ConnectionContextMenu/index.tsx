@@ -1,13 +1,11 @@
 import React from 'react';
-import { Modal, message } from '@/components/ui';
-// TODO: Replace these Ant Design components: Menu
-import { WifiOutlined, DisconnectOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, DatabaseOutlined } from '@/components/ui';
-// TODO: Replace these icons: ExportOutlined
-// You may need to find alternatives or create custom icons
-import type { MenuProps } from 'antd';
+import { Modal, message, Menu } from '@/components/ui';
+import { WifiOutlined, DisconnectOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, DatabaseOutlined, ExportOutlined } from '@/components/ui';
+import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ConnectionContextMenuProps {
   connection: ConnectionConfig;

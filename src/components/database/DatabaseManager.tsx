@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tabs, Table, Button, Space, Typography, Modal, Form, Input, Select, message, Tag, Row, Col, Statistic, Alert } from '@/components/ui';
-// TODO: Replace these Ant Design components: InputNumber, Popconfirm, Tooltip, Progress, 
-import { DatabaseOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, InfoCircleOutlined, ReloadOutlined, ExclamationCircleOutlined, CheckCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: ClockCircleOutlined
-// You may need to find alternatives or create custom icons
+import { Card, Tabs, Table, Button, Space, Typography, Modal, Form, Input, Select, message, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from '@/components/ui';
+import { DatabaseOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, InfoCircleOutlined, ReloadOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import type { RetentionPolicy, RetentionPolicyConfig, DatabaseStorageInfo } from '@/types';

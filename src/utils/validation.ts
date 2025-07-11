@@ -142,7 +142,7 @@ export class ValidationUtils {
    * 验证主机名
    */
   static hostname(value: string, fieldName?: string): string | null {
-    const hostnameRegex = /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])(\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])*$/;
+    const hostnameRegex = /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])*$/;
     
     if (!hostnameRegex.test(value)) {
       return `${fieldName || '主机名'}格式不正确`;
@@ -295,7 +295,7 @@ export class ValidationUtils {
     const hasLowerCase = /[a-z]/.test(value);
     const hasUpperCase = /[A-Z]/.test(value);
     const hasNumbers = /\d/.test(value);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value);
 
     const strength = [hasLowerCase, hasUpperCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
 

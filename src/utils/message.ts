@@ -27,22 +27,22 @@ export const showMessage = {
 // 便捷的通知方法 (使用消息系统)
 export const showNotification = {
   success: (config: { message: string; description?: string; duration?: number } | string) => {
-    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? `: ${config.description}` : ''}`;
     return message.success(content, typeof config === 'object' ? config.duration : undefined);
   },
 
   error: (config: { message: string; description?: string; duration?: number } | string) => {
-    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? `: ${config.description}` : ''}`;
     return message.error(content, typeof config === 'object' ? config.duration : undefined);
   },
 
   warning: (config: { message: string; description?: string; duration?: number } | string) => {
-    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? `: ${config.description}` : ''}`;
     return message.warning(content, typeof config === 'object' ? config.duration : undefined);
   },
 
   info: (config: { message: string; description?: string; duration?: number } | string) => {
-    const content = typeof config === 'string' ? config : `${config.message}${config.description ? ': ' + config.description : ''}`;
+    const content = typeof config === 'string' ? config : `${config.message}${config.description ? `: ${config.description}` : ''}`;
     return message.info(content, typeof config === 'object' ? config.duration : undefined);
   }
 };

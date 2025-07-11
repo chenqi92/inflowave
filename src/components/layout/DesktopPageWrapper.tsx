@@ -1,6 +1,5 @@
 import React from 'react';
-import { Typography, Button } from '@/components/ui';
-// TODO: Replace these Ant Design components: Breadcrumb
+import { Typography, Button, Breadcrumb } from '@/components/ui';
 import { HomeOutlined, RightOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,7 +44,7 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
     ];
 
     if (breadcrumb && breadcrumb.length > 0) {
-      breadcrumb.forEach((item, index) => {
+      breadcrumb.forEach((item, _index) => {
         items.push({
           title: item.path ? (
             <Button

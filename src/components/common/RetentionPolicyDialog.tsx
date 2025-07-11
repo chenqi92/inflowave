@@ -1,9 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Space, Alert, Select, message, Typography } from '@/components/ui';
-// TODO: Replace these Ant Design components: Switch, InputNumber, Tooltip, 
-import { InfoCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: QuestionCircleOutlined
-// You may need to find alternatives or create custom icons
+import { Modal, Form, Input, Button, Space, Alert, Select, message, Typography, Switch, InputNumber, Tooltip } from '@/components/ui';
+import { InfoCircleOutlined, QuestionCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
