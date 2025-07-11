@@ -24,6 +24,7 @@ import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
 import UITest from './pages/UITest';
+import TestButton from './components/test/TestButton';
 
 // Layout 组件直接导入
 import { Content } from '@/components/ui';
@@ -101,6 +102,9 @@ const MainLayout: React.FC = () => {
           navigate('/query', { state: { query } });
         }}
       />
+      
+      {/* 测试按钮 - 仅在开发环境显示 */}
+      {process.env.NODE_ENV === 'development' && <TestButton />}
     </Layout>
   );
 };
@@ -140,6 +144,22 @@ const App: React.FC = () => {
         console.warn('应用将以降级模式运行');
       } finally {
         setLoading(false);
+        
+        // 在开发模式下加载测试工具
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            import('./utils/masterTestRunner').then(({ masterTestRunner }) => {
+              console.log('🧪 测试工具已加载');
+              console.log('使用以下命令运行测试:');
+              console.log('- runCompleteTests() // 运行完整测试套件');
+              console.log('- quickHealthCheck() // 快速健康检查');
+              console.log('- runUITests() // 运行UI测试');
+              console.log('- runFeatureTests() // 运行功能测试');
+            });
+          } catch (error) {
+            console.warn('测试工具加载失败:', error);
+          }
+        }
       }
     };
 
