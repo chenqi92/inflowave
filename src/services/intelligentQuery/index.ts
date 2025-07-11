@@ -1,8 +1,10 @@
 import { QueryOptimizer } from './optimizer/QueryOptimizer';
 import { QueryAnalyzer } from './analyzer/QueryAnalyzer';
 import { IntelligentCache } from './cache/IntelligentCache';
-import { QueryRouter } from './router/QueryRouter';
-import { PerformancePredictor } from './predictor/PerformancePredictor';
+import QueryRouter from './router/QueryRouter';
+import PerformancePredictor from './predictor/PerformancePredictor';
+import MLOptimizer from './ml/MLOptimizer';
+import OptimizationHistory from './history/OptimizationHistory';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 export interface QueryOptimizationRequest {
@@ -72,7 +74,7 @@ export interface OptimizationTechnique {
 
 export interface RoutingStrategy {
   targetConnection: string;
-  loadBalancing: 'round_robin' | 'least_connections' | 'weighted' | 'hash';
+  loadBalancing: 'round_robin' | 'least_connections' | 'weighted' | 'hash' | 'adaptive';
   priority: number;
   reason: string;
 }
@@ -131,6 +133,7 @@ export class IntelligentQueryEngine {
   private cache: IntelligentCache;
   private router: QueryRouter;
   private predictor: PerformancePredictor;
+  private history: OptimizationHistory;
 
   constructor() {
     this.optimizer = new QueryOptimizer();
@@ -138,6 +141,7 @@ export class IntelligentQueryEngine {
     this.cache = new IntelligentCache();
     this.router = new QueryRouter();
     this.predictor = new PerformancePredictor();
+    this.history = new OptimizationHistory();
   }
 
   /**
@@ -210,6 +214,15 @@ export class IntelligentQueryEngine {
       ttl: this.cache.calculateTTL(analysis),
       tags: analysis.tags,
     });
+
+    // 9. 记录优化历史
+    await this.history.recordOptimization(
+      connectionId,
+      database,
+      query,
+      result,
+      context
+    );
 
     return result;
   }
@@ -304,6 +317,111 @@ export class IntelligentQueryEngine {
     return recommendations
       .sort((a, b) => b.estimatedBenefit - a.estimatedBenefit)
       .slice(0, limit);
+  }
+
+  /**
+   * 训练机器学习模型
+   */
+  async trainMLModels(): Promise<void> {
+    await this.optimizer.trainMLModels();
+  }
+
+  /**
+   * 添加ML训练数据
+   */
+  addMLTrainingData(data: any): void {
+    this.optimizer.addMLTrainingData(data);
+  }
+
+  /**
+   * 获取ML模型信息
+   */
+  getMLModelInfo(): any[] {
+    return this.optimizer.getMLModelInfo();
+  }
+
+  /**
+   * 获取ML模型指标
+   */
+  async getMLModelMetrics(modelId: string): Promise<any> {
+    return this.optimizer.getMLModelMetrics(modelId);
+  }
+
+  /**
+   * 获取优化历史
+   */
+  getOptimizationHistory(filter?: any, limit?: number, offset?: number): any[] {
+    return this.history.queryHistory(filter, limit, offset);
+  }
+
+  /**
+   * 获取历史记录详情
+   */
+  getHistoryEntry(entryId: string): any {
+    return this.history.getHistoryEntry(entryId);
+  }
+
+  /**
+   * 更新执行性能
+   */
+  async updateExecutionPerformance(entryId: string, performance: any): Promise<boolean> {
+    return this.history.updatePerformance(entryId, performance);
+  }
+
+  /**
+   * 添加用户反馈
+   */
+  async addUserFeedback(entryId: string, feedback: any): Promise<boolean> {
+    return this.history.addUserFeedback(entryId, feedback);
+  }
+
+  /**
+   * 获取历史统计
+   */
+  getHistoryStatistics(filter?: any): any {
+    return this.history.generateStatistics(filter);
+  }
+
+  /**
+   * 查找相似查询
+   */
+  findSimilarQueries(query: string, limit?: number, threshold?: number): any[] {
+    return this.history.findSimilarQueries(query, limit, threshold);
+  }
+
+  /**
+   * 获取最佳优化案例
+   */
+  getBestOptimizations(limit?: number): any[] {
+    return this.history.getBestOptimizations(limit);
+  }
+
+  /**
+   * 获取最差优化案例
+   */
+  getWorstOptimizations(limit?: number): any[] {
+    return this.history.getWorstOptimizations(limit);
+  }
+
+  /**
+   * 导出历史数据
+   */
+  async exportOptimizationHistory(options: any): Promise<string> {
+    return this.history.exportHistory(options);
+  }
+
+  /**
+   * 导入历史数据
+   */
+  async importOptimizationHistory(data: string, format: 'json' | 'csv'): Promise<number> {
+    return this.history.importHistory(data, format);
+  }
+
+  /**
+   * 清空历史记录
+   */
+  async clearOptimizationHistory(): Promise<void> {
+    return this.history.clearHistory();
   }
 
   /**
@@ -482,6 +600,18 @@ export interface TimeRange {
   start: Date;
   end: Date;
 }
+
+// Export ML-related interfaces
+export type { MLModel, MLPrediction, MLTrainingData, PerformanceMetrics, UserFeedback } from './ml/MLOptimizer';
+
+// Export History-related interfaces
+export type { 
+  OptimizationHistoryEntry, 
+  ExecutionPerformance, 
+  HistoryFilter, 
+  HistoryStatistics, 
+  ExportOptions 
+} from './history/OptimizationHistory';
 
 // 创建单例实例
 export const intelligentQueryEngine = new IntelligentQueryEngine();

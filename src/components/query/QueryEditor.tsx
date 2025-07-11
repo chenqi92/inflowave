@@ -13,7 +13,10 @@ import {
   PlusOutlined,
   CloseOutlined,
   CopyOutlined,
-  EditOutlined
+  EditOutlined,
+  ThunderboltOutlined,
+  ExperimentOutlined,
+  BulbOutlined
 } from '@/components/ui';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -22,6 +25,7 @@ import { useConnectionStore } from '@/store/connection';
 import { useQuery } from '@/hooks/useQuery';
 import { useSettingsStore } from '@/store/settings';
 import { FormatUtils } from '@/utils/format';
+import { intelligentQueryEngine } from '@/services/intelligentQuery';
 import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
@@ -71,6 +75,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [optimizationLoading, setOptimizationLoading] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<any>(null);
+  const [autoOptimize, setAutoOptimize] = useState(false);
+  const [showOptimizationTips, setShowOptimizationTips] = useState(false);
 
   // 初始化编辑器
   const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
@@ -116,6 +124,79 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         : tab
     ));
   }, [activeTabId]);
+
+  // 智能优化查询
+  const handleOptimizeQuery = useCallback(async () => {
+    if (!activeConnectionId || !getCurrentTab()?.query) {
+      message.warning('请选择连接并输入查询语句');
+      return;
+    }
+
+    const currentTab = getCurrentTab();
+    if (!currentTab) return;
+
+    setOptimizationLoading(true);
+    try {
+      const result = await intelligentQueryEngine.optimizeQuery({
+        query: currentTab.query,
+        connectionId: activeConnectionId,
+        database: currentTab.database || selectedDatabase,
+        context: {
+          historicalQueries: [],
+          userPreferences: {
+            preferredPerformance: 'balanced',
+            maxQueryTime: 5000,
+            cachePreference: 'aggressive'
+          },
+          systemLoad: {
+            cpuUsage: 50,
+            memoryUsage: 60,
+            diskIo: 30,
+            networkLatency: 20
+          },
+          dataSize: {
+            totalRows: 100000,
+            totalSize: 1024 * 1024 * 100,
+            averageRowSize: 1024,
+            compressionRatio: 0.3
+          },
+          indexInfo: []
+        }
+      });
+
+      setOptimizationResult(result);
+      
+      // 如果用户启用了自动应用优化
+      if (autoOptimize && result.optimizedQuery !== currentTab.query) {
+        updateCurrentTabQuery(result.optimizedQuery);
+        if (editorInstance) {
+          editorInstance.setValue(result.optimizedQuery);
+        }
+        message.success(`查询已自动优化，预计性能提升 ${result.estimatedPerformanceGain}%`);
+      } else {
+        message.success(`查询分析完成，预计性能提升 ${result.estimatedPerformanceGain}%`);
+      }
+    } catch (error) {
+      console.error('Query optimization failed:', error);
+      message.error('查询优化失败');
+    } finally {
+      setOptimizationLoading(false);
+    }
+  }, [activeConnectionId, getCurrentTab, selectedDatabase, autoOptimize, updateCurrentTabQuery, editorInstance]);
+
+  // 应用优化建议
+  const handleApplyOptimization = useCallback(() => {
+    if (!optimizationResult || !getCurrentTab()) return;
+
+    const currentTab = getCurrentTab();
+    if (!currentTab) return;
+
+    updateCurrentTabQuery(optimizationResult.optimizedQuery);
+    if (editorInstance) {
+      editorInstance.setValue(optimizationResult.optimizedQuery);
+    }
+    message.success('优化建议已应用');
+  }, [optimizationResult, getCurrentTab, updateCurrentTabQuery, editorInstance]);
 
   // 添加新标签页
   const addNewTab = () => {
@@ -539,6 +620,36 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 格式化
               </Button>
 
+              <Tooltip title="智能优化查询">
+                <Button
+                  icon={<ThunderboltOutlined />}
+                  onClick={handleOptimizeQuery}
+                  loading={optimizationLoading}
+                  disabled={!activeConnectionId || !currentTab?.query.trim()}
+                >
+                  智能优化
+                </Button>
+              </Tooltip>
+
+              {optimizationResult && (
+                <Tooltip title="应用优化建议">
+                  <Button
+                    icon={<BulbOutlined />}
+                    onClick={handleApplyOptimization}
+                    disabled={!optimizationResult || optimizationResult.optimizedQuery === currentTab?.query}
+                  >
+                    应用优化
+                  </Button>
+                </Tooltip>
+              )}
+
+              <Tooltip title="优化设置">
+                <Button
+                  icon={<ExperimentOutlined />}
+                  onClick={() => setShowOptimizationTips(true)}
+                />
+              </Tooltip>
+
               <Select
                 placeholder="选择模板"
                 style={{ width: 150 }}
@@ -579,6 +690,58 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               }}
             />
           </div>
+
+          {/* 优化结果展示 */}
+          {optimizationResult && (
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: '12px 16px', background: '#fafafa' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Space>
+                  <Text strong>优化分析结果</Text>
+                  <Badge 
+                    count={`${optimizationResult.estimatedPerformanceGain}%`} 
+                    style={{ backgroundColor: optimizationResult.estimatedPerformanceGain > 20 ? '#52c41a' : '#faad14' }}
+                  />
+                  <Text type="secondary">预计性能提升</Text>
+                </Space>
+                
+                {optimizationResult.optimizationTechniques.length > 0 && (
+                  <Space wrap>
+                    <Text type="secondary">优化技术:</Text>
+                    {optimizationResult.optimizationTechniques.map((tech: any, index: number) => (
+                      <Badge
+                        key={index}
+                        count={tech.name}
+                        style={{ 
+                          backgroundColor: tech.impact === 'high' ? '#52c41a' : 
+                                          tech.impact === 'medium' ? '#faad14' : '#d9d9d9'
+                        }}
+                      />
+                    ))}
+                  </Space>
+                )}
+
+                {optimizationResult.warnings.length > 0 && (
+                  <Space wrap>
+                    <Text type="warning">警告:</Text>
+                    {optimizationResult.warnings.map((warning: string, index: number) => (
+                      <Text key={index} type="warning">{warning}</Text>
+                    ))}
+                  </Space>
+                )}
+
+                {optimizationResult.recommendations.length > 0 && (
+                  <Space wrap>
+                    <Text type="secondary">建议:</Text>
+                    {optimizationResult.recommendations.slice(0, 2).map((rec: any, index: number) => (
+                      <Tooltip key={index} title={rec.description}>
+                        <Badge count={rec.title} style={{ backgroundColor: '#1890ff' }} />
+                      </Tooltip>
+                    ))}
+                  </Space>
+                )}
+              </Space>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -666,6 +829,112 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <span className="text-sm">显示行号</span>
             <Switch defaultChecked={true} />
           </div>
+        </div>
+      </Drawer>
+
+      {/* 优化设置抽屉 */}
+      <Drawer
+        title="优化设置"
+        open={showOptimizationTips}
+        onClose={() => setShowOptimizationTips(false)}
+        width={400}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">自动应用优化</span>
+            <Switch 
+              checked={autoOptimize} 
+              onChange={setAutoOptimize}
+            />
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3">优化技术</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">索引优化</span>
+                <Switch defaultChecked={true} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">查询重写</span>
+                <Switch defaultChecked={true} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">缓存策略</span>
+                <Switch defaultChecked={true} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">并行化</span>
+                <Switch defaultChecked={false} />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3">性能目标</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-sm font-medium mb-1">最大执行时间 (秒)</label>
+                <Select defaultValue="5" style={{ width: '100%' }}>
+                  <Option value="1">1</Option>
+                  <Option value="5">5</Option>
+                  <Option value="10">10</Option>
+                  <Option value="30">30</Option>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">内存使用限制 (MB)</label>
+                <Select defaultValue="512" style={{ width: '100%' }}>
+                  <Option value="256">256</Option>
+                  <Option value="512">512</Option>
+                  <Option value="1024">1024</Option>
+                  <Option value="2048">2048</Option>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3">路由策略</h4>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-sm font-medium mb-1">负载均衡</label>
+                <Select defaultValue="adaptive" style={{ width: '100%' }}>
+                  <Option value="round_robin">轮询</Option>
+                  <Option value="least_connections">最少连接</Option>
+                  <Option value="weighted">加权</Option>
+                  <Option value="adaptive">自适应</Option>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">启用读写分离</span>
+                <Switch defaultChecked={true} />
+              </div>
+            </div>
+          </div>
+
+          {optimizationResult && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">优化历史</h4>
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <Text type="secondary">上次优化时间:</Text>
+                  <br />
+                  <Text>{new Date().toLocaleString()}</Text>
+                </div>
+                <div className="text-sm">
+                  <Text type="secondary">性能提升:</Text>
+                  <br />
+                  <Text type="success">{optimizationResult.estimatedPerformanceGain}%</Text>
+                </div>
+                <div className="text-sm">
+                  <Text type="secondary">优化技术:</Text>
+                  <br />
+                  <Text>{optimizationResult.optimizationTechniques.map((t: any) => t.name).join(', ')}</Text>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Drawer>
     </div>

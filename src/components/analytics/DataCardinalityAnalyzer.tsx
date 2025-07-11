@@ -184,16 +184,16 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
   // 格式化数字
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return `${(num / 1000000).toFixed(1)}M`;
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return `${(num / 1000).toFixed(1)}K`;
     }
     return num.toString();
   };
 
   // 格式化百分比
   const formatPercentage = (ratio: number): string => {
-    return (ratio * 100).toFixed(1) + '%';
+    return `${(ratio * 100).toFixed(1)}%`;
   };
 
   // 表格列定义

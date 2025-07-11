@@ -1,4 +1,5 @@
 import { safeTauriInvoke } from '@/utils/tauri';
+import MLOptimizer from '../ml/MLOptimizer';
 
 export interface OptimizedQuery {
   query: string;
@@ -161,9 +162,11 @@ export interface Recommendation {
 export class QueryOptimizer {
   private optimizationRules: OptimizationRule[] = [];
   private learningModel: OptimizationModel | null = null;
+  private mlOptimizer: MLOptimizer;
 
   constructor() {
     this.initializeOptimizationRules();
+    this.mlOptimizer = new MLOptimizer();
   }
 
   /**
@@ -612,9 +615,21 @@ export class QueryOptimizer {
     analysis: QueryAnalysis,
     context?: QueryContext
   ): Promise<{ query: string; techniques: OptimizationTechnique[]; improvement: number }> {
-    // 这里应该调用机器学习模型进行优化
-    // 暂时返回空结果
-    return { query, techniques: [], improvement: 0 };
+    try {
+      const mlResult = await this.mlOptimizer.optimizeQuery(query, analysis, context);
+      
+      // 计算改进估计
+      const improvement = mlResult.techniques.reduce((sum, tech) => sum + tech.estimatedGain, 0);
+      
+      return {
+        query: mlResult.optimizedQuery,
+        techniques: mlResult.techniques,
+        improvement: Math.min(improvement, 70), // 限制ML优化的最大改进
+      };
+    } catch (error) {
+      console.error('ML optimization failed:', error);
+      return { query, techniques: [], improvement: 0 };
+    }
   }
 
   /**
@@ -784,6 +799,34 @@ export class QueryOptimizer {
         step.description.includes(join.leftTable) || step.description.includes(join.rightTable)
       )
       .map(step => step.id);
+  }
+
+  /**
+   * 训练机器学习模型
+   */
+  async trainMLModels(): Promise<void> {
+    await this.mlOptimizer.trainModels();
+  }
+
+  /**
+   * 添加ML训练数据
+   */
+  addMLTrainingData(data: any): void {
+    this.mlOptimizer.addTrainingData(data);
+  }
+
+  /**
+   * 获取ML模型信息
+   */
+  getMLModelInfo(): any[] {
+    return this.mlOptimizer.getModelInfo();
+  }
+
+  /**
+   * 获取ML模型指标
+   */
+  async getMLModelMetrics(modelId: string): Promise<any> {
+    return this.mlOptimizer.getModelMetrics(modelId);
   }
 }
 

@@ -26,15 +26,9 @@ import {
   InputNumber,
 } from '@/components/ui';
 import {
-  WarningOutlined,
-  ExclamationCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  InfoCircleOutlined,
   ReloadOutlined,
   DownloadOutlined,
   SettingOutlined,
-  EyeOutlined,
   ClockCircleOutlined,
   MemoryOutlined,
   HddOutlined,
@@ -48,20 +42,13 @@ import {
   MonitorOutlined,
   RiseOutlined,
   MinusOutlined,
-  SearchOutlined,
   ClearOutlined,
   BulbOutlined,
   ApiOutlined,
   ConsoleSqlOutlined,
-  CheckOutlined,
-  InfoOutlined,
-  WarningOutlined as WarningIcon,
-  ExclamationCircleOutlined as ExclamationIcon,
-  CheckCircleOutlined as CheckIcon,
-  CloseCircleOutlined as CloseIcon,
-  InfoCircleOutlined as InfoIcon,
   MinusCircleOutlined,
-  EyeOutlined as EyeIcon,
+  InfoCircleOutlined,
+  CheckCircleOutlined,
 } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { PerformanceBottleneckService, type PerformanceBottleneck, type BottleneckMetrics } from '@/services/analyticsService';
@@ -70,11 +57,9 @@ import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
-const { Panel } = Collapse;
 const { Option } = Select;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
-const { Step } = Steps;
 
 interface PerformanceBottleneckDiagnosticsProps {
   className?: string;
@@ -96,7 +81,6 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
   const [systemMetrics, setSystemMetrics] = useState<any>(null);
   const [slowQueries, setSlowQueries] = useState<any>(null);
   const [lockWaits, setLockWaits] = useState<any>(null);
-  const [connectionPoolStats, setConnectionPoolStats] = useState<any>(null);
   const [performanceReport, setPerformanceReport] = useState<any>(null);
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
   const [diagnosticsModalVisible, setDiagnosticsModalVisible] = useState(false);
@@ -205,33 +189,24 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
   const getStatusIcon = (status: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
       'active': <FireOutlined style={{ color: '#ff4d4f' }} />,
-      'resolved': <CheckIcon style={{ color: '#52c41a' }} />,
+      'resolved': <CheckCircleOutlined style={{ color: '#52c41a' }} />,
       'ignored': <MinusCircleOutlined style={{ color: '#d9d9d9' }} />,
     };
-    return iconMap[status] || <InfoIcon />;
+    return iconMap[status] || <InfoCircleOutlined />;
   };
 
-  // 格式化数字
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
 
   // 格式化时间
   const formatTime = (ms: number): string => {
     if (ms >= 1000) {
-      return (ms / 1000).toFixed(2) + 's';
+      return `${(ms / 1000).toFixed(2)}s`;
     }
-    return ms.toFixed(2) + 'ms';
+    return `${ms.toFixed(2)}ms`;
   };
 
   // 格式化百分比
   const formatPercentage = (ratio: number): string => {
-    return (ratio * 100).toFixed(1) + '%';
+    return `${(ratio * 100).toFixed(1)}%`;
   };
 
   // 过滤瓶颈数据

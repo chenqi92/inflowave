@@ -110,15 +110,6 @@ class UIInteractionTester {
   async testToolbarButtons(): Promise<void> {
     const category = '工具栏按钮';
     
-    // 定义工具栏按钮测试用例
-    const toolbarButtons = [
-      { selector: '.toolbar-button-vertical', name: '仪表板按钮', expectedText: '仪表板' },
-      { selector: '[data-testid="connections-btn"]', name: '连接管理按钮', expectedText: '连接' },
-      { selector: '[data-testid="query-btn"]', name: '数据查询按钮', expectedText: '查询' },
-      { selector: '[data-testid="database-btn"]', name: '数据库管理按钮', expectedText: '数据库' },
-      { selector: '[data-testid="visualization-btn"]', name: '数据可视化按钮', expectedText: '可视化' },
-      { selector: '[data-testid="performance-btn"]', name: '性能监控按钮', expectedText: '性能' }
-    ];
 
     // 查找所有工具栏按钮
     const allToolbarButtons = document.querySelectorAll('.toolbar-button-vertical');
@@ -395,7 +386,7 @@ class UIInteractionTester {
         const inputType = input.type || 'text';
         
         try {
-          const testValue = 'test-value-' + Date.now();
+          const testValue = `test-value-${Date.now()}`;
           
           // 模拟输入
           input.focus();
