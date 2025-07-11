@@ -3,11 +3,12 @@ import { cn } from '@/utils/cn';
 
 export interface DropdownMenuItem {
   key: string;
-  label: React.ReactNode;
+  label?: React.ReactNode;
   icon?: React.ReactNode;
   disabled?: boolean;
   danger?: boolean;
   onClick?: () => void;
+  type?: 'divider';
 }
 
 export interface DropdownMenuProps {
@@ -104,22 +105,34 @@ const Dropdown: React.FC<DropdownProps> = ({
             placementStyles[placement]
           )}
         >
-          {menu.items.map((item) => (
-            <button
-              key={item.key}
-              className={cn(
-                'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
-                'hover:bg-gray-50',
-                item.disabled && 'cursor-not-allowed opacity-50 hover:bg-white',
-                item.danger && 'text-red-600 hover:bg-red-50'
-              )}
-              onClick={() => handleMenuItemClick(item)}
-              disabled={item.disabled}
-            >
-              {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
-              <span className="flex-1">{item.label}</span>
-            </button>
-          ))}
+          {menu.items.map((item) => {
+            if (item.type === 'divider') {
+              return (
+                <div
+                  key={item.key}
+                  className="h-px bg-gray-200 my-1"
+                  role="separator"
+                />
+              );
+            }
+            
+            return (
+              <button
+                key={item.key}
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                  'hover:bg-gray-50',
+                  item.disabled && 'cursor-not-allowed opacity-50 hover:bg-white',
+                  item.danger && 'text-red-600 hover:bg-red-50'
+                )}
+                onClick={() => handleMenuItemClick(item)}
+                disabled={item.disabled}
+              >
+                {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
+                <span className="flex-1">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

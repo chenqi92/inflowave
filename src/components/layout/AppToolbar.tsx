@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button, Space, Typography, Tooltip, Badge, Dropdown } from '@/components/ui';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -22,6 +22,47 @@ const AppToolbar: React.FC = () => {
   const currentStatus = activeConnectionId 
     ? connectionStatuses[activeConnectionId]
     : null;
+
+  // 键盘快捷键处理
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case 'n':
+            event.preventDefault();
+            if (activeConnectionId) {
+              navigate('/query');
+            }
+            break;
+          case '1':
+            event.preventDefault();
+            navigate('/dashboard');
+            break;
+          case '2':
+            event.preventDefault();
+            navigate('/connections');
+            break;
+          case '3':
+            event.preventDefault();
+            if (activeConnectionId) {
+              navigate('/query');
+            }
+            break;
+          case '4':
+            event.preventDefault();
+            if (activeConnectionId) {
+              navigate('/database');
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeConnectionId, navigate]);
 
   // 主题切换菜单
   const themeMenuItems: DropdownMenuItem[] = [
@@ -61,16 +102,42 @@ const AppToolbar: React.FC = () => {
   // 用户菜单
   const userMenuItems: DropdownMenuItem[] = [
     {
-      key: 'theme',
+      key: 'theme-light',
       icon: <BulbOutlined />,
-      label: '主题设置',
-      onClick: () => {}, // 展开主题菜单
+      label: '浅色主题',
+      onClick: () => setTheme('light'),
     },
     {
-      key: 'language',
+      key: 'theme-dark',
+      icon: <BulbOutlined />,
+      label: '深色主题',
+      onClick: () => setTheme('dark'),
+    },
+    {
+      key: 'theme-auto',
+      icon: <BulbOutlined />,
+      label: '跟随系统',
+      onClick: () => setTheme('auto'),
+    },
+    {
+      key: 'divider-1',
+      type: 'divider',
+    },
+    {
+      key: 'language-zh',
       icon: <GlobalOutlined />,
-      label: '语言设置',
-      onClick: () => {}, // 展开语言菜单
+      label: '简体中文',
+      onClick: () => setLanguage('zh-CN'),
+    },
+    {
+      key: 'language-en',
+      icon: <GlobalOutlined />,
+      label: 'English',
+      onClick: () => setLanguage('en-US'),
+    },
+    {
+      key: 'divider-2',
+      type: 'divider',
     },
     {
       key: 'settings',

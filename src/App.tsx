@@ -13,7 +13,7 @@ import NativeMenuHandler from './components/layout/NativeMenuHandler';
 // 页面组件
 import ConnectionsPage from './pages/Connections';
 import DatabasePage from './pages/Database';
-
+import QueryPage from './pages/Query';
 import DashboardPage from './pages/Dashboard';
 import DataWritePage from './pages/DataWrite';
 import VisualizationPage from './pages/Visualization';
@@ -73,7 +73,8 @@ const MainLayout: React.FC = () => {
           } />
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route path="/database" element={<DatabasePage />} />
-          <Route path="/query" element={<DataGripLayout />} />
+          <Route path="/query" element={<QueryPage />} />
+          <Route path="/datagrip" element={<DataGripLayout />} />
           <Route path="/visualization" element={<VisualizationPage />} />
           <Route path="/data-write" element={<DataWritePage />} />
           <Route path="/write" element={<DataWritePage />} />
