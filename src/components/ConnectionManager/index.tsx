@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, message, Statistic, Row, Col, Tooltip, InputNumber, Switch, Dropdown, Progress, Badge } from '@/components/ui';
+import { Card, Table, Button, Space, Tag, Modal, message, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from '@/components/ui';
 import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined, MoreOutlined } from '@/components/ui';
 import type { TableColumn } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
@@ -8,6 +8,7 @@ import { useConnectionStore } from '@/store/connection';
 
 interface ConnectionManagerProps {
   onConnectionSelect?: (connectionId: string) => void;
+  onEditConnection?: (connection: ConnectionConfig) => void;
 }
 
 interface ConnectionWithStatus extends ConnectionConfig {
@@ -15,7 +16,7 @@ interface ConnectionWithStatus extends ConnectionConfig {
   poolStats?: any;
 }
 
-const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelect }) => {
+const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelect, onEditConnection }) => {
   const {
     connections,
     connectionStatuses,
@@ -29,17 +30,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     stopMonitoring,
     refreshAllStatuses,
     getPoolStats,
-    addConnection,
-    updateConnection,
     removeConnection,
   } = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
   const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
-  const [form] = Form.useForm();
 
   // 自动刷新状态
   useEffect(() => {
@@ -55,7 +51,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   // 初始加载
   useEffect(() => {
     refreshAllStatuses();
-  }, []);
+  }, [refreshAllStatuses]);
 
   // 处理连接操作
   const handleConnectionToggle = useCallback(async (connectionId: string) => {
@@ -182,9 +178,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             icon: <EditOutlined />,
             label: '编辑',
             onClick: () => {
-              setEditingConnection(record);
-              form.setFieldsValue(record);
-              setModalVisible(true);
+              onEditConnection?.(record);
             },
           },
           {
@@ -322,92 +316,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         </div>
       </Card>
 
-      {/* 连接配置模态框 */}
-      <Modal
-        title={editingConnection ? '编辑连接' : '新建连接'}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        onOk={() => form.submit()}
-        width={600}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => {
-            if (editingConnection) {
-              updateConnection(editingConnection.id!, values);
-              message.success('连接更新成功');
-            } else {
-              addConnection({
-                ...values,
-                id: `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
-              message.success('连接创建成功');
-            }
-            setModalVisible(false);
-            form.resetFields();
-          }}
-        >
-          <Form.Item
-            label="连接名称"
-            name="name"
-            rules={[{ required: true, message: '请输入连接名称' }]}
-          >
-            <Input placeholder="请输入连接名称" />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item
-                label="主机地址"
-                name="host"
-                rules={[{ required: true, message: '请输入主机地址' }]}
-              >
-                <Input placeholder="localhost" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="端口"
-                name="port"
-                rules={[{ required: true, message: '请输入端口' }]}
-              >
-                <InputNumber min={1} max={65535} placeholder="8086" style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="用户名" name="username">
-                <Input placeholder="用户名" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="密码" name="password">
-                <Input.Password placeholder="密码" />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="默认数据库" name="database">
-                <Input placeholder="数据库名称" />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="SSL" name="ssl" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="超时(秒)" name="timeout">
-                <InputNumber min={1} max={300} placeholder="30" style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
 
       {/* 连接池统计模态框 */}
       <Modal

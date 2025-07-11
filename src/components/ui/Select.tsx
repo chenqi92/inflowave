@@ -69,7 +69,7 @@ const Select: React.FC<SelectProps> = ({
     onChange?.('');
   };
 
-  const selectedOption = options.find(option => option.value === selectedValue);
+  const selectedOption = options?.find(option => option.value === selectedValue);
 
   return (
     <div className={cn('relative', className)} ref={selectRef}>

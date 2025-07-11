@@ -74,6 +74,8 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       const tempConfig: ConnectionConfig = {
         id: 'temp-test',
         ...values,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const result = await testConnection(tempConfig.id!);
@@ -125,7 +127,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           { min: 1, max: 100, message: '连接名称长度为1-100个字符' },
         ]}
       >
-        <Input placeholder="输入连接名称" />
+        <Input placeholder="输入连接名称" autoCapitalize="off" autoCorrect="off" />
       </Form.Item>
 
       <div className="grid grid-cols-3 gap-4">
@@ -137,13 +139,16 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { required: true, message: '请输入主机地址' },
             {
               validator: (_, value) => {
-                const error = ValidationUtils.ipAddress(value) && ValidationUtils.hostname(value);
-                return error ? Promise.reject(error) : Promise.resolve();
+                if (!value) return Promise.resolve();
+                // 可以是IP地址或主机名
+                const ipError = ValidationUtils.ipAddress(value);
+                const hostnameError = ValidationUtils.hostname(value);
+                return ipError && hostnameError ? Promise.reject(ipError) : Promise.resolve();
               }
             }
           ]}
         >
-          <Input placeholder="localhost 或 192.168.1.100" />
+          <Input placeholder="localhost 或 192.168.1.100" autoCapitalize="off" autoCorrect="off" />
         </Form.Item>
 
         <Form.Item
@@ -166,7 +171,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { max: 50, message: '用户名长度不能超过50个字符' },
           ]}
         >
-          <Input placeholder="可选" />
+          <Input placeholder="可选" autoCapitalize="off" autoCorrect="off" />
         </Form.Item>
 
         <Form.Item
