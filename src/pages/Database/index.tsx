@@ -109,7 +109,7 @@ const Database: React.FC = () => {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
-      setDatabases(dbList);
+      setDatabases(Array.isArray(dbList) ? dbList : []);
 
       // 如果有数据库且没有选中的，选择第一个
       if (dbList.length > 0 && !selectedDatabase) {
@@ -117,6 +117,8 @@ const Database: React.FC = () => {
       }
     } catch (error) {
       message.error(`加载数据库列表失败: ${error}`);
+      // Reset databases to prevent null/undefined errors
+      setDatabases([]);
     } finally {
       setLoading(false);
     }
@@ -144,11 +146,15 @@ const Database: React.FC = () => {
         }).catch(() => null),
       ]);
 
-      setMeasurements(measurementList);
-      setRetentionPolicies(retentionPolicyList);
+      setMeasurements(Array.isArray(measurementList) ? measurementList : []);
+      setRetentionPolicies(Array.isArray(retentionPolicyList) ? retentionPolicyList : []);
       setDatabaseStats(stats);
     } catch (error) {
       message.error(`加载数据库详细信息失败: ${error}`);
+      // Reset arrays to prevent null/undefined errors
+      setMeasurements([]);
+      setRetentionPolicies([]);
+      setDatabaseStats(null);
     } finally {
       setLoading(false);
     }
@@ -280,7 +286,7 @@ const Database: React.FC = () => {
             onChange={setSelectedDatabase}
             loading={loading}
           >
-            {databases.map(db => (
+            {(databases || []).map(db => (
               <Option key={db} value={db}>
                 <DatabaseContextMenu
                   databaseName={db}
@@ -359,7 +365,69 @@ const Database: React.FC = () => {
           <Card title="测量列表" className="mb-6">
             <Spin spinning={loading}>
               <Table
-                dataSource={measurements.map(m => ({ name: m }))}
+                dataSource={measurements?.map(m => ({ name: m })) || []}
+                columns={[
+                  {
+                    title: '测量名称',
+                    dataIndex: 'name',
+                    key: 'name',
+                    render: (name: string) => (
+                      <TableContextMenu
+                        tableName={name}
+                        databaseName={selectedDatabase}
+                        onAction={(action, tableName) => {
+                          console.log('表操作:', action, tableName);
+                          // 根据操作类型执行相应的处理
+                          if (action === 'view_data') {
+                            // 跳转到查询页面并执行查看数据的查询
+                            navigate('/query', {
+                              state: {
+                                query: `SELECT * FROM "${tableName}" LIMIT 100`,
+                                database: selectedDatabase
+                              }
+                            });
+                          } else if (action === 'refresh_table') {
+                            loadDatabaseDetails(selectedDatabase);
+                          }
+                        }}
+                      >
+                        <Space>
+                          <BarChartOutlined />
+                          <Text strong>{name}</Text>
+                        </Space>
+                      </TableContextMenu>
+                    ),
+                  },
+                  {
+                    title: '操作',
+                    key: 'actions',
+                    width: 150,
+                    render: (_, record: { name: string }) => (
+                      <Space>
+                        <Tooltip title="查看详情">
+                          <Button
+                            variant="ghost"
+                            icon={<InfoCircleOutlined />}
+                            onClick={() => message.info('查看测量详情功能开发中...')}
+                          />
+                        </Tooltip>
+                        <Popconfirm
+                          title="确定要删除这个测量吗？"
+                          onConfirm={() => message.info('删除测量功能开发中...')}
+                          okText="确定"
+                          cancelText="取消"
+                        >
+                          <Tooltip title="删除">
+                            <Button
+                              variant="danger"
+                              icon={<DeleteOutlined />}
+                            />
+                          </Tooltip>
+                        </Popconfirm>
+                      </Space>
+                    ),
+                  },
+                ]}
                 rowKey="name"
                 pagination={{
                   pageSize: 10,
@@ -384,69 +452,7 @@ const Database: React.FC = () => {
                     });
                   },
                 })}
-              >
-                <Table.Column
-                  title="测量名称"
-                  dataIndex="name"
-                  key="name"
-                  render={(name: string) => (
-                    <TableContextMenu
-                      tableName={name}
-                      databaseName={selectedDatabase}
-                      onAction={(action, tableName) => {
-                        console.log('表操作:', action, tableName);
-                        // 根据操作类型执行相应的处理
-                        if (action === 'view_data') {
-                          // 跳转到查询页面并执行查看数据的查询
-                          navigate('/query', {
-                            state: {
-                              query: `SELECT * FROM "${tableName}" LIMIT 100`,
-                              database: selectedDatabase
-                            }
-                          });
-                        } else if (action === 'refresh_table') {
-                          loadDatabaseDetails(selectedDatabase);
-                        }
-                      }}
-                    >
-                      <Space>
-                        <BarChartOutlined />
-                        <Text strong>{name}</Text>
-                      </Space>
-                    </TableContextMenu>
-                  )}
-                />
-                <Table.Column
-                  title="操作"
-                  key="actions"
-                  width={150}
-                  render={(_, record: { name: string }) => (
-                    <Space>
-                      <Tooltip title="查看详情">
-                        <Button
-                          type="text"
-                          icon={<InfoCircleOutlined />}
-                          onClick={() => message.info('查看测量详情功能开发中...')}
-                        />
-                      </Tooltip>
-                      <Popconfirm
-                        title="确定要删除这个测量吗？"
-                        onConfirm={() => message.info('删除测量功能开发中...')}
-                        okText="确定"
-                        cancelText="取消"
-                      >
-                        <Tooltip title="删除">
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                          />
-                        </Tooltip>
-                      </Popconfirm>
-                    </Space>
-                  )}
-                />
-              </Table>
+              />
             </Spin>
           </Card>
 
@@ -469,90 +475,90 @@ const Database: React.FC = () => {
           >
             <Spin spinning={loading}>
               <Table
-                dataSource={retentionPolicies}
+                dataSource={Array.isArray(retentionPolicies) ? retentionPolicies : []}
+                columns={[
+                  {
+                    title: '策略名称',
+                    dataIndex: 'name',
+                    key: 'name',
+                    render: (name: string, record: RetentionPolicy) => (
+                      <Space>
+                        <Text strong>{name}</Text>
+                        {record.default && <Tag color="blue">默认</Tag>}
+                      </Space>
+                    ),
+                  },
+                  {
+                    title: '保留时间',
+                    dataIndex: 'duration',
+                    key: 'duration',
+                  },
+                  {
+                    title: '分片组时间',
+                    dataIndex: 'shardGroupDuration',
+                    key: 'shardGroupDuration',
+                  },
+                  {
+                    title: '副本数',
+                    dataIndex: 'replicaN',
+                    key: 'replicaN',
+                  },
+                  {
+                    title: '操作',
+                    key: 'actions',
+                    width: 100,
+                    render: (_, record: RetentionPolicy) => (
+                      <Space>
+                        <Tooltip title="编辑">
+                          <Button
+                            variant="ghost"
+                            icon={<EditOutlined />}
+                            onClick={() => setRetentionPolicyDialog({
+                              visible: true,
+                              mode: 'edit',
+                              policy: record,
+                            })}
+                          />
+                        </Tooltip>
+                        {!record.default && (
+                          <Popconfirm
+                            title="确定要删除这个保留策略吗？"
+                            description="删除后数据将无法恢复！"
+                            onConfirm={async () => {
+                              try {
+                                await safeTauriInvoke('drop_retention_policy', {
+                                  connectionId: activeConnectionId,
+                                  database: selectedDatabase,
+                                  policyName: record.name,
+                                });
+                                message.success(`保留策略 "${record.name}" 删除成功`);
+                                loadDatabaseDetails(selectedDatabase);
+                              } catch (error) {
+                                message.error(`删除保留策略失败: ${error}`);
+                              }
+                            }}
+                            okText="确定"
+                            cancelText="取消"
+                            okType="danger"
+                          >
+                            <Tooltip title="删除">
+                              <Button
+                                variant="danger"
+                                icon={<DeleteOutlined />}
+                              />
+                            </Tooltip>
+                          </Popconfirm>
+                        )}
+                      </Space>
+                    ),
+                  },
+                ]}
                 rowKey="name"
                 pagination={false}
                 locale={{
                   emptyText: '暂无保留策略',
                 }}
-              >
-                <Table.Column
-                  title="策略名称"
-                  dataIndex="name"
-                  key="name"
-                  render={(name: string, record: RetentionPolicy) => (
-                    <Space>
-                      <Text strong>{name}</Text>
-                      {record.default && <Tag color="blue">默认</Tag>}
-                    </Space>
-                  )}
-                />
-                <Table.Column
-                  title="保留时间"
-                  dataIndex="duration"
-                  key="duration"
-                />
-                <Table.Column
-                  title="分片组时间"
-                  dataIndex="shardGroupDuration"
-                  key="shardGroupDuration"
-                />
-                <Table.Column
-                  title="副本数"
-                  dataIndex="replicaN"
-                  key="replicaN"
-                />
-                <Table.Column
-                  title="操作"
-                  key="actions"
-                  width={100}
-                  render={(_, record: RetentionPolicy) => (
-                    <Space>
-                      <Tooltip title="编辑">
-                        <Button
-                          type="text"
-                          icon={<EditOutlined />}
-                          onClick={() => setRetentionPolicyDialog({
-                            visible: true,
-                            mode: 'edit',
-                            policy: record,
-                          })}
-                        />
-                      </Tooltip>
-                      {!record.default && (
-                        <Popconfirm
-                          title="确定要删除这个保留策略吗？"
-                          description="删除后数据将无法恢复！"
-                          onConfirm={async () => {
-                            try {
-                              await safeTauriInvoke('drop_retention_policy', {
-                                connectionId: activeConnectionId,
-                                database: selectedDatabase,
-                                policyName: record.name,
-                              });
-                              message.success(`保留策略 "${record.name}" 删除成功`);
-                              loadDatabaseDetails(selectedDatabase);
-                            } catch (error) {
-                              message.error(`删除保留策略失败: ${error}`);
-                            }
-                          }}
-                          okText="确定"
-                          cancelText="取消"
-                          okType="danger"
-                        >
-                          <Tooltip title="删除">
-                            <Button
-                              type="text"
-                              danger
-                              icon={<DeleteOutlined />}
-                            />
-                          </Tooltip>
-                        </Popconfirm>
-                      )}
-                    </Space>
-                  )}
-                />
-              </Table>
+              />
             </Spin>
           </Card>
         </>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button, Space, Typography, Select, Table, Tabs, message, Spin, Row, Col, Alert, Tree } from '@/components/ui';
 import { PlayCircleOutlined, SaveOutlined, DatabaseOutlined, TableOutlined, ExclamationCircleOutlined, DownloadOutlined, HistoryOutlined, FieldTimeOutlined, TagsOutlined } from '@/components/ui';
 import Editor from '@monaco-editor/react';
@@ -164,46 +164,50 @@ const Query: React.FC = () => {
   }, [selectedDatabase]);
 
   // 构建数据库结构树数据
-  const buildDatabaseStructure = () => {
+  const databaseStructure = useMemo(() => {
+    if (!databases || databases.length === 0) {
+      return [];
+    }
+    
     return databases.map(db => ({
       title: db,
-      key: db,
+      key: `db-${db}`,
       icon: <DatabaseOutlined />,
-      children: measurements.map(measurement => ({
+      children: measurements && measurements.length > 0 ? measurements.map(measurement => ({
         title: measurement,
-        key: `${db}.${measurement}`,
+        key: `${db}-${measurement}`,
         icon: <TableOutlined />,
         children: [
           {
             title: 'Fields',
-            key: `${db}.${measurement}.fields`,
+            key: `${db}-${measurement}-fields`,
             icon: <FieldTimeOutlined />,
             children: [], // 可以在这里加载字段信息
           },
           {
             title: 'Tags',
-            key: `${db}.${measurement}.tags`,
+            key: `${db}-${measurement}-tags`,
             icon: <TagsOutlined />,
             children: [], // 可以在这里加载标签信息
           },
         ],
-      })),
+      })) : [],
     }));
-  };
-
-  const databaseStructure = buildDatabaseStructure();
+  }, [databases, measurements]);
 
   // 处理树节点点击
   const handleTreeNodeClick = (selectedKeys: React.Key[], _: any) => {
     const key = selectedKeys[0] as string;
-    const parts = key.split('.');
-
-    if (parts.length === 2) {
-      // 点击测量，生成预览查询
-      const database = parts[0];
-      const measurement = parts[1];
-      setSelectedDatabase(database);
-      setQuery(`SELECT * FROM "${measurement}" LIMIT 10`);
+    
+    // 解析新的 key 格式
+    if (key.includes('-') && !key.includes('-fields') && !key.includes('-tags')) {
+      const parts = key.split('-');
+      if (parts.length >= 2) {
+        const database = parts[0];
+        const measurement = parts.slice(1).join('-'); // 处理测量名包含连字符的情况
+        setSelectedDatabase(database);
+        setQuery(`SELECT * FROM "${measurement}" LIMIT 10`);
+      }
     }
   };
 
@@ -392,7 +396,7 @@ const Query: React.FC = () => {
               onSelect={handleTreeNodeClick}
               titleRender={(nodeData) => (
                 <span className="cursor-pointer hover:bg-blue-50 px-1 rounded">
-                  {nodeData.title}
+                  {typeof nodeData.title === 'string' ? nodeData.title : String(nodeData.title)}
                 </span>
               )}
             />

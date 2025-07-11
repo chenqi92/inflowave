@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { ConfigProvider } from 'antd';
 import { Layout, Typography, Spin } from '@/components/ui';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import { antdTheme } from '@/styles/antd-theme';
 
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
@@ -185,7 +187,11 @@ const App: React.FC = () => {
     );
   }
 
-  return <MainLayout />;
+  return (
+    <ConfigProvider theme={antdTheme}>
+      <MainLayout />
+    </ConfigProvider>
+  );
 };
 
 export default App;

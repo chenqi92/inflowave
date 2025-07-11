@@ -35,9 +35,11 @@
     "prepare": "node scripts/prepare.js"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.0.0",
     "@monaco-editor/react": "^4.6.0",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
+    "antd": "^5.26.4",
     "classnames": "^2.3.2",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.10",
