@@ -4,31 +4,41 @@
 .database-explorer-tree .ant-tree-treenode {
   display: flex !important;
   align-items: center !important;
+  height: 28px !important;
+  line-height: 28px !important;
 }
 
 .database-explorer-tree .ant-tree-node-content-wrapper {
   display: flex !important;
   align-items: center !important;
-  line-height: normal !important;
-  min-height: 24px !important;
+  line-height: 28px !important;
+  min-height: 28px !important;
+  height: 28px !important;
 }
 
 .database-explorer-tree .ant-tree-iconEle {
   display: inline-flex !important;
   align-items: center !important;
   margin-right: 4px !important;
+  height: 28px !important;
+  line-height: 28px !important;
 }
 
 .database-explorer-tree .ant-tree-title {
   display: flex !important;
   align-items: center !important;
   flex: 1 !important;
+  height: 28px !important;
+  line-height: 28px !important;
 }
 
 .database-explorer-tree .ant-tree-switcher {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  width: 24px !important;
 }
 
 /* 编辑器标签页样式 */
@@ -117,9 +127,23 @@
   background: #fafbfc;
 }
 
+/* 左侧面板与右侧内容区域间距优化 */
+.ant-layout-sider {
+  border-right: 1px solid #e1e4e8 !important;
+}
+
+/* 右侧内容区域间距优化 */
+.ant-layout-content {
+  margin-left: 0 !important;
+}
+
 .database-explorer .ant-tree .ant-tree-node-content-wrapper {
   border-radius: 3px;
   transition: all 0.2s ease;
+  height: 28px !important;
+  line-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .database-explorer .ant-tree .ant-tree-node-content-wrapper:hover {
@@ -132,9 +156,44 @@
 }
 
 .database-explorer .ant-tree .ant-tree-switcher {
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
+  width: 24px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 确保树形组件整体对齐 */
+.database-explorer-tree .ant-tree-list-holder-inner {
+  align-items: stretch !important;
+}
+
+.database-explorer-tree .ant-tree-treenode-leaf-last .ant-tree-switcher {
+  background: transparent !important;
+}
+
+/* 树形组件间距优化 */
+.database-explorer-tree .ant-tree-indent {
+  width: 24px !important;
+}
+
+.database-explorer-tree .ant-tree-indent-unit {
+  width: 24px !important;
+}
+
+/* 修复图标与文本的垂直对齐 */
+.database-explorer-tree .ant-tree-iconEle svg,
+.database-explorer-tree .ant-tree-switcher svg {
+  vertical-align: middle !important;
+}
+
+/* 优化树节点的整体布局 */
+.database-explorer-tree .ant-tree-treenode-switcher-open .ant-tree-switcher,
+.database-explorer-tree .ant-tree-treenode-switcher-close .ant-tree-switcher {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* 结果面板样式 */

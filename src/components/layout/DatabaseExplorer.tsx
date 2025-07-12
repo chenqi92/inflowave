@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, message, Spin, Alert } from 'antd';
+import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import type { MenuProps } from 'antd';
 import { 
@@ -21,6 +21,7 @@ import {
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { showMessage } from '@/utils/message';
 
 const { Search } = Input;
 const { TabPane } = Tabs;
@@ -55,6 +56,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   const loadDatabases = async (connectionId: string): Promise<string[]> => {
     console.log(`🔍 开始加载连接 ${connectionId} 的数据库列表...`);
     try {
+      // 首先验证连接是否在后端存在
+      const backendConnections = await safeTauriInvoke<any[]>('get_connections');
+      const backendConnection = backendConnections?.find((c: any) => c.id === connectionId);
+      
+      if (!backendConnection) {
+        console.warn(`⚠️ 连接 ${connectionId} 在后端不存在，尝试重新创建...`);
+        
+        // 从前端获取连接配置
+        const connection = getConnection(connectionId);
+        if (connection) {
+          try {
+            // 重新创建连接到后端
+            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+            console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
+            
+            // 如果ID发生变化，需要通知用户
+            if (newConnectionId !== connectionId) {
+              showMessage.warning('连接配置已重新同步，请刷新页面或重新选择连接');
+              return [];
+            }
+          } catch (createError) {
+            console.error(`❌ 重新创建连接失败:`, createError);
+            showMessage.error(`连接 ${connectionId} 不存在且重新创建失败`);
+            return [];
+          }
+        } else {
+          console.error(`❌ 前端也没有找到连接 ${connectionId} 的配置`);
+          showMessage.error(`连接配置不存在: ${connectionId}`);
+          return [];
+        }
+      }
+
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId,
       });
@@ -62,6 +95,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       return dbList || [];
     } catch (error) {
       console.error(`❌ 加载连接 ${connectionId} 的数据库失败:`, error);
+      
+      // 如果是连接不存在的错误，显示更友好的消息
+      const errorStr = String(error);
+      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
+        showMessage.error(`连接不存在，请检查连接配置: ${connectionId}`);
+      } else {
+        showMessage.error(`加载数据库列表失败: ${error}`);
+      }
       return [];
     }
   };
@@ -70,6 +111,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   const loadTables = async (connectionId: string, database: string): Promise<string[]> => {
     console.log(`🔍 开始加载数据库 "${database}" 的表列表...`);
     try {
+      // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
       const tables = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
         database,
@@ -78,6 +120,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       return tables || [];
     } catch (error) {
       console.error(`❌ 加载数据库 ${database} 的表失败:`, error);
+      
+      // 如果是连接不存在的错误，显示友好消息
+      const errorStr = String(error);
+      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
+        showMessage.error(`连接不存在，无法加载数据库 ${database} 的表列表`);
+      }
       return [];
     }
   };
@@ -93,6 +141,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       return schema || { tags: [], fields: [] };
     } catch (error) {
       console.error(`加载表 ${table} 的架构失败:`, error);
+      
+      // 如果是连接不存在的错误，显示友好消息
+      const errorStr = String(error);
+      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
+        showMessage.error(`连接不存在，无法加载表 ${table} 的架构`);
+      }
       return { tags: [], fields: [] };
     }
   };
@@ -119,10 +173,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       };
 
       // 为活跃连接加载数据库
-      if (connection.id === activeConnectionId) {
+      if (connection.id === activeConnectionId && connection.id) {
         console.log(`🔗 处理活跃连接: ${connection.name} (${connection.id})`);
         try {
-          const databases = await loadDatabases(connection.id!);
+          const databases = await loadDatabases(connection.id);
           console.log(`📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`);
           connectionNode.children = databases.map(db => ({
             title: (
@@ -290,7 +344,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         });
       }
     } catch (error) {
-      message.error(`加载数据失败: ${error}`);
+      showMessage.error(`加载数据失败: ${error}`);
     } finally {
       setLoadingNodes(prev => {
         const newSet = new Set(prev);
@@ -511,7 +565,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             {
               key: 'explorer',
               label: (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 ml-3">
                   <DatabaseOutlined />
                   数据源
                 </span>
@@ -547,7 +601,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             {
               key: 'favorites',
               label: (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 ml-3">
                   <KeyOutlined />
                   收藏
                 </span>

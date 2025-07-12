@@ -26,7 +26,6 @@ import {
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import SettingsModal from '@/components/common/SettingsModal';
-import ConnectionModal from '@/components/common/ConnectionModal';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -37,31 +36,15 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const { activeConnectionId, connections } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [connectionModalVisible, setConnectionModalVisible] = useState(false);
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
 
   const handleConnectionMenuClick = ({ key }: { key: string }) => {
-    if (key === 'new' || key === 'manage') {
-      setConnectionModalVisible(true);
-    } else {
-      // 选择连接
-      const { setActiveConnectionId } = useConnectionStore.getState();
-      setActiveConnectionId(key);
-    }
+    // 选择连接
+    const { setActiveConnectionId } = useConnectionStore.getState();
+    setActiveConnectionId(key);
   };
 
   const connectionMenuItems: MenuProps['items'] = [
-    {
-      key: 'new',
-      label: '新建连接',
-      icon: <DatabaseOutlined />,
-    },
-    {
-      key: 'manage',
-      label: '管理连接',
-      icon: <SettingOutlined />,
-    },
-    { type: 'divider' },
     ...connections.map(conn => ({
       key: conn.id,
       label: (
@@ -277,6 +260,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
         {/* 视图切换 */}
         <Space.Compact>
+          <Tooltip title="数据源管理">
+            <Button 
+              type={currentView === 'datasource' ? 'primary' : 'default'}
+              icon={<SettingOutlined />}
+              className="h-8"
+              onClick={() => onViewChange?.('datasource')}
+            />
+          </Tooltip>
           <Tooltip title="数据库浏览">
             <Button 
               type={currentView === 'database' ? 'primary' : 'default'}
@@ -329,16 +320,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
       {/* 右侧：导航和帮助 */}
       <Space size="small">
-        <Tooltip title="连接管理">
-          <Button 
-            icon={<ApiOutlined />}
-            className="h-8"
-            onClick={() => setConnectionModalVisible(true)}
-          >
-            连接
-          </Button>
-        </Tooltip>
-
         <Tooltip title="偏好设置">
           <Button 
             icon={<SettingOutlined />}
@@ -361,12 +342,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
-      />
-
-      {/* 连接管理模态框 */}
-      <ConnectionModal
-        visible={connectionModalVisible}
-        onClose={() => setConnectionModalVisible(false)}
       />
     </div>
   );

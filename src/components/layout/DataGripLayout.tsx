@@ -1,8 +1,9 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Button, Card, Col, Layout, message, Row, Space, Tabs, Tag, Typography, Tooltip, Tree } from '@/components/ui';
+import { Button, Card, Col, Layout, Row, Space, Tabs, Tag, Typography, Tooltip, Tree } from '@/components/ui';
 import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined, ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
+import { showMessage } from '@/utils/message';
 import QueryEditor from '@/components/query/QueryEditor';
 import QueryResults from '@/components/query/QueryResults';
 import QueryHistory from '@/components/query/QueryHistory';
@@ -12,6 +13,7 @@ import DatabaseManager from '@/components/database/DatabaseManager';
 import RealTimeMonitor from '@/components/monitoring/RealTimeMonitor';
 import DashboardDesigner from '@/components/dashboard/DashboardDesigner';
 import DataImportWizard from '@/components/data/DataImportWizard';
+import ConnectionsPage from '@/pages/Connections';
 import type { QueryResult } from '@/types';
 
 // Define DataNode type for Tree component
@@ -55,7 +57,7 @@ const DataGripLayout: React.FC = () => {
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryLoading, setQueryLoading] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState('database');
-  const [mainContentTab, setMainContentTab] = useState('query');
+  const [mainContentTab, setMainContentTab] = useState('datasource');
   const [showImportWizard, setShowImportWizard] = useState(false);
 
   // 加载数据库结构
@@ -64,6 +66,17 @@ const DataGripLayout: React.FC = () => {
 
     setLoading(true);
     try {
+      // 首先验证连接是否在后端存在
+      const backendConnections = await invoke<any[]>('get_connections');
+      const backendConnection = backendConnections?.find((c: any) => c.id === connectionId);
+      
+      if (!backendConnection) {
+        console.warn(`⚠️ 连接 ${connectionId} 在后端不存在，跳过加载数据库结构`);
+        showMessage.warning('连接不存在，请重新选择连接');
+        setLoading(false);
+        return;
+      }
+
       // 获取数据库列表
       const databases = await invoke<string[]>('get_databases', {
         connectionId,
@@ -122,7 +135,7 @@ const DataGripLayout: React.FC = () => {
         setSelectedDatabase(databases[0]);
       }
     } catch (error) {
-      message.error(`加载数据库结构失败: ${error}`);
+      showMessage.error(`加载数据库结构失败: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -263,15 +276,15 @@ const DataGripLayout: React.FC = () => {
         await connectToDatabase(connectionId);
         setActiveConnection(connectionId);
         await loadDatabaseStructure(connectionId);
-        message.success('连接成功');
+        showMessage.success('连接成功');
       } else {
         await disconnectFromDatabase(connectionId);
         setActiveConnection(null);
         setStructure({ databases: [], measurements: {}, fields: {}, tags: {} });
-        message.info('已断开连接');
+        showMessage.info('已断开连接');
       }
     } catch (error) {
-      message.error(`连接操作失败: ${error}`);
+      showMessage.error(`连接操作失败: ${error}`);
     }
   };
 
@@ -317,7 +330,7 @@ const DataGripLayout: React.FC = () => {
     }
     // 这里需要将查询传递给 QueryEditor，暂时通过事件或状态管理
     // 可以考虑使用 ref 或者状态提升
-    message.info('查询已选择，请在编辑器中查看');
+    showMessage.info('查询已选择，请在编辑器中查看');
   };
 
   return (
@@ -422,11 +435,29 @@ const DataGripLayout: React.FC = () => {
             styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
             tabList={[
               {
+                key: 'datasource',
+                tab: (
+                  <Space>
+                    <SettingOutlined />
+                    <span>数据源管理</span>
+                  </Space>
+                ),
+              },
+              {
+                key: 'database',
+                tab: (
+                  <Space>
+                    <DatabaseOutlined />
+                    <span>数据库浏览</span>
+                  </Space>
+                ),
+              },
+              {
                 key: 'query',
                 tab: (
                   <Space>
                     <PlayCircleOutlined />
-                    <span>查询工作台</span>
+                    <span>查询编辑器</span>
                   </Space>
                 ),
               },
@@ -457,15 +488,6 @@ const DataGripLayout: React.FC = () => {
                   </Space>
                 ),
               },
-              {
-                key: 'database',
-                tab: (
-                  <Space>
-                    <DatabaseOutlined />
-                    <span>数据库管理</span>
-                  </Space>
-                ),
-              },
             ]}
             activeTabKey={mainContentTab}
             onTabChange={setMainContentTab}
@@ -484,6 +506,12 @@ const DataGripLayout: React.FC = () => {
               </Space>
             }
           >
+            {mainContentTab === 'datasource' && (
+              <div style={{ height: '100%', padding: '0' }}>
+                <ConnectionsPage />
+              </div>
+            )}
+
             {mainContentTab === 'query' && (
               <Row style={{ height: '100%' }} gutter={[0, 8]}>
                 <Col span={24} style={{ height: '50%' }}>

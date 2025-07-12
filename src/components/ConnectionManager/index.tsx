@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, message, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from '@/components/ui';
+import { Card, Table, Button, Space, Tag, Modal, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from '@/components/ui';
 import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined, MoreOutlined } from '@/components/ui';
 import type { TableColumn } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
+import { safeTauriInvoke } from '@/utils/tauri';
+import { showMessage } from '@/utils/message';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -58,34 +60,64 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   const handleConnectionToggle = useCallback(async (connectionId: string) => {
     setLoading(true);
     try {
+      // 首先确保连接配置存在
+      const connection = connections.find(c => c.id === connectionId);
+      if (!connection) {
+        showMessage.error('连接配置不存在，请重新加载页面');
+        refreshAllStatuses();
+        return;
+      }
+
+      // 检查后端是否存在该连接
+      try {
+        const backendConnections = await safeTauriInvoke<any[]>('get_connections');
+        const backendConnection = backendConnections?.find((c: any) => c.id === connectionId);
+        
+        if (!backendConnection) {
+          showMessage.error('后端连接不存在，正在重新创建...');
+          // 重新创建连接到后端
+          const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+          if (newConnectionId && newConnectionId !== connectionId) {
+            showMessage.success('连接已重新创建，请重新加载页面');
+            refreshAllStatuses();
+            return;
+          }
+        }
+      } catch (backendError) {
+        console.error('检查后端连接失败:', backendError);
+        showMessage.error('无法验证连接状态，请检查后端服务');
+        return;
+      }
+
       const status = connectionStatuses[connectionId];
       if (status?.status === 'connected') {
         await disconnectFromDatabase(connectionId);
-        message.success('连接已断开');
+        showMessage.success('连接已断开');
       } else {
         await connectToDatabase(connectionId);
-        message.success('连接成功');
+        showMessage.success('连接成功');
         onConnectionSelect?.(connectionId);
       }
     } catch (error) {
-      message.error(`连接操作失败: ${error}`);
+      console.error('连接操作失败:', error);
+      showMessage.error(`连接操作失败: ${error}`);
     } finally {
       setLoading(false);
     }
-  }, [connectionStatuses, connectToDatabase, disconnectFromDatabase, onConnectionSelect]);
+  }, [connections, connectionStatuses, connectToDatabase, disconnectFromDatabase, onConnectionSelect, refreshAllStatuses]);
 
   // 处理监控切换
   const handleMonitoringToggle = useCallback(async () => {
     try {
       if (monitoringActive) {
         await stopMonitoring();
-        message.success('监控已停止');
+        showMessage.success('监控已停止');
       } else {
         await startMonitoring(30);
-        message.success('监控已启动');
+        showMessage.success('监控已启动');
       }
     } catch (error) {
-      message.error(`监控操作失败: ${error}`);
+      showMessage.error(`监控操作失败: ${error}`);
     }
   }, [monitoringActive, startMonitoring, stopMonitoring]);
 
@@ -96,7 +128,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       setSelectedConnectionId(connectionId);
       setPoolStatsModalVisible(true);
     } catch (error) {
-      message.error(`获取连接池统计失败: ${error}`);
+      showMessage.error(`获取连接池统计失败: ${error}`);
     }
   }, [getPoolStats]);
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tabs, Table, Button, Space, Typography, Modal, Form, Input, Select, message, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from '@/components/ui';
+import { Card, Tabs, Table, Button, Space, Typography, Modal, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from '@/components/ui';
 import { DatabaseOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, InfoCircleOutlined, ReloadOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
+import { showMessage } from '@/utils/message';
 import type { RetentionPolicy, RetentionPolicyConfig, DatabaseStorageInfo } from '@/types';
 
 const { Title, Text } = Typography;
@@ -33,6 +34,38 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     if (!selectedConnection) return;
 
     try {
+      // 首先验证连接是否在后端存在
+      const backendConnections = await safeTauriInvoke<any[]>('get_connections');
+      const backendConnection = backendConnections?.find((c: any) => c.id === selectedConnection);
+      
+      if (!backendConnection) {
+        console.warn(`⚠️ 连接 ${selectedConnection} 在后端不存在，尝试重新创建...`);
+        
+        // 从前端获取连接配置
+        const connection = connections.find(c => c.id === selectedConnection);
+        if (connection) {
+          try {
+            // 重新创建连接到后端
+            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+            console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
+            
+            // 如果ID发生变化，需要通知用户
+            if (newConnectionId !== selectedConnection) {
+              showMessage.warning('连接配置已重新同步，请刷新页面或重新选择连接');
+              return;
+            }
+          } catch (createError) {
+            console.error(`❌ 重新创建连接失败:`, createError);
+            showMessage.error(`连接 ${selectedConnection} 不存在且重新创建失败`);
+            return;
+          }
+        } else {
+          console.error(`❌ 前端也没有找到连接 ${selectedConnection} 的配置`);
+          showMessage.error(`连接配置不存在: ${selectedConnection}`);
+          return;
+        }
+      }
+
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: selectedConnection,
       });
@@ -41,7 +74,15 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      console.error(`❌ 加载数据库列表失败:`, error);
+      
+      // 如果是连接不存在的错误，显示更友好的消息
+      const errorStr = String(error);
+      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
+        showMessage.error(`连接不存在，请检查连接配置: ${selectedConnection}`);
+      } else {
+        showMessage.error(`加载数据库列表失败: ${error}`);
+      }
     }
   };
 
@@ -57,7 +98,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       });
       setRetentionPolicies(policies || []);
     } catch (error) {
-      message.error(`加载保留策略失败: ${error}`);
+      showMessage.error(`加载保留策略失败: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -95,12 +136,12 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         policy: policyConfig,
       });
 
-      message.success('保留策略创建成功');
+      showMessage.success('保留策略创建成功');
       setShowPolicyModal(false);
       form.resetFields();
       await loadRetentionPolicies();
     } catch (error) {
-      message.error(`创建保留策略失败: ${error}`);
+      showMessage.error(`创建保留策略失败: ${error}`);
     }
   };
 
@@ -121,13 +162,13 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         },
       });
 
-      message.success('保留策略更新成功');
+      showMessage.success('保留策略更新成功');
       setShowPolicyModal(false);
       setEditingPolicy(null);
       form.resetFields();
       await loadRetentionPolicies();
     } catch (error) {
-      message.error(`更新保留策略失败: ${error}`);
+      showMessage.error(`更新保留策略失败: ${error}`);
     }
   };
 
@@ -140,10 +181,10 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         policyName,
       });
 
-      message.success('保留策略删除成功');
+      showMessage.success('保留策略删除成功');
       await loadRetentionPolicies();
     } catch (error) {
-      message.error(`删除保留策略失败: ${error}`);
+      showMessage.error(`删除保留策略失败: ${error}`);
     }
   };
 

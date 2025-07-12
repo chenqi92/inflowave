@@ -224,8 +224,8 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                 <TableOutlined />
                 查询结果
                 {queryResult && (
-                  <Tag 
-                    color="blue" 
+                  <Tag
+                    color="blue"
                     size="small"
                     className="ml-1"
                   >
@@ -286,7 +286,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                 )}
 
                 {/* 结果内容 */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden pl-4">
                   {queryResult && tableData.length > 0 ? (
                     <Table
                       className="result-table"
@@ -297,7 +297,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                       pagination={{
                         showSizeChanger: true,
                         showQuickJumper: true,
-                        showTotal: (total, range) => 
+                        showTotal: (total, range) =>
                           `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
                         pageSize: 500,
                         pageSizeOptions: ['100', '500', '1000', '2000'],
@@ -306,7 +306,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-500">
-                      <Empty 
+                      <Empty
                         description={queryResult ? "查询结果为空" : "请执行查询以查看结果"}
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                       />

@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Space, Tabs, Radio, Modal } from '@/components/ui';
+import { Typography, Button, Space, Tabs, Modal } from '@/components/ui';
 import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined, TableOutlined, AppstoreOutlined, DeleteOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
@@ -39,18 +39,31 @@ const Connections: React.FC = () => {
       const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
       
       if (backendConnections && backendConnections.length > 0) {
-        // 清空前端存储的连接
-        clearConnections();
+        // 对比前端和后端的连接，只更新有差异的
+        const currentConnections = connections;
+        const needsUpdate = backendConnections.some(backendConn => {
+          const frontendConn = currentConnections.find(c => c.id === backendConn.id);
+          return !frontendConn || JSON.stringify(frontendConn) !== JSON.stringify(backendConn);
+        });
         
-        // 重新添加从后端获取的连接
-        for (const conn of backendConnections) {
-          addConnection(conn);
+        if (needsUpdate || currentConnections.length !== backendConnections.length) {
+          // 清空前端存储的连接
+          clearConnections();
+          
+          // 重新添加从后端获取的连接
+          for (const conn of backendConnections) {
+            addConnection(conn);
+          }
+          
+          console.log(`已同步 ${backendConnections.length} 个连接配置`);
         }
-        
-        console.log(`已同步 ${backendConnections.length} 个连接配置`);
+      } else if (connections.length > 0) {
+        // 如果后端没有连接但前端有，可能需要将前端连接推送到后端
+        console.log('后端无连接配置，保持前端配置');
       }
     } catch (error) {
       console.error('同步连接配置失败:', error);
+      showMessage.error('同步连接配置失败，请检查后端服务');
     }
   };
 
@@ -148,6 +161,37 @@ const Connections: React.FC = () => {
   const handleConnectionToggle = async (connectionId: string) => {
     setLoading(true);
     try {
+      // 首先确保连接配置存在
+      const connection = connections.find(c => c.id === connectionId);
+      if (!connection) {
+        showMessage.error('连接配置不存在，请重新加载页面');
+        await loadConnections();
+        return;
+      }
+
+      // 检查后端是否存在该连接
+      try {
+        const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+        const backendConnection = backendConnections?.find(c => c.id === connectionId);
+        
+        if (!backendConnection) {
+          showMessage.error('后端连接不存在，正在重新创建...');
+          // 重新创建连接到后端
+          const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+          if (newConnectionId && newConnectionId !== connectionId) {
+            // 更新前端连接ID
+            updateConnection(connectionId, { id: newConnectionId });
+            showMessage.success('连接已重新创建，请重试');
+            await loadConnections();
+            return;
+          }
+        }
+      } catch (backendError) {
+        console.error('检查后端连接失败:', backendError);
+        showMessage.error('无法验证连接状态，请检查后端服务');
+        return;
+      }
+
       const { connectToDatabase, disconnectFromDatabase } = useConnectionStore.getState();
       const status = connectionStatuses[connectionId];
       
@@ -160,6 +204,7 @@ const Connections: React.FC = () => {
         handleConnectionSelect(connectionId);
       }
     } catch (error) {
+      console.error('连接操作失败:', error);
       showMessage.error(`连接操作失败: ${error}`);
     } finally {
       setLoading(false);
@@ -212,18 +257,26 @@ const Connections: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4">
             {/* 视图切换 */}
-            <Radio.Group 
-              value={viewMode} 
-              onChange={(e) => setViewMode(e.target.value)}
-              size="small"
-            >
-              <Radio.Button value="card">
-                <AppstoreOutlined /> 卡片
-              </Radio.Button>
-              <Radio.Button value="table">
-                <TableOutlined /> 表格
-              </Radio.Button>
-            </Radio.Group>
+            <div className="flex border border-gray-300 rounded-md overflow-hidden">
+              <Button
+                type={viewMode === 'card' ? 'primary' : 'default'}
+                icon={<AppstoreOutlined />}
+                onClick={() => setViewMode('card')}
+                className={`rounded-none border-0 ${viewMode === 'card' ? 'shadow-none' : 'bg-white hover:bg-gray-50'}`}
+                size="small"
+              >
+                卡片
+              </Button>
+              <Button
+                type={viewMode === 'table' ? 'primary' : 'default'}
+                icon={<TableOutlined />}
+                onClick={() => setViewMode('table')}
+                className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'table' ? 'shadow-none' : 'bg-white hover:bg-gray-50'}`}
+                size="small"
+              >
+                表格
+              </Button>
+            </div>
 
             <div className="flex space-x-3">
               <Button

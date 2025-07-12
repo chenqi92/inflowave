@@ -46,7 +46,7 @@
 
 .ant-modal-wrap:has(.ant-modal-title:contains('新建连接')),
 .ant-modal-wrap:has(.ant-modal-title:contains('编辑连接')) {
-  z-index: 1100;
+  z-index: 1200 !important;
 }
 
 /* 确保新建/编辑连接弹框在连接管理弹框之上 */
@@ -56,4 +56,17 @@
 
 .ant-modal-mask {
   z-index: inherit;
+}
+
+/* 强制确保编辑对话框在最顶层 */
+.ant-modal-wrap[style*="z-index: 1200"] {
+  z-index: 1200 !important;
+}
+
+.ant-modal-wrap[style*="z-index: 1200"] .ant-modal {
+  z-index: 1200 !important;
+}
+
+.ant-modal-wrap[style*="z-index: 1200"] .ant-modal-mask {
+  z-index: 1199 !important;
 }

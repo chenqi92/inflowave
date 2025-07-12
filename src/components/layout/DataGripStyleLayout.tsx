@@ -12,6 +12,7 @@ import type { QueryResult } from '@/types';
 import DatabasePage from '../../pages/Database';
 import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
+import ConnectionsPage from '../../pages/Connections';
 
 const { Header, Sider, Content } = Layout;
 
@@ -24,7 +25,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
-  const [currentView, setCurrentView] = useState('query');
+  const [currentView, setCurrentView] = useState('datasource');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
 
@@ -42,6 +43,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   // 根据当前视图渲染主要内容
   const renderMainContent = () => {
     switch (currentView) {
+      case 'datasource':
+        return (
+          <div className="h-full">
+            <ConnectionsPage />
+          </div>
+        );
       case 'database':
         return (
           <div className="h-full p-4 overflow-auto">

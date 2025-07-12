@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Button, Space, Dropdown, Tooltip, Modal, Select, message } from 'antd';
+import { Tabs, Button, Space, Dropdown, Tooltip, Modal, Select } from 'antd';
 import type { MenuProps } from 'antd';
 import { 
   PlusOutlined, 
@@ -16,6 +16,7 @@ import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { showMessage } from '@/utils/message';
 import type { QueryResult, QueryRequest } from '@/types';
 
 interface EditorTab {
@@ -53,6 +54,16 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     if (!activeConnectionId) return;
 
     try {
+      // 首先验证连接是否在后端存在
+      const backendConnections = await safeTauriInvoke<any[]>('get_connections');
+      const backendConnection = backendConnections?.find((c: any) => c.id === activeConnectionId);
+      
+      if (!backendConnection) {
+        console.warn(`⚠️ 连接 ${activeConnectionId} 在后端不存在，跳过加载数据库列表`);
+        showMessage.warning('连接不存在，请重新选择连接');
+        return;
+      }
+
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
@@ -62,25 +73,32 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       }
     } catch (error) {
       console.error('加载数据库列表失败:', error);
-      message.error(`加载数据库列表失败: ${error}`);
+      
+      // 如果是连接不存在的错误，显示更友好的消息
+      const errorStr = String(error);
+      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
+        showMessage.error(`连接不存在，请检查连接配置: ${activeConnectionId}`);
+      } else {
+        showMessage.error(`加载数据库列表失败: ${error}`);
+      }
     }
   };
 
   // 执行查询
   const executeQuery = async () => {
     if (!activeConnectionId) {
-      message.warning('请先选择数据库连接');
+      showMessage.warning('请先选择数据库连接');
       return;
     }
 
     if (!selectedDatabase) {
-      message.warning('请选择数据库');
+      showMessage.warning('请选择数据库');
       return;
     }
 
     const currentTab = tabs.find(tab => tab.id === activeKey);
     if (!currentTab || !currentTab.content.trim()) {
-      message.warning('请输入查询语句');
+      showMessage.warning('请输入查询语句');
       return;
     }
 
@@ -98,11 +116,11 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       
       if (result) {
         onQueryResult?.(result);
-        message.success('查询执行成功');
+        showMessage.success('查询执行成功');
       }
     } catch (error) {
       console.error('查询执行失败:', error);
-      message.error(`查询执行失败: ${error}`);
+      showMessage.error(`查询执行失败: ${error}`);
     } finally {
       setLoading(false);
     }
