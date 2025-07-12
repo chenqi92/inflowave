@@ -90,9 +90,12 @@ export interface QueryRequest {
 }
 
 export interface QueryResult {
-  series: Series[];
-  executionTime: number;
-  rowCount: number;
+  results: {
+    series?: Series[];
+    error?: string;
+  }[];
+  executionTime?: number;
+  rowCount?: number;
   error?: string;
 }
 

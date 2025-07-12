@@ -495,17 +495,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               ),
               children: (
                 <div className="px-2 h-full overflow-auto">
-                  {isBrowserEnvironment() && (
-                    <div className="mb-3">
-                      <Alert
-                        message="模拟数据模式"
-                        description="当前显示模拟数据。要连接真实InfluxDB，请使用 Tauri 应用。"
-                        type="info"
-                        size="small"
-                        showIcon
-                      />
-                    </div>
-                  )}
                   {loading ? (
                     <div className="flex items-center justify-center py-8">
                       <Spin tip="加载中..." />

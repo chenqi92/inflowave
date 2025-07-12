@@ -6,6 +6,7 @@ import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
 import ResultPanel from './ResultPanel';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
+import type { QueryResult } from '@/types';
 
 // 临时导入页面组件用于视图切换
 import DatabasePage from '../../pages/Database';
@@ -25,6 +26,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
   const [currentView, setCurrentView] = useState('query');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
 
   // 刷新数据源面板的方法
   const refreshDataExplorer = () => {
@@ -69,7 +71,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                 height: bottomPanelCollapsed ? '100%' : `calc(100% - ${bottomPanelHeight}px - 4px)` 
               }}
             >
-              <TabEditor />
+              <TabEditor onQueryResult={setQueryResult} />
             </div>
 
             {/* 分割线 */}
@@ -103,7 +105,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                 className="bg-gray-50 border-t border-gray-200 overflow-hidden"
                 style={{ height: `${bottomPanelHeight}px` }}
               >
-                <ResultPanel collapsed={bottomPanelCollapsed} />
+                <ResultPanel 
+                  collapsed={bottomPanelCollapsed} 
+                  queryResult={queryResult} 
+                  onClearResult={() => setQueryResult(null)}
+                />
               </div>
             )}
           </>

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Tabs, Button, Space, Dropdown, Tooltip, Modal } from 'antd';
+import React, { useState, useRef, useEffect } from 'react';
+import { Tabs, Button, Space, Dropdown, Tooltip, Modal, Select, message } from 'antd';
 import type { MenuProps } from 'antd';
 import { 
   PlusOutlined, 
@@ -14,6 +14,9 @@ import {
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
+import { useConnectionStore } from '@/store/connection';
+import { safeTauriInvoke } from '@/utils/tauri';
+import type { QueryResult, QueryRequest } from '@/types';
 
 interface EditorTab {
   id: string;
@@ -24,8 +27,16 @@ interface EditorTab {
   filePath?: string;
 }
 
-const TabEditor: React.FC = () => {
+interface TabEditorProps {
+  onQueryResult?: (result: QueryResult) => void;
+}
+
+const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
+  const { activeConnectionId } = useConnectionStore();
   const [activeKey, setActiveKey] = useState<string>('');
+  const [selectedDatabase, setSelectedDatabase] = useState<string>('');
+  const [databases, setDatabases] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const [tabs, setTabs] = useState<EditorTab[]>([
     {
       id: '1',
@@ -36,6 +47,76 @@ const TabEditor: React.FC = () => {
     }
   ]);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+
+  // 加载数据库列表
+  const loadDatabases = async () => {
+    if (!activeConnectionId) return;
+
+    try {
+      const dbList = await safeTauriInvoke<string[]>('get_databases', {
+        connectionId: activeConnectionId,
+      });
+      setDatabases(dbList || []);
+      if (dbList && dbList.length > 0 && !selectedDatabase) {
+        setSelectedDatabase(dbList[0]);
+      }
+    } catch (error) {
+      console.error('加载数据库列表失败:', error);
+      message.error(`加载数据库列表失败: ${error}`);
+    }
+  };
+
+  // 执行查询
+  const executeQuery = async () => {
+    if (!activeConnectionId) {
+      message.warning('请先选择数据库连接');
+      return;
+    }
+
+    if (!selectedDatabase) {
+      message.warning('请选择数据库');
+      return;
+    }
+
+    const currentTab = tabs.find(tab => tab.id === activeKey);
+    if (!currentTab || !currentTab.content.trim()) {
+      message.warning('请输入查询语句');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const request: QueryRequest = {
+        connectionId: activeConnectionId,
+        database: selectedDatabase,
+        query: currentTab.content.trim(),
+      };
+
+      console.log('🚀 执行查询:', request);
+      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
+      console.log('✅ 查询结果:', result);
+      
+      if (result) {
+        onQueryResult?.(result);
+        message.success('查询执行成功');
+      }
+    } catch (error) {
+      console.error('查询执行失败:', error);
+      message.error(`查询执行失败: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 组件加载时加载数据库列表
+  useEffect(() => {
+    if (activeConnectionId) {
+      loadDatabases();
+    } else {
+      setDatabases([]);
+      setSelectedDatabase('');
+    }
+  }, [activeConnectionId]);
 
   // 创建新标签
   const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
@@ -126,7 +207,7 @@ const TabEditor: React.FC = () => {
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       // 执行查询
-      console.log('执行查询');
+      executeQuery();
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -232,11 +313,28 @@ const TabEditor: React.FC = () => {
 
         {/* 工具栏 */}
         <Space size="small" className="px-3">
+          <Select
+            value={selectedDatabase}
+            onChange={setSelectedDatabase}
+            placeholder="选择数据库"
+            style={{ minWidth: 150 }}
+            size="small"
+            disabled={!activeConnectionId || databases.length === 0}
+          >
+            {databases.map(db => (
+              <Select.Option key={db} value={db}>
+                {db}
+              </Select.Option>
+            ))}
+          </Select>
           <Tooltip title="执行 (Ctrl+Enter)">
             <Button 
               type="primary" 
               icon={<PlayCircleOutlined />} 
               size="small"
+              onClick={executeQuery}
+              loading={loading}
+              disabled={!activeConnectionId || !selectedDatabase}
             >
               执行
             </Button>
