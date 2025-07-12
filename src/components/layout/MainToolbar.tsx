@@ -77,6 +77,37 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     })),
   ];
 
+  const handleFileMenuClick = ({ key }: { key: string }) => {
+    switch (key) {
+      case 'new-query':
+        // 创建新查询
+        navigate('/query');
+        break;
+      case 'open':
+        // 打开文件
+        console.log('打开文件');
+        break;
+      case 'save':
+        // 保存当前查询
+        console.log('保存文件');
+        break;
+      case 'save-as':
+        // 另存为
+        console.log('另存为');
+        break;
+      case 'import':
+        // 导入数据
+        navigate('/data-import');
+        break;
+      case 'export':
+        // 导出数据
+        navigate('/data-export');
+        break;
+      default:
+        console.log('未处理的文件菜单项:', key);
+    }
+  };
+
   const fileMenuItems: MenuProps['items'] = [
     {
       key: 'new-query',
@@ -110,6 +141,25 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       icon: <ExportOutlined />,
     },
   ];
+
+  const handleToolsMenuClick = ({ key }: { key: string }) => {
+    switch (key) {
+      case 'query-history':
+        // 查询历史
+        console.log('打开查询历史');
+        break;
+      case 'console':
+        // 控制台
+        console.log('打开控制台');
+        break;
+      case 'preferences':
+        // 首选项
+        setSettingsVisible(true);
+        break;
+      default:
+        console.log('未处理的工具菜单项:', key);
+    }
+  };
 
   const toolsMenuItems: MenuProps['items'] = [
     {
@@ -180,7 +230,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
         {/* 文件操作 */}
         <Dropdown 
-          menu={{ items: fileMenuItems }} 
+          menu={{ items: fileMenuItems, onClick: handleFileMenuClick }} 
           placement="bottomLeft"
         >
           <Button 

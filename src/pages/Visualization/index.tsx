@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Select, Form, Input, Typography, Space, Modal, message, Alert, Spin } from '@/components/ui';
+import { Card, Row, Col, Button, Select, Form, Input, Typography, Space, message, Alert, Spin } from '@/components/ui';
+import { Modal } from 'antd';
 // TODO: Replace these Ant Design components: 
 import { LineChartOutlined, BarChartOutlined, PieChartOutlined, PlusOutlined, PlayCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SettingOutlined } from '@/components/ui';
 import { AreaChartOutlined } from '@ant-design/icons';
@@ -398,6 +399,10 @@ const Visualization: React.FC = () => {
         confirmLoading={loading}
         okText="创建"
         cancelText="取消"
+        closable={true}
+        keyboard={true}
+        maskClosable={true}
+        destroyOnClose={true}
       >
         <Form
           form={form}
@@ -417,7 +422,12 @@ const Visualization: React.FC = () => {
             name="type"
             rules={[{ required: true, message: '请选择图表类型' }]}
           >
-            <Select placeholder="选择图表类型">
+            <Select 
+              placeholder="选择图表类型" 
+              style={{ width: '100%' }}
+              showSearch
+              optionFilterProp="children"
+            >
               <Option value="line">
                 <Space>
                   <LineChartOutlined />
@@ -450,7 +460,12 @@ const Visualization: React.FC = () => {
             name="database"
             rules={[{ required: true, message: '请选择数据库' }]}
           >
-            <Select placeholder="选择数据库">
+            <Select 
+              placeholder="选择数据库" 
+              style={{ width: '100%' }}
+              showSearch
+              optionFilterProp="children"
+            >
               {databases.map(db => (
                 <Option key={db} value={db}>
                   {db}
@@ -475,7 +490,12 @@ const Visualization: React.FC = () => {
             name="refreshInterval"
             tooltip="设置图表自动刷新间隔，0 表示不自动刷新"
           >
-            <Select placeholder="选择刷新间隔">
+            <Select 
+              placeholder="选择刷新间隔" 
+              style={{ width: '100%' }}
+              showSearch
+              optionFilterProp="children"
+            >
               <Option value={0}>不自动刷新</Option>
               <Option value={5}>5 秒</Option>
               <Option value={10}>10 秒</Option>

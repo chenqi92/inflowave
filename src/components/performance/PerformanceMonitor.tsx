@@ -34,7 +34,13 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         memoryUsage: [],
         cpuUsage: [],
         diskIO: { readBytes: 0, writeBytes: 0, readOps: 0, writeOps: 0 },
-        networkIO: { bytesIn: 0, bytesOut: 0, packetsIn: 0, packetsOut: 0 }
+        networkIO: { bytesIn: 0, bytesOut: 0, packetsIn: 0, packetsOut: 0 },
+        storageAnalysis: {
+          totalSize: 0,
+          compressionRatio: 1,
+          retentionPolicyEffectiveness: 0,
+          recommendations: []
+        }
       });
     } catch (error) {
       console.error('加载性能指标失败:', error);
@@ -218,7 +224,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card>
             <Statistic
               title="查询执行次数"
-              value={metrics.queryExecutionTime.length}
+              value={metrics?.queryExecutionTime?.length || 0}
               prefix={<DashboardOutlined />}
             />
           </Card>
@@ -227,7 +233,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card>
             <Statistic
               title="平均执行时间"
-              value={metrics.queryExecutionTime.length > 0 
+              value={metrics?.queryExecutionTime?.length > 0 
                 ? Math.round(metrics.queryExecutionTime.reduce((a, b) => a + b, 0) / metrics.queryExecutionTime.length)
                 : 0
               }
@@ -240,7 +246,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card>
             <Statistic
               title="写入延迟"
-              value={metrics.writeLatency.length > 0 
+              value={metrics?.writeLatency?.length > 0 
                 ? Math.round(metrics.writeLatency.reduce((a, b) => a + b, 0) / metrics.writeLatency.length)
                 : 0
               }
@@ -253,7 +259,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card>
             <Statistic
               title="网络 I/O"
-              value={formatBytes(metrics.networkIO.bytesIn + metrics.networkIO.bytesOut)}
+              value={formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}
               prefix={<ExclamationCircleOutlined />}
             />
           </Card>
@@ -268,27 +274,27 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <div>
                 <Text>内存使用情况</Text>
                 <Progress
-                  percent={metrics.memoryUsage.length > 0 
+                  percent={metrics?.memoryUsage?.length > 0 
                     ? Math.round(metrics.memoryUsage[metrics.memoryUsage.length - 1])
                     : 0
                   }
-                  status={metrics.memoryUsage.length > 0 && metrics.memoryUsage[metrics.memoryUsage.length - 1] > 80 ? 'exception' : 'normal'}
+                  status={metrics?.memoryUsage?.length > 0 && metrics.memoryUsage[metrics.memoryUsage.length - 1] > 80 ? 'exception' : 'normal'}
                 />
               </div>
               <div>
                 <Text>CPU 使用率</Text>
                 <Progress
-                  percent={metrics.cpuUsage.length > 0 
+                  percent={metrics?.cpuUsage?.length > 0 
                     ? Math.round(metrics.cpuUsage[metrics.cpuUsage.length - 1])
                     : 0
                   }
-                  status={metrics.cpuUsage.length > 0 && metrics.cpuUsage[metrics.cpuUsage.length - 1] > 80 ? 'exception' : 'normal'}
+                  status={metrics?.cpuUsage?.length > 0 && metrics.cpuUsage[metrics.cpuUsage.length - 1] > 80 ? 'exception' : 'normal'}
                 />
               </div>
               <div>
                 <Text>磁盘 I/O</Text>
                 <div style={{ fontSize: '12px', color: '#666' }}>
-                  读取: {formatBytes(metrics.diskIO.readBytes)} | 写入: {formatBytes(metrics.diskIO.writeBytes)}
+                  读取: {formatBytes(metrics?.diskIO?.readBytes || 0)} | 写入: {formatBytes(metrics?.diskIO?.writeBytes || 0)}
                 </div>
               </div>
             </Space>
@@ -302,17 +308,17 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <div>
                 <Text>输入流量</Text>
                 <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                  {formatBytes(metrics.networkIO.bytesIn)}
+                  {formatBytes(metrics?.networkIO?.bytesIn || 0)}
                 </div>
-                <Text type="secondary">{metrics.networkIO.packetsIn.toLocaleString()} 包</Text>
+                <Text type="secondary">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</Text>
               </div>
               <Divider />
               <div>
                 <Text>输出流量</Text>
                 <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                  {formatBytes(metrics.networkIO.bytesOut)}
+                  {formatBytes(metrics?.networkIO?.bytesOut || 0)}
                 </div>
-                <Text type="secondary">{metrics.networkIO.packetsOut.toLocaleString()} 包</Text>
+                <Text type="secondary">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Text>
               </div>
             </Space>
           </Card>
@@ -345,14 +351,14 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Col span={8}>
             <Statistic
               title="总存储大小"
-              value={formatBytes(metrics.storageAnalysis.totalSize)}
+              value={formatBytes(metrics?.storageAnalysis?.totalSize || 0)}
               prefix={<DatabaseOutlined />}
             />
           </Col>
           <Col span={8}>
             <Statistic
               title="压缩比"
-              value={metrics.storageAnalysis.compressionRatio}
+              value={metrics?.storageAnalysis?.compressionRatio || 0}
               precision={2}
               suffix="x"
             />
@@ -360,19 +366,19 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Col span={8}>
             <Statistic
               title="保留策略效果"
-              value={metrics.storageAnalysis.retentionPolicyEffectiveness * 100}
+              value={(metrics?.storageAnalysis?.retentionPolicyEffectiveness || 0) * 100}
               precision={1}
               suffix="%"
             />
           </Col>
         </Row>
 
-        {metrics.storageAnalysis.recommendations.length > 0 && (
+        {(metrics?.storageAnalysis?.recommendations?.length || 0) > 0 && (
           <>
             <Divider />
             <Title level={5}>优化建议</Title>
             <List
-              dataSource={metrics.storageAnalysis.recommendations}
+              dataSource={metrics?.storageAnalysis?.recommendations || []}
               renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta

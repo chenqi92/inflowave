@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, message, Spin } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import type { MenuProps } from 'antd';
 import { 
@@ -13,7 +13,11 @@ import {
   TagsOutlined,
   FunctionOutlined,
   FileTextOutlined,
-  SettingOutlined
+  SettingOutlined,
+  LinkOutlined,
+  NumberOutlined,
+  FileOutlined,
+  BranchesOutlined
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -25,69 +29,218 @@ interface DatabaseExplorerProps {
   collapsed?: boolean;
 }
 
+interface TableInfo {
+  name: string;
+  tags: string[];
+  fields: Array<{ name: string; type: string }>;
+}
+
+interface DatabaseInfo {
+  name: string;
+  tables: TableInfo[];
+}
+
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }) => {
-  const { activeConnectionId, getConnection } = useConnectionStore();
-  const [databases, setDatabases] = useState<string[]>([]);
+  const { connections, activeConnectionId, getConnection } = useConnectionStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
-  // 加载数据库列表
-  const loadDatabases = async () => {
-    if (!activeConnectionId) return;
-
-    setLoading(true);
+  // 加载指定连接的数据库列表
+  const loadDatabases = async (connectionId: string): Promise<string[]> => {
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
+        connectionId,
       });
-      setDatabases(dbList);
-      buildTreeData(dbList);
+      return dbList || [];
     } catch (error) {
-      console.error('加载数据库失败:', error);
-    } finally {
-      setLoading(false);
+      console.error(`加载连接 ${connectionId} 的数据库失败:`, error);
+      return [];
     }
   };
 
-  // 构建树形数据
-  const buildTreeData = (databases: string[]) => {
-    const treeNodes: DataNode[] = databases.map((db, index) => ({
-      title: db,
-      key: `database-${db}`,
-      icon: <DatabaseOutlined className="text-blue-500" />,
-      children: [
-        {
-          title: '表',
-          key: `${db}-tables`,
-          icon: <TableOutlined className="text-green-500" />,
-          children: [],
-        },
-        {
-          title: '字段',
-          key: `${db}-fields`,
-          icon: <FieldTimeOutlined className="text-orange-500" />,
-          children: [],
-        },
-        {
-          title: '标签',
-          key: `${db}-tags`,
-          icon: <TagsOutlined className="text-purple-500" />,
-          children: [],
-        },
-        {
-          title: '函数',
-          key: `${db}-functions`,
-          icon: <FunctionOutlined className="text-red-500" />,
-          children: [],
-        },
-      ],
-    }));
-    setTreeData(treeNodes);
+  // 加载指定数据库的表列表
+  const loadTables = async (connectionId: string, database: string): Promise<string[]> => {
+    try {
+      const tables = await safeTauriInvoke<string[]>('get_measurements', {
+        connectionId,
+        database,
+      });
+      return tables || [];
+    } catch (error) {
+      console.error(`加载数据库 ${database} 的表失败:`, error);
+      return [];
+    }
   };
+
+  // 加载指定表的字段和标签信息
+  const loadTableSchema = async (connectionId: string, database: string, table: string): Promise<{ tags: string[]; fields: Array<{ name: string; type: string }> }> => {
+    try {
+      const schema = await safeTauriInvoke<{ tags: string[]; fields: Array<{ name: string; type: string }> }>('get_table_schema', {
+        connectionId,
+        database,
+        measurement: table,
+      });
+      return schema || { tags: [], fields: [] };
+    } catch (error) {
+      console.error(`加载表 ${table} 的架构失败:`, error);
+      return { tags: [], fields: [] };
+    }
+  };
+
+  // 构建完整的树形数据
+  const buildCompleteTreeData = useCallback(async () => {
+    setLoading(true);
+    const treeNodes: DataNode[] = [];
+
+    for (const connection of connections) {
+      const connectionNode: DataNode = {
+        title: (
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${
+              connection.id === activeConnectionId ? 'bg-green-500' : 'bg-gray-300'
+            }`} />
+            <span>{connection.name}</span>
+          </div>
+        ),
+        key: `connection-${connection.id}`,
+        icon: <LinkOutlined className="text-blue-600" />,
+        children: [],
+      };
+
+      // 为活跃连接加载数据库
+      if (connection.id === activeConnectionId) {
+        try {
+          const databases = await loadDatabases(connection.id!);
+          connectionNode.children = databases.map(db => ({
+            title: db,
+            key: `database-${connection.id}-${db}`,
+            icon: <DatabaseOutlined className="text-purple-600" />,
+            isLeaf: false,
+            // 延迟加载表数据
+          }));
+        } catch (error) {
+          console.error('加载数据库失败:', error);
+        }
+      }
+
+      treeNodes.push(connectionNode);
+    }
+
+    setTreeData(treeNodes);
+    setLoading(false);
+  }, [connections, activeConnectionId]);
+
+  // 动态加载节点数据
+  const loadData = useCallback(async (node: any): Promise<void> => {
+    const { key } = node;
+    
+    if (loadingNodes.has(key)) return;
+    
+    setLoadingNodes(prev => new Set(prev).add(key));
+
+    try {
+      if (key.startsWith('database-')) {
+        // 加载表列表
+        const [, connectionId, database] = key.split('-', 3);
+        const tables = await loadTables(connectionId, database);
+        
+        const tableNodes: DataNode[] = tables.map(table => ({
+          title: table,
+          key: `table-${connectionId}-${database}-${table}`,
+          icon: <TableOutlined className="text-green-600" />,
+          isLeaf: false,
+        }));
+
+        // 更新树数据
+        setTreeData(prevData => {
+          const updateNode = (nodes: DataNode[]): DataNode[] => {
+            return nodes.map(node => {
+              if (node.key === key) {
+                return { ...node, children: tableNodes };
+              }
+              if (node.children) {
+                return { ...node, children: updateNode(node.children) };
+              }
+              return node;
+            });
+          };
+          return updateNode(prevData);
+        });
+      } else if (key.startsWith('table-')) {
+        // 加载表的字段和标签
+        const [, connectionId, database, table] = key.split('-', 4);
+        const { tags, fields } = await loadTableSchema(connectionId, database, table);
+        
+        const children: DataNode[] = [];
+        
+        // 添加标签节点
+        if (tags.length > 0) {
+          children.push({
+            title: `标签 (${tags.length})`,
+            key: `tags-${connectionId}-${database}-${table}`,
+            icon: <TagsOutlined className="text-orange-500" />,
+            children: tags.map(tag => ({
+              title: tag,
+              key: `tag-${connectionId}-${database}-${table}-${tag}`,
+              icon: <BranchesOutlined className="text-orange-400" />,
+              isLeaf: true,
+            })),
+          });
+        }
+        
+        // 添加字段节点
+        if (fields.length > 0) {
+          children.push({
+            title: `字段 (${fields.length})`,
+            key: `fields-${connectionId}-${database}-${table}`,
+            icon: <FieldTimeOutlined className="text-blue-500" />,
+            children: fields.map(field => ({
+              title: (
+                <div className="flex items-center gap-2">
+                  <span>{field.name}</span>
+                  <span className="text-xs text-gray-500">({field.type})</span>
+                </div>
+              ),
+              key: `field-${connectionId}-${database}-${table}-${field.name}`,
+              icon: field.type === 'number' ? 
+                <NumberOutlined className="text-blue-400" /> : 
+                <FileOutlined className="text-gray-400" />,
+              isLeaf: true,
+            })),
+          });
+        }
+
+        // 更新树数据
+        setTreeData(prevData => {
+          const updateNode = (nodes: DataNode[]): DataNode[] => {
+            return nodes.map(node => {
+              if (node.key === key) {
+                return { ...node, children };
+              }
+              if (node.children) {
+                return { ...node, children: updateNode(node.children) };
+              }
+              return node;
+            });
+          };
+          return updateNode(prevData);
+        });
+      }
+    } catch (error) {
+      message.error(`加载数据失败: ${error}`);
+    } finally {
+      setLoadingNodes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(key);
+        return newSet;
+      });
+    }
+  }, [loadingNodes]);
 
   // 处理节点右键菜单
   const getContextMenu = (node: DataNode): MenuProps['items'] => {
@@ -146,6 +299,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
     if (node.key.startsWith('database-')) {
       // 数据库节点被选中
       console.log('选中数据库:', node.title);
+    } else if (node.key.startsWith('table-')) {
+      // 表节点被选中
+      console.log('选中表:', node.title);
+    } else if (node.key.startsWith('field-') || node.key.startsWith('tag-')) {
+      // 字段或标签节点被选中
+      console.log('选中字段/标签:', node.title);
     }
   };
 
@@ -153,21 +312,39 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
   const filterTreeData = (data: DataNode[]): DataNode[] => {
     if (!searchValue) return data;
 
-    return data.filter(node => {
-      const title = node.title as string;
-      return title.toLowerCase().includes(searchValue.toLowerCase());
-    });
+    const filterNode = (node: DataNode): DataNode | null => {
+      const title = typeof node.title === 'string' ? node.title : '';
+      const titleMatch = title.toLowerCase().includes(searchValue.toLowerCase());
+      
+      let filteredChildren: DataNode[] = [];
+      if (node.children) {
+        filteredChildren = node.children
+          .map(child => filterNode(child))
+          .filter(Boolean) as DataNode[];
+      }
+      
+      if (titleMatch || filteredChildren.length > 0) {
+        return {
+          ...node,
+          children: filteredChildren.length > 0 ? filteredChildren : node.children,
+        };
+      }
+      
+      return null;
+    };
+
+    return data.map(node => filterNode(node)).filter(Boolean) as DataNode[];
   };
+
+  // 刷新树数据
+  const refreshTree = useCallback(() => {
+    buildCompleteTreeData();
+  }, [buildCompleteTreeData]);
 
   // 初始化数据
   useEffect(() => {
-    if (activeConnectionId) {
-      loadDatabases();
-    } else {
-      setDatabases([]);
-      setTreeData([]);
-    }
-  }, [activeConnectionId]);
+    buildCompleteTreeData();
+  }, [buildCompleteTreeData]);
 
   if (collapsed) {
     return (
@@ -184,7 +361,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
             type="text" 
             icon={<ReloadOutlined />}
             className="w-8 h-8"
-            onClick={loadDatabases}
+            onClick={refreshTree}
             loading={loading}
           />
         </Tooltip>
@@ -213,7 +390,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
                 type="text" 
                 icon={<ReloadOutlined />}
                 size="small"
-                onClick={loadDatabases}
+                onClick={refreshTree}
                 loading={loading}
               />
             </Tooltip>
@@ -232,7 +409,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
 
         {/* 搜索框 */}
         <Search
-          placeholder="搜索数据库..."
+          placeholder="搜索连接、数据库、表..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           size="small"
@@ -243,23 +420,28 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
       {/* 主要内容：标签页 */}
       <div className="flex-1 overflow-hidden">
         <Tabs 
-          defaultActiveKey="databases" 
+          defaultActiveKey="explorer" 
           size="small"
           className="h-full"
           items={[
             {
-              key: 'databases',
+              key: 'explorer',
               label: (
                 <span className="flex items-center gap-1">
                   <DatabaseOutlined />
-                  数据库
+                  数据源
                 </span>
               ),
               children: (
                 <div className="px-2 h-full overflow-auto">
-                  {activeConnection ? (
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Spin tip="加载中..." />
+                    </div>
+                  ) : treeData.length > 0 ? (
                     <Tree
                       showIcon
+                      loadData={loadData}
                       treeData={filterTreeData(treeData)}
                       expandedKeys={expandedKeys}
                       onExpand={handleExpand}
@@ -269,7 +451,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
                   ) : (
                     <div className="text-center text-gray-500 mt-8">
                       <DatabaseOutlined className="text-2xl mb-2" />
-                      <p>请先连接到数据库</p>
+                      <p>暂无连接</p>
+                      <p className="text-sm mt-1">请在连接管理中添加数据库连接</p>
                     </div>
                   )}
                 </div>
