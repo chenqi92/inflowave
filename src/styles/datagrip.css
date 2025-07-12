@@ -1,0 +1,277 @@
+/* DataGrip风格的样式优化 */
+
+/* 编辑器标签页样式 */
+.editor-tabs .ant-tabs-nav {
+  margin: 0;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+.editor-tabs .ant-tabs-tab {
+  border: 1px solid #e1e4e8;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 2px;
+  background: #ffffff;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+}
+
+.editor-tabs .ant-tabs-tab:hover {
+  background: #f6f8fa;
+}
+
+.editor-tabs .ant-tabs-tab-active {
+  background: #ffffff;
+  border-color: #1890ff;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-tabs .ant-tabs-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #ffffff;
+}
+
+.editor-tabs .ant-tabs-add-icon {
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.editor-tabs .ant-tabs-add-icon:hover {
+  background: #e1e4e8;
+  border-color: #d0d7de;
+}
+
+/* 工具栏样式 */
+.datagrip-toolbar {
+  border-bottom: 1px solid #e1e4e8;
+  background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.datagrip-toolbar .ant-btn {
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.datagrip-toolbar .ant-btn:hover {
+  border-color: #1890ff;
+  box-shadow: 0 1px 3px rgba(24, 144, 255, 0.2);
+}
+
+.datagrip-toolbar .ant-btn-primary {
+  background: linear-gradient(to bottom, #0366d6, #0366d6);
+  border-color: #0366d6;
+}
+
+.datagrip-toolbar .ant-btn-primary:hover {
+  background: linear-gradient(to bottom, #0366d6, #044d8d);
+  border-color: #044d8d;
+}
+
+/* 数据库浏览器样式 */
+.database-explorer {
+  border-right: 1px solid #e1e4e8;
+  background: #fafbfc;
+}
+
+.database-explorer .ant-tree .ant-tree-node-content-wrapper {
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.database-explorer .ant-tree .ant-tree-node-content-wrapper:hover {
+  background: #f1f8ff;
+}
+
+.database-explorer .ant-tree .ant-tree-node-selected .ant-tree-node-content-wrapper {
+  background: #0366d6;
+  color: white;
+}
+
+.database-explorer .ant-tree .ant-tree-switcher {
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+}
+
+/* 结果面板样式 */
+.result-panel {
+  border-top: 1px solid #e1e4e8;
+  background: #ffffff;
+}
+
+.result-panel .ant-tabs-nav {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e1e4e8;
+  margin: 0;
+  padding: 0 8px;
+}
+
+.result-panel .ant-tabs-tab {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+}
+
+.result-panel .ant-tabs-tab:hover {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.result-panel .ant-tabs-tab-active {
+  border-bottom-color: #1890ff;
+  background: #ffffff;
+  font-weight: 500;
+}
+
+/* 状态栏样式 */
+.status-bar {
+  background: #f8f9fa;
+  border-top: 1px solid #e1e4e8;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #586069;
+}
+
+/* 连接状态指示器 */
+.connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.connection-indicator.connected {
+  background: #dcffe4;
+  color: #28a745;
+}
+
+.connection-indicator.disconnected {
+  background: #ffe6e6;
+  color: #dc3545;
+}
+
+.connection-indicator.connecting {
+  background: #fff3cd;
+  color: #fd7e14;
+}
+
+/* 分割线样式 */
+.resize-handle {
+  background: #e1e4e8;
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: #1890ff;
+}
+
+.resize-handle.horizontal {
+  cursor: row-resize;
+  height: 4px;
+}
+
+.resize-handle.vertical {
+  cursor: col-resize;
+  width: 4px;
+}
+
+/* 控制台样式 */
+.console-panel {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.console-panel .prompt {
+  color: #6a9955;
+}
+
+.console-panel .error {
+  color: #f44747;
+}
+
+.console-panel .warning {
+  color: #ffcc02;
+}
+
+.console-panel .info {
+  color: #569cd6;
+}
+
+/* 表格优化 */
+.result-table .ant-table-thead > tr > th {
+  background: #f8f9fa;
+  border-bottom: 2px solid #e1e4e8;
+  font-weight: 600;
+  color: #24292e;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.result-table .ant-table-tbody > tr:hover > td {
+  background: #f6f8fa;
+}
+
+.result-table .ant-table-tbody > tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .editor-tabs .ant-tabs-nav {
+    background: #2d3748;
+    border-bottom-color: #4a5568;
+  }
+
+  .editor-tabs .ant-tabs-tab {
+    background: #1a202c;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .editor-tabs .ant-tabs-tab-active {
+    background: #2d3748;
+    border-color: #63b3ed;
+  }
+
+  .datagrip-toolbar {
+    background: linear-gradient(to bottom, #2d3748, #1a202c);
+    border-bottom-color: #4a5568;
+  }
+
+  .database-explorer {
+    background: #1a202c;
+    border-right-color: #4a5568;
+  }
+
+  .result-panel {
+    background: #2d3748;
+    border-top-color: #4a5568;
+  }
+
+  .result-panel .ant-tabs-nav {
+    background: #1a202c;
+    border-bottom-color: #4a5568;
+  }
+}

@@ -11,6 +11,7 @@ export class QueryOperationsService {
    * 预览测量数据
    */
   static async previewData(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     limit?: number;
@@ -34,7 +35,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current', // 当前活跃连接
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -58,6 +59,7 @@ export class QueryOperationsService {
    * 显示测量的字段信息
    */
   static async showFields(params: {
+    connectionId: string;
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
@@ -66,7 +68,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -86,6 +88,7 @@ export class QueryOperationsService {
    * 显示测量的标签键
    */
   static async showTagKeys(params: {
+    connectionId: string;
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
@@ -94,7 +97,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -114,6 +117,7 @@ export class QueryOperationsService {
    * 显示标签值
    */
   static async showTagValues(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     tagKey?: string;
@@ -126,7 +130,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -146,6 +150,7 @@ export class QueryOperationsService {
    * 获取记录总数
    */
   static async getRecordCount(params: {
+    connectionId: string;
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
@@ -154,7 +159,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -176,6 +181,7 @@ export class QueryOperationsService {
    * 获取时间范围
    */
   static async getTimeRange(params: {
+    connectionId: string;
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
@@ -184,7 +190,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -204,6 +210,7 @@ export class QueryOperationsService {
    * 获取字段基础统计信息
    */
   static async getFieldBasicStats(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     field: string;
@@ -213,7 +220,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -233,6 +240,7 @@ export class QueryOperationsService {
    * 获取字段分位数统计
    */
   static async getFieldPercentileStats(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     field: string;
@@ -242,7 +250,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -262,6 +270,7 @@ export class QueryOperationsService {
    * 按标签值查询
    */
   static async queryByTagValue(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     tagKey: string;
@@ -273,7 +282,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -293,6 +302,7 @@ export class QueryOperationsService {
    * 生成时序聚合查询
    */
   static async generateTimeAggregationQuery(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     field: string;
@@ -307,6 +317,7 @@ export class QueryOperationsService {
    * 生成按标签分组查询
    */
   static async generateTagGroupQuery(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     field: string;
@@ -321,6 +332,7 @@ export class QueryOperationsService {
    * 导出数据
    */
   static async exportData(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     format: 'csv' | 'json' | 'excel';
@@ -333,7 +345,7 @@ export class QueryOperationsService {
       // 首先执行查询获取数据
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -361,6 +373,7 @@ export class QueryOperationsService {
    * 删除测量
    */
   static async deleteMeasurement(params: {
+    connectionId: string;
     database: string;
     measurement: string;
   }): Promise<void> {
@@ -369,7 +382,7 @@ export class QueryOperationsService {
     try {
       await safeTauriInvoke('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -386,6 +399,7 @@ export class QueryOperationsService {
    * 删除数据库
    */
   static async deleteDatabase(params: {
+    connectionId: string;
     database: string;
   }): Promise<void> {
     const query = `DROP DATABASE "${params.database}"`;
@@ -393,7 +407,7 @@ export class QueryOperationsService {
     try {
       await safeTauriInvoke('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -410,11 +424,12 @@ export class QueryOperationsService {
    * 显示数据库信息
    */
   static async showDatabaseInfo(params: {
+    connectionId: string;
     database: string;
   }): Promise<any> {
     try {
       const info = await safeTauriInvoke('get_database_stats', {
-        connectionId: 'current',
+        connectionId: params.connectionId,
         database: params.database
       });
 
@@ -429,6 +444,7 @@ export class QueryOperationsService {
    * 显示保留策略
    */
   static async showRetentionPolicies(params: {
+    connectionId: string;
     database: string;
   }): Promise<QueryResult> {
     const query = `SHOW RETENTION POLICIES ON "${params.database}"`;
@@ -436,7 +452,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -456,6 +472,7 @@ export class QueryOperationsService {
    * 显示所有测量
    */
   static async showMeasurements(params: {
+    connectionId: string;
     database: string;
   }): Promise<QueryResult> {
     const query = `SHOW MEASUREMENTS`;
@@ -463,7 +480,7 @@ export class QueryOperationsService {
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'current',
+          connectionId: params.connectionId,
           database: params.database,
           query
         }

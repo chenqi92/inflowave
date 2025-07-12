@@ -1,0 +1,306 @@
+/* Settings Modal Styles */
+.settings-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.settings-modal .ant-modal-header {
+  background: #fafbfc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 24px;
+}
+
+.settings-modal .ant-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.settings-modal .ant-modal-body {
+  padding: 0;
+}
+
+/* Tabs styling */
+.settings-modal .ant-tabs {
+  height: 100%;
+}
+
+.settings-modal .ant-tabs-nav {
+  margin: 0;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+}
+
+.settings-modal .ant-tabs-tab {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 0;
+  border: none;
+  justify-content: flex-start;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.settings-modal .ant-tabs-tab:hover {
+  background: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
+}
+
+.settings-modal .ant-tabs-tab-active {
+  background: #3b82f6;
+  color: white !important;
+  font-weight: 600;
+}
+
+.settings-modal .ant-tabs-tab-active .anticon {
+  color: white !important;
+}
+
+.settings-modal .ant-tabs-tab-active span {
+  color: white !important;
+}
+
+.settings-modal .ant-tabs-content {
+  padding: 16px 24px;
+  height: 100%;
+}
+
+.settings-modal .ant-tabs-tabpane {
+  height: 100%;
+}
+
+/* Form improvements */
+.settings-modal .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.settings-modal .ant-form-item-label > label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 13px;
+}
+
+.settings-modal .ant-input,
+.settings-modal .ant-select-selector,
+.settings-modal .ant-input-number {
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
+
+.settings-modal .ant-input:focus,
+.settings-modal .ant-select-focused .ant-select-selector,
+.settings-modal .ant-input-number:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Button improvements */
+.settings-modal .ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.settings-modal .ant-btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.settings-modal .ant-btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-modal .ant-btn-danger {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.settings-modal .ant-btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.settings-modal .ant-btn-dashed:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+/* Alert improvements */
+.settings-modal .ant-alert {
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.settings-modal .ant-alert-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
+.settings-modal .ant-alert-info {
+  background: #dbeafe;
+  border: 1px solid #3b82f6;
+}
+
+.settings-modal .ant-alert-success {
+  background: #d1fae5;
+  border: 1px solid #10b981;
+}
+
+/* Typography improvements */
+.settings-modal .ant-typography h5 {
+  color: #111827;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.settings-modal .ant-typography-paragraph {
+  color: #6b7280;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+/* Switch improvements */
+.settings-modal .ant-switch {
+  background: #d1d5db;
+}
+
+.settings-modal .ant-switch-checked {
+  background: #3b82f6;
+}
+
+/* Divider improvements */
+.settings-modal .ant-divider {
+  border-color: #e5e7eb;
+  margin: 16px 0;
+}
+
+/* Scrollbar styling */
+.settings-modal .max-h-96::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-modal .max-h-96::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.settings-modal .max-h-96::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.settings-modal .max-h-96::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Compact spacing */
+.settings-modal .ant-space-compact {
+  gap: 8px;
+}
+
+.settings-modal .ant-space-item {
+  margin-right: 8px;
+}
+
+/* Icon improvements */
+.settings-modal .anticon {
+  font-size: 14px;
+}
+
+.settings-modal .ant-tabs-tab .anticon {
+  margin-right: 8px;
+}
+
+/* Row and Col improvements */
+.settings-modal .ant-row {
+  margin-bottom: 0;
+}
+
+.settings-modal .ant-col {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .settings-modal .ant-modal {
+    width: 95% !important;
+    max-width: none;
+  }
+  
+  .settings-modal .ant-tabs {
+    flex-direction: column;
+  }
+  
+  .settings-modal .ant-tabs-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .settings-modal .ant-tabs-content {
+    padding: 12px 16px;
+  }
+  
+  .settings-modal .ant-col {
+    padding: 0 4px;
+  }
+}
+
+/* Focus improvements */
+.settings-modal .ant-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+.settings-modal .ant-btn:hover .anticon {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Badge improvements */
+.settings-modal .ant-badge {
+  font-size: 12px;
+}
+
+/* List improvements for error log */
+.settings-modal .ant-list-item {
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+/* Error log viewer specific */
+.settings-modal .error-log-container {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+/* Card like container for sections */
+.settings-modal .settings-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* Tooltip improvements */
+.ant-tooltip {
+  font-size: 12px;
+}
+
+.ant-tooltip-inner {
+  border-radius: 6px;
+}

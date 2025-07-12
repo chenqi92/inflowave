@@ -169,24 +169,24 @@ const Query: React.FC = () => {
       return [];
     }
     
-    return databases.map(db => ({
+    return databases.map((db, dbIndex) => ({
       title: db,
-      key: `db-${db}`,
+      key: `db-${db}-${dbIndex}`, // 确保 key 唯一
       icon: <DatabaseOutlined />,
-      children: measurements && measurements.length > 0 ? measurements.map(measurement => ({
+      children: measurements && measurements.length > 0 ? measurements.map((measurement, measurementIndex) => ({
         title: measurement,
-        key: `${db}-${measurement}`,
+        key: `${db}-${measurement}-${measurementIndex}`, // 确保 key 唯一
         icon: <TableOutlined />,
         children: [
           {
             title: 'Fields',
-            key: `${db}-${measurement}-fields`,
+            key: `${db}-${measurement}-fields-${measurementIndex}`,
             icon: <FieldTimeOutlined />,
             children: [], // 可以在这里加载字段信息
           },
           {
             title: 'Tags',
-            key: `${db}-${measurement}-tags`,
+            key: `${db}-${measurement}-tags-${measurementIndex}`,
             icon: <TagsOutlined />,
             children: [], // 可以在这里加载标签信息
           },
@@ -199,12 +199,19 @@ const Query: React.FC = () => {
   const handleTreeNodeClick = (selectedKeys: React.Key[], _: any) => {
     const key = selectedKeys[0] as string;
     
-    // 解析新的 key 格式
-    if (key.includes('-') && !key.includes('-fields') && !key.includes('-tags')) {
+    // 解析新的 key 格式: db-{dbName}-{dbIndex} 或 {dbName}-{measurementName}-{measurementIndex}
+    if (key && !key.includes('-fields') && !key.includes('-tags')) {
       const parts = key.split('-');
-      if (parts.length >= 2) {
+      
+      // 如果是数据库节点: db-{dbName}-{dbIndex}
+      if (parts[0] === 'db' && parts.length >= 3) {
+        const database = parts[1];
+        setSelectedDatabase(database);
+      }
+      // 如果是测量节点: {dbName}-{measurementName}-{measurementIndex}
+      else if (parts.length >= 3) {
         const database = parts[0];
-        const measurement = parts.slice(1).join('-'); // 处理测量名包含连字符的情况
+        const measurement = parts.slice(1, -1).join('-'); // 排除最后的索引，处理测量名包含连字符的情况
         setSelectedDatabase(database);
         setQuery(`SELECT * FROM "${measurement}" LIMIT 10`);
       }
@@ -394,11 +401,6 @@ const Query: React.FC = () => {
               defaultExpandAll
               treeData={databaseStructure}
               onSelect={handleTreeNodeClick}
-              titleRender={(nodeData) => (
-                <span className="cursor-pointer hover:bg-blue-50 px-1 rounded">
-                  {typeof nodeData.title === 'string' ? nodeData.title : String(nodeData.title)}
-                </span>
-              )}
             />
           </Card>
         </Col>

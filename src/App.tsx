@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
 import { Layout, Typography, Spin } from '@/components/ui';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { antdTheme } from '@/styles/antd-theme';
+import '@/styles/datagrip.css';
+
+// 错误处理
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+import { errorLogger } from '@/utils/errorLogger';
 
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
-import BrowserModeNotice from './components/common/BrowserModeNotice';
+import BrowserModeModal from './components/common/BrowserModeModal';
 import AppToolbar from './components/layout/AppToolbar';
 import AppStatusBar from './components/layout/AppStatusBar';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
+import { useNoticeStore } from './store/notice';
 
 // 页面组件
 import ConnectionsPage from './pages/Connections';
@@ -21,12 +27,13 @@ import DataWritePage from './pages/DataWrite';
 import VisualizationPage from './pages/Visualization';
 import PerformancePage from './pages/Performance';
 import ExtensionsPage from './pages/Extensions';
-import SettingsPage from './pages/Settings';
+// import SettingsPage from './pages/Settings'; // 已移至模态框
 import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
 import UITest from './pages/UITest';
 import TestButton from './components/test/TestButton';
+import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
 // Layout 组件直接导入
 import { Content } from '@/components/ui';
@@ -35,9 +42,21 @@ const { Text } = Typography;
 // 主布局组件
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [statusbarVisible, setStatusbarVisible] = useState(true);
+  const [browserModalVisible, setBrowserModalVisible] = useState(false);
+  const { browserModeNoticeDismissed } = useNoticeStore();
+
+  // 检查是否显示浏览器模式提醒
+  useEffect(() => {
+    if (isBrowserEnvironment() && !browserModeNoticeDismissed) {
+      // 延迟显示弹框，确保应用完全加载
+      const timer = setTimeout(() => {
+        setBrowserModalVisible(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [browserModeNoticeDismissed]);
 
   // 键盘快捷键处理
   useEffect(() => {
@@ -53,61 +72,70 @@ const MainLayout: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 检查是否为需要特殊处理的页面（连接管理等）
+  const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test'].includes(location.pathname);
+
+  if (isSpecialPage) {
+    return (
+      <Layout className="desktop-layout">
+        {/* 应用工具栏 */}
+        <AppToolbar />
+
+        {/* 主内容区 */}
+        <Content className="desktop-content">
+          <Routes>
+            <Route path="/connections" element={<ConnectionsPage />} />
+            <Route path="/debug" element={<ConnectionDebug />} />
+            <Route path="/typography-test" element={<TypographyTest />} />
+            <Route path="/ui-test" element={<UITest />} />
+          </Routes>
+        </Content>
+
+        {/* 全局搜索 */}
+        <GlobalSearch
+          visible={globalSearchVisible}
+          onClose={() => setGlobalSearchVisible(false)}
+          onNavigate={(path, params) => {
+            navigate(path, { state: params });
+          }}
+          onExecuteQuery={(query) => {
+            navigate('/query', { state: { query } });
+          }}
+        />
+        
+        {/* 测试按钮 - 仅在开发环境显示 */}
+        {(import.meta as any).env?.DEV && <TestButton />}
+      </Layout>
+    );
+  }
+
+  // 对于主要的数据库工作区页面，使用DataGrip风格布局
   return (
-    <Layout className="desktop-layout">
-      {/* 原生菜单处理器 */}
-      <NativeMenuHandler
-        onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
-        onToggleStatusbar={() => setStatusbarVisible(!statusbarVisible)}
-        onGlobalSearch={() => setGlobalSearchVisible(true)}
+    <>
+      <Routes>
+        <Route path="/" element={<DataGripStyleLayout />} />
+        <Route path="/dashboard" element={<DataGripStyleLayout />} />
+        <Route path="/database" element={<DataGripStyleLayout />} />
+        <Route path="/query" element={<DataGripStyleLayout />} />
+        <Route path="/datagrip" element={<DataGripStyleLayout />} />
+        <Route path="/visualization" element={<DataGripStyleLayout />} />
+        <Route path="/data-write" element={<DataGripStyleLayout />} />
+        <Route path="/write" element={<DataGripStyleLayout />} />
+        <Route path="/performance" element={<DataGripStyleLayout />} />
+        <Route path="/extensions" element={<DataGripStyleLayout />} />
+        
+        {/* 保留旧版本用于比较 */}
+        <Route path="/datagrip-old" element={<DataGripLayout />} />
+        <Route path="/query-old" element={<QueryPage />} />
+        <Route path="/database-old" element={<DatabasePage />} />
+      </Routes>
+
+      {/* 浏览器模式提醒弹框 */}
+      <BrowserModeModal
+        visible={browserModalVisible}
+        onClose={() => setBrowserModalVisible(false)}
       />
-
-      {/* 应用工具栏 */}
-      <AppToolbar />
-
-      {/* 主内容区 */}
-      <Content className="desktop-content">
-        <Routes>
-          <Route path="/" element={
-            isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
-          } />
-          <Route path="/dashboard" element={
-            isBrowserEnvironment() ? <BrowserModeNotice /> : <DashboardPage />
-          } />
-          <Route path="/connections" element={<ConnectionsPage />} />
-          <Route path="/database" element={<DatabasePage />} />
-          <Route path="/query" element={<QueryPage />} />
-          <Route path="/datagrip" element={<DataGripLayout />} />
-          <Route path="/visualization" element={<VisualizationPage />} />
-          <Route path="/data-write" element={<DataWritePage />} />
-          <Route path="/write" element={<DataWritePage />} />
-          <Route path="/performance" element={<PerformancePage />} />
-          <Route path="/extensions" element={<ExtensionsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/debug" element={<ConnectionDebug />} />
-          <Route path="/typography-test" element={<TypographyTest />} />
-          <Route path="/ui-test" element={<UITest />} />
-        </Routes>
-      </Content>
-
-      {/* 底部状态栏 */}
-      {statusbarVisible && <AppStatusBar />}
-
-      {/* 全局搜索 */}
-      <GlobalSearch
-        visible={globalSearchVisible}
-        onClose={() => setGlobalSearchVisible(false)}
-        onNavigate={(path, params) => {
-          navigate(path, { state: params });
-        }}
-        onExecuteQuery={(query) => {
-          navigate('/query', { state: { query } });
-        }}
-      />
-      
-      {/* 测试按钮 - 仅在开发环境显示 */}
-      {(import.meta as any).env?.DEV && <TestButton />}
-    </Layout>
+    </>
   );
 };
 
@@ -119,6 +147,9 @@ const App: React.FC = () => {
     const initApp = async () => {
       try {
         console.log('InfloWave 启动中...');
+
+        // 初始化错误日志系统
+        console.log('初始化错误日志系统...');
 
         // 初始化环境检测
         initializeEnvironment();
@@ -142,6 +173,11 @@ const App: React.FC = () => {
         showMessage.success('应用启动成功');
       } catch (error) {
         console.error('应用初始化失败:', error);
+        // 记录到错误日志系统
+        await errorLogger.logCustomError('应用初始化失败', { 
+          error: error?.toString(),
+          stack: (error as Error)?.stack 
+        });
         // 不显示错误消息，允许应用继续运行
         console.warn('应用将以降级模式运行');
       } finally {
@@ -167,7 +203,11 @@ const App: React.FC = () => {
 
     // 延迟初始化，确保UI先渲染
     const timer = setTimeout(initApp, 100);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // 应用卸载时清理错误日志器
+      errorLogger.cleanup();
+    };
   }, []);
 
   if (loading) {
@@ -188,9 +228,11 @@ const App: React.FC = () => {
   }
 
   return (
-    <ConfigProvider theme={antdTheme}>
-      <MainLayout />
-    </ConfigProvider>
+    <ErrorBoundary>
+      <ConfigProvider theme={antdTheme}>
+        <MainLayout />
+      </ConfigProvider>
+    </ErrorBoundary>
   );
 };
 

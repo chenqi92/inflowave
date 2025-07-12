@@ -29,13 +29,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         timeRange,
       });
       setMetrics(result || {
-        cpu_usage: 0,
-        memory_usage: 0,
-        disk_usage: 0,
-        network_io: { bytes_in: 0, bytes_out: 0 },
-        query_performance: { avg_response_time: 0, queries_per_second: 0 },
-        connection_count: 0,
-        uptime: 0
+        queryExecutionTime: [],
+        writeLatency: [],
+        memoryUsage: [],
+        cpuUsage: [],
+        diskIO: { readBytes: 0, writeBytes: 0, readOps: 0, writeOps: 0 },
+        networkIO: { bytesIn: 0, bytesOut: 0, packetsIn: 0, packetsOut: 0 }
       });
     } catch (error) {
       console.error('加载性能指标失败:', error);
@@ -218,8 +217,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="总查询数"
-              value={metrics.queryPerformance.totalQueries}
+              title="查询执行次数"
+              value={metrics.queryExecutionTime.length}
               prefix={<DashboardOutlined />}
             />
           </Card>
@@ -228,7 +227,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card>
             <Statistic
               title="平均执行时间"
-              value={metrics.queryPerformance.averageExecutionTime}
+              value={metrics.queryExecutionTime.length > 0 
+                ? Math.round(metrics.queryExecutionTime.reduce((a, b) => a + b, 0) / metrics.queryExecutionTime.length)
+                : 0
+              }
               suffix="ms"
               prefix={<ClockCircleOutlined />}
             />
@@ -237,9 +239,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="QPS"
-              value={metrics.queryPerformance.queriesPerSecond}
-              precision={1}
+              title="写入延迟"
+              value={metrics.writeLatency.length > 0 
+                ? Math.round(metrics.writeLatency.reduce((a, b) => a + b, 0) / metrics.writeLatency.length)
+                : 0
+              }
+              suffix="ms"
               prefix={<ThunderboltOutlined />}
             />
           </Card>
@@ -247,11 +252,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="错误率"
-              value={metrics.queryPerformance.errorRate}
-              suffix="%"
+              title="网络 I/O"
+              value={formatBytes(metrics.networkIO.bytesIn + metrics.networkIO.bytesOut)}
               prefix={<ExclamationCircleOutlined />}
-              valueStyle={{ color: metrics.queryPerformance.errorRate > 5 ? '#cf1322' : '#3f8600' }}
             />
           </Card>
         </Col>
@@ -263,65 +266,55 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Card title="系统资源" size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
               <div>
-                <Text>内存使用率</Text>
+                <Text>内存使用情况</Text>
                 <Progress
-                  percent={metrics.systemResources.memory.percentage}
-                  status={metrics.systemResources.memory.percentage > 80 ? 'exception' : 'normal'}
-                  format={() => `${formatBytes(metrics.systemResources.memory.used)} / ${formatBytes(metrics.systemResources.memory.total)}`}
+                  percent={metrics.memoryUsage.length > 0 
+                    ? Math.round(metrics.memoryUsage[metrics.memoryUsage.length - 1])
+                    : 0
+                  }
+                  status={metrics.memoryUsage.length > 0 && metrics.memoryUsage[metrics.memoryUsage.length - 1] > 80 ? 'exception' : 'normal'}
                 />
               </div>
               <div>
                 <Text>CPU 使用率</Text>
                 <Progress
-                  percent={metrics.systemResources.cpu.usage}
-                  status={metrics.systemResources.cpu.usage > 80 ? 'exception' : 'normal'}
+                  percent={metrics.cpuUsage.length > 0 
+                    ? Math.round(metrics.cpuUsage[metrics.cpuUsage.length - 1])
+                    : 0
+                  }
+                  status={metrics.cpuUsage.length > 0 && metrics.cpuUsage[metrics.cpuUsage.length - 1] > 80 ? 'exception' : 'normal'}
                 />
               </div>
               <div>
-                <Text>磁盘使用率</Text>
-                <Progress
-                  percent={metrics.systemResources.disk.percentage}
-                  status={metrics.systemResources.disk.percentage > 90 ? 'exception' : 'normal'}
-                  format={() => `${formatBytes(metrics.systemResources.disk.used)} / ${formatBytes(metrics.systemResources.disk.total)}`}
-                />
+                <Text>磁盘 I/O</Text>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  读取: {formatBytes(metrics.diskIO.readBytes)} | 写入: {formatBytes(metrics.diskIO.writeBytes)}
+                </div>
               </div>
             </Space>
           </Card>
         </Col>
 
-        {/* 连接健康状态 */}
+        {/* 网络状态 */}
         <Col span={12}>
-          <Card title="连接健康状态" size="small">
-            <List
-              dataSource={metrics.connectionHealth}
-              renderItem={(item: ConnectionHealthMetrics) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      size="small"
-                      onClick={() => performHealthCheck(item.connectionId)}
-                    >
-                      检查
-                    </Button>
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Tag color={getStatusColor(item.status)}>
-                        {item.status === 'healthy' ? <CheckCircleOutlined /> : <WarningOutlined />}
-                      </Tag>
-                    }
-                    title={item.connectionId}
-                    description={
-                      <Space size="small">
-                        <Text type="secondary">响应时间: {item.responseTime}ms</Text>
-                        <Text type="secondary">错误: {item.errorCount}</Text>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
+          <Card title="网络 I/O 状态" size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div>
+                <Text>输入流量</Text>
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                  {formatBytes(metrics.networkIO.bytesIn)}
+                </div>
+                <Text type="secondary">{metrics.networkIO.packetsIn.toLocaleString()} 包</Text>
+              </div>
+              <Divider />
+              <div>
+                <Text>输出流量</Text>
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                  {formatBytes(metrics.networkIO.bytesOut)}
+                </div>
+                <Text type="secondary">{metrics.networkIO.packetsOut.toLocaleString()} 包</Text>
+              </div>
+            </Space>
           </Card>
         </Col>
       </Row>

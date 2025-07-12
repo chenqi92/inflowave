@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Space, Typography, Tooltip, Badge, Dropdown } from '@/components/ui';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -9,6 +9,7 @@ import {
 import type { DropdownMenuItem } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { useAppStore } from '@/store/app';
+import SettingsModal from '@/components/common/SettingsModal';
 
 const { Text } = Typography;
 
@@ -17,6 +18,7 @@ const AppToolbar: React.FC = () => {
   const location = useLocation();
   const { activeConnectionId, connectionStatuses } = useConnectionStore();
   const { config, setTheme, setLanguage } = useAppStore();
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   // 获取当前连接状态
   const currentStatus = activeConnectionId 
@@ -142,8 +144,8 @@ const AppToolbar: React.FC = () => {
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: '应用设置',
-      onClick: () => navigate('/settings'),
+      label: '偏好设置',
+      onClick: () => setSettingsVisible(true),
     },
   ];
 
@@ -340,6 +342,12 @@ const AppToolbar: React.FC = () => {
           />
         </Dropdown>
       </div>
+
+      {/* 设置模态框 */}
+      <SettingsModal
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+      />
     </div>
   );
 };

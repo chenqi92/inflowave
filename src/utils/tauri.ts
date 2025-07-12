@@ -81,26 +81,26 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
     case 'get_connections':
       return [
         {
-          id: 'mock-connection-1',
-          name: '本地 InfluxDB',
-          host: 'localhost',
+          id: 'demo-connection-1',
+          name: '演示连接 (模拟数据)',
+          host: 'demo.example.com',
           port: 8086,
-          database: 'mydb',
-          username: 'admin',
+          database: 'demo_db',
+          username: 'demo_user',
           ssl: false,
-          status: 'connected',
-          lastConnected: new Date().toISOString()
+          status: 'disconnected',
+          lastConnected: null
         },
         {
-          id: 'mock-connection-2', 
-          name: '生产环境',
-          host: 'prod.example.com',
+          id: 'demo-connection-2', 
+          name: '示例远程连接',
+          host: 'remote.example.com',
           port: 8086,
-          database: 'production',
+          database: 'sample_db',
           username: 'readonly',
           ssl: true,
           status: 'disconnected',
-          lastConnected: new Date(Date.now() - 86400000).toISOString()
+          lastConnected: null
         }
       ] as T;
       
@@ -114,10 +114,44 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
       
     case 'get_databases':
       return [
-        { name: 'mydb', retentionPolicies: ['autogen'] },
-        { name: 'telegraf', retentionPolicies: ['autogen', '30d'] },
-        { name: '_internal', retentionPolicies: ['monitor'] }
+        'mydb',
+        'telegraf', 
+        '_internal'
       ] as T;
+
+    case 'get_database_info':
+      const dbName = args?.database;
+      const dbInfoMap: Record<string, any> = {
+        'mydb': { name: 'mydb', retentionPolicies: ['autogen'], measurementCount: 5 },
+        'telegraf': { name: 'telegraf', retentionPolicies: ['autogen', '30d'], measurementCount: 12 },
+        '_internal': { name: '_internal', retentionPolicies: ['monitor'], measurementCount: 3 }
+      };
+      return dbInfoMap[dbName || 'mydb'] || null as T;
+
+    case 'get_measurements':
+      return [
+        'cpu',
+        'memory', 
+        'disk',
+        'network',
+        'temperature'
+      ] as T;
+
+    case 'get_retention_policies':
+      const database = args?.database;
+      const policiesMap: Record<string, any[]> = {
+        'mydb': [
+          { name: 'autogen', duration: '0s', shardGroupDuration: '168h', replicationFactor: 1, default: true }
+        ],
+        'telegraf': [
+          { name: 'autogen', duration: '0s', shardGroupDuration: '168h', replicationFactor: 1, default: true },
+          { name: '30d', duration: '720h', shardGroupDuration: '24h', replicationFactor: 1, default: false }
+        ],
+        '_internal': [
+          { name: 'monitor', duration: '168h', shardGroupDuration: '24h', replicationFactor: 1, default: true }
+        ]
+      };
+      return policiesMap[database || 'mydb'] || [] as T;
       
     case 'execute_query':
       return {

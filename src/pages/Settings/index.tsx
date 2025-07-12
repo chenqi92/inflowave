@@ -1,11 +1,32 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs, InputNumber, Switch, Divider } from '@/components/ui';
-import { SaveOutlined, ReloadOutlined, DeleteOutlined, InfoCircleOutlined, ExportOutlined, ImportOutlined } from '@/components/ui';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs, InputNumber, Switch, Divider, PageHeader, Modal } from '@/components/ui';
+import { 
+  SaveOutlined, 
+  ReloadOutlined, 
+  DeleteOutlined, 
+  InfoCircleOutlined, 
+  ExportOutlined, 
+  ImportOutlined, 
+  SettingOutlined, 
+  DatabaseOutlined, 
+  UserOutlined, 
+  BugOutlined,
+  LeftOutlined,
+  HomeOutlined,
+  BellOutlined 
+} from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
+import { useNavigate } from 'react-router-dom';
 import UserPreferences from '@/components/settings/UserPreferences';
+import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
+import ErrorTestButton from '@/components/test/ErrorTestButton';
+import BrowserModeModal from '@/components/common/BrowserModeModal';
+import { useNoticeStore } from '@/store/notice';
+import { isBrowserEnvironment } from '@/utils/tauri';
 import type { AppConfig } from '@/types';
+import '@/styles/settings.css';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -13,13 +34,27 @@ const { Option } = Select;
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [browserModalVisible, setBrowserModalVisible] = useState(false);
+  const navigate = useNavigate();
   const { config, setConfig, setTheme, setLanguage, resetConfig } = useAppStore();
+  
+  // 使用 memo 来确保 config 对象稳定性
+  const stableConfig = useMemo(() => config, [
+    config.theme,
+    config.language,
+    config.queryTimeout,
+    config.maxQueryResults,
+    config.autoSave,
+    config.autoConnect,
+    config.logLevel
+  ]);
   const { clearConnections } = useConnectionStore();
+  const { resetNoticeSettings } = useNoticeStore();
 
   // 初始化表单值
   useEffect(() => {
-    form.setFieldsValue(config);
-  }, [config, form]);
+    form.setFieldsValue(stableConfig);
+  }, [stableConfig]); // 使用稳定的 config 对象
 
   // 保存设置
   const saveSettings = async (values: AppConfig) => {
@@ -52,7 +87,11 @@ const Settings: React.FC = () => {
   // 重置设置
   const handleResetSettings = () => {
     resetConfig();
-    form.setFieldsValue(useAppStore.getState().config);
+    // 延迟设置表单值，确保 store 状态已更新
+    setTimeout(() => {
+      const latestConfig = useAppStore.getState().config;
+      form.setFieldsValue(latestConfig);
+    }, 0);
     message.success('设置已重置为默认值');
   };
 
@@ -66,10 +105,25 @@ const Settings: React.FC = () => {
         version: '1.0.0',
       };
 
-      // 这里应该调用 Tauri 的文件保存对话框
-      await safeTauriInvoke('export_settings', { settings });
-      message.success('设置已导出');
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：下载为JSON文件
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        message.success('设置已导出到下载文件夹');
+      } else {
+        // Tauri 环境：调用原生文件保存对话框
+        await safeTauriInvoke('export_settings', { settings });
+        message.success('设置已导出');
+      }
     } catch (error) {
+      console.error('导出设置失败:', error);
       message.error(`导出设置失败: ${error}`);
     }
   };
@@ -77,53 +131,144 @@ const Settings: React.FC = () => {
   // 导入设置
   const importSettings = async () => {
     try {
-      // 这里应该调用 Tauri 的文件选择对话框
-      const settings = await safeTauriInvoke('import_settings');
-
-      if (settings) {
-        // 应用导入的设置
-        setConfig(settings.appConfig);
-        message.success('设置已导入');
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：使用文件输入
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            try {
+              const text = await file.text();
+              const settings = JSON.parse(text);
+              
+              if (settings.appConfig) {
+                setConfig(settings.appConfig);
+                form.setFieldsValue(settings.appConfig);
+                message.success('设置已导入');
+              } else {
+                message.error('无效的设置文件格式');
+              }
+            } catch (parseError) {
+              console.error('解析设置文件失败:', parseError);
+              message.error('设置文件格式错误');
+            }
+          }
+        };
+        input.click();
+      } else {
+        // Tauri 环境：调用原生文件选择对话框
+        const settings = await safeTauriInvoke('import_settings');
+        if (settings) {
+          setConfig(settings.appConfig);
+          form.setFieldsValue(settings.appConfig);
+          message.success('设置已导入');
+        }
       }
     } catch (error) {
+      console.error('导入设置失败:', error);
       message.error(`导入设置失败: ${error}`);
     }
   };
 
   // 清除所有数据
   const clearAllData = () => {
-    clearConnections();
-    resetConfig();
-    form.setFieldsValue(useAppStore.getState().config);
-    message.success('所有数据已清除');
+    Modal.confirm({
+      title: '确认重置所有设置',
+      content: '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？',
+      okText: '确认重置',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: () => {
+        clearConnections();
+        resetConfig();
+        setTimeout(() => {
+          const latestConfig = useAppStore.getState().config;
+          form.setFieldsValue(latestConfig);
+        }, 0);
+        message.success('所有数据已清除');
+      },
+    });
+  };
+
+  // 清除连接配置（带确认）
+  const clearConnectionsWithConfirm = () => {
+    Modal.confirm({
+      title: '确认清除连接配置',
+      content: '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？',
+      okText: '确认清除',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: () => {
+        clearConnections();
+        message.success('连接配置已清除');
+      },
+    });
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <Title level={2} className="mb-2">应用设置</Title>
-        <Text type="secondary" className="text-base">
-          配置应用程序的行为和外观，个性化您的使用体验
-        </Text>
+    <div className="settings-page">
+      {/* 页面头部 */}
+      <div className="settings-header bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              type="text" 
+              icon={<LeftOutlined />} 
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 cursor-pointer"
+              title="返回"
+            />
+            <div>
+              <Title level={2} className="mb-0">应用设置</Title>
+              <Text type="secondary" className="text-sm">
+                配置应用程序的行为和外观，个性化您的使用体验
+              </Text>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              icon={<HomeOutlined />} 
+              onClick={() => navigate('/')}
+              type="default"
+              className="cursor-pointer"
+            >
+              返回主页
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        <Tabs
-          items={[
-            {
-              key: 'general',
-              label: '常规设置',
-              children: (
-                <Card className="shadow-sm">
-                  <div className="mb-4">
-                    <Title level={4} className="mb-2">基础配置</Title>
-                    <Text type="secondary">设置应用程序的基本行为和外观</Text>
-                  </div>
+      {/* 设置内容 */}
+      <div className="settings-content p-6 max-w-6xl mx-auto">
+
+        <div className="space-y-6">
+          <Tabs
+            size="large"
+            type="card"
+            className="settings-tabs"
+            items={[
+              {
+                key: 'general',
+                label: (
+                  <span className="flex items-center space-x-2">
+                    <SettingOutlined />
+                    <span>常规设置</span>
+                  </span>
+                ),
+                children: (
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <Card className="shadow-sm border-0">
+                      <div className="mb-6">
+                        <Title level={4} className="mb-2 text-gray-800">基础配置</Title>
+                        <Text type="secondary" className="text-base">设置应用程序的基本行为和外观</Text>
+                      </div>
                   <Form
                     form={form}
                     layout="vertical"
                     onFinish={saveSettings}
-                    initialValues={config}
+                    initialValues={stableConfig}
                   >
                     <Row gutter={24}>
                       <Col span={12}>
@@ -235,6 +380,7 @@ const Settings: React.FC = () => {
                             loading={loading}
                             icon={<SaveOutlined />}
                             size="large"
+                            className="cursor-pointer"
                           >
                             保存设置
                           </Button>
@@ -242,24 +388,31 @@ const Settings: React.FC = () => {
                             icon={<ReloadOutlined />}
                             onClick={handleResetSettings}
                             size="large"
+                            className="cursor-pointer"
                           >
                             重置为默认
                           </Button>
                         </Space>
                       </Form.Item>
                     </div>
-                  </Form>
-                </Card>
+                    </Form>
+                  </Card>
+                </div>
               ),
             },
             {
               key: 'data',
-              label: '数据管理',
+              label: (
+                <span className="flex items-center space-x-2">
+                  <DatabaseOutlined />
+                  <span>数据管理</span>
+                </span>
+              ),
               children: (
-                <div className="space-y-6">
-                  <Card title="导入/导出" className="shadow-sm">
+                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                  <Card title="导入/导出" className="shadow-sm border-0">
                     <div className="mb-4">
-                      <Title level={5} className="mb-2">数据备份与恢复</Title>
+                      <Title level={5} className="mb-2 text-gray-800">数据备份与恢复</Title>
                       <Paragraph className="text-gray-600">
                         您可以导出当前的应用设置和连接配置，或从文件中导入设置。
                       </Paragraph>
@@ -271,6 +424,7 @@ const Settings: React.FC = () => {
                         onClick={exportSettings}
                         size="large"
                         type="dashed"
+                        className="cursor-pointer"
                       >
                         导出设置
                       </Button>
@@ -279,13 +433,14 @@ const Settings: React.FC = () => {
                         onClick={importSettings}
                         size="large"
                         type="dashed"
+                        className="cursor-pointer"
                       >
                         导入设置
                       </Button>
                     </Space>
                   </Card>
 
-                  <Card title="数据清理" className="border-red-200 shadow-sm">
+                  <Card title="数据清理" className="border-red-200 shadow-sm border-0 bg-red-50">
                     <div className="mb-4">
                       <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
                       <Alert
@@ -308,11 +463,8 @@ const Settings: React.FC = () => {
                         <Button
                           danger
                           icon={<DeleteOutlined />}
-                          onClick={() => {
-                            clearConnections();
-                            message.success('连接配置已清除');
-                          }}
-                          className="mt-2"
+                          onClick={clearConnectionsWithConfirm}
+                          className="mt-2 cursor-pointer"
                           size="large"
                         >
                           清除连接配置
@@ -332,7 +484,7 @@ const Settings: React.FC = () => {
                           danger
                           icon={<DeleteOutlined />}
                           onClick={clearAllData}
-                          className="mt-2"
+                          className="mt-2 cursor-pointer"
                           size="large"
                         >
                           重置所有设置
@@ -345,51 +497,57 @@ const Settings: React.FC = () => {
             },
             {
               key: 'about',
-              label: '关于',
+              label: (
+                <span className="flex items-center space-x-2">
+                  <InfoCircleOutlined />
+                  <span>关于</span>
+                </span>
+              ),
               children: (
-                <Card title="关于 InfluxDB GUI Manager" className="shadow-sm">
-                  <Row gutter={24}>
-                    <Col span={12}>
-                      <div className="space-y-4">
-                        <div>
-                          <Text strong className="text-lg">版本信息</Text>
-                          <br />
-                          <Text className="text-base">v0.1.0-alpha</Text>
-                        </div>
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <Card title="关于 InfloWave" className="shadow-sm border-0">
+                    <Row gutter={24}>
+                      <Col span={12}>
+                        <div className="space-y-4">
+                          <div>
+                            <Text strong className="text-lg text-gray-800">版本信息</Text>
+                            <br />
+                            <Text className="text-base">v0.1.0-alpha</Text>
+                          </div>
 
-                        <div>
-                          <Text strong className="text-lg">构建时间</Text>
-                          <br />
-                          <Text className="text-base">{new Date().toLocaleDateString()}</Text>
-                        </div>
+                          <div>
+                            <Text strong className="text-lg text-gray-800">构建时间</Text>
+                            <br />
+                            <Text className="text-base">{new Date().toLocaleDateString()}</Text>
+                          </div>
 
-                        <div>
-                          <Text strong className="text-lg">技术栈</Text>
-                          <br />
-                          <Text className="text-base">React + TypeScript + Rust + Tauri</Text>
-                        </div>
+                          <div>
+                            <Text strong className="text-lg text-gray-800">技术栈</Text>
+                            <br />
+                            <Text className="text-base">React + TypeScript + Rust + Tauri</Text>
+                          </div>
                       </div>
                     </Col>
 
-                    <Col span={12}>
-                      <div className="space-y-4">
-                        <div>
-                          <Text strong className="text-lg">支持的 InfluxDB 版本</Text>
-                          <br />
-                          <Text className="text-base">InfluxDB 1.x</Text>
-                        </div>
+                      <Col span={12}>
+                        <div className="space-y-4">
+                          <div>
+                            <Text strong className="text-lg text-gray-800">支持的 InfluxDB 版本</Text>
+                            <br />
+                            <Text className="text-base">InfluxDB 1.x</Text>
+                          </div>
 
-                        <div>
-                          <Text strong className="text-lg">开源协议</Text>
-                          <br />
-                          <Text className="text-base">MIT License</Text>
-                        </div>
+                          <div>
+                            <Text strong className="text-lg text-gray-800">开源协议</Text>
+                            <br />
+                            <Text className="text-base">MIT License</Text>
+                          </div>
 
-                        <div>
-                          <Text strong className="text-lg">项目地址</Text>
-                          <br />
-                          <Text className="text-base text-blue-600 hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
-                        </div>
+                          <div>
+                            <Text strong className="text-lg text-gray-800">项目地址</Text>
+                            <br />
+                            <Text className="text-base text-blue-600 hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
+                          </div>
                       </div>
                     </Col>
                   </Row>
@@ -412,15 +570,124 @@ const Settings: React.FC = () => {
                     showIcon
                     icon={<InfoCircleOutlined />}
                   />
-                </Card>
+                  </Card>
+                </div>
               ),
             },
             {
               key: 'preferences',
-              label: '用户偏好',
-              children: <UserPreferences />,
+              label: (
+                <span className="flex items-center space-x-2">
+                  <UserOutlined />
+                  <span>用户偏好</span>
+                </span>
+              ),
+              children: (
+                <div className="bg-gray-50 p-6 rounded-lg">
+                  <UserPreferences />
+                </div>
+              ),
+            },
+            {
+              key: 'notifications',
+              label: (
+                <span className="flex items-center space-x-2">
+                  <BellOutlined />
+                  <span>通知设置</span>
+                </span>
+              ),
+              children: (
+                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                  <Card title="浏览器模式提醒" className="shadow-sm border-0">
+                    <div className="mb-4">
+                      <Title level={4} className="mb-2 text-gray-800">预览模式说明</Title>
+                      <Text type="secondary">
+                        管理在浏览器环境中运行时显示的功能说明提醒。
+                      </Text>
+                    </div>
+                    
+                    {isBrowserEnvironment() && (
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        <Alert
+                          message="当前运行在浏览器预览模式"
+                          description="您可以重新查看功能说明，或者重置提醒设置。"
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: '16px' }}
+                        />
+                        
+                        <Space>
+                          <Button
+                            type="primary"
+                            icon={<InfoCircleOutlined />}
+                            onClick={() => setBrowserModalVisible(true)}
+                            className="cursor-pointer"
+                          >
+                            查看功能说明
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={() => {
+                              resetNoticeSettings();
+                              message.success('提醒设置已重置，下次启动时会再次显示功能说明');
+                            }}
+                            className="cursor-pointer"
+                          >
+                            重置提醒设置
+                          </Button>
+                        </Space>
+                      </Space>
+                    )}
+                    
+                    {!isBrowserEnvironment() && (
+                      <Alert
+                        message="当前运行在桌面应用模式"
+                        description="桌面应用环境中不需要显示浏览器模式提醒。"
+                        type="success"
+                        showIcon
+                      />
+                    )}
+                  </Card>
+                </div>
+              ),
+            },
+            {
+              key: 'developer',
+              label: (
+                <span className="flex items-center space-x-2">
+                  <BugOutlined />
+                  <span>开发者工具</span>
+                </span>
+              ),
+              children: (
+                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                  {/* 错误测试工具 - 仅开发环境显示 */}
+                  {(import.meta as any).env?.DEV && (
+                    <Card title="错误测试工具" className="shadow-sm border-yellow-200 border-0 bg-yellow-50">
+                      <ErrorTestButton />
+                    </Card>
+                  )}
+                  
+                  <Card title="错误日志查看器" className="shadow-sm border-0">
+                    <div className="mb-4">
+                      <Title level={4} className="mb-2 text-gray-800">应用错误日志</Title>
+                      <Text type="secondary">
+                        查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
+                      </Text>
+                    </div>
+                    <ErrorLogViewer />
+                  </Card>
+                </div>
+              ),
             },
           ]}
+        />
+        </div>
+
+        {/* 浏览器模式说明弹框 */}
+        <BrowserModeModal
+          visible={browserModalVisible}
+          onClose={() => setBrowserModalVisible(false)}
         />
       </div>
     </div>
