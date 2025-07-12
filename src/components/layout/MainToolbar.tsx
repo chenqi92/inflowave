@@ -20,11 +20,13 @@ import {
   EditOutlined,
   ThunderboltOutlined,
   ApiOutlined,
-  HomeOutlined
+  HomeOutlined,
+  ToolOutlined
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import SettingsModal from '@/components/common/SettingsModal';
+import ConnectionModal from '@/components/common/ConnectionModal';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -35,11 +37,12 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const { activeConnectionId, connections } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [connectionModalVisible, setConnectionModalVisible] = useState(false);
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
 
   const handleConnectionMenuClick = ({ key }: { key: string }) => {
     if (key === 'new' || key === 'manage') {
-      navigate('/connections');
+      setConnectionModalVisible(true);
     } else {
       // 选择连接
       const { setActiveConnectionId } = useConnectionStore.getState();
@@ -97,11 +100,11 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         break;
       case 'import':
         // 导入数据
-        navigate('/data-import');
+        navigate('/data-write');
         break;
       case 'export':
-        // 导出数据
-        navigate('/data-export');
+        // 导出数据  
+        console.log('导出数据功能尚未实现');
         break;
       default:
         console.log('未处理的文件菜单项:', key);
@@ -152,6 +155,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         // 控制台
         console.log('打开控制台');
         break;
+      case 'dev-tools':
+        // 开发者工具
+        navigate('/dev-tools');
+        break;
       case 'preferences':
         // 首选项
         setSettingsVisible(true);
@@ -171,6 +178,11 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       key: 'console',
       label: '控制台',
       icon: <BugOutlined />,
+    },
+    {
+      key: 'dev-tools',
+      label: '开发者工具',
+      icon: <ToolOutlined />,
     },
     { type: 'divider' },
     {
@@ -248,6 +260,19 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
           保存
         </Button>
 
+        {/* 工具菜单 */}
+        <Dropdown 
+          menu={{ items: toolsMenuItems, onClick: handleToolsMenuClick }} 
+          placement="bottomLeft"
+        >
+          <Button 
+            icon={<ToolOutlined />}
+            className="h-8"
+          >
+            工具
+          </Button>
+        </Dropdown>
+
         <Divider type="vertical" className="h-6" />
 
         {/* 视图切换 */}
@@ -308,7 +333,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
           <Button 
             icon={<ApiOutlined />}
             className="h-8"
-            onClick={() => navigate('/connections')}
+            onClick={() => setConnectionModalVisible(true)}
           >
             连接
           </Button>
@@ -336,6 +361,12 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
+      />
+
+      {/* 连接管理模态框 */}
+      <ConnectionModal
+        visible={connectionModalVisible}
+        onClose={() => setConnectionModalVisible(false)}
       />
     </div>
   );

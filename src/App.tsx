@@ -13,21 +13,11 @@ import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './
 import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import BrowserModeModal from './components/common/BrowserModeModal';
-import AppToolbar from './components/layout/AppToolbar';
-import AppStatusBar from './components/layout/AppStatusBar';
-import NativeMenuHandler from './components/layout/NativeMenuHandler';
 import { useNoticeStore } from './store/notice';
 
 // 页面组件
-import ConnectionsPage from './pages/Connections';
 import DatabasePage from './pages/Database';
 import QueryPage from './pages/Query';
-import DashboardPage from './pages/Dashboard';
-import DataWritePage from './pages/DataWrite';
-import VisualizationPage from './pages/Visualization';
-import PerformancePage from './pages/Performance';
-import ExtensionsPage from './pages/Extensions';
-// import SettingsPage from './pages/Settings'; // 已移至模态框
 import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
@@ -73,18 +63,16 @@ const MainLayout: React.FC = () => {
   }, []);
 
   // 检查是否为需要特殊处理的页面（连接管理等）
-  const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test'].includes(location.pathname);
+  const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/dev-tools'].includes(location.pathname);
 
   if (isSpecialPage) {
     return (
       <Layout className="desktop-layout">
         {/* 应用工具栏 */}
-        <AppToolbar />
 
         {/* 主内容区 */}
         <Content className="desktop-content">
           <Routes>
-            <Route path="/connections" element={<ConnectionsPage />} />
             <Route path="/debug" element={<ConnectionDebug />} />
             <Route path="/typography-test" element={<TypographyTest />} />
             <Route path="/ui-test" element={<UITest />} />
@@ -123,11 +111,15 @@ const MainLayout: React.FC = () => {
         <Route path="/write" element={<DataGripStyleLayout />} />
         <Route path="/performance" element={<DataGripStyleLayout />} />
         <Route path="/extensions" element={<DataGripStyleLayout />} />
+        <Route path="/dev-tools" element={<DataGripStyleLayout />} />
         
         {/* 保留旧版本用于比较 */}
         <Route path="/datagrip-old" element={<DataGripLayout />} />
         <Route path="/query-old" element={<QueryPage />} />
         <Route path="/database-old" element={<DatabasePage />} />
+        
+        {/* 重定向旧的连接页面到主页 */}
+        <Route path="/connections" element={<DataGripStyleLayout />} />
       </Routes>
 
       {/* 浏览器模式提醒弹框 */}

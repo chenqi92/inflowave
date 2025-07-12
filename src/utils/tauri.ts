@@ -26,16 +26,27 @@ export const safeTauriInvoke = async <T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T | null> => {
-  if (!isTauriEnvironment()) {
-    console.warn(`Tauri command "${command}" called in browser environment, returning mock data`);
-    return getMockData<T>(command, args);
+  const isRunningInTauri = isTauriEnvironment();
+  console.log(`🚀 API 调用: ${command}`, {
+    args,
+    environment: isRunningInTauri ? 'Tauri' : 'Browser',
+    willUseMockData: !isRunningInTauri
+  });
+  
+  if (!isRunningInTauri) {
+    console.warn(`🌐 Tauri command "${command}" called in browser environment, returning mock data`);
+    const mockResult = getMockData<T>(command, args);
+    console.log(`🤖 模拟数据返回:`, mockResult);
+    return mockResult;
   }
 
   try {
     const { invoke } = await import('@tauri-apps/api/core');
-    return await invoke<T>(command, args);
+    const result = await invoke<T>(command, args);
+    console.log(`✅ Tauri API 返回结果 (${command}):`, result);
+    return result;
   } catch (error) {
-    console.error(`Tauri invoke error for command "${command}":`, error);
+    console.error(`❌ Tauri invoke error for command "${command}":`, error);
     throw error;
   }
 };
@@ -116,7 +127,8 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
       return [
         'mydb',
         'telegraf', 
-        '_internal'
+        '_internal',
+        'test_db'  // 添加测试数据库
       ] as T;
 
     case 'get_database_info':
@@ -124,18 +136,42 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
       const dbInfoMap: Record<string, any> = {
         'mydb': { name: 'mydb', retentionPolicies: ['autogen'], measurementCount: 5 },
         'telegraf': { name: 'telegraf', retentionPolicies: ['autogen', '30d'], measurementCount: 12 },
-        '_internal': { name: '_internal', retentionPolicies: ['monitor'], measurementCount: 3 }
+        '_internal': { name: '_internal', retentionPolicies: ['monitor'], measurementCount: 3 },
+        'test_db': { name: 'test_db', retentionPolicies: ['autogen'], measurementCount: 5 }
       };
       return dbInfoMap[dbName || 'mydb'] || null as T;
 
     case 'get_measurements':
-      return [
-        'cpu',
-        'memory', 
-        'disk',
-        'network',
-        'temperature'
-      ] as T;
+      const dbParam = args?.database;
+      const measurementsMap: Record<string, string[]> = {
+        'mydb': [
+          'cpu',
+          'memory', 
+          'disk',
+          'network',
+          'temperature'
+        ],
+        'telegraf': [
+          'cpu',
+          'mem',
+          'disk',
+          'net',
+          'system'
+        ],
+        '_internal': [
+          'database',
+          'httpd',
+          'write'
+        ],
+        'test_db': [
+          'sensor_data',        // IoT传感器数据
+          'system_metrics',     // 系统监控数据
+          'business_metrics',   // 业务指标数据
+          'network_traffic',    // 网络流量数据
+          'app_performance'     // 应用性能数据
+        ]
+      };
+      return measurementsMap[dbParam || 'mydb'] || measurementsMap['mydb'] as T;
 
     case 'get_retention_policies':
       const database = args?.database;
@@ -149,6 +185,9 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
         ],
         '_internal': [
           { name: 'monitor', duration: '168h', shardGroupDuration: '24h', replicationFactor: 1, default: true }
+        ],
+        'test_db': [
+          { name: 'autogen', duration: '0s', shardGroupDuration: '168h', replicationFactor: 1, default: true }
         ]
       };
       return policiesMap[database || 'mydb'] || [] as T;

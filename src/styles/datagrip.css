@@ -1,5 +1,36 @@
 /* DataGrip风格的样式优化 */
 
+/* 数据库浏览器树形组件对齐修复 */
+.database-explorer-tree .ant-tree-treenode {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.database-explorer-tree .ant-tree-node-content-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  line-height: normal !important;
+  min-height: 24px !important;
+}
+
+.database-explorer-tree .ant-tree-iconEle {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-right: 4px !important;
+}
+
+.database-explorer-tree .ant-tree-title {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+}
+
+.database-explorer-tree .ant-tree-switcher {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 /* 编辑器标签页样式 */
 .editor-tabs .ant-tabs-nav {
   margin: 0;

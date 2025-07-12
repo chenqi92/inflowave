@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from 'antd';
 import { cn } from '@/utils/cn';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
 import ResultPanel from './ResultPanel';
+import { dataExplorerRefresh } from '@/utils/refreshEvents';
 
 // 临时导入页面组件用于视图切换
 import DatabasePage from '../../pages/Database';
@@ -23,6 +24,18 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
   const [currentView, setCurrentView] = useState('query');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // 刷新数据源面板的方法
+  const refreshDataExplorer = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // 监听全局刷新事件
+  useEffect(() => {
+    const removeListener = dataExplorerRefresh.addListener(refreshDataExplorer);
+    return removeListener;
+  }, []);
 
   // 根据当前视图渲染主要内容
   const renderMainContent = () => {
@@ -119,7 +132,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           className="bg-white border-r border-gray-200"
           theme="light"
         >
-          <DatabaseExplorer collapsed={leftPanelCollapsed} />
+          <DatabaseExplorer 
+            collapsed={leftPanelCollapsed} 
+            refreshTrigger={refreshTrigger}
+          />
         </Sider>
 
         {/* 右侧主要工作区域 */}

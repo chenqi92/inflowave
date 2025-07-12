@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, message, Spin } from 'antd';
+import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, message, Spin, Alert } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import type { MenuProps } from 'antd';
 import { 
@@ -27,6 +27,7 @@ const { TabPane } = Tabs;
 
 interface DatabaseExplorerProps {
   collapsed?: boolean;
+  refreshTrigger?: number; // 用于触发刷新
 }
 
 interface TableInfo {
@@ -40,7 +41,7 @@ interface DatabaseInfo {
   tables: TableInfo[];
 }
 
-const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }) => {
+const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger }) => {
   const { connections, activeConnectionId, getConnection } = useConnectionStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
@@ -52,27 +53,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
 
   // 加载指定连接的数据库列表
   const loadDatabases = async (connectionId: string): Promise<string[]> => {
+    console.log(`🔍 开始加载连接 ${connectionId} 的数据库列表...`);
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId,
       });
+      console.log(`✅ 成功加载数据库列表:`, dbList);
       return dbList || [];
     } catch (error) {
-      console.error(`加载连接 ${connectionId} 的数据库失败:`, error);
+      console.error(`❌ 加载连接 ${connectionId} 的数据库失败:`, error);
       return [];
     }
   };
 
   // 加载指定数据库的表列表
   const loadTables = async (connectionId: string, database: string): Promise<string[]> => {
+    console.log(`🔍 开始加载数据库 "${database}" 的表列表...`);
     try {
       const tables = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
         database,
       });
+      console.log(`✅ 成功加载表列表 (数据库: ${database}):`, tables);
       return tables || [];
     } catch (error) {
-      console.error(`加载数据库 ${database} 的表失败:`, error);
+      console.error(`❌ 加载数据库 ${database} 的表失败:`, error);
       return [];
     }
   };
@@ -94,17 +99,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
 
   // 构建完整的树形数据
   const buildCompleteTreeData = useCallback(async () => {
+    console.log(`🏗️ 开始构建树形数据，活跃连接: ${activeConnectionId}`);
     setLoading(true);
     const treeNodes: DataNode[] = [];
 
     for (const connection of connections) {
       const connectionNode: DataNode = {
         title: (
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${
+          <div className="flex items-center gap-2 min-h-[20px]">
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
               connection.id === activeConnectionId ? 'bg-green-500' : 'bg-gray-300'
             }`} />
-            <span>{connection.name}</span>
+            <span className="flex-1">{connection.name}</span>
           </div>
         ),
         key: `connection-${connection.id}`,
@@ -114,23 +120,32 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
 
       // 为活跃连接加载数据库
       if (connection.id === activeConnectionId) {
+        console.log(`🔗 处理活跃连接: ${connection.name} (${connection.id})`);
         try {
           const databases = await loadDatabases(connection.id!);
+          console.log(`📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`);
           connectionNode.children = databases.map(db => ({
-            title: db,
+            title: (
+              <span className="flex items-center min-h-[20px]">
+                {db}
+              </span>
+            ),
             key: `database-${connection.id}-${db}`,
             icon: <DatabaseOutlined className="text-purple-600" />,
             isLeaf: false,
             // 延迟加载表数据
           }));
         } catch (error) {
-          console.error('加载数据库失败:', error);
+          console.error('❌ 加载数据库失败:', error);
         }
+      } else {
+        console.log(`⏭️ 跳过非活跃连接: ${connection.name}`);
       }
 
       treeNodes.push(connectionNode);
     }
 
+    console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
     setTreeData(treeNodes);
     setLoading(false);
   }, [connections, activeConnectionId]);
@@ -138,8 +153,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
   // 动态加载节点数据
   const loadData = useCallback(async (node: any): Promise<void> => {
     const { key } = node;
+    console.log(`🔄 开始动态加载节点: ${key}`);
     
-    if (loadingNodes.has(key)) return;
+    if (loadingNodes.has(key)) {
+      console.log(`⏳ 节点 ${key} 正在加载中，跳过`);
+      return;
+    }
     
     setLoadingNodes(prev => new Set(prev).add(key));
 
@@ -147,10 +166,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
       if (key.startsWith('database-')) {
         // 加载表列表
         const [, connectionId, database] = key.split('-', 3);
+        console.log(`📋 加载数据库表列表: connectionId=${connectionId}, database=${database}`);
         const tables = await loadTables(connectionId, database);
         
         const tableNodes: DataNode[] = tables.map(table => ({
-          title: table,
+          title: (
+            <span className="flex items-center min-h-[20px]">
+              {table}
+            </span>
+          ),
           key: `table-${connectionId}-${database}-${table}`,
           icon: <TableOutlined className="text-green-600" />,
           isLeaf: false,
@@ -181,11 +205,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
         // 添加标签节点
         if (tags.length > 0) {
           children.push({
-            title: `标签 (${tags.length})`,
+            title: (
+              <span className="flex items-center min-h-[20px]">
+                标签 ({tags.length})
+              </span>
+            ),
             key: `tags-${connectionId}-${database}-${table}`,
             icon: <TagsOutlined className="text-orange-500" />,
             children: tags.map(tag => ({
-              title: tag,
+              title: (
+                <span className="flex items-center min-h-[20px]">
+                  {tag}
+                </span>
+              ),
               key: `tag-${connectionId}-${database}-${table}-${tag}`,
               icon: <BranchesOutlined className="text-orange-400" />,
               isLeaf: true,
@@ -196,14 +228,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
         // 添加字段节点
         if (fields.length > 0) {
           children.push({
-            title: `字段 (${fields.length})`,
+            title: (
+              <span className="flex items-center min-h-[20px]">
+                字段 ({fields.length})
+              </span>
+            ),
             key: `fields-${connectionId}-${database}-${table}`,
             icon: <FieldTimeOutlined className="text-blue-500" />,
             children: fields.map(field => ({
               title: (
-                <div className="flex items-center gap-2">
-                  <span>{field.name}</span>
-                  <span className="text-xs text-gray-500">({field.type})</span>
+                <div className="flex items-center gap-2 min-h-[20px]">
+                  <span className="flex-1">{field.name}</span>
+                  <span className="text-xs text-gray-500 flex-shrink-0">({field.type})</span>
                 </div>
               ),
               key: `field-${connectionId}-${database}-${table}-${field.name}`,
@@ -341,10 +377,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
     buildCompleteTreeData();
   }, [buildCompleteTreeData]);
 
-  // 初始化数据
+  // 监听连接和连接变化
   useEffect(() => {
+    console.log(`🔄 DatabaseExplorer: 连接或活跃连接发生变化`);
+    console.log(`🔗 所有连接 (${connections.length}):`, connections.map(c => `${c.name} (${c.id})`));
+    console.log(`✨ 活跃连接ID: ${activeConnectionId}`);
+    if (activeConnection) {
+      console.log(`🎯 活跃连接详情:`, {
+        name: activeConnection.name,
+        host: activeConnection.host,
+        port: activeConnection.port,
+        database: activeConnection.database
+      });
+    }
     buildCompleteTreeData();
-  }, [buildCompleteTreeData]);
+  }, [connections, activeConnectionId, buildCompleteTreeData]);
+
+  // 监听刷新触发器
+  useEffect(() => {
+    if (refreshTrigger) {
+      console.log(`🔄 收到刷新触发器，重新加载数据...`);
+      buildCompleteTreeData();
+    }
+  }, [refreshTrigger, buildCompleteTreeData]);
 
   if (collapsed) {
     return (
@@ -378,7 +433,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
             <Badge 
               status={activeConnection ? "success" : "default"} 
               text={
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium flex items-center">
                   {activeConnection ? activeConnection.name : '未连接'}
                 </span>
               }
@@ -394,16 +449,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
                 loading={loading}
               />
             </Tooltip>
-            <Dropdown 
-              menu={{ items: [] }}
-              trigger={['click']}
-            >
+            <Tooltip title="调试信息">
               <Button 
                 type="text" 
                 icon={<MoreOutlined />}
                 size="small"
+                onClick={() => {
+                  console.log('🔍 手动触发调试信息:');
+                  console.log('- 连接列表:', connections);
+                  console.log('- 活跃连接ID:', activeConnectionId);
+                  console.log('- 活跃连接对象:', activeConnection);
+                  console.log('- 树数据:', treeData);
+                  console.log('- 加载状态:', loading);
+                  console.log('- 正在加载的节点:', loadingNodes);
+                }}
               />
-            </Dropdown>
+            </Tooltip>
           </Space>
         </div>
 
@@ -434,6 +495,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
               ),
               children: (
                 <div className="px-2 h-full overflow-auto">
+                  {isBrowserEnvironment() && (
+                    <div className="mb-3">
+                      <Alert
+                        message="模拟数据模式"
+                        description="当前显示模拟数据。要连接真实InfluxDB，请使用 Tauri 应用。"
+                        type="info"
+                        size="small"
+                        showIcon
+                      />
+                    </div>
+                  )}
                   {loading ? (
                     <div className="flex items-center justify-center py-8">
                       <Spin tip="加载中..." />
@@ -446,7 +518,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false }
                       expandedKeys={expandedKeys}
                       onExpand={handleExpand}
                       onSelect={handleSelect}
-                      className="bg-transparent"
+                      className="bg-transparent database-explorer-tree"
                     />
                   ) : (
                     <div className="text-center text-gray-500 mt-8">
