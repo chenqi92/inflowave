@@ -1,4 +1,4 @@
-import { safeTauriInvoke } from './tauri';
+import { safeTauriInvoke, isBrowserEnvironment } from './tauri';
 
 /**
  * 文件操作工具类
@@ -11,6 +11,11 @@ export class FileOperations {
    * @param content 文件内容
    */
   static async writeFile(path: string, content: string): Promise<void> {
+    // 在浏览器环境中跳过文件操作
+    if (isBrowserEnvironment()) {
+      return;
+    }
+    
     try {
       await safeTauriInvoke('write_text_file', {
         path,
@@ -28,6 +33,11 @@ export class FileOperations {
    * @param content 要追加的内容
    */
   static async appendToFile(path: string, content: string): Promise<void> {
+    // 在浏览器环境中跳过文件操作
+    if (isBrowserEnvironment()) {
+      return;
+    }
+    
     try {
       await safeTauriInvoke('append_text_file', {
         path,
@@ -45,6 +55,11 @@ export class FileOperations {
    * @returns 文件内容
    */
   static async readFile(path: string): Promise<string> {
+    // 在浏览器环境中返回空内容
+    if (isBrowserEnvironment()) {
+      return '';
+    }
+    
     try {
       return await safeTauriInvoke('read_text_file', { path });
     } catch (error) {
@@ -58,6 +73,11 @@ export class FileOperations {
    * @param path 文件路径
    */
   static async deleteFile(path: string): Promise<void> {
+    // 在浏览器环境中跳过文件操作
+    if (isBrowserEnvironment()) {
+      return;
+    }
+    
     try {
       await safeTauriInvoke('delete_file', { path });
     } catch (error) {
@@ -72,6 +92,11 @@ export class FileOperations {
    * @returns 是否存在
    */
   static async fileExists(path: string): Promise<boolean> {
+    // 在浏览器环境中总是返回 false
+    if (isBrowserEnvironment()) {
+      return false;
+    }
+    
     try {
       return await safeTauriInvoke('file_exists', { path });
     } catch (error) {
@@ -85,6 +110,11 @@ export class FileOperations {
    * @param path 目录路径
    */
   static async createDir(path: string): Promise<void> {
+    // 在浏览器环境中跳过目录操作
+    if (isBrowserEnvironment()) {
+      return;
+    }
+    
     try {
       await safeTauriInvoke('create_dir', { path });
     } catch (error) {
@@ -105,6 +135,17 @@ export class FileOperations {
     isFile: boolean;
     isDir: boolean;
   }> {
+    // 在浏览器环境中返回默认文件信息
+    if (isBrowserEnvironment()) {
+      return {
+        size: 0,
+        modified: new Date().toISOString(),
+        created: new Date().toISOString(),
+        isFile: true,
+        isDir: false
+      };
+    }
+    
     try {
       return await safeTauriInvoke('get_file_info', { path });
     } catch (error) {

@@ -47,7 +47,7 @@ impl QueryService {
                 
                 self.add_to_history(history).await;
                 
-                info!("查询执行成功，耗时: {}ms", result.execution_time);
+                info!("查询执行成功，耗时: {}ms", result.execution_time.unwrap_or(0));
                 Ok(result)
             }
             Err(e) => {

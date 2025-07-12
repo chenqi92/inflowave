@@ -74,9 +74,9 @@ impl InfluxClient {
                 let execution_time = start.elapsed().as_millis() as u64;
 
                 // 解析 InfluxDB 查询结果
-                let query_result = self.parse_query_result("query_executed".to_string(), execution_time)?;
+                let query_result = self.parse_query_result(result, execution_time)?;
 
-                info!("查询执行成功，耗时: {}ms，返回 {} 行", execution_time, query_result.row_count);
+                info!("查询执行成功，耗时: {}ms，返回 {} 行", execution_time, query_result.row_count.unwrap_or(0));
 
                 Ok(query_result)
             }
@@ -88,20 +88,93 @@ impl InfluxClient {
     }
 
     /// 解析查询结果
-    fn parse_query_result(&self, _result: String, execution_time: u64) -> Result<QueryResult> {
-        // 尝试解析 InfluxDB 查询结果
-        // 注意：influxdb crate 的结果解析可能需要根据实际返回格式调整
+    fn parse_query_result(&self, result: String, execution_time: u64) -> Result<QueryResult> {
+        debug!("解析查询结果: {}", result);
+        
+        // 尝试解析 JSON 格式的 InfluxDB 响应
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut columns = Vec::new();
+                let mut rows = Vec::new();
 
-        // 如果是 SHOW 类型的查询，返回简单的文本结果
-        let columns = vec!["name".to_string()];
-        let mut rows = Vec::new();
+                // InfluxDB 返回的典型格式：
+                // {"results":[{"series":[{"name":"measurement","columns":["time","value"],"values":[["2023-01-01T00:00:00Z",123]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                // 获取列名
+                                if let Some(cols) = serie.get("columns").and_then(|c| c.as_array()) {
+                                    if columns.is_empty() {
+                                        columns = cols.iter()
+                                            .filter_map(|c| c.as_str().map(|s| s.to_string()))
+                                            .collect();
+                                    }
+                                }
 
-        // 这里需要根据实际的 InfluxDB 响应格式来解析
-        // 暂时返回一个示例结果，实际使用时需要根据 influxdb crate 的 API 调整
-        rows.push(vec![serde_json::Value::String("示例结果".to_string())]);
+                                // 获取数据行
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value_row in values {
+                                        if let Some(row_array) = value_row.as_array() {
+                                            let row: Vec<serde_json::Value> = row_array.iter()
+                                                .map(|v| v.clone())
+                                                .collect();
+                                            rows.push(row);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
 
-        let query_result = QueryResult::new(columns, rows, execution_time);
-        Ok(query_result)
+                // 如果没有找到结构化数据，可能是 SHOW 命令的响应
+                if columns.is_empty() && rows.is_empty() {
+                    // 尝试解析简单的字符串结果
+                    if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                        for result_item in results {
+                            if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                                for serie in series {
+                                    if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                        columns = vec!["name".to_string()];
+                                        for value in values {
+                                            if let Some(arr) = value.as_array() {
+                                                if let Some(first) = arr.first() {
+                                                    rows.push(vec![first.clone()]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Ok(QueryResult::new(columns, rows, execution_time))
+            }
+            Err(e) => {
+                debug!("JSON 解析失败，尝试作为原始文本处理: {}", e);
+                
+                // 如果不是 JSON，可能是简单的文本响应
+                let lines: Vec<&str> = result.lines().collect();
+                if !lines.is_empty() {
+                    let columns = vec!["result".to_string()];
+                    let rows: Vec<Vec<serde_json::Value>> = lines.iter()
+                        .map(|line| vec![serde_json::Value::String(line.to_string())])
+                        .collect();
+                    Ok(QueryResult::new(columns, rows, execution_time))
+                } else {
+                    Ok(QueryResult::new(vec![], vec![], execution_time))
+                }
+            }
+        }
     }
 
     /// 获取数据库列表
@@ -111,17 +184,59 @@ impl InfluxClient {
         let query = influxdb::ReadQuery::new("SHOW DATABASES");
         
         match self.client.query(query).await {
-            Ok(_result) => {
-                // 临时实现：返回默认数据库列表
-                // TODO: 正确解析 InfluxDB 查询结果
-                let databases = vec!["_internal".to_string(), "mydb".to_string()];
-
+            Ok(result) => {
+                // 解析 SHOW DATABASES 的响应
+                let databases = self.parse_show_databases_result(result)?;
                 info!("获取到 {} 个数据库", databases.len());
                 Ok(databases)
             }
             Err(e) => {
                 error!("获取数据库列表失败: {}", e);
                 Err(anyhow::anyhow!("获取数据库列表失败: {}", e))
+            }
+        }
+    }
+
+    /// 解析 SHOW DATABASES 结果
+    fn parse_show_databases_result(&self, result: String) -> Result<Vec<String>> {
+        debug!("解析数据库列表结果: {}", result);
+        
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut databases = Vec::new();
+
+                // SHOW DATABASES 返回格式：
+                // {"results":[{"series":[{"name":"databases","columns":["name"],"values":[["_internal"],["mydb"]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value in values {
+                                        if let Some(arr) = value.as_array() {
+                                            if let Some(db_name) = arr.first().and_then(|v| v.as_str()) {
+                                                databases.push(db_name.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
+
+                Ok(databases)
+            }
+            Err(e) => {
+                debug!("JSON 解析失败: {}", e);
+                // 如果解析失败，返回空列表
+                Ok(vec![])
             }
         }
     }
@@ -205,7 +320,7 @@ impl InfluxClient {
         match self.client.query(query).await {
             Ok(result) => {
                 // 解析测量列表结果
-                let measurements = self.parse_measurements_result("measurements_result".to_string())?;
+                let measurements = self.parse_measurements_result(result)?;
                 info!("获取到 {} 个测量", measurements.len());
                 Ok(measurements)
             }
@@ -217,17 +332,47 @@ impl InfluxClient {
     }
 
     /// 解析测量列表结果
-    fn parse_measurements_result(&self, _result: String) -> Result<Vec<String>> {
-        // 临时实现：返回示例测量列表
-        // TODO: 根据实际的 InfluxDB 响应格式解析
-        let measurements = vec![
-            "cpu".to_string(),
-            "memory".to_string(),
-            "disk".to_string(),
-            "network".to_string(),
-            "temperature".to_string()
-        ];
-        Ok(measurements)
+    fn parse_measurements_result(&self, result: String) -> Result<Vec<String>> {
+        debug!("解析测量列表结果: {}", result);
+        
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut measurements = Vec::new();
+
+                // SHOW MEASUREMENTS 返回格式：
+                // {"results":[{"series":[{"name":"measurements","columns":["name"],"values":[["cpu"],["memory"],["disk"]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value in values {
+                                        if let Some(arr) = value.as_array() {
+                                            if let Some(measurement_name) = arr.first().and_then(|v| v.as_str()) {
+                                                measurements.push(measurement_name.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
+
+                Ok(measurements)
+            }
+            Err(e) => {
+                debug!("JSON 解析失败: {}", e);
+                // 如果解析失败，返回空列表
+                Ok(vec![])
+            }
+        }
     }
 
     /// 写入 Line Protocol 数据
@@ -273,8 +418,136 @@ impl InfluxClient {
         }
     }
 
+    /// 获取表结构信息 (字段和标签)
+    pub async fn get_table_schema(&self, _database: &str, measurement: &str) -> Result<TableSchema> {
+        debug!("获取表 '{}' 的结构信息", measurement);
+
+        // 获取字段信息
+        let field_query = format!("SHOW FIELD KEYS FROM \"{}\"", measurement);
+        let field_result = self.client.query(influxdb::ReadQuery::new(&field_query)).await
+            .map_err(|e| anyhow::anyhow!("获取字段信息失败: {}", e))?;
+
+        // 获取标签信息  
+        let tag_query = format!("SHOW TAG KEYS FROM \"{}\"", measurement);
+        let tag_result = self.client.query(influxdb::ReadQuery::new(&tag_query)).await
+            .map_err(|e| anyhow::anyhow!("获取标签信息失败: {}", e))?;
+
+        // 解析字段和标签
+        let fields = self.parse_field_keys_result(field_result)?;
+        let tags = self.parse_tag_keys_result(tag_result)?;
+
+        Ok(TableSchema { tags, fields })
+    }
+
+    /// 解析字段键结果
+    fn parse_field_keys_result(&self, result: String) -> Result<Vec<FieldSchema>> {
+        debug!("解析字段键结果: {}", result);
+        
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut fields = Vec::new();
+
+                // SHOW FIELD KEYS 返回格式：
+                // {"results":[{"series":[{"name":"measurement","columns":["fieldKey","fieldType"],"values":[["field1","float"],["field2","string"]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value in values {
+                                        if let Some(arr) = value.as_array() {
+                                            if arr.len() >= 2 {
+                                                if let (Some(field_name), Some(field_type)) = 
+                                                    (arr[0].as_str(), arr[1].as_str()) {
+                                                    fields.push(FieldSchema {
+                                                        name: field_name.to_string(),
+                                                        r#type: field_type.to_string(),
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
+
+                Ok(fields)
+            }
+            Err(e) => {
+                debug!("JSON 解析失败: {}", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 解析标签键结果
+    fn parse_tag_keys_result(&self, result: String) -> Result<Vec<String>> {
+        debug!("解析标签键结果: {}", result);
+        
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut tags = Vec::new();
+
+                // SHOW TAG KEYS 返回格式：
+                // {"results":[{"series":[{"name":"measurement","columns":["tagKey"],"values":[["tag1"],["tag2"]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value in values {
+                                        if let Some(arr) = value.as_array() {
+                                            if let Some(tag_name) = arr.first().and_then(|v| v.as_str()) {
+                                                tags.push(tag_name.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
+
+                Ok(tags)
+            }
+            Err(e) => {
+                debug!("JSON 解析失败: {}", e);
+                Ok(vec![])
+            }
+        }
+    }
+
     /// 获取配置信息
     pub fn get_config(&self) -> &ConnectionConfig {
         &self.config
     }
+}
+
+/// 表结构信息
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct TableSchema {
+    pub tags: Vec<String>,
+    pub fields: Vec<FieldSchema>,
+}
+
+/// 字段结构信息
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct FieldSchema {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
 }

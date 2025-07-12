@@ -316,6 +316,62 @@ const getMockData = <T = any>(command: string, args?: Record<string, any>): T | 
         }
       ] as T;
 
+    case 'get_table_schema':
+      // 根据传入的测量名返回不同的表结构
+      const measurement = args?.measurement || 'sensor_data';
+      const schemaMap: Record<string, any> = {
+        'sensor_data': {
+          tags: ['device_id', 'location', 'sensor_type'],
+          fields: [
+            { name: 'temperature', type: 'float' },
+            { name: 'humidity', type: 'float' },
+            { name: 'pressure', type: 'float' },
+            { name: 'status', type: 'string' }
+          ]
+        },
+        'system_metrics': {
+          tags: ['host', 'region'],
+          fields: [
+            { name: 'cpu_usage', type: 'float' },
+            { name: 'memory_usage', type: 'float' },
+            { name: 'disk_usage', type: 'float' },
+            { name: 'active_connections', type: 'integer' }
+          ]
+        },
+        'business_metrics': {
+          tags: ['department', 'project'],
+          fields: [
+            { name: 'revenue', type: 'float' },
+            { name: 'users_count', type: 'integer' },
+            { name: 'conversion_rate', type: 'float' },
+            { name: 'status', type: 'string' }
+          ]
+        },
+        'network_traffic': {
+          tags: ['interface', 'direction'],
+          fields: [
+            { name: 'bytes_in', type: 'integer' },
+            { name: 'bytes_out', type: 'integer' },
+            { name: 'packets_in', type: 'integer' },
+            { name: 'packets_out', type: 'integer' }
+          ]
+        },
+        'app_performance': {
+          tags: ['app_name', 'version'],
+          fields: [
+            { name: 'response_time', type: 'float' },
+            { name: 'throughput', type: 'float' },
+            { name: 'error_rate', type: 'float' },
+            { name: 'active_users', type: 'integer' }
+          ]
+        }
+      };
+      return schemaMap[measurement] || schemaMap['sensor_data'] as T;
+
+    case 'append_text_file':
+      // 对于文件写入操作，返回成功状态但不实际操作
+      return { success: true } as T;
+
     default:
       console.warn(`No mock data available for command: ${command}`);
       return null;

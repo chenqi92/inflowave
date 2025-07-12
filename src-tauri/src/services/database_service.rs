@@ -248,7 +248,7 @@ impl DatabaseService {
         
         // 解析字段键
         let mut field_keys = Vec::new();
-        for row in result.rows {
+        for row in result.rows() {
             if let Some(field_key) = row.get(0) {
                 if let Some(key_str) = field_key.as_str() {
                     field_keys.push(key_str.to_string());
@@ -283,7 +283,7 @@ impl DatabaseService {
         
         // 解析标签键
         let mut tag_keys = Vec::new();
-        for row in result.rows {
+        for row in result.rows() {
             if let Some(tag_key) = row.get(0) {
                 if let Some(key_str) = tag_key.as_str() {
                     tag_keys.push(key_str.to_string());
@@ -319,7 +319,7 @@ impl DatabaseService {
         
         // 解析标签值
         let mut tag_values = Vec::new();
-        for row in result.rows {
+        for row in result.rows() {
             if let Some(tag_value) = row.get(1) { // 标签值通常在第二列
                 if let Some(value_str) = tag_value.as_str() {
                     tag_values.push(value_str.to_string());
@@ -375,6 +375,6 @@ impl DatabaseService {
         let result = client.execute_query(&query).await
             .context("获取序列数量失败")?;
         
-        Ok(result.row_count as u64)
+        Ok(result.row_count.unwrap_or(0) as u64)
     }
 }

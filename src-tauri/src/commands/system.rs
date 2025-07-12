@@ -77,7 +77,7 @@ async fn get_series_count(
 ) -> Result<u64, anyhow::Error> {
     let query = format!("SHOW SERIES ON \"{}\"", database);
     let result = client.execute_query(&query).await?;
-    Ok(result.row_count as u64)
+    Ok(result.row_count.unwrap_or(0) as u64)
 }
 
 /// 健康检查

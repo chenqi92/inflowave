@@ -139,6 +139,7 @@ async fn main() {
             get_field_keys,
             get_tag_keys,
             get_tag_values,
+            get_table_schema,
             import_data,
 
             // New database operations

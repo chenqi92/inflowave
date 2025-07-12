@@ -13,12 +13,28 @@ pub struct QueryRequest {
 /// 查询结果
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResult {
+    pub results: Vec<QueryResultItem>,
+    #[serde(rename = "executionTime")]
+    pub execution_time: Option<u64>,
+    #[serde(rename = "rowCount")]
+    pub row_count: Option<usize>,
+    pub error: Option<String>,
+}
+
+/// 查询结果项
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryResultItem {
+    pub series: Option<Vec<Series>>,
+    pub error: Option<String>,
+}
+
+/// 数据系列
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Series {
+    pub name: String,
     pub columns: Vec<String>,
-    pub rows: Vec<Vec<serde_json::Value>>,
-    pub execution_time: u64,
-    pub row_count: usize,
-    pub query_id: String,
-    pub timestamp: DateTime<Utc>,
+    pub values: Vec<Vec<serde_json::Value>>,
+    pub tags: Option<std::collections::HashMap<String, String>>,
 }
 
 impl QueryResult {
@@ -28,25 +44,91 @@ impl QueryResult {
         execution_time: u64,
     ) -> Self {
         let row_count = rows.len();
+        let series = if !columns.is_empty() || !rows.is_empty() {
+            vec![Series {
+                name: "query_result".to_string(),
+                columns,
+                values: rows,
+                tags: None,
+            }]
+        } else {
+            vec![]
+        };
+
         Self {
-            columns,
-            rows,
-            execution_time,
-            row_count,
-            query_id: uuid::Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            results: vec![QueryResultItem {
+                series: if series.is_empty() { None } else { Some(series) },
+                error: None,
+            }],
+            execution_time: Some(execution_time),
+            row_count: Some(row_count),
+            error: None,
+        }
+    }
+
+    pub fn with_series(series: Vec<Series>, execution_time: u64) -> Self {
+        let total_rows: usize = series.iter().map(|s| s.values.len()).sum();
+        Self {
+            results: vec![QueryResultItem {
+                series: Some(series),
+                error: None,
+            }],
+            execution_time: Some(execution_time),
+            row_count: Some(total_rows),
+            error: None,
         }
     }
 
     pub fn empty() -> Self {
         Self {
-            columns: vec![],
-            rows: vec![],
-            execution_time: 0,
-            row_count: 0,
-            query_id: uuid::Uuid::new_v4().to_string(),
-            timestamp: Utc::now(),
+            results: vec![QueryResultItem {
+                series: None,
+                error: None,
+            }],
+            execution_time: Some(0),
+            row_count: Some(0),
+            error: None,
         }
+    }
+
+    pub fn with_error(error: String) -> Self {
+        Self {
+            results: vec![QueryResultItem {
+                series: None,
+                error: Some(error.clone()),
+            }],
+            execution_time: None,
+            row_count: None,
+            error: Some(error),
+        }
+    }
+
+    // 兼容性方法，用于访问旧的字段格式
+    pub fn get_columns(&self) -> Vec<String> {
+        self.results
+            .first()
+            .and_then(|r| r.series.as_ref())
+            .and_then(|s| s.first())
+            .map(|s| s.columns.clone())
+            .unwrap_or_default()
+    }
+    
+    pub fn get_rows(&self) -> Vec<Vec<serde_json::Value>> {
+        self.results
+            .first()
+            .and_then(|r| r.series.as_ref())
+            .and_then(|s| s.first())
+            .map(|s| s.values.clone())
+            .unwrap_or_default()
+    }
+
+    // 为了兼容性，添加这些字段作为属性访问器
+    pub fn columns(&self) -> Vec<String> {
+        self.get_columns()
+    }
+
+    pub fn rows(&self) -> Vec<Vec<serde_json::Value>> {
+        self.get_rows()
     }
 }
 
@@ -76,11 +158,11 @@ impl QueryHistory {
             connection_id,
             database,
             query,
-            execution_time: result.execution_time,
-            row_count: result.row_count,
-            success: true,
-            error: None,
-            timestamp: result.timestamp,
+            execution_time: result.execution_time.unwrap_or(0),
+            row_count: result.row_count.unwrap_or(0),
+            success: result.error.is_none(),
+            error: result.error.clone(),
+            timestamp: Utc::now(),
         }
     }
 

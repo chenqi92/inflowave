@@ -1,5 +1,6 @@
 use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats};
 use crate::services::{ConnectionService, database_service::DatabaseService};
+use crate::database::client::TableSchema;
 use tauri::State;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
@@ -286,12 +287,12 @@ pub async fn get_table_structure(
 /// 生成插入数据模板
 #[tauri::command]
 pub async fn generate_insert_template(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    _connection_service: State<'_, ConnectionService>,
+    _connection_id: String,
     database: String,
     table: String,
 ) -> Result<String, String> {
-    debug!("处理生成插入模板命令: {} - {} - {}", connection_id, database, table);
+    debug!("处理生成插入模板命令: {} - {} - {}", _connection_id, database, table);
 
     // 生成 Line Protocol 格式的插入模板
     let template = format!(
@@ -359,12 +360,12 @@ fn export_to_csv(result: &QueryResult, file_path: &str) -> Result<String, String
         .map_err(|e| format!("创建文件失败: {}", e))?;
 
     // 写入表头
-    let header = result.columns.join(",");
+    let header = result.columns().join(",");
     writeln!(file, "{}", header)
         .map_err(|e| format!("写入表头失败: {}", e))?;
 
     // 写入数据行
-    for row in &result.rows {
+    for row in &result.rows() {
         let row_str: Vec<String> = row.iter()
             .map(|value| match value {
                 serde_json::Value::String(s) => format!("\"{}\"", s),
@@ -378,7 +379,7 @@ fn export_to_csv(result: &QueryResult, file_path: &str) -> Result<String, String
             .map_err(|e| format!("写入数据行失败: {}", e))?;
     }
 
-    Ok(format!("成功导出 {} 行数据到 {}", result.row_count, file_path))
+    Ok(format!("成功导出 {} 行数据到 {}", result.row_count.unwrap_or(0), file_path))
 }
 
 /// 导出为JSON格式
@@ -395,7 +396,7 @@ fn export_to_json(result: &QueryResult, file_path: &str) -> Result<String, Strin
     file.write_all(json_data.as_bytes())
         .map_err(|e| format!("写入文件失败: {}", e))?;
 
-    Ok(format!("成功导出 {} 行数据到 {}", result.row_count, file_path))
+    Ok(format!("成功导出 {} 行数据到 {}", result.row_count.unwrap_or(0), file_path))
 }
 
 /// 刷新数据库结构
@@ -606,7 +607,7 @@ pub async fn get_field_keys(
     
     // 解析字段键
     let mut field_keys = Vec::new();
-    for row in result.rows {
+    for row in result.rows() {
         if let Some(field_key) = row.get(0) {
             if let Some(key_str) = field_key.as_str() {
                 field_keys.push(key_str.to_string());
@@ -648,7 +649,7 @@ pub async fn get_tag_keys(
     
     // 解析标签键
     let mut tag_keys = Vec::new();
-    for row in result.rows {
+    for row in result.rows() {
         if let Some(tag_key) = row.get(0) {
             if let Some(key_str) = tag_key.as_str() {
                 tag_keys.push(key_str.to_string());
@@ -691,7 +692,7 @@ pub async fn get_tag_values(
     
     // 解析标签值
     let mut tag_values = Vec::new();
-    for row in result.rows {
+    for row in result.rows() {
         if let Some(tag_value) = row.get(1) { // 标签值通常在第二列
             if let Some(value_str) = tag_value.as_str() {
                 tag_values.push(value_str.to_string());
@@ -700,6 +701,30 @@ pub async fn get_tag_values(
     }
     
     Ok(tag_values)
+}
+
+/// 获取表结构信息（包含字段和标签）
+#[tauri::command]
+pub async fn get_table_schema(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    measurement: String,
+) -> Result<TableSchema, String> {
+    debug!("处理获取表结构命令: {} - {} - {}", connection_id, database, measurement);
+    
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+    
+    client.get_table_schema(&database, &measurement).await
+        .map_err(|e| {
+            error!("获取表结构失败: {}", e);
+            format!("获取表结构失败: {}", e)
+        })
 }
 
 /// 字段映射配置

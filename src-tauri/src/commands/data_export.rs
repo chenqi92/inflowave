@@ -78,7 +78,7 @@ pub async fn export_query_data(
             format!("查询执行失败: {}", e)
         })?;
 
-    let row_count = query_result.rows.len() as u64;
+    let row_count = query_result.rows().len() as u64;
     let mut errors = Vec::new();
 
     // 根据格式导出数据
@@ -158,7 +158,7 @@ pub async fn get_export_formats() -> Result<Vec<serde_json::Value>, String> {
 pub async fn estimate_export_size(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
-    database: String,
+    _database: String,
     query: String,
     format: ExportFormat,
 ) -> Result<serde_json::Value, String> {
@@ -178,9 +178,9 @@ pub async fn estimate_export_size(
     let count_result = client.execute_query(&count_query).await
         .map_err(|e| format!("统计查询失败: {}", e))?;
 
-    let row_count = if let Some(first_row) = count_result.rows.first() {
+    let row_count = if let Some(first_row) = count_result.rows().first() {
         // Find the index of the count column
-        if let Some(count_index) = count_result.columns.iter().position(|col| col.contains("count")) {
+        if let Some(count_index) = count_result.columns().iter().position(|col| col.contains("count")) {
             if let Some(count_value) = first_row.get(count_index) {
                 count_value.as_f64().unwrap_or(0.0) as u64
             } else {
@@ -232,16 +232,16 @@ fn export_to_csv(
         .unwrap_or(true);
 
     // 写入表头
-    if include_headers && !query_result.columns.is_empty() {
-        let header = query_result.columns.join(delimiter);
+    if include_headers && !query_result.columns().is_empty() {
+        let header = query_result.columns().join(delimiter);
         writeln!(writer, "{}", header)
             .map_err(|e| format!("写入表头失败: {}", e))?;
     }
 
     // 写入数据行
-    for row in &query_result.rows {
+    for row in &query_result.rows() {
         let mut values = Vec::new();
-        for (index, _column) in query_result.columns.iter().enumerate() {
+        for (index, _column) in query_result.columns().iter().enumerate() {
             let value = row.get(index)
                 .map(|v| format_csv_value(v))
                 .unwrap_or_default();
@@ -267,7 +267,7 @@ fn export_to_json(
     file_path: &str,
     _options: &Option<ExportOptions>,
 ) -> Result<u64, String> {
-    let json_data = serde_json::to_string_pretty(&query_result.rows)
+    let json_data = serde_json::to_string_pretty(&query_result.rows())
         .map_err(|e| format!("JSON 序列化失败: {}", e))?;
 
     std::fs::write(file_path, json_data)
@@ -298,16 +298,16 @@ fn export_to_sql(
     let mut writer = BufWriter::new(file);
 
     // 写入 SQL 插入语句
-    for row in &query_result.rows {
+    for row in &query_result.rows() {
         let mut values = Vec::new();
-        for (index, _column) in query_result.columns.iter().enumerate() {
+        for (index, _column) in query_result.columns().iter().enumerate() {
             let value = row.get(index)
                 .map(|v| format_sql_value(v))
                 .unwrap_or("NULL".to_string());
             values.push(value);
         }
         
-        let columns_str = query_result.columns.iter()
+        let columns_str = query_result.columns().iter()
             .map(|c| format!("\"{}\"", c))
             .collect::<Vec<_>>()
             .join(", ");

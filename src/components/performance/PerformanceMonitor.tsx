@@ -133,7 +133,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       dataIndex: 'rowsReturned',
       key: 'rowsReturned',
       width: 100,
-      render: (rows: number) => rows.toLocaleString(),
+      render: (rows: number) => (rows || 0).toLocaleString(),
     },
     {
       title: '时间',

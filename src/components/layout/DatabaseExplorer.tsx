@@ -106,7 +106,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     for (const connection of connections) {
       const connectionNode: DataNode = {
         title: (
-          <div className="flex items-center gap-2 min-h-[20px]">
+          <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
               connection.id === activeConnectionId ? 'bg-green-500' : 'bg-gray-300'
             }`} />
@@ -126,7 +126,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           console.log(`📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`);
           connectionNode.children = databases.map(db => ({
             title: (
-              <span className="flex items-center min-h-[20px]">
+              <span className="flex items-center">
                 {db}
               </span>
             ),
@@ -171,9 +171,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         
         const tableNodes: DataNode[] = tables.map(table => ({
           title: (
-            <span className="flex items-center min-h-[20px]">
-              {table}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex-1">{table}</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">表</span>
+            </div>
           ),
           key: `table-${connectionId}-${database}-${table}`,
           icon: <TableOutlined className="text-green-600" />,
@@ -202,61 +203,82 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         
         const children: DataNode[] = [];
         
-        // 添加标签节点
-        if (tags.length > 0) {
+        // 直接添加标签列
+        tags.forEach(tag => {
           children.push({
             title: (
-              <span className="flex items-center min-h-[20px]">
-                标签 ({tags.length})
-              </span>
-            ),
-            key: `tags-${connectionId}-${database}-${table}`,
-            icon: <TagsOutlined className="text-orange-500" />,
-            children: tags.map(tag => ({
-              title: (
-                <span className="flex items-center min-h-[20px]">
-                  {tag}
+              <div className="flex items-center gap-2">
+                <span className="flex-1">{tag}</span>
+                <span className="px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded flex-shrink-0">
+                  Tag
                 </span>
-              ),
-              key: `tag-${connectionId}-${database}-${table}-${tag}`,
-              icon: <BranchesOutlined className="text-orange-400" />,
-              isLeaf: true,
-            })),
+                <span className="text-xs text-gray-500 flex-shrink-0">string</span>
+              </div>
+            ),
+            key: `tag-${connectionId}-${database}-${table}-${tag}`,
+            icon: <TagsOutlined className="text-orange-500" />,
+            isLeaf: true,
           });
-        }
+        });
         
-        // 添加字段节点
-        if (fields.length > 0) {
+        // 直接添加字段列
+        fields.forEach(field => {
+          const getFieldIcon = (type: string) => {
+            switch (type.toLowerCase()) {
+              case 'number':
+              case 'float':
+              case 'integer':
+              case 'int64':
+                return <NumberOutlined className="text-blue-500" />;
+              case 'string':
+              case 'text':
+                return <FileTextOutlined className="text-gray-500" />;
+              case 'time':
+              case 'timestamp':
+                return <FieldTimeOutlined className="text-purple-500" />;
+              case 'boolean':
+              case 'bool':
+                return <BranchesOutlined className="text-green-500" />;
+              default:
+                return <FileOutlined className="text-gray-400" />;
+            }
+          };
+
           children.push({
             title: (
-              <span className="flex items-center min-h-[20px]">
-                字段 ({fields.length})
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="flex-1">{field.name}</span>
+                <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded flex-shrink-0">
+                  Field
+                </span>
+                <span className="text-xs text-gray-500 flex-shrink-0">{field.type}</span>
+              </div>
             ),
-            key: `fields-${connectionId}-${database}-${table}`,
-            icon: <FieldTimeOutlined className="text-blue-500" />,
-            children: fields.map(field => ({
-              title: (
-                <div className="flex items-center gap-2 min-h-[20px]">
-                  <span className="flex-1">{field.name}</span>
-                  <span className="text-xs text-gray-500 flex-shrink-0">({field.type})</span>
-                </div>
-              ),
-              key: `field-${connectionId}-${database}-${table}-${field.name}`,
-              icon: field.type === 'number' ? 
-                <NumberOutlined className="text-blue-400" /> : 
-                <FileOutlined className="text-gray-400" />,
-              isLeaf: true,
-            })),
+            key: `field-${connectionId}-${database}-${table}-${field.name}`,
+            icon: getFieldIcon(field.type),
+            isLeaf: true,
           });
-        }
+        });
 
-        // 更新树数据
+        // 更新树数据，同时更新表节点显示列数
         setTreeData(prevData => {
           const updateNode = (nodes: DataNode[]): DataNode[] => {
             return nodes.map(node => {
               if (node.key === key) {
-                return { ...node, children };
+                const totalColumns = tags.length + fields.length;
+                const updatedTitle = (
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1">{table}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">
+                      {totalColumns} 列
+                    </span>
+                  </div>
+                );
+                return { 
+                  ...node, 
+                  children,
+                  title: updatedTitle
+                };
               }
               if (node.children) {
                 return { ...node, children: updateNode(node.children) };
@@ -303,17 +325,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       ];
     }
 
-    if (key.includes('-tables')) {
+    if (key.startsWith('table-')) {
       return [
         {
-          key: 'refresh-tables',
-          label: '刷新表列表',
+          key: 'refresh-table',
+          label: '刷新表结构',
           icon: <ReloadOutlined />,
         },
         {
-          key: 'create-table',
-          label: '创建表',
-          icon: <TableOutlined />,
+          key: 'query-table',
+          label: '查询此表',
+          icon: <FileTextOutlined />,
+        },
+        { type: 'divider' },
+        {
+          key: 'table-properties',
+          label: '表属性',
+          icon: <SettingOutlined />,
+        },
+      ];
+    }
+
+    if (key.startsWith('field-') || key.startsWith('tag-')) {
+      return [
+        {
+          key: 'insert-column',
+          label: '插入到查询',
+          icon: <FileTextOutlined />,
+        },
+        {
+          key: 'copy-name',
+          label: '复制列名',
+          icon: <FileOutlined />,
         },
       ];
     }
@@ -502,12 +545,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                   ) : treeData.length > 0 ? (
                     <Tree
                       showIcon
+                      showLine={{ showLeafIcon: false }}
                       loadData={loadData}
                       treeData={filterTreeData(treeData)}
                       expandedKeys={expandedKeys}
                       onExpand={handleExpand}
                       onSelect={handleSelect}
                       className="bg-transparent database-explorer-tree"
+                      titleRender={(nodeData) => nodeData.title}
                     />
                   ) : (
                     <div className="text-center text-gray-500 mt-8">
