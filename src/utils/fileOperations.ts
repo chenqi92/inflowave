@@ -61,7 +61,8 @@ export class FileOperations {
     }
     
     try {
-      return await safeTauriInvoke('read_text_file', { path });
+      const result = await safeTauriInvoke<string>('read_text_file', { path });
+      return result || '';
     } catch (error) {
       console.error(`读取文件失败 ${path}:`, error);
       throw error;
@@ -98,7 +99,8 @@ export class FileOperations {
     }
     
     try {
-      return await safeTauriInvoke('file_exists', { path });
+      const result = await safeTauriInvoke<boolean>('file_exists', { path });
+      return result || false;
     } catch (error) {
       console.error(`检查文件存在性失败 ${path}:`, error);
       return false;
@@ -147,7 +149,20 @@ export class FileOperations {
     }
     
     try {
-      return await safeTauriInvoke('get_file_info', { path });
+      const result = await safeTauriInvoke<{
+        size: number;
+        modified: string;
+        created: string;
+        isFile: boolean;
+        isDir: boolean;
+      }>('get_file_info', { path });
+      return result || {
+        size: 0,
+        modified: new Date().toISOString(),
+        created: new Date().toISOString(),
+        isFile: true,
+        isDir: false
+      };
     } catch (error) {
       console.error(`获取文件信息失败 ${path}:`, error);
       throw error;

@@ -168,7 +168,7 @@ export class QueryOperationsService {
       if (!result) {
         throw new Error('查询返回结果为空');
       }
-      const count = result.series[0]?.values[0]?.[1] || 0;
+      const count = result.results[0]?.rows[0]?.[1] || 0;
       message.info(`测量 "${params.measurement}" 共有 ${count} 条记录`);
       return result;
     } catch (error) {

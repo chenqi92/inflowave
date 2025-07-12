@@ -10,313 +10,297 @@ export interface ExportOptions {
 
 // 将查询结果转换为 CSV 格式
 export const convertToCSV = (result: QueryResult, options: ExportOptions): string => {
-  if (!result.series || result.series.length === 0) {
+  if (!result.results || result.results.length === 0) {
     return '';
   }
 
   const delimiter = options.delimiter || ',';
   const lines: string[] = [];
 
-  for (const series of result.series) {
-    // 添加系列名称作为注释
-    if (series.name) {
-      lines.push(`# Series: ${series.name}`);
-    }
-
+  for (const resultItem of result.results) {
     // 添加标题行
-    if (options.includeHeaders && series.columns) {
-      lines.push(series.columns.join(delimiter));
+    if (options.includeHeaders && resultItem.columns) {
+      lines.push(resultItem.columns.join(delimiter));
     }
 
     // 添加数据行
-    if (series.values) {
-      for (const row of series.values) {
-        const csvRow = row.map(value => {
+    if (resultItem.rows) {
+      for (const row of resultItem.rows) {
+        const csvRow = row.map((value: any) => {
           if (value === null || value === undefined) {
             return '';
           }
-          
           const stringValue = String(value);
-          
-          // 如果值包含分隔符、引号或换行符，需要用引号包围
           if (stringValue.includes(delimiter) || stringValue.includes('"') || stringValue.includes('\n')) {
-            return `"${stringValue.replace(/"/g, '""')}"`;
+            return '"' + stringValue.replace(/"/g, '""') + '"';
           }
-          
           return stringValue;
-        });
-        
-        lines.push(csvRow.join(delimiter));
+        }).join(delimiter);
+        lines.push(csvRow);
       }
     }
 
-    // 在系列之间添加空行
-    if (result.series.length > 1) {
-      lines.push('');
-    }
+    // 添加空行分隔不同的结果
+    lines.push('');
   }
 
   return lines.join('\n');
 };
 
 // 将查询结果转换为 JSON 格式
-export const convertToJSON = (result: QueryResult): string => {
-  const exportData = {
-    metadata: {
-      executionTime: result.executionTime,
-      rowCount: result.rowCount,
-      exportTime: new Date().toISOString(),
-    },
-    series: result.series?.map(series => ({
-      name: series.name,
-      tags: series.tags,
-      columns: series.columns,
-      values: series.values,
-    })) || [],
-  };
-
-  return JSON.stringify(exportData, null, 2);
-};
-
-// 将查询结果转换为 Excel 兼容的 CSV 格式
-export const convertToExcelCSV = (result: QueryResult, options: ExportOptions): string => {
-  // Excel 使用 UTF-8 BOM 来正确识别编码
-  const bom = '\uFEFF';
-  const csv = convertToCSV(result, { ...options, delimiter: ',' });
-  return bom + csv;
-};
-
-// 将查询结果转换为真正的 Excel 格式
-export const convertToXLSX = (result: QueryResult, options: ExportOptions): ArrayBuffer => {
-  if (!result.series || result.series.length === 0) {
-    // 创建空工作簿
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([['No Data']]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+export const convertToJSON = (result: QueryResult, _options: ExportOptions): string => {
+  const data: any[] = [];
+  
+  if (!result.results || result.results.length === 0) {
+    return JSON.stringify(data, null, 2);
   }
 
-  const wb = XLSX.utils.book_new();
-
-  for (let i = 0; i < result.series.length; i++) {
-    const series = result.series[i];
-    const sheetName = series.name || `Sheet${i + 1}`;
-
-    // 准备数据
-    const data: any[][] = [];
-
-    // 添加标题行
-    if (options.includeHeaders && series.columns) {
-      data.push(series.columns);
+  for (const resultItem of result.results) {
+    if (resultItem.rows && resultItem.columns) {
+      for (const row of resultItem.rows) {
+        const rowObj: any = {};
+        
+        // 添加列数据
+        resultItem.columns.forEach((column, index) => {
+          rowObj[column] = row[index];
+        });
+        
+        data.push(rowObj);
+      }
     }
-
-    // 添加数据行
-    if (series.values) {
-      data.push(...series.values);
-    }
-
-    // 创建工作表
-    const ws = XLSX.utils.aoa_to_sheet(data);
-
-    // 设置列宽
-    if (series.columns) {
-      const colWidths = series.columns.map(() => ({ wch: 15 }));
-      ws['!cols'] = colWidths;
-    }
-
-    // 添加到工作簿
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
-
-  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  
+  return JSON.stringify(data, null, 2);
 };
 
-// 下载文件
-export const downloadFile = (content: string | ArrayBuffer, filename: string, mimeType: string) => {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
+// 将查询结果转换为 Excel 格式
+export const convertToExcel = (result: QueryResult, options: ExportOptions): ArrayBuffer => {
+  const workbook = XLSX.utils.book_new();
+  
+  if (!result.results || result.results.length === 0) {
+    // 创建空工作表
+    const worksheet = XLSX.utils.aoa_to_sheet([['No Data']]);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+  } else {
+    result.results.forEach((resultItem, index) => {
+      const data: any[][] = [];
+      
+      // 添加标题行
+      if (options.includeHeaders && resultItem.columns) {
+        data.push(resultItem.columns);
+      }
+      
+      // 添加数据行
+      if (resultItem.rows) {
+        data.push(...resultItem.rows);
+      }
+      
+      const worksheet = XLSX.utils.aoa_to_sheet(data);
+      const sheetName = `Sheet${index + 1}`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    });
+  }
+  
+  // 生成 Excel 文件缓冲区
+  return XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+};
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
+// 下载数据到文件
+export const downloadData = (
+  data: string | ArrayBuffer,
+  filename: string,
+  mimeType: string
+): void => {
+  try {
+    const blob = new Blob([data], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // 清理对象 URL
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('下载文件失败:', error);
+    throw new Error('文件下载失败');
+  }
+};
 
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+// 根据格式获取 MIME 类型
+export const getMimeType = (format: string): string => {
+  switch (format.toLowerCase()) {
+    case 'csv':
+      return 'text/csv';
+    case 'json':
+      return 'application/json';
+    case 'excel':
+    case 'xlsx':
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    default:
+      return 'text/plain';
+  }
+};
 
-  // 清理 URL 对象
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+// 根据格式获取文件扩展名
+export const getFileExtension = (format: string): string => {
+  switch (format.toLowerCase()) {
+    case 'csv':
+      return '.csv';
+    case 'json':
+      return '.json';
+    case 'excel':
+    case 'xlsx':
+      return '.xlsx';
+    default:
+      return '.txt';
+  }
+};
+
+// 生成默认文件名
+export const generateFilename = (format: string, prefix: string = 'export'): string => {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const extension = getFileExtension(format);
+  return `${prefix}_${timestamp}${extension}`;
 };
 
 // 导出查询结果
-export const exportQueryResult = (result: QueryResult, options: ExportOptions) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const baseFilename = options.filename || `influxdb-query-${timestamp}`;
-
-  let content: string | ArrayBuffer;
-  let filename: string;
-  let mimeType: string;
-
-  switch (options.format) {
-    case 'csv':
-      content = convertToCSV(result, options);
-      filename = `${baseFilename}.csv`;
-      mimeType = 'text/csv;charset=utf-8';
-      break;
-
-    case 'json':
-      content = convertToJSON(result);
-      filename = `${baseFilename}.json`;
-      mimeType = 'application/json;charset=utf-8';
-      break;
-
-    case 'excel':
-      content = convertToExcelCSV(result, options);
-      filename = `${baseFilename}.csv`;
-      mimeType = 'text/csv;charset=utf-8';
-      break;
-
-    case 'xlsx':
-      content = convertToXLSX(result, options);
-      filename = `${baseFilename}.xlsx`;
-      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      break;
-
-    default:
-      throw new Error(`Unsupported export format: ${options.format}`);
+export const exportQueryResult = async (
+  result: QueryResult,
+  options: ExportOptions
+): Promise<void> => {
+  try {
+    const filename = options.filename || generateFilename(options.format);
+    const mimeType = getMimeType(options.format);
+    
+    let data: string | ArrayBuffer;
+    
+    switch (options.format.toLowerCase()) {
+      case 'csv':
+        data = convertToCSV(result, options);
+        break;
+      case 'json':
+        data = convertToJSON(result, options);
+        break;
+      case 'excel':
+      case 'xlsx':
+        data = convertToExcel(result, options);
+        break;
+      default:
+        throw new Error(`不支持的导出格式: ${options.format}`);
+    }
+    
+    await downloadData(data, filename, mimeType);
+  } catch (error) {
+    console.error('导出失败:', error);
+    throw error;
   }
-
-  downloadFile(content, filename, mimeType);
 };
 
-// 生成查询结果统计信息
-export const generateResultStats = (result: QueryResult) => {
-  const stats = {
-    totalSeries: result.series?.length || 0,
-    totalRows: result.rowCount || 0,
-    executionTime: result.executionTime || 0,
-    columns: [] as string[],
-    seriesInfo: [] as Array<{
-      name: string;
-      columns: string[];
-      rowCount: number;
-      tags: Record<string, string>;
-    }>,
+// 获取导出数据的统计信息
+export const getExportStats = (result: QueryResult): {
+  totalRows: number;
+  totalColumns: number;
+  seriesCount: number;
+  dataSize: number;
+} => {
+  let totalRows = 0;
+  let totalColumns = 0;
+  let dataSize = 0;
+  
+  if (result.results && result.results.length > 0) {
+    for (const resultItem of result.results) {
+      if (resultItem.rows) {
+        totalRows += resultItem.rows.length;
+        if (resultItem.columns) {
+          totalColumns = Math.max(totalColumns, resultItem.columns.length);
+        }
+        
+        // 估算数据大小（字节）
+        for (const row of resultItem.rows) {
+          for (const col of row) {
+            dataSize += String(col || '').length;
+          }
+        }
+      }
+    }
+  }
+  
+  return {
+    totalRows,
+    totalColumns,
+    seriesCount: result.results?.length || 0,
+    dataSize
   };
-
-  if (result.series) {
-    const allColumns = new Set<string>();
-    
-    for (const series of result.series) {
-      if (series.columns) {
-        series.columns.forEach(col => allColumns.add(col));
-      }
-      
-      stats.seriesInfo.push({
-        name: series.name || 'Unknown',
-        columns: series.columns || [],
-        rowCount: series.values?.length || 0,
-        tags: series.tags || {},
-      });
-    }
-    
-    stats.columns = Array.from(allColumns);
-  }
-
-  return stats;
 };
 
-// 验证导出选项
-export const validateExportOptions = (options: ExportOptions): string[] => {
+// 验证导出数据
+export const validateExportData = (result: QueryResult): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} => {
   const errors: string[] = [];
-
-  if (!['csv', 'json', 'excel', 'xlsx'].includes(options.format)) {
-    errors.push('Invalid export format. Must be csv, json, excel, or xlsx.');
+  const warnings: string[] = [];
+  
+  if (!result) {
+    errors.push('查询结果为空');
+    return { isValid: false, errors, warnings };
   }
-
-  if (options.delimiter && options.delimiter.length !== 1) {
-    errors.push('Delimiter must be a single character.');
+  
+  if (!result.results || result.results.length === 0) {
+    errors.push('没有可导出的数据结果');
+    return { isValid: false, errors, warnings };
   }
-
-  if (options.filename && !/^[a-zA-Z0-9_\-\s]+$/.test(options.filename)) {
-    errors.push('Filename contains invalid characters.');
-  }
-
-  return errors;
-};
-
-// 预览导出内容（前几行）
-export const previewExportContent = (result: QueryResult, options: ExportOptions, maxLines: number = 10): string => {
-  let content: string;
-
-  switch (options.format) {
-    case 'csv':
-    case 'excel':
-      content = convertToCSV(result, options);
-      break;
-    case 'json':
-      content = convertToJSON(result);
-      break;
-    case 'xlsx': {
-      // 对于 XLSX 格式，显示表格结构预览
-      if (!result.series || result.series.length === 0) {
-        return 'No data to preview';
-      }
-      const series = result.series[0];
-      const previewData = [];
-      if (options.includeHeaders && series.columns) {
-        previewData.push(series.columns.join('\t'));
-      }
-      if (series.values) {
-        const previewRows = series.values.slice(0, maxLines - 1);
-        previewData.push(...previewRows.map(row => row.join('\t')));
-      }
-      if (series.values && series.values.length > maxLines - 1) {
-        previewData.push(`... (${series.values.length - (maxLines - 1)} more rows)`);
-      }
-      return previewData.join('\n');
+  
+  // 检查每个结果的数据完整性
+  result.results.forEach((resultItem, index) => {
+    if (!resultItem.columns || resultItem.columns.length === 0) {
+      warnings.push(`结果 ${index + 1} 缺少列定义`);
     }
-    default:
-      return 'Unsupported format for preview';
-  }
-
-  const lines = content.split('\n');
-  const previewLines = lines.slice(0, maxLines);
-
-  if (lines.length > maxLines) {
-    previewLines.push(`... (${lines.length - maxLines} more lines)`);
-  }
-
-  return previewLines.join('\n');
+    
+    if (!resultItem.rows || resultItem.rows.length === 0) {
+      warnings.push(`结果 ${index + 1} 没有数据行`);
+    }
+    
+    // 检查数据一致性
+    if (resultItem.columns && resultItem.rows) {
+      const columnCount = resultItem.columns.length;
+      const inconsistentRows = resultItem.rows.filter((row: any[]) => row.length !== columnCount);
+      
+      if (inconsistentRows.length > 0) {
+        warnings.push(`结果 ${index + 1} 有 ${inconsistentRows.length} 行数据列数不一致`);
+      }
+    }
+  });
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings
+  };
 };
 
-// 估算文件大小
-export const estimateFileSize = (result: QueryResult, options: ExportOptions): string => {
-  let content: string | ArrayBuffer;
+// 格式化数据大小
+export const formatDataSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
-  switch (options.format) {
-    case 'csv':
-    case 'excel':
-      content = convertToCSV(result, options);
-      break;
-    case 'json':
-      content = convertToJSON(result);
-      break;
-    case 'xlsx':
-      content = convertToXLSX(result, options);
-      break;
-    default:
-      return 'Unknown';
-  }
-
-  const sizeInBytes = new Blob([content]).size;
-
-  if (sizeInBytes < 1024) {
-    return `${sizeInBytes} B`;
-  } else if (sizeInBytes < 1024 * 1024) {
-    return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-  } else {
-    return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+// 预估导出时间
+export const estimateExportTime = (stats: ReturnType<typeof getExportStats>): number => {
+  // 基于数据大小的简单估算，单位：毫秒
+  const baseTime = 100; // 基础时间
+  const sizeMultiplier = Math.max(1, stats.dataSize / 1000); // 每 1KB 增加 1ms
+  const rowMultiplier = Math.max(1, stats.totalRows / 100); // 每 100 行增加 1ms
+  
+  return Math.round(baseTime + sizeMultiplier + rowMultiplier);
 };

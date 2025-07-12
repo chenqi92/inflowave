@@ -1,4 +1,4 @@
-import { safeTauriInvoke, isBrowserEnvironment } from './tauri';
+import { isBrowserEnvironment } from './tauri';
 import { FileOperations } from './fileOperations';
 
 export interface ErrorLogEntry {
@@ -19,14 +19,14 @@ export interface ErrorLogEntry {
 
 class ErrorLogger {
   private logFilePath: string;
-  private maxLogSize: number;
+  private _maxLogSize: number;
   private sessionId: string;
   private logBuffer: ErrorLogEntry[] = [];
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: number | null = null;
 
   constructor() {
     this.logFilePath = 'logs/error.log';
-    this.maxLogSize = 10 * 1024 * 1024; // 10MB
+    this._maxLogSize = 10 * 1024 * 1024; // 10MB
     this.sessionId = this.generateSessionId();
     this.initializeLogging();
   }
@@ -77,7 +77,7 @@ class ErrorLogger {
     const sessionInfo: ErrorLogEntry = {
       id: this.generateId(),
       timestamp: new Date().toISOString(),
-      type: 'info',
+      type: 'javascript',
       level: 'info',
       message: `=== 新会话开始 ===`,
       userAgent: navigator.userAgent,
@@ -210,12 +210,16 @@ class ErrorLogger {
     this.scheduleFlush();
 
     // 同时输出到控制台（开发环境）
-    if (import.meta.env?.DEV) {
-      console.group(`🐛 Error Logged [${logEntry.type}:${logEntry.level}]`);
-      console.log('Message:', logEntry.message);
-      if (logEntry.stack) console.log('Stack:', logEntry.stack);
-      if (logEntry.additional) console.log('Additional:', logEntry.additional);
-      console.groupEnd();
+    try {
+      if (import.meta?.env?.DEV) {
+        console.group(`🐛 Error Logged [${logEntry.type}:${logEntry.level}]`);
+        console.log('Message:', logEntry.message);
+        if (logEntry.stack) console.log('Stack:', logEntry.stack);
+        if (logEntry.additional) console.log('Additional:', logEntry.additional);
+        console.groupEnd();
+      }
+    } catch {
+      // Ignore errors when accessing import.meta
     }
   }
 
@@ -289,7 +293,7 @@ class ErrorLogger {
   private formatLogEntry(entry: ErrorLogEntry): string {
     const parts = [
       `[${entry.timestamp}]`,
-      `[${entry.sessionId || this.sessionId}]`,
+      `[${this.sessionId}]`,
       `[${entry.type.toUpperCase()}:${entry.level.toUpperCase()}]`,
       `${entry.message}`
     ];
