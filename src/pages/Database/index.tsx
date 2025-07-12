@@ -666,7 +666,13 @@ const Database: React.FC = () => {
                   okText: '删除',
                   okType: 'danger',
                   cancelText: '取消',
+                  closable: true,
+                  keyboard: true,
+                  maskClosable: true,
                   onOk: () => deleteDatabase(params.database),
+                  onCancel: () => {
+                    // 明确处理取消操作
+                  },
                 });
                 break;
 
@@ -1071,6 +1077,9 @@ const Database: React.FC = () => {
                   okText: '删除',
                   okType: 'danger',
                   cancelText: '取消',
+                  closable: true,
+                  keyboard: true,
+                  maskClosable: true,
                   onOk: async () => {
                     try {
                       await safeTauriInvoke('drop_measurement', {
@@ -1083,6 +1092,9 @@ const Database: React.FC = () => {
                     } catch (error) {
                       message.error(`删除测量失败: ${error}`);
                     }
+                  },
+                  onCancel: () => {
+                    // 明确处理取消操作
                   },
                 });
                 break;

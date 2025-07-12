@@ -54,6 +54,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             Modal.info({
               title: `表结构 - ${tableName}`,
               width: 800,
+              closable: true,
+              keyboard: true,
+              maskClosable: true,
               content: (
                 <div>
                   <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
@@ -61,6 +64,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                   </pre>
                 </div>
               ),
+              onOk: () => {
+                // 确保能正常关闭
+              },
             });
             message.success(`已获取表 ${tableName} 的结构信息`);
           } catch (error) {
@@ -81,6 +87,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             Modal.info({
               title: `插入数据模板 - ${tableName}`,
               width: 800,
+              closable: true,
+              keyboard: true,
+              maskClosable: true,
               content: (
                 <div>
                   <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
@@ -88,6 +97,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                   </pre>
                 </div>
               ),
+              onOk: () => {
+                // 确保能正常关闭
+              },
             });
             message.success(`已生成表 ${tableName} 的插入模板`);
           } catch (error) {
@@ -135,6 +147,11 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             // 显示导出选项对话框
             Modal.confirm({
               title: `导出表数据 - ${tableName}`,
+              okText: '确认',
+              cancelText: '取消',
+              closable: true,
+              keyboard: true,
+              maskClosable: true,
               content: (
                 <div>
                   <p>选择导出格式和选项：</p>
@@ -187,6 +204,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               ),
               onOk() {
                 // 对话框确认后的操作
+              },
+              onCancel() {
+                // 明确处理取消操作
               },
             });
           } catch (error) {

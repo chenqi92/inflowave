@@ -39,6 +39,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             Modal.info({
               title: `创建 Measurement - ${databaseName}`,
               width: 800,
+              closable: true,
+              keyboard: true,
+              maskClosable: true,
               content: (
                 <div>
                   <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
@@ -46,6 +49,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
                   </pre>
                 </div>
               ),
+              onOk: () => {
+                // 确保能正常关闭
+              },
             });
             message.success(`已生成数据库 ${databaseName} 的 measurement 创建模板`);
           } catch (error) {
@@ -79,6 +85,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             Modal.info({
               title: `数据库信息 - ${databaseName}`,
               width: 800,
+              closable: true,
+              keyboard: true,
+              maskClosable: true,
               content: (
                 <div>
                   <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
@@ -86,6 +95,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
                   </pre>
                 </div>
               ),
+              onOk: () => {
+                // 确保能正常关闭
+              },
             });
             message.success(`已获取数据库 ${databaseName} 的详细信息`);
           } catch (error) {

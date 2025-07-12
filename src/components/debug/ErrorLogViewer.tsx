@@ -197,6 +197,9 @@ const ErrorLogViewer: React.FC = () => {
       content: '这将删除所有错误日志，此操作不可恢复。',
       okText: '确认',
       cancelText: '取消',
+      closable: true,
+      keyboard: true,
+      maskClosable: true,
       onOk: async () => {
         try {
           await FileOperations.deleteFile('logs/error.log');
@@ -206,6 +209,9 @@ const ErrorLogViewer: React.FC = () => {
         } catch (error) {
           message.error('清除日志失败');
         }
+      },
+      onCancel: () => {
+        // 明确处理取消操作
       },
     });
   };

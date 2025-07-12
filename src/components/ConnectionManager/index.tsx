@@ -197,7 +197,16 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               Modal.confirm({
                 title: '确认删除',
                 content: `确定要删除连接 "${record.name}" 吗？`,
+                okText: '确认删除',
+                cancelText: '取消',
+                closable: true,
+                keyboard: true,
+                maskClosable: true,
+                okButtonProps: { danger: true },
                 onOk: () => removeConnection(record.id!),
+                onCancel: () => {
+                  // 明确处理取消操作
+                },
               });
             },
           },
