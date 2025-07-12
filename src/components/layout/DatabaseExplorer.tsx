@@ -472,43 +472,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       {/* 头部：连接状态和操作 */}
       <div className="p-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Badge 
-              status={activeConnection ? "success" : "default"} 
-              text={
-                <span className="text-sm font-medium flex items-center">
-                  {activeConnection ? activeConnection.name : '未连接'}
-                </span>
-              }
+          <Badge 
+            status={activeConnection ? "success" : "default"} 
+            text={
+              <span className="text-sm font-medium">
+                {activeConnection ? activeConnection.name : '未连接'}
+              </span>
+            }
+          />
+          <Tooltip title="刷新">
+            <Button 
+              type="text" 
+              icon={<ReloadOutlined />}
+              size="small"
+              onClick={refreshTree}
+              loading={loading}
             />
-          </div>
-          <Space size="small">
-            <Tooltip title="刷新">
-              <Button 
-                type="text" 
-                icon={<ReloadOutlined />}
-                size="small"
-                onClick={refreshTree}
-                loading={loading}
-              />
-            </Tooltip>
-            <Tooltip title="调试信息">
-              <Button 
-                type="text" 
-                icon={<MoreOutlined />}
-                size="small"
-                onClick={() => {
-                  console.log('🔍 手动触发调试信息:');
-                  console.log('- 连接列表:', connections);
-                  console.log('- 活跃连接ID:', activeConnectionId);
-                  console.log('- 活跃连接对象:', activeConnection);
-                  console.log('- 树数据:', treeData);
-                  console.log('- 加载状态:', loading);
-                  console.log('- 正在加载的节点:', loadingNodes);
-                }}
-              />
-            </Tooltip>
-          </Space>
+          </Tooltip>
         </div>
 
         {/* 搜索框 */}

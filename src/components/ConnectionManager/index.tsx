@@ -5,6 +5,7 @@ import type { TableColumn } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
+import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
   onConnectionSelect?: (connectionId: string) => void;
@@ -127,32 +128,53 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record) => (
-        <Space>
+        <div className="flex items-center space-x-3">
           <Badge
             status={connectionStatuses[record.id!]?.status === 'connected' ? 'success' : 'default'}
           />
-          <strong>{name}</strong>
-          {activeConnectionId === record.id && <Tag color="blue">活跃</Tag>}
-        </Space>
+          <div>
+            <div className="font-medium text-gray-900">{name}</div>
+            <div className="text-sm text-gray-500">{record.host}:{record.port}</div>
+          </div>
+          {activeConnectionId === record.id && (
+            <Tag color="blue" className="ml-2">活跃</Tag>
+          )}
+        </div>
       ),
     },
     {
-      title: '主机',
-      dataIndex: 'host',
-      key: 'host',
-      render: (host: string, record) => `${host}:${record.port}`,
+      title: '连接信息',
+      key: 'connectionInfo',
+      render: (_, record) => (
+        <div className="space-y-1">
+          <div className="text-sm">
+            <span className="text-gray-500">用户：</span>
+            <span className="text-gray-900">{record.username || '无'}</span>
+          </div>
+          <div className="text-sm">
+            <span className="text-gray-500">SSL：</span>
+            <span className={record.ssl ? 'text-green-600' : 'text-gray-400'}>
+              {record.ssl ? '已启用' : '未启用'}
+            </span>
+          </div>
+        </div>
+      ),
     },
     {
       title: '状态',
       key: 'status',
-      render: (_, record) => getStatusTag(connectionStatuses[record.id!]),
-    },
-    {
-      title: '延迟',
-      key: 'latency',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
-        return status?.latency ? `${status.latency}ms` : '-';
+        return (
+          <div className="space-y-1">
+            {getStatusTag(status)}
+            {status?.latency && (
+              <div className="text-xs text-gray-500">
+                延迟: {status.latency}ms
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -160,74 +182,82 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       key: 'lastConnected',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
-        return status?.lastConnected
-          ? new Date(status.lastConnected).toLocaleString()
-          : '-';
+        return status?.lastConnected ? (
+          <div className="text-sm text-gray-600">
+            {new Date(status.lastConnected).toLocaleString()}
+          </div>
+        ) : (
+          <span className="text-gray-400">从未连接</span>
+        );
       },
     },
     {
       title: '操作',
       key: 'actions',
+      width: 200,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
-        
-        const menuItems: MenuProps['items'] = [
-          {
-            key: 'edit',
-            icon: <EditOutlined />,
-            label: '编辑',
-            onClick: () => {
-              console.log('编辑连接:', record);
-              onEditConnection?.(record);
-            },
-          },
-          {
-            key: 'poolStats',
-            icon: <EyeOutlined />,
-            label: '连接池统计',
-            disabled: !isConnected,
-            onClick: () => handleViewPoolStats(record.id!),
-          },
-          {
-            key: 'delete',
-            icon: <DeleteOutlined />,
-            label: '删除',
-            danger: true,
-            onClick: () => {
-              Modal.confirm({
-                title: '确认删除',
-                content: `确定要删除连接 "${record.name}" 吗？`,
-                okText: '确认删除',
-                cancelText: '取消',
-                closable: true,
-                keyboard: true,
-                maskClosable: true,
-                okButtonProps: { danger: true },
-                onOk: () => removeConnection(record.id!),
-                onCancel: () => {
-                  // 明确处理取消操作
-                },
-              });
-            },
-          },
-        ];
 
         return (
-          <Space>
+          <div className="flex items-center space-x-2">
             <Button
               type={isConnected ? 'default' : 'primary'}
               icon={isConnected ? <DisconnectOutlined /> : <WifiOutlined />}
               size="small"
               loading={loading}
               onClick={() => handleConnectionToggle(record.id!)}
+              className={isConnected ? '' : 'bg-green-600 hover:bg-green-700 border-green-600'}
             >
               {isConnected ? '断开' : '连接'}
             </Button>
-            <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+            
+            <Button
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => {
+                console.log('编辑连接:', record);
+                onEditConnection?.(record);
+              }}
+              title="编辑连接"
+            />
+            
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'poolStats',
+                    icon: <EyeOutlined />,
+                    label: '连接池统计',
+                    disabled: !isConnected,
+                    onClick: () => handleViewPoolStats(record.id!),
+                  },
+                  {
+                    key: 'delete',
+                    icon: <DeleteOutlined />,
+                    label: '删除连接',
+                    danger: true,
+                    onClick: () => {
+                      Modal.confirm({
+                        title: '确认删除',
+                        content: `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`,
+                        okText: '确认删除',
+                        cancelText: '取消',
+                        closable: true,
+                        keyboard: true,
+                        maskClosable: true,
+                        okButtonProps: { danger: true },
+                        onOk: () => removeConnection(record.id!),
+                      });
+                    },
+                  },
+                ]
+              }}
+              trigger={['click']}
+            >
               <Button icon={<MoreOutlined />} size="small" />
             </Dropdown>
-          </Space>
+          </div>
         );
       },
     },
@@ -309,20 +339,27 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         </Row>
 
         {/* 连接表格 */}
-        <div style={{ marginTop: '16px' }}>
+        <div className="bg-white rounded-lg border border-gray-200">
           <Table
             columns={columns}
             dataSource={dataSource}
             rowKey="id"
             pagination={{
-              pageSize: 10,
+              pageSize: 8,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+              size: 'default'
             }}
             loading={loading}
             scroll={{ x: 'max-content' }}
             size="middle"
+            className="connection-table"
+            rowClassName={(record) => 
+              activeConnectionId === record.id 
+                ? 'bg-blue-50 border-blue-200' 
+                : 'hover:bg-gray-50'
+            }
           />
         </div>
       </Card>

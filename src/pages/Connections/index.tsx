@@ -1,11 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Space, Tabs } from '@/components/ui';
-import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined } from '@/components/ui';
+import { Typography, Button, Space, Tabs, Radio, Modal } from '@/components/ui';
+import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined, TableOutlined, AppstoreOutlined, DeleteOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
+import ConnectionListView from '@/components/ConnectionManager/ConnectionListView';
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -30,6 +31,7 @@ const Connections: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
 
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
@@ -142,6 +144,45 @@ const Connections: React.FC = () => {
     navigate('/database', { state: { connectionId } });
   };
 
+  // 处理连接操作（用于卡片视图）
+  const handleConnectionToggle = async (connectionId: string) => {
+    setLoading(true);
+    try {
+      const { connectToDatabase, disconnectFromDatabase } = useConnectionStore.getState();
+      const status = connectionStatuses[connectionId];
+      
+      if (status?.status === 'connected') {
+        await disconnectFromDatabase(connectionId);
+        showMessage.success('连接已断开');
+      } else {
+        await connectToDatabase(connectionId);
+        showMessage.success('连接成功');
+        handleConnectionSelect(connectionId);
+      }
+    } catch (error) {
+      showMessage.error(`连接操作失败: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 处理删除连接（用于卡片视图）
+  const handleDeleteConnection = (connectionId: string) => {
+    const connection = connections.find(c => c.id === connectionId);
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除连接 "${connection?.name}" 吗？此操作无法撤销。`,
+      okText: '确认删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => removeConnection(connectionId),
+    });
+  };
+
+  // 获取连接状态
+  const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
+  const activeConnectionId = useConnectionStore(state => state.activeConnectionId);
+
   return (
     <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col p-6">
       {/* 页面标题和操作 */}
@@ -169,41 +210,57 @@ const Connections: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex space-x-3">
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={loadConnections}
-              loading={loading}
-              className="border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-colors"
-              title="刷新连接列表"
+          <div className="flex items-center space-x-4">
+            {/* 视图切换 */}
+            <Radio.Group 
+              value={viewMode} 
+              onChange={(e) => setViewMode(e.target.value)}
+              size="small"
             >
-              刷新
-            </Button>
-            <Button
-              icon={<ImportOutlined />}
-              onClick={() => showMessage.info('导入功能开发中...')}
-              className="border-gray-300 hover:border-green-400 hover:text-green-600 transition-colors"
-              title="导入连接配置"
-            >
-              导入
-            </Button>
-            <Button
-              icon={<ExportOutlined />}
-              onClick={() => showMessage.info('导出功能开发中...')}
-              className="border-gray-300 hover:border-purple-400 hover:text-purple-600 transition-colors"
-              title="导出连接配置"
-            >
-              导出
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => handleOpenDialog()}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-sm"
-              size="large"
-            >
-              新建连接
-            </Button>
+              <Radio.Button value="card">
+                <AppstoreOutlined /> 卡片
+              </Radio.Button>
+              <Radio.Button value="table">
+                <TableOutlined /> 表格
+              </Radio.Button>
+            </Radio.Group>
+
+            <div className="flex space-x-3">
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={loadConnections}
+                loading={loading}
+                className="border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                title="刷新连接列表"
+              >
+                刷新
+              </Button>
+              <Button
+                icon={<ImportOutlined />}
+                onClick={() => showMessage.info('导入功能开发中...')}
+                className="border-gray-300 hover:border-green-400 hover:text-green-600 transition-colors"
+                title="导入连接配置"
+              >
+                导入
+              </Button>
+              <Button
+                icon={<ExportOutlined />}
+                onClick={() => showMessage.info('导出功能开发中...')}
+                className="border-gray-300 hover:border-purple-400 hover:text-purple-600 transition-colors"
+                title="导出连接配置"
+              >
+                导出
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => handleOpenDialog()}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-sm"
+                size="large"
+              >
+                新建连接
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -216,10 +273,20 @@ const Connections: React.FC = () => {
             {
               key: 'manager',
               label: '连接管理',
-              children: (
+              children: viewMode === 'table' ? (
                 <ConnectionManager 
                   onConnectionSelect={handleConnectionSelect}
                   onEditConnection={handleOpenDialog}
+                />
+              ) : (
+                <ConnectionListView
+                  connections={connections}
+                  connectionStatuses={connectionStatuses}
+                  activeConnectionId={activeConnectionId}
+                  loading={loading}
+                  onConnect={handleConnectionToggle}
+                  onEdit={handleOpenDialog}
+                  onDelete={handleDeleteConnection}
                 />
               ),
             },

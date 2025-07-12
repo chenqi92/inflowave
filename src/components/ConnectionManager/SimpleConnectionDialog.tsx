@@ -350,6 +350,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       width={600}
       footer={null}
       destroyOnClose
+      zIndex={1100}
+      maskClosable={true}
+      keyboard={true}
+      centered
     >
       <div className="space-y-6">
         {/* 步骤指示器 */}

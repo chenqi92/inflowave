@@ -1,0 +1,59 @@
+/* 连接管理器样式 */
+.connection-table .ant-table-tbody > tr:hover > td {
+  background-color: #f8fafc !important;
+}
+
+.connection-table .ant-table-tbody > tr.bg-blue-50 > td {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.connection-table .ant-table-tbody > tr.bg-blue-50:hover > td {
+  background-color: #dbeafe !important;
+}
+
+/* 确保按钮在操作列中对齐 */
+.connection-table .ant-table-tbody .ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 状态标签样式 */
+.connection-table .ant-tag {
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 2px 6px;
+  line-height: 1.2;
+}
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .connection-table .ant-table-tbody > tr > td {
+    padding: 8px 4px;
+  }
+  
+  .connection-table .ant-btn {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+}
+
+/* 优化弹框层级 */
+.ant-modal-wrap {
+  z-index: 1000;
+}
+
+.ant-modal-wrap:has(.ant-modal-title:contains('新建连接')),
+.ant-modal-wrap:has(.ant-modal-title:contains('编辑连接')) {
+  z-index: 1100;
+}
+
+/* 确保新建/编辑连接弹框在连接管理弹框之上 */
+.ant-modal {
+  z-index: inherit;
+}
+
+.ant-modal-mask {
+  z-index: inherit;
+}

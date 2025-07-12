@@ -14,9 +14,14 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({ visible, onClose }) =
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={1000}
+      width={1200}
       style={{ top: 20 }}
       bodyStyle={{ padding: 0, maxHeight: 'calc(100vh - 120px)', overflow: 'auto' }}
+      zIndex={1000}
+      maskClosable={true}
+      keyboard={true}
+      destroyOnClose={true}
+      getContainer={false}
     >
       <div style={{ padding: '20px' }}>
         <ConnectionsPage />
