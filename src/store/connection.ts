@@ -273,10 +273,7 @@ export const useConnectionStore = create<ConnectionState>()(
     {
       name: 'influx-gui-connection-store',
       partialize: (state) => ({
-        connections: state.connections.map(conn => ({
-          ...conn,
-          password: '', // 不持久化密码，安全考虑
-        })),
+        connections: state.connections,
         activeConnectionId: state.activeConnectionId,
       }),
     }

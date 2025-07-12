@@ -178,6 +178,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             icon: <EditOutlined />,
             label: '编辑',
             onClick: () => {
+              console.log('编辑连接:', record);
               onEditConnection?.(record);
             },
           },
@@ -256,8 +257,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         style={{
           width: '100%',
           height: '100%',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+          border: 'none',
+          borderRadius: '0',
+          boxShadow: 'none'
         }}
         bodyStyle={{
           height: 'calc(100% - 65px)',

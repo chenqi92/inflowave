@@ -1,12 +1,13 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Space } from '@/components/ui';
-import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined } from '@/components/ui';
+import { Typography, Button, Space, Tabs } from '@/components/ui';
+import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
+import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
 const { Title } = Typography;
@@ -18,20 +19,47 @@ interface ConnectionListItem extends ConnectionConfig {
 const Connections: React.FC = () => {
   const navigate = useNavigate();
   const {
+    connections,
     addConnection,
     updateConnection,
     removeConnection,
     setConnectionStatus,
+    clearConnections,
   } = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
 
+  // 同步连接配置从后端到前端
+  const syncConnectionsFromBackend = async () => {
+    try {
+      const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+      
+      if (backendConnections && backendConnections.length > 0) {
+        // 清空前端存储的连接
+        clearConnections();
+        
+        // 重新添加从后端获取的连接
+        for (const conn of backendConnections) {
+          addConnection(conn);
+        }
+        
+        console.log(`已同步 ${backendConnections.length} 个连接配置`);
+      }
+    } catch (error) {
+      console.error('同步连接配置失败:', error);
+    }
+  };
+
   // 加载连接列表
   const loadConnections = async () => {
     setLoading(true);
     try {
+      // 首先同步连接配置
+      await syncConnectionsFromBackend();
+      
+      // 然后获取连接状态
       const connectionList = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (connectionList) {
@@ -81,25 +109,25 @@ const Connections: React.FC = () => {
   // 处理连接保存成功
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
-      if (editingConnection) {
-        // 更新现有连接
-        await safeTauriInvoke('update_connection', {
-          connectionId: connection.id,
-          config: connection
-        });
-        updateConnection(connection.id!, connection);
+      if (editingConnection?.id) {
+        // 更新现有连接 - 确保使用正确的连接ID
+        const updateConfig = { ...connection, id: editingConnection.id };
+        await safeTauriInvoke('update_connection', { config: updateConfig });
+        updateConnection(editingConnection.id, updateConfig);
         showMessage.success('连接配置已更新');
       } else {
         // 创建新连接
         const connectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
         if (connectionId) {
-          addConnection({ ...connection, id: connectionId });
+          const newConnection = { ...connection, id: connectionId };
+          addConnection(newConnection);
           showMessage.success('连接配置已创建');
         }
       }
 
       handleCloseDialog();
-      await loadConnections(); // 重新加载连接列表
+      // 重新加载连接列表以确保状态同步
+      await loadConnections();
     } catch (error) {
       console.error('保存连接配置失败:', error);
       showMessage.error(`保存连接配置失败: ${error}`);
@@ -115,38 +143,55 @@ const Connections: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col">
+    <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col p-6">
       {/* 页面标题和操作 */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
         <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              连接管理
-            </h1>
-            <p className="text-gray-600 text-sm">
-              管理和配置 InfluxDB 数据库连接，支持多环境管理
-            </p>
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                </svg>
+              </div>
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                连接管理
+              </h1>
+              <p className="text-gray-600 text-sm">
+                管理和配置 InfluxDB 数据库连接，支持多环境管理和实时监控
+              </p>
+              <div className="flex items-center mt-2 text-xs text-gray-500">
+                <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-600">
+                  {connections.length} 个连接
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex space-x-3">
             <Button
               icon={<ReloadOutlined />}
               onClick={loadConnections}
               loading={loading}
-              className="border-gray-300"
+              className="border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-colors"
+              title="刷新连接列表"
             >
               刷新
             </Button>
             <Button
               icon={<ImportOutlined />}
               onClick={() => showMessage.info('导入功能开发中...')}
-              className="border-gray-300"
+              className="border-gray-300 hover:border-green-400 hover:text-green-600 transition-colors"
+              title="导入连接配置"
             >
               导入
             </Button>
             <Button
               icon={<ExportOutlined />}
               onClick={() => showMessage.info('导出功能开发中...')}
-              className="border-gray-300"
+              className="border-gray-300 hover:border-purple-400 hover:text-purple-600 transition-colors"
+              title="导出连接配置"
             >
               导出
             </Button>
@@ -154,7 +199,8 @@ const Connections: React.FC = () => {
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => handleOpenDialog()}
-              className="bg-blue-600 hover:bg-blue-700 border-blue-600"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-sm"
+              size="large"
             >
               新建连接
             </Button>
@@ -163,10 +209,32 @@ const Connections: React.FC = () => {
       </div>
 
       {/* 连接管理器 */}
-      <div className="flex-1 bg-white rounded-lg shadow-sm border overflow-hidden">
-        <ConnectionManager 
-          onConnectionSelect={handleConnectionSelect}
-          onEditConnection={handleOpenDialog}
+      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <Tabs
+          defaultActiveKey="manager"
+          items={[
+            {
+              key: 'manager',
+              label: '连接管理',
+              children: (
+                <ConnectionManager 
+                  onConnectionSelect={handleConnectionSelect}
+                  onEditConnection={handleOpenDialog}
+                />
+              ),
+            },
+            {
+              key: 'debug',
+              label: (
+                <Space>
+                  <BugOutlined />
+                  调试面板
+                </Space>
+              ),
+              children: <ConnectionDebugPanel />,
+            },
+          ]}
+          style={{ height: '100%' }}
         />
       </div>
 
