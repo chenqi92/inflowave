@@ -81,7 +81,7 @@ const TestButton: React.FC = () => {
           {isRunning ? '运行中...' : '运行测试'}
         </Button>
         
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-muted-foreground">
           查看控制台输出结果
         </div>
       </div>

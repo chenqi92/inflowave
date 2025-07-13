@@ -41,16 +41,16 @@ const getIcon = (type?: string, customIcon?: React.ReactNode) => {
   
   switch (type) {
     case 'info':
-      return <Info className="w-5 h-5 text-blue-500" />;
+      return <Info className="w-5 h-5 text-primary" />;
     case 'success':
-      return <CheckCircle className="w-5 h-5 text-green-500" />;
+      return <CheckCircle className="w-5 h-5 text-success" />;
     case 'error':
-      return <XCircle className="w-5 h-5 text-red-500" />;
+      return <XCircle className="w-5 h-5 text-destructive" />;
     case 'warning':
     case 'confirm':
       return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
     default:
-      return <Info className="w-5 h-5 text-blue-500" />;
+      return <Info className="w-5 h-5 text-primary" />;
   }
 };
 

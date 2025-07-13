@@ -38,7 +38,7 @@ const AppFooter: React.FC = () => {
     <Footer className="app-footer">
       <div className="flex items-center justify-between">
         {/* 左侧 - 应用信息 */}
-        <div className="flex gap-2" split={<div className="border-t border-gray-200 my-4" type="vertical" />}>
+        <div className="flex gap-2" split={<div className="border-t border my-4" type="vertical" />}>
           <Text className="text-xs">
             InfluxDB GUI Manager v0.1.0
           </Text>
@@ -52,7 +52,7 @@ const AppFooter: React.FC = () => {
         </div>
 
         {/* 中间 - 连接状态 */}
-        <div className="flex gap-2" split={<div className="border-t border-gray-200 my-4" type="vertical" />}>
+        <div className="flex gap-2" split={<div className="border-t border my-4" type="vertical" />}>
           {activeConnectionId && currentStatus ? (
             <>
               <div className="flex gap-2">

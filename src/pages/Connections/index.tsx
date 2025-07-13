@@ -253,12 +253,12 @@ const Connections: React.FC = () => {
   return (
     <div className="h-full bg-white flex flex-col">
       {/* 页面标题和操作 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+      <div className="flex justify-between items-center p-4 border-b border">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">
             连接管理
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             管理 InfluxDB 数据库连接 ({connections.length} 个连接)
           </p>
         </div>

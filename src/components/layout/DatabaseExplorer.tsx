@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from '@/components/ui';
+import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography } from '@/components/ui';
 import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -187,7 +187,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           </div>
         ),
         key: `connection-${connection.id}`,
-        icon: <Link className="w-4 h-4 text-blue-600"   />,
+        icon: <Link className="w-4 h-4 text-primary"   />,
         children: []};
 
       // 为活跃连接加载数据库
@@ -250,7 +250,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             </div>
           ),
           key: `table-${connectionId}-${database}-${table}`,
-          icon: <Table className="w-4 h-4 text-green-600"   />,
+          icon: <Table className="w-4 h-4 text-success"   />,
           isLeaf: false,
           children: [] // 空数组表示有子节点但未加载
         }));
@@ -286,7 +286,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 <span className="px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded flex-shrink-0">
                   Tag
                 </span>
-                <span className="text-xs text-gray-500 flex-shrink-0">string</span>
+                <span className="text-xs text-muted-foreground flex-shrink-0">string</span>
               </div>
             ),
             key: `tag-${connectionId}-${database}-${table}-${tag}`,
@@ -302,16 +302,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               case 'float':
               case 'integer':
               case 'int64':
-                return <Hash className="w-4 h-4 text-blue-500"   />;
+                return <Hash className="w-4 h-4 text-primary"   />;
               case 'string':
               case 'text':
-                return <FileText className="w-4 h-4 text-gray-500"   />;
+                return <FileText className="w-4 h-4 text-muted-foreground"   />;
               case 'time':
               case 'timestamp':
                 return <Clock className="text-purple-500" />;
               case 'boolean':
               case 'bool':
-                return <GitBranch className="w-4 h-4 text-green-500" />;
+                return <GitBranch className="w-4 h-4 text-success" />;
               default:
                 return <File className="w-4 h-4 text-gray-400"   />;
             }
@@ -321,10 +321,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{field.name}</span>
-                <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-600 rounded flex-shrink-0">
+                <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-primary rounded flex-shrink-0">
                   Field
                 </span>
-                <span className="text-xs text-gray-500 flex-shrink-0">{field.type}</span>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{field.type}</span>
               </div>
             ),
             key: `field-${connectionId}-${database}-${table}-${field.name}`,
@@ -558,7 +558,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   return (
     <div className="database-explorer h-full flex flex-col bg-white">
       {/* 头部：连接状态和操作 */}
-      <div className="p-3 border-b border-gray-200">
+      <div className="p-3 border-b border">
         <div className="flex items-center justify-between mb-3">
           <Badge 
             status={activeConnection ? "success" : "default"} 
@@ -619,15 +619,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 className="bg-transparent database-explorer-tree"
               />
             ) : (
-              <div className="text-center text-gray-500 mt-8">
+              <div className="text-center text-muted-foreground mt-8">
                 <Database className="w-4 h-4 text-2xl mb-2" />
                 <p>暂无连接</p>
-                <p className="text-sm mt-1">请在连接管理中添加数据库连接</p>
+                <Typography.Text className="text-sm mt-1">请在连接管理中添加数据库连接</Typography.Text>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="favorites" className="p-4 text-center text-gray-500">
+          <TabsContent value="favorites" className="p-4 text-center text-muted-foreground">
             <Key className="w-4 h-4 text-2xl mb-2" />
             <p>暂无收藏项</p>
           </TabsContent>

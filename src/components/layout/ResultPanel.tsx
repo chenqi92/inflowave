@@ -195,7 +195,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
 
   if (collapsed) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
+      <div className="h-full flex items-center justify-center text-muted-foreground">
         <TableIcon className="w-4 h-4 text-lg" />
       </div>
     );
@@ -204,7 +204,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
   const logMessages = getLogMessages();
 
   return (
-    <div className="h-full bg-white border-t border-gray-200">
+    <div className="h-full bg-white border-t border">
       <Tabs 
         value={activeTab}
         onValueChange={setActiveTab}
@@ -232,7 +232,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
               <div className="h-full flex flex-col">
                 {/* 查询状态栏 */}
                 {queryResult && (
-                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                  <div className="p-3 bg-muted/50 border-b border">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex gap-2" wrap>
@@ -298,7 +298,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                       rowKey="_key"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
                       <Empty
                         description={queryResult ? "查询结果为空" : "请执行查询以查看结果"}
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -333,7 +333,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                     return (
                       <div 
                         key={log.id} 
-                        className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded text-sm"
+                        className="flex items-start gap-3 p-2 hover:bg-muted/50 rounded text-sm"
                       >
                         <Tag 
                           color={levelDisplay.color}
@@ -343,7 +343,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                         </Tag>
                         <div className="flex-1">
                           <div className="text-gray-900">{log.message}</div>
-                          <div className="text-gray-500 text-xs mt-1">
+                          <div className="text-muted-foreground text-xs mt-1">
                             {log.timestamp.toLocaleTimeString()} - {log.source}
                           </div>
                         </div>

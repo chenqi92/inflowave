@@ -34,7 +34,7 @@ const DevTools: React.FC = () => {
       toolbar={
         <div className="flex items-center gap-2">
           <Wrench className="w-4 h-4" />
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             开发测试工具集
           </span>
         </div>

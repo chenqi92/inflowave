@@ -91,7 +91,7 @@ const AppStatusBar: React.FC = () => {
         {/* 中间 - 连接信息 */}
         <div className='flex items-center space-x-4'>
           {activeConnectionId && currentConnection && currentStatus ? (
-            <Space split={<div className="border-t border-gray-200 my-4" type='vertical' />}>
+            <Space split={<div className="border-t border my-4" type='vertical' />}>
               <Tooltip
                 title={`${currentConnection.host}:${currentConnection.port}`}
               >
@@ -128,7 +128,7 @@ const AppStatusBar: React.FC = () => {
 
         {/* 右侧 - 系统信息 */}
         <div className='flex items-center space-x-4'>
-          <Space split={<div className="border-t border-gray-200 my-4" type='vertical' />}>
+          <Space split={<div className="border-t border my-4" type='vertical' />}>
             {/* 内存使用 */}
             <Tooltip title='内存使用情况'>
               <div className="flex gap-2">

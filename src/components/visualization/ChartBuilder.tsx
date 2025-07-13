@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Switch, Slider, Input, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Switch, Slider, Input, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, Label } from '@/components/ui';
 import { Card } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, TrendingUp, PieChart, AreaChart, Settings, Save, Eye, Copy, PlayCircle } from 'lucide-react';
@@ -231,7 +231,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">显示网格</label>
+          <Label className="text-sm font-medium">显示网格</Label>
           <Switch
             checked={chartConfig.settings?.showGrid}
             onValueChange={(checked) => handleSettingsChange('showGrid', checked)}
@@ -239,7 +239,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">显示图例</label>
+          <Label className="text-sm font-medium">显示图例</Label>
           <Switch
             checked={chartConfig.settings?.showLegend}
             onValueChange={(checked) => handleSettingsChange('showLegend', checked)}
@@ -247,7 +247,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">显示提示框</label>
+          <Label className="text-sm font-medium">显示提示框</Label>
           <Switch
             checked={chartConfig.settings?.showTooltip}
             onValueChange={(checked) => handleSettingsChange('showTooltip', checked)}
@@ -255,7 +255,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">启用动画</label>
+          <Label className="text-sm font-medium">启用动画</Label>
           <Switch
             checked={chartConfig.settings?.animation}
             onValueChange={(checked) => handleSettingsChange('animation', checked)}
@@ -266,7 +266,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       {['line', 'area'].includes(chartConfig.type!) && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">平滑曲线</label>
+            <Label className="text-sm font-medium">平滑曲线</Label>
             <Switch
               checked={chartConfig.settings?.smooth}
               onValueChange={(checked) => handleSettingsChange('smooth', checked)}
@@ -274,7 +274,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">堆叠显示</label>
+            <Label className="text-sm font-medium">堆叠显示</Label>
             <Switch
               checked={chartConfig.settings?.stack}
               onValueChange={(checked) => handleSettingsChange('stack', checked)}
@@ -284,7 +284,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">显示数据标签</label>
+        <Label className="text-sm font-medium">显示数据标签</Label>
         <Switch
           checked={chartConfig.settings?.showDataLabels}
           onValueChange={(checked) => handleSettingsChange('showDataLabels', checked)}
@@ -292,7 +292,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">透明度</label>
+        <Label className="text-sm font-medium">透明度</Label>
         <Slider
           min={0}
           max={1}
@@ -304,7 +304,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">主题</label>
+        <Label className="text-sm font-medium">主题</Label>
         <Select
           value={chartConfig.settings?.theme || 'default'}
           onValueChange={(value) => handleSettingsChange('theme', value)}
@@ -327,7 +327,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             <BarChart className="w-4 h-4"  />
             <span>图表构建器</span>
             {queryResult && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 数据源: {queryResult.rowCount} 行
               </span>
             )}
@@ -385,8 +385,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
           {/* 预览区域 */}
           {previewMode && queryResult && (
-            <div className="flex-1 mt-4 border rounded p-4 bg-gray-50">
-              <div className="text-center text-gray-500">
+            <div className="flex-1 mt-4 border rounded p-4 bg-muted/50">
+              <div className="text-center text-muted-foreground">
                 <BarChart className="w-4 h-4 text-4xl mb-2"   />
                 <div>图表预览区域</div>
                 <div className="text-sm">

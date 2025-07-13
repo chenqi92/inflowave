@@ -3,7 +3,7 @@ import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Card, Modal 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// 本地类型定义替代 antd 类型
+// 本地类型定义
 interface ColumnType<T = any> {
   title?: React.ReactNode;
   dataIndex?: string;

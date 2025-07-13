@@ -58,7 +58,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto">
                     {JSON.stringify(structure, null, 2)}
                   </pre>
                 </div>
@@ -89,7 +89,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
+                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
                     {template}
                   </pre>
                 </div>

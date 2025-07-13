@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator, List, Tag, Text } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator, List, Tag, Text, Typography } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, Clock, Database, FileText, Info, Zap, Eye, Download, Lightbulb, RefreshCw, Code, Table, TrendingUp, PieChart, Book, Rocket, Settings, Trophy, PlayCircle, AlertTriangle, AlertCircle, CheckCircle, MinusCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -112,7 +112,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 <Badge variant="secondary">
                   {node.nodeType}
                 </Badge>
-                <span className="font-medium">{node.operation}</span>
+                <Typography.Text className="font-medium">{node.operation}</Typography.Text>
                 {node.table && (
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Database className="w-4 h-4" /> {node.table}
@@ -143,7 +143,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
-                        <AlertCircle className="w-4 h-4 text-red-500" />
+                        <AlertCircle className="w-4 h-4 text-destructive" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>行数估计不准确</p>
@@ -317,19 +317,19 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
             <Badge variant="secondary">
               {selectedNode.nodeType}
             </Badge>
-            <span className="font-medium">{selectedNode.operation}</span>
+            <Typography.Text className="font-medium">{selectedNode.operation}</Typography.Text>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-2">
-              <div><span className="font-medium">表名:</span> {selectedNode.table || '-'}</div>
-              <div><span className="font-medium">索引:</span> {selectedNode.index || '-'}</div>
-              <div><span className="font-medium">预估行数:</span> {formatNumber(selectedNode.estimatedRows)}</div>
-              <div><span className="font-medium">实际行数:</span> {hasActualStats ? formatNumber(selectedNode.actualRows!) : '-'}</div>
+              <div><Typography.Text className="font-medium">表名:</Typography.Text> {selectedNode.table || '-'}</div>
+              <div><Typography.Text className="font-medium">索引:</Typography.Text> {selectedNode.index || '-'}</div>
+              <div><Typography.Text className="font-medium">预估行数:</Typography.Text> {formatNumber(selectedNode.estimatedRows)}</div>
+              <div><Typography.Text className="font-medium">实际行数:</Typography.Text> {hasActualStats ? formatNumber(selectedNode.actualRows!) : '-'}</div>
             </div>
             <div className="space-y-2">
-              <div><span className="font-medium">预估成本:</span> {formatNumber(selectedNode.estimatedCost)}</div>
-              <div><span className="font-medium">实际成本:</span> {hasActualStats && selectedNode.actualCost !== undefined ? formatNumber(selectedNode.actualCost) : '-'}</div>
-              <div><span className="font-medium">执行时间:</span> {hasActualStats && selectedNode.executionTime !== undefined ? formatTime(selectedNode.executionTime) : '-'}</div>
+              <div><Typography.Text className="font-medium">预估成本:</Typography.Text> {formatNumber(selectedNode.estimatedCost)}</div>
+              <div><Typography.Text className="font-medium">实际成本:</Typography.Text> {hasActualStats && selectedNode.actualCost !== undefined ? formatNumber(selectedNode.actualCost) : '-'}</div>
+              <div><Typography.Text className="font-medium">执行时间:</Typography.Text> {hasActualStats && selectedNode.executionTime !== undefined ? formatTime(selectedNode.executionTime) : '-'}</div>
             </div>
           </div>
         </Card>
@@ -408,7 +408,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
         {/* 警告信息 */}
         {selectedNode.warnings.length > 0 && (
           <Card className="p-4">
-            <h4 className="font-medium mb-4">警告信息</h4>
+            <Typography variant="h4" className="font-medium mb-4">警告信息</Typography>
             <div className="space-y-2">
               {selectedNode.warnings.map((warning, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 bg-yellow-50 rounded">

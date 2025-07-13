@@ -491,7 +491,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         )}
       />
 
-      <div className="border-t border-gray-200 my-4" />
+      <div className="border-t border my-4" />
       
       <Alert
         message="数据生成说明"

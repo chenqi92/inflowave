@@ -96,7 +96,7 @@
 }
 
 .settings-page input:focus,
-.settings-page .ant-select-focused [data-select-trigger],
+.settings-page [data-select-trigger]:focus,
 .settings-page input-number:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -294,7 +294,7 @@
 /* Focus improvements */
 .settings-page button:focus,
 .settings-page input:focus,
-.settings-page .ant-select:focus {
+.settings-page [data-select]:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }

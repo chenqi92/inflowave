@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, Tabs, Spin, Row, Col, Alert, Tree, Card } from '@/components/ui';
+import { Button, Select, Tabs, Spin, Row, Col, Alert, Tree, Card, Typography } from '@/components/ui';
 import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
@@ -346,9 +346,9 @@ const Query: React.FC = () => {
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-2xl font-bold mb-2">数据查询</h2>
+          <Typography variant="h2" className="text-2xl font-bold mb-2">数据查询</Typography>
           {currentConnection && (
-            <p className="text-gray-500">
+            <p className="text-muted-foreground">
               当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
             </p>
           )}
@@ -430,7 +430,7 @@ const Query: React.FC = () => {
             </div>
             
             {queryResult && (
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 执行时间: {queryResult.executionTime}ms | 返回行数: {queryResult.rowCount}
               </span>
             )}
@@ -508,14 +508,14 @@ const Query: React.FC = () => {
                 key: 'json',
                 label: 'JSON 视图',
                 children: (
-                  <pre className="bg-gray-50 p-4 rounded overflow-auto max-h-96">
+                  <pre className="bg-muted/50 p-4 rounded overflow-auto max-h-96">
                     {JSON.stringify(queryResult, null, 2)}
                   </pre>
                 )},
             ]}
           />
         ) : (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             请执行查询以查看结果
           </div>
         )}

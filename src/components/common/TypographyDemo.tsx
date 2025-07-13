@@ -8,7 +8,7 @@ const { Text } = Typography;
 const TypographyDemo: React.FC = () => {
   return (
     <div className="p-4 bg-white rounded-lg border">
-      <h3 className="mb-4 text-lg font-semibold">Typography 样式测试</h3>
+      <Typography variant="h3" className="mb-4 text-lg font-semibold">Typography 样式测试</Typography>
       
       <div className="flex gap-2" direction="vertical" size="md" style={{ width: '100%' }}>
         <div>

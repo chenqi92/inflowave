@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography } from '@/components/ui';
 import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { Plus, Edit, Trash2, Settings, MoreVertical, Save, Eye } from 'lucide-react';
@@ -238,7 +238,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
               {dashboard?.name || '新建仪表板'}
             </h4>
             {dashboard?.description && (
-              <p className="text-sm text-muted-foreground">{dashboard.description}</p>
+              <Typography.Text className="text-sm text-muted-foreground">{dashboard.description}</Typography.Text>
             )}
           </div>
           <div>
@@ -305,7 +305,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
               <div key={widget.id}>
                 <Card className="h-full">
                   <div className="flex justify-between items-center p-4 border-b">
-                    <h3 className="font-medium">{widget.title}</h3>
+                    <Typography variant="h3" className="font-medium">{widget.title}</Typography>
                     {!readOnly && renderWidgetMenu(widget)}
                   </div>
                   <div className="p-2 h-[calc(100%-60px)]">

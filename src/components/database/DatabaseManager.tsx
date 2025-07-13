@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Progress } from '@/components/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Progress, Typography } from '@/components/ui';
 import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 // AlertDialog components not available in current UI library
@@ -216,7 +216,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           <TableRow key={policy.name}>
             <TableCell>
               <div className="flex gap-2 items-center">
-                <span className="font-medium">{policy.name}</span>
+                <Typography.Text className="font-medium">{policy.name}</Typography.Text>
                 {policy.default && <Badge variant="default">默认</Badge>}
               </div>
             </TableCell>

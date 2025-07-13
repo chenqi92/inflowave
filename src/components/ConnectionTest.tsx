@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Button, Form, Input, InputNumber, Switch } from '@/components/ui';
+import { Button, Form, Input, InputNumber, Switch, Typography } from '@/components/ui';
 import { Card, toast } from '@/components/ui';
 
 interface ConnectionConfig {
@@ -156,29 +156,29 @@ const ConnectionTest: React.FC = () => {
           className={`mb-6 ${testResult.success ? 'border-green-500' : 'border-red-500'}`}>
           <div className="space-y-2">
             <div className="flex items-center">
-              <span className="font-medium mr-2">状态:</span>
-              <span className={testResult.success ? 'text-green-600' : 'text-red-600'}>
+              <Typography.Text className="font-medium mr-2">状态:</Typography.Text>
+              <span className={testResult.success ? 'text-success' : 'text-red-600'}>
                 {testResult.success ? '✅ 连接成功' : '❌ 连接失败'}
               </span>
             </div>
             
             {testResult.latency && (
               <div className="flex items-center">
-                <span className="font-medium mr-2">延迟:</span>
-                <span className="text-blue-600">{testResult.latency} ms</span>
+                <Typography.Text className="font-medium mr-2">延迟:</Typography.Text>
+                <span className="text-primary">{testResult.latency} ms</span>
               </div>
             )}
             
             {testResult.server_version && (
               <div className="flex items-center">
-                <span className="font-medium mr-2">服务器版本:</span>
-                <span className="text-gray-600">{testResult.server_version}</span>
+                <Typography.Text className="font-medium mr-2">服务器版本:</Typography.Text>
+                <span className="text-muted-foreground">{testResult.server_version}</span>
               </div>
             )}
             
             {testResult.error && (
               <div className="flex items-start">
-                <span className="font-medium mr-2">错误:</span>
+                <Typography.Text className="font-medium mr-2">错误:</Typography.Text>
                 <span className="text-red-600 break-all">{testResult.error}</span>
               </div>
             )}
@@ -188,7 +188,7 @@ const ConnectionTest: React.FC = () => {
 
       {/* 使用说明 */}
       <Card title="使用说明" size="small">
-        <div className="text-sm text-gray-600 space-y-2">
+        <div className="text-sm text-muted-foreground space-y-2">
           <p>• 确保 InfluxDB 服务正在运行</p>
           <p>• 默认端口通常是 8086</p>
           <p>• 如果启用了认证，请提供用户名和密码</p>

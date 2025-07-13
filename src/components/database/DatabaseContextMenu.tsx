@@ -44,7 +44,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
+                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
                     {template}
                   </pre>
                 </div>
@@ -87,7 +87,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto">
                     {JSON.stringify(info, null, 2)}
                   </pre>
                 </div>

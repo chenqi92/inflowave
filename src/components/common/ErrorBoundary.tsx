@@ -107,11 +107,11 @@ class ErrorBoundary extends Component<Props, State> {
       const { error, errorInfo, errorId } = this.state;
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-muted/50">
           <div className="max-w-2xl w-full">
             <Result
               status="error"
-              icon={<Bug className="w-4 h-4 text-red-500"   />}
+              icon={<Bug className="w-4 h-4 text-destructive"   />}
               title="应用程序发生错误"
               subTitle={
                 <div className="space-y-2">
@@ -169,7 +169,7 @@ class ErrorBoundary extends Component<Props, State> {
                           <AntParagraph
                             code
                             copyable
-                            className="bg-red-50 p-3 rounded border border-red-200"
+                            className="bg-destructive/10 p-3 rounded border border-destructive"
                           >
                             {error.message}
                           </AntParagraph>
@@ -182,7 +182,7 @@ class ErrorBoundary extends Component<Props, State> {
                           <AntParagraph
                             code
                             copyable
-                            className="bg-gray-50 p-3 rounded border text-xs"
+                            className="bg-muted/50 p-3 rounded border text-xs"
                             style={{ whiteSpace: 'pre-wrap' }}
                           >
                             {error.stack}
@@ -206,7 +206,7 @@ class ErrorBoundary extends Component<Props, State> {
 
                       <div>
                         <Text strong>环境信息:</Text>
-                        <div className="bg-gray-50 p-3 rounded border text-xs font-mono">
+                        <div className="bg-muted/50 p-3 rounded border text-xs font-mono">
                           <div>URL: {window.location.href}</div>
                           <div>用户代理: {navigator.userAgent}</div>
                           <div>时间戳: {new Date().toISOString()}</div>

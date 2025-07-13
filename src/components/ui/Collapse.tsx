@@ -70,7 +70,7 @@ export const Collapse: React.FC<CollapseProps> = ({
 
   return (
     <div className={cn(
-      'border border-gray-200 rounded-lg overflow-hidden',
+      'border border rounded-lg overflow-hidden',
       ghost && 'border-none bg-transparent',
       className
     )}>
@@ -84,18 +84,18 @@ export const Collapse: React.FC<CollapseProps> = ({
         
         return (
           <div key={key} className={cn(
-            !ghost && index > 0 && 'border-t border-gray-200'
+            !ghost && index > 0 && 'border-t border'
           )}>
             {/* Header */}
             <button
               className={cn(
                 'w-full px-4 py-3 text-left flex items-center justify-between',
-                'hover:bg-gray-50 transition-colors duration-200',
+                'hover:bg-muted/50 transition-colors duration-200',
                 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset',
                 sizeClasses[size],
                 disabled && 'opacity-50 cursor-not-allowed',
                 ghost && 'px-0 hover:bg-transparent',
-                !ghost && 'bg-gray-50/50'
+                !ghost && 'bg-muted/50/50'
               )}
               onClick={() => !disabled && handleToggle(key)}
               disabled={disabled}

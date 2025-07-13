@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui';
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Typography } from '@/components/ui';
 import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
@@ -258,7 +258,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           {filteredHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Clock className="w-8 h-8 mb-2" />
-              <p className="text-sm">暂无查询历史</p>
+              <Typography.Text className="text-sm">暂无查询历史</Typography.Text>
             </div>
           ) : (
             filteredHistory.map((item) => (
@@ -357,7 +357,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           {filteredSavedQueries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <FileText className="w-8 h-8 mb-2" />
-              <p className="text-sm">暂无保存的查询</p>
+              <Typography.Text className="text-sm">暂无保存的查询</Typography.Text>
             </div>
           ) : (
             filteredSavedQueries.map((item) => (
@@ -365,7 +365,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex gap-2 mb-2 items-center">
-                      <h4 className="font-medium">{item.name}</h4>
+                      <Typography variant="h4" className="font-medium">{item.name}</Typography>
                       {item.favorite && <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />}
                       {item.database && <Badge variant="outline">{item.database}</Badge>}
                     </div>

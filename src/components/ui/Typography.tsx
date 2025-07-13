@@ -42,7 +42,7 @@ const Text = React.forwardRef<
 >(({ className, type, strong, code, children, ...props }, ref) => {
   const variants = {
     secondary: "text-muted-foreground",
-    success: "text-green-600",
+    success: "text-success",
     warning: "text-yellow-600",
     danger: "text-red-600"
   }
@@ -134,7 +134,7 @@ const AntParagraph = React.forwardRef<
 
   const typeVariants = {
     secondary: "text-muted-foreground",
-    success: "text-green-600",
+    success: "text-success",
     warning: "text-yellow-600",
     danger: "text-red-600"
   };

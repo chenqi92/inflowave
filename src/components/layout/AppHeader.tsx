@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space } from '@/components/ui';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Database, Settings, Lightbulb, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';
@@ -94,6 +95,9 @@ const AppHeader: React.FC = () => {
 
       {/* 右侧 */}
       <div className='flex items-center space-x-2'>
+        {/* 主题切换按钮 */}
+        <ThemeToggle />
+        
         {/* 用户菜单 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -105,18 +109,6 @@ const AppHeader: React.FC = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setTheme('light')}>
-              <Lightbulb className="mr-2 h-4 w-4" />
-              浅色主题
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('dark')}>
-              <Lightbulb className="mr-2 h-4 w-4" />
-              深色主题
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme('auto')}>
-              <Lightbulb className="mr-2 h-4 w-4" />
-              跟随系统
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLanguage('zh-CN')}>
               <Globe className="mr-2 h-4 w-4" />
               简体中文

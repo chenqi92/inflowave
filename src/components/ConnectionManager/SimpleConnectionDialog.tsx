@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Alert, AlertDescription, Steps, Input, InputNumber, Switch, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Alert, AlertDescription, Steps, Input, InputNumber, Switch, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Label, Typography } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
@@ -175,7 +175,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     <div className="space-y-3">
       <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
-          连接名称 <span className="text-red-500">*</span>
+          连接名称 <span className="text-destructive">*</span>
         </label>
         <Input
           placeholder="例如: 生产环境 InfluxDB"
@@ -191,7 +191,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2 space-y-1">
           <label className="block text-sm font-medium text-gray-700">
-            主机地址 <span className="text-red-500">*</span>
+            主机地址 <span className="text-destructive">*</span>
           </label>
           <Input
             placeholder="localhost 或 192.168.1.100"
@@ -206,7 +206,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
         <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">
-            端口 <span className="text-red-500">*</span>
+            端口 <span className="text-destructive">*</span>
           </label>
           <InputNumber
             placeholder="8086"
@@ -222,7 +222,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">用户名</label>
+          <Label className="block text-sm font-medium text-gray-700">用户名</Label>
           <Input
             placeholder="可选"
             value={formData.username}
@@ -233,7 +233,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">密码</label>
+          <Label className="block text-sm font-medium text-gray-700">密码</Label>
           <Input
             type="password"
             placeholder="可选"
@@ -244,7 +244,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       </div>
 
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">默认数据库</label>
+        <Label className="block text-sm font-medium text-gray-700">默认数据库</Label>
         <Input
           placeholder="可选，连接后默认选择的数据库"
           value={formData.database}
@@ -256,18 +256,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">启用SSL</label>
+          <Label className="block text-sm font-medium text-gray-700">启用SSL</Label>
           <div className="flex items-center space-x-2">
             <Switch
               checked={formData.ssl}
               onCheckedChange={(checked) => handleInputChange('ssl', checked)}
             />
-            <span className="text-sm text-gray-500">使用SSL加密连接</span>
+            <span className="text-sm text-muted-foreground">使用SSL加密连接</span>
           </div>
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">超时时间(秒)</label>
+          <Label className="block text-sm font-medium text-gray-700">超时时间(秒)</Label>
           <InputNumber
             placeholder="30"
             value={formData.timeout}
@@ -312,9 +312,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <div className="bg-green-50 border border-green-200 rounded p-3">
             <div className="flex items-center gap-2 text-green-700">
               <CheckCircle />
-              <span className="font-medium">连接配置正确</span>
+              <Typography.Text className="font-medium">连接配置正确</Typography.Text>
             </div>
-            <div className="text-sm text-green-600 mt-1">
+            <div className="text-sm text-success mt-1">
               您可以点击"保存连接"来保存此配置
             </div>
           </div>
@@ -349,7 +349,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {currentStep === 1 && renderTestResult()}
 
         {/* 操作按钮 */}
-        <div className="flex justify-between pt-3 border-t border-gray-200">
+        <div className="flex justify-between pt-3 border-t border">
           <div>
             {currentStep === 1 && (
               <Button

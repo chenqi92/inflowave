@@ -286,14 +286,14 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     <TooltipProvider>
       <div className="h-full flex flex-col bg-white">
       {/* 标签页头部 */}
-      <div className="flex items-center justify-between border-b border-gray-200">
+      <div className="flex items-center justify-between border-b border">
         <div className="flex-1 flex items-center">
-          <div className="flex items-center border-b border-gray-200 flex-1">
+          <div className="flex items-center border-b border flex-1">
             {tabs.map(tab => (
               <div
                 key={tab.id}
-                className={`flex items-center gap-1 px-3 py-2 border-r border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                  activeKey === tab.id ? 'bg-white border-b-2 border-blue-500' : 'bg-gray-50'
+                className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 ${
+                  activeKey === tab.id ? 'bg-white border-b-2 border-blue-500' : 'bg-muted/50'
                 }`}
                 onClick={() => setActiveKey(tab.id)}
               >
@@ -409,7 +409,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               formatOnType: true}}
           />
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
+          <div className="h-full flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <FileText className="w-4 h-4 text-4xl mb-4"   />
               <p>暂无打开的文件</p>

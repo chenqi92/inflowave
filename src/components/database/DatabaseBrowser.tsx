@@ -54,7 +54,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
         title: (
           <div className="flex items-center justify-between group">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-blue-500"   />
+              <Database className="w-4 h-4 text-primary"   />
               <span>{database.name}</span>
               {database.measurementCount !== undefined && (
                 <Badge 
@@ -91,7 +91,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           title: (
             <div className="flex items-center justify-between group">
               <div className="flex items-center gap-2">
-                <Table className="w-4 h-4 text-green-500"   />
+                <Table className="w-4 h-4 text-success"   />
                 <span>{m.name}</span>
                 {m.seriesCount !== undefined && (
                   <Badge 
@@ -151,7 +151,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${getFieldTypeColor(f.type)}`} />
                 <span>{f.name}</span>
-                <span className="text-xs text-gray-500">({f.type})</span>
+                <span className="text-xs text-muted-foreground">({f.type})</span>
               </div>
               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                 <FieldContextMenu database={database} measurement={measurement} field={f.name} fieldType="field" />
@@ -202,7 +202,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
     switch (type) {
       case 'integer':
       case 'float':
-        return 'bg-blue-500';
+        return 'bg-primary';
       case 'string':
         return 'bg-green-500';
       case 'boolean':
@@ -240,7 +240,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
 
   if (!currentConnectionId) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <div className="text-center">
           <Database className="w-4 h-4 text-4xl mb-2"   />
           <div>请先选择一个连接</div>
@@ -252,9 +252,9 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   if (error) {
     return (
       <div className="p-4">
-        <div className="text-red-500 text-center">
+        <div className="text-destructive text-center">
           <div className="mb-2">加载数据库结构失败</div>
-          <div className="text-sm text-gray-600 mb-4">{error}</div>
+          <div className="text-sm text-muted-foreground mb-4">{error}</div>
           <Button onClick={handleRefresh} icon={<RefreshCw className="w-4 h-4"  />}>
             重试
           </Button>

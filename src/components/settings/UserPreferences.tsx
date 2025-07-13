@@ -333,7 +333,7 @@ const UserPreferencesComponent: React.FC = () => {
         </Card>
 
         {/* 保存按钮 */}
-        <div className="pt-6 border-t border-gray-200">
+        <div className="pt-6 border-t border">
           <div className="flex justify-end">
             <div className="flex gap-2" size="large">
               <Button onClick={() => form.resetFields()} size="large">

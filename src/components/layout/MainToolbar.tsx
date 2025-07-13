@@ -94,7 +94,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             }`} />
             <span>{conn.name}</span>
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {conn.host}:{conn.port}
           </span>
         </div>
@@ -215,7 +215,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         {/* 五大功能区域布局 */}
         <div className="flex items-center gap-1">
           {/* 区域1: 连接管理 */}
-          <div className="flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

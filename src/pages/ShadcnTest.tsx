@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster } from '@/components/ui';
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Label } from '@/components/ui';
 
 const ShadcnTest: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
@@ -25,7 +25,7 @@ const ShadcnTest: React.FC = () => {
       <Toaster />
       
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Shadcn/ui 组件测试</h1>
+        <Typography variant="h1" className="text-3xl font-bold mb-8">Shadcn/ui 组件测试</Typography>
 
         {/* 按钮测试 */}
         <Card className="mb-6">
@@ -55,7 +55,7 @@ const ShadcnTest: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">普通输入框</label>
+                <Label className="block text-sm font-medium mb-2">普通输入框</Label>
                 <Input
                   placeholder="请输入内容"
                   value={inputValue}
@@ -63,11 +63,11 @@ const ShadcnTest: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">文本域</label>
+                <Label className="block text-sm font-medium mb-2">文本域</Label>
                 <Textarea placeholder="请输入多行文本" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">选择器</label>
+                <Label className="block text-sm font-medium mb-2">选择器</Label>
                 <Select value={selectValue} onValueChange={setSelectValue}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="请选择选项" />
@@ -123,7 +123,7 @@ const ShadcnTest: React.FC = () => {
             <div className="space-y-6">
               {/* 头像 */}
               <div>
-                <h3 className="text-lg font-medium mb-2">头像</h3>
+                <Typography variant="h3" className="text-lg font-medium mb-2">头像</Typography>
                 <div className="flex gap-4">
                   <Avatar>
                     <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
@@ -137,7 +137,7 @@ const ShadcnTest: React.FC = () => {
 
               {/* 复选框和开关 */}
               <div>
-                <h3 className="text-lg font-medium mb-2">复选框和开关</h3>
+                <Typography variant="h3" className="text-lg font-medium mb-2">复选框和开关</Typography>
                 <div className="flex gap-6">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -159,7 +159,7 @@ const ShadcnTest: React.FC = () => {
 
               {/* 滑块 */}
               <div>
-                <h3 className="text-lg font-medium mb-2">滑块</h3>
+                <Typography variant="h3" className="text-lg font-medium mb-2">滑块</Typography>
                 <Slider
                   value={sliderValue}
                   onValueChange={setSliderValue}
@@ -174,7 +174,7 @@ const ShadcnTest: React.FC = () => {
 
               {/* 对话框和通知 */}
               <div>
-                <h3 className="text-lg font-medium mb-2">对话框和通知</h3>
+                <Typography variant="h3" className="text-lg font-medium mb-2">对话框和通知</Typography>
                 <div className="flex gap-4">
                   <Dialog>
                     <DialogTrigger asChild>

@@ -14,17 +14,17 @@ export interface ResultProps {
 
 const statusConfig = {
   success: {
-    color: 'text-green-500',
+    color: 'text-success',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200'
   },
   error: {
-    color: 'text-red-500',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200'
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
+    borderColor: 'border-destructive'
   },
   info: {
-    color: 'text-blue-500',
+    color: 'text-primary',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200'
   },
@@ -34,19 +34,19 @@ const statusConfig = {
     borderColor: 'border-yellow-200'
   },
   '404': {
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200'
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted/50',
+    borderColor: 'border'
   },
   '403': {
-    color: 'text-red-500',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200'
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
+    borderColor: 'border-destructive'
   },
   '500': {
-    color: 'text-red-500',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200'
+    color: 'text-destructive',
+    bgColor: 'bg-destructive/10',
+    borderColor: 'border-destructive'
   }
 };
 
@@ -90,7 +90,7 @@ const Result: React.FC<ResultProps> = ({
       )}
 
       {subTitle && (
-        <div className="text-gray-600 mb-4 max-w-md">
+        <div className="text-muted-foreground mb-4 max-w-md">
           {subTitle}
         </div>
       )}

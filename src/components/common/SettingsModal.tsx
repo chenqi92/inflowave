@@ -378,7 +378,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 my-4" />
+          <div className="border-t border my-4" />
 
           <div>
             <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
@@ -492,13 +492,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <div>
                   <Text strong className="text-base">项目地址</Text>
                   <br />
-                  <Text className="text-blue-600 hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
+                  <Text className="text-primary hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
                 </div>
               </div>
             </Col>
           </Row>
 
-          <div className="border-t border-gray-200 my-4" />
+          <div className="border-t border my-4" />
 
           <Alert
             message="功能特性"
@@ -591,7 +591,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             <Text type="secondary" className="text-sm">
               查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
             </Text>
-            <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded" style={{ maxHeight: '200px', overflow: 'auto' }}>
+            <div className="mt-3 p-3 bg-muted/50 border border rounded" style={{ maxHeight: '200px', overflow: 'auto' }}>
               {isBrowserEnvironment() ? (
                 <Alert
                   message="浏览器环境提示"
@@ -613,7 +613,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
     <>
       <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden settings-modal">
-          <DialogHeader className="border-b border-gray-200 pb-4">
+          <DialogHeader className="border-b border pb-4">
             <DialogTitle className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>偏好设置</span>
@@ -621,7 +621,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
             <Tabs defaultValue="general" orientation="vertical" className="flex h-full">
-              <TabsList className="flex flex-col h-full w-40 mr-4 bg-gray-50">
+              <TabsList className="flex flex-col h-full w-40 mr-4 bg-muted/50">
                 {tabItems.map((item) => (
                   <TabsTrigger
                     key={item.key}

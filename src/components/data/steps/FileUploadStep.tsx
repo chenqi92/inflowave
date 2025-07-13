@@ -609,8 +609,8 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
           <Upload.Dragger {...uploadProps}>
             <div className="flex flex-col items-center space-y-2">
               <UploadIcon className="w-8 h-8 text-gray-400" />
-              <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
-              <p className="text-sm text-gray-500">
+              <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
+              <p className="text-sm text-muted-foreground">
                 支持 CSV、JSON、Excel 格式文件。文件大小不超过 100MB。
               </p>
             </div>

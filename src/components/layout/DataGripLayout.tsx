@@ -188,7 +188,7 @@ const DataGripLayout: React.FC = () => {
         <div className="flex gap-2">
           <Database className="w-4 h-4"  />
           <span>{db}</span>
-          <span className="text-gray-500">
+          <span className="text-muted-foreground">
             ({structure.measurements[db]?.length || 0})
           </span>
         </div>
@@ -216,7 +216,7 @@ const DataGripLayout: React.FC = () => {
             <div className="flex gap-2">
               <Clock />
               <span>Fields</span>
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 ({structure.fields[`${database}.${measurement}`]?.length || 0})
               </span>
             </div>
@@ -235,7 +235,7 @@ const DataGripLayout: React.FC = () => {
             <div className="flex gap-2">
               <Tags className="w-4 h-4"  />
               <span>Tags</span>
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 ({structure.tags[`${database}.${measurement}`]?.length || 0})
               </span>
             </div>

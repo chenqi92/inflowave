@@ -89,7 +89,7 @@
 }
 
 .settings-modal input:focus,
-.settings-modal .ant-select-focused [data-select-trigger],
+.settings-modal [data-select-trigger]:focus,
 .settings-modal input-number:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
@@ -219,11 +219,11 @@
 }
 
 /* Row and Col improvements */
-.settings-modal .ant-row {
+.settings-modal .grid-row {
   margin-bottom: 0;
 }
 
-.settings-modal .ant-col {
+.settings-modal .grid-col {
   padding-right: 8px;
   padding-left: 8px;
 }
@@ -249,7 +249,7 @@
     padding: 12px 16px;
   }
   
-  .settings-modal .ant-col {
+  .settings-modal .grid-col {
     padding: 0 4px;
   }
 }

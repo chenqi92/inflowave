@@ -79,7 +79,7 @@ const ErrorTestButton: React.FC = () => {
   }
 
   return (
-    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+    <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
       <div className="mb-4">
         <h4 className="text-lg font-semibold text-red-700 mb-2">
           🧪 错误日志系统测试工具

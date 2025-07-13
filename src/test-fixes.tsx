@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Typography, Result, Tooltip, TooltipTrigger, TooltipContent, AntParagraph } from '@/components/ui';
+import { Table, Typography, Result, Tooltip, TooltipTrigger, TooltipContent, AntParagraph, Button } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -19,16 +19,16 @@ const TestFixes: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1>Error Fixes Test</h1>
+      <Typography variant="h1">Error Fixes Test</Typography>
       
       {/* Test 1: Tooltip with TooltipProvider */}
       <div>
-        <h2>1. Tooltip Test</h2>
+        <Typography variant="h2">1. Tooltip Test</Typography>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded">
+            <Button className="px-4 py-2">
               Hover me
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>
             This tooltip should work without errors
@@ -38,7 +38,7 @@ const TestFixes: React.FC = () => {
 
       {/* Test 2: Table with Ant Design props */}
       <div>
-        <h2>2. Table Test</h2>
+        <Typography variant="h2">2. Table Test</Typography>
         <Table
           columns={columns}
           dataSource={dataSource}
@@ -52,7 +52,7 @@ const TestFixes: React.FC = () => {
 
       {/* Test 3: Typography with Ant Design props */}
       <div>
-        <h2>3. Typography Test</h2>
+        <Typography variant="h2">3. Typography Test</Typography>
         <AntParagraph wrap={true} code={false} copyable={false}>
           This paragraph should not pass invalid props to DOM
         </AntParagraph>
@@ -63,7 +63,7 @@ const TestFixes: React.FC = () => {
 
       {/* Test 4: Result with wrap prop */}
       <div>
-        <h2>4. Result Test</h2>
+        <Typography variant="h2">4. Result Test</Typography>
         <Result
           status="success"
           title="Success"

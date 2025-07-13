@@ -71,13 +71,13 @@ const TypographyTest: React.FC = () => {
           <div>
             <Title level={4}>链接样式测试</Title>
             <div className="flex gap-2" wrap>
-              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline" target="_blank">
+              <a href="https://ant.design" className="text-primary hover:text-blue-800 underline" target="_blank">
                 普通链接
               </a>
-              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline font-semibold" target="_blank">
+              <a href="https://ant.design" className="text-primary hover:text-blue-800 underline font-semibold" target="_blank">
                 粗体链接
               </a>
-              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline" target="_blank">
+              <a href="https://ant.design" className="text-primary hover:text-blue-800 underline" target="_blank">
                 下划线链接
               </a>
               <a href="https://ant.design" className="text-gray-400 cursor-not-allowed" target="_blank">
@@ -158,7 +158,7 @@ greet('World');`}
               <Text underline>下划线</Text>、
               <Text type="danger">危险文本</Text>、
               <Text code>代码</Text>、
-              <a href="#" className="text-blue-600 hover:text-blue-800 underline" target="_blank">链接</a>
+              <a href="#" className="text-primary hover:text-blue-800 underline" target="_blank">链接</a>
               等多种样式的组合。
             </Paragraph>
           </div>

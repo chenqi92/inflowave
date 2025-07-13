@@ -187,7 +187,7 @@ const Dashboard: React.FC = () => {
                             <div className="font-medium">
                               {action.title}
                             </div>
-                            <div className="text-sm text-gray-500 mb-4">
+                            <div className="text-sm text-muted-foreground mb-4">
                               {action.description}
                             </div>
                             <Button
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
                       return (
                         <div
                           key={connection.id}
-                          className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
+                          className="flex items-center justify-between p-3 border rounded hover:bg-muted/50"
                         >
                           <div className="flex gap-2">
                             <div
@@ -248,7 +248,7 @@ const Dashboard: React.FC = () => {
                             />
                             <div>
                               <div className="font-medium text-sm">{connection.name}</div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-muted-foreground">
                                 {connection.host}:{connection.port}
                               </div>
                             </div>
@@ -262,7 +262,7 @@ const Dashboard: React.FC = () => {
                               {statusText}
                             </span>
                             {status?.latency && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-muted-foreground">
                                 {status.latency}ms
                               </span>
                             )}
@@ -300,7 +300,7 @@ const Dashboard: React.FC = () => {
                     <Card size="small" hoverable className="text-center">
                       <Webhook className="w-4 h-4" style={{ fontSize: 28, color: '#1890ff', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">连接管理</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         管理多个 InfluxDB 连接，支持连接测试、状态监控等功能。
                       </div>
                     </Card>
@@ -309,7 +309,7 @@ const Dashboard: React.FC = () => {
                     <Card size="small" hoverable className="text-center">
                       <Search className="w-4 h-4" style={{ fontSize: 28, color: '#52c41a', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据查询</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         强大的 InfluxQL 查询编辑器，支持语法高亮、自动补全等功能。
                       </div>
                     </Card>
@@ -318,7 +318,7 @@ const Dashboard: React.FC = () => {
                     <Card size="small" hoverable className="text-center">
                       <BarChart className="w-4 h-4" style={{ fontSize: 28, color: '#fa8c16', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据可视化</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         创建各种图表和仪表板，直观展示时序数据。
                       </div>
                     </Card>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Progress, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, List, Tag } from '@/components/ui';
+import { Card, Progress, Badge, Button, Select, Input, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Table, List, Tag, Typography, Empty, Statistic } from '@/components/ui';
 
-import { X } from 'lucide-react';
 import { BarChart, TrendingUp, Database, Info, RefreshCw, Download, Eye, Bug, Copy, FileText, Key, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { DataCardinalityService, type DataCardinalityStats, type DataAnomaly } from '@/services/analyticsService';
@@ -221,7 +220,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       render: (value: number, record: DataCardinalityStats) => (
         <div className="flex gap-2">
           <Text>{formatNumber(value)}</Text>
-          <Text type="secondary">({formatPercentage(value / record.totalRows)})</Text>
+          <Typography.Text variant="muted">({formatPercentage(value / record.totalRows)})</Typography.Text>
         </div>
       ),
       sorter: true},
@@ -346,42 +345,36 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               <Select
                 value={qualityFilter}
                 onValueChange={(value) => setQualityFilter(value as typeof qualityFilter)}
-                placeholder="质量筛选"
-                options={[
-                  { value: 'all', label: '所有质量' },
-                  { value: 'high', label: '高质量 (≥0.8)' },
-                  { value: 'medium', label: '中质量 (0.6-0.8)' },
-                  { value: 'low', label: '低质量 (<0.6)' },
-                ]}
-              />
-            </Col>
-            <Col span={4}>
+              >
+                <option value="all">所有质量</option>
+                <option value="high">高质量 (≥0.8)</option>
+                <option value="medium">中质量 (0.6-0.8)</option>
+                <option value="low">低质量 (&lt;0.6)</option>
+              </Select>
+            </div>
+            <div className="col-span-2">
               <Select
                 value={cardinalityFilter}
                 onValueChange={(value) => setCardinalityFilter(value as typeof cardinalityFilter)}
-                placeholder="基数筛选"
-                options={[
-                  { value: 'all', label: '所有基数' },
-                  { value: 'unique', label: '唯一值' },
-                  { value: 'high', label: '高基数 (≥0.8)' },
-                  { value: 'medium', label: '中基数 (0.4-0.8)' },
-                  { value: 'low', label: '低基数 (<0.4)' },
-                ]}
-              />
-            </Col>
-            <Col span={4}>
+              >
+                <option value="all">所有基数</option>
+                <option value="unique">唯一值</option>
+                <option value="high">高基数 (≥0.8)</option>
+                <option value="medium">中基数 (0.4-0.8)</option>
+                <option value="low">低基数 (&lt;0.4)</option>
+              </Select>
+            </div>
+            <div className="col-span-4">
               <div className="flex gap-2">
                 <Switch
                   checked={showAnomalies}
-                  onValueChange={setShowAnomalies}
-                  size="sm"
+                  onCheckedChange={setShowAnomalies}
                 />
-                <Text type="secondary">显示异常</Text>
+                <Typography.Text variant="muted">显示异常</Typography.Text>
               </div>
-            </Col>
-            <Col span={4}>
+            </div>
+            <div className="col-span-2">
               <Button
-                icon={<ClearOutlined />}
                 onClick={() => {
                   setSearchText('');
                   setQualityFilter('all');
@@ -391,8 +384,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               >
                 清空筛选
               </Button>
-            </Col>
-          </Row>
+            </div>
+          </div>
         </Card>
 
         {/* 统计表格 */}

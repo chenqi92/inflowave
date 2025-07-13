@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space, Tooltip } from '@/components/ui';
+import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space, Tooltip, Label } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { useToast } from '@/hooks/use-toast';
 
@@ -416,7 +416,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       label: (
         <div className="flex items-center gap-1">
           <span>{tab.name}</span>
-          {tab.isModified && <div className="w-1 h-1 bg-blue-500 rounded-full" />}
+          {tab.isModified && <div className="w-1 h-1 bg-primary rounded-full" />}
           {tab.lastExecuted && (
             <Tooltip title={`最后执行: ${tab.lastExecuted.toLocaleString()}`}>
               <Clock className="w-4 h-4 text-xs text-gray-400"   />
@@ -727,10 +727,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               >
                 <div className="space-y-1">
                   <div className="font-medium">{tab.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {tab.lastExecuted?.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600 truncate">
+                  <div className="text-sm text-muted-foreground truncate">
                     {tab.query}
                   </div>
                 </div>
@@ -738,7 +738,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             ))}
           
           {queryTabs.filter(tab => tab.lastExecuted).length === 0 && (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center text-muted-foreground py-8">
               <History className="w-4 h-4 text-4xl mb-2"   />
               <div>暂无查询历史</div>
             </div>
@@ -755,7 +755,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">字体大小</label>
+            <Label className="block text-sm font-medium mb-2">字体大小</Label>
             <Select defaultValue={14} style={{ width: '100%' }}>
               <Option value={12}>12px</Option>
               <Option value={14}>14px</Option>
@@ -765,7 +765,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">主题</label>
+            <Label className="block text-sm font-medium mb-2">主题</Label>
             <Select defaultValue="vs-light" style={{ width: '100%' }}>
               <Option value="vs-light">浅色</Option>
               <Option value="vs-dark">深色</Option>
@@ -807,7 +807,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">优化技术</h4>
+            <Typography variant="h4" className="font-medium mb-3">优化技术</Typography>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">索引优化</span>
@@ -829,10 +829,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">性能目标</h4>
+            <Typography variant="h4" className="font-medium mb-3">性能目标</Typography>
             <div className="space-y-2">
               <div>
-                <label className="block text-sm font-medium mb-1">最大执行时间 (秒)</label>
+                <Label className="block text-sm font-medium mb-1">最大执行时间 (秒)</Label>
                 <Select defaultValue="5" style={{ width: '100%' }}>
                   <Option value="1">1</Option>
                   <Option value="5">5</Option>
@@ -841,7 +841,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">内存使用限制 (MB)</label>
+                <Label className="block text-sm font-medium mb-1">内存使用限制 (MB)</Label>
                 <Select defaultValue="512" style={{ width: '100%' }}>
                   <Option value="256">256</Option>
                   <Option value="512">512</Option>
@@ -853,10 +853,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </div>
 
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-3">路由策略</h4>
+            <Typography variant="h4" className="font-medium mb-3">路由策略</Typography>
             <div className="space-y-2">
               <div>
-                <label className="block text-sm font-medium mb-1">负载均衡</label>
+                <Label className="block text-sm font-medium mb-1">负载均衡</Label>
                 <Select defaultValue="adaptive" style={{ width: '100%' }}>
                   <Option value="round_robin">轮询</Option>
                   <Option value="least_connections">最少连接</Option>
@@ -873,7 +873,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
           {optimizationResult && (
             <div className="border-t pt-4">
-              <h4 className="font-medium mb-3">优化历史</h4>
+              <Typography variant="h4" className="font-medium mb-3">优化历史</Typography>
               <div className="space-y-2">
                 <div className="text-sm">
                   <Text type="secondary">上次优化时间:</Text>

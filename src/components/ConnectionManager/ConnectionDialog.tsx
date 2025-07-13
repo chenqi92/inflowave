@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Button, Alert, AlertDescription, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Button, Alert, AlertDescription, Dialog, DialogContent, DialogHeader, DialogTitle, Typography } from '@/components/ui';
 import { Switch } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
@@ -300,9 +300,9 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           <div className="bg-green-50 border border-green-200 rounded p-3">
             <div className="flex items-center gap-2 text-green-700">
               <CheckCircle />
-              <span className="font-medium">连接配置正确</span>
+              <Typography.Text className="font-medium">连接配置正确</Typography.Text>
             </div>
-            <div className="text-sm text-green-600 mt-1">
+            <div className="text-sm text-success mt-1">
               您可以点击"保存连接"来保存此配置
             </div>
           </div>

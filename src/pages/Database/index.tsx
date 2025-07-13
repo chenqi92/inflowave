@@ -295,8 +295,8 @@ const Database: React.FC = () => {
       {/* 页面标题和操作 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1">数据库管理</h2>
-          <p className="text-gray-500">
+          <Typography variant="h2" className="text-2xl font-bold mb-1">数据库管理</Typography>
+          <p className="text-muted-foreground">
             管理 InfluxDB 数据库、测量和保留策略
           </p>
         </div>
@@ -321,7 +321,7 @@ const Database: React.FC = () => {
       {/* 数据库选择器 */}
       <Card className="mb-6">
         <div className="flex items-center gap-4">
-          <span className="font-semibold text-base">选择数据库:</span>
+          <Typography.Text className="font-semibold text-base">选择数据库:</Typography.Text>
           <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
             <SelectTrigger className="w-[280px]">
               <SelectValue placeholder="选择数据库" />
@@ -444,7 +444,7 @@ const Database: React.FC = () => {
                       >
                         <div className="flex gap-2">
                           <BarChart className="w-4 h-4"  />
-                          <span className="font-semibold">{name}</span>
+                          <Typography.Text className="font-semibold">{name}</Typography.Text>
                         </div>
                       </TableContextMenu>
                     )},
@@ -530,7 +530,7 @@ const Database: React.FC = () => {
                     key: 'name',
                     render: (name: string, record: RetentionPolicy) => (
                       <div className="flex gap-2">
-                        <span className="font-semibold">{name}</span>
+                        <Typography.Text className="font-semibold">{name}</Typography.Text>
                         {record.default && <Tag color="blue">默认</Tag>}
                       </div>
                     )},
@@ -740,10 +740,10 @@ const Database: React.FC = () => {
                     width: 1000,
                     content: (
                       <div>
-                        <span className="text-gray-500">查询: {query}</span>
+                        <span className="text-muted-foreground">查询: {query}</span>
                         <div className="mt-4">
                           {/* 这里可以添加一个简单的表格来显示结果 */}
-                          <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                          <pre className="bg-muted p-4 rounded max-h-96 overflow-auto">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
@@ -870,9 +870,9 @@ const Database: React.FC = () => {
                     width: 800,
                     content: (
                       <div>
-                        <span className="text-gray-500">查询: {query}</span>
+                        <span className="text-muted-foreground">查询: {query}</span>
                         <div className="mt-4">
-                          <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
+                          <pre className="bg-muted p-4 rounded max-h-96 overflow-auto">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
@@ -901,7 +901,7 @@ const Database: React.FC = () => {
                           prefix={<DatabaseIcon className="w-4 h-4"  />}
                         />
                         <div className="mt-4">
-                          <span className="text-gray-500">查询: {query}</span>
+                          <span className="text-muted-foreground">查询: {query}</span>
                         </div>
                       </div>
                     )});
@@ -924,10 +924,10 @@ const Database: React.FC = () => {
                       <div>
                         <Descriptions column={1} bordered>
                           <DescriptionsItem label="查询">
-                            <code className="bg-gray-100 px-1 rounded">{query}</code>
+                            <code className="bg-muted px-1 rounded">{query}</code>
                           </DescriptionsItem>
                           <DescriptionsItem label="结果">
-                            <pre className="bg-gray-100 p-2 rounded">
+                            <pre className="bg-muted p-2 rounded">
                               {JSON.stringify(result, null, 2)}
                             </pre>
                           </DescriptionsItem>
@@ -970,9 +970,9 @@ const Database: React.FC = () => {
                           type="info"
                           className="mb-4"
                         />
-                        <span className="text-gray-500">查询: {query}</span>
+                        <span className="text-muted-foreground">查询: {query}</span>
                         <div className="mt-4">
-                          <pre className="bg-gray-100 p-4 rounded">
+                          <pre className="bg-muted p-4 rounded">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
@@ -1014,9 +1014,9 @@ const Database: React.FC = () => {
                           type="info"
                           className="mb-4"
                         />
-                        <span className="text-gray-500">查询: {query}</span>
+                        <span className="text-muted-foreground">查询: {query}</span>
                         <div className="mt-4">
-                          <pre className="bg-gray-100 p-4 rounded max-h-64 overflow-auto">
+                          <pre className="bg-muted p-4 rounded max-h-64 overflow-auto">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>

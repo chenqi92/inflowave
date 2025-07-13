@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Card, Space } from '@/components/ui';
+import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Card, Space, Typography } from '@/components/ui';
 import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Popconfirm } from '@/components/ui';
 import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -168,7 +168,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
           />
           <div>
             <div className="font-medium text-gray-900">{name}</div>
-            <div className="text-sm text-gray-500">{record.host}:{record.port}</div>
+            <div className="text-sm text-muted-foreground">{record.host}:{record.port}</div>
           </div>
           {activeConnectionId === record.id && (
             <Tag color="blue" className="ml-2">活跃</Tag>
@@ -181,12 +181,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       render: (_, record) => (
         <div className="space-y-1">
           <div className="text-sm">
-            <span className="text-gray-500">用户：</span>
+            <span className="text-muted-foreground">用户：</span>
             <span className="text-gray-900">{record.username || '无'}</span>
           </div>
           <div className="text-sm">
-            <span className="text-gray-500">SSL：</span>
-            <span className={record.ssl ? 'text-green-600' : 'text-gray-400'}>
+            <span className="text-muted-foreground">SSL：</span>
+            <span className={record.ssl ? 'text-success' : 'text-gray-400'}>
               {record.ssl ? '已启用' : '未启用'}
             </span>
           </div>
@@ -201,7 +201,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
           <div className="space-y-1">
             {getStatusTag(status)}
             {status?.latency && (
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 延迟: {status.latency}ms
               </div>
             )}
@@ -214,7 +214,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return status?.lastConnected ? (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {new Date(status.lastConnected).toLocaleString()}
           </div>
         ) : (
@@ -292,8 +292,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   return (
     <div className="h-full flex flex-col">
       {/* 工具栏 */}
-      <div className="flex justify-between items-center p-3 border-b border-gray-200">
-        <div className="text-sm text-gray-600">
+      <div className="flex justify-between items-center p-3 border-b border">
+        <div className="text-sm text-muted-foreground">
           连接状态监控
         </div>
         <Button
@@ -306,29 +306,29 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         </Button>
       </div>
       {/* 统计信息 */}
-      <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+      <div className="flex items-center justify-between p-3 bg-muted/50 border-b border">
         <div className="flex items-center space-x-6 text-sm">
           <div className="flex items-center space-x-2">
-            <Settings className="w-4 h-4 text-gray-500"   />
-            <span className="text-gray-600">总连接:</span>
-            <span className="font-medium">{connections.length}</span>
+            <Settings className="w-4 h-4 text-muted-foreground"   />
+            <span className="text-muted-foreground">总连接:</span>
+            <Typography.Text className="font-medium">{connections.length}</Typography.Text>
           </div>
           <div className="flex items-center space-x-2">
-            <Wifi className="w-4 h-4 text-green-500"   />
-            <span className="text-gray-600">已连接:</span>
-            <span className="font-medium text-green-600">
+            <Wifi className="w-4 h-4 text-success"   />
+            <span className="text-muted-foreground">已连接:</span>
+            <span className="font-medium text-success">
               {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-gray-600">监控:</span>
-            <span className={`font-medium ${monitoringActive ? 'text-green-600' : 'text-red-600'}`}>
+            <span className="text-muted-foreground">监控:</span>
+            <span className={`font-medium ${monitoringActive ? 'text-success' : 'text-red-600'}`}>
               {monitoringActive ? '运行中' : '已停止'}
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-gray-600">间隔:</span>
-            <span className="font-medium">{monitoringInterval}秒</span>
+            <span className="text-muted-foreground">间隔:</span>
+            <Typography.Text className="font-medium">{monitoringInterval}秒</Typography.Text>
           </div>
         </div>
       </div>
@@ -353,7 +353,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
           rowClassName={(record) =>
             activeConnectionId === record.id
               ? 'bg-blue-50'
-              : 'hover:bg-gray-50'
+              : 'hover:bg-muted/50'
           }
         />
       </div>
@@ -398,7 +398,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               </Col>
             </Row>
             <div style={{ marginTop: 16 }}>
-              <h4>连接池使用率</h4>
+              <Typography variant="h4">连接池使用率</Typography>
               <Progress
                 percent={Math.round(
                   (poolStats[selectedConnectionId].active_connections /

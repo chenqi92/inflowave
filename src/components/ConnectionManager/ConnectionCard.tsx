@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Badge, TooltipWrapper as Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card } from '@/components/ui';
+import { Button, Badge, TooltipWrapper as Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card, Typography } from '@/components/ui';
 import { Settings, Trash2, Edit, Wifi, Unlink, Copy, Info, PlayCircle, PauseCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
@@ -104,11 +104,11 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
     switch (status?.status) {
       case 'connected':
-        return <Wifi className="w-4 h-4 text-green-500"   />;
+        return <Wifi className="w-4 h-4 text-success"   />;
       case 'connecting':
         return <Progress type="circle" size={16} />;
       case 'error':
-        return <Unlink className="w-4 h-4 text-red-500"   />;
+        return <Unlink className="w-4 h-4 text-destructive"   />;
       default:
         return <Unlink className="w-4 h-4 text-gray-400"   />;
     }
@@ -116,8 +116,8 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
   const getLatencyDisplay = () => {
     if (status?.latency !== undefined) {
-      const latencyClass = status.latency < 100 ? 'text-green-500' : 
-                          status.latency < 500 ? 'text-yellow-500' : 'text-red-500';
+      const latencyClass = status.latency < 100 ? 'text-success' : 
+                          status.latency < 500 ? 'text-yellow-500' : 'text-destructive';
       return (
         <span className={`text-xs ${latencyClass}`}>
           延迟: {status.latency}ms
@@ -176,7 +176,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
         'transition-all duration-200 hover:shadow-md cursor-pointer',
         'border-2 hover:border-blue-300',
         isActive && 'border-blue-500 shadow-md',
-        status?.status === 'error' && 'border-red-200 bg-red-50',
+        status?.status === 'error' && 'border-destructive bg-destructive/10',
         className
       )}
       onClick={onClick}
@@ -192,29 +192,29 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             {getStatusBadge()}
           </div>
           
-          <div className="text-sm text-gray-600 space-y-1">
+          <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex items-center gap-1">
               <span className="w-12 text-gray-400">主机:</span>
-              <span className="font-mono">{connection.host}:{connection.port}</span>
+              <Typography.Text className="font-mono">{connection.host}:{connection.port}</Typography.Text>
             </div>
             
             {connection.database && (
               <div className="flex items-center gap-1">
                 <span className="w-12 text-gray-400">库:</span>
-                <span className="font-mono">{connection.database}</span>
+                <Typography.Text className="font-mono">{connection.database}</Typography.Text>
               </div>
             )}
             
             {connection.username && (
               <div className="flex items-center gap-1">
                 <span className="w-12 text-gray-400">用户:</span>
-                <span className="font-mono">{connection.username}</span>
+                <Typography.Text className="font-mono">{connection.username}</Typography.Text>
               </div>
             )}
           </div>
 
           {/* 状态信息 */}
-          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
             {getLatencyDisplay()}
             
             {status?.lastConnected && (
@@ -224,7 +224,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             )}
             
             {poolStats && (
-              <span className="text-blue-600">
+              <span className="text-primary">
                 连接池: {poolStats.active}/{poolStats.max}
               </span>
             )}
@@ -232,7 +232,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
           {/* 错误信息 */}
           {status?.error && (
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+            <div className="mt-2 p-2 bg-destructive/10 border border-destructive rounded text-xs text-red-600">
               {status.error}
             </div>
           )}

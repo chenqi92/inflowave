@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge } from '@/components/ui';
+import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge, Typography } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
 import { Database, TrendingUp, Settings, CheckCircle, Rocket, Star, Zap, FileUp, Monitor, Grid3X3 } from 'lucide-react';
 import { featureTester } from '../utils/featureTest';
@@ -207,13 +207,13 @@ const FeatureShowcase: React.FC = () => {
     <div style={{ padding: '24px' }}>
       {/* 标题和概览 */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <h1 className="text-4xl font-bold mb-4 flex items-center justify-center">
-          <Rocket className="w-8 h-8 mr-3 text-blue-600" />
+        <Typography variant="h1" className="text-4xl font-bold mb-4 flex items-center justify-center">
+          <Rocket className="w-8 h-8 mr-3 text-primary" />
           InfloWave 功能展示
-        </h1>
-        <p className="text-lg text-gray-600">
+        </Typography>
+        <Typography.Text className="text-lg text-muted-foreground">
           全新的 InfluxDB 管理体验，专业级数据库工具的完整功能集
-        </p>
+        </Typography.Text>
       </div>
 
       {/* 统计概览 */}
@@ -257,7 +257,7 @@ const FeatureShowcase: React.FC = () => {
                 status={completionRate === 100 ? 'success' : 'active'}
               />
               <div style={{ marginTop: '8px' }}>
-                <span className="font-semibold">项目进度</span>
+                <Typography.Text weight="semibold">项目进度</Typography.Text>
               </div>
             </div>
           </Card>
@@ -267,10 +267,10 @@ const FeatureShowcase: React.FC = () => {
       {/* 功能测试 */}
       <Card style={{ marginBottom: '32px' }}>
         <div style={{ textAlign: 'center' }}>
-          <h3 className="text-xl font-bold mb-4">功能完整性测试</h3>
-          <p className="text-gray-600 mb-4">
+          <Typography variant="h3" className="text-xl font-bold mb-4">功能完整性测试</Typography>
+          <Typography.Text className="text-muted-foreground mb-4">
             运行自动化测试以验证所有功能的可用性和集成状态
-          </p>
+          </Typography.Text>
           <Button
             type="primary"
             size="large"
@@ -323,7 +323,7 @@ const FeatureShowcase: React.FC = () => {
                   ]}
                 >
                   <List.Item.Meta
-                    title={<span className="font-semibold">{item.name}</span>}
+                    title={<Typography.Text className="font-semibold">{item.name}</Typography.Text>}
                     description={item.description}
                   />
                 </List.Item>
@@ -335,17 +335,17 @@ const FeatureShowcase: React.FC = () => {
 
       {/* 版本路线图 */}
       <Card style={{ marginTop: '32px' }}>
-        <h3 className="text-xl font-bold mb-4">版本路线图</h3>
+        <Typography variant="h3" className="text-xl font-bold mb-4">版本路线图</Typography>
         <Timeline mode="left">
           <Timeline.Item
             color="green"
             dot={<CheckCircle style={{ fontSize: '16px' }} />}
           >
             <div>
-              <span className="font-semibold">v2.0.0 - 核心功能完善</span>
+              <Typography.Text className="font-semibold">v2.0.0 - 核心功能完善</Typography.Text>
               <div style={{ marginTop: '8px' }}>
                 <Tag color="green">已发布</Tag>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-muted-foreground">
                   完成了查询管理、数据可视化、实时监控、数据管理和用户体验的全面升级
                 </p>
               </div>
@@ -356,10 +356,10 @@ const FeatureShowcase: React.FC = () => {
             dot={<Star className="w-4 h-4" style={{ fontSize: '16px' }}  />}
           >
             <div>
-              <span className="font-semibold">v2.1.0 - 扩展生态</span>
+              <Typography.Text className="font-semibold">v2.1.0 - 扩展生态</Typography.Text>
               <div style={{ marginTop: '8px' }}>
                 <Tag color="blue">计划中</Tag>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-muted-foreground">
                   插件系统、API集成、Webhook支持、自动化规则等扩展功能
                 </p>
               </div>
@@ -370,10 +370,10 @@ const FeatureShowcase: React.FC = () => {
             dot={<Rocket className="w-4 h-4" style={{ fontSize: '16px' }}  />}
           >
             <div>
-              <span className="font-semibold">v2.2.0 - 企业级功能</span>
+              <Typography.Text className="font-semibold">v2.2.0 - 企业级功能</Typography.Text>
               <div style={{ marginTop: '8px' }}>
                 <Tag color="orange">规划中</Tag>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-muted-foreground">
                   用户权限管理、审计日志、集群管理、高可用部署等企业级功能
                 </p>
               </div>
@@ -384,7 +384,7 @@ const FeatureShowcase: React.FC = () => {
 
       {/* 技术栈 */}
       <Card style={{ marginTop: '32px' }}>
-        <h3 className="text-xl font-bold mb-4">技术栈</h3>
+        <Typography variant="h3" className="text-xl font-bold mb-4">技术栈</Typography>
         <Row gutter={[16, 16]}>
           <Col span={8}>
             <Card size="small" title="前端技术">

@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Separator } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Separator, Typography } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Upload as UploadIcon, Database, CheckCircle, Info, AlertCircle } from 'lucide-react';
 import { Card, Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
@@ -706,8 +706,8 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 <Upload.Dragger {...uploadProps}>
                   <div className="flex flex-col items-center space-y-2">
                     <UploadIcon className="w-8 h-8 text-gray-400" />
-                    <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
-                    <p className="text-sm text-gray-500">
+                    <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
+                    <p className="text-sm text-muted-foreground">
                       支持 CSV、JSON、Excel 格式文件。文件大小不超过 50MB。
                     </p>
                   </div>
@@ -1012,7 +1012,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             <div className="text-center space-y-4">
               {importProgress?.stage === 'completed' ? (
                 <>
-                  <CheckCircle className="text-6xl text-green-500" />
+                  <CheckCircle className="text-6xl text-success" />
                   <Title level={3}>导入完成</Title>
                   <Paragraph>
                     成功导入 <strong>{importProgress.processedRows}</strong> 行数据到数据库 <strong>{database}</strong> 中。
@@ -1020,7 +1020,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 </>
               ) : importProgress?.stage === 'error' ? (
                 <>
-                  <AlertCircle className="text-6xl text-red-500" />
+                  <AlertCircle className="text-6xl text-destructive" />
                   <Title level={3}>导入失败</Title>
                   <Paragraph>
                     {importProgress.message}

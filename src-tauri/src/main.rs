@@ -32,31 +32,115 @@ use commands::optimization_history::*;
 use services::ConnectionService;
 use utils::encryption::create_encryption_service;
 
-// 创建原生菜单 - 简化版本
+// 创建原生菜单 - 完整的专业化菜单
 fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+    // 文件菜单
     let file_menu = SubmenuBuilder::new(app, "文件")
-        .text("new_query", "新建查询")
-        .text("save", "保存")
+        .text("new_query", "新建查询\tCtrl+N")
+        .text("open_file", "打开文件\tCtrl+O")
+        .text("save", "保存\tCtrl+S")
+        .text("save_as", "另存为\tCtrl+Shift+S")
         .separator()
-        .text("quit", "退出")
+        .text("import_data", "导入数据")
+        .text("export_data", "导出数据")
+        .separator()
+        .text("quit", "退出\tCtrl+Q")
         .build()?;
 
+    // 编辑菜单
+    let edit_menu = SubmenuBuilder::new(app, "编辑")
+        .text("undo", "撤销\tCtrl+Z")
+        .text("redo", "重做\tCtrl+Y")
+        .separator()
+        .text("cut", "剪切\tCtrl+X")
+        .text("copy", "复制\tCtrl+C")
+        .text("paste", "粘贴\tCtrl+V")
+        .separator()
+        .text("find", "查找\tCtrl+F")
+        .text("replace", "替换\tCtrl+H")
+        .text("global_search", "全局搜索\tCtrl+Shift+F")
+        .build()?;
+
+    // 查看菜单
     let view_menu = SubmenuBuilder::new(app, "查看")
-        .text("view_dashboard", "仪表板")
-        .text("view_connections", "连接管理")
-        .text("view_query", "数据查询")
+        .text("view_datasource", "数据源管理\tCtrl+1")
+        .text("view_query", "查询编辑器\tCtrl+2")
+        .text("view_visualization", "数据可视化\tCtrl+3")
+        .text("view_performance", "性能监控\tCtrl+4")
+        .separator()
+        .text("toggle_sidebar", "切换侧边栏\tCtrl+B")
+        .text("toggle_statusbar", "切换状态栏")
+        .text("fullscreen", "全屏模式\tF11")
+        .separator()
+        .text("zoom_in", "放大\tCtrl+=")
+        .text("zoom_out", "缩小\tCtrl+-")
+        .text("zoom_reset", "重置缩放\tCtrl+0")
         .build()?;
 
+    // 数据库菜单
+    let database_menu = SubmenuBuilder::new(app, "数据库")
+        .text("new_connection", "新建连接\tCtrl+Shift+N")
+        .text("edit_connection", "编辑连接")
+        .text("test_connection", "测试连接\tCtrl+T")
+        .text("delete_connection", "删除连接")
+        .separator()
+        .text("refresh_structure", "刷新数据库结构\tF5")
+        .text("database_info", "查看数据库信息")
+        .text("database_stats", "数据库统计")
+        .separator()
+        .text("import_structure", "导入数据库结构")
+        .text("export_structure", "导出数据库结构")
+        .build()?;
+
+    // 查询菜单
+    let query_menu = SubmenuBuilder::new(app, "查询")
+        .text("execute_query", "执行查询\tF5")
+        .text("stop_query", "停止查询\tCtrl+F2")
+        .text("execute_selection", "执行选中\tCtrl+Enter")
+        .separator()
+        .text("query_history", "查询历史\tCtrl+H")
+        .text("save_query", "保存查询")
+        .text("query_favorites", "查询收藏夹")
+        .separator()
+        .text("query_plan", "查询计划")
+        .text("explain_query", "解释查询")
+        .text("format_query", "格式化查询\tCtrl+Alt+L")
+        .build()?;
+
+    // 工具菜单
+    let tools_menu = SubmenuBuilder::new(app, "工具")
+        .text("console", "控制台\tCtrl+`")
+        .text("dev_tools", "开发者工具\tF12")
+        .text("query_performance", "查询性能分析")
+        .separator()
+        .text("extensions", "扩展管理")
+        .text("theme_settings", "主题设置")
+        .text("language_settings", "语言设置")
+        .separator()
+        .text("preferences", "首选项\tCtrl+,")
+        .build()?;
+
+    // 帮助菜单
     let help_menu = SubmenuBuilder::new(app, "帮助")
-        .text("about", "关于 InfloWave")
+        .text("user_manual", "用户手册\tF1")
+        .text("quick_start", "快速入门")
+        .text("shortcuts_help", "键盘快捷键\tCtrl+/")
+        .separator()
+        .text("sample_queries", "示例查询")
+        .text("api_docs", "API文档")
+        .text("influxdb_docs", "InfluxDB文档")
+        .separator()
+        .text("check_updates", "检查更新")
+        .text("report_issue", "反馈问题")
+        .text("about", "关于InfloWave")
         .build()?;
 
     MenuBuilder::new(app)
-        .items(&[&file_menu, &view_menu, &help_menu])
+        .items(&[&file_menu, &edit_menu, &view_menu, &database_menu, &query_menu, &tools_menu, &help_menu])
         .build()
 }
 
-// 处理菜单事件 - 简化版本
+// 处理菜单事件 - 完整的专业化菜单
 fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     let window = app.get_webview_window("main").unwrap();
 
@@ -65,25 +149,189 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "new_query" => {
             let _ = window.emit("menu-action", "new_query");
         }
+        "open_file" => {
+            let _ = window.emit("menu-action", "open_file");
+        }
         "save" => {
             let _ = window.emit("menu-action", "save");
+        }
+        "save_as" => {
+            let _ = window.emit("menu-action", "save_as");
+        }
+        "import_data" => {
+            let _ = window.emit("menu-action", "import_data");
+        }
+        "export_data" => {
+            let _ = window.emit("menu-action", "export_data");
         }
         "quit" => {
             std::process::exit(0);
         }
 
-        // 查看菜单
-        "view_dashboard" => {
-            let _ = window.emit("menu-action", "navigate:/dashboard");
+        // 编辑菜单
+        "undo" => {
+            let _ = window.emit("menu-action", "undo");
         }
-        "view_connections" => {
-            let _ = window.emit("menu-action", "navigate:/connections");
+        "redo" => {
+            let _ = window.emit("menu-action", "redo");
+        }
+        "cut" => {
+            let _ = window.emit("menu-action", "cut");
+        }
+        "copy" => {
+            let _ = window.emit("menu-action", "copy");
+        }
+        "paste" => {
+            let _ = window.emit("menu-action", "paste");
+        }
+        "find" => {
+            let _ = window.emit("menu-action", "find");
+        }
+        "replace" => {
+            let _ = window.emit("menu-action", "replace");
+        }
+        "global_search" => {
+            let _ = window.emit("menu-action", "global_search");
+        }
+
+        // 查看菜单
+        "view_datasource" => {
+            let _ = window.emit("menu-action", "navigate:/datasource");
         }
         "view_query" => {
             let _ = window.emit("menu-action", "navigate:/query");
         }
+        "view_visualization" => {
+            let _ = window.emit("menu-action", "navigate:/visualization");
+        }
+        "view_performance" => {
+            let _ = window.emit("menu-action", "navigate:/performance");
+        }
+        "toggle_sidebar" => {
+            let _ = window.emit("menu-action", "toggle_sidebar");
+        }
+        "toggle_statusbar" => {
+            let _ = window.emit("menu-action", "toggle_statusbar");
+        }
+        "fullscreen" => {
+            let _ = window.emit("menu-action", "fullscreen");
+        }
+        "zoom_in" => {
+            let _ = window.emit("menu-action", "zoom_in");
+        }
+        "zoom_out" => {
+            let _ = window.emit("menu-action", "zoom_out");
+        }
+        "zoom_reset" => {
+            let _ = window.emit("menu-action", "zoom_reset");
+        }
+
+        // 数据库菜单
+        "new_connection" => {
+            let _ = window.emit("menu-action", "new_connection");
+        }
+        "edit_connection" => {
+            let _ = window.emit("menu-action", "edit_connection");
+        }
+        "test_connection" => {
+            let _ = window.emit("menu-action", "test_connection");
+        }
+        "delete_connection" => {
+            let _ = window.emit("menu-action", "delete_connection");
+        }
+        "refresh_structure" => {
+            let _ = window.emit("menu-action", "refresh_structure");
+        }
+        "database_info" => {
+            let _ = window.emit("menu-action", "database_info");
+        }
+        "database_stats" => {
+            let _ = window.emit("menu-action", "database_stats");
+        }
+        "import_structure" => {
+            let _ = window.emit("menu-action", "import_structure");
+        }
+        "export_structure" => {
+            let _ = window.emit("menu-action", "export_structure");
+        }
+
+        // 查询菜单
+        "execute_query" => {
+            let _ = window.emit("menu-action", "execute_query");
+        }
+        "stop_query" => {
+            let _ = window.emit("menu-action", "stop_query");
+        }
+        "execute_selection" => {
+            let _ = window.emit("menu-action", "execute_selection");
+        }
+        "query_history" => {
+            let _ = window.emit("menu-action", "query_history");
+        }
+        "save_query" => {
+            let _ = window.emit("menu-action", "save_query");
+        }
+        "query_favorites" => {
+            let _ = window.emit("menu-action", "query_favorites");
+        }
+        "query_plan" => {
+            let _ = window.emit("menu-action", "query_plan");
+        }
+        "explain_query" => {
+            let _ = window.emit("menu-action", "explain_query");
+        }
+        "format_query" => {
+            let _ = window.emit("menu-action", "format_query");
+        }
+
+        // 工具菜单
+        "console" => {
+            let _ = window.emit("menu-action", "console");
+        }
+        "dev_tools" => {
+            let _ = window.emit("menu-action", "dev_tools");
+        }
+        "query_performance" => {
+            let _ = window.emit("menu-action", "query_performance");
+        }
+        "extensions" => {
+            let _ = window.emit("menu-action", "navigate:/extensions");
+        }
+        "theme_settings" => {
+            let _ = window.emit("menu-action", "theme_settings");
+        }
+        "language_settings" => {
+            let _ = window.emit("menu-action", "language_settings");
+        }
+        "preferences" => {
+            let _ = window.emit("menu-action", "navigate:/settings");
+        }
 
         // 帮助菜单
+        "user_manual" => {
+            let _ = window.emit("menu-action", "user_manual");
+        }
+        "quick_start" => {
+            let _ = window.emit("menu-action", "quick_start");
+        }
+        "shortcuts_help" => {
+            let _ = window.emit("menu-action", "shortcuts_help");
+        }
+        "sample_queries" => {
+            let _ = window.emit("menu-action", "sample_queries");
+        }
+        "api_docs" => {
+            let _ = window.emit("menu-action", "api_docs");
+        }
+        "influxdb_docs" => {
+            let _ = window.emit("menu-action", "influxdb_docs");
+        }
+        "check_updates" => {
+            let _ = window.emit("menu-action", "check_updates");
+        }
+        "report_issue" => {
+            let _ = window.emit("menu-action", "report_issue");
+        }
         "about" => {
             let _ = window.emit("menu-action", "about");
         }

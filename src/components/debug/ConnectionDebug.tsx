@@ -59,14 +59,14 @@ const ConnectionDebug: React.FC = () => {
 
               <div>
                 <Text strong>连接配置:</Text>
-                <pre className="bg-gray-100 p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+                <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
                   {JSON.stringify(debugInfo.connections, null, 2)}
                 </pre>
               </div>
 
               <div>
                 <Text strong>连接状态:</Text>
-                <pre className="bg-gray-100 p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+                <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
                   {JSON.stringify(debugInfo.statuses, null, 2)}
                 </pre>
               </div>

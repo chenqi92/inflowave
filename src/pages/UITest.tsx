@@ -39,7 +39,7 @@ const UITest: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-muted/50 min-h-screen">
       <Title level={1}>UI Components Test</Title>
       
       {/* Buttons */}
@@ -258,7 +258,7 @@ const UITest: React.FC = () => {
             <Spin size="default" />
             <Spin size="large" />
             <Spin spinning={loading} tip="Loading...">
-              <div className="p-8 bg-gray-100 rounded">
+              <div className="p-8 bg-muted rounded">
                 <Button onClick={() => setLoading(!loading)}>
                   Toggle Loading
                 </Button>

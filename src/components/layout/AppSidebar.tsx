@@ -63,7 +63,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
 
   return (
     <div
-      className={`app-sider bg-white border-r border-gray-200 h-full transition-all duration-200 ${
+      className={`app-sider bg-white border-r border h-full transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-60'
       }`}
     >

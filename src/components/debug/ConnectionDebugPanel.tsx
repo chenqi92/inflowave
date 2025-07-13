@@ -102,7 +102,7 @@ const ConnectionDebugPanel: React.FC = () => {
       render: (record: any) => {
         const status = debugInfo?.connectionStatuses[record.id];
         return status ? (
-          <span className={status.status === 'connected' ? 'text-green-600' : 'text-gray-500'}>
+          <span className={status.status === 'connected' ? 'text-success' : 'text-muted-foreground'}>
             {status.status}
           </span>
         ) : (
@@ -136,7 +136,7 @@ const ConnectionDebugPanel: React.FC = () => {
       {!debugInfo ? (
         <div className="text-center py-8">
           <Info className="w-4 h-4 text-4xl text-gray-400 mb-4"   />
-          <p className="text-gray-500">点击"收集调试信息"开始诊断连接问题</p>
+          <Typography.Text className="text-muted-foreground">点击"收集调试信息"开始诊断连接问题</Typography.Text>
         </div>
       ) : (
         <Collapse defaultActiveKey={mismatchedConnections.length > 0 ? ['mismatch'] : ['summary']}>
@@ -144,13 +144,13 @@ const ConnectionDebugPanel: React.FC = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-primary">
                     {debugInfo.frontendConnections.length}
                   </div>
                   <div className="text-sm text-blue-800">前端连接数</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-success">
                     {debugInfo.backendConnections.length}
                   </div>
                   <div className="text-sm text-green-800">后端连接数</div>
@@ -228,7 +228,7 @@ const ConnectionDebugPanel: React.FC = () => {
           {debugInfo.backendDebugInfo && (
             <Panel header="后端调试信息" key="backendDebug">
               <Paragraph>
-                <pre className="bg-gray-50 p-4 rounded overflow-auto text-xs">
+                <pre className="bg-muted/50 p-4 rounded overflow-auto text-xs">
                   {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
                 </pre>
               </Paragraph>

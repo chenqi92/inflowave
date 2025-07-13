@@ -479,7 +479,7 @@ class UIInteractionTester {
     }
 
     // 查找现有的模态框
-    const existingModals = document.querySelectorAll('.modal, [role="dialog"], .ant-modal');
+    const existingModals = document.querySelectorAll('.modal, [role="dialog"], [data-state="open"]');
     
     this.recordTest(
       '现有模态框',

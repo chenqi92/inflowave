@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Card, Space } from '@/components/ui';
+import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Card, Space, Typography } from '@/components/ui';
 import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker, InputNumber, Divider } from '@/components/ui';
@@ -309,8 +309,8 @@ const DataWrite: React.FC = () => {
       {/* 页面标题和数据库选择 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1">数据写入</h2>
-          <p className="text-gray-500">
+          <Typography variant="h2" className="text-2xl font-bold mb-1">数据写入</Typography>
+          <p className="text-muted-foreground">
             向 InfluxDB 写入时序数据
           </p>
         </div>
@@ -464,10 +464,10 @@ const DataWrite: React.FC = () => {
                     description={
                       <div>
                         <p className="mb-2">
-                          格式: <code className="bg-gray-100 px-1 rounded">measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp</code>
+                          格式: <code className="bg-muted px-1 rounded">measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp</code>
                         </p>
                         <p className="mb-0">
-                          示例: <code className="bg-gray-100 px-1 rounded">temperature,host=server01,region=us-west value=23.5,status="ok" 1609459200000</code>
+                          示例: <code className="bg-muted px-1 rounded">temperature,host=server01,region=us-west value=23.5,status="ok" 1609459200000</code>
                         </p>
                       </div>
                     }

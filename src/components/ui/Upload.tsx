@@ -1,4 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
+import { Typography } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { X, Upload as UploadIcon } from 'lucide-react';
@@ -121,10 +122,10 @@ const Upload: React.FC<UploadProps> & {
           {fileList.map((file) => (
             <div
               key={file.uid}
-              className="flex items-center justify-between p-2 border rounded-md bg-gray-50"
+              className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
             >
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">{file.name}</span>
+                <span className="text-sm text-muted-foreground">{file.name}</span>
                 {file.size && (
                   <span className="text-xs text-gray-400">
                     ({(file.size / 1024).toFixed(1)} KB)
@@ -218,7 +219,7 @@ const Dragger: React.FC<DraggerProps> = ({
           {children || (
             <>
               <UploadIcon className="w-8 h-8 mx-auto text-gray-400" />
-              <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+              <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
             </>
           )}
         </div>
@@ -229,10 +230,10 @@ const Dragger: React.FC<DraggerProps> = ({
           {props.fileList.map((file) => (
             <div
               key={file.uid}
-              className="flex items-center justify-between p-2 border rounded-md bg-gray-50"
+              className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
             >
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">{file.name}</span>
+                <span className="text-sm text-muted-foreground">{file.name}</span>
                 {file.size && (
                   <span className="text-xs text-gray-400">
                     ({(file.size / 1024).toFixed(1)} KB)

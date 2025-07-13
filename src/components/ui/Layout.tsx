@@ -75,7 +75,7 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
       <aside
         ref={ref}
         className={cn(
-          'bg-white border-r border-gray-200 h-full transition-all duration-200 flex flex-col',
+          'bg-white border-r border h-full transition-all duration-200 flex flex-col',
           className
         )}
         style={{ width: widthStyle }}
@@ -86,7 +86,7 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
         </div>
         {collapsible && trigger && (
           <div 
-            className="border-t p-2 cursor-pointer hover:bg-gray-50"
+            className="border-t p-2 cursor-pointer hover:bg-muted/50"
             onClick={() => onCollapse?.(!collapsed)}
           >
             {trigger}

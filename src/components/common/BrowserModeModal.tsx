@@ -29,7 +29,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) 
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <Globe className="w-6 h-6 text-blue-500" />
+            <Globe className="w-6 h-6 text-primary" />
             <span>🌐 InfloWave 功能预览</span>
           </DialogTitle>
         </DialogHeader>

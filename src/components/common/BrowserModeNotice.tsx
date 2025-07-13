@@ -144,7 +144,7 @@ const BrowserModeNotice: React.FC = () => {
         {/* 已知限制 */}
         <div style={{ marginBottom: '32px' }}>
           <Text className="text-lg font-semibold block mb-2">⚠️ 已知限制</Text>
-          <Text className="block mb-4 text-gray-600">
+          <Text className="block mb-4 text-muted-foreground">
             以下功能需要在桌面应用环境中才能正常使用，这些是计划中的核心特性：
           </Text>
           <div style={{
@@ -224,7 +224,7 @@ const BrowserModeNotice: React.FC = () => {
         {/* 即将推出 */}
         <div style={{ marginBottom: '32px' }}>
           <Text className="text-lg font-semibold block mb-2">🚀 即将推出</Text>
-          <Text className="block mb-4 text-gray-600">
+          <Text className="block mb-4 text-muted-foreground">
             这些核心功能将在桌面应用版本中完全实现，为您提供专业级的数据库管理体验：
           </Text>
           <div style={{
@@ -248,7 +248,7 @@ const BrowserModeNotice: React.FC = () => {
                   <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>🔗</span>
                 </div>
                 <div>
-                  <Text className="font-semibold text-sm text-blue-600">多实例连接管理</Text>
+                  <Text className="font-semibold text-sm text-primary">多实例连接管理</Text>
                   <br />
                   <Text className="text-muted-foreground">
                     支持同时连接多个 InfluxDB 实例，实时状态监控和连接池管理
@@ -269,7 +269,7 @@ const BrowserModeNotice: React.FC = () => {
                   <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>📁</span>
                 </div>
                 <div>
-                  <Text className="font-semibold text-sm text-blue-600">高效数据导入导出</Text>
+                  <Text className="font-semibold text-sm text-primary">高效数据导入导出</Text>
                   <br />
                   <Text className="text-muted-foreground">
                     支持 CSV、JSON、Parquet 等多种格式的批量数据导入导出功能
@@ -290,7 +290,7 @@ const BrowserModeNotice: React.FC = () => {
                   <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>🔔</span>
                 </div>
                 <div>
-                  <Text className="font-semibold text-sm text-blue-600">智能通知系统</Text>
+                  <Text className="font-semibold text-sm text-primary">智能通知系统</Text>
                   <br />
                   <Text className="text-muted-foreground">
                     查询完成、连接状态变化、系统告警等事件的桌面通知提醒

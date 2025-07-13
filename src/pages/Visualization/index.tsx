@@ -348,7 +348,7 @@ const Visualization: React.FC = () => {
           ) : (
             <div className="text-center py-12">
               <BarChart className="w-4 h-4" style={{ fontSize: 48, color: '#d9d9d9' }}  />
-              <div className="mt-4 text-gray-500">
+              <div className="mt-4 text-muted-foreground">
                 暂无图表
               </div>
               <div className="text-sm text-gray-400 mt-2">

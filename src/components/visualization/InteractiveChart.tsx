@@ -232,7 +232,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         <div className="flex gap-2">
           <span>{config.title}</span>
           {selectedSeries.length > 0 && (
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               ({selectedSeries.length} 个系列已选择)
             </span>
           )}
@@ -321,7 +321,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       />
       
       {zoomLevel !== 100 && (
-        <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs text-gray-600">
+        <div className="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs text-muted-foreground">
           {zoomLevel}%
         </div>
       )}

@@ -68,13 +68,13 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
     const getDefaultDot = (color?: string) => {
       switch (color) {
         case 'green':
-          return <CheckCircle className="h-3 w-3 text-green-500" />
+          return <CheckCircle className="h-3 w-3 text-success" />
         case 'red':
-          return <XCircle className="h-3 w-3 text-red-500" />
+          return <XCircle className="h-3 w-3 text-destructive" />
         case 'yellow':
           return <AlertCircle className="h-3 w-3 text-yellow-500" />
         case 'blue':
-          return <Circle className="h-3 w-3 text-blue-500 fill-current" />
+          return <Circle className="h-3 w-3 text-primary fill-current" />
         default:
           return <Circle className="h-3 w-3 text-gray-400 fill-current" />
       }

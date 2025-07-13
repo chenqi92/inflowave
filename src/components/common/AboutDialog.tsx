@@ -43,7 +43,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-blue-500" />
+            <Database className="w-5 h-5 text-primary" />
             <span>关于 {appInfo.name}</span>
           </DialogTitle>
         </DialogHeader>
@@ -52,7 +52,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
         <div className="grid grid-cols-1 gap-4">
           <Card>
             <div className="text-center mb-6">
-              <Database className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <Database className="w-16 h-16 text-primary mx-auto mb-4" />
               <Text className="text-2xl font-bold block">
                 {appInfo.name}
               </Text>
@@ -125,7 +125,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             
             <div className="flex justify-between items-center">
               <Text className="font-medium">项目地址:</Text>
-              <Link href={appInfo.repository} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+              <Link href={appInfo.repository} target="_blank" className="flex items-center gap-2 text-primary hover:text-blue-800">
                 <Github className="w-4 h-4" />
                 <span>GitHub 仓库</span>
               </Link>
@@ -133,7 +133,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             
             <div className="flex justify-between items-center">
               <Text className="font-medium">官方网站:</Text>
-              <Link href={appInfo.website} target="_blank" className="text-blue-600 hover:text-blue-800">
+              <Link href={appInfo.website} target="_blank" className="text-primary hover:text-blue-800">
                 {appInfo.website}
               </Link>
             </div>
@@ -146,7 +146,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
         <Card>
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
-              <Heart className="w-4 h-4 text-red-500" />
+              <Heart className="w-4 h-4 text-destructive" />
               <Text>感谢您使用 {appInfo.name}！</Text>
             </div>
             
@@ -155,14 +155,14 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             </Text>
             
             <div className="flex items-center justify-center gap-4">
-              <Link href={`${appInfo.repository}/issues`} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+              <Link href={`${appInfo.repository}/issues`} target="_blank" className="flex items-center gap-2 text-primary hover:text-blue-800">
                 <Bug className="w-4 h-4" />
                 <span>报告问题</span>
               </Link>
               
               <Divider orientation="vertical" className="h-4" />
               
-              <Link href={`${appInfo.repository}/discussions`} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+              <Link href={`${appInfo.repository}/discussions`} target="_blank" className="flex items-center gap-2 text-primary hover:text-blue-800">
                 <Users className="w-4 h-4" />
                 <span>社区讨论</span>
               </Link>

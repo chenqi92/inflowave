@@ -192,14 +192,14 @@ const Settings: React.FC = () => {
   return (
     <div className="settings-page">
       {/* 页面头部 */}
-      <div className="settings-header bg-white border-b border-gray-200 px-6 py-4">
+      <div className="settings-header bg-white border-b border px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
               type="text" 
               icon={<ChevronLeft className="w-4 h-4"  />} 
               onClick={() => navigate(-1)}
-              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 cursor-pointer"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted cursor-pointer"
               title="返回"
             />
             <div>
@@ -240,7 +240,7 @@ const Settings: React.FC = () => {
                   </span>
                 ),
                 children: (
-                  <div className="bg-gray-50 p-6 rounded-lg">
+                  <div className="bg-muted/50 p-6 rounded-lg">
                     <Card className="shadow-sm border-0">
                       <div className="mb-6">
                         <Title level={4} className="mb-2 text-gray-800">基础配置</Title>
@@ -353,7 +353,7 @@ const Settings: React.FC = () => {
 
                     <Divider />
 
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="pt-4 border-t border">
                       <FormItem className="mb-0">
                         <div className="flex gap-2" size="middle">
                           <Button
@@ -390,11 +390,11 @@ const Settings: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                <div className="bg-muted/50 p-6 rounded-lg space-y-6">
                   <Card title="导入/导出" className="shadow-sm border-0">
                     <div className="mb-4">
                       <Title level={5} className="mb-2 text-gray-800">数据备份与恢复</Title>
-                      <Paragraph className="text-gray-600">
+                      <Paragraph className="text-muted-foreground">
                         您可以导出当前的应用设置和连接配置，或从文件中导入设置。
                       </Paragraph>
                     </div>
@@ -421,7 +421,7 @@ const Settings: React.FC = () => {
                     </div>
                   </Card>
 
-                  <Card title="数据清理" className="border-red-200 shadow-sm border-0 bg-red-50">
+                  <Card title="数据清理" className="border-destructive shadow-sm border-0 bg-destructive/10">
                     <div className="mb-4">
                       <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
                       <Alert
@@ -484,7 +484,7 @@ const Settings: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-muted/50 p-6 rounded-lg">
                   <Card title="关于 InfloWave" className="shadow-sm border-0">
                     <Row gutter={24}>
                       <Col span={12}>
@@ -526,7 +526,7 @@ const Settings: React.FC = () => {
                           <div>
                             <Text strong className="text-lg text-gray-800">项目地址</Text>
                             <br />
-                            <Text className="text-base text-blue-600 hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
+                            <Text className="text-base text-primary hover:text-blue-800 cursor-pointer">GitHub Repository</Text>
                           </div>
                       </div>
                     </Col>
@@ -562,7 +562,7 @@ const Settings: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="bg-muted/50 p-6 rounded-lg">
                   <UserPreferences />
                 </div>
               )},
@@ -575,7 +575,7 @@ const Settings: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                <div className="bg-muted/50 p-6 rounded-lg space-y-6">
                   <Card title="浏览器模式提醒" className="shadow-sm border-0">
                     <div className="mb-4">
                       <Title level={4} className="mb-2 text-gray-800">预览模式说明</Title>
@@ -637,7 +637,7 @@ const Settings: React.FC = () => {
                 </span>
               ),
               children: (
-                <div className="bg-gray-50 p-6 rounded-lg space-y-6">
+                <div className="bg-muted/50 p-6 rounded-lg space-y-6">
                   {/* 错误测试工具 - 仅开发环境显示 */}
                   {(import.meta as any).env?.DEV && (
                     <Card title="错误测试工具" className="shadow-sm border-yellow-200 border-0 bg-yellow-50">

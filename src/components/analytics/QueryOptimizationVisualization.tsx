@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List } from '@/components/ui';
+import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List, Typography } from '@/components/ui';
 
 import { BranchesOutlined, TargetOutlined } from '@/components/ui';
 import { Zap, Clock, Database, BarChart, TrendingUp, PieChart, Info, Lightbulb, Flame, Rocket, Trophy, Eye, Settings, RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
@@ -76,15 +76,15 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
   // 获取步骤图标
   const getStepIcon = (operation: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'SELECT': <Database className="w-4 h-4 text-blue-500"  />,
-      'JOIN': <BranchesOutlined className="text-green-500" />,
+      'SELECT': <Database className="w-4 h-4 text-primary"  />,
+      'JOIN': <BranchesOutlined className="text-success" />,
       'FILTER': <TargetOutlined className="text-yellow-500" />,
       'SORT': <BarChart className="w-4 h-4 text-purple-500"  />,
       'GROUP': <PieChart className="w-4 h-4 text-pink-500"  />,
       'AGGREGATE': <TrendingUp className="w-4 h-4 text-cyan-500"  />,
-      'INDEX_SCAN': <Rocket className="w-4 h-4 text-green-500"  />,
+      'INDEX_SCAN': <Rocket className="w-4 h-4 text-success"  />,
       'TABLE_SCAN': <Database className="w-4 h-4 text-yellow-500"  />,
-      'HASH_JOIN': <BranchesOutlined className="text-blue-500" />,
+      'HASH_JOIN': <BranchesOutlined className="text-primary" />,
       'NESTED_LOOP': <BranchesOutlined className="text-orange-500" />};
     
     return iconMap[operation.toUpperCase()] || <Info className="w-4 h-4"  />;
@@ -143,7 +143,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
           <div className="flex items-center justify-between w-full">
             <div className="flex gap-2">
               {node.icon}
-              <span className="font-medium">{node.title}</span>
+              <Typography.Text className="font-medium">{node.title}</Typography.Text>
               {node.cost && (
                 <Tag color="blue" size="small">
                   Cost: {node.cost.toFixed(2)}
@@ -227,7 +227,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               }
               description={
                 <div>
-                  <Text className="text-sm text-gray-600 mb-2 block">
+                  <Text className="text-sm text-muted-foreground mb-2 block">
                     {technique.description}
                   </Text>
                   <div className="flex items-center justify-between">
@@ -343,7 +343,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                     }
                     description={
                       <div>
-                        <Text className="text-sm text-gray-600 mb-2 block">
+                        <Text className="text-sm text-muted-foreground mb-2 block">
                           {recommendation.description}
                         </Text>
                         <div className="flex items-center justify-between">
@@ -470,7 +470,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               {viewMode === 'tree' && renderExecutionTree()}
               {viewMode === 'timeline' && renderTimelineView()}
               {viewMode === 'flow' && (
-                <div className="text-center p-8 text-gray-500">
+                <div className="text-center p-8 text-muted-foreground">
                   <Eye className="w-4 h-4 text-4xl mb-4"   />
                   <div>流程图视图开发中...</div>
                 </div>

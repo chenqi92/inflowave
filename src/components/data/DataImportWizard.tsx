@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea, Typography } from '@/components/ui';
 import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
@@ -211,8 +211,8 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
           <Upload.Dragger {...uploadProps}>
             <div className="flex flex-col items-center space-y-2">
               <UploadIcon className="w-8 h-8 text-gray-400" />
-              <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
-              <p className="text-sm text-gray-500">
+              <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
+              <p className="text-sm text-muted-foreground">
                 支持 CSV、JSON 和 Line Protocol 格式，文件大小不超过 100MB
               </p>
             </div>

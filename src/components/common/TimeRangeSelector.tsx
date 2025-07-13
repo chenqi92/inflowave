@@ -119,7 +119,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           </Tooltip>
           
           <DropdownMenuContent align="start" className="w-48">
-            <div className="px-2 py-1 text-xs font-medium text-gray-500 border-b">
+            <div className="px-2 py-1 text-xs font-medium text-muted-foreground border-b">
               快速选择
             </div>
             
@@ -129,13 +129,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 onClick={() => handleRangeSelect(range)}
                 className={`
                   flex items-center gap-2 text-sm
-                  ${selectedRange.value === range.value ? 'bg-blue-50 text-blue-600' : ''}
+                  ${selectedRange.value === range.value ? 'bg-blue-50 text-primary' : ''}
                 `}
               >
                 <Clock className="w-3 h-3" />
                 <span>{range.label}</span>
                 {selectedRange.value === range.value && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto" />
+                  <div className="w-2 h-2 bg-primary rounded-full ml-auto" />
                 )}
               </DropdownMenuItem>
             ))}
