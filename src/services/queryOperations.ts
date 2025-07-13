@@ -64,7 +64,7 @@ export class QueryOperationsService {
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
-    const query = `SHOW FIELD KEYS FROM "${params.measurement}"`;
+    const query = `SHOW FIELD KEYS ON "${params.database}" FROM "${params.measurement}"`;
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
@@ -93,7 +93,7 @@ export class QueryOperationsService {
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
-    const query = `SHOW TAG KEYS FROM "${params.measurement}"`;
+    const query = `SHOW TAG KEYS ON "${params.database}" FROM "${params.measurement}"`;
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {

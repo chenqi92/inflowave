@@ -237,10 +237,11 @@ impl DatabaseService {
         let client = manager.get_connection(connection_id).await
             .context("获取连接失败")?;
         
+        // 构建查询语句，包含数据库上下文
         let query = if let Some(measurement) = measurement {
-            format!("SHOW FIELD KEYS FROM \"{}\"", measurement)
+            format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
         } else {
-            "SHOW FIELD KEYS".to_string()
+            format!("SHOW FIELD KEYS ON \"{}\"", database)
         };
         
         let result = client.execute_query(&query).await
@@ -272,10 +273,11 @@ impl DatabaseService {
         let client = manager.get_connection(connection_id).await
             .context("获取连接失败")?;
         
+        // 构建查询语句，包含数据库上下文
         let query = if let Some(measurement) = measurement {
-            format!("SHOW TAG KEYS FROM \"{}\"", measurement)
+            format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
         } else {
-            "SHOW TAG KEYS".to_string()
+            format!("SHOW TAG KEYS ON \"{}\"", database)
         };
         
         let result = client.execute_query(&query).await

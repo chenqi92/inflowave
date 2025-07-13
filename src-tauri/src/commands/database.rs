@@ -258,16 +258,16 @@ pub async fn get_table_structure(
             format!("获取连接失败: {}", e)
         })?;
 
-    // 获取字段信息
-    let field_query = format!("SHOW FIELD KEYS FROM \"{}\"", table);
+    // 获取字段信息，包含数据库上下文
+    let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
     let field_result = client.execute_query(&field_query).await
         .map_err(|e| {
             error!("获取字段信息失败: {}", e);
             format!("获取字段信息失败: {}", e)
         })?;
 
-    // 获取标签信息
-    let tag_query = format!("SHOW TAG KEYS FROM \"{}\"", table);
+    // 获取标签信息，包含数据库上下文
+    let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, table);
     let tag_result = client.execute_query(&tag_query).await
         .map_err(|e| {
             error!("获取标签信息失败: {}", e);
@@ -585,26 +585,27 @@ pub async fn get_field_keys(
     measurement: Option<String>,
 ) -> Result<Vec<String>, String> {
     debug!("处理获取字段键命令: {} - {} - {:?}", connectionId, database, measurement);
-    
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
+    // 构建查询语句，包含数据库上下文
     let query = if let Some(measurement) = measurement {
-        format!("SHOW FIELD KEYS FROM \"{}\"", measurement)
+        format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
     } else {
-        "SHOW FIELD KEYS".to_string()
+        format!("SHOW FIELD KEYS ON \"{}\"", database)
     };
-    
+
     let result = client.execute_query(&query).await
         .map_err(|e| {
             error!("获取字段键失败: {}", e);
             format!("获取字段键失败: {}", e)
         })?;
-    
+
     // 解析字段键
     let mut field_keys = Vec::new();
     for row in result.rows() {
@@ -614,7 +615,7 @@ pub async fn get_field_keys(
             }
         }
     }
-    
+
     Ok(field_keys)
 }
 
@@ -627,26 +628,27 @@ pub async fn get_tag_keys(
     measurement: Option<String>,
 ) -> Result<Vec<String>, String> {
     debug!("处理获取标签键命令: {} - {} - {:?}", connectionId, database, measurement);
-    
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
+    // 构建查询语句，包含数据库上下文
     let query = if let Some(measurement) = measurement {
-        format!("SHOW TAG KEYS FROM \"{}\"", measurement)
+        format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
     } else {
-        "SHOW TAG KEYS".to_string()
+        format!("SHOW TAG KEYS ON \"{}\"", database)
     };
-    
+
     let result = client.execute_query(&query).await
         .map_err(|e| {
             error!("获取标签键失败: {}", e);
             format!("获取标签键失败: {}", e)
         })?;
-    
+
     // 解析标签键
     let mut tag_keys = Vec::new();
     for row in result.rows() {
@@ -656,7 +658,7 @@ pub async fn get_tag_keys(
             }
         }
     }
-    
+
     Ok(tag_keys)
 }
 
@@ -678,10 +680,11 @@ pub async fn get_tag_values(
             format!("获取连接失败: {}", e)
         })?;
     
+    // 构建查询语句，包含数据库上下文
     let query = if let Some(measurement) = measurement {
-        format!("SHOW TAG VALUES FROM \"{}\" WITH KEY = \"{}\"", measurement, tag_key)
+        format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, measurement, tag_key)
     } else {
-        format!("SHOW TAG VALUES WITH KEY = \"{}\"", tag_key)
+        format!("SHOW TAG VALUES ON \"{}\" WITH KEY = \"{}\"", database, tag_key)
     };
     
     let result = client.execute_query(&query).await

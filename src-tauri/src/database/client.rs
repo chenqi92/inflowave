@@ -419,16 +419,16 @@ impl InfluxClient {
     }
 
     /// 获取表结构信息 (字段和标签)
-    pub async fn get_table_schema(&self, _database: &str, measurement: &str) -> Result<TableSchema> {
-        debug!("获取表 '{}' 的结构信息", measurement);
+    pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
+        debug!("获取表 '{}' 在数据库 '{}' 的结构信息", measurement, database);
 
-        // 获取字段信息
-        let field_query = format!("SHOW FIELD KEYS FROM \"{}\"", measurement);
+        // 获取字段信息，包含数据库上下文
+        let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
         let field_result = self.client.query(influxdb::ReadQuery::new(&field_query)).await
             .map_err(|e| anyhow::anyhow!("获取字段信息失败: {}", e))?;
 
-        // 获取标签信息  
-        let tag_query = format!("SHOW TAG KEYS FROM \"{}\"", measurement);
+        // 获取标签信息，包含数据库上下文
+        let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement);
         let tag_result = self.client.query(influxdb::ReadQuery::new(&tag_query)).await
             .map_err(|e| anyhow::anyhow!("获取标签信息失败: {}", e))?;
 

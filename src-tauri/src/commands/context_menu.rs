@@ -424,31 +424,64 @@ fn generate_count_sql(request: &SqlGenerationRequest) -> String {
     format!("SELECT COUNT(*) FROM \"{}\"", measurement)
 }
 
-fn generate_show_measurements_sql(_request: &SqlGenerationRequest) -> String {
-    "SHOW MEASUREMENTS".to_string()
+fn generate_show_measurements_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
+
+    if database.is_empty() {
+        "SHOW MEASUREMENTS".to_string()
+    } else {
+        format!("SHOW MEASUREMENTS ON \"{}\"", database)
+    }
 }
 
 fn generate_show_tag_keys_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
-    format!("SHOW TAG KEYS FROM \"{}\"", measurement)
+
+    if measurement.is_empty() {
+        format!("SHOW TAG KEYS ON \"{}\"", database)
+    } else {
+        format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+    }
 }
 
 fn generate_show_tag_values_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
+
     if let Some(tags) = &request.tags {
         if !tags.is_empty() {
-            return format!("SHOW TAG VALUES FROM \"{}\" WITH KEY = \"{}\"", measurement, tags[0]);
+            if measurement.is_empty() {
+                return format!("SHOW TAG VALUES ON \"{}\" WITH KEY = \"{}\"", database, tags[0]);
+            } else {
+                return format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, measurement, tags[0]);
+            }
         }
     }
-    format!("SHOW TAG VALUES FROM \"{}\"", measurement)
+
+    if measurement.is_empty() {
+        format!("SHOW TAG VALUES ON \"{}\"", database)
+    } else {
+        format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\"", database, measurement)
+    }
 }
 
 fn generate_show_field_keys_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
-    format!("SHOW FIELD KEYS FROM \"{}\"", measurement)
+
+    if measurement.is_empty() {
+        format!("SHOW FIELD KEYS ON \"{}\"", database)
+    } else {
+        format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+    }
 }
 
 fn generate_describe_sql(request: &SqlGenerationRequest) -> String {
