@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Row, Col, Statistic, Typography, Button, Empty, Alert, Tabs } from 'antd';
+import { Row, Col, Statistic, Button, Empty, Alert, Tabs } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
-import { DatabaseOutlined, BarChartOutlined, PlusOutlined, SearchOutlined, DashboardOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
-// TODO: Replace these icons: ApiOutlined, ClockCircleOutlined, RocketOutlined
-// You may need to find alternatives or create custom icons
+import { Database, BarChart, Plus, Search, Download, RefreshCw, LayoutDashboard, Webhook, Clock, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import DashboardManager from '@/components/dashboard/DashboardManager';
@@ -27,64 +25,58 @@ const Dashboard: React.FC = () => {
       status => status.status === 'connected'
     ).length,
     lastQueryTime: '暂无数据',
-    totalQueries: 0,
-  };
+    totalQueries: 0};
 
   // 快速操作
   const quickActions = [
     {
       title: '新建连接',
       description: '添加新的 InfluxDB 连接',
-      icon: <PlusOutlined />,
+      icon: <Plus className="w-4 h-4"  />,
       action: () => navigate('/connections'),
-      type: 'primary' as const,
-    },
+      type: 'primary' as const},
     {
       title: '执行查询',
       description: '查询和分析数据',
-      icon: <SearchOutlined />,
+      icon: <Search className="w-4 h-4"  />,
       action: () => navigate('/query'),
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       title: '数据可视化',
       description: '创建图表和仪表板',
-      icon: <BarChartOutlined />,
+      icon: <BarChart className="w-4 h-4"  />,
       action: () => setActiveTab('dashboards'),
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       title: '数据导出',
       description: '导出查询结果到文件',
-      icon: <DownloadOutlined />,
+      icon: <Download className="w-4 h-4"  />,
       action: () => setExportDialogVisible(true),
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       title: '仪表板管理',
       description: '管理和创建仪表板',
-      icon: <DashboardOutlined />,
-      action: () => setActiveTab('dashboards'),
-    },
+      icon: <LayoutDashboard />,
+      action: () => setActiveTab('dashboards')},
   ];
 
   // 工具栏
   const toolbar = (
-    <Space>
+    <div className="flex gap-2">
       <Button
-        icon={<ReloadOutlined />}
+        icon={<RefreshCw className="w-4 h-4"  />}
         onClick={() => window.location.reload()}
       >
         刷新
       </Button>
       <Button
         type="primary"
-        icon={<PlusOutlined />}
+        icon={<Plus className="w-4 h-4"  />}
         onClick={() => navigate('/connections')}
       >
         新建连接
       </Button>
-    </Space>
+    </div>
   );
 
   return (
@@ -96,10 +88,10 @@ const Dashboard: React.FC = () => {
       {/* 欢迎信息 */}
       <Alert
         message={
-          <Space>
-            <RocketOutlined />
+          <div className="flex gap-2">
+            <Rocket className="w-4 h-4"  />
             <span>欢迎使用 InfloWave</span>
-          </Space>
+          </div>
         }
         description="现代化的时序数据库管理工具，提供连接管理、数据查询、可视化等功能。"
         type="info"
@@ -128,7 +120,7 @@ const Dashboard: React.FC = () => {
                       <Statistic
                         title="总连接数"
                         value={stats.totalConnections}
-                        prefix={<DatabaseOutlined />}
+                        prefix={<Database className="w-4 h-4"  />}
                         valueStyle={{ color: '#1890ff' }}
                       />
                     </Card>
@@ -139,7 +131,7 @@ const Dashboard: React.FC = () => {
                       <Statistic
                         title="活跃连接"
                         value={stats.activeConnections}
-                        prefix={<ApiOutlined />}
+                        prefix={<Webhook className="w-4 h-4"  />}
                         valueStyle={{ color: '#52c41a' }}
                       />
                     </Card>
@@ -150,7 +142,7 @@ const Dashboard: React.FC = () => {
                       <Statistic
                         title="总查询数"
                         value={stats.totalQueries}
-                        prefix={<BarChartOutlined />}
+                        prefix={<BarChart className="w-4 h-4"  />}
                         valueStyle={{ color: '#722ed1' }}
                       />
                     </Card>
@@ -161,7 +153,7 @@ const Dashboard: React.FC = () => {
                       <Statistic
                         title="最后查询"
                         value={stats.lastQueryTime}
-                        prefix={<ClockCircleOutlined />}
+                        prefix={<Clock className="w-4 h-4"  />}
                         valueStyle={{ color: '#fa8c16' }}
                       />
                     </Card>
@@ -238,22 +230,20 @@ const Dashboard: React.FC = () => {
                         connected: '#52c41a',
                         connecting: '#faad14',
                         disconnected: '#ff4d4f',
-                        error: '#ff4d4f',
-                      }[status?.status || 'disconnected'];
+                        error: '#ff4d4f'}[status?.status || 'disconnected'];
 
                       const statusText = {
                         connected: '已连接',
                         connecting: '连接中',
                         disconnected: '已断开',
-                        error: '连接错误',
-                      }[status?.status || 'disconnected'];
+                        error: '连接错误'}[status?.status || 'disconnected'];
 
                       return (
                         <div
                           key={connection.id}
                           className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
                         >
-                          <Space>
+                          <div className="flex gap-2">
                             <div
                               className="w-2 h-2 rounded-full"
                               style={{ backgroundColor: statusColor }}
@@ -264,9 +254,9 @@ const Dashboard: React.FC = () => {
                                 {connection.host}:{connection.port}
                               </div>
                             </div>
-                          </Space>
+                          </div>
 
-                          <Space>
+                          <div className="flex gap-2">
                             <span
                               className="text-xs"
                               style={{ color: statusColor }}
@@ -278,7 +268,7 @@ const Dashboard: React.FC = () => {
                                 {status.latency}ms
                               </span>
                             )}
-                          </Space>
+                          </div>
                         </div>
                       );
                     })}
@@ -291,7 +281,7 @@ const Dashboard: React.FC = () => {
                     <Button
                       size="small"
                       type="primary"
-                      icon={<PlusOutlined />}
+                      icon={<Plus className="w-4 h-4"  />}
                       onClick={() => navigate('/connections')}
                     >
                       创建连接
@@ -310,7 +300,7 @@ const Dashboard: React.FC = () => {
                 <Row gutter={[16, 16]}>
                   <Col xs={24} sm={12} lg={8}>
                     <Card size="small" hoverable className="text-center">
-                      <ApiOutlined style={{ fontSize: 28, color: '#1890ff', marginBottom: 12 }} />
+                      <Webhook className="w-4 h-4" style={{ fontSize: 28, color: '#1890ff', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">连接管理</div>
                       <div className="text-sm text-gray-500">
                         管理多个 InfluxDB 连接，支持连接测试、状态监控等功能。
@@ -319,7 +309,7 @@ const Dashboard: React.FC = () => {
                   </Col>
                   <Col xs={24} sm={12} lg={8}>
                     <Card size="small" hoverable className="text-center">
-                      <SearchOutlined style={{ fontSize: 28, color: '#52c41a', marginBottom: 12 }} />
+                      <Search className="w-4 h-4" style={{ fontSize: 28, color: '#52c41a', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据查询</div>
                       <div className="text-sm text-gray-500">
                         强大的 InfluxQL 查询编辑器，支持语法高亮、自动补全等功能。
@@ -328,7 +318,7 @@ const Dashboard: React.FC = () => {
                   </Col>
                   <Col xs={24} sm={12} lg={8}>
                     <Card size="small" hoverable className="text-center">
-                      <BarChartOutlined style={{ fontSize: 28, color: '#fa8c16', marginBottom: 12 }} />
+                      <BarChart className="w-4 h-4" style={{ fontSize: 28, color: '#fa8c16', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据可视化</div>
                       <div className="text-sm text-gray-500">
                         创建各种图表和仪表板，直观展示时序数据。

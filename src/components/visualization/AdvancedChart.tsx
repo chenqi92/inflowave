@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Select, Button, Typography, Row, Col } from 'antd';
+import { Select, Button, Typography, Row, Col } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
+
 // TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
-import { LineChartOutlined, BarChartOutlined, PieChartOutlined, SettingOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
-// TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, FullscreenOutlined
+import { TrendingUp, BarChart, PieChart, Settings, Download, RefreshCw } from 'lucide-react';
+// TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, Maximize
 // You may need to find alternatives or create custom icons
 import * as echarts from 'echarts';
 import type { QueryResult } from '@/types';
@@ -36,8 +37,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   data,
   height = 400,
   onConfigChange,
-  initialConfig = {},
-}) => {
+  initialConfig = {}}) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -54,8 +54,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     colorScheme: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'],
     animation: true,
     animationDuration: 1000,
-    ...initialConfig,
-  });
+    ...initialConfig});
 
   // 预定义颜色方案
   const colorSchemes = {
@@ -64,8 +63,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     green: ['#52c41a', '#73d13d', '#95de64', '#b7eb8f', '#d9f7be', '#f6ffed'],
     red: ['#ff4d4f', '#ff7875', '#ffa39e', '#ffccc7', '#ffe1e1', '#fff1f0'],
     purple: ['#722ed1', '#9254de', '#b37feb', '#d3adf7', '#efdbff', '#f9f0ff'],
-    orange: ['#fa8c16', '#ffa940', '#ffc069', '#ffd591', '#ffe7ba', '#fff7e6'],
-  };
+    orange: ['#fa8c16', '#ffa940', '#ffc069', '#ffd591', '#ffe7ba', '#fff7e6']};
 
   // 处理图表数据
   const processChartData = () => {
@@ -118,12 +116,9 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         areaStyle: config.type === 'area' ? {} : undefined,
         stack: config.stack ? 'total' : undefined,
         itemStyle: {
-          color: config.colorScheme[index % config.colorScheme.length],
-        },
+          color: config.colorScheme[index % config.colorScheme.length]},
         lineStyle: config.type === 'line' ? {
-          width: 2,
-        } : undefined,
-      };
+          width: 2} : undefined};
     });
 
     return { xAxisData, seriesData };
@@ -144,54 +139,42 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         left: 'center',
         textStyle: {
           fontSize: 16,
-          fontWeight: 'bold',
-        },
-      },
+          fontWeight: 'bold'}},
       tooltip: config.showTooltip ? {
         trigger: config.type === 'pie' ? 'item' : 'axis',
         axisPointer: {
           type: 'cross',
           label: {
-            backgroundColor: '#6a7985',
-          },
-        },
+            backgroundColor: '#6a7985'}},
         formatter: config.type === 'pie' ? 
           '{a} <br/>{b}: {c} ({d}%)' : 
-          undefined,
-      } : undefined,
+          undefined} : undefined,
       legend: config.showLegend ? {
         data: seriesData.map(s => s.name),
-        top: 30,
-      } : undefined,
+        top: 30} : undefined,
       grid: config.showGrid && config.type !== 'pie' ? {
         left: '3%',
         right: '4%',
         bottom: config.showDataZoom ? '15%' : '3%',
         containLabel: true,
         show: true,
-        borderColor: '#ddd',
-      } : undefined,
+        borderColor: '#ddd'} : undefined,
       xAxis: config.type !== 'pie' ? {
         type: 'category',
         boundaryGap: config.type === 'bar',
         data: xAxisData,
         axisLabel: {
           rotate: xAxisData.length > 10 ? 45 : 0,
-          interval: Math.max(0, Math.floor(xAxisData.length / 20)),
-        },
-      } : undefined,
+          interval: Math.max(0, Math.floor(xAxisData.length / 20))}} : undefined,
       yAxis: config.type !== 'pie' ? {
         type: 'value',
         splitLine: {
-          show: config.showGrid,
-        },
-      } : undefined,
+          show: config.showGrid}} : undefined,
       dataZoom: config.showDataZoom && config.type !== 'pie' ? [
         {
           type: 'inside',
           start: 0,
-          end: 100,
-        },
+          end: 100},
         {
           start: 0,
           end: 100,
@@ -202,15 +185,12 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
             shadowBlur: 3,
             shadowColor: 'rgba(0, 0, 0, 0.6)',
             shadowOffsetX: 2,
-            shadowOffsetY: 2,
-          },
-        },
+            shadowOffsetY: 2}},
       ] : undefined,
       series: seriesData,
       animation: config.animation,
       animationDuration: config.animationDuration,
-      backgroundColor: 'transparent',
-    };
+      backgroundColor: 'transparent'};
 
     // 特殊处理饼图
     if (config.type === 'pie') {
@@ -223,14 +203,10 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)',
-          },
-        },
+            shadowColor: 'rgba(0, 0, 0, 0.5)'}},
         label: {
           show: true,
-          formatter: '{b}: {c} ({d}%)',
-        },
-      }];
+          formatter: '{b}: {c} ({d}%)'}}];
     }
 
     chartInstance.current.setOption(option, true);
@@ -280,8 +256,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
       const url = chartInstance.current.getDataURL({
         type: 'png',
         pixelRatio: 2,
-        backgroundColor: '#fff',
-      });
+        backgroundColor: '#fff'});
       const link = document.createElement('a');
       link.download = `${config.title}.png`;
       link.href = url;
@@ -303,15 +278,15 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   return (
     <Card
       title={
-        <Space>
-          <LineChartOutlined />
+        <div className="flex gap-2">
+          <TrendingUp className="w-4 h-4"  />
           <span>高级图表</span>
-        </Space>
+        </div>
       }
       extra={
-        <Space>
+        <div className="flex gap-2">
           <Button
-            icon={<SettingOutlined />}
+            icon={<Settings className="w-4 h-4"  />}
             onClick={() => setShowSettings(!showSettings)}
             type={showSettings ? 'primary' : 'default'}
             size="small"
@@ -319,20 +294,20 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
             设置
           </Button>
           <Button
-            icon={<DownloadOutlined />}
+            icon={<Download className="w-4 h-4"  />}
             onClick={exportChart}
             size="small"
           >
             导出
           </Button>
           <Button
-            icon={<FullscreenOutlined />}
+            icon={<Maximize className="w-4 h-4"  />}
             onClick={toggleFullscreen}
             size="small"
           >
             全屏
           </Button>
-        </Space>
+        </div>
       }
       style={{ height: showSettings ? height + 200 : height + 100 }}
     >
@@ -349,19 +324,19 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                   size="small"
                 >
                   <Select.Option value="line">
-                    <Space><LineChartOutlined />折线图</Space>
+                    <div className="flex gap-2"><TrendingUp className="w-4 h-4"  />折线图</div>
                   </Select.Option>
                   <Select.Option value="bar">
-                    <Space><BarChartOutlined />柱状图</Space>
+                    <div className="flex gap-2"><BarChart className="w-4 h-4"  />柱状图</div>
                   </Select.Option>
                   <Select.Option value="area">
-                    <Space><AreaChartOutlined />面积图</Space>
+                    <div className="flex gap-2"><AreaChart className="w-4 h-4"  />面积图</div>
                   </Select.Option>
                   <Select.Option value="pie">
-                    <Space><PieChartOutlined />饼图</Space>
+                    <div className="flex gap-2"><PieChart className="w-4 h-4"  />饼图</div>
                   </Select.Option>
                   <Select.Option value="scatter">
-                    <Space><DotChartOutlined />散点图</Space>
+                    <div className="flex gap-2"><DotChartOutlined />散点图</div>
                   </Select.Option>
                 </Select>
               </div>
@@ -396,7 +371,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
               </div>
             </Col>
             <Col span={6}>
-              <Space direction="vertical" size="small">
+              <div className="flex gap-2" direction="vertical" size="small">
                 <div>
                   <Switch
                     checked={config.showLegend}
@@ -421,7 +396,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                   />
                   <Text style={{ marginLeft: 8 }}>平滑曲线</Text>
                 </div>
-              </Space>
+              </div>
             </Col>
           </Row>
         </Card>
@@ -432,8 +407,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         style={{
           width: '100%',
           height: showSettings ? height - 100 : height - 50,
-          minHeight: 300,
-        }}
+          minHeight: 300}}
       />
     </Card>
   );

@@ -1,21 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Select, Button, Typography, Row, Col, Alert, Tabs, InputNumber, Switch, Divider } from 'antd';
-import { Card, Space, message, PageHeader, Modal } from '@/components/ui';
-import { 
-  SaveOutlined, 
-  ReloadOutlined, 
-  DeleteOutlined, 
-  InfoCircleOutlined, 
-  ExportOutlined, 
-  ImportOutlined, 
-  SettingOutlined, 
-  DatabaseOutlined, 
-  UserOutlined, 
-  BugOutlined,
-  LeftOutlined,
-  HomeOutlined,
-  BellOutlined 
-} from '@/components/ui';
+import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Divider, Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Save, RefreshCw, Trash2, Info, FileDown, FileUp, Settings, Database, User, Bug, ChevronLeft, Home, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
@@ -29,8 +14,6 @@ import { isBrowserEnvironment } from '@/utils/tauri';
 import type { AppConfig } from '@/types';
 import '@/styles/settings.css';
 
-const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
 
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -77,9 +60,9 @@ const Settings: React.FC = () => {
         console.warn('保存配置到后端失败:', error);
       }
 
-      message.success('设置已保存');
+      toast({ title: "成功", description: "设置已保存" });
     } catch (error) {
-      message.error(`保存设置失败: ${error}`);
+      toast({ title: "错误", description: "保存设置失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -93,7 +76,7 @@ const Settings: React.FC = () => {
       const latestConfig = useAppStore.getState().config;
       form.setFieldsValue(latestConfig);
     }, 0);
-    message.success('设置已重置为默认值');
+    toast({ title: "成功", description: "设置已重置为默认值" });
   };
 
   // 导出设置
@@ -103,8 +86,7 @@ const Settings: React.FC = () => {
         appConfig: config,
         connections: useConnectionStore.getState().connections,
         exportTime: new Date().toISOString(),
-        version: '1.0.0',
-      };
+        version: '1.0.0'};
 
       if (isBrowserEnvironment()) {
         // 浏览器环境：下载为JSON文件
@@ -117,15 +99,15 @@ const Settings: React.FC = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        message.success('设置已导出到下载文件夹');
+        toast({ title: "成功", description: "设置已导出到下载文件夹" });
       } else {
         // Tauri 环境：调用原生文件保存对话框
         await safeTauriInvoke('export_settings', { settings });
-        message.success('设置已导出');
+        toast({ title: "成功", description: "设置已导出" });
       }
     } catch (error) {
       console.error('导出设置失败:', error);
-      message.error(`导出设置失败: ${error}`);
+      toast({ title: "错误", description: "导出设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -147,13 +129,13 @@ const Settings: React.FC = () => {
               if (settings.appConfig) {
                 setConfig(settings.appConfig);
                 form.setFieldsValue(settings.appConfig);
-                message.success('设置已导入');
+                toast({ title: "成功", description: "设置已导入" });
               } else {
-                message.error('无效的设置文件格式');
+                toast({ title: "错误", description: "无效的设置文件格式", variant: "destructive" });
               }
             } catch (parseError) {
               console.error('解析设置文件失败:', parseError);
-              message.error('设置文件格式错误');
+              toast({ title: "错误", description: "设置文件格式错误", variant: "destructive" });
             }
           }
         };
@@ -164,12 +146,12 @@ const Settings: React.FC = () => {
         if (settings) {
           setConfig(settings.appConfig);
           form.setFieldsValue(settings.appConfig);
-          message.success('设置已导入');
+          toast({ title: "成功", description: "设置已导入" });
         }
       }
     } catch (error) {
       console.error('导入设置失败:', error);
-      message.error(`导入设置失败: ${error}`);
+      toast({ title: "错误", description: "导入设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -188,9 +170,8 @@ const Settings: React.FC = () => {
           const latestConfig = useAppStore.getState().config;
           form.setFieldsValue(latestConfig);
         }, 0);
-        message.success('所有数据已清除');
-      },
-    });
+        toast({ title: "成功", description: "所有数据已清除" });
+      }});
   };
 
   // 清除连接配置（带确认）
@@ -203,9 +184,8 @@ const Settings: React.FC = () => {
       okType: 'danger',
       onOk: () => {
         clearConnections();
-        message.success('连接配置已清除');
-      },
-    });
+        toast({ title: "成功", description: "连接配置已清除" });
+      }});
   };
 
   return (
@@ -216,7 +196,7 @@ const Settings: React.FC = () => {
           <div className="flex items-center space-x-4">
             <Button 
               type="text" 
-              icon={<LeftOutlined />} 
+              icon={<ChevronLeft className="w-4 h-4"  />} 
               onClick={() => navigate(-1)}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 cursor-pointer"
               title="返回"
@@ -230,7 +210,7 @@ const Settings: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2">
             <Button 
-              icon={<HomeOutlined />} 
+              icon={<Home className="w-4 h-4"  />} 
               onClick={() => navigate('/')}
               type="default"
               className="cursor-pointer"
@@ -248,13 +228,13 @@ const Settings: React.FC = () => {
           <Tabs
             size="large"
             type="card"
-            className="settings-tabs"
+            className="settings-tabs flex items-center space-x-2"
             items={[
               {
                 key: 'general',
                 label: (
-                  <span className="flex items-center space-x-2">
-                    <SettingOutlined />
+                  <span >
+                    <Settings className="w-4 h-4"  />
                     <span>常规设置</span>
                   </span>
                 ),
@@ -374,38 +354,37 @@ const Settings: React.FC = () => {
 
                     <div className="pt-4 border-t border-gray-200">
                       <Form.Item className="mb-0">
-                        <Space size="middle">
+                        <div className="flex gap-2" size="middle">
                           <Button
                             type="primary"
                             htmlType="submit"
                             loading={loading}
-                            icon={<SaveOutlined />}
+                            icon={<Save className="w-4 h-4"  />}
                             size="large"
                             className="cursor-pointer"
                           >
                             保存设置
                           </Button>
                           <Button
-                            icon={<ReloadOutlined />}
+                            icon={<RefreshCw className="w-4 h-4"  />}
                             onClick={handleResetSettings}
                             size="large"
                             className="cursor-pointer"
                           >
                             重置为默认
                           </Button>
-                        </Space>
+                        </div>
                       </Form.Item>
                     </div>
                     </Form>
                   </Card>
                 </div>
-              ),
-            },
+              )},
             {
               key: 'data',
               label: (
                 <span className="flex items-center space-x-2">
-                  <DatabaseOutlined />
+                  <Database className="w-4 h-4"  />
                   <span>数据管理</span>
                 </span>
               ),
@@ -419,9 +398,9 @@ const Settings: React.FC = () => {
                       </Paragraph>
                     </div>
 
-                    <Space size="large">
+                    <div className="flex gap-2" size="large">
                       <Button
-                        icon={<ExportOutlined />}
+                        icon={<FileDown className="w-4 h-4"  />}
                         onClick={exportSettings}
                         size="large"
                         type="dashed"
@@ -430,7 +409,7 @@ const Settings: React.FC = () => {
                         导出设置
                       </Button>
                       <Button
-                        icon={<ImportOutlined />}
+                        icon={<FileUp className="w-4 h-4"  />}
                         onClick={importSettings}
                         size="large"
                         type="dashed"
@@ -438,7 +417,7 @@ const Settings: React.FC = () => {
                       >
                         导入设置
                       </Button>
-                    </Space>
+                    </div>
                   </Card>
 
                   <Card title="数据清理" className="border-red-200 shadow-sm border-0 bg-red-50">
@@ -453,7 +432,7 @@ const Settings: React.FC = () => {
                       />
                     </div>
 
-                    <Space direction="vertical" style={{ width: '100%' }}>
+                    <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                       <div>
                         <Text strong>清除所有连接配置</Text>
                         <br />
@@ -463,7 +442,7 @@ const Settings: React.FC = () => {
                         <br />
                         <Button
                           danger
-                          icon={<DeleteOutlined />}
+                          icon={<Trash2 className="w-4 h-4"  />}
                           onClick={clearConnectionsWithConfirm}
                           className="mt-2 cursor-pointer"
                           size="large"
@@ -483,7 +462,7 @@ const Settings: React.FC = () => {
                         <br />
                         <Button
                           danger
-                          icon={<DeleteOutlined />}
+                          icon={<Trash2 className="w-4 h-4"  />}
                           onClick={clearAllData}
                           className="mt-2 cursor-pointer"
                           size="large"
@@ -491,16 +470,15 @@ const Settings: React.FC = () => {
                           重置所有设置
                         </Button>
                       </div>
-                    </Space>
+                    </div>
                   </Card>
                 </div>
-              ),
-            },
+              )},
             {
               key: 'about',
               label: (
                 <span className="flex items-center space-x-2">
-                  <InfoCircleOutlined />
+                  <Info className="w-4 h-4"  />
                   <span>关于</span>
                 </span>
               ),
@@ -569,17 +547,16 @@ const Settings: React.FC = () => {
                     }
                     type="info"
                     showIcon
-                    icon={<InfoCircleOutlined />}
+                    icon={<Info className="w-4 h-4"  />}
                   />
                   </Card>
                 </div>
-              ),
-            },
+              )},
             {
               key: 'preferences',
               label: (
                 <span className="flex items-center space-x-2">
-                  <UserOutlined />
+                  <User className="w-4 h-4"  />
                   <span>用户偏好</span>
                 </span>
               ),
@@ -587,13 +564,12 @@ const Settings: React.FC = () => {
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <UserPreferences />
                 </div>
-              ),
-            },
+              )},
             {
               key: 'notifications',
               label: (
                 <span className="flex items-center space-x-2">
-                  <BellOutlined />
+                  <Bell className="w-4 h-4"  />
                   <span>通知设置</span>
                 </span>
               ),
@@ -608,7 +584,7 @@ const Settings: React.FC = () => {
                     </div>
                     
                     {isBrowserEnvironment() && (
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                      <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                         <Alert
                           message="当前运行在浏览器预览模式"
                           description="您可以重新查看功能说明，或者重置提醒设置。"
@@ -617,27 +593,27 @@ const Settings: React.FC = () => {
                           style={{ marginBottom: '16px' }}
                         />
                         
-                        <Space>
+                        <div className="flex gap-2">
                           <Button
                             type="primary"
-                            icon={<InfoCircleOutlined />}
+                            icon={<Info className="w-4 h-4"  />}
                             onClick={() => setBrowserModalVisible(true)}
                             className="cursor-pointer"
                           >
                             查看功能说明
                           </Button>
                           <Button
-                            icon={<ReloadOutlined />}
+                            icon={<RefreshCw className="w-4 h-4"  />}
                             onClick={() => {
                               resetNoticeSettings();
-                              message.success('提醒设置已重置，下次启动时会再次显示功能说明');
+                              toast({ title: "成功", description: "提醒设置已重置，下次启动时会再次显示功能说明" });
                             }}
                             className="cursor-pointer"
                           >
                             重置提醒设置
                           </Button>
-                        </Space>
-                      </Space>
+                        </div>
+                      </div>
                     )}
                     
                     {!isBrowserEnvironment() && (
@@ -650,13 +626,12 @@ const Settings: React.FC = () => {
                     )}
                   </Card>
                 </div>
-              ),
-            },
+              )},
             {
               key: 'developer',
               label: (
                 <span className="flex items-center space-x-2">
-                  <BugOutlined />
+                  <Bug className="w-4 h-4"  />
                   <span>开发者工具</span>
                 </span>
               ),
@@ -679,8 +654,7 @@ const Settings: React.FC = () => {
                     <ErrorLogViewer />
                   </Card>
                 </div>
-              ),
-            },
+              )},
           ]}
         />
         </div>

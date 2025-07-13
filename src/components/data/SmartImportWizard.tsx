@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Steps, Button, Alert, Typography, Progress } from 'antd';
-import { Modal, Space, Card, message } from '@/components/ui';
-import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined, EyeOutlined } from '@/components/ui';
+import { Steps, Button, Alert, Typography, Progress } from '@/components/ui';
+import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 // 导入工具类
@@ -96,8 +96,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   onClose,
   connectionId,
   database,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [wizardData, setWizardData] = useState<ImportWizardData>({
@@ -121,9 +120,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
       skipErrors: false,
       enableValidation: true,
       enableCleaning: false,
-      createBackup: false,
-    },
-  });
+      createBackup: false}});
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [measurements, setMeasurements] = useState<string[]>([]);
 
@@ -137,39 +134,32 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   const steps = [
     {
       title: '上传文件',
-      icon: <UploadOutlined />,
-      description: '选择要导入的数据文件',
-    },
+      icon: <Upload className="w-4 h-4"  />,
+      description: '选择要导入的数据文件'},
     {
       title: '数据预览',
-      icon: <EyeOutlined />,
-      description: '预览和确认数据内容',
-    },
+      icon: <Eye className="w-4 h-4"  />,
+      description: '预览和确认数据内容'},
     {
       title: '字段映射',
-      icon: <DatabaseOutlined />,
-      description: '配置字段映射关系',
-    },
+      icon: <Database className="w-4 h-4"  />,
+      description: '配置字段映射关系'},
     {
       title: '数据验证',
-      icon: <CheckCircleOutlined />,
-      description: '验证数据质量',
-    },
+      icon: <CheckCircle />,
+      description: '验证数据质量'},
     {
       title: '数据清理',
-      icon: <SettingOutlined />,
-      description: '清理和标准化数据',
-    },
+      icon: <Settings className="w-4 h-4"  />,
+      description: '清理和标准化数据'},
     {
       title: '导入配置',
-      icon: <SettingOutlined />,
-      description: '配置导入参数',
-    },
+      icon: <Settings className="w-4 h-4"  />,
+      description: '配置导入参数'},
     {
       title: '执行导入',
-      icon: <CheckCircleOutlined />,
-      description: '执行数据导入',
-    },
+      icon: <CheckCircle />,
+      description: '执行数据导入'},
   ];
 
   // 重置向导状态
@@ -197,9 +187,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
         skipErrors: false,
         enableValidation: true,
         enableCleaning: false,
-        createBackup: false,
-      },
-    });
+        createBackup: false}});
     setImportProgress(null);
   }, []);
 
@@ -210,8 +198,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
     try {
       const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
-        database,
-      });
+        database});
       setMeasurements(measurementList);
     } catch (error) {
       console.error('加载测量列表失败:', error);
@@ -286,7 +273,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   const handleStepComplete = useCallback(async () => {
     const isValid = await validateCurrentStep();
     if (!isValid) {
-      message.error('请完成当前步骤的必填项');
+      toast({ title: "错误", description: "请完成当前步骤的必填项", variant: "destructive" });
       return;
     }
 
@@ -324,24 +311,21 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           rules.push({
             type: 'fillMissing',
             field: '*',
-            params: { method: 'constant', value: '' },
-          });
+            params: { method: 'constant', value: '' }});
           break;
         
         case 'duplicate':
           rules.push({
             type: 'removeDuplicates',
             field: '*',
-            params: {},
-          });
+            params: {}});
           break;
         
         case 'outlier':
           rules.push({
             type: 'removeOutliers',
             field: '*',
-            params: { method: 'iqr' },
-          });
+            params: { method: 'iqr' }});
           break;
       }
     });
@@ -369,9 +353,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           precision: wizardData.importConfig.precision,
           retentionPolicy: wizardData.importConfig.retentionPolicy,
           skipErrors: wizardData.importConfig.skipErrors,
-          createBackup: wizardData.importConfig.createBackup,
-        },
-      };
+          createBackup: wizardData.importConfig.createBackup}};
 
       // 模拟进度更新
       const stages = [
@@ -391,8 +373,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           processedRows: Math.floor((stage.progress / 100) * wizardData.totalRows),
           totalRows: wizardData.totalRows,
           errors: [],
-          warnings: [],
-        });
+          warnings: []});
         
         // 模拟延迟
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -401,7 +382,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
       // 调用后端导入接口
       await safeTauriInvoke('smart_import_data', importRequest);
 
-      message.success('数据导入成功');
+      toast({ title: "成功", description: "数据导入成功" });
       
       if (onSuccess) {
         onSuccess();
@@ -415,9 +396,8 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
         processedRows: 0,
         totalRows: wizardData.totalRows,
         errors: [String(error)],
-        warnings: [],
-      });
-      message.error(`数据导入失败: ${error}`);
+        warnings: []});
+      toast({ title: "错误", description: "数据导入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -552,7 +532,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
                   第 {currentStep + 1} 步，共 {steps.length} 步
                 </Text>
               </div>
-              <Space>
+              <div className="flex gap-2">
                 {currentStep > 0 && (
                   <Button onClick={prevStep} disabled={loading}>
                     上一步
@@ -568,7 +548,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
                 >
                   {currentStep === steps.length - 2 ? '开始导入' : '下一步'}
                 </Button>
-              </Space>
+              </div>
             </div>
           </Card>
         )}

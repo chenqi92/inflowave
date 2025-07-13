@@ -111,8 +111,7 @@ export class QueryRouter {
       retryInterval: 1000, // 1秒
       stickySession: false,
       weights: {},
-      ...config,
-    };
+      ...config};
 
     this.routingStatistics = {
       totalRequests: 0,
@@ -123,8 +122,7 @@ export class QueryRouter {
       healthyNodes: 0,
       unhealthyNodes: 0,
       failoverCount: 0,
-      routingRules: [],
-    };
+      routingRules: []};
 
     this.initializeRoutingRules();
     this.startHealthChecks();
@@ -156,8 +154,7 @@ export class QueryRouter {
         targetConnection: finalRoute?.connectionId || defaultConnectionId,
         loadBalancing: this.loadBalancingConfig.strategy,
         priority: finalRoute?.priority || 0,
-        reason: this.getRoutingReason(finalRoute, selectedRoute !== null),
-      };
+        reason: this.getRoutingReason(finalRoute, selectedRoute !== null)};
 
       // 5. 记录路由历史
       this.recordRouting(query, strategy, finalRoute, Date.now() - startTime);
@@ -173,8 +170,7 @@ export class QueryRouter {
         targetConnection: defaultConnectionId,
         loadBalancing: 'round_robin' as const,
         priority: 0,
-        reason: 'Fallback to default connection due to routing error',
-      };
+        reason: 'Fallback to default connection due to routing error'};
     } finally {
       this.routingStatistics.avgRoutingTime = 
         (this.routingStatistics.avgRoutingTime * (this.routingStatistics.totalRequests - 1) + 
@@ -195,8 +191,7 @@ export class QueryRouter {
       health: 1.0,
       priority: 1,
       tags: [],
-      metadata,
-    };
+      metadata};
 
     this.candidates.set(connectionId, candidate);
     
@@ -491,8 +486,7 @@ export class QueryRouter {
   private async updateHealthStatus(connectionId: string): Promise<void> {
     try {
       const healthData = await safeTauriInvoke<HealthDetails>('check_connection_health', {
-        connectionId,
-      });
+        connectionId});
 
       if (!healthData) {
         throw new Error('No health data received');
@@ -506,8 +500,7 @@ export class QueryRouter {
         errorRate: 0, // 需要从历史数据计算
         lastCheck: new Date(),
         consecutiveFailures: 0,
-        details: healthData,
-      };
+        details: healthData};
 
       this.healthStatus.set(connectionId, health);
       
@@ -563,8 +556,7 @@ export class QueryRouter {
         );
         return readReplicas.length > 0 ? readReplicas[0] : candidates[0];
       },
-      description: 'Route read queries to secondary or analytics nodes',
-    });
+      description: 'Route read queries to secondary or analytics nodes'});
 
     // 大查询路由规则
     this.addRoutingRule({
@@ -580,8 +572,7 @@ export class QueryRouter {
         const analyticsNodes = candidates.filter(c => c.metadata.nodeType === 'analytics');
         return analyticsNodes.length > 0 ? analyticsNodes[0] : null;
       },
-      description: 'Route large or complex queries to analytics nodes',
-    });
+      description: 'Route large or complex queries to analytics nodes'});
 
     // 地理位置路由规则
     this.addRoutingRule({
@@ -596,8 +587,7 @@ export class QueryRouter {
           candidate.latency < best.latency ? candidate : best
         );
       },
-      description: 'Route queries to geographically closest nodes',
-    });
+      description: 'Route queries to geographically closest nodes'});
   }
 
   /**
@@ -635,11 +625,9 @@ export class QueryRouter {
         connectionId: candidate.connectionId,
         score: candidate.score,
         latency: candidate.latency,
-        load: candidate.load,
-      } : null,
+        load: candidate.load} : null,
       routingTime,
-      timestamp: Date.now(),
-    };
+      timestamp: Date.now()};
 
     this.routingHistory.push(entry);
     
@@ -679,8 +667,7 @@ export class QueryRouter {
         hitCount: 0,
         successRate: 1.0,
         avgExecutionTime: 0,
-        lastUsed: new Date(),
-      };
+        lastUsed: new Date()};
       this.routingStatistics.routingRules.push(ruleStats);
     }
 

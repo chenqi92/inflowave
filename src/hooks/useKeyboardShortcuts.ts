@@ -32,8 +32,7 @@ export const useKeyboardShortcuts = (
     enabled = true,
     element = null,
     preventDefault = true,
-    stopPropagation = true,
-  } = options;
+    stopPropagation = true} = options;
 
   const shortcutsRef = useRef<KeyboardShortcut[]>([]);
   const navigate = useNavigate();
@@ -90,8 +89,7 @@ export const useKeyboardShortcuts = (
     },
     clearShortcuts: () => {
       shortcutsRef.current = [];
-    },
-  };
+    }};
 };
 
 // 全局快捷键hook
@@ -106,50 +104,43 @@ export const useGlobalShortcuts = () => {
       ctrlKey: true,
       callback: () => navigate('/dashboard'),
       description: '打开仪表板',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '2',
       ctrlKey: true,
       callback: () => navigate('/connections'),
       description: '打开连接管理',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '3',
       ctrlKey: true,
       callback: () => navigate('/query'),
       description: '打开数据查询',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '4',
       ctrlKey: true,
       callback: () => navigate('/database'),
       description: '打开数据库管理',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '5',
       ctrlKey: true,
       callback: () => navigate('/visualization'),
       description: '打开数据可视化',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '6',
       ctrlKey: true,
       callback: () => navigate('/performance'),
       description: '打开性能监控',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     {
       key: '7',
       ctrlKey: true,
       callback: () => navigate('/settings'),
       description: '打开应用设置',
-      category: 'navigation',
-    },
+      category: 'navigation'},
     
     // 文件操作快捷键
     {
@@ -163,16 +154,14 @@ export const useGlobalShortcuts = () => {
         }
       },
       description: '新建查询',
-      category: 'file',
-    },
+      category: 'file'},
     {
       key: 'n',
       ctrlKey: true,
       shiftKey: true,
       callback: () => navigate('/connections'),
       description: '新建连接',
-      category: 'file',
-    },
+      category: 'file'},
     
     // 查询执行快捷键
     {
@@ -186,8 +175,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(executeEvent);
       },
       description: '执行查询',
-      category: 'query',
-    },
+      category: 'query'},
     {
       key: 'c',
       ctrlKey: true,
@@ -200,8 +188,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(stopEvent);
       },
       description: '停止查询',
-      category: 'query',
-    },
+      category: 'query'},
     
     // 全局搜索快捷键
     {
@@ -215,8 +202,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(searchEvent);
       },
       description: '全局搜索',
-      category: 'search',
-    },
+      category: 'search'},
     
     // 工具快捷键
     {
@@ -229,8 +215,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(shortcutsEvent);
       },
       description: '显示快捷键帮助',
-      category: 'tools',
-    },
+      category: 'tools'},
     
     // 开发者工具快捷键
     {
@@ -242,8 +227,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(devToolsEvent);
       },
       description: '切换开发者工具',
-      category: 'developer',
-    },
+      category: 'developer'},
     
     // 刷新快捷键
     {
@@ -255,8 +239,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(refreshEvent);
       },
       description: '刷新页面',
-      category: 'general',
-    },
+      category: 'general'},
     
     // 窗口管理快捷键
     {
@@ -269,8 +252,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(toggleSidebarEvent);
       },
       description: '切换侧边栏',
-      category: 'layout',
-    },
+      category: 'layout'},
     
     // 缩放快捷键
     {
@@ -283,8 +265,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(zoomInEvent);
       },
       description: '放大',
-      category: 'view',
-    },
+      category: 'view'},
     {
       key: 'Minus',
       ctrlKey: true,
@@ -295,8 +276,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(zoomOutEvent);
       },
       description: '缩小',
-      category: 'view',
-    },
+      category: 'view'},
     {
       key: '0',
       ctrlKey: true,
@@ -307,8 +287,7 @@ export const useGlobalShortcuts = () => {
         document.dispatchEvent(resetZoomEvent);
       },
       description: '重置缩放',
-      category: 'view',
-    },
+      category: 'view'},
   ];
 
   const { addShortcut, removeShortcut, clearShortcuts } = useKeyboardShortcuts(globalShortcuts);
@@ -317,8 +296,7 @@ export const useGlobalShortcuts = () => {
     shortcuts: globalShortcuts,
     addShortcut,
     removeShortcut,
-    clearShortcuts,
-  };
+    clearShortcuts};
 };
 
 // 查询编辑器专用快捷键
@@ -334,8 +312,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         document.dispatchEvent(executeEvent);
       },
       description: '执行查询',
-      category: 'query',
-    },
+      category: 'query'},
     {
       key: 'l',
       ctrlKey: true,
@@ -346,8 +323,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         document.dispatchEvent(formatEvent);
       },
       description: '格式化查询',
-      category: 'query',
-    },
+      category: 'query'},
     {
       key: 'd',
       ctrlKey: true,
@@ -360,8 +336,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         }
       },
       description: '复制当前行',
-      category: 'edit',
-    },
+      category: 'edit'},
     {
       key: 'Slash',
       ctrlKey: true,
@@ -372,8 +347,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         document.dispatchEvent(commentEvent);
       },
       description: '切换注释',
-      category: 'edit',
-    },
+      category: 'edit'},
     {
       key: 's',
       ctrlKey: true,
@@ -384,8 +358,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         document.dispatchEvent(saveEvent);
       },
       description: '保存查询',
-      category: 'file',
-    },
+      category: 'file'},
     {
       key: 'o',
       ctrlKey: true,
@@ -396,13 +369,11 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
         document.dispatchEvent(openEvent);
       },
       description: '打开查询',
-      category: 'file',
-    },
+      category: 'file'},
   ];
 
   return useKeyboardShortcuts(shortcuts, {
-    element: editorRef.current,
-  });
+    element: editorRef.current});
 };
 
 // 数据库浏览器专用快捷键
@@ -417,8 +388,7 @@ export const useDatabaseBrowserShortcuts = () => {
         document.dispatchEvent(refreshEvent);
       },
       description: '刷新数据库结构',
-      category: 'database',
-    },
+      category: 'database'},
     {
       key: 'Delete',
       callback: () => {
@@ -428,8 +398,7 @@ export const useDatabaseBrowserShortcuts = () => {
         document.dispatchEvent(deleteEvent);
       },
       description: '删除选中项',
-      category: 'database',
-    },
+      category: 'database'},
     {
       key: 'F2',
       callback: () => {
@@ -439,8 +408,7 @@ export const useDatabaseBrowserShortcuts = () => {
         document.dispatchEvent(renameEvent);
       },
       description: '重命名选中项',
-      category: 'database',
-    },
+      category: 'database'},
     {
       key: 't',
       ctrlKey: true,
@@ -451,8 +419,7 @@ export const useDatabaseBrowserShortcuts = () => {
         document.dispatchEvent(newTableEvent);
       },
       description: '创建新表',
-      category: 'database',
-    },
+      category: 'database'},
   ];
 
   return useKeyboardShortcuts(shortcuts);

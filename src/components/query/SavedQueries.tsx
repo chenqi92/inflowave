@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Form, Empty, Row, Col } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
+import { Button, Typography, Input, Select, Tag, Form, Empty, Row, Col } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
 // TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
-import { PlayCircleOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined, DatabaseOutlined, SaveOutlined, CloseOutlined } from '@/components/ui';
+import { Trash2, Edit, Plus, Search, Database, Save, X, PlayCircle } from 'lucide-react';
 // TODO: Replace these icons: BookOutlined, TagOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -31,8 +33,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   onQuerySelect,
   visible = true,
   onClose,
-  databases = [],
-}) => {
+  databases = []}) => {
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -49,7 +50,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
       setSavedQueries(queries || []);
     } catch (error) {
-      message.error(`加载保存的查询失败: ${error}`);
+      toast({ title: "错误", description: "加载保存的查询失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -66,16 +67,15 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
         database: values.database,
         tags: values.tags || [],
         createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       await safeTauriInvoke('save_query', { query: newQuery });
       await loadSavedQueries();
       setShowCreateModal(false);
       form.resetFields();
-      message.success('查询已保存');
+      toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      message.error(`保存查询失败: ${error}`);
+      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -91,16 +91,15 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
         query: values.query,
         database: values.database,
         tags: values.tags || [],
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       await safeTauriInvoke('update_saved_query', { query: updatedQuery });
       await loadSavedQueries();
       setEditingQuery(null);
       form.resetFields();
-      message.success('查询已更新');
+      toast({ title: "成功", description: "查询已更新" });
     } catch (error) {
-      message.error(`更新查询失败: ${error}`);
+      toast({ title: "错误", description: "更新查询失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -109,9 +108,9 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
     try {
       await safeTauriInvoke('delete_saved_query', { id });
       await loadSavedQueries();
-      message.success('查询已删除');
+      toast({ title: "成功", description: "查询已删除" });
     } catch (error) {
-      message.error(`删除查询失败: ${error}`);
+      toast({ title: "错误", description: "删除查询失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -123,8 +122,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       description: query.description,
       query: query.query,
       database: query.database,
-      tags: query.tags || [],
-    });
+      tags: query.tags || []});
   };
 
   // 取消编辑
@@ -172,14 +170,14 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
         <Tooltip title="执行查询">
           <Button
             type="text"
-            icon={<PlayCircleOutlined />}
+            icon={<PlayCircle />}
             onClick={() => onQuerySelect?.(query.query, query.database)}
           />
         </Tooltip>,
         <Tooltip title="编辑">
           <Button
             type="text"
-            icon={<EditOutlined />}
+            icon={<Edit className="w-4 h-4"  />}
             onClick={() => handleEditQuery(query)}
           />
         </Tooltip>,
@@ -188,26 +186,26 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             title="确定删除这个查询吗？"
             onConfirm={() => handleDeleteQuery(query.id)}
           >
-            <Button type="text" icon={<DeleteOutlined />} danger />
+            <Button type="text" icon={<Trash2 className="w-4 h-4"  />} danger />
           </Popconfirm>
         </Tooltip>,
       ]}
     >
       <List.Item.Meta
         title={
-          <Space>
+          <div className="flex gap-2">
             <Text strong>{query.name}</Text>
             {query.database && (
-              <Tag color="blue" icon={<DatabaseOutlined />}>
+              <Tag color="blue" icon={<Database className="w-4 h-4"  />}>
                 {query.database}
               </Tag>
             )}
             {query.tags?.map(tag => (
-              <Tag key={tag} color="default" icon={<TagOutlined />}>
+              <Tag key={tag} color="default" icon={<Tag className="w-4 h-4"  />}>
                 {tag}
               </Tag>
             ))}
-          </Space>
+          </div>
         }
         description={
           <div>
@@ -305,14 +303,14 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       </Row>
 
       <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-        <Space>
+        <div className="flex gap-2">
           <Button onClick={handleCancelEdit}>
             取消
           </Button>
-          <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+          <Button type="primary" htmlType="submit" icon={<Save className="w-4 h-4"  />}>
             {editingQuery ? '更新' : '保存'}
           </Button>
-        </Space>
+        </div>
       </Form.Item>
     </Form>
   );
@@ -359,7 +357,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           <Col span={6} style={{ textAlign: 'right' }}>
             <Button
               type="primary"
-              icon={<PlusOutlined />}
+              icon={<Plus className="w-4 h-4"  />}
               onClick={() => setShowCreateModal(true)}
             >
               新建查询
@@ -380,8 +378,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
                 description="暂无保存的查询"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
-            ),
-          }}
+            )}}
         />
       </div>
     </div>
@@ -393,10 +390,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       {visible && onClose ? (
         <Modal
           title={
-            <Space>
-              <BookOutlined />
+            <div className="flex gap-2">
+              <Book className="w-4 h-4"  />
               <span>保存的查询</span>
-            </Space>
+            </div>
           }
           open={visible}
           onCancel={onClose}
@@ -409,10 +406,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       ) : (
         <Card
           title={
-            <Space>
-              <BookOutlined />
+            <div className="flex gap-2">
+              <Book className="w-4 h-4"  />
               <span>保存的查询</span>
-            </Space>
+            </div>
           }
           style={{ height: '100%' }}
           styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
@@ -424,10 +421,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       {/* 创建/编辑查询模态框 */}
       <Modal
         title={
-          <Space>
-            {editingQuery ? <EditOutlined /> : <PlusOutlined />}
+          <div className="flex gap-2">
+            {editingQuery ? <Edit className="w-4 h-4"  /> : <Plus className="w-4 h-4"  />}
             <span>{editingQuery ? '编辑查询' : '新建查询'}</span>
-          </Space>
+          </div>
         }
         open={showCreateModal || !!editingQuery}
         onCancel={handleCancelEdit}

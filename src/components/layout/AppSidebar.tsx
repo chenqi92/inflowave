@@ -1,11 +1,8 @@
 import React from 'react';
-import { Layout, Menu } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined, ApiOutlined } from '@/components/ui';
-import type { MenuProps } from '@/components/ui';
+import { Database, Search, BarChart, Edit, Settings, Webhook, LayoutDashboard } from 'lucide-react';
+import { Button, Separator } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
-
-const { Sider } = Layout;
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -17,56 +14,47 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
   const { activeConnectionId } = useConnectionStore();
 
   // 菜单项配置
-  const menuItems: MenuProps['items'] = [
+  const menuItems = [
     {
       key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表板',
-    },
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      label: '仪表板'},
     {
       key: '/connections',
-      icon: <ApiOutlined />,
-      label: '连接管理',
-    },
+      icon: <Webhook className="w-4 h-4" />,
+      label: '连接管理'},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: '/query',
-      icon: <SearchOutlined />,
+      icon: <Search className="w-4 h-4" />,
       label: '数据查询',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/database',
-      icon: <DatabaseOutlined />,
+      icon: <Database className="w-4 h-4" />,
       label: '数据库管理',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/visualization',
-      icon: <BarChartOutlined />,
+      icon: <BarChart className="w-4 h-4" />,
       label: '数据可视化',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/write',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4" />,
       label: '数据写入',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: '/settings',
-      icon: <SettingOutlined />,
-      label: '应用设置',
-    },
+      icon: <Settings className="w-4 h-4" />,
+      label: '应用设置'},
   ];
 
   // 处理菜单点击
-  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+  const handleMenuClick = (key: string) => {
     navigate(key);
   };
 
@@ -74,21 +62,36 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
   const selectedKeys = [location.pathname];
 
   return (
-    <Sider
-      className="app-sider"
-      collapsed={collapsed}
-      width={240}
-      collapsedWidth={64}
-      theme="light"
+    <div
+      className={`app-sider bg-white border-r border-gray-200 h-full transition-all duration-200 ${
+        collapsed ? 'w-16' : 'w-60'
+      }`}
     >
-      <Menu
-        mode="inline"
-        selectedKeys={selectedKeys}
-        items={menuItems}
-        onClick={handleMenuClick}
-        className="h-full border-r-0"
-      />
-    </Sider>
+      <nav className="h-full py-2">
+        {menuItems.map((item) => {
+          if (item.type === 'divider') {
+            return <Separator key={item.key} className="my-2 mx-4" />;
+          }
+
+          const isSelected = selectedKeys.includes(item.key);
+
+          return (
+            <Button
+              key={item.key}
+              variant={isSelected ? 'secondary' : 'ghost'}
+              className={`w-full justify-start px-4 py-2 h-10 mb-1 mx-2 ${
+                collapsed ? 'px-2' : 'px-4'
+              }`}
+              onClick={() => handleMenuClick(item.key)}
+              disabled={item.disabled}
+            >
+              {item.icon}
+              {!collapsed && <span className="ml-3">{item.label}</span>}
+            </Button>
+          );
+        })}
+      </nav>
+    </div>
   );
 };
 

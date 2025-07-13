@@ -1,137 +1,207 @@
-import React from 'react';
-import { cn } from '@/utils/cn';
-import { CheckCircleOutlined, ClockCircleOutlined } from './Icons';
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Clock, CheckCircle, XCircle, AlertCircle, Circle } from "lucide-react"
 
-export interface TimelineItemProps {
-  color?: 'blue' | 'red' | 'green' | 'gray' | string;
-  dot?: React.ReactNode;
-  pending?: boolean;
-  position?: 'left' | 'right';
-  label?: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string;
+interface TimelineItem {
+  key?: string
+  children?: React.ReactNode
+  color?: "blue" | "green" | "red" | "yellow" | "gray" | string
+  dot?: React.ReactNode
+  label?: React.ReactNode
+  position?: "left" | "right"
 }
 
-export interface TimelineProps {
-  pending?: React.ReactNode;
-  pendingDot?: React.ReactNode;
-  reverse?: boolean;
-  mode?: 'left' | 'alternate' | 'right';
-  children?: React.ReactNode;
-  className?: string;
+interface TimelineProps {
+  className?: string
+  pending?: React.ReactNode | boolean
+  pendingDot?: React.ReactNode
+  reverse?: boolean
+  mode?: "left" | "alternate" | "right"
+  items?: TimelineItem[]
+  children?: React.ReactNode
 }
 
-const TimelineItem: React.FC<TimelineItemProps> = ({
-  color = 'blue',
-  dot,
-  pending = false,
-  position,
-  label,
-  children,
-  className,
-}) => {
-  const getColorClasses = (colorName: string) => {
-    const colorMap = {
-      blue: 'border-blue-500 bg-blue-500',
-      red: 'border-red-500 bg-red-500',
-      green: 'border-green-500 bg-green-500',
-      gray: 'border-gray-300 bg-gray-300',
-    };
-    return colorMap[colorName as keyof typeof colorMap] || `border-[${colorName}] bg-[${colorName}]`;
-  };
-
-  const renderDot = () => {
-    if (dot) {
-      return <div className="flex items-center justify-center">{dot}</div>;
-    }
+const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
+  ({ 
+    className, 
+    pending, 
+    pendingDot, 
+    reverse = false, 
+    mode = "left",
+    items = [],
+    children,
+    ...props 
+  }, ref) => {
+    // 处理items数据
+    const processedItems = items.length > 0 ? items : []
     
+    // 如果有children，转换为items格式
+    const childItems = React.Children.toArray(children).filter(
+      child => React.isValidElement(child) && child.type === TimelineItem
+    ).map((child: any, index) => ({
+      key: child.key || index.toString(),
+      children: child.props.children,
+      color: child.props.color,
+      dot: child.props.dot,
+      label: child.props.label,
+      position: child.props.position
+    }))
+
+    let allItems = processedItems.length > 0 ? processedItems : childItems
+
+    // 添加pending项
     if (pending) {
-      return <ClockCircleOutlined className="text-gray-400" />;
+      const pendingItem: TimelineItem = {
+        key: 'pending',
+        children: typeof pending === 'boolean' ? null : pending,
+        dot: pendingDot || <Clock className="h-3 w-3 animate-spin" />,
+        color: 'blue'
+      }
+      allItems = [...allItems, pendingItem]
+    }
+
+    // 如果reverse为true，反转数组
+    if (reverse) {
+      allItems = [...allItems].reverse()
+    }
+
+    const getDefaultDot = (color?: string) => {
+      switch (color) {
+        case 'green':
+          return <CheckCircle className="h-3 w-3 text-green-500" />
+        case 'red':
+          return <XCircle className="h-3 w-3 text-red-500" />
+        case 'yellow':
+          return <AlertCircle className="h-3 w-3 text-yellow-500" />
+        case 'blue':
+          return <Circle className="h-3 w-3 text-blue-500 fill-current" />
+        default:
+          return <Circle className="h-3 w-3 text-gray-400 fill-current" />
+      }
+    }
+
+    const getItemPosition = (item: TimelineItem, index: number) => {
+      if (mode === "alternate") {
+        return item.position || (index % 2 === 0 ? "left" : "right")
+      }
+      return mode
+    }
+
+    const renderItem = (item: TimelineItem, index: number, isLast: boolean) => {
+      const position = getItemPosition(item, index)
+      const isRight = position === "right"
+
+      return (
+        <div 
+          key={item.key || index}
+          className={cn(
+            "relative flex",
+            mode === "alternate" ? "w-full" : "items-start gap-3"
+          )}
+        >
+          {mode === "alternate" && (
+            <div className={cn(
+              "flex w-full",
+              isRight ? "flex-row-reverse" : "flex-row"
+            )}>
+              {/* 内容区域 */}
+              <div className={cn(
+                "flex-1 px-4",
+                isRight ? "text-right" : "text-left"
+              )}>
+                {item.label && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {item.label}
+                  </div>
+                )}
+                <div className="text-sm text-foreground">
+                  {item.children}
+                </div>
+              </div>
+
+              {/* 时间轴中心线和点 */}
+              <div className="relative flex flex-col items-center">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background border-2 border-border z-10">
+                  {item.dot || getDefaultDot(item.color)}
+                </div>
+                {!isLast && (
+                  <div className="w-0.5 h-12 bg-border mt-2" />
+                )}
+              </div>
+
+              {/* 占位区域 */}
+              <div className="flex-1" />
+            </div>
+          )}
+
+          {mode !== "alternate" && (
+            <>
+              {/* 时间轴点 */}
+              <div className="relative flex flex-col items-center">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-background border-2 border-border z-10">
+                  {item.dot || getDefaultDot(item.color)}
+                </div>
+                {!isLast && (
+                  <div className="w-0.5 flex-1 bg-border mt-2 min-h-[2rem]" />
+                )}
+              </div>
+
+              {/* 内容区域 */}
+              <div className="flex-1 pb-8">
+                {item.label && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {item.label}
+                  </div>
+                )}
+                <div className="text-sm text-foreground">
+                  {item.children}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )
     }
 
     return (
       <div
+        ref={ref}
         className={cn(
-          'w-3 h-3 rounded-full border-2',
-          getColorClasses(color)
+          "relative",
+          mode === "alternate" && "space-y-4",
+          className
         )}
-      />
-    );
-  };
-
-  return (
-    <div className={cn('relative flex', className)}>
-      {/* 时间轴线 */}
-      <div className="relative flex flex-col items-center">
-        <div className="flex items-center justify-center w-6 h-6">
-          {renderDot()}
-        </div>
-        <div className="w-px bg-gray-200 flex-1 mt-1" />
-      </div>
-      
-      {/* 内容区域 */}
-      <div className="ml-4 pb-6 flex-1">
-        {label && (
-          <div className="text-sm text-gray-500 mb-1">
-            {label}
-          </div>
+        {...props}
+      >
+        {mode === "alternate" && (
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-0.5" />
         )}
-        <div className="text-gray-900">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Timeline: React.FC<TimelineProps> & { Item: typeof TimelineItem } = ({
-  pending,
-  pendingDot,
-  reverse = false,
-  mode = 'left',
-  children,
-  className,
-}) => {
-  const items = React.Children.toArray(children);
-  const processedItems = reverse ? items.reverse() : items;
-
-  return (
-    <div className={cn('timeline', className)}>
-      {processedItems.map((child, index) => {
-        if (!React.isValidElement(child)) return null;
-
-        const isLast = index === processedItems.length - 1;
         
-        // 为最后一个项目移除时间轴线
-        return React.cloneElement(child, {
-          key: index,
-          className: cn(
-            child.props.className,
-            isLast && '[&_.w-px]:hidden'
-          ),
-          position: mode === 'alternate' 
-            ? (index % 2 === 0 ? 'left' : 'right')
-            : mode === 'right' 
-            ? 'right' 
-            : 'left'
-        });
-      })}
-      
-      {/* 待定项目 */}
-      {pending && (
-        <TimelineItem
-          pending
-          dot={pendingDot}
-          className="[&_.w-px]:hidden"
-        >
-          {pending}
-        </TimelineItem>
-      )}
-    </div>
-  );
-};
+        {allItems.map((item, index) => 
+          renderItem(item, index, index === allItems.length - 1)
+        )}
+      </div>
+    )
+  }
+)
+Timeline.displayName = "Timeline"
 
-Timeline.Item = TimelineItem;
+interface TimelineItemProps {
+  className?: string
+  children?: React.ReactNode
+  color?: "blue" | "green" | "red" | "yellow" | "gray" | string
+  dot?: React.ReactNode
+  label?: React.ReactNode
+  position?: "left" | "right"
+}
 
-export { Timeline, TimelineItem };
-export type { TimelineItemProps };
+const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
+  ({ children, ...props }, ref) => {
+    // 这个组件主要是为了API兼容，实际渲染在Timeline中处理
+    return <div ref={ref} {...props}>{children}</div>
+  }
+)
+TimelineItem.displayName = "TimelineItem"
+
+export { Timeline, TimelineItem }
+export type { TimelineProps, TimelineItemProps, TimelineItem as TimelineItemType }

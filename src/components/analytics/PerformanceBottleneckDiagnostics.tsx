@@ -1,53 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Progress, Tag, Button, Alert, Row, Col, Typography, Tabs, Statistic, List, Select, Input, Spin, Empty, Descriptions, Switch, DatePicker, Drawer, Form, InputNumber } from 'antd';
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Progress, Tag, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Input, Switch, Form } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import { DatePickerWithRange } from '@/components/ui';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui';
 
-const { RangePicker } = DatePicker;
-import { Card, Space, Modal,  } from '@/components/ui';
-import {
-  ReloadOutlined,
-  DownloadOutlined,
-  SettingOutlined,
-  ClockCircleOutlined,
-  FireOutlined,
-  BugOutlined,
-  TrophyOutlined,
-  RocketOutlined,
-  LockOutlined,
-  MonitorOutlined,
-  RiseOutlined,
-  MinusOutlined,
-  ClearOutlined,
-  BulbOutlined,
-  ApiOutlined,
-  MinusCircleOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-  WarningOutlined,
-  ExclamationCircleOutlined,
-} from '@/components/ui';
+import { MonitorOutlined, RiseOutlined, ClearOutlined } from '@/components/ui';
+import { RefreshCw, Download, Settings, Clock, Flame, Bug, Trophy, Rocket, Lock, Lightbulb, Webhook, Info, Minus, MinusCircle, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { PerformanceBottleneckService, type PerformanceBottleneck } from '@/services/analyticsService';
 import { showMessage } from '@/utils/message';
 import dayjs from 'dayjs';
 
-const { Text } = Typography;
-const { TabPane } = Tabs;
-const { Option } = Select;
-const { Search } = Input;
+import { Text } from '@/components/ui';
 
 interface PerformanceBottleneckDiagnosticsProps {
   className?: string;
 }
 
 export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDiagnosticsProps> = ({
-  className,
-}) => {
+  className}) => {
   const { activeConnectionId } = useConnectionStore();
   const [bottlenecks, setBottlenecks] = useState<PerformanceBottleneck[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedBottleneck, setSelectedBottleneck] = useState<PerformanceBottleneck | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [timeRange, setTimeRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+  const [timeRange, setTimeRange] = useState<{from: Date, to: Date} | null>(null);
   const [severityFilter, setSeverityFilter] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'query' | 'connection' | 'memory' | 'disk' | 'network' | 'cpu' | 'lock'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'ignored'>('all');
@@ -88,8 +65,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
     diskIo: 90,
     networkIo: 95,
     queryExecutionTime: 5000,
-    connectionCount: 100,
-  });
+    connectionCount: 100});
 
   // 获取性能瓶颈数据
   const getBottlenecks = useCallback(async () => {
@@ -98,9 +74,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
     setLoading(true);
     try {
       const range = timeRange ? {
-        start: timeRange[0].toDate(),
-        end: timeRange[1].toDate(),
-      } : undefined;
+        start: timeRange.from,
+        end: timeRange.to} : undefined;
 
       const [
         bottlenecksData,
@@ -150,44 +125,40 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       'low': 'green',
       'medium': 'orange',
       'high': 'red',
-      'critical': 'red',
-    };
+      'critical': 'red'};
     return colorMap[severity] || 'default';
   };
 
   // 获取严重程度图标
   const getSeverityIcon = (severity: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'low': <InfoCircleOutlined style={{ color: '#52c41a' }} />,
-      'medium': <WarningOutlined style={{ color: '#faad14' }} />,
-      'high': <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
-      'critical': <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
-    };
-    return iconMap[severity] || <InfoCircleOutlined />;
+      'low': <Info className="w-4 h-4" style={{ color: '#52c41a' }}  />,
+      'medium': <AlertTriangle style={{ color: '#faad14' }} />,
+      'high': <AlertCircle style={{ color: '#ff4d4f' }} />,
+      'critical': <AlertCircle style={{ color: '#ff4d4f' }} />};
+    return iconMap[severity] || <Info className="w-4 h-4"  />;
   };
 
   // 获取类型图标
   const getTypeIcon = (type: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'query': <BugOutlined />,
-      'connection': <ApiOutlined />,
-      'memory': <MemoryOutlined />,
-      'disk': <HddOutlined />,
-      'network': <NetworkOutlined />,
-      'cpu': <CpuOutlined />,
-      'lock': <LockOutlined />,
-    };
-    return iconMap[type] || <InfoCircleOutlined />;
+      'query': <Bug className="w-4 h-4"  />,
+      'connection': <Webhook className="w-4 h-4"  />,
+      'memory': <Database className="w-4 h-4" />,
+      'disk': <Database className="w-4 h-4" />,
+      'network': <Webhook className="w-4 h-4" />,
+      'cpu': <Bug className="w-4 h-4" />,
+      'lock': <Lock className="w-4 h-4"  />};
+    return iconMap[type] || <Info className="w-4 h-4"  />;
   };
 
   // 获取状态图标
   const getStatusIcon = (status: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'active': <FireOutlined style={{ color: '#ff4d4f' }} />,
-      'resolved': <CheckCircleOutlined style={{ color: '#52c41a' }} />,
-      'ignored': <MinusCircleOutlined style={{ color: '#d9d9d9' }} />,
-    };
-    return iconMap[status] || <InfoCircleOutlined />;
+      'active': <Flame className="w-4 h-4" style={{ color: '#ff4d4f' }}  />,
+      'resolved': <CheckCircle style={{ color: '#52c41a' }} />,
+      'ignored': <MinusCircle style={{ color: '#d9d9d9' }} />};
+    return iconMap[status] || <Info className="w-4 h-4"  />;
   };
 
 
@@ -246,85 +217,77 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       key: 'type',
       width: 80,
       render: (type: string) => (
-        <Space>
+        <div className="flex gap-2">
           {getTypeIcon(type)}
           <Text>{type}</Text>
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '严重程度',
       dataIndex: 'severity',
       key: 'severity',
       width: 100,
       render: (severity: string) => (
-        <Space>
+        <div className="flex gap-2">
           {getSeverityIcon(severity)}
           <Tag color={getSeverityColor(severity)}>{severity.toUpperCase()}</Tag>
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
       width: 200,
-      render: (title: string) => <Text strong>{title}</Text>,
-    },
+      render: (title: string) => <Text strong>{title}</Text>},
     {
       title: '描述',
       dataIndex: 'description',
       key: 'description',
       width: 300,
       render: (description: string) => (
-        <Paragraph ellipsis={{ rows: 2, expandable: true }}>
+        <Text className="block" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {description}
-        </Paragraph>
-      ),
-    },
+        </Text>
+      )},
     {
       title: '持续时间',
       dataIndex: 'duration',
       key: 'duration',
       width: 100,
-      render: (duration: number) => formatTime(duration),
-    },
+      render: (duration: number) => formatTime(duration)},
     {
       title: '频率',
       dataIndex: 'frequency',
       key: 'frequency',
       width: 80,
-      render: (frequency: number) => `${frequency}次`,
-    },
+      render: (frequency: number) => `${frequency}次`},
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 100,
       render: (status: string) => (
-        <Space>
+        <div className="flex gap-2">
           {getStatusIcon(status)}
           <Text>{status === 'active' ? '活跃' : status === 'resolved' ? '已解决' : '已忽略'}</Text>
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '检测时间',
       dataIndex: 'detectedAt',
       key: 'detectedAt',
       width: 120,
-      render: (date: Date) => moment(date).format('MM-DD HH:mm'),
-    },
+      render: (date: Date) => moment(date).format('MM-DD HH:mm')},
     {
       title: '操作',
       key: 'action',
       width: 150,
       fixed: 'right' as const,
       render: (text: string, record: PerformanceBottleneck) => (
-        <Space>
+        <div className="flex gap-2">
           <Button
             size="small"
-            icon={<EyeIcon />}
+            icon={<Eye className="w-4 h-4" />}
             onClick={() => {
               setSelectedBottleneck(record);
               setDetailsDrawerVisible(true);
@@ -336,23 +299,22 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <>
               <Button
                 size="small"
-                icon={<CheckIcon />}
+                icon={<CheckCircle className="w-4 h-4" />}
                 onClick={() => markAsResolved(record.id)}
               >
                 解决
               </Button>
               <Button
                 size="small"
-                icon={<MinusOutlined />}
+                icon={<Minus />}
                 onClick={() => ignoreBottleneck(record.id)}
               >
                 忽略
               </Button>
             </>
           )}
-        </Space>
-      ),
-    },
+        </div>
+      )},
   ];
 
   // 渲染概览
@@ -376,7 +338,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 value={activeBottlenecks.length}
                 suffix={`/ ${bottlenecks.length}`}
                 valueStyle={{ color: activeBottlenecks.length > 0 ? '#ff4d4f' : '#52c41a' }}
-                prefix={<FireOutlined />}
+                prefix={<Flame className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -386,7 +348,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 title="严重瓶颈"
                 value={criticalBottlenecks.length}
                 valueStyle={{ color: criticalBottlenecks.length > 0 ? '#ff4d4f' : '#52c41a' }}
-                prefix={<ExclamationIcon />}
+                prefix={<AlertCircle className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -396,7 +358,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 title="高危瓶颈"
                 value={highBottlenecks.length}
                 valueStyle={{ color: highBottlenecks.length > 0 ? '#faad14' : '#52c41a' }}
-                prefix={<WarningIcon />}
+                prefix={<AlertTriangle className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -478,14 +440,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               />
             </Col>
             <Col span={3}>
-              <Space>
+              <div className="flex gap-2">
                 <Switch
                   checked={autoRefresh}
                   onChange={setAutoRefresh}
                   size="small"
                 />
                 <Text type="secondary">自动刷新</Text>
-              </Space>
+              </div>
             </Col>
             <Col span={2}>
               <Button
@@ -514,8 +476,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-          }}
+            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}}
           scroll={{ x: 1400 }}
           size="small"
           rowClassName={(record) => {
@@ -547,7 +508,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ 
                   color: systemMetrics.cpu[systemMetrics.cpu.length - 1]?.usage > 80 ? '#ff4d4f' : '#52c41a' 
                 }}
-                prefix={<CpuOutlined />}
+                prefix={<Bug className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -561,7 +522,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ 
                   color: systemMetrics.memory[systemMetrics.memory.length - 1]?.usage > 85 ? '#ff4d4f' : '#52c41a' 
                 }}
-                prefix={<MemoryOutlined />}
+                prefix={<Database className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -573,7 +534,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 suffix="IOPS"
                 precision={0}
                 valueStyle={{ color: '#1890ff' }}
-                prefix={<HddOutlined />}
+                prefix={<Database className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -585,7 +546,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 suffix="KB/s"
                 precision={1}
                 valueStyle={{ color: '#722ed1' }}
-                prefix={<NetworkOutlined />}
+                prefix={<Webhook className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -626,48 +587,42 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         key: 'query',
         width: 300,
         render: (query: string) => (
-          <Paragraph ellipsis={{ rows: 2, expandable: true }}>
-            <Text code>{query}</Text>
-          </Paragraph>
-        ),
-      },
+          <Text code className="block" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {query}
+          </Text>
+        )},
       {
         title: '平均执行时间',
         dataIndex: 'avgDuration',
         key: 'avgDuration',
         width: 120,
         render: (duration: number) => formatTime(duration),
-        sorter: (a: any, b: any) => a.avgDuration - b.avgDuration,
-      },
+        sorter: (a: any, b: any) => a.avgDuration - b.avgDuration},
       {
         title: '最大执行时间',
         dataIndex: 'maxDuration',
         key: 'maxDuration',
         width: 120,
         render: (duration: number) => formatTime(duration),
-        sorter: (a: any, b: any) => a.maxDuration - b.maxDuration,
-      },
+        sorter: (a: any, b: any) => a.maxDuration - b.maxDuration},
       {
         title: '执行频率',
         dataIndex: 'frequency',
         key: 'frequency',
         width: 100,
         render: (frequency: number) => `${frequency}次`,
-        sorter: (a: any, b: any) => a.frequency - b.frequency,
-      },
+        sorter: (a: any, b: any) => a.frequency - b.frequency},
       {
         title: '数据库',
         dataIndex: 'database',
         key: 'database',
-        width: 100,
-      },
+        width: 100},
       {
         title: '最近执行',
         dataIndex: 'lastExecuted',
         key: 'lastExecuted',
         width: 120,
-        render: (date: Date) => moment(date).format('MM-DD HH:mm'),
-      },
+        render: (date: Date) => new Date(date).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })},
     ];
 
     return (
@@ -685,8 +640,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             total: slowQueries.total,
             pageSize: 10,
             showSizeChanger: true,
-            showQuickJumper: true,
-          }}
+            showQuickJumper: true}}
           scroll={{ x: 1000 }}
           size="small"
         />
@@ -706,47 +660,41 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         dataIndex: 'type',
         key: 'type',
         width: 100,
-        render: (type: string) => <Tag color="orange">{type}</Tag>,
-      },
+        render: (type: string) => <Tag color="orange">{type}</Tag>},
       {
         title: '表名',
         dataIndex: 'table',
         key: 'table',
-        width: 150,
-      },
+        width: 150},
       {
         title: '等待时长',
         dataIndex: 'duration',
         key: 'duration',
         width: 100,
         render: (duration: number) => formatTime(duration),
-        sorter: (a: any, b: any) => a.duration - b.duration,
-      },
+        sorter: (a: any, b: any) => a.duration - b.duration},
       {
         title: '等待查询数',
         dataIndex: 'waitingQueries',
         key: 'waitingQueries',
         width: 100,
-        render: (queries: string[]) => queries.length,
-      },
+        render: (queries: string[]) => queries.length},
       {
         title: '阻塞查询',
         dataIndex: 'blockingQuery',
         key: 'blockingQuery',
         width: 200,
         render: (query: string) => (
-          <Paragraph ellipsis={{ rows: 1, expandable: true }}>
-            <Text code>{query}</Text>
-          </Paragraph>
-        ),
-      },
+          <Text code className="block" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {query}
+          </Text>
+        )},
       {
         title: '发生时间',
         dataIndex: 'timestamp',
         key: 'timestamp',
         width: 120,
-        render: (date: Date) => moment(date).format('MM-DD HH:mm'),
-      },
+        render: (date: Date) => new Date(date).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })},
     ];
 
     return (
@@ -757,7 +705,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               <Statistic
                 title="总锁等待数"
                 value={lockWaits.summary.totalLocks}
-                prefix={<LockOutlined />}
+                prefix={<Lock className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -768,7 +716,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 value={lockWaits.summary.avgWaitTime}
                 suffix="ms"
                 precision={2}
-                prefix={<ClockCircleOutlined />}
+                prefix={<Clock className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -779,7 +727,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 value={lockWaits.summary.maxWaitTime}
                 suffix="ms"
                 precision={2}
-                prefix={<ExclamationIcon />}
+                prefix={<AlertCircle className="w-4 h-4" />}
               />
             </Card>
           </Col>
@@ -792,8 +740,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showQuickJumper: true,
-          }}
+            showQuickJumper: true}}
           scroll={{ x: 1000 }}
           size="small"
         />
@@ -805,7 +752,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               renderItem={(recommendation: string) => (
                 <List.Item>
                   <List.Item.Meta
-                    avatar={<BulbOutlined style={{ color: '#1890ff' }} />}
+                    avatar={<Lightbulb className="w-4 h-4" style={{ color: '#1890ff' }}  />}
                     description={recommendation}
                   />
                 </List.Item>
@@ -836,7 +783,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 suffix="/ 100"
                 precision={1}
                 valueStyle={{ color: summary.overallScore >= 80 ? '#52c41a' : summary.overallScore >= 60 ? '#faad14' : '#ff4d4f' }}
-                prefix={<TrophyOutlined />}
+                prefix={<Trophy className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -847,7 +794,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 value={summary.avgQueryTime}
                 suffix="ms"
                 precision={2}
-                prefix={<ClockCircleOutlined />}
+                prefix={<Clock className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -859,7 +806,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 suffix="%"
                 precision={2}
                 valueStyle={{ color: summary.errorRate > 5 ? '#ff4d4f' : '#52c41a' }}
-                prefix={<BugOutlined />}
+                prefix={<Bug className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -870,7 +817,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 value={summary.throughput}
                 suffix="QPS"
                 precision={1}
-                prefix={<RocketOutlined />}
+                prefix={<Rocket className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -946,16 +893,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
     <div className={className}>
       <Card
         title={
-          <Space>
+          <div className="flex gap-2">
             <MonitorOutlined />
             <span>性能瓶颈诊断</span>
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             <Button
               size="small"
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={getBottlenecks}
               loading={loading}
             >
@@ -963,19 +910,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             </Button>
             <Button
               size="small"
-              icon={<SettingOutlined />}
+              icon={<Settings className="w-4 h-4"  />}
               onClick={() => setDiagnosticsModalVisible(true)}
             >
               诊断设置
             </Button>
             <Button
               size="small"
-              icon={<DownloadOutlined />}
+              icon={<Download className="w-4 h-4"  />}
               onClick={() => {
                 if (performanceReport) {
                   const blob = new Blob([JSON.stringify(performanceReport, null, 2)], {
-                    type: 'application/json',
-                  });
+                    type: 'application/json'});
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
@@ -988,7 +934,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             >
               导出报告
             </Button>
-          </Space>
+          </div>
         }
       >
         <Spin spinning={loading}>
@@ -1024,18 +970,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
           <div>
             <Descriptions column={1} bordered>
               <Descriptions.Item label="类型">
-                <Space>
+                <div className="flex gap-2">
                   {getTypeIcon(selectedBottleneck.type)}
                   <span>{selectedBottleneck.type}</span>
-                </Space>
+                </div>
               </Descriptions.Item>
               <Descriptions.Item label="严重程度">
-                <Space>
+                <div className="flex gap-2">
                   {getSeverityIcon(selectedBottleneck.severity)}
                   <Tag color={getSeverityColor(selectedBottleneck.severity)}>
                     {selectedBottleneck.severity.toUpperCase()}
                   </Tag>
-                </Space>
+                </div>
               </Descriptions.Item>
               <Descriptions.Item label="标题">
                 {selectedBottleneck.title}
@@ -1053,16 +999,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 {selectedBottleneck.frequency}次
               </Descriptions.Item>
               <Descriptions.Item label="状态">
-                <Space>
+                <div className="flex gap-2">
                   {getStatusIcon(selectedBottleneck.status)}
                   <span>
                     {selectedBottleneck.status === 'active' ? '活跃' : 
                      selectedBottleneck.status === 'resolved' ? '已解决' : '已忽略'}
                   </span>
-                </Space>
+                </div>
               </Descriptions.Item>
               <Descriptions.Item label="检测时间">
-                {moment(selectedBottleneck.detectedAt).format('YYYY-MM-DD HH:mm:ss')}
+                {new Date(selectedBottleneck.detectedAt).toLocaleString('zh-CN')}
               </Descriptions.Item>
             </Descriptions>
 
@@ -1073,7 +1019,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                   renderItem={(recommendation: string) => (
                     <List.Item>
                       <List.Item.Meta
-                        avatar={<BulbOutlined style={{ color: '#1890ff' }} />}
+                        avatar={<Lightbulb className="w-4 h-4" style={{ color: '#1890ff' }}  />}
                         description={recommendation}
                       />
                     </List.Item>
@@ -1083,12 +1029,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             )}
 
             <div style={{ marginTop: '16px' }}>
-              <Space>
+              <div className="flex gap-2">
                 {selectedBottleneck.status === 'active' && (
                   <>
                     <Button
                       type="primary"
-                      icon={<CheckIcon />}
+                      icon={<CheckCircle className="w-4 h-4" />}
                       onClick={() => {
                         markAsResolved(selectedBottleneck.id);
                         setDetailsDrawerVisible(false);
@@ -1097,7 +1043,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                       标记为已解决
                     </Button>
                     <Button
-                      icon={<MinusOutlined />}
+                      icon={<Minus />}
                       onClick={() => {
                         ignoreBottleneck(selectedBottleneck.id);
                         setDetailsDrawerVisible(false);
@@ -1107,20 +1053,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                     </Button>
                   </>
                 )}
-              </Space>
+              </div>
             </div>
           </div>
         )}
       </Drawer>
 
       {/* 诊断设置模态框 */}
-      <Modal
-        title="诊断设置"
-        visible={diagnosticsModalVisible}
-        onCancel={() => setDiagnosticsModalVisible(false)}
-        footer={null}
-        width={600}
-      >
+      <Dialog open={diagnosticsModalVisible} onOpenChange={setDiagnosticsModalVisible}>
+        <DialogContent className="max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>诊断设置</DialogTitle>
+          </DialogHeader>
         <Form layout="vertical">
           <Form.Item label="自动刷新">
             <Row gutter={16}>
@@ -1204,7 +1148,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             />
           </Form.Item>
         </Form>
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

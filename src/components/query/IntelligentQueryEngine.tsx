@@ -1,36 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Descriptions, List, Statistic, Switch, Select, Tooltip, Drawer, Timeline, Badge, Collapse, Table } from 'antd';
-import { Card, Space, Modal, message,  } from '@/components/ui';
-import {
-  ThunderboltOutlined,
-  RocketOutlined,
-  BarChartOutlined,
-  SettingOutlined,
-  InfoCircleOutlined,
-  EyeOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-  PlayCircleOutlined,
-  PauseCircleOutlined,
-  BulbOutlined,
-  WarningOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  LineChartOutlined,
-  TrophyOutlined,
-  FireOutlined,
-  MemoryOutlined,
-  CpuOutlined,
-  HddOutlined,
-  NetworkOutlined,
-  HistoryOutlined,
-  ShareAltOutlined,
-  ApiOutlined,
-  ExperimentOutlined,
-  StarOutlined,
-  SafetyCertificateOutlined,
-} from '@/components/ui';
+import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table } from '@/components/ui';
+// TODO: Replace these Ant Design components: Descriptions, List, Tooltip, Drawer, Timeline, Badge, Collapse
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
+import { MemoryOutlined, CpuOutlined, HddOutlined, NetworkOutlined, ShareAltOutlined, ExperimentOutlined, SafetyCertificateOutlined } from '@/components/ui';
+import { Zap, Rocket, BarChart, Settings, Info, Eye, Download, RefreshCw, Lightbulb, Clock, Database, TrendingUp, Trophy, Flame, History, Webhook, Star, PlayCircle, PauseCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { intelligentQueryEngine, type QueryOptimizationResult, type QueryContext } from '@/services/intelligentQuery';
 import { showMessage } from '@/utils/message';
@@ -45,8 +20,7 @@ interface IntelligentQueryEngineProps {
 }
 
 export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
-  className,
-}) => {
+  className}) => {
   const { activeConnectionId, connections } = useConnectionStore();
   const [query, setQuery] = useState('');
   const [database, setDatabase] = useState('');
@@ -63,8 +37,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     enableRouting: true,
     enablePrediction: true,
     optimizationLevel: 'balanced' as 'conservative' | 'balanced' | 'aggressive',
-    maxOptimizationTime: 5000,
-  });
+    maxOptimizationTime: 5000});
 
   // 获取查询统计
   const getQueryStats = useCallback(async () => {
@@ -96,23 +69,18 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           userPreferences: {
             preferredPerformance: optimizationConfig.optimizationLevel,
             maxQueryTime: optimizationConfig.maxOptimizationTime,
-            cachePreference: optimizationConfig.enableCaching ? 'aggressive' : 'disabled',
-          },
+            cachePreference: optimizationConfig.enableCaching ? 'aggressive' : 'disabled'},
           systemLoad: {
             cpuUsage: 50,
             memoryUsage: 60,
             diskIo: 30,
-            networkLatency: 20,
-          },
+            networkLatency: 20},
           dataSize: {
             totalRows: 1000000,
             totalSize: 1024 * 1024 * 1024,
             averageRowSize: 1024,
-            compressionRatio: 0.3,
-          },
-          indexInfo: [],
-        } as QueryContext,
-      };
+            compressionRatio: 0.3},
+          indexInfo: []} as QueryContext};
 
       const result = await intelligentQueryEngine.optimizeQuery(request);
       setOptimizationResult(result);
@@ -173,12 +141,12 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Card>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Title level={4}>
-                  <ThunderboltOutlined /> 智能查询优化器
+                  <Zap className="w-4 h-4"  /> 智能查询优化器
                 </Title>
-                <Space>
+                <div className="flex gap-2">
                   <Switch
                     checked={autoOptimize}
                     onChange={setAutoOptimize}
@@ -186,12 +154,12 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     unCheckedChildren="手动优化"
                   />
                   <Button
-                    icon={<SettingOutlined />}
+                    icon={<Settings className="w-4 h-4"  />}
                     onClick={() => setSettingsVisible(true)}
                   >
                     设置
                   </Button>
-                </Space>
+                </div>
               </div>
               
               <Row gutter={[16, 16]}>
@@ -208,28 +176,27 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   </Select>
                 </Col>
                 <Col span={16}>
-                  <Space>
+                  <div className="flex gap-2">
                     <Button
                       type="primary"
-                      icon={<RocketOutlined />}
+                      icon={<Rocket className="w-4 h-4"  />}
                       onClick={optimizeQuery}
                       loading={loading}
                     >
                       优化查询
                     </Button>
                     <Button
-                      icon={<ReloadOutlined />}
+                      icon={<RefreshCw className="w-4 h-4"  />}
                       onClick={clearCache}
                     >
                       清空缓存
                     </Button>
                     <Button
-                      icon={<DownloadOutlined />}
+                      icon={<Download className="w-4 h-4"  />}
                       onClick={() => {
                         if (optimizationResult) {
                           const blob = new Blob([JSON.stringify(optimizationResult, null, 2)], {
-                            type: 'application/json',
-                          });
+                            type: 'application/json'});
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
@@ -242,7 +209,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     >
                       导出结果
                     </Button>
-                  </Space>
+                  </div>
                 </Col>
               </Row>
               
@@ -256,7 +223,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   placeholder="输入您的SQL查询语句..."
                 />
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -355,7 +322,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                         {optimizationResult.executionPlan.steps.map((step, index) => (
                           <Timeline.Item
                             key={step.id}
-                            dot={step.canParallelize ? <ApiOutlined /> : <ClockCircleOutlined />}
+                            dot={step.canParallelize ? <Webhook className="w-4 h-4"  /> : <Clock className="w-4 h-4"  />}
                             color={step.canParallelize ? 'green' : 'blue'}
                           >
                             <div>
@@ -440,7 +407,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <Statistic
               title="总查询数"
               value={queryStats?.totalQueries || 0}
-              prefix={<DatabaseOutlined />}
+              prefix={<Database className="w-4 h-4"  />}
             />
           </Card>
         </Col>
@@ -450,7 +417,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               title="平均执行时间"
               value={queryStats?.avgExecutionTime || 0}
               suffix="ms"
-              prefix={<ClockCircleOutlined />}
+              prefix={<Clock className="w-4 h-4"  />}
             />
           </Card>
         </Col>
@@ -471,7 +438,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               title="优化成功率"
               value={queryStats?.optimizationSuccessRate || 0}
               suffix="%"
-              prefix={<TrophyOutlined />}
+              prefix={<Trophy className="w-4 h-4"  />}
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
@@ -490,21 +457,18 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   dataIndex: 'query',
                   key: 'query',
                   ellipsis: true,
-                  width: 200,
-                },
+                  width: 200},
                 {
                   title: '执行时间',
                   dataIndex: 'executionTime',
                   key: 'executionTime',
                   render: (time: number) => `${time}ms`,
-                  sorter: (a: any, b: any) => a.executionTime - b.executionTime,
-                },
+                  sorter: (a: any, b: any) => a.executionTime - b.executionTime},
                 {
                   title: '频次',
                   dataIndex: 'frequency',
                   key: 'frequency',
-                  sorter: (a: any, b: any) => a.frequency - b.frequency,
-                },
+                  sorter: (a: any, b: any) => a.frequency - b.frequency},
               ]}
               pagination={{ pageSize: 5 }}
             />
@@ -521,21 +485,18 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   dataIndex: 'query',
                   key: 'query',
                   ellipsis: true,
-                  width: 200,
-                },
+                  width: 200},
                 {
                   title: '平均时间',
                   dataIndex: 'avgExecutionTime',
                   key: 'avgExecutionTime',
                   render: (time: number) => `${time}ms`,
-                  sorter: (a: any, b: any) => a.avgExecutionTime - b.avgExecutionTime,
-                },
+                  sorter: (a: any, b: any) => a.avgExecutionTime - b.avgExecutionTime},
                 {
                   title: '频次',
                   dataIndex: 'frequency',
                   key: 'frequency',
-                  sorter: (a: any, b: any) => a.frequency - b.frequency,
-                },
+                  sorter: (a: any, b: any) => a.frequency - b.frequency},
               ]}
               pagination={{ pageSize: 5 }}
             />
@@ -616,7 +577,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             actions={[
               <Button
                 size="small"
-                icon={<EyeOutlined />}
+                icon={<Eye className="w-4 h-4"  />}
                 onClick={() => setOptimizationResult(item)}
               >
                 查看
@@ -668,22 +629,22 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     <div className={className}>
       <Card
         title={
-          <Space>
+          <div className="flex gap-2">
             <ExperimentOutlined />
             <span>智能查询优化引擎</span>
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             <Button
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={getQueryStats}
               size="small"
             >
               刷新
             </Button>
             <Button
-              icon={<InfoCircleOutlined />}
+              icon={<Info className="w-4 h-4"  />}
               onClick={() => {
                 Modal.info({
                   title: '智能查询优化引擎',
@@ -700,21 +661,20 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       </ul>
                     </div>
                   ),
-                  width: 800,
-                });
+                  width: 800});
               }}
               size="small"
             >
               帮助
             </Button>
-          </Space>
+          </div>
         }
       >
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <Tabs.TabPane 
             tab={
               <span>
-                <RocketOutlined />
+                <Rocket className="w-4 h-4"  />
                 查询优化器
               </span>
             } 
@@ -726,7 +686,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           <Tabs.TabPane 
             tab={
               <span>
-                <LineChartOutlined />
+                <TrendingUp className="w-4 h-4"  />
                 性能监控
               </span>
             } 
@@ -738,7 +698,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           <Tabs.TabPane 
             tab={
               <span>
-                <HistoryOutlined />
+                <History className="w-4 h-4"  />
                 优化历史
               </span>
             } 
@@ -757,7 +717,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         open={settingsVisible}
         width={400}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
           <div>
             <Text strong>缓存设置</Text>
             <div style={{ marginTop: '8px' }}>
@@ -842,7 +802,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               </Select>
             </div>
           </div>
-        </Space>
+        </div>
       </Drawer>
     </div>
   );

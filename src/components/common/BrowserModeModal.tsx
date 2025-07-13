@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, Alert, Typography, Button, Space, Divider, Checkbox } from 'antd';
-import {
-  InfoCircleOutlined,
-  CodeOutlined,
-  GlobalOutlined,
-  DesktopOutlined,
-  CloseOutlined
-} from '@ant-design/icons';
+import { Text, Button, Space, Divider, Checkbox, Dialog, DialogContent, DialogHeader, DialogTitle, Alert } from '@/components/ui';
+import { Info, Code, Globe, Monitor, X } from 'lucide-react';
 import { isBrowserEnvironment } from '@/utils/tauri';
 import { useNoticeStore } from '@/store/notice';
-
-const { Title, Text, Paragraph } = Typography;
 
 interface BrowserModeModalProps {
   visible: boolean;
@@ -33,23 +25,17 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
   }
 
   return (
-    <Modal
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <GlobalOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-          <span>🌐 InfloWave 功能预览</span>
-        </div>
-      }
-      open={visible}
-      onCancel={handleClose}
-      footer={null}
-      width={800}
-      centered
-      closeIcon={<CloseOutlined />}
-    >
+    <Dialog open={visible} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <Globe className="w-6 h-6 text-blue-500" />
+            <span>🌐 InfloWave 功能预览</span>
+          </DialogTitle>
+        </DialogHeader>
       <div style={{ maxHeight: '70vh', overflowY: 'auto', padding: '8px 0' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <Text type="secondary" style={{ fontSize: '16px', lineHeight: '1.6' }}>
+          <Text className="text-muted-foreground text-base leading-relaxed">
             欢迎体验 InfloWave 的界面和功能演示！<br />
             当前运行在浏览器预览模式，使用模拟数据展示应用特性
           </Text>
@@ -59,16 +45,16 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
           message="预览模式说明"
           description="您正在体验 InfloWave 的功能预览版本。完整的数据库连接、文件操作等功能需要在桌面应用中使用。"
           type="info"
-          icon={<InfoCircleOutlined />}
+          icon={<Info className="w-4 h-4"  />}
           showIcon
           style={{ marginBottom: '24px' }}
         />
 
         <div style={{ marginBottom: '24px' }}>
-          <Title level={5}>🚀 获取完整版本</Title>
-          <Paragraph style={{ marginBottom: '16px', fontSize: '14px' }}>
+          <Text className="text-lg font-semibold block mb-2">🚀 获取完整版本</Text>
+          <Text className="block mb-4 text-sm">
             要体验 InfloWave 的完整功能，请下载桌面应用版本：
-          </Paragraph>
+          </Text>
 
           <div style={{
             background: '#f6f8fa',
@@ -77,7 +63,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
             padding: '12px',
             marginBottom: '12px'
           }}>
-            <Text strong style={{ display: 'block', marginBottom: '6px', fontSize: '14px' }}>开发者模式：</Text>
+            <Text className="font-semibold block mb-1.5 text-sm">开发者模式：</Text>
             <div style={{ 
               backgroundColor: '#ffffff', 
               border: '1px solid #e1e4e8',
@@ -85,9 +71,9 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
               padding: '8px 12px',
               marginBottom: '6px'
             }}>
-              <Text code style={{ fontSize: '13px' }}>npm run tauri:dev</Text>
+              <code className="text-xs">npm run tauri:dev</code>
             </div>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+            <Text className="text-muted-foreground text-xs">
               适用于开发和测试，支持热更新
             </Text>
           </div>
@@ -98,7 +84,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
             borderRadius: '6px',
             padding: '12px'
           }}>
-            <Text strong style={{ display: 'block', marginBottom: '6px', fontSize: '14px' }}>生产版本：</Text>
+            <Text className="font-semibold block mb-1.5 text-sm">生产版本：</Text>
             <div style={{ 
               backgroundColor: '#ffffff', 
               border: '1px solid #e1e4e8',
@@ -106,9 +92,9 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
               padding: '8px 12px',
               marginBottom: '6px'
             }}>
-              <Text code style={{ fontSize: '13px' }}>npm run tauri:build</Text>
+              <code className="text-xs">npm run tauri:build</code>
             </div>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+            <Text className="text-muted-foreground text-xs">
               构建优化的安装包，适用于日常使用
             </Text>
           </div>
@@ -118,14 +104,14 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
 
         {/* 可用功能 */}
         <div style={{ marginBottom: '24px' }}>
-          <Title level={5}>✨ 当前可用功能</Title>
+          <Text className="text-lg font-semibold block mb-2">✨ 当前可用功能</Text>
           <div style={{
             background: '#f6ffed',
             border: '1px solid #b7eb8f',
             borderRadius: '6px',
             padding: '12px'
           }}>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" size="small" style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
                   width: '16px',
@@ -139,7 +125,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
                 </div>
-                <Text style={{ fontSize: '14px' }}>完整界面展示和交互体验</Text>
+                <Text className="text-sm">完整界面展示和交互体验</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -154,7 +140,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
                 </div>
-                <Text style={{ fontSize: '14px' }}>模拟数据演示和功能测试</Text>
+                <Text className="text-sm">模拟数据演示和功能测试</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -169,22 +155,22 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
                 </div>
-                <Text style={{ fontSize: '14px' }}>完整的设置和配置选项</Text>
+                <Text className="text-sm">完整的设置和配置选项</Text>
               </div>
-            </Space>
+            </div>
           </div>
         </div>
 
         {/* 限制说明 */}
         <div style={{ marginBottom: '24px' }}>
-          <Title level={5}>⚠️ 已知限制</Title>
+          <Text className="text-lg font-semibold block mb-2">⚠️ 已知限制</Text>
           <div style={{
             background: '#fff7e6',
             border: '1px solid #ffd591',
             borderRadius: '6px',
             padding: '12px'
           }}>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" size="small" style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
                   width: '16px',
@@ -198,7 +184,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>!</span>
                 </div>
-                <Text style={{ fontSize: '14px', color: '#d46b08' }}>无法连接真实数据库</Text>
+                <Text className="text-sm text-orange-600">无法连接真实数据库</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -213,7 +199,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>!</span>
                 </div>
-                <Text style={{ fontSize: '14px', color: '#d46b08' }}>无法进行文件操作</Text>
+                <Text className="text-sm text-orange-600">无法进行文件操作</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
@@ -228,19 +214,19 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
                 }}>
                   <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>!</span>
                 </div>
-                <Text style={{ fontSize: '14px', color: '#d46b08' }}>无法发送系统通知</Text>
+                <Text className="text-sm text-orange-600">无法发送系统通知</Text>
               </div>
-            </Space>
+            </div>
           </div>
         </div>
 
         <Divider />
 
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <Space size="middle">
+          <div className="flex gap-2" size="middle">
             <Button
               type="primary"
-              icon={<DesktopOutlined />}
+              icon={<Monitor />}
               onClick={() => {
                 window.open('https://tauri.app/v1/guides/getting-started/setup/', '_blank');
               }}
@@ -248,14 +234,14 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
               了解 Tauri
             </Button>
             <Button
-              icon={<CodeOutlined />}
+              icon={<Code className="w-4 h-4"  />}
               onClick={() => {
                 window.open('https://github.com/chenqi92/inflowave', '_blank');
               }}
             >
               查看源码
             </Button>
-          </Space>
+          </div>
         </div>
 
         <div style={{ 
@@ -269,7 +255,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
             checked={dontShowAgain}
             onChange={(e) => setDontShowAgain(e.target.checked)}
           >
-            <Text style={{ fontSize: '14px' }}>不再显示此提醒</Text>
+            <Text className="text-sm">不再显示此提醒</Text>
           </Checkbox>
           
           <Button type="primary" onClick={handleClose}>
@@ -277,7 +263,8 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
           </Button>
         </div>
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Alert, Row, Col, Switch, InputNumber, Divider } from 'antd';
-import { Modal, Space, message } from '@/components/ui';
-import { DownloadOutlined, TableOutlined, InfoCircleOutlined, FileTextOutlined, FileExcelOutlined, CodeOutlined } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Row, Col, Switch, InputNumber, Divider } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Download, Table, Info, FileText, Code, FileSpreadsheet } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
@@ -26,8 +26,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   currentConnection,
   currentDatabase,
   query,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [estimating, setEstimating] = useState(false);
@@ -37,11 +36,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
 
   // 格式图标映射
   const formatIcons: Record<string, React.ReactNode> = {
-    csv: <FileTextOutlined />,
-    excel: <FileExcelOutlined />,
-    json: <CodeOutlined />,
-    sql: <TableOutlined />,
-  };
+    csv: <FileText className="w-4 h-4"  />,
+    excel: <FileSpreadsheet />,
+    json: <Code className="w-4 h-4"  />,
+    sql: <Table className="w-4 h-4"  />};
 
   // 初始化表单
   useEffect(() => {
@@ -56,9 +54,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           delimiter: ',',
           encoding: 'utf-8',
           compression: false,
-          chunkSize: 10000,
-        },
-      });
+          chunkSize: 10000}});
       setExportResult(null);
       setEstimateInfo(null);
       loadExportFormats();
@@ -85,14 +81,13 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         connectionId: values.connectionId,
         database: values.database,
         query: values.query,
-        format: values.format,
-      });
+        format: values.format});
 
       setEstimateInfo(estimate);
-      message.success('预估完成');
+      toast({ title: "成功", description: "预估完成" });
     } catch (error) {
       console.error('预估失败:', error);
-      message.error('预估失败');
+      toast({ title: "错误", description: "预估失败", variant: "destructive" });
     } finally {
       setEstimating(false);
     }
@@ -113,7 +108,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       }
     } catch (error) {
       console.error('选择文件路径失败:', error);
-      message.error('选择文件路径失败');
+      toast({ title: "错误", description: "选择文件路径失败", variant: "destructive" });
     }
   };
 
@@ -123,7 +118,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const values = await form.validateFields();
       
       if (!values.filePath) {
-        message.warning('请选择保存路径');
+        toast({ title: "警告", description: "请选择保存路径" });
         return;
       }
 
@@ -135,35 +130,31 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         database: values.database,
         query: values.query,
         format: values.format,
-        options: values.options,
-      };
+        options: values.options};
 
       const result = await safeTauriInvoke('export_query_data', {
         request: {
           ...exportConfig,
-          file_path: values.filePath,
-        },
-      }) as DataExportResult;
+          file_path: values.filePath}}) as DataExportResult;
 
       setExportResult(result);
 
       if (result.success) {
-        message.success('数据导出成功');
+        toast({ title: "成功", description: "数据导出成功" });
         onSuccess?.(result);
       } else {
-        message.error('数据导出失败');
+        toast({ title: "错误", description: "数据导出失败", variant: "destructive" });
       }
     } catch (error) {
       console.error('导出失败:', error);
-      message.error(`导出失败: ${error}`);
+      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
       setExportResult({
         success: false,
         message: `导出失败: ${error}`,
         rowCount: 0,
         fileSize: 0,
         duration: 0,
-        errors: [String(error)],
-      });
+        errors: [String(error)]});
     } finally {
       setLoading(false);
     }
@@ -179,7 +170,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   };
 
   return (
-    <Modal
+    <Dialog
       title="数据导出"
       open={visible}
       onCancel={onClose}
@@ -190,7 +181,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         </Button>,
         <Button
           key="estimate"
-          icon={<InfoCircleOutlined />}
+          icon={<Info className="w-4 h-4"  />}
           loading={estimating}
           onClick={estimateExportSize}
         >
@@ -199,7 +190,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         <Button
           key="export"
           type="primary"
-          icon={<DownloadOutlined />}
+          icon={<Download className="w-4 h-4"  />}
           loading={loading}
           disabled={!canExport()}
           onClick={executeExport}
@@ -259,10 +250,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
               <Select>
                 {exportFormats.map(format => (
                   <Option key={format.id} value={format.id}>
-                    <Space>
+                    <div className="flex gap-2">
                       {formatIcons[format.id]}
                       {format.name}
-                    </Space>
+                    </div>
                   </Option>
                 ))}
               </Select>
@@ -392,7 +383,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           />
         )}
       </Form>
-    </Modal>
+    </Dialog>
   );
 };
 

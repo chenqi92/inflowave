@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Table, Button, Space, Typography, Tag, Progress, Alert, Empty, Dropdown, message } from 'antd';
-import type { MenuProps } from 'antd';
+import { Tabs, Table, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toast } from '@/components/ui';
+// TODO: Replace antd types: MenuProps 
 import { 
-  TableOutlined, 
-  BugOutlined, 
-  InfoCircleOutlined,
-  ExportOutlined,
-  ClearOutlined,
-  DownloadOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  WarningOutlined,
-  FileExcelOutlined,
-  FileTextOutlined,
-  FileOutlined
-} from '@ant-design/icons';
+  TableIcon, 
+  Bug, 
+  Info,
+  Download,
+  X,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  AlertTriangle,
+  FileSpreadsheet,
+  FileText,
+  File,
+  FileDown
+} from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
+import { useToast } from '@/hooks/use-toast';
 import type { QueryResult } from '@/types';
 
-const { Text } = Typography;
 
 interface ResultPanelProps {
   collapsed?: boolean;
@@ -48,6 +48,7 @@ interface LogMessage {
 }
 
 const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResult, onClearResult }) => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('results');
   const { activeConnectionId, connections } = useConnectionStore();
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
@@ -66,8 +67,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     dataIndex: col,
     key: col,
     ellipsis: true,
-    width: 150,
-  })) || [];
+    width: 150})) || [];
   
   // 将 InfluxDB 的结果转换为表格数据格式
   const tableData = React.useMemo(() => {
@@ -93,18 +93,17 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
 
   const getStatusDisplay = (status: string) => {
     const displays = {
-      running: { icon: <ClockCircleOutlined />, color: 'blue', text: '运行中' },
-      success: { icon: <CheckCircleOutlined />, color: 'green', text: '成功' },
-      error: { icon: <ExclamationCircleOutlined />, color: 'red', text: '错误' },
-      warning: { icon: <WarningOutlined />, color: 'orange', text: '警告' },
-    };
+      running: { icon: <Clock className="w-4 h-4"  />, color: 'blue', text: '运行中' },
+      success: { icon: <CheckCircle />, color: 'green', text: '成功' },
+      error: { icon: <AlertCircle />, color: 'red', text: '错误' },
+      warning: { icon: <AlertTriangle />, color: 'orange', text: '警告' }};
     return displays[status as keyof typeof displays] || displays.success;
   };
 
   // 导出为 CSV 格式
   const exportToCSV = () => {
     if (!queryResult || tableData.length === 0) {
-      message.warning('没有可导出的数据');
+      toast({ title: "警告", description: "没有可导出的数据" });
       return;
     }
 
@@ -124,25 +123,25 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     ].join('\n');
 
     downloadFile(csvContent, 'query-result.csv', 'text/csv');
-    message.success('CSV 文件导出成功');
+    toast({ title: "成功", description: "CSV 文件导出成功" });
   };
 
   // 导出为 JSON 格式
   const exportToJSON = () => {
     if (!queryResult || tableData.length === 0) {
-      message.warning('没有可导出的数据');
+      toast({ title: "警告", description: "没有可导出的数据" });
       return;
     }
 
     const jsonContent = JSON.stringify(tableData, null, 2);
     downloadFile(jsonContent, 'query-result.json', 'application/json');
-    message.success('JSON 文件导出成功');
+    toast({ title: "成功", description: "JSON 文件导出成功" });
   };
 
   // 导出为 Excel 格式 (实际上是 TSV，可以被 Excel 打开)
   const exportToExcel = () => {
     if (!queryResult || tableData.length === 0) {
-      message.warning('没有可导出的数据');
+      toast({ title: "警告", description: "没有可导出的数据" });
       return;
     }
 
@@ -155,7 +154,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     ].join('\n');
 
     downloadFile(tsvContent, 'query-result.xlsx', 'application/vnd.ms-excel');
-    message.success('Excel 文件导出成功');
+    toast({ title: "成功", description: "Excel 文件导出成功" });
   };
 
   // 下载文件的通用函数
@@ -174,7 +173,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
   // 清空结果
   const handleClearResult = () => {
     onClearResult?.();
-    message.success('查询结果已清空');
+    toast({ title: "成功", description: "查询结果已清空" });
   };
 
   // 导出菜单项
@@ -182,27 +181,24 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     {
       key: 'csv',
       label: 'CSV 格式',
-      icon: <FileTextOutlined />,
-      onClick: exportToCSV,
-    },
+      icon: <FileText className="w-4 h-4"  />,
+      onClick: exportToCSV},
     {
       key: 'json',
       label: 'JSON 格式',
-      icon: <FileOutlined />,
-      onClick: exportToJSON,
-    },
+      icon: <File className="w-4 h-4"  />,
+      onClick: exportToJSON},
     {
       key: 'excel',
       label: 'Excel 格式',
-      icon: <FileExcelOutlined />,
-      onClick: exportToExcel,
-    },
+      icon: <FileSpreadsheet />,
+      onClick: exportToExcel},
   ];
 
   if (collapsed) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
-        <TableOutlined className="text-lg" />
+        <TableIcon className="w-4 h-4 text-lg" />
       </div>
     );
   }
@@ -215,13 +211,13 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
         activeKey={activeTab}
         onChange={setActiveTab}
         size="small"
-        className="h-full"
+        className="h-full flex items-center gap-1"
         items={[
           {
             key: 'results',
             label: (
-              <span className="flex items-center gap-1">
-                <TableOutlined />
+              <span >
+                <TableIcon className="w-4 h-4" />
                 查询结果
                 {queryResult && (
                   <Tag
@@ -241,31 +237,31 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                   <div className="p-3 bg-gray-50 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Space wrap>
-                          <Space size="small">
+                        <div className="flex gap-2" wrap>
+                          <div className="flex gap-2" size="small">
                             <div className="flex items-center gap-2">
                               <Tag 
-                                icon={<CheckCircleOutlined />} 
+                                icon={<CheckCircle />} 
                                 color="green"
                               >
                                 成功
                               </Tag>
-                              <Text className="text-sm">
+                              <span className="text-sm">
                                 {tableData.length} 行
-                              </Text>
+                              </span>
                             </div>
-                          </Space>
-                        </Space>
+                          </div>
+                        </div>
                       </div>
                       
-                      <Space>
+                      <div className="flex gap-2">
                         <Dropdown 
                           menu={{ items: exportMenuItems }} 
                           placement="bottomLeft"
                           disabled={!queryResult || tableData.length === 0}
                         >
                           <Button 
-                            icon={<ExportOutlined />} 
+                            icon={<FileDown className="w-4 h-4"  />} 
                             size="small"
                             disabled={!queryResult || tableData.length === 0}
                           >
@@ -273,14 +269,14 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                           </Button>
                         </Dropdown>
                         <Button 
-                          icon={<ClearOutlined />} 
+                          icon={<X className="w-4 h-4" />} 
                           size="small"
                           onClick={handleClearResult}
                           disabled={!queryResult}
                         >
                           清空
                         </Button>
-                      </Space>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -300,8 +296,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                         showTotal: (total, range) =>
                           `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
                         pageSize: 500,
-                        pageSizeOptions: ['100', '500', '1000', '2000'],
-                      }}
+                        pageSizeOptions: ['100', '500', '1000', '2000']}}
                       rowKey="_key"
                     />
                   ) : (
@@ -314,13 +309,12 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                   )}
                 </div>
               </div>
-            ),
-          },
+            )},
           {
             key: 'messages',
             label: (
               <span className="flex items-center gap-1">
-                <InfoCircleOutlined />
+                <Info className="w-4 h-4"  />
                 消息
                 {logMessages.length > 0 && (
                   <Tag color="orange" size="small" className="ml-1">
@@ -336,8 +330,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                     const levelDisplay = {
                       info: { color: 'blue', text: 'INFO' },
                       warning: { color: 'orange', text: 'WARN' },
-                      error: { color: 'red', text: 'ERROR' },
-                    }[log.level];
+                      error: { color: 'red', text: 'ERROR' }}[log.level];
 
                     return (
                       <div 
@@ -361,13 +354,12 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                   })}
                 </div>
               </div>
-            ),
-          },
+            )},
           {
             key: 'console',
             label: (
               <span className="flex items-center gap-1">
-                <BugOutlined />
+                <Bug className="w-4 h-4"  />
                 控制台
               </span>
             ),
@@ -391,8 +383,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
                   )}
                 </div>
               </div>
-            ),
-          },
+            )},
         ]}
       />
     </div>

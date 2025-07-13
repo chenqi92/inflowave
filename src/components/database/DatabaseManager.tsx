@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from 'antd';
-import { Card, Space, Modal } from '@/components/ui';
-import { DatabaseOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, InfoCircleOutlined, ReloadOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@/components/ui';
+import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Progress } from '@/components/ui';
+// TODO: Replace these Ant Design components: Popconfirm, Tooltip
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Database, Plus, Edit, Trash2, Settings, Info, RefreshCw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
@@ -17,8 +18,7 @@ interface DatabaseManagerProps {
 
 const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   connectionId,
-  database,
-}) => {
+  database}) => {
   const { connections, activeConnectionId } = useConnectionStore();
   const [loading, setLoading] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState(connectionId || activeConnectionId || '');
@@ -73,8 +73,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: selectedConnection,
-      });
+        connectionId: selectedConnection});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -100,8 +99,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     try {
       const policies = await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
         connectionId: selectedConnection,
-        database: selectedDatabase,
-      });
+        database: selectedDatabase});
       setRetentionPolicies(policies || []);
     } catch (error) {
       showMessage.error(`加载保留策略失败: ${error}`);
@@ -117,8 +115,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     try {
       const info = await safeTauriInvoke<DatabaseStorageInfo>('get_storage_analysis_report', {
         connectionId: selectedConnection,
-        database: selectedDatabase,
-      });
+        database: selectedDatabase});
       setStorageInfo(info);
     } catch (error) {
       console.error('加载存储信息失败:', error);
@@ -133,14 +130,12 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         duration: values.duration,
         shardGroupDuration: values.shardGroupDuration,
         replicaN: values.replicaN || 1,
-        default: values.default || false,
-      };
+        default: values.default || false};
 
       await safeTauriInvoke('create_retention_policy', {
         connectionId: selectedConnection,
         database: selectedDatabase,
-        policy: policyConfig,
-      });
+        policy: policyConfig});
 
       showMessage.success('保留策略创建成功');
       setShowPolicyModal(false);
@@ -164,9 +159,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           duration: values.duration,
           shardGroupDuration: values.shardGroupDuration,
           replicaN: values.replicaN,
-          default: values.default,
-        },
-      });
+          default: values.default}});
 
       showMessage.success('保留策略更新成功');
       setShowPolicyModal(false);
@@ -184,8 +177,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       await safeTauriInvoke('drop_retention_policy', {
         connectionId: selectedConnection,
         database: selectedDatabase,
-        policyName,
-      });
+        policyName});
 
       showMessage.success('保留策略删除成功');
       await loadRetentionPolicies();
@@ -202,8 +194,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       duration: policy.duration,
       shardGroupDuration: policy.shardGroupDuration,
       replicaN: policy.replicationFactor,
-      default: policy.default,
-    });
+      default: policy.default});
     setShowPolicyModal(true);
   };
 
@@ -214,41 +205,37 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record: RetentionPolicy) => (
-        <Space>
+        <div className="flex gap-2">
           <Text strong>{name}</Text>
           {record.default && <Tag color="blue">默认</Tag>}
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '保留时间',
       dataIndex: 'duration',
       key: 'duration',
-      render: (duration: string) => <Tag color="green">{duration}</Tag>,
-    },
+      render: (duration: string) => <Tag color="green">{duration}</Tag>},
     {
       title: '分片组时间',
       dataIndex: 'shardGroupDuration',
       key: 'shardGroupDuration',
-      render: (duration: string) => <Tag color="orange">{duration}</Tag>,
-    },
+      render: (duration: string) => <Tag color="orange">{duration}</Tag>},
     {
       title: '副本数',
       dataIndex: 'replicationFactor',
       key: 'replicationFactor',
       width: 80,
-      align: 'center' as const,
-    },
+      align: 'center' as const},
     {
       title: '操作',
       key: 'actions',
       width: 150,
       render: (_: any, record: RetentionPolicy) => (
-        <Space>
+        <div className="flex gap-2">
           <Tooltip title="编辑">
             <Button
               type="text"
-              icon={<EditOutlined />}
+              icon={<Edit className="w-4 h-4"  />}
               onClick={() => handleEditPolicy(record)}
               size="small"
             />
@@ -261,16 +248,15 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               >
                 <Button
                   type="text"
-                  icon={<DeleteOutlined />}
+                  icon={<Trash2 className="w-4 h-4"  />}
                   danger
                   size="small"
                 />
               </Popconfirm>
             </Tooltip>
           )}
-        </Space>
-      ),
-    },
+        </div>
+      )},
   ];
 
   // 格式化字节数
@@ -301,9 +287,9 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       <Card style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Space>
+            <div className="flex gap-2">
               <Title level={4} style={{ margin: 0 }}>
-                <DatabaseOutlined /> 数据库管理
+                <Database className="w-4 h-4"  /> 数据库管理
               </Title>
               <Select
                 placeholder="选择连接"
@@ -329,11 +315,11 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   </Select.Option>
                 ))}
               </Select>
-            </Space>
+            </div>
           </Col>
           <Col>
             <Button
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={() => {
                 loadRetentionPolicies();
                 loadStorageInfo();
@@ -354,7 +340,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               <Statistic
                 title="数据库大小"
                 value={formatBytes(storageInfo.size)}
-                prefix={<DatabaseOutlined />}
+                prefix={<Database className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -363,7 +349,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               <Statistic
                 title="测量数量"
                 value={storageInfo.measurementCount}
-                prefix={<SettingOutlined />}
+                prefix={<Settings className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -372,7 +358,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               <Statistic
                 title="序列数量"
                 value={storageInfo.seriesCount.toLocaleString()}
-                prefix={<InfoCircleOutlined />}
+                prefix={<Info className="w-4 h-4"  />}
               />
             </Card>
           </Col>
@@ -383,7 +369,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 value={storageInfo.compressionRatio}
                 suffix=":1"
                 precision={2}
-                prefix={<CheckCircleOutlined />}
+                prefix={<CheckCircle />}
               />
             </Card>
           </Col>
@@ -396,10 +382,10 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           {
             key: 'retention',
             label: (
-              <Space>
-                <ClockCircleOutlined />
+              <div className="flex gap-2">
+                <Clock className="w-4 h-4"  />
                 保留策略
-              </Space>
+              </div>
             ),
             children: (
               <Card
@@ -407,7 +393,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 extra={
                   <Button
                     type="primary"
-                    icon={<PlusOutlined />}
+                    icon={<Plus className="w-4 h-4"  />}
                     onClick={() => {
                       setEditingPolicy(null);
                       form.resetFields();
@@ -428,15 +414,14 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   size="small"
                 />
               </Card>
-            ),
-          },
+            )},
           {
             key: 'storage',
             label: (
-              <Space>
-                <InfoCircleOutlined />
+              <div className="flex gap-2">
+                <Info className="w-4 h-4"  />
                 存储分析
-              </Space>
+              </div>
             ),
             children: (
               <Card title="存储分析报告">
@@ -478,8 +463,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   />
                 )}
               </Card>
-            ),
-          },
+            )},
         ]}
       />
 

@@ -165,9 +165,7 @@ export class IntelligentQueryEngine {
           description: 'Result retrieved from intelligent cache',
           impact: 'high' as const,
           appliedTo: ['query_result'],
-          estimatedGain: 95,
-        }],
-      };
+          estimatedGain: 95}]};
     }
 
     // 3. 优化查询
@@ -206,14 +204,12 @@ export class IntelligentQueryEngine {
       routingStrategy,
       executionPlan,
       warnings: analysis.warnings,
-      recommendations,
-    };
+      recommendations};
 
     // 8. 缓存结果
     await this.cache.set(cacheKey, result, {
       ttl: this.cache.calculateTTL(analysis),
-      tags: analysis.tags,
-    });
+      tags: analysis.tags});
 
     // 9. 记录优化历史
     await this.history.recordOptimization(
@@ -448,8 +444,7 @@ export class IntelligentQueryEngine {
       steps,
       parallelization,
       resourceRequirements,
-      estimatedDuration,
-    };
+      estimatedDuration};
   }
 
   /**

@@ -1,32 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Row, Col, Typography, Tabs, Progress, Timeline, Tag, Badge, Button, Tooltip, Divider, Statistic, Alert, List, Descriptions, Tree, Select, Switch, Spin } from 'antd';
-import { Card, Space,  } from '@/components/ui';
-import {
-  ThunderboltOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-  BranchesOutlined,
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-  BulbOutlined,
-  FireOutlined,
-  RocketOutlined,
-  TargetOutlined,
-  TrophyOutlined,
-  EyeOutlined,
-  SettingOutlined,
-  ReloadOutlined,
-  DownloadOutlined,
-} from '@/components/ui';
+import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch } from '@/components/ui';
+
+import { BranchesOutlined, TargetOutlined } from '@/components/ui';
+import { Zap, Clock, Database, BarChart, TrendingUp, PieChart, Info, Lightbulb, Flame, Rocket, Trophy, Eye, Settings, RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { QueryOptimizationResult, ExecutionPlan, OptimizationTechnique } from '@/services/intelligentQuery';
 
-const { Title, Text, Paragraph } = Typography;
-const { TabPane } = Tabs;
-const { Option } = Select;
+import { Text } from '@/components/ui';
 
 interface QueryOptimizationVisualizationProps {
   optimizationResult: QueryOptimizationResult;
@@ -51,8 +30,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
   optimizationResult,
   onRefresh,
   onExport,
-  className,
-}) => {
+  className}) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
@@ -73,8 +51,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
         duration: step.estimatedDuration,
         rows: step.estimatedRows,
         type: step.operation,
-        isLeaf: true,
-      };
+        isLeaf: true};
       
       // 如果有子步骤，递归构建
       if (step.subSteps && step.subSteps.length > 0) {
@@ -86,8 +63,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
           duration: subStep.estimatedDuration,
           rows: subStep.estimatedRows,
           type: subStep.operation,
-          isLeaf: true,
-        }));
+          isLeaf: true}));
         node.isLeaf = false;
       }
       
@@ -100,19 +76,18 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
   // 获取步骤图标
   const getStepIcon = (operation: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'SELECT': <DatabaseOutlined style={{ color: '#1890ff' }} />,
-      'JOIN': <BranchesOutlined style={{ color: '#52c41a' }} />,
-      'FILTER': <TargetOutlined style={{ color: '#faad14' }} />,
-      'SORT': <BarChartOutlined style={{ color: '#722ed1' }} />,
-      'GROUP': <PieChartOutlined style={{ color: '#eb2f96' }} />,
-      'AGGREGATE': <LineChartOutlined style={{ color: '#13c2c2' }} />,
-      'INDEX_SCAN': <RocketOutlined style={{ color: '#52c41a' }} />,
-      'TABLE_SCAN': <DatabaseOutlined style={{ color: '#faad14' }} />,
-      'HASH_JOIN': <BranchesOutlined style={{ color: '#1890ff' }} />,
-      'NESTED_LOOP': <BranchesOutlined style={{ color: '#fa8c16' }} />,
-    };
+      'SELECT': <Database className="w-4 h-4 text-blue-500"  />,
+      'JOIN': <BranchesOutlined className="text-green-500" />,
+      'FILTER': <TargetOutlined className="text-yellow-500" />,
+      'SORT': <BarChart className="w-4 h-4 text-purple-500"  />,
+      'GROUP': <PieChart className="w-4 h-4 text-pink-500"  />,
+      'AGGREGATE': <TrendingUp className="w-4 h-4 text-cyan-500"  />,
+      'INDEX_SCAN': <Rocket className="w-4 h-4 text-green-500"  />,
+      'TABLE_SCAN': <Database className="w-4 h-4 text-yellow-500"  />,
+      'HASH_JOIN': <BranchesOutlined className="text-blue-500" />,
+      'NESTED_LOOP': <BranchesOutlined className="text-orange-500" />};
     
-    return iconMap[operation.toUpperCase()] || <InfoCircleOutlined />;
+    return iconMap[operation.toUpperCase()] || <Info className="w-4 h-4"  />;
   };
 
   // 获取优化技术颜色
@@ -128,17 +103,16 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
   // 获取优化技术图标
   const getTechniqueIcon = (technique: OptimizationTechnique): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      'index_optimization': <RocketOutlined />,
-      'query_rewriting': <BulbOutlined />,
+      'index_optimization': <Rocket className="w-4 h-4"  />,
+      'query_rewriting': <Lightbulb className="w-4 h-4"  />,
       'join_optimization': <BranchesOutlined />,
       'predicate_pushdown': <TargetOutlined />,
-      'column_pruning': <DatabaseOutlined />,
-      'partition_pruning': <DatabaseOutlined />,
-      'caching': <ThunderboltOutlined />,
-      'parallel_execution': <FireOutlined />,
-    };
+      'column_pruning': <Database className="w-4 h-4"  />,
+      'partition_pruning': <Database className="w-4 h-4"  />,
+      'caching': <Zap className="w-4 h-4"  />,
+      'parallel_execution': <Flame className="w-4 h-4"  />};
     
-    return iconMap[technique.name] || <InfoCircleOutlined />;
+    return iconMap[technique.name] || <Info className="w-4 h-4"  />;
   };
 
   // 格式化持续时间
@@ -167,7 +141,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
         onSelect={(selectedKeys) => setSelectedStep(selectedKeys[0] as string)}
         titleRender={(node: ExecutionStepNode) => (
           <div className="flex items-center justify-between w-full">
-            <Space>
+            <div className="flex gap-2">
               {node.icon}
               <span className="font-medium">{node.title}</span>
               {node.cost && (
@@ -175,8 +149,8 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                   Cost: {node.cost.toFixed(2)}
                 </Tag>
               )}
-            </Space>
-            <Space>
+            </div>
+            <div className="flex gap-2">
               {node.duration && (
                 <Text type="secondary" className="text-xs">
                   {formatDuration(node.duration)}
@@ -187,7 +161,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                   {formatRows(node.rows)} rows
                 </Text>
               )}
-            </Space>
+            </div>
           </div>
         )}
       />
@@ -203,10 +177,10 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
         <div className="pb-4">
           <div className="flex items-center justify-between">
             <Text strong>{step.operation}</Text>
-            <Space>
+            <div className="flex gap-2">
               <Tag color="blue">Cost: {step.estimatedCost.toFixed(2)}</Tag>
               <Tag color="green">{formatDuration(step.estimatedDuration)}</Tag>
-            </Space>
+            </div>
           </div>
           <Text type="secondary" className="text-sm">
             {step.description}
@@ -219,8 +193,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
             />
           </div>
         </div>
-      ),
-    }));
+      )}));
 
     return <Timeline items={timelineItems} />;
   };
@@ -242,21 +215,21 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               title={
                 <div className="flex items-center justify-between">
                   <Text strong>{technique.name}</Text>
-                  <Space>
+                  <div className="flex gap-2">
                     <Tag color={getTechniqueColor(technique)}>
                       {technique.impact}
                     </Tag>
                     <Text type="secondary">
                       +{technique.estimatedGain}%
                     </Text>
-                  </Space>
+                  </div>
                 </div>
               }
               description={
                 <div>
-                  <Paragraph className="text-sm text-gray-600 mb-2">
+                  <Text className="text-sm text-gray-600 mb-2 block">
                     {technique.description}
-                  </Paragraph>
+                  </Text>
                   <div className="flex items-center justify-between">
                     <Progress
                       percent={technique.confidence * 100}
@@ -285,29 +258,25 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
         value: optimizationResult.estimatedPerformanceGain,
         suffix: '%',
         valueStyle: { color: '#52c41a' },
-        prefix: <TrophyOutlined />,
-      },
+        prefix: <Trophy className="w-4 h-4"  />},
       {
         title: 'Original Duration',
         value: optimizationResult.executionPlan.originalDuration,
         formatter: formatDuration,
         valueStyle: { color: '#faad14' },
-        prefix: <ClockCircleOutlined />,
-      },
+        prefix: <Clock className="w-4 h-4"  />},
       {
         title: 'Optimized Duration',
         value: optimizationResult.executionPlan.estimatedDuration,
         formatter: formatDuration,
         valueStyle: { color: '#52c41a' },
-        prefix: <RocketOutlined />,
-      },
+        prefix: <Rocket className="w-4 h-4"  />},
       {
         title: 'Resource Savings',
         value: optimizationResult.executionPlan.resourceRequirements.memoryReduction || 0,
         suffix: '%',
         valueStyle: { color: '#1890ff' },
-        prefix: <DatabaseOutlined />,
-      },
+        prefix: <Database className="w-4 h-4"  />},
     ];
 
     return (
@@ -358,7 +327,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                           recommendation.priority === 'high' ? '#52c41a' :
                           recommendation.priority === 'medium' ? '#faad14' : '#d9d9d9'
                         }
-                        count={<BulbOutlined />}
+                        count={<Lightbulb className="w-4 h-4"  />}
                       />
                     }
                     title={
@@ -374,9 +343,9 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                     }
                     description={
                       <div>
-                        <Paragraph className="text-sm text-gray-600 mb-2">
+                        <Text className="text-sm text-gray-600 mb-2 block">
                           {recommendation.description}
-                        </Paragraph>
+                        </Text>
                         <div className="flex items-center justify-between">
                           <Text type="secondary" className="text-xs">
                             预期收益: {recommendation.estimatedBenefit}%
@@ -402,13 +371,13 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
       <Card
         title={
           <div className="flex items-center justify-between">
-            <Space>
-              <BarChartOutlined />
-              <Title level={4} style={{ margin: 0 }}>
+            <div className="flex gap-2">
+              <BarChart className="w-4 h-4"  />
+              <Text className="text-lg font-semibold">
                 查询优化分析
-              </Title>
-            </Space>
-            <Space>
+              </Text>
+            </div>
+            <div className="flex gap-2">
               <Select
                 value={viewMode}
                 onChange={setViewMode}
@@ -428,19 +397,19 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               />
               <Tooltip title="刷新分析">
                 <Button
-                  icon={<ReloadOutlined />}
+                  icon={<RefreshCw className="w-4 h-4"  />}
                   onClick={onRefresh}
                   size="small"
                 />
               </Tooltip>
               <Tooltip title="导出报告">
                 <Button
-                  icon={<DownloadOutlined />}
+                  icon={<Download className="w-4 h-4"  />}
                   onClick={onExport}
                   size="small"
                 />
               </Tooltip>
-            </Space>
+            </div>
           </div>
         }
       >
@@ -502,7 +471,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               {viewMode === 'timeline' && renderTimelineView()}
               {viewMode === 'flow' && (
                 <div className="text-center p-8 text-gray-500">
-                  <EyeOutlined className="text-4xl mb-4" />
+                  <Eye className="w-4 h-4 text-4xl mb-4"   />
                   <div>流程图视图开发中...</div>
                 </div>
               )}

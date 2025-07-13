@@ -109,14 +109,11 @@ export class IntelligentCache {
         priorities: {
           'high': 1.5,
           'medium': 1.0,
-          'low': 0.5,
-        },
-      },
+          'low': 0.5}},
       compressionEnabled: true,
       persistenceEnabled: false,
       distributedEnabled: false,
-      ...config,
-    };
+      ...config};
   }
 
   /**
@@ -176,8 +173,7 @@ export class IntelligentCache {
       hitCount: 0,
       lastHit: 0,
       tags,
-      metadata,
-    };
+      metadata};
 
     // 检查是否需要淘汰
     await this.evictIfNeeded();
@@ -295,8 +291,7 @@ export class IntelligentCache {
       evictionCount: this.evictionCount,
       avgResponseTime,
       topHitQueries,
-      topMissQueries,
-    };
+      topMissQueries};
   }
 
   /**
@@ -315,8 +310,7 @@ export class IntelligentCache {
         title: 'Enable aggressive caching',
         description: 'This query is ideal for caching with high TTL',
         implementation: `Set cache TTL to ${this.calculateTTL(analysis)}ms`,
-        estimatedBenefit: Math.floor(cachingScore * 100),
-      });
+        estimatedBenefit: Math.floor(cachingScore * 100)});
     } else if (cachingScore > 0.4) {
       recommendations.push({
         type: 'caching',
@@ -324,8 +318,7 @@ export class IntelligentCache {
         title: 'Enable conservative caching',
         description: 'This query could benefit from short-term caching',
         implementation: `Set cache TTL to ${Math.floor(this.calculateTTL(analysis) * 0.5)}ms`,
-        estimatedBenefit: Math.floor(cachingScore * 60),
-      });
+        estimatedBenefit: Math.floor(cachingScore * 60)});
     }
     
     // 检查缓存策略优化
@@ -337,8 +330,7 @@ export class IntelligentCache {
         title: 'Optimize cache strategy',
         description: 'Current cache hit rate is low, consider adjusting strategy',
         implementation: 'Switch to adaptive caching strategy',
-        estimatedBenefit: 40,
-      });
+        estimatedBenefit: 40});
     }
     
     return recommendations;
@@ -410,10 +402,8 @@ export class IntelligentCache {
       statistics: {
         hitCount: this.hitCount,
         missCount: this.missCount,
-        evictionCount: this.evictionCount,
-      },
-      timestamp: Date.now(),
-    };
+        evictionCount: this.evictionCount},
+      timestamp: Date.now()};
     
     try {
       await safeTauriInvoke('save_cache_data', { data: cacheData });
@@ -546,8 +536,7 @@ export class IntelligentCache {
       dataSize: this.calculateSize(value),
       computationCost: 0,
       freshnessScore: 1.0,
-      popularityScore: 0.0,
-    };
+      popularityScore: 0.0};
   }
 
   private calculateSize(value: any): number {
@@ -579,8 +568,7 @@ export class IntelligentCache {
       key,
       hitCount: entry.hitCount,
       avgResponseTime: 0, // 需要从访问日志计算
-      lastHit: new Date(entry.lastHit),
-    }));
+      lastHit: new Date(entry.lastHit)}));
   }
 
   private getTopMissQueries(): CacheMissInfo[] {
@@ -601,8 +589,7 @@ export class IntelligentCache {
         key,
         missCount: stats.count,
         avgComputeTime: stats.totalTime / stats.count,
-        lastMiss: new Date(),
-      }));
+        lastMiss: new Date()}));
   }
 
   private calculateCachingScore(analysis: QueryAnalysis): number {
@@ -669,8 +656,7 @@ export class IntelligentCache {
       accessCount: 0,
       lastAccess: 0,
       ttl: options.ttl || this.configuration.defaultTtl,
-      tags: options.tags || [],
-    };
+      tags: options.tags || []};
     
     pattern.accessCount++;
     pattern.lastAccess = Date.now();

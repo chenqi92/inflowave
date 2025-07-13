@@ -1,34 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Switch, Slider, Select, Typography, Divider, Button, Tooltip, Radio, Checkbox, InputNumber, Upload, List, Tag, Badge, Alert } from 'antd';
-import { Card, ColorPicker, Space, message, Preview, Popover, Modal,  } from '@/components/ui';
-import {
-  BgColorsOutlined,
-  FontSizeOutlined,
-  SkinOutlined,
-  SettingOutlined,
-  EyeOutlined,
-  UploadOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-  CopyOutlined,
-  ShareAltOutlined,
-  BulbOutlined,
-  MoonOutlined,
-  SunOutlined,
-  DesktopOutlined,
-  BorderOutlined,
-  CompressOutlined,
-  ExpandOutlined,
-  PictureOutlined,
-  GiftOutlined,
-  ExperimentOutlined,
-  FireOutlined,
-  StarOutlined,
-  HeartOutlined,
-  ThunderboltOutlined,
-  CrownOutlined,
-  DiamondOutlined,
-} from '@/components/ui';
+import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert } from '@/components/ui';
+, Tooltip, List, Badge
+import { Card, ColorPicker, Space, Preview, Popover, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
+import { SkinOutlined, ShareAltOutlined, MoonOutlined, SunOutlined, ExperimentOutlined, DiamondOutlined } from '@/components/ui';
+import { Settings, Eye, Upload, Download, RefreshCw, Copy, Lightbulb, Shrink, Expand, Image, Gift, Flame, Star, Heart, Zap, Crown, Palette, Type, Monitor, Square } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
 import { showMessage } from '@/utils/message';
 
@@ -40,8 +17,7 @@ interface AdvancedThemeSettingsProps {
 }
 
 export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
-  className,
-}) => {
+  className}) => {
   const { settings, updateTheme, updateSettings, saveSettings } = useSettingsStore();
   const [previewMode, setPreviewMode] = useState(false);
   const [customThemeModalVisible, setCustomThemeModalVisible] = useState(false);
@@ -56,8 +32,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#1890ff',
       borderRadius: 6,
       compact: false,
-      icon: <SunOutlined />,
-    },
+      icon: <SunOutlined />},
     {
       name: 'Default Dark',
       key: 'default-dark',
@@ -65,8 +40,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#1890ff',
       borderRadius: 6,
       compact: false,
-      icon: <MoonOutlined />,
-    },
+      icon: <MoonOutlined />},
     {
       name: 'Compact Blue',
       key: 'compact-blue',
@@ -74,8 +48,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#096dd9',
       borderRadius: 4,
       compact: true,
-      icon: <CompressOutlined />,
-    },
+      icon: <Shrink className="w-4 h-4"  />},
     {
       name: 'Green Nature',
       key: 'green-nature',
@@ -83,8 +56,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#52c41a',
       borderRadius: 8,
       compact: false,
-      icon: <HeartOutlined />,
-    },
+      icon: <Heart className="w-4 h-4"  />},
     {
       name: 'Purple Dream',
       key: 'purple-dream',
@@ -92,8 +64,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#722ed1',
       borderRadius: 10,
       compact: false,
-      icon: <StarOutlined />,
-    },
+      icon: <Star className="w-4 h-4"  />},
     {
       name: 'Orange Sunset',
       key: 'orange-sunset',
@@ -101,8 +72,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#fa8c16',
       borderRadius: 6,
       compact: false,
-      icon: <FireOutlined />,
-    },
+      icon: <Flame className="w-4 h-4"  />},
     {
       name: 'Dark Professional',
       key: 'dark-professional',
@@ -110,8 +80,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#13c2c2',
       borderRadius: 4,
       compact: false,
-      icon: <CrownOutlined />,
-    },
+      icon: <Crown className="w-4 h-4"  />},
     {
       name: 'High Contrast',
       key: 'high-contrast',
@@ -119,8 +88,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       primaryColor: '#000000',
       borderRadius: 2,
       compact: true,
-      icon: <BorderOutlined />,
-    },
+      icon: <Square />},
   ];
 
   // 主题色彩选项
@@ -157,8 +125,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       mode: theme.mode,
       primaryColor: theme.primaryColor,
       borderRadius: theme.borderRadius,
-      compact: theme.compact,
-    });
+      compact: theme.compact});
     showMessage.success(`已应用主题: ${theme.name}`);
   };
 
@@ -168,12 +135,10 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       name: 'Custom Theme',
       timestamp: new Date().toISOString(),
       theme: settings.theme,
-      version: '1.0.0',
-    };
+      version: '1.0.0'};
     
     const blob = new Blob([JSON.stringify(themeConfig, null, 2)], {
-      type: 'application/json',
-    });
+      type: 'application/json'});
     
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -214,11 +179,9 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
           mode: 'auto',
           primaryColor: '#1890ff',
           borderRadius: 6,
-          compact: false,
-        });
+          compact: false});
         showMessage.success('主题已重置为默认设置');
-      },
-    });
+      }});
   };
 
   // 复制主题配置
@@ -235,28 +198,28 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={24}>
           <Card
             title={
-              <Space>
-                <BulbOutlined />
+              <div className="flex gap-2">
+                <Lightbulb className="w-4 h-4"  />
                 <span>主题模式</span>
-              </Space>
+              </div>
             }
             extra={
-              <Space>
+              <div className="flex gap-2">
                 <Button
                   size="small"
-                  icon={<EyeOutlined />}
+                  icon={<Eye className="w-4 h-4"  />}
                   onClick={() => setPreviewMode(!previewMode)}
                 >
                   {previewMode ? '退出预览' : '预览模式'}
                 </Button>
                 <Button
                   size="small"
-                  icon={<ReloadOutlined />}
+                  icon={<RefreshCw className="w-4 h-4"  />}
                   onClick={resetTheme}
                 >
                   重置
                 </Button>
-              </Space>
+              </div>
             }
           >
             <Row gutter={[16, 16]}>
@@ -267,26 +230,26 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     onChange={(e) => updateTheme({ mode: e.target.value })}
                     style={{ width: '100%' }}
                   >
-                    <Space direction="vertical" style={{ width: '100%' }}>
+                    <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                       <Radio value="light">
-                        <Space>
+                        <div className="flex gap-2">
                           <SunOutlined />
                           <span>亮色模式</span>
-                        </Space>
+                        </div>
                       </Radio>
                       <Radio value="dark">
-                        <Space>
+                        <div className="flex gap-2">
                           <MoonOutlined />
                           <span>暗色模式</span>
-                        </Space>
+                        </div>
                       </Radio>
                       <Radio value="auto">
-                        <Space>
-                          <DesktopOutlined />
+                        <div className="flex gap-2">
+                          <Monitor />
                           <span>跟随系统</span>
-                        </Space>
+                        </div>
                       </Radio>
-                    </Space>
+                    </div>
                   </Radio.Group>
                 </div>
               </Col>
@@ -318,10 +281,10 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={24}>
           <Card
             title={
-              <Space>
+              <div className="flex gap-2">
                 <SkinOutlined />
                 <span>预定义主题</span>
-              </Space>
+              </div>
             }
           >
             <Row gutter={[12, 12]}>
@@ -333,8 +296,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     style={{ 
                       cursor: 'pointer',
                       borderColor: settings.theme.primaryColor === theme.primaryColor ? settings.theme.primaryColor : '#d9d9d9',
-                      borderWidth: settings.theme.primaryColor === theme.primaryColor ? '2px' : '1px',
-                    }}
+                      borderWidth: settings.theme.primaryColor === theme.primaryColor ? '2px' : '1px'}}
                     onClick={() => applyPredefinedTheme(theme)}
                   >
                     <div style={{ textAlign: 'center' }}>
@@ -360,13 +322,13 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={12}>
           <Card
             title={
-              <Space>
-                <BgColorsOutlined />
+              <div className="flex gap-2">
+                <Palette />
                 <span>主题色彩</span>
-              </Space>
+              </div>
             }
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Text strong>主色调</Text>
                 <div style={{ marginTop: '8px' }}>
@@ -382,8 +344,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                               borderRadius: '6px',
                               cursor: 'pointer',
                               border: settings.theme.primaryColor === color.value ? '3px solid #fff' : '1px solid #d9d9d9',
-                              boxShadow: settings.theme.primaryColor === color.value ? `0 0 0 2px ${color.color}` : 'none',
-                            }}
+                              boxShadow: settings.theme.primaryColor === color.value ? `0 0 0 2px ${color.color}` : 'none'}}
                             onClick={() => updateTheme({ primaryColor: color.value })}
                           />
                         </Tooltip>
@@ -404,13 +365,12 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     presets={[
                       {
                         label: '推荐色彩',
-                        colors: colorOptions.map(c => c.value),
-                      },
+                        colors: colorOptions.map(c => c.value)},
                     ]}
                   />
                 </div>
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
 
@@ -418,13 +378,13 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={12}>
           <Card
             title={
-              <Space>
-                <SettingOutlined />
+              <div className="flex gap-2">
+                <Settings className="w-4 h-4"  />
                 <span>界面设置</span>
-              </Space>
+              </div>
             }
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Row justify="space-between" align="middle">
                   <Text strong>紧凑模式</Text>
@@ -451,12 +411,11 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                       0: '0px',
                       6: '6px',
                       12: '12px',
-                      20: '20px',
-                    }}
+                      20: '20px'}}
                   />
                 </div>
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
 
@@ -464,23 +423,23 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={24}>
           <Card
             title={
-              <Space>
+              <div className="flex gap-2">
                 <ExperimentOutlined />
                 <span>高级设置</span>
-              </Space>
+              </div>
             }
             extra={
-              <Space>
+              <div className="flex gap-2">
                 <Button
                   size="small"
-                  icon={<CopyOutlined />}
+                  icon={<Copy className="w-4 h-4"  />}
                   onClick={copyThemeConfig}
                 >
                   复制配置
                 </Button>
                 <Button
                   size="small"
-                  icon={<DownloadOutlined />}
+                  icon={<Download className="w-4 h-4"  />}
                   onClick={exportTheme}
                 >
                   导出主题
@@ -493,11 +452,11 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     return false;
                   }}
                 >
-                  <Button size="small" icon={<UploadOutlined />}>
+                  <Button size="small" icon={<Upload className="w-4 h-4"  />}>
                     导入主题
                   </Button>
                 </Upload>
-              </Space>
+              </div>
             }
           >
             <Row gutter={[16, 16]}>
@@ -565,26 +524,24 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
         <Col span={24}>
           <Card
             title={
-              <Space>
-                <EyeOutlined />
+              <div className="flex gap-2">
+                <Eye className="w-4 h-4"  />
                 <span>主题效果预览</span>
-              </Space>
+              </div>
             }
           >
             <div style={{ 
               padding: '16px',
               backgroundColor: settings.theme.mode === 'dark' ? '#141414' : '#fafafa',
               borderRadius: settings.theme.borderRadius,
-              border: `1px solid ${settings.theme.mode === 'dark' ? '#434343' : '#d9d9d9'}`,
-            }}>
+              border: `1px solid ${settings.theme.mode === 'dark' ? '#434343' : '#d9d9d9'}`}}>
               <Row gutter={[16, 16]}>
                 <Col span={8}>
                   <div style={{ 
                     padding: settings.theme.compact ? '8px' : '12px',
                     backgroundColor: settings.theme.mode === 'dark' ? '#1f1f1f' : '#fff',
                     borderRadius: settings.theme.borderRadius,
-                    border: `1px solid ${settings.theme.mode === 'dark' ? '#434343' : '#d9d9d9'}`,
-                  }}>
+                    border: `1px solid ${settings.theme.mode === 'dark' ? '#434343' : '#d9d9d9'}`}}>
                     <div style={{ color: settings.theme.primaryColor, marginBottom: '8px' }}>
                       <DiamondOutlined /> 卡片标题
                     </div>
@@ -598,10 +555,9 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     padding: settings.theme.compact ? '8px' : '12px',
                     backgroundColor: settings.theme.primaryColor,
                     borderRadius: settings.theme.borderRadius,
-                    color: '#fff',
-                  }}>
+                    color: '#fff'}}>
                     <div style={{ marginBottom: '8px' }}>
-                      <ThunderboltOutlined /> 主要按钮
+                      <Zap className="w-4 h-4"  /> 主要按钮
                     </div>
                     <div>
                       这是使用主题色的组件预览。
@@ -613,10 +569,9 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     padding: settings.theme.compact ? '8px' : '12px',
                     backgroundColor: settings.theme.mode === 'dark' ? '#262626' : '#f0f0f0',
                     borderRadius: settings.theme.borderRadius,
-                    color: settings.theme.mode === 'dark' ? '#fff' : '#000',
-                  }}>
+                    color: settings.theme.mode === 'dark' ? '#fff' : '#000'}}>
                     <div style={{ marginBottom: '8px' }}>
-                      <GiftOutlined /> 次要内容
+                      <Gift className="w-4 h-4"  /> 次要内容
                     </div>
                     <div>
                       这是次要内容区域的预览。

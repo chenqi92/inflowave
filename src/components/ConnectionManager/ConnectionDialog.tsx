@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Switch, Button, Alert, Steps } from 'antd';
-import { Modal, Space } from '@/components/ui';
-import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@/components/ui';
+import { Form, Input, InputNumber, Switch, Button, Alert, AlertDescription, Steps, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
@@ -29,8 +28,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   visible,
   connection,
   onCancel,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const { createConnection, editConnection, testConnection } = useConnection();
   const [form] = Form.useForm<FormData>();
   const [currentStep, setCurrentStep] = useState(0);
@@ -51,15 +49,13 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           password: connection.password,
           database: connection.database,
           ssl: connection.ssl,
-          timeout: connection.timeout,
-        });
+          timeout: connection.timeout});
       } else {
         form.resetFields();
         form.setFieldsValue({
           port: 8086,
           ssl: false,
-          timeout: 30,
-        });
+          timeout: 30});
       }
       setCurrentStep(0);
       setTestResult(null);
@@ -77,8 +73,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         id: 'temp-test',
         ...values,
         createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       const result = await testConnection(tempConfig.id!);
       setTestResult(result);
@@ -100,8 +95,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
 
       const configData: ConnectionConfig = {
         ...values,
-        id: connection?.id,
-      };
+        id: connection?.id};
 
       if (isEditing) {
         await editConnection(configData);
@@ -255,7 +249,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         {testResult.success && (
           <div className="bg-green-50 border border-green-200 rounded p-3">
             <div className="flex items-center gap-2 text-green-700">
-              <CheckCircleOutlined />
+              <CheckCircle />
               <span className="font-medium">连接配置正确</span>
             </div>
             <div className="text-sm text-green-600 mt-1">
@@ -271,14 +265,12 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     {
       title: '配置连接',
       description: '填写连接参数',
-      icon: currentStep === 0 ? <LoadingOutlined /> : 
-            currentStep > 0 ? <CheckCircleOutlined /> : undefined,
-    },
+      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> : 
+            currentStep > 0 ? <CheckCircle /> : undefined},
     {
       title: '测试连接',
       description: '验证连接可用性',
-      icon: currentStep === 1 ? (testResult?.success ? <CheckCircleOutlined /> : <CloseCircleOutlined />) : undefined,
-    },
+      icon: currentStep === 1 ? (testResult?.success ? <CheckCircle /> : <XCircle />) : undefined},
   ];
 
   return (
@@ -301,13 +293,10 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           validateMessages={{
             required: '${label}是必填项',
             types: {
-              number: '${label}必须是数字',
-            },
+              number: '${label}必须是数字'},
             number: {
               min: '${label}最小值为${min}',
-              max: '${label}最大值为${max}',
-            },
-          }}
+              max: '${label}最大值为${max}'}}}
         >
           {currentStep === 0 && renderConnectionForm()}
           {currentStep === 1 && renderTestResult()}
@@ -325,7 +314,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
               )}
             </div>
 
-            <Space size="small">
+            <div className="flex gap-2" size="small">
               <Button
                 onClick={onCancel}
                 size="small"
@@ -334,7 +323,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
               </Button>
 
               {currentStep === 0 ? (
-                <Space size="small">
+                <div className="flex gap-2" size="small">
                   {isEditing && (
                     <Button
                       type="primary"
@@ -349,12 +338,12 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                     type={isEditing ? 'default' : 'primary'}
                     onClick={handleTestConnection}
                     loading={isTesting}
-                    icon={<InfoCircleOutlined />}
+                    icon={<Info className="w-4 h-4"  />}
                     size="small"
                   >
                     测试连接
                   </Button>
-                </Space>
+                </div>
               ) : (
                 <Button
                   type="primary"
@@ -366,7 +355,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                   保存连接
                 </Button>
               )}
-            </Space>
+            </div>
           </div>
         </Form>
       </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col } from 'antd';
-import { Card, Modal, Space, message } from '@/components/ui';
+import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
 // TODO: Replace these Ant Design components: List, Switch, Divider, 
-import { SettingOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, PlusOutlined } from '@/components/ui';
+import { Settings, Trash2, Plus, PlayCircle, PauseCircle } from 'lucide-react';
 // TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -75,18 +77,18 @@ const ExtensionManager: React.FC = () => {
       loadPlugins();
     } catch (error) {
       console.error('切换插件状态失败:', error);
-      message.error('操作失败');
+      toast({ title: "错误", description: "操作失败", variant: "destructive" });
     }
   };
 
   const uninstallPlugin = async (pluginId: string) => {
     try {
       await safeTauriInvoke('uninstall_plugin', { pluginId });
-      message.success('插件已卸载');
+      toast({ title: "成功", description: "插件已卸载" });
       loadPlugins();
     } catch (error) {
       console.error('卸载插件失败:', error);
-      message.error('卸载失败');
+      toast({ title: "错误", description: "卸载失败", variant: "destructive" });
     }
   };
 
@@ -101,19 +103,16 @@ const ExtensionManager: React.FC = () => {
           endpoint: values.endpoint,
           authentication: {
             auth_type: values.authType,
-            credentials: values.credentials || {},
-          },
+            credentials: values.credentials || {}},
           headers: values.headers || {},
-          enabled: true,
-        },
-      });
-      message.success('API集成创建成功');
+          enabled: true}});
+      toast({ title: "成功", description: "API集成创建成功" });
       setApiModalVisible(false);
       apiForm.resetFields();
       loadApiIntegrations();
     } catch (error) {
       console.error('创建API集成失败:', error);
-      message.error('创建失败');
+      toast({ title: "错误", description: "创建失败", variant: "destructive" });
     }
   };
 
@@ -136,10 +135,9 @@ const ExtensionManager: React.FC = () => {
               </div>
             )}
           </div>
-        ),
-      });
+        )});
     } catch (error) {
-      message.error(`测试失败: ${error}`);
+      toast({ title: "错误", description: "测试失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -160,17 +158,14 @@ const ExtensionManager: React.FC = () => {
           retry_policy: {
             max_retries: values.maxRetries || 3,
             backoff_multiplier: values.backoffMultiplier || 2.0,
-            max_backoff_time: values.maxBackoffTime || 300,
-          },
-        },
-      });
-      message.success('Webhook创建成功');
+            max_backoff_time: values.maxBackoffTime || 300}}});
+      toast({ title: "成功", description: "Webhook创建成功" });
       setWebhookModalVisible(false);
       webhookForm.resetFields();
       loadWebhooks();
     } catch (error) {
       console.error('创建Webhook失败:', error);
-      message.error('创建失败');
+      toast({ title: "错误", description: "创建失败", variant: "destructive" });
     }
   };
 
@@ -184,21 +179,18 @@ const ExtensionManager: React.FC = () => {
           description: values.description,
           trigger: {
             trigger_type: values.triggerType,
-            config: values.triggerConfig || {},
-          },
+            config: values.triggerConfig || {}},
           conditions: values.conditions || [],
           actions: values.actions || [],
           enabled: true,
-          execution_count: 0,
-        },
-      });
-      message.success('自动化规则创建成功');
+          execution_count: 0}});
+      toast({ title: "成功", description: "自动化规则创建成功" });
       setAutomationModalVisible(false);
       automationForm.resetFields();
       loadAutomationRules();
     } catch (error) {
       console.error('创建自动化规则失败:', error);
-      message.error('创建失败');
+      toast({ title: "错误", description: "创建失败", variant: "destructive" });
     }
   };
 
@@ -206,13 +198,12 @@ const ExtensionManager: React.FC = () => {
     try {
       const result = await safeTauriInvoke('execute_automation_rule', {
         ruleId,
-        context: {},
-      });
-      message.success('自动化规则执行成功');
+        context: {}});
+      toast({ title: "成功", description: "自动化规则执行成功" });
       console.log('执行结果:', result);
     } catch (error) {
       console.error('执行自动化规则失败:', error);
-      message.error('执行失败');
+      toast({ title: "错误", description: "执行失败", variant: "destructive" });
     }
   };
 
@@ -227,11 +218,11 @@ const ExtensionManager: React.FC = () => {
     <div className="extension-manager">
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         {/* 插件管理 */}
-        <Tabs.TabPane tab={<><AppstoreOutlined /> 插件</>} key="plugins">
+        <Tabs.TabPane tab={<><Grid3X3 className="w-4 h-4"  /> 插件</>} key="plugins">
           <Card
             title="已安装的插件"
             extra={
-              <Button type="primary" icon={<PlusOutlined />}>
+              <Button type="primary" icon={<Plus className="w-4 h-4"  />}>
                 安装插件
               </Button>
             }
@@ -249,7 +240,7 @@ const ExtensionManager: React.FC = () => {
                     <Button
                       type="text"
                       danger
-                      icon={<DeleteOutlined />}
+                      icon={<Trash2 className="w-4 h-4"  />}
                       onClick={() => uninstallPlugin(plugin.id)}
                     >
                       卸载
@@ -258,13 +249,13 @@ const ExtensionManager: React.FC = () => {
                 >
                   <List.Item.Meta
                     title={
-                      <Space>
+                      <div className="flex gap-2">
                         {plugin.name}
                         <Tag color="blue">v{plugin.version}</Tag>
                         <Tag color={plugin.enabled ? 'green' : 'red'}>
                           {plugin.enabled ? '已启用' : '已禁用'}
                         </Tag>
-                      </Space>
+                      </div>
                     }
                     description={
                       <div>
@@ -283,13 +274,13 @@ const ExtensionManager: React.FC = () => {
         </Tabs.TabPane>
 
         {/* API 集成 */}
-        <Tabs.TabPane tab={<><ApiOutlined /> API 集成</>} key="api">
+        <Tabs.TabPane tab={<><Webhook className="w-4 h-4"  /> API 集成</>} key="api">
           <Card
             title="API 集成"
             extra={
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => setApiModalVisible(true)}
               >
                 新建集成
@@ -315,10 +306,10 @@ const ExtensionManager: React.FC = () => {
                 >
                   <List.Item.Meta
                     title={
-                      <Space>
+                      <div className="flex gap-2">
                         {integration.name}
                         <Tag color="blue">{integration.integration_type}</Tag>
-                      </Space>
+                      </div>
                     }
                     description={integration.endpoint}
                   />
@@ -329,13 +320,13 @@ const ExtensionManager: React.FC = () => {
         </Tabs.TabPane>
 
         {/* Webhook */}
-        <Tabs.TabPane tab={<><LinkOutlined /> Webhook</>} key="webhooks">
+        <Tabs.TabPane tab={<><Link className="w-4 h-4"  /> Webhook</>} key="webhooks">
           <Card
             title="Webhook 配置"
             extra={
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => setWebhookModalVisible(true)}
               >
                 新建 Webhook
@@ -357,11 +348,11 @@ const ExtensionManager: React.FC = () => {
                       <div>
                         <Text type="secondary">{webhook.url}</Text>
                         <br />
-                        <Space size="small">
+                        <div className="flex gap-2" size="small">
                           {webhook.events.map(event => (
                             <Tag key={event} size="small">{event}</Tag>
                           ))}
-                        </Space>
+                        </div>
                       </div>
                     }
                   />
@@ -378,7 +369,7 @@ const ExtensionManager: React.FC = () => {
             extra={
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => setAutomationModalVisible(true)}
               >
                 新建规则
@@ -393,7 +384,7 @@ const ExtensionManager: React.FC = () => {
                   actions={[
                     <Button
                       type="text"
-                      icon={<PlayCircleOutlined />}
+                      icon={<PlayCircle />}
                       onClick={() => executeAutomationRule(rule.id)}
                     >
                       执行
@@ -403,10 +394,10 @@ const ExtensionManager: React.FC = () => {
                 >
                   <List.Item.Meta
                     title={
-                      <Space>
+                      <div className="flex gap-2">
                         {rule.name}
                         <Tag color="green">执行 {rule.executionCount} 次</Tag>
-                      </Space>
+                      </div>
                     }
                     description={
                       <div>

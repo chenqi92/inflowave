@@ -1,8 +1,9 @@
 import React from 'react';
-import { message } from '@/components/ui';
+import { toast } from '@/components/ui';
+
 // TODO: Replace these Ant Design components: Dropdown
 import type { MenuProps } from '@/components/ui';
-import { CopyOutlined, BarChartOutlined, EditOutlined, EyeOutlined, TableOutlined } from '@/components/ui';
+import { Copy, BarChart, Edit, Eye, Table } from 'lucide-react';
 // TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
 // You may need to find alternatives or create custom icons
 
@@ -19,8 +20,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
   selectedData,
   columnName,
   rowData,
-  onAction,
-}) => {
+  onAction}) => {
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     try {
@@ -29,7 +29,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制单元格内容
           if (selectedData !== undefined) {
             await navigator.clipboard.writeText(String(selectedData));
-            message.success('已复制单元格内容');
+            toast({ title: "成功", description: "已复制单元格内容" });
           }
           break;
 
@@ -38,7 +38,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           if (rowData) {
             const rowText = Object.values(rowData).join('\t');
             await navigator.clipboard.writeText(rowText);
-            message.success('已复制行数据');
+            toast({ title: "成功", description: "已复制行数据" });
           }
           break;
 
@@ -46,7 +46,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制列名
           if (columnName) {
             await navigator.clipboard.writeText(columnName);
-            message.success(`已复制列名: ${columnName}`);
+            toast({ title: "成功", description: "已复制列名: ${columnName}" });
           }
           break;
 
@@ -54,7 +54,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制为 JSON 格式
           if (rowData) {
             await navigator.clipboard.writeText(JSON.stringify(rowData, null, 2));
-            message.success('已复制为 JSON 格式');
+            toast({ title: "成功", description: "已复制为 JSON 格式" });
           }
           break;
 
@@ -63,57 +63,57 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           if (rowData) {
             const csvText = Object.values(rowData).join(',');
             await navigator.clipboard.writeText(csvText);
-            message.success('已复制为 CSV 格式');
+            toast({ title: "成功", description: "已复制为 CSV 格式" });
           }
           break;
 
         case 'filter_by_value':
           // 按值过滤
           if (selectedData !== undefined && columnName) {
-            message.success(`正在按 ${columnName} = ${selectedData} 过滤`);
+            toast({ title: "成功", description: "正在按 ${columnName} = ${selectedData} 过滤" });
           }
           break;
 
         case 'filter_not_equal':
           // 按值排除
           if (selectedData !== undefined && columnName) {
-            message.success(`正在按 ${columnName} != ${selectedData} 过滤`);
+            toast({ title: "成功", description: "正在按 ${columnName} != ${selectedData} 过滤" });
           }
           break;
 
         case 'sort_asc':
           // 升序排序
           if (columnName) {
-            message.success(`正在按 ${columnName} 升序排序`);
+            toast({ title: "成功", description: "正在按 ${columnName} 升序排序" });
           }
           break;
 
         case 'sort_desc':
           // 降序排序
           if (columnName) {
-            message.success(`正在按 ${columnName} 降序排序`);
+            toast({ title: "成功", description: "正在按 ${columnName} 降序排序" });
           }
           break;
 
         case 'export_results':
           // 导出查询结果
-          message.success('正在导出查询结果');
+          toast({ title: "成功", description: "正在导出查询结果" });
           break;
 
         case 'visualize_data':
           // 数据可视化
-          message.success('正在创建数据可视化');
+          toast({ title: "成功", description: "正在创建数据可视化" });
           break;
 
         case 'edit_query':
           // 编辑查询
-          message.success('正在编辑查询');
+          toast({ title: "成功", description: "正在编辑查询" });
           break;
 
         case 'view_details':
           // 查看详细信息
           if (rowData) {
-            message.success('正在查看详细信息');
+            toast({ title: "成功", description: "正在查看详细信息" });
           }
           break;
 
@@ -128,7 +128,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      message.error(`操作失败: ${error}`);
+      toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -137,128 +137,106 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
     {
       key: 'copy_group',
       label: '复制操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'copy_cell',
-      icon: <CopyOutlined />,
+      icon: <Copy className="w-4 h-4"  />,
       label: '复制单元格',
       onClick: () => handleMenuClick('copy_cell'),
-      disabled: selectedData === undefined,
-    },
+      disabled: selectedData === undefined},
     {
       key: 'copy_row',
-      icon: <CopyOutlined />,
+      icon: <Copy className="w-4 h-4"  />,
       label: '复制整行',
       onClick: () => handleMenuClick('copy_row'),
-      disabled: !rowData,
-    },
+      disabled: !rowData},
     {
       key: 'copy_column',
-      icon: <CopyOutlined />,
+      icon: <Copy className="w-4 h-4"  />,
       label: '复制列名',
       onClick: () => handleMenuClick('copy_column'),
-      disabled: !columnName,
-    },
+      disabled: !columnName},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'format_group',
       label: '格式化复制',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'copy_as_json',
-      icon: <FileTextOutlined />,
+      icon: <FileText className="w-4 h-4"  />,
       label: '复制为 JSON',
       onClick: () => handleMenuClick('copy_as_json'),
-      disabled: !rowData,
-    },
+      disabled: !rowData},
     {
       key: 'copy_as_csv',
-      icon: <TableOutlined />,
+      icon: <Table className="w-4 h-4"  />,
       label: '复制为 CSV',
       onClick: () => handleMenuClick('copy_as_csv'),
-      disabled: !rowData,
-    },
+      disabled: !rowData},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'filter_group',
       label: '过滤操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'filter_by_value',
-      icon: <FilterOutlined />,
+      icon: <Filter className="w-4 h-4"  />,
       label: '按此值过滤',
       onClick: () => handleMenuClick('filter_by_value'),
-      disabled: selectedData === undefined || !columnName,
-    },
+      disabled: selectedData === undefined || !columnName},
     {
       key: 'filter_not_equal',
-      icon: <FilterOutlined />,
+      icon: <Filter className="w-4 h-4"  />,
       label: '排除此值',
       onClick: () => handleMenuClick('filter_not_equal'),
-      disabled: selectedData === undefined || !columnName,
-    },
+      disabled: selectedData === undefined || !columnName},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'sort_group',
       label: '排序操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'sort_asc',
-      icon: <SortAscendingOutlined />,
+      icon: <ArrowUp className="w-4 h-4"  />,
       label: '升序排序',
       onClick: () => handleMenuClick('sort_asc'),
-      disabled: !columnName,
-    },
+      disabled: !columnName},
     {
       key: 'sort_desc',
-      icon: <SortDescendingOutlined />,
+      icon: <ArrowDown className="w-4 h-4"  />,
       label: '降序排序',
       onClick: () => handleMenuClick('sort_desc'),
-      disabled: !columnName,
-    },
+      disabled: !columnName},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'action_group',
       label: '其他操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'view_details',
-      icon: <EyeOutlined />,
+      icon: <Eye className="w-4 h-4"  />,
       label: '查看详情',
       onClick: () => handleMenuClick('view_details'),
-      disabled: !rowData,
-    },
+      disabled: !rowData},
     {
       key: 'visualize_data',
-      icon: <BarChartOutlined />,
+      icon: <BarChart className="w-4 h-4"  />,
       label: '数据可视化',
-      onClick: () => handleMenuClick('visualize_data'),
-    },
+      onClick: () => handleMenuClick('visualize_data')},
     {
       key: 'export_results',
-      icon: <ExportOutlined />,
+      icon: <FileDown className="w-4 h-4"  />,
       label: '导出结果',
-      onClick: () => handleMenuClick('export_results'),
-    },
+      onClick: () => handleMenuClick('export_results')},
     {
       key: 'edit_query',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       label: '编辑查询',
-      onClick: () => handleMenuClick('edit_query'),
-    },
+      onClick: () => handleMenuClick('edit_query')},
   ];
 
   return (

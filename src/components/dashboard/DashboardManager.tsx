@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Button, Form, Input, Select, Typography, Tag, Row, Col, List, Popconfirm, Divider, InputNumber } from 'antd';
-import { Card, Modal, Space, message } from '@/components/ui';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, BarChartOutlined, EyeOutlined } from '@/components/ui';
+import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber } from '@/components/ui';
+// TODO: Replace these Ant Design components: List, Popconfirm, Divider
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
 
@@ -14,8 +15,7 @@ interface DashboardManagerProps {
 }
 
 const DashboardManager: React.FC<DashboardManagerProps> = ({
-  onOpenDashboard,
-}) => {
+  onOpenDashboard}) => {
   const [dashboards, setDashboards] = useState<DashboardConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -31,7 +31,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       setDashboards(result);
     } catch (error) {
       console.error('加载仪表板失败:', error);
-      message.error('加载仪表板失败');
+      toast({ title: "错误", description: "加载仪表板失败", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -47,17 +47,13 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
           layout: {
             columns: values.columns || 12,
             rows: values.rows || 8,
-            gap: values.gap || 16,
-          },
+            gap: values.gap || 16},
           refresh_interval: values.refreshInterval || 30000,
           time_range: {
             start: values.timeStart || 'now() - 1h',
-            end: values.timeEnd || 'now()',
-          },
-        },
-      }) as string;
+            end: values.timeEnd || 'now()'}}}) as string;
 
-      message.success('仪表板创建成功');
+      toast({ title: "成功", description: "仪表板创建成功" });
       setCreateModalVisible(false);
       form.resetFields();
       loadDashboards();
@@ -66,7 +62,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       onOpenDashboard(dashboardId);
     } catch (error) {
       console.error('创建仪表板失败:', error);
-      message.error('创建仪表板失败');
+      toast({ title: "错误", description: "创建仪表板失败", variant: "destructive" });
     }
   };
 
@@ -83,24 +79,20 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
           layout: {
             columns: values.columns,
             rows: values.rows,
-            gap: values.gap,
-          },
+            gap: values.gap},
           refresh_interval: values.refreshInterval,
           time_range: {
             start: values.timeStart,
-            end: values.timeEnd,
-          },
-        },
-      });
+            end: values.timeEnd}}});
 
-      message.success('仪表板更新成功');
+      toast({ title: "成功", description: "仪表板更新成功" });
       setEditModalVisible(false);
       setSelectedDashboard(null);
       form.resetFields();
       loadDashboards();
     } catch (error) {
       console.error('更新仪表板失败:', error);
-      message.error('更新仪表板失败');
+      toast({ title: "错误", description: "更新仪表板失败", variant: "destructive" });
     }
   };
 
@@ -108,11 +100,11 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   const deleteDashboard = async (dashboardId: string) => {
     try {
       await safeTauriInvoke('delete_dashboard', { dashboardId });
-      message.success('仪表板删除成功');
+      toast({ title: "成功", description: "仪表板删除成功" });
       loadDashboards();
     } catch (error) {
       console.error('删除仪表板失败:', error);
-      message.error('删除仪表板失败');
+      toast({ title: "错误", description: "删除仪表板失败", variant: "destructive" });
     }
   };
 
@@ -122,15 +114,14 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       const newName = `${dashboard.name} - 副本`;
       const newDashboardId = await safeTauriInvoke('duplicate_dashboard', {
         dashboardId: dashboard.id,
-        newName,
-      }) as string;
+        newName}) as string;
 
-      message.success('仪表板复制成功');
+      toast({ title: "成功", description: "仪表板复制成功" });
       loadDashboards();
       onOpenDashboard(newDashboardId);
     } catch (error) {
       console.error('复制仪表板失败:', error);
-      message.error('复制仪表板失败');
+      toast({ title: "错误", description: "复制仪表板失败", variant: "destructive" });
     }
   };
 
@@ -145,8 +136,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       gap: dashboard.layout.gap,
       refreshInterval: dashboard.refreshInterval,
       timeStart: dashboard.timeRange.start,
-      timeEnd: dashboard.timeRange.end,
-    });
+      timeEnd: dashboard.timeRange.end});
     setEditModalVisible(true);
   };
 
@@ -173,7 +163,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
         extra={
           <Button
             type="primary"
-            icon={<PlusOutlined />}
+            icon={<Plus className="w-4 h-4"  />}
             onClick={() => setCreateModalVisible(true)}
           >
             创建仪表板
@@ -189,21 +179,21 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
               actions={[
                 <Button
                   type="text"
-                  icon={<EyeOutlined />}
+                  icon={<Eye className="w-4 h-4"  />}
                   onClick={() => onOpenDashboard(dashboard.id)}
                 >
                   查看
                 </Button>,
                 <Button
                   type="text"
-                  icon={<EditOutlined />}
+                  icon={<Edit className="w-4 h-4"  />}
                   onClick={() => openEditModal(dashboard)}
                 >
                   编辑
                 </Button>,
                 <Button
                   type="text"
-                  icon={<CopyOutlined />}
+                  icon={<Copy className="w-4 h-4"  />}
                   onClick={() => duplicateDashboard(dashboard)}
                 >
                   复制
@@ -214,20 +204,20 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                   okText="确定"
                   cancelText="取消"
                 >
-                  <Button type="text" danger icon={<DeleteOutlined />}>
+                  <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />}>
                     删除
                   </Button>
                 </Popconfirm>,
               ]}
             >
               <List.Item.Meta
-                avatar={<BarChartOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
+                avatar={<BarChart className="w-4 h-4" style={{ fontSize: 24, color: '#1890ff' }}  />}
                 title={
-                  <Space>
+                  <div className="flex gap-2">
                     <Text strong>{dashboard.name}</Text>
                     <Tag color="blue">{dashboard.widgets.length} 个组件</Tag>
                     <Tag color="green">{getRefreshIntervalLabel(dashboard.refreshInterval)}</Tag>
-                  </Space>
+                  </div>
                 }
                 description={
                   <div>
@@ -235,7 +225,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       <Text type="secondary">{dashboard.description}</Text>
                     )}
                     <div style={{ marginTop: 4 }}>
-                      <Space size="small">
+                      <div className="flex gap-2" size="small">
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           布局: {dashboard.layout.columns}x{dashboard.layout.rows}
                         </Text>
@@ -245,7 +235,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           更新时间: {formatTime(dashboard.updatedAt)}
                         </Text>
-                      </Space>
+                      </div>
                     </div>
                   </div>
                 }
@@ -280,7 +270,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
           </Form.Item>
 
-          <Divider>布局设置</Divider>
+          <div className="border-t border-gray-200 my-4">布局设置</Divider>
 
           <Row gutter={16}>
             <Col span={8}>
@@ -300,7 +290,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             </Col>
           </Row>
 
-          <Divider>时间和刷新设置</Divider>
+          <div className="border-t border-gray-200 my-4">时间和刷新设置</Divider>
 
           <Row gutter={16}>
             <Col span={12}>
@@ -354,7 +344,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
           </Form.Item>
 
-          <Divider>布局设置</Divider>
+          <div className="border-t border-gray-200 my-4">布局设置</Divider>
 
           <Row gutter={16}>
             <Col span={8}>
@@ -374,7 +364,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             </Col>
           </Row>
 
-          <Divider>时间和刷新设置</Divider>
+          <div className="border-t border-gray-200 my-4">时间和刷新设置</Divider>
 
           <Row gutter={16}>
             <Col span={12}>

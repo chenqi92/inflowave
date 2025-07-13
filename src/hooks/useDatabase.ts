@@ -36,8 +36,7 @@ export const useDatabase = (connectionId?: string) => {
     clearCache,
     clearDatabaseCache,
     setError,
-    clearError,
-  } = useDatabaseStore();
+    clearError} = useDatabaseStore();
 
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -393,6 +392,5 @@ export const useDatabase = (connectionId?: string) => {
     fetchSeries,
     fetchDatabaseStats,
     refreshDatabaseStructure,
-    clearLocalError,
-  };
+    clearLocalError};
 };

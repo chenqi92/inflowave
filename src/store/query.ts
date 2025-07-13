@@ -110,13 +110,11 @@ export const useQueryStore = create<QueryState>()(
           database,
           isRunning: false,
           lastModified: new Date(),
-          saved: query === '',
-        };
+          saved: query === ''};
 
         set(state => ({
           tabs: [...state.tabs, newTab],
-          activeTabId: id,
-        }));
+          activeTabId: id}));
 
         return id;
       },
@@ -138,8 +136,7 @@ export const useQueryStore = create<QueryState>()(
 
           return {
             tabs: newTabs,
-            activeTabId: newActiveTabId,
-          };
+            activeTabId: newActiveTabId};
         });
       },
 
@@ -153,8 +150,7 @@ export const useQueryStore = create<QueryState>()(
             tab.id === tabId
               ? { ...tab, query, saved: false, lastModified: new Date() }
               : tab
-          ),
-        }));
+          )}));
       },
 
       updateTabResult: (tabId, result) => {
@@ -163,16 +159,14 @@ export const useQueryStore = create<QueryState>()(
             tab.id === tabId
               ? { ...tab, result, isRunning: false }
               : tab
-          ),
-        }));
+          )}));
       },
 
       markTabSaved: (tabId, saved) => {
         set(state => ({
           tabs: state.tabs.map(tab =>
             tab.id === tabId ? { ...tab, saved } : tab
-          ),
-        }));
+          )}));
       },
 
       // 查询执行
@@ -188,8 +182,7 @@ export const useQueryStore = create<QueryState>()(
             database: request.database || '',
             duration: result.executionTime || 0,
             rowCount: result.rowCount,
-            success: true,
-          });
+            success: true});
 
           // 更新当前选项卡结果
           if (get().activeTabId) {
@@ -198,8 +191,7 @@ export const useQueryStore = create<QueryState>()(
 
           set({ 
             queryResult: result,
-            isExecuting: false,
-          });
+            isExecuting: false});
 
           return result;
         } catch (error) {
@@ -211,13 +203,11 @@ export const useQueryStore = create<QueryState>()(
             database: request.database || '',
             duration: 0,
             success: false,
-            error: errorMessage,
-          });
+            error: errorMessage});
 
           set({ 
             queryError: errorMessage,
-            isExecuting: false,
-          });
+            isExecuting: false});
 
           throw error;
         }
@@ -268,8 +258,7 @@ export const useQueryStore = create<QueryState>()(
         const historyItem: QueryHistoryItem = {
           ...item,
           id,
-          timestamp: new Date(),
-        };
+          timestamp: new Date()};
 
         set(state => {
           const newHistory = [historyItem, ...state.history];
@@ -289,8 +278,7 @@ export const useQueryStore = create<QueryState>()(
 
       removeFromHistory: (id) => {
         set(state => ({
-          history: state.history.filter(item => item.id !== id),
-        }));
+          history: state.history.filter(item => item.id !== id)}));
       },
 
       getHistoryItem: (id) => {
@@ -321,8 +309,7 @@ export const useQueryStore = create<QueryState>()(
 
       clearQueryError: () => {
         set({ queryError: null });
-      },
-    }),
+      }}),
     {
       name: 'query-store',
       partialize: (state) => ({
@@ -336,8 +323,6 @@ export const useQueryStore = create<QueryState>()(
           result: undefined, // 不持久化查询结果
           isRunning: false, // 重置运行状态
         })),
-        activeTabId: state.activeTabId,
-      }),
-    }
+        activeTabId: state.activeTabId})}
   )
 );

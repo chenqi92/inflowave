@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Empty } from 'antd';
+import { Empty } from '@/components/ui';
 import * as echarts from 'echarts';
 
 interface ChartData {
@@ -40,23 +40,19 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       const pieData = data.valueColumns.slice(0, 1).map(col => {
         return data.data.map((item: any, index: number) => ({
           name: item[data.timeColumn || 'index'] || `Item ${index}`,
-          value: Number(item[col]) || 0,
-        }));
+          value: Number(item[col]) || 0}));
       })[0] || [];
 
       option = {
         title: {
           text: '数据分布',
-          left: 'center',
-        },
+          left: 'center'},
         tooltip: {
           trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)',
-        },
+          formatter: '{a} <br/>{b}: {c} ({d}%)'},
         legend: {
           orient: 'vertical',
-          left: 'left',
-        },
+          left: 'left'},
         series: [
           {
             name: data.valueColumns[0] || 'Value',
@@ -67,12 +63,8 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)',
-              },
-            },
-          },
-        ],
-      };
+                shadowColor: 'rgba(0, 0, 0, 0.5)'}}},
+        ]};
     } else {
       // 时序图表配置
       const xAxisData = data.data.map(item => {
@@ -92,42 +84,32 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
         type: type === 'area' ? 'line' : type,
         data: data.data.map(item => Number(item[col]) || 0),
         smooth: type === 'line' || type === 'area',
-        areaStyle: type === 'area' ? {} : undefined,
-      }));
+        areaStyle: type === 'area' ? {} : undefined}));
 
       option = {
         title: {
           text: '时序数据图表',
-          left: 'center',
-        },
+          left: 'center'},
         tooltip: {
           trigger: 'axis',
           axisPointer: {
             type: 'cross',
             label: {
-              backgroundColor: '#6a7985',
-            },
-          },
-        },
+              backgroundColor: '#6a7985'}}},
         legend: {
           data: data.valueColumns,
-          top: 30,
-        },
+          top: 30},
         toolbox: {
           feature: {
             saveAsImage: {},
             dataZoom: {
-              yAxisIndex: 'none',
-            },
-            restore: {},
-          },
-        },
+              yAxisIndex: 'none'},
+            restore: {}}},
         grid: {
           left: '3%',
           right: '4%',
           bottom: '3%',
-          containLabel: true,
-        },
+          containLabel: true},
         xAxis: [
           {
             type: 'category',
@@ -135,21 +117,17 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
             data: xAxisData,
             axisLabel: {
               rotate: 45,
-              interval: Math.max(1, Math.floor(xAxisData.length / 10)),
-            },
-          },
+              interval: Math.max(1, Math.floor(xAxisData.length / 10))}},
         ],
         yAxis: [
           {
-            type: 'value',
-          },
+            type: 'value'},
         ],
         dataZoom: [
           {
             type: 'inside',
             start: 0,
-            end: 100,
-          },
+            end: 100},
           {
             start: 0,
             end: 100,
@@ -160,12 +138,9 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
               shadowBlur: 3,
               shadowColor: 'rgba(0, 0, 0, 0.6)',
               shadowOffsetX: 2,
-              shadowOffsetY: 2,
-            },
-          },
+              shadowOffsetY: 2}},
         ],
-        series,
-      };
+        series};
     }
 
     // 设置图表配置
@@ -207,8 +182,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       style={{
         width: '100%',
         height,
-        minHeight: 300,
-      }}
+        minHeight: 300}}
     />
   );
 };

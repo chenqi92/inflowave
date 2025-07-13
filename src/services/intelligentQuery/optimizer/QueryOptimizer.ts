@@ -240,8 +240,7 @@ export class QueryOptimizer {
         description: `Scan table ${table}`,
         estimatedCost: this.estimateTableScanCost(table, analysis),
         dependencies: [],
-        canParallelize: true,
-      });
+        canParallelize: true});
     }
 
     // 2. 条件过滤步骤
@@ -252,8 +251,7 @@ export class QueryOptimizer {
         description: `Apply WHERE conditions`,
         estimatedCost: this.estimateFilterCost(pattern.conditions, analysis),
         dependencies: steps.slice(-pattern.tables.length).map(s => s.id),
-        canParallelize: true,
-      });
+        canParallelize: true});
     }
 
     // 3. 连接步骤
@@ -264,8 +262,7 @@ export class QueryOptimizer {
         description: `${join.type} JOIN ${join.leftTable} with ${join.rightTable}`,
         estimatedCost: this.estimateJoinCost(join, analysis),
         dependencies: this.findJoinDependencies(join, steps),
-        canParallelize: join.type === 'INNER',
-      });
+        canParallelize: join.type === 'INNER'});
     }
 
     // 4. 聚合步骤
@@ -276,8 +273,7 @@ export class QueryOptimizer {
         description: `Apply aggregation functions`,
         estimatedCost: this.estimateAggregationCost(pattern.aggregations, analysis),
         dependencies: steps.slice(-1).map(s => s.id),
-        canParallelize: this.canParallelizeAggregation(pattern.aggregations),
-      });
+        canParallelize: this.canParallelizeAggregation(pattern.aggregations)});
     }
 
     // 5. 排序步骤
@@ -288,8 +284,7 @@ export class QueryOptimizer {
         description: `Sort by ${pattern.orderBy.map(o => `${o.column} ${o.direction}`).join(', ')}`,
         estimatedCost: this.estimateSortCost(pattern.orderBy, analysis),
         dependencies: steps.slice(-1).map(s => s.id),
-        canParallelize: false,
-      });
+        canParallelize: false});
     }
 
     // 6. 限制步骤
@@ -300,8 +295,7 @@ export class QueryOptimizer {
         description: `Limit to ${pattern.limit} rows`,
         estimatedCost: 10, // 限制操作成本很低
         dependencies: steps.slice(-1).map(s => s.id),
-        canParallelize: false,
-      });
+        canParallelize: false});
     }
 
     return steps;
@@ -340,8 +334,7 @@ export class QueryOptimizer {
     return {
       maxDegreeOfParallelism,
       parallelSteps: parallelGroups,
-      bottlenecks,
-    };
+      bottlenecks};
   }
 
   /**
@@ -389,8 +382,7 @@ export class QueryOptimizer {
       maxMemory,
       cpuIntensive: hasJoins || hasAggregations || totalCost > 5000,
       ioIntensive: steps.some(step => step.operation === 'TABLE_SCAN'),
-      networkIntensive: steps.some(step => step.operation === 'JOIN'),
-    };
+      networkIntensive: steps.some(step => step.operation === 'JOIN')};
   }
 
   /**
@@ -423,8 +415,7 @@ export class QueryOptimizer {
         title: `Create index on ${column}`,
         description: `Creating an index on ${column} will improve WHERE clause performance`,
         implementation: `CREATE INDEX idx_${column} ON ${pattern.tables[0]} (${column})`,
-        estimatedBenefit: 60,
-      });
+        estimatedBenefit: 60});
     }
 
     // 推荐复合索引
@@ -435,8 +426,7 @@ export class QueryOptimizer {
         title: `Create composite index on (${whereColumns.join(', ')})`,
         description: `A composite index can optimize multiple WHERE conditions`,
         implementation: `CREATE INDEX idx_composite ON ${pattern.tables[0]} (${whereColumns.join(', ')})`,
-        estimatedBenefit: 75,
-      });
+        estimatedBenefit: 75});
     }
 
     // 推荐排序索引
@@ -447,8 +437,7 @@ export class QueryOptimizer {
         title: `Create index for ORDER BY`,
         description: `Index on ORDER BY columns will eliminate sorting`,
         implementation: `CREATE INDEX idx_order ON ${pattern.tables[0]} (${orderByColumns.join(', ')})`,
-        estimatedBenefit: 50,
-      });
+        estimatedBenefit: 50});
     }
 
     return recommendations;
@@ -471,8 +460,7 @@ export class QueryOptimizer {
         title: 'Convert EXISTS to JOIN',
         description: 'Converting EXISTS subqueries to JOINs can improve performance',
         implementation: 'Rewrite EXISTS subquery as INNER JOIN',
-        estimatedBenefit: 40,
-      });
+        estimatedBenefit: 40});
     }
 
     // 检查是否可以优化DISTINCT
@@ -483,8 +471,7 @@ export class QueryOptimizer {
         title: 'Optimize DISTINCT usage',
         description: 'Consider using GROUP BY instead of DISTINCT when possible',
         implementation: 'Replace DISTINCT with GROUP BY',
-        estimatedBenefit: 25,
-      });
+        estimatedBenefit: 25});
     }
 
     // 检查是否可以优化ORDER BY
@@ -495,8 +482,7 @@ export class QueryOptimizer {
         title: 'Optimize ORDER BY with LIMIT',
         description: 'Consider using TOP-N optimization for ORDER BY with LIMIT',
         implementation: 'Use heap-based sorting for limited results',
-        estimatedBenefit: 35,
-      });
+        estimatedBenefit: 35});
     }
 
     return recommendations;
@@ -520,8 +506,7 @@ export class QueryOptimizer {
         title: 'Increase memory allocation',
         description: 'Query requires more memory than currently allocated',
         implementation: 'Increase max_memory setting to at least 2GB',
-        estimatedBenefit: 30,
-      });
+        estimatedBenefit: 30});
     }
 
     // 检查是否可以启用并行处理
@@ -532,8 +517,7 @@ export class QueryOptimizer {
         title: 'Enable parallel processing',
         description: 'Complex queries can benefit from parallel execution',
         implementation: 'Set max_parallel_workers to match CPU cores',
-        estimatedBenefit: 45,
-      });
+        estimatedBenefit: 45});
     }
 
     return recommendations;
@@ -549,29 +533,25 @@ export class QueryOptimizer {
         description: 'Push WHERE conditions down to reduce data scanning',
         condition: (analysis) => analysis.patterns[0]?.conditions.length > 0,
         apply: (query) => this.applyPredicatePushdown(query),
-        estimatedGain: 30,
-      },
+        estimatedGain: 30},
       {
         name: 'join_reordering',
         description: 'Reorder JOINs to minimize intermediate results',
         condition: (analysis) => analysis.patterns[0]?.joins.length > 1,
         apply: (query) => this.applyJoinReordering(query),
-        estimatedGain: 25,
-      },
+        estimatedGain: 25},
       {
         name: 'aggregation_optimization',
         description: 'Optimize GROUP BY and aggregation functions',
         condition: (analysis) => analysis.patterns[0]?.aggregations.length > 0,
         apply: (query) => this.applyAggregationOptimization(query),
-        estimatedGain: 20,
-      },
+        estimatedGain: 20},
       {
         name: 'limit_pushdown',
         description: 'Push LIMIT clause to reduce data processing',
         condition: (analysis) => analysis.patterns[0]?.limit !== undefined,
         apply: (query) => this.applyLimitPushdown(query),
-        estimatedGain: 15,
-      },
+        estimatedGain: 15},
     ];
   }
 
@@ -597,8 +577,7 @@ export class QueryOptimizer {
             description: rule.description,
             impact: rule.estimatedGain > 25 ? 'high' : rule.estimatedGain > 15 ? 'medium' : 'low',
             appliedTo: result.appliedTo || [],
-            estimatedGain: rule.estimatedGain,
-          });
+            estimatedGain: rule.estimatedGain});
           totalImprovement += rule.estimatedGain;
         }
       }
@@ -654,8 +633,7 @@ export class QueryOptimizer {
           description: 'Optimize time range queries for better performance',
           impact: 'high',
           appliedTo: ['WHERE clause'],
-          estimatedGain: 40,
-        });
+          estimatedGain: 40});
         totalImprovement += 40;
       }
     }
@@ -670,8 +648,7 @@ export class QueryOptimizer {
           description: 'Optimize time-based aggregations',
           impact: 'medium',
           appliedTo: ['GROUP BY clause'],
-          estimatedGain: 25,
-        });
+          estimatedGain: 25});
         totalImprovement += 25;
       }
     }

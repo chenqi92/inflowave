@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Divider } from 'antd';
+import { Layout, Typography } from '@/components/ui';
 import { Space } from '@/components/ui';
-import { DatabaseOutlined, WifiOutlined, ClockCircleOutlined, HddOutlined } from '@/components/ui';
+
+import { HddOutlined } from '@/components/ui';
+import { Database, Wifi, Clock } from 'lucide-react';
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';
 
@@ -36,60 +38,59 @@ const AppFooter: React.FC = () => {
     <Footer className="app-footer">
       <div className="flex items-center justify-between">
         {/* 左侧 - 应用信息 */}
-        <Space split={<Divider type="vertical" />}>
+        <div className="flex gap-2" split={<div className="border-t border-gray-200 my-4" type="vertical" />}>
           <Text className="text-xs">
             InfluxDB GUI Manager v0.1.0
           </Text>
           
-          <Space>
+          <div className="flex gap-2">
             <HddOutlined />
             <Text className="text-xs">
               内存: {getMemoryUsage()}MB
             </Text>
-          </Space>
-        </Space>
+          </div>
+        </div>
 
         {/* 中间 - 连接状态 */}
-        <Space split={<Divider type="vertical" />}>
+        <div className="flex gap-2" split={<div className="border-t border-gray-200 my-4" type="vertical" />}>
           {activeConnectionId && currentStatus ? (
             <>
-              <Space>
-                <WifiOutlined 
-                  style={{ 
+              <div className="flex gap-2">
+                <Wifi className="w-4 h-4" style={{ 
                     color: currentStatus.status === 'connected' ? '#52c41a' : '#ff4d4f' 
                   }} 
-                />
+                 />
                 <Text className="text-xs">
                   {currentStatus.status === 'connected' ? '已连接' : '未连接'}
                 </Text>
-              </Space>
+              </div>
               
               {currentStatus.latency && (
-                <Space>
-                  <DatabaseOutlined />
+                <div className="flex gap-2">
+                  <Database className="w-4 h-4"  />
                   <Text className="text-xs">
                     延迟: {currentStatus.latency}ms
                   </Text>
-                </Space>
+                </div>
               )}
             </>
           ) : (
-            <Space>
-              <WifiOutlined style={{ color: '#d9d9d9' }} />
+            <div className="flex gap-2">
+              <Wifi className="w-4 h-4" style={{ color: '#d9d9d9' }}  />
               <Text className="text-xs" type="secondary">
                 无活跃连接
               </Text>
-            </Space>
+            </div>
           )}
-        </Space>
+        </div>
 
         {/* 右侧 - 时间 */}
-        <Space>
-          <ClockCircleOutlined />
+        <div className="flex gap-2">
+          <Clock className="w-4 h-4"  />
           <Text className="text-xs">
             {currentTime.format('YYYY-MM-DD HH:mm:ss')}
           </Text>
-        </Space>
+        </div>
       </div>
     </Footer>
   );

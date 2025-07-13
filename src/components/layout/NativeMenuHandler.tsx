@@ -15,8 +15,7 @@ interface NativeMenuHandlerProps {
 const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   onToggleSidebar,
   onToggleStatusbar,
-  onGlobalSearch,
-}) => {
+  onGlobalSearch}) => {
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
   const [shortcutsVisible, setShortcutsVisible] = useState(false);

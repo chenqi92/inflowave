@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Badge, Progress, List, Tooltip } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
-import { PlayCircleOutlined, PauseCircleOutlined, ReloadOutlined, SettingOutlined, LineChartOutlined, ExclamationCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, BellOutlined, WarningOutlined } from '@/components/ui';
+import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress } from '@/components/ui';
+// TODO: Replace these Ant Design components: Badge, List, Tooltip
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { RefreshCw, Settings, TrendingUp, Bell, PlayCircle, PauseCircle, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import AdvancedChart from '../visualization/AdvancedChart';
@@ -38,8 +39,7 @@ interface RealTimeMonitorProps {
 
 const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   connectionId,
-  database,
-}) => {
+  database}) => {
   const { connections, activeConnectionId } = useConnectionStore();
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(5); // 秒
@@ -65,14 +65,13 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: selectedConnection,
-      });
+        connectionId: selectedConnection});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -88,9 +87,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           request: {
             connectionId: selectedConnection,
             database: selectedDatabase,
-            query,
-          },
-        });
+            query}});
         results[query] = result;
       } catch (error) {
         console.error(`查询执行失败: ${query}`, error);
@@ -142,8 +139,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           value,
           threshold: rule.threshold,
           timestamp: new Date(),
-          acknowledged: false,
-        };
+          acknowledged: false};
         newAlerts.push(alertEvent);
       }
     });
@@ -155,8 +151,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         safeTauriInvoke('send_notification', {
           title: `告警: ${alert.ruleName}`,
           message: alert.message,
-          severity: alert.severity,
-        }).catch(console.error);
+          severity: alert.severity}).catch(console.error);
       });
     }
   };
@@ -186,22 +181,21 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         condition: values.condition,
         threshold: values.threshold,
         enabled: values.enabled ?? true,
-        severity: values.severity,
-      };
+        severity: values.severity};
 
       if (editingAlert) {
         setAlertRules(prev => prev.map(r => r.id === rule.id ? rule : r));
-        message.success('告警规则已更新');
+        toast({ title: "成功", description: "告警规则已更新" });
       } else {
         setAlertRules(prev => [...prev, rule]);
-        message.success('告警规则已创建');
+        toast({ title: "成功", description: "告警规则已创建" });
       }
 
       setShowAlertModal(false);
       setEditingAlert(null);
       form.resetFields();
     } catch (error) {
-      message.error(`保存告警规则失败: ${error}`);
+      toast({ title: "错误", description: "保存告警规则失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -248,11 +242,11 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   // 获取严重程度图标
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'critical': return <CloseCircleOutlined />;
-      case 'error': return <ExclamationCircleOutlined />;
-      case 'warning': return <WarningOutlined />;
-      case 'info': return <CheckCircleOutlined />;
-      default: return <CheckCircleOutlined />;
+      case 'critical': return <XCircle />;
+      case 'error': return <AlertCircle />;
+      case 'warning': return <AlertTriangle />;
+      case 'info': return <CheckCircle />;
+      default: return <CheckCircle />;
     }
   };
 
@@ -287,9 +281,9 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       <Card style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Space>
+            <div className="flex gap-2">
               <Title level={4} style={{ margin: 0 }}>
-                <LineChartOutlined /> 实时监控
+                <TrendingUp className="w-4 h-4"  /> 实时监控
               </Title>
               <Select
                 placeholder="选择连接"
@@ -315,10 +309,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                   </Select.Option>
                 ))}
               </Select>
-            </Space>
+            </div>
           </Col>
           <Col>
-            <Space>
+            <div className="flex gap-2">
               <Text>刷新间隔:</Text>
               <InputNumber
                 min={1}
@@ -330,14 +324,14 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               />
               <Button
                 type={isMonitoring ? 'danger' : 'primary'}
-                icon={isMonitoring ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                icon={isMonitoring ? <PauseCircle /> : <PlayCircle />}
                 onClick={toggleMonitoring}
                 disabled={!selectedConnection || !selectedDatabase}
               >
                 {isMonitoring ? '停止监控' : '开始监控'}
               </Button>
               <Button
-                icon={<SettingOutlined />}
+                icon={<Settings className="w-4 h-4"  />}
                 onClick={() => {
                   setEditingAlert(null);
                   form.resetFields();
@@ -346,7 +340,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               >
                 告警设置
               </Button>
-            </Space>
+            </div>
           </Col>
         </Row>
       </Card>
@@ -356,12 +350,12 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         <Alert
           message={`当前有 ${alertStats.total} 个未确认告警`}
           description={
-            <Space>
+            <div className="flex gap-2">
               {alertStats.critical > 0 && <Tag color="red">严重: {alertStats.critical}</Tag>}
               {alertStats.error > 0 && <Tag color="volcano">错误: {alertStats.error}</Tag>}
               {alertStats.warning > 0 && <Tag color="orange">警告: {alertStats.warning}</Tag>}
               {alertStats.info > 0 && <Tag color="blue">信息: {alertStats.info}</Tag>}
-            </Space>
+            </div>
           }
           type="warning"
           showIcon
@@ -413,8 +407,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                        query.includes('memory') ? '内存使用率趋势' : 
                        query.includes('errors') ? '错误数量趋势' : '实时数据',
                 showDataZoom: false,
-                animation: false,
-              }}
+                animation: false}}
             />
           </Col>
         ))}
@@ -422,11 +415,11 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
 
       {/* 告警事件列表 */}
       <Card title={
-        <Space>
-          <BellOutlined />
+        <div className="flex gap-2">
+          <Bell className="w-4 h-4"  />
           <span>告警事件</span>
           <Badge count={alertStats.total} />
-        </Space>
+        </div>
       }>
         <List
           dataSource={alertEvents.slice(0, 20)}
@@ -451,13 +444,13 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                   </div>
                 }
                 title={
-                  <Space>
+                  <div className="flex gap-2">
                     <span>{alert.ruleName}</span>
                     <Tag color={getSeverityColor(alert.severity)}>
                       {alert.severity.toUpperCase()}
                     </Tag>
                     {alert.acknowledged && <Tag color="green">已确认</Tag>}
-                  </Space>
+                  </div>
                 }
                 description={
                   <div>

@@ -1,8 +1,10 @@
 import React from 'react';
-import { Button, Dropdown } from 'antd';
-import { message, Modal } from '@/components/ui';
+import { Button, Dropdown } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
 import type { MenuProps } from '@/components/ui';
-import { TableOutlined, EyeOutlined, EditOutlined, DeleteOutlined, CopyOutlined, ReloadOutlined, InfoCircleOutlined, BarChartOutlined, ExportOutlined, ImportOutlined, FileTextOutlined } from '@/components/ui';
+import { Table, Eye, Edit, Trash2, Copy, RefreshCw, Info, BarChart, FileDown, FileUp, FileText } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -17,14 +19,13 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
   children,
   tableName,
   databaseName,
-  onAction,
-}) => {
+  onAction}) => {
   const { activeConnectionId } = useConnectionStore();
 
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     if (!activeConnectionId) {
-      message.error('请先建立数据库连接');
+      toast({ title: "错误", description: "请先建立数据库连接", variant: "destructive" });
       return;
     }
 
@@ -37,9 +38,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             database: databaseName,
             table: tableName,
             queryType: 'SELECT',
-            limit: 1000,
-          });
-          message.success(`正在查看表 ${tableName} 的数据`);
+            limit: 1000});
+          toast({ title: "成功", description: "正在查看表 ${tableName} 的数据" });
           break;
 
         case 'view_structure':
@@ -48,8 +48,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             const structure = await safeTauriInvoke('get_table_structure', {
               connectionId: activeConnectionId,
               database: databaseName,
-              table: tableName,
-            });
+              table: tableName});
 
             // 显示结构信息
             Modal.info({
@@ -67,11 +66,10 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               ),
               onOk: () => {
                 // 确保能正常关闭
-              },
-            });
-            message.success(`已获取表 ${tableName} 的结构信息`);
+              }});
+            toast({ title: "成功", description: "已获取表 ${tableName} 的结构信息" });
           } catch (error) {
-            message.error(`获取表结构失败: ${error}`);
+            toast({ title: "错误", description: "获取表结构失败: ${error}", variant: "destructive" });
           }
           break;
 
@@ -81,8 +79,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             const template = await safeTauriInvoke('generate_insert_template', {
               connectionId: activeConnectionId,
               database: databaseName,
-              table: tableName,
-            });
+              table: tableName});
 
             // 显示插入模板
             Modal.info({
@@ -100,11 +97,10 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               ),
               onOk: () => {
                 // 确保能正常关闭
-              },
-            });
-            message.success(`已生成表 ${tableName} 的插入模板`);
+              }});
+            toast({ title: "成功", description: "已生成表 ${tableName} 的插入模板" });
           } catch (error) {
-            message.error(`生成插入模板失败: ${error}`);
+            toast({ title: "错误", description: "生成插入模板失败: ${error}", variant: "destructive" });
           }
           break;
 
@@ -113,9 +109,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('generate_update_template', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`已生成表 ${tableName} 的更新模板`);
+            table: tableName});
+          toast({ title: "成功", description: "已生成表 ${tableName} 的更新模板" });
           break;
 
         case 'delete_data':
@@ -123,22 +118,21 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('generate_delete_template', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`已生成表 ${tableName} 的删除模板`);
+            table: tableName});
+          toast({ title: "成功", description: "已生成表 ${tableName} 的删除模板" });
           break;
 
         case 'copy_name':
           // 复制表名
           await navigator.clipboard.writeText(tableName);
-          message.success(`已复制表名: ${tableName}`);
+          toast({ title: "成功", description: "已复制表名: ${tableName}" });
           break;
 
         case 'copy_select': {
           // 复制 SELECT 语句
           const selectQuery = `SELECT * FROM "${tableName}" LIMIT 100;`;
           await navigator.clipboard.writeText(selectQuery);
-          message.success('已复制 SELECT 语句到剪贴板');
+          toast({ title: "成功", description: "已复制 SELECT 语句到剪贴板" });
           break;
         }
 
@@ -168,11 +162,10 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             table: tableName,
                             format: 'csv',
                             limit: 10000,
-                            filePath,
-                          });
-                          message.success(result);
+                            filePath});
+                          toast.success(result);
                         } catch (error) {
-                          message.error(`导出CSV失败: ${error}`);
+                          toast({ title: "错误", description: "导出CSV失败: ${error}", variant: "destructive" });
                         }
                       }}
                       className="mr-2"
@@ -190,11 +183,10 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             table: tableName,
                             format: 'json',
                             limit: 10000,
-                            filePath,
-                          });
-                          message.success(result);
+                            filePath});
+                          toast.success(result);
                         } catch (error) {
-                          message.error(`导出JSON失败: ${error}`);
+                          toast({ title: "错误", description: "导出JSON失败: ${error}", variant: "destructive" });
                         }
                       }}
                     >
@@ -208,10 +200,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               },
               onCancel() {
                 // 明确处理取消操作
-              },
-            });
+              }});
           } catch (error) {
-            message.error(`导出数据失败: ${error}`);
+            toast({ title: "错误", description: "导出数据失败: ${error}", variant: "destructive" });
           }
           break;
 
@@ -220,9 +211,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('import_table_data', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`正在导入数据到表 ${tableName}`);
+            table: tableName});
+          toast({ title: "成功", description: "正在导入数据到表 ${tableName}" });
           break;
 
         case 'refresh_table':
@@ -230,9 +220,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('refresh_table_info', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`已刷新表 ${tableName} 的信息`);
+            table: tableName});
+          toast({ title: "成功", description: "已刷新表 ${tableName} 的信息" });
           break;
 
         case 'table_info':
@@ -240,9 +229,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('get_table_info', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`正在获取表 ${tableName} 的详细信息`);
+            table: tableName});
+          toast({ title: "成功", description: "正在获取表 ${tableName} 的详细信息" });
           break;
 
         case 'visualize_data':
@@ -250,9 +238,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('create_table_visualization', {
             connectionId: activeConnectionId,
             database: databaseName,
-            table: tableName,
-          });
-          message.success(`正在为表 ${tableName} 创建数据可视化`);
+            table: tableName});
+          toast({ title: "成功", description: "正在为表 ${tableName} 创建数据可视化" });
           break;
 
         case 'drop_table': {
@@ -262,9 +249,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             await safeTauriInvoke('drop_table', {
               connectionId: activeConnectionId,
               database: databaseName,
-              table: tableName,
-            });
-            message.success(`表 ${tableName} 已删除`);
+              table: tableName});
+            toast({ title: "成功", description: "表 ${tableName} 已删除" });
           }
           break;
         }
@@ -280,7 +266,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      message.error(`操作失败: ${error}`);
+      toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -289,127 +275,103 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     {
       key: 'query_group',
       label: '查询操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'view_data',
-      icon: <EyeOutlined />,
+      icon: <Eye className="w-4 h-4"  />,
       label: '查看数据',
-      onClick: () => handleMenuClick('view_data'),
-    },
+      onClick: () => handleMenuClick('view_data')},
     {
       key: 'view_structure',
-      icon: <TableOutlined />,
+      icon: <Table className="w-4 h-4"  />,
       label: '查看结构',
-      onClick: () => handleMenuClick('view_structure'),
-    },
+      onClick: () => handleMenuClick('view_structure')},
     {
       key: 'table_info',
-      icon: <InfoCircleOutlined />,
+      icon: <Info className="w-4 h-4"  />,
       label: '表信息',
-      onClick: () => handleMenuClick('table_info'),
-    },
+      onClick: () => handleMenuClick('table_info')},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'data_group',
       label: '数据操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'insert_data',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       label: '插入数据',
-      onClick: () => handleMenuClick('insert_data'),
-    },
+      onClick: () => handleMenuClick('insert_data')},
     {
       key: 'update_data',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       label: '更新数据',
-      onClick: () => handleMenuClick('update_data'),
-    },
+      onClick: () => handleMenuClick('update_data')},
     {
       key: 'delete_data',
-      icon: <DeleteOutlined />,
+      icon: <Trash2 className="w-4 h-4"  />,
       label: '删除数据',
-      onClick: () => handleMenuClick('delete_data'),
-    },
+      onClick: () => handleMenuClick('delete_data')},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'copy_group',
       label: '复制操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'copy_name',
-      icon: <CopyOutlined />,
+      icon: <Copy className="w-4 h-4"  />,
       label: '复制表名',
-      onClick: () => handleMenuClick('copy_name'),
-    },
+      onClick: () => handleMenuClick('copy_name')},
     {
       key: 'copy_select',
-      icon: <FileTextOutlined />,
+      icon: <FileText className="w-4 h-4"  />,
       label: '复制 SELECT 语句',
-      onClick: () => handleMenuClick('copy_select'),
-    },
+      onClick: () => handleMenuClick('copy_select')},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'import_export_group',
       label: '导入导出',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'export_data',
-      icon: <ExportOutlined />,
+      icon: <FileDown className="w-4 h-4"  />,
       label: '导出数据',
-      onClick: () => handleMenuClick('export_data'),
-    },
+      onClick: () => handleMenuClick('export_data')},
     {
       key: 'import_data',
-      icon: <ImportOutlined />,
+      icon: <FileUp className="w-4 h-4"  />,
       label: '导入数据',
-      onClick: () => handleMenuClick('import_data'),
-    },
+      onClick: () => handleMenuClick('import_data')},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'other_group',
       label: '其他操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'visualize_data',
-      icon: <BarChartOutlined />,
+      icon: <BarChart className="w-4 h-4"  />,
       label: '数据可视化',
-      onClick: () => handleMenuClick('visualize_data'),
-    },
+      onClick: () => handleMenuClick('visualize_data')},
     {
       key: 'refresh_table',
-      icon: <ReloadOutlined />,
+      icon: <RefreshCw className="w-4 h-4"  />,
       label: '刷新表',
-      onClick: () => handleMenuClick('refresh_table'),
-    },
+      onClick: () => handleMenuClick('refresh_table')},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'danger_group',
       label: '危险操作',
-      type: 'group',
-    },
+      type: 'group'},
     {
       key: 'drop_table',
-      icon: <DeleteOutlined />,
+      icon: <Trash2 className="w-4 h-4"  />,
       label: '删除表',
       onClick: () => handleMenuClick('drop_table'),
-      danger: true,
-    },
+      danger: true},
   ];
 
   return (

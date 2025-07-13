@@ -1,28 +1,39 @@
 import React, { useState } from 'react';
-import { Button, Space, Divider, Dropdown, Badge, Tooltip } from 'antd';
-import type { MenuProps } from 'antd';
+import { Button, Separator, Badge } from '@/components/ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  FolderOpen
+} from 'lucide-react';
 import { 
-  DatabaseOutlined, 
-  PlayCircleOutlined, 
-  StopOutlined, 
-  SaveOutlined, 
-  FolderOpenOutlined,
-  HistoryOutlined,
-  SettingOutlined,
-  ReloadOutlined,
-  ExportOutlined,
-  ImportOutlined,
-  BugOutlined,
-  QuestionCircleOutlined,
-  LinkOutlined,
-  DisconnectOutlined,
-  BarChartOutlined,
-  EditOutlined,
-  ThunderboltOutlined,
-  ApiOutlined,
-  HomeOutlined,
-  ToolOutlined
-} from '@ant-design/icons';
+  Database, 
+  PlayCircle, 
+  Square, 
+  Save, 
+  History,
+  Settings,
+  RefreshCw,
+  FileUp,
+  FileDown,
+  Bug,
+  HelpCircle,
+  Link,
+  Unlink,
+  BarChart,
+  Edit,
+  Zap,
+  Wrench
+} from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
@@ -66,7 +77,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     }
   };
 
-  const connectionMenuItems: MenuProps['items'] = [
+  const connectionMenuItems = [
     ...connections.map(conn => ({
       key: conn.id,
       label: (
@@ -81,8 +92,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             {conn.host}:{conn.port}
           </span>
         </div>
-      ),
-    })),
+      )})),
   ];
 
   const handleFileMenuClick = ({ key }: { key: string }) => {
@@ -116,38 +126,32 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     }
   };
 
-  const fileMenuItems: MenuProps['items'] = [
+  const fileMenuItems = [
     {
       key: 'new-query',
       label: '新建查询',
-      icon: <FolderOpenOutlined />,
-    },
+      icon: <FolderOpen className="w-4 h-4" />},
     {
       key: 'open',
       label: '打开文件',
-      icon: <FolderOpenOutlined />,
-    },
+      icon: <FolderOpen className="w-4 h-4" />},
     {
       key: 'save',
       label: '保存',
-      icon: <SaveOutlined />,
-    },
+      icon: <Save className="w-4 h-4" />},
     {
       key: 'save-as',
       label: '另存为',
-      icon: <SaveOutlined />,
-    },
+      icon: <Save className="w-4 h-4" />},
     { type: 'divider' },
     {
       key: 'import',
       label: '导入数据',
-      icon: <ImportOutlined />,
-    },
+      icon: <FileUp className="w-4 h-4" />},
     {
       key: 'export',
       label: '导出数据',
-      icon: <ExportOutlined />,
-    },
+      icon: <FileDown className="w-4 h-4" />},
   ];
 
   const handleToolsMenuClick = ({ key }: { key: string }) => {
@@ -173,200 +177,269 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     }
   };
 
-  const toolsMenuItems: MenuProps['items'] = [
+  const toolsMenuItems = [
     {
       key: 'query-history',
       label: '查询历史',
-      icon: <HistoryOutlined />,
-    },
+      icon: <History className="w-4 h-4" />},
     {
       key: 'console',
       label: '控制台',
-      icon: <BugOutlined />,
-    },
+      icon: <Bug className="w-4 h-4" />},
     {
       key: 'dev-tools',
       label: '开发者工具',
-      icon: <ToolOutlined />,
-    },
+      icon: <Wrench className="w-4 h-4" />},
     { type: 'divider' },
     {
       key: 'preferences',
       label: '首选项',
-      icon: <SettingOutlined />,
-    },
+      icon: <Settings className="w-4 h-4" />},
   ];
 
   return (
-    <div className="datagrip-toolbar flex items-center justify-between w-full">
-      {/* 左侧：主要操作按钮 */}
-      <Space size="small">
-        {/* 连接管理 */}
-        <Dropdown 
-          menu={{ items: connectionMenuItems, onClick: handleConnectionMenuClick }} 
-          placement="bottomLeft"
-          trigger={['click']}
-        >
-          <Button 
-            type={activeConnection ? 'primary' : 'default'}
-            icon={activeConnection ? <LinkOutlined /> : <DisconnectOutlined />}
+    <TooltipProvider>
+      <div className="datagrip-toolbar flex items-center justify-between w-full">
+        {/* 左侧：主要操作按钮 */}
+        <div className="flex gap-2">
+          {/* 连接管理 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={activeConnection ? 'default' : 'outline'}
+                className="h-8"
+                disabled={connecting}
+              >
+                {activeConnection ? <Link className="w-4 h-4 mr-2" /> : <Unlink className="w-4 h-4 mr-2" />}
+                {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
+                {activeConnection && !connecting && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-green-500 text-white"
+                  >
+                    ●
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {connectionMenuItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.key}
+                  onClick={() => handleConnectionMenuClick({ key: item.key })}
+                >
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* 执行相关 */}
+          <Button
+            variant="default"
             className="h-8"
-            loading={connecting}
+            disabled={!activeConnection}
           >
-            {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
-            {activeConnection && !connecting && (
-              <Badge 
-                status="success" 
-                className="ml-1" 
-                size="small"
-              />
-            )}
+            <PlayCircle className="w-4 h-4 mr-2" />
+            执行
           </Button>
-        </Dropdown>
 
-        <Divider type="vertical" className="h-6" />
+          <Button
+            variant="outline"
+            className="h-8"
+            disabled={!activeConnection}
+          >
+            <Square className="w-4 h-4 mr-2" />
+            停止
+          </Button>
 
-        {/* 执行相关 */}
-        <Button 
-          type="primary" 
-          icon={<PlayCircleOutlined />}
-          className="h-8"
-          disabled={!activeConnection}
-        >
-          执行
-        </Button>
-        
-        <Button 
-          icon={<StopOutlined />}
-          className="h-8"
-          disabled={!activeConnection}
-        >
-          停止
-        </Button>
+          <Separator orientation="vertical" className="h-6" />
 
-        <Divider type="vertical" className="h-6" />
+          {/* 文件操作 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8"
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                文件
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {fileMenuItems.map((item) => (
+                item.type === 'divider' ? (
+                  <div key={item.key} className="border-t my-1" />
+                ) : (
+                  <DropdownMenuItem
+                    key={item.key}
+                    onClick={() => handleFileMenuClick({ key: item.key })}
+                  >
+                    {item.icon}
+                    <span className="ml-2">{item.label}</span>
+                  </DropdownMenuItem>
+                )
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* 文件操作 */}
-        <Dropdown 
-          menu={{ items: fileMenuItems, onClick: handleFileMenuClick }} 
-          placement="bottomLeft"
-        >
-          <Button 
-            icon={<FolderOpenOutlined />}
+          <Button
+            variant="outline"
             className="h-8"
           >
-            文件
+            <Save className="w-4 h-4 mr-2" />
+            保存
           </Button>
-        </Dropdown>
 
-        <Button 
-          icon={<SaveOutlined />}
-          className="h-8"
-        >
-          保存
-        </Button>
+          {/* 工具菜单 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8"
+              >
+                <Wrench className="w-4 h-4 mr-2" />
+                工具
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {toolsMenuItems.map((item) => (
+                item.type === 'divider' ? (
+                  <div key={item.key} className="border-t my-1" />
+                ) : (
+                  <DropdownMenuItem
+                    key={item.key}
+                    onClick={() => handleToolsMenuClick({ key: item.key })}
+                  >
+                    {item.icon}
+                    <span className="ml-2">{item.label}</span>
+                  </DropdownMenuItem>
+                )
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* 工具菜单 */}
-        <Dropdown 
-          menu={{ items: toolsMenuItems, onClick: handleToolsMenuClick }} 
-          placement="bottomLeft"
-        >
-          <Button 
-            icon={<ToolOutlined />}
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* 视图切换 */}
+          <div className="flex gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'datasource' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => onViewChange?.('datasource')}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据源管理</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'database' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => onViewChange?.('database')}
+                  disabled={!activeConnection}
+                >
+                  <Database className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据库浏览</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'query' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => onViewChange?.('query')}
+                  disabled={!activeConnection}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>查询编辑器</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'visualization' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => onViewChange?.('visualization')}
+                  disabled={!activeConnection}
+                >
+                  <BarChart className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据可视化</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'performance' ? 'default' : 'outline'}
+                  className="h-8"
+                  onClick={() => onViewChange?.('performance')}
+                  disabled={!activeConnection}
+                >
+                  <Zap className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>性能监控</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* 刷新 */}
+          <Button
+            variant="outline"
             className="h-8"
+            disabled={!activeConnection}
           >
-            工具
+            <RefreshCw className="w-4 h-4 mr-2" />
+            刷新
           </Button>
-        </Dropdown>
+      </div>
 
-        <Divider type="vertical" className="h-6" />
-
-        {/* 视图切换 */}
-        <Space.Compact>
-          <Tooltip title="数据源管理">
-            <Button 
-              type={currentView === 'datasource' ? 'primary' : 'default'}
-              icon={<SettingOutlined />}
-              className="h-8"
-              onClick={() => onViewChange?.('datasource')}
-            />
+        {/* 右侧：导航和帮助 */}
+        <div className="flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8"
+                onClick={() => setSettingsVisible(true)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                设置
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>偏好设置</TooltipContent>
           </Tooltip>
-          <Tooltip title="数据库浏览">
-            <Button 
-              type={currentView === 'database' ? 'primary' : 'default'}
-              icon={<DatabaseOutlined />}
-              className="h-8"
-              onClick={() => onViewChange?.('database')}
-              disabled={!activeConnection}
-            />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>帮助</TooltipContent>
           </Tooltip>
-          <Tooltip title="查询编辑器">
-            <Button 
-              type={currentView === 'query' ? 'primary' : 'default'}
-              icon={<EditOutlined />}
-              className="h-8"
-              onClick={() => onViewChange?.('query')}
-              disabled={!activeConnection}
-            />
-          </Tooltip>
-          <Tooltip title="数据可视化">
-            <Button 
-              type={currentView === 'visualization' ? 'primary' : 'default'}
-              icon={<BarChartOutlined />}
-              className="h-8"
-              onClick={() => onViewChange?.('visualization')}
-              disabled={!activeConnection}
-            />
-          </Tooltip>
-          <Tooltip title="性能监控">
-            <Button 
-              type={currentView === 'performance' ? 'primary' : 'default'}
-              icon={<ThunderboltOutlined />}
-              className="h-8"
-              onClick={() => onViewChange?.('performance')}
-              disabled={!activeConnection}
-            />
-          </Tooltip>
-        </Space.Compact>
+        </div>
 
-        <Divider type="vertical" className="h-6" />
-
-        {/* 刷新 */}
-        <Button 
-          icon={<ReloadOutlined />}
-          className="h-8"
-          disabled={!activeConnection}
-        >
-          刷新
-        </Button>
-      </Space>
-
-      {/* 右侧：导航和帮助 */}
-      <Space size="small">
-        <Tooltip title="偏好设置">
-          <Button 
-            icon={<SettingOutlined />}
-            className="h-8"
-            onClick={() => setSettingsVisible(true)}
-          >
-            设置
-          </Button>
-        </Tooltip>
-
-        <Tooltip title="帮助">
-          <Button 
-            icon={<QuestionCircleOutlined />}
-            className="h-8"
-          />
-        </Tooltip>
-      </Space>
-
-      {/* 设置模态框 */}
-      <SettingsModal
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-      />
-    </div>
+        {/* 设置模态框 */}
+        <SettingsModal
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+        />
+      </div>
+    </TooltipProvider>
   );
 };
 

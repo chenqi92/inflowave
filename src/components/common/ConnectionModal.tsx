@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal } from 'antd';
+import { Dialog } from '@/components/ui';
 import ConnectionsPage from '@/pages/Connections';
 
 interface ConnectionModalProps {
@@ -9,7 +9,7 @@ interface ConnectionModalProps {
 
 const ConnectionModal: React.FC<ConnectionModalProps> = ({ visible, onClose }) => {
   return (
-    <Modal
+    <Dialog
       title="连接管理"
       open={visible}
       onCancel={onClose}
@@ -26,7 +26,7 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({ visible, onClose }) =
       <div style={{ padding: '20px' }}>
         <ConnectionsPage />
       </div>
-    </Modal>
+    </Dialog>
   );
 };
 

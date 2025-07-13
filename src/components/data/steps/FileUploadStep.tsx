@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from 'antd';
-import { Card, Space, message } from '@/components/ui';
-import { UploadOutlined, FileTextOutlined, FileExcelOutlined, DeleteOutlined } from '@/components/ui';
+import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
+import { Card, Space, toast } from '@/components/ui';
+import { Upload, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';
 import { ExcelImportManager } from '../ExcelImportUtils';
@@ -42,8 +42,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
   onDataUpdate,
   loading,
   onLoadingChange,
-  excelManager,
-}) => {
+  excelManager}) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [parseOptions, setParseOptions] = useState<ParseOptions>({
     delimiter: ',',
@@ -55,8 +54,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
     worksheet: '',
     headerRow: 0,
     maxRows: 100000,
-    previewRows: 50,
-  });
+    previewRows: 50});
   const [availableWorksheets, setAvailableWorksheets] = useState<string[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
 
@@ -69,7 +67,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       // 文件大小限制
       const maxSize = 100 * 1024 * 1024; // 100MB
       if (file.size > maxSize) {
-        message.error('文件大小不能超过 100MB');
+        toast({ title: "错误", description: "文件大小不能超过 100MB", variant: "destructive" });
         return false;
       }
 
@@ -92,7 +90,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
                          fileName.endsWith('.xls');
       
       if (!isValidType) {
-        message.error('只支持 CSV、JSON、Excel 格式的文件');
+        toast({ title: "错误", description: "只支持 CSV、JSON、Excel 格式的文件", variant: "destructive" });
         return false;
       }
 
@@ -114,10 +112,8 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         preview: [],
         totalRows: 0,
         worksheets: [],
-        selectedWorksheet: '',
-      });
-    },
-  };
+        selectedWorksheet: ''});
+    }};
 
   // 处理文件选择
   const handleFileSelect = useCallback(async (file: File) => {
@@ -134,8 +130,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         file,
         fileName,
         fileSize,
-        fileType,
-      });
+        fileType});
 
       // 如果是 Excel 文件，获取工作表列表
       if (fileType === 'excel') {
@@ -152,7 +147,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       }
     } catch (error) {
       setParseError(`文件处理失败: ${error}`);
-      message.error(`文件处理失败: ${error}`);
+      toast({ title: "错误", description: "文件处理失败: ${error}", variant: "destructive" });
     } finally {
       onLoadingChange(false);
     }
@@ -207,11 +202,10 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         headers,
         data,
         preview,
-        totalRows,
-      });
+        totalRows});
     } catch (error) {
       setParseError(`解析失败: ${error}`);
-      message.error(`解析失败: ${error}`);
+      toast({ title: "错误", description: "解析失败: ${error}", variant: "destructive" });
     } finally {
       onLoadingChange(false);
     }
@@ -337,8 +331,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
   // 解析 Excel 文件
   const parseExcelFile = async (file: File, options: ParseOptions) => {
     const worksheet = await excelManager.parseSpecificWorksheet(file, options.worksheet, {
-      header: options.headerRow,
-    });
+      header: options.headerRow});
 
     const headers = worksheet.headers;
     const data = worksheet.data;
@@ -586,16 +579,14 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         <div style={{ maxWidth: 150 }}>
           {text}
         </div>
-      ),
-    }));
+      )}));
 
     const dataSource = wizardData.preview.map((row, index) => ({
       key: index,
       ...row.reduce((acc, cell, cellIndex) => {
         acc[cellIndex] = cell;
         return acc;
-      }, {} as Record<number, any>),
-    }));
+      }, {} as Record<number, any>)}));
 
     return (
       <Card title={`数据预览 (前 ${wizardData.preview.length} 行)`} size="small">
@@ -617,7 +608,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         <div className="space-y-4">
           <Upload.Dragger {...uploadProps}>
             <p className="ant-upload-drag-icon">
-              <UploadOutlined />
+              <Upload className="w-4 h-4"  />
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
@@ -630,9 +621,9 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             message="支持的文件格式"
             description={
               <div>
-                <p><FileTextOutlined /> <strong>CSV 格式:</strong> 逗号分隔值文件，支持自定义分隔符</p>
-                <p><FileTextOutlined /> <strong>JSON 格式:</strong> JSON 数组格式，支持嵌套对象扁平化</p>
-                <p><FileExcelOutlined /> <strong>Excel 格式:</strong> .xlsx 和 .xls 文件，支持多工作表</p>
+                <p><FileText className="w-4 h-4"  /> <strong>CSV 格式:</strong> 逗号分隔值文件，支持自定义分隔符</p>
+                <p><FileText className="w-4 h-4"  /> <strong>JSON 格式:</strong> JSON 数组格式，支持嵌套对象扁平化</p>
+                <p><FileSpreadsheet /> <strong>Excel 格式:</strong> .xlsx 和 .xls 文件，支持多工作表</p>
               </div>
             }
             type="info"

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Typography, Select, Table, Tabs, Spin, Row, Col, Alert, Tree } from 'antd';
-import { Card, Space, message } from '@/components/ui';
-import { PlayCircleOutlined, SaveOutlined, DatabaseOutlined, TableOutlined, ExclamationCircleOutlined, DownloadOutlined, HistoryOutlined, FieldTimeOutlined, TagsOutlined } from '@/components/ui';
+import { Button, Select, Table, Tabs, Spin, Row, Col, Alert, Tree, Card } from '@/components/ui';
+import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -11,10 +11,10 @@ import ExportDialog from '@/components/common/ExportDialog';
 import QueryResultContextMenu from '@/components/query/QueryResultContextMenu';
 import type { QueryResult, QueryRequest } from '@/types';
 
-const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Query: React.FC = () => {
+  const { toast } = useToast();
   const { activeConnectionId, getConnection } = useConnectionStore();
   const [query, setQuery] = useState('SELECT * FROM measurement_name LIMIT 10');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -37,8 +37,7 @@ const Query: React.FC = () => {
     setLoadingDatabases(true);
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(dbList);
 
       // 如果有数据库且没有选中的，选择第一个
@@ -46,7 +45,7 @@ const Query: React.FC = () => {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
     } finally {
       setLoadingDatabases(false);
     }
@@ -59,8 +58,7 @@ const Query: React.FC = () => {
     try {
       const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId: activeConnectionId,
-        database,
-      });
+        database});
       setMeasurements(measurementList);
 
       // 加载第一个测量的字段和标签信息（用于自动补全）
@@ -82,13 +80,11 @@ const Query: React.FC = () => {
         safeTauriInvoke<string[]>('get_field_keys', {
           connectionId: activeConnectionId,
           database,
-          measurement,
-        }).catch(() => []),
+          measurement}).catch(() => []),
         safeTauriInvoke<string[]>('get_tag_keys', {
           connectionId: activeConnectionId,
           database,
-          measurement,
-        }).catch(() => []),
+          measurement}).catch(() => []),
       ]);
 
       setFields(fieldList);
@@ -122,8 +118,7 @@ const Query: React.FC = () => {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
-      automaticLayout: true,
-    });
+      automaticLayout: true});
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -173,27 +168,25 @@ const Query: React.FC = () => {
     return databases.map((db, dbIndex) => ({
       title: db,
       key: `db-${db}-${dbIndex}`, // 确保 key 唯一
-      icon: <DatabaseOutlined />,
+      icon: <Database className="w-4 h-4"  />,
       children: measurements && measurements.length > 0 ? measurements.map((measurement, measurementIndex) => ({
         title: measurement,
         key: `${db}-${measurement}-${measurementIndex}`, // 确保 key 唯一
-        icon: <TableOutlined />,
+        icon: <Table className="w-4 h-4"  />,
         children: [
           {
             title: 'Fields',
             key: `${db}-${measurement}-fields-${measurementIndex}`,
-            icon: <FieldTimeOutlined />,
+            icon: <Clock />,
             children: [], // 可以在这里加载字段信息
           },
           {
             title: 'Tags',
             key: `${db}-${measurement}-tags-${measurementIndex}`,
-            icon: <TagsOutlined />,
+            icon: <Tags className="w-4 h-4"  />,
             children: [], // 可以在这里加载标签信息
           },
-        ],
-      })) : [],
-    }));
+        ]})) : []}));
   }, [databases, measurements]);
 
   // 处理树节点点击
@@ -222,17 +215,17 @@ const Query: React.FC = () => {
   // 执行查询
   const handleExecuteQuery = async () => {
     if (!query.trim()) {
-      message.warning('请输入查询语句');
+      toast({ title: "警告", description: "请输入查询语句" });
       return;
     }
 
     if (!selectedDatabase) {
-      message.warning('请选择数据库');
+      toast({ title: "警告", description: "请选择数据库" });
       return;
     }
 
     if (!activeConnectionId) {
-      message.warning('请先选择一个连接');
+      toast({ title: "警告", description: "请先选择一个连接" });
       return;
     }
 
@@ -242,14 +235,13 @@ const Query: React.FC = () => {
       const request: QueryRequest = {
         connectionId: activeConnectionId,
         database: selectedDatabase,
-        query: query.trim(),
-      };
+        query: query.trim()};
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       setQueryResult(result);
-      message.success(`查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms`);
+      toast({ title: "成功", description: "查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms" });
     } catch (error) {
-      message.error(`查询执行失败: ${error}`);
+      toast({ title: "错误", description: "查询执行失败: ${error}", variant: "destructive" });
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -259,7 +251,7 @@ const Query: React.FC = () => {
   // 保存查询
   const handleSaveQuery = async () => {
     if (!query.trim()) {
-      message.warning('请输入查询语句');
+      toast({ title: "警告", description: "请输入查询语句" });
       return;
     }
 
@@ -272,13 +264,12 @@ const Query: React.FC = () => {
         tags: [],
         description: '',
         createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       await safeTauriInvoke('save_query', { query: savedQuery });
-      message.success('查询已保存');
+      toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      message.error(`保存查询失败: ${error}`);
+      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -316,8 +307,7 @@ const Query: React.FC = () => {
         >
           <span style={{ cursor: 'pointer' }}>{text}</span>
         </QueryResultContextMenu>
-      ),
-    }));
+      )}));
 
     const dataSource = series.values.map((row: any[], index: number) => {
       const record: any = { key: index };
@@ -340,7 +330,7 @@ const Query: React.FC = () => {
           description="在连接管理页面选择一个连接并激活后，才能执行查询。"
           type="warning"
           showIcon
-          icon={<ExclamationCircleOutlined />}
+          icon={<AlertCircle />}
           action={
             <Button size="small" type="primary">
               去连接
@@ -356,17 +346,17 @@ const Query: React.FC = () => {
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <Title level={2} className="mb-2">数据查询</Title>
+          <h2 className="text-2xl font-bold mb-2">数据查询</h2>
           {currentConnection && (
-            <Text type="secondary">
+            <p className="text-gray-500">
               当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
-            </Text>
+            </p>
           )}
         </div>
 
-        <Space>
+        <div className="flex gap-2">
           <Button
-            icon={<DatabaseOutlined />}
+            icon={<Database className="w-4 h-4"  />}
             onClick={loadDatabases}
             loading={loadingDatabases}
           >
@@ -381,11 +371,11 @@ const Query: React.FC = () => {
           >
             {databases.map(db => (
               <Option key={db} value={db}>
-                <DatabaseOutlined /> {db}
+                <Database className="w-4 h-4"  /> {db}
               </Option>
             ))}
           </Select>
-        </Space>
+        </div>
       </div>
 
       {/* 主要内容区域 */}
@@ -415,10 +405,10 @@ const Query: React.FC = () => {
         <div className="space-y-4">
           {/* 工具栏 */}
           <div className="flex items-center justify-between">
-            <Space>
+            <div className="flex gap-2">
               <Button
                 type="primary"
-                icon={<PlayCircleOutlined />}
+                icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
                 loading={loading}
                 disabled={!selectedDatabase}
@@ -427,23 +417,23 @@ const Query: React.FC = () => {
               </Button>
               
               <Button
-                icon={<SaveOutlined />}
+                icon={<Save className="w-4 h-4"  />}
                 onClick={handleSaveQuery}
               >
                 保存查询
               </Button>
               
               <Button
-                icon={<HistoryOutlined />}
+                icon={<History className="w-4 h-4"  />}
               >
                 查询历史
               </Button>
-            </Space>
+            </div>
             
             {queryResult && (
-              <Text type="secondary">
+              <span className="text-gray-500">
                 执行时间: {queryResult.executionTime}ms | 返回行数: {queryResult.rowCount}
-              </Text>
+              </span>
             )}
           </div>
 
@@ -464,16 +454,14 @@ const Query: React.FC = () => {
                 roundedSelection: false,
                 scrollbar: {
                   vertical: 'auto',
-                  horizontal: 'auto',
-                },
+                  horizontal: 'auto'},
                 wordWrap: 'on',
                 automaticLayout: true,
                 suggestOnTriggerCharacters: true,
                 quickSuggestions: true,
                 parameterHints: { enabled: true },
                 formatOnPaste: true,
-                formatOnType: true,
-              }}
+                formatOnType: true}}
             />
           </div>
         </div>
@@ -482,11 +470,11 @@ const Query: React.FC = () => {
       {/* 查询结果 */}
       <Card
         title="查询结果"
-        className="w-full"
+        className="w-full w-4 h-4"
         extra={
           queryResult && (
             <Button
-              icon={<DownloadOutlined />}
+              icon={<Download className="w-4 h-4" />}
               onClick={() => setExportDialogVisible(true)}
             >
               导出
@@ -514,11 +502,9 @@ const Query: React.FC = () => {
                       pageSize: 50,
                       showSizeChanger: true,
                       showQuickJumper: true,
-                      showTotal: (total) => `共 ${total} 行`,
-                    }}
+                      showTotal: (total) => `共 ${total} 行`}}
                   />
-                ),
-              },
+                )},
               {
                 key: 'json',
                 label: 'JSON 视图',
@@ -526,8 +512,7 @@ const Query: React.FC = () => {
                   <pre className="bg-gray-50 p-4 rounded overflow-auto max-h-96">
                     {JSON.stringify(queryResult, null, 2)}
                   </pre>
-                ),
-              },
+                )},
             ]}
           />
         ) : (

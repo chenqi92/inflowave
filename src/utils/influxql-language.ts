@@ -100,9 +100,7 @@ export const influxqlLanguageDefinition: monaco.languages.IMonarchLanguage = {
       [/@escapes/, 'string.escape'],
       [/\\./, 'string.escape.invalid'],
       [/"/, 'string', '@pop']
-    ],
-  },
-};
+    ]}};
 
 // InfluxQL 自动补全提供器
 export const createInfluxQLCompletionProvider = (
@@ -241,8 +239,7 @@ export const registerInfluxQLLanguage = () => {
   // 设置语言配置
   monaco.languages.setLanguageConfiguration('influxql', {
     comments: {
-      lineComment: '--',
-    },
+      lineComment: '--'},
     brackets: [
       ['{', '}'],
       ['[', ']'],

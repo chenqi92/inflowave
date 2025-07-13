@@ -1,18 +1,8 @@
 import React from 'react';
-import { Typography, Row, Col, Tag, Divider } from 'antd';
-import { Modal, Space, Card } from '@/components/ui';
-import {
-  DatabaseOutlined,
-  InfoCircleOutlined,
-  GithubOutlined,
-  BugOutlined,
-  HeartOutlined,
-  RocketOutlined,
-  TeamOutlined,
-  ToolOutlined
-} from '@/components/ui';
+import { Text, Tag, Divider, Space, Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Link } from 'react-router-dom';
 
-const { Title, Text, Paragraph, Link } = Typography;
+import { Database, Info, Bug, Heart, Rocket, Users, Wrench, Github } from 'lucide-react';
 
 interface AboutDialogProps {
   visible: boolean;
@@ -26,9 +16,8 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
     description: '现代化的 InfluxDB 数据库管理工具',
     author: 'InfloWave Team',
     license: 'MIT',
-    repository: 'https://github.com/your-org/inflowave',
-    website: 'https://inflowave.com',
-  };
+    repository: 'https://github.com/chenqi92/inflowave',
+    website: 'https://inflowave.com'};
 
   const features = [
     '直观的数据库连接管理',
@@ -44,203 +33,152 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
     { name: 'Tauri', color: 'blue' },
     { name: 'React', color: 'cyan' },
     { name: 'TypeScript', color: 'geekblue' },
-    { name: 'Ant Design', color: 'purple' },
+    { name: 'Shadcn/ui', color: 'purple' },
     { name: 'Rust', color: 'orange' },
     { name: 'InfluxDB', color: 'green' },
   ];
 
   return (
-    <Modal
-      title={
-        <Space>
-          <DatabaseOutlined style={{ color: '#1890ff' }} />
-          <span>关于 {appInfo.name}</span>
-        </Space>
-      }
-      open={visible}
-      onCancel={onClose}
-      footer={null}
-      width={700}
-      style={{ top: 20 }}
-    >
+    <Dialog open={visible} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Database className="w-5 h-5 text-blue-500" />
+            <span>关于 {appInfo.name}</span>
+          </DialogTitle>
+        </DialogHeader>
       <div style={{ padding: '16px 0' }}>
         {/* 应用信息 */}
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <Card>
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <DatabaseOutlined 
-                  style={{ 
-                    fontSize: 64, 
-                    color: '#1890ff',
-                    marginBottom: 16 
-                  }} 
-                />
-                <Title level={2} style={{ margin: 0 }}>
-                  {appInfo.name}
-                </Title>
-                <Text type="secondary" style={{ fontSize: 16 }}>
-                  版本 {appInfo.version}
-                </Text>
-              </div>
-              
-              <Paragraph style={{ textAlign: 'center', fontSize: 16 }}>
-                {appInfo.description}
-              </Paragraph>
-            </Card>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-1 gap-4">
+          <Card>
+            <div className="text-center mb-6">
+              <Database className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <Text className="text-2xl font-bold block">
+                {appInfo.name}
+              </Text>
+              <Text className="text-muted-foreground text-base">
+                版本 {appInfo.version}
+              </Text>
+            </div>
+            
+            <Text className="block text-center text-base">
+              {appInfo.description}
+            </Text>
+          </Card>
+        </div>
 
         <Divider />
 
         {/* 主要功能 */}
-        <Row gutter={[16, 16]}>
-          <Col span={12}>
-            <Card 
-              title={
-                <Space>
-                  <RocketOutlined />
-                  <span>主要功能</span>
-                </Space>
-              }
-              size="small"
-            >
-              <ul style={{ paddingLeft: 20, margin: 0 }}>
-                {features.map((feature, index) => (
-                  <li key={index} style={{ marginBottom: 8 }}>
-                    <Text>{feature}</Text>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          </Col>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Rocket className="w-4 h-4" />
+              <Text className="font-semibold">主要功能</Text>
+            </div>
+            <ul className="space-y-2 pl-5">
+              {features.map((feature, index) => (
+                <li key={index}>
+                  <Text>{feature}</Text>
+                </li>
+              ))}
+            </ul>
+          </Card>
           
-          <Col span={12}>
-            <Card 
-              title={
-                <Space>
-                  <ToolOutlined />
-                  <span>技术栈</span>
-                </Space>
-              }
-              size="small"
-            >
-              <Space wrap>
-                {techStack.map((tech) => (
-                  <Tag key={tech.name} color={tech.color}>
-                    {tech.name}
-                  </Tag>
-                ))}
-              </Space>
-            </Card>
-          </Col>
-        </Row>
+          <Card className="space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Wrench className="w-4 h-4" />
+              <Text className="font-semibold">技术栈</Text>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {techStack.map((tech) => (
+                <Tag key={tech.name} variant="secondary">
+                  {tech.name}
+                </Tag>
+              ))}
+            </div>
+          </Card>
+        </div>
 
         <Divider />
 
         {/* 项目信息 */}
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <Card 
-              title={
-                <Space>
-                  <InfoCircleOutlined />
-                  <span>项目信息</span>
-                </Space>
-              }
-              size="small"
-            >
-              <Row gutter={[16, 8]}>
-                <Col span={6}>
-                  <Text strong>开发团队:</Text>
-                </Col>
-                <Col span={18}>
-                  <Space>
-                    <TeamOutlined />
-                    <Text>{appInfo.author}</Text>
-                  </Space>
-                </Col>
-                
-                <Col span={6}>
-                  <Text strong>开源许可:</Text>
-                </Col>
-                <Col span={18}>
-                  <Tag color="green">{appInfo.license}</Tag>
-                </Col>
-                
-                <Col span={6}>
-                  <Text strong>项目地址:</Text>
-                </Col>
-                <Col span={18}>
-                  <Link href={appInfo.repository} target="_blank">
-                    <Space>
-                      <GithubOutlined />
-                      <span>GitHub 仓库</span>
-                    </Space>
-                  </Link>
-                </Col>
-                
-                <Col span={6}>
-                  <Text strong>官方网站:</Text>
-                </Col>
-                <Col span={18}>
-                  <Link href={appInfo.website} target="_blank">
-                    {appInfo.website}
-                  </Link>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
+        <Card className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Info className="w-4 h-4" />
+            <Text className="font-semibold">项目信息</Text>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <Text className="font-medium">开发团队:</Text>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <Text>{appInfo.author}</Text>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <Text className="font-medium">开源许可:</Text>
+              <Tag variant="outline">{appInfo.license}</Tag>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <Text className="font-medium">项目地址:</Text>
+              <Link href={appInfo.repository} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+                <Github className="w-4 h-4" />
+                <span>GitHub 仓库</span>
+              </Link>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <Text className="font-medium">官方网站:</Text>
+              <Link href={appInfo.website} target="_blank" className="text-blue-600 hover:text-blue-800">
+                {appInfo.website}
+              </Link>
+            </div>
+          </div>
+        </Card>
 
         <Divider />
 
         {/* 支持信息 */}
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <Card size="small">
-              <div style={{ textAlign: 'center' }}>
-                <Space direction="vertical" size="small">
-                  <Space>
-                    <HeartOutlined style={{ color: '#ff4d4f' }} />
-                    <Text>感谢您使用 {appInfo.name}！</Text>
-                  </Space>
-                  
-                  <Text type="secondary">
-                    如果您遇到问题或有建议，请通过以下方式联系我们：
-                  </Text>
-                  
-                  <Space>
-                    <Link href={`${appInfo.repository}/issues`} target="_blank">
-                      <Space>
-                        <BugOutlined />
-                        <span>报告问题</span>
-                      </Space>
-                    </Link>
-                    
-                    <Divider type="vertical" />
-                    
-                    <Link href={`${appInfo.repository}/discussions`} target="_blank">
-                      <Space>
-                        <TeamOutlined />
-                        <span>社区讨论</span>
-                      </Space>
-                    </Link>
-                  </Space>
-                </Space>
-              </div>
-            </Card>
-          </Col>
-        </Row>
+        <Card>
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <Heart className="w-4 h-4 text-red-500" />
+              <Text>感谢您使用 {appInfo.name}！</Text>
+            </div>
+            
+            <Text className="text-muted-foreground">
+              如果您遇到问题或有建议，请通过以下方式联系我们：
+            </Text>
+            
+            <div className="flex items-center justify-center gap-4">
+              <Link href={`${appInfo.repository}/issues`} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+                <Bug className="w-4 h-4" />
+                <span>报告问题</span>
+              </Link>
+              
+              <Divider orientation="vertical" className="h-4" />
+              
+              <Link href={`${appInfo.repository}/discussions`} target="_blank" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+                <Users className="w-4 h-4" />
+                <span>社区讨论</span>
+              </Link>
+            </div>
+          </div>
+        </Card>
 
         {/* 版权信息 */}
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>
+        <div className="text-center mt-6">
+          <Text className="text-muted-foreground text-xs">
             © 2024 {appInfo.author}. All rights reserved.
           </Text>
         </div>
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

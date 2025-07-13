@@ -20,8 +20,7 @@ export const useConnection = () => {
     disconnectFromDatabase,
     startMonitoring,
     stopMonitoring,
-    refreshAllStatuses,
-  } = useConnectionStore();
+    refreshAllStatuses} = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -203,6 +202,5 @@ export const useConnection = () => {
     startMonitoring,
     stopMonitoring,
     setActiveConnection,
-    clearError,
-  };
+    clearError};
 };

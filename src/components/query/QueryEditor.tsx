@@ -1,24 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Button, Select, Typography, Tooltip, Badge, Dropdown, Switch, Tabs, Drawer } from 'antd';
-import { Card, Space, message } from '@/components/ui';
-import { 
-  PlayCircleOutlined, 
-  SaveOutlined, 
-  DatabaseOutlined,
-  HistoryOutlined,
-  SettingOutlined,
-  FullscreenOutlined,
-  FullscreenExitOutlined,
-  ClockCircleOutlined,
-  FormatPainterOutlined,
-  PlusOutlined,
-  CloseOutlined,
-  CopyOutlined,
-  EditOutlined,
-  ThunderboltOutlined,
-  ExperimentOutlined,
-  BulbOutlined
-} from '@/components/ui';
+import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Badge, Drawer
+import { useToast } from '@/hooks/use-toast';
+
+
+import { FlaskConical } from 'lucide-react';
+import { Save, Database, History, Settings, Maximize, Minimize, Clock, Plus, X, Copy, Edit, Zap, Lightbulb, PlayCircle, Paintbrush } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -57,8 +44,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   onDatabaseChange,
   databases,
   onQueryResult,
-  onLoadingChange,
-}) => {
+  onLoadingChange}) => {
   const { activeConnectionId } = useConnectionStore();
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
     {
@@ -66,8 +52,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       name: '查询 1',
       query: 'SELECT * FROM measurement_name LIMIT 10',
       database: selectedDatabase,
-      isModified: false,
-    }
+      isModified: false}
   ]);
   const [activeTabId, setActiveTabId] = useState('default');
   const [loading, setLoading] = useState(false);
@@ -96,8 +81,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       theme: 'vs-light',
       suggestOnTriggerCharacters: true,
       quickSuggestions: true,
-      parameterHints: { enabled: true },
-    });
+      parameterHints: { enabled: true }});
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -129,7 +113,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   // 智能优化查询
   const handleOptimizeQuery = useCallback(async () => {
     if (!activeConnectionId || !getCurrentTab()?.query) {
-      message.warning('请选择连接并输入查询语句');
+      toast({ title: "警告", description: "请选择连接并输入查询语句" });
       return;
     }
 
@@ -173,13 +157,13 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         if (editorInstance) {
           editorInstance.setValue(result.optimizedQuery);
         }
-        message.success(`查询已自动优化，预计性能提升 ${result.estimatedPerformanceGain}%`);
+        toast({ title: "成功", description: "查询已自动优化，预计性能提升 ${result.estimatedPerformanceGain}%" });
       } else {
-        message.success(`查询分析完成，预计性能提升 ${result.estimatedPerformanceGain}%`);
+        toast({ title: "成功", description: "查询分析完成，预计性能提升 ${result.estimatedPerformanceGain}%" });
       }
     } catch (error) {
       console.error('Query optimization failed:', error);
-      message.error('查询优化失败');
+      toast({ title: "错误", description: "查询优化失败", variant: "destructive" });
     } finally {
       setOptimizationLoading(false);
     }
@@ -196,7 +180,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     if (editorInstance) {
       editorInstance.setValue(optimizationResult.optimizedQuery);
     }
-    message.success('优化建议已应用');
+    toast({ title: "成功", description: "优化建议已应用" });
   }, [optimizationResult, getCurrentTab, updateCurrentTabQuery, editorInstance]);
 
   // 添加新标签页
@@ -206,8 +190,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       name: `查询 ${queryTabs.length + 1}`,
       query: 'SELECT * FROM measurement_name LIMIT 10',
       database: selectedDatabase,
-      isModified: false,
-    };
+      isModified: false};
     setQueryTabs([...queryTabs, newTab]);
     setActiveTabId(newTab.id);
   };
@@ -235,8 +218,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       ...tab,
       id: `tab_${Date.now()}`,
       name: `${tab.name} (副本)`,
-      isModified: false,
-    };
+      isModified: false};
     setQueryTabs([...queryTabs, newTab]);
     setActiveTabId(newTab.id);
   };
@@ -275,9 +257,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           [/[^/*]+/, 'comment'],
           [/\*\//, 'comment', '@pop'],
           [/[/*]/, 'comment'],
-        ],
-      },
-    });
+        ]}});
 
     // 设置自动补全
     monaco.languages.registerCompletionItemProvider('influxql', {
@@ -287,8 +267,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           startLineNumber: position.lineNumber,
           endLineNumber: position.lineNumber,
           startColumn: word.startColumn,
-          endColumn: word.endColumn,
-        };
+          endColumn: word.endColumn};
 
         const suggestions: monaco.languages.CompletionItem[] = [
           // 关键字
@@ -296,46 +275,42 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             label: keyword,
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: keyword,
-            range,
-          })),
+            range})),
           // 函数
           ...['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN'].map(func => ({
             label: func,
             kind: monaco.languages.CompletionItemKind.Function,
             insertText: `${func}()`,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-          })),
+            range})),
           // 数据库
           ...databases.map(db => ({
             label: db,
             kind: monaco.languages.CompletionItemKind.Module,
             insertText: `"${db}"`,
             range,
-            documentation: `Database: ${db}`,
-          })),
+            documentation: `Database: ${db}`})),
         ];
 
         return { suggestions };
-      },
-    });
+      }});
   };
 
   // 执行查询
   const handleExecuteQuery = async () => {
     const currentTab = getCurrentTab();
     if (!currentTab?.query.trim()) {
-      message.warning('请输入查询语句');
+      toast({ title: "警告", description: "请输入查询语句" });
       return;
     }
 
     if (!selectedDatabase) {
-      message.warning('请选择数据库');
+      toast({ title: "警告", description: "请选择数据库" });
       return;
     }
 
     if (!activeConnectionId) {
-      message.warning('请先连接到数据库');
+      toast({ title: "警告", description: "请先连接到数据库" });
       return;
     }
 
@@ -347,8 +322,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       const request: QueryRequest = {
         connectionId: activeConnectionId,
         database: selectedDatabase,
-        query: currentTab.query.trim(),
-      };
+        query: currentTab.query.trim()};
 
       const result = await invoke<QueryResult>('execute_query', { request });
       const executionTime = Date.now() - startTime;
@@ -363,9 +337,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           : tab
       ));
       
-      message.success(`查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms`);
+      toast({ title: "成功", description: "查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms" });
     } catch (error) {
-      message.error(`查询执行失败: ${error}`);
+      toast({ title: "错误", description: "查询执行失败: ${error}", variant: "destructive" });
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -377,7 +351,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const handleSaveQuery = async () => {
     const currentTab = getCurrentTab();
     if (!currentTab?.query.trim()) {
-      message.warning('请输入查询语句');
+      toast({ title: "警告", description: "请输入查询语句" });
       return;
     }
 
@@ -390,13 +364,12 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         tags: [],
         description: '',
         createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       await safeTauriInvoke('save_query', { query: savedQuery });
-      message.success('查询已保存');
+      toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      message.error(`保存查询失败: ${error}`);
+      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -411,28 +384,22 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const queryTemplates = [
     {
       label: '查询所有数据',
-      value: 'SELECT * FROM measurement_name LIMIT 10',
-    },
+      value: 'SELECT * FROM measurement_name LIMIT 10'},
     {
       label: '按时间范围查询',
-      value: 'SELECT * FROM measurement_name WHERE time >= now() - 1h',
-    },
+      value: 'SELECT * FROM measurement_name WHERE time >= now() - 1h'},
     {
       label: '聚合查询',
-      value: 'SELECT MEAN(field_name) FROM measurement_name WHERE time >= now() - 1h GROUP BY time(5m)',
-    },
+      value: 'SELECT MEAN(field_name) FROM measurement_name WHERE time >= now() - 1h GROUP BY time(5m)'},
     {
       label: '显示测量',
-      value: 'SHOW MEASUREMENTS',
-    },
+      value: 'SHOW MEASUREMENTS'},
     {
       label: '显示字段',
-      value: 'SHOW FIELD KEYS FROM measurement_name',
-    },
+      value: 'SHOW FIELD KEYS FROM measurement_name'},
     {
       label: '显示标签',
-      value: 'SHOW TAG KEYS FROM measurement_name',
-    },
+      value: 'SHOW TAG KEYS FROM measurement_name'},
   ];
 
   // 处理模板选择
@@ -453,14 +420,14 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           {tab.isModified && <div className="w-1 h-1 bg-blue-500 rounded-full" />}
           {tab.lastExecuted && (
             <Tooltip title={`最后执行: ${tab.lastExecuted.toLocaleString()}`}>
-              <ClockCircleOutlined className="text-xs text-gray-400" />
+              <Clock className="w-4 h-4 text-xs text-gray-400"   />
             </Tooltip>
           )}
           {queryTabs.length > 1 && (
             <Button
               type="text"
               size="small"
-              icon={<CloseOutlined />}
+              icon={<X className="w-4 h-4"  />}
               className="ml-1 opacity-60 hover:opacity-100"
               onClick={(e) => {
                 e.stopPropagation();
@@ -470,8 +437,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           )}
         </div>
       ),
-      children: null,
-    }));
+      children: null}));
 
     return (
       <Tabs
@@ -485,42 +451,38 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           }
         }}
         tabBarExtraContent={
-          <Space>
+          <div className="flex gap-2">
             <Dropdown
               menu={{
                 items: [
                   {
                     key: 'duplicate',
                     label: '复制标签页',
-                    icon: <CopyOutlined />,
-                    onClick: () => duplicateTab(activeTabId),
-                  },
+                    icon: <Copy className="w-4 h-4"  />,
+                    onClick: () => duplicateTab(activeTabId)},
                   {
                     key: 'rename',
                     label: '重命名',
-                    icon: <EditOutlined />,
+                    icon: <Edit className="w-4 h-4"  />,
                     onClick: () => {
                       const newName = prompt('请输入新名称', currentTab?.name);
                       if (newName && newName.trim()) {
                         renameTab(activeTabId, newName.trim());
                       }
-                    },
-                  },
+                    }},
                   { type: 'divider' },
                   {
                     key: 'close-others',
                     label: '关闭其他标签页',
                     onClick: () => {
                       setQueryTabs([currentTab!]);
-                    },
-                  },
-                ],
-              }}
+                    }},
+                ]}}
               trigger={['click']}
             >
-              <Button type="text" size="small" icon={<SettingOutlined />} />
+              <Button type="text" size="small" icon={<Settings className="w-4 h-4"  />} />
             </Dropdown>
-          </Space>
+          </div>
         }
       />
     );
@@ -530,21 +492,21 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     <div className={`h-full flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
       <Card
         title={
-          <Space>
-            <DatabaseOutlined />
+          <div className="flex gap-2">
+            <Database className="w-4 h-4"  />
             <span>查询编辑器</span>
             {lastExecutionTime && (
               <Text type="secondary">
-                <ClockCircleOutlined /> 上次执行: {lastExecutionTime}ms
+                <Clock className="w-4 h-4"  /> 上次执行: {lastExecutionTime}ms
               </Text>
             )}
             {currentTab?.isModified && (
               <Badge color="blue" text="未保存" />
             )}
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             <Select
               placeholder="选择数据库"
               value={selectedDatabase}
@@ -562,7 +524,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Tooltip title="查询历史">
               <Button
                 size="small"
-                icon={<HistoryOutlined />}
+                icon={<History className="w-4 h-4"  />}
                 onClick={() => setShowHistory(true)}
               />
             </Tooltip>
@@ -570,7 +532,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Tooltip title="编辑器设置">
               <Button
                 size="small"
-                icon={<SettingOutlined />}
+                icon={<Settings className="w-4 h-4"  />}
                 onClick={() => setShowSettings(true)}
               />
             </Tooltip>
@@ -578,11 +540,11 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Tooltip title={isFullscreen ? '退出全屏' : '全屏模式'}>
               <Button
                 size="small"
-                icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                icon={isFullscreen ? <Minimize className="w-4 h-4"  /> : <Maximize className="w-4 h-4"  />}
                 onClick={() => setIsFullscreen(!isFullscreen)}
               />
             </Tooltip>
-          </Space>
+          </div>
         }
         styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
         style={{ height: '100%', border: 'none' }}
@@ -595,10 +557,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
           {/* 工具栏 */}
           <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}>
-            <Space>
+            <div className="flex gap-2">
               <Button
                 type="primary"
-                icon={<PlayCircleOutlined />}
+                icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
                 loading={loading}
                 disabled={!selectedDatabase || !activeConnectionId || !currentTab?.query.trim()}
@@ -607,7 +569,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               </Button>
               
               <Button
-                icon={<SaveOutlined />}
+                icon={<Save className="w-4 h-4"  />}
                 onClick={handleSaveQuery}
                 disabled={!currentTab?.query.trim()}
               >
@@ -615,7 +577,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               </Button>
               
               <Button
-                icon={<FormatPainterOutlined />}
+                icon={<Paintbrush />}
                 onClick={handleFormatQuery}
               >
                 格式化
@@ -623,7 +585,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
               <Tooltip title="智能优化查询">
                 <Button
-                  icon={<ThunderboltOutlined />}
+                  icon={<Zap className="w-4 h-4"  />}
                   onClick={handleOptimizeQuery}
                   loading={optimizationLoading}
                   disabled={!activeConnectionId || !currentTab?.query.trim()}
@@ -635,7 +597,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               {optimizationResult && (
                 <Tooltip title="应用优化建议">
                   <Button
-                    icon={<BulbOutlined />}
+                    icon={<Lightbulb className="w-4 h-4"  />}
                     onClick={handleApplyOptimization}
                     disabled={!optimizationResult || optimizationResult.optimizedQuery === currentTab?.query}
                   >
@@ -664,7 +626,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                   </Option>
                 ))}
               </Select>
-            </Space>
+            </div>
           </div>
 
           {/* 编辑器 */}
@@ -684,29 +646,27 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 roundedSelection: false,
                 scrollbar: {
                   vertical: 'auto',
-                  horizontal: 'auto',
-                },
+                  horizontal: 'auto'},
                 wordWrap: 'on',
-                automaticLayout: true,
-              }}
+                automaticLayout: true}}
             />
           </div>
 
           {/* 优化结果展示 */}
           {optimizationResult && (
             <div style={{ borderTop: '1px solid #f0f0f0', padding: '12px 16px', background: '#fafafa' }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Space>
+              <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
+                <div className="flex gap-2">
                   <Text strong>优化分析结果</Text>
                   <Badge 
                     count={`${optimizationResult.estimatedPerformanceGain}%`} 
                     style={{ backgroundColor: optimizationResult.estimatedPerformanceGain > 20 ? '#52c41a' : '#faad14' }}
                   />
                   <Text type="secondary">预计性能提升</Text>
-                </Space>
+                </div>
                 
                 {optimizationResult.optimizationTechniques.length > 0 && (
-                  <Space wrap>
+                  <div className="flex gap-2" wrap>
                     <Text type="secondary">优化技术:</Text>
                     {optimizationResult.optimizationTechniques.map((tech: any, index: number) => (
                       <Badge
@@ -718,36 +678,36 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                         }}
                       />
                     ))}
-                  </Space>
+                  </div>
                 )}
 
                 {optimizationResult.warnings.length > 0 && (
-                  <Space wrap>
+                  <div className="flex gap-2" wrap>
                     <Text type="warning">警告:</Text>
                     {optimizationResult.warnings.map((warning: string, index: number) => (
                       <Text key={index} type="warning">{warning}</Text>
                     ))}
-                  </Space>
+                  </div>
                 )}
 
                 {optimizationResult.recommendations.length > 0 && (
-                  <Space wrap>
+                  <div className="flex gap-2" wrap>
                     <Text type="secondary">建议:</Text>
                     {optimizationResult.recommendations.slice(0, 2).map((rec: any, index: number) => (
                       <Tooltip key={index} title={rec.description}>
                         <Badge count={rec.title} style={{ backgroundColor: '#1890ff' }} />
                       </Tooltip>
                     ))}
-                  </Space>
+                  </div>
                 )}
-              </Space>
+              </div>
             </div>
           )}
         </div>
       </Card>
 
       {/* 查询历史抽屉 */}
-      <Drawer
+      <Sheet
         title="查询历史"
         open={showHistory}
         onClose={() => setShowHistory(false)}
@@ -782,15 +742,15 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           
           {queryTabs.filter(tab => tab.lastExecuted).length === 0 && (
             <div className="text-center text-gray-500 py-8">
-              <HistoryOutlined className="text-4xl mb-2" />
+              <History className="w-4 h-4 text-4xl mb-2"   />
               <div>暂无查询历史</div>
             </div>
           )}
         </div>
-      </Drawer>
+      </Sheet>
 
       {/* 编辑器设置抽屉 */}
-      <Drawer
+      <Sheet
         title="编辑器设置"
         open={showSettings}
         onClose={() => setShowSettings(false)}
@@ -831,10 +791,10 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Switch defaultChecked={true} />
           </div>
         </div>
-      </Drawer>
+      </Sheet>
 
       {/* 优化设置抽屉 */}
-      <Drawer
+      <Sheet
         title="优化设置"
         open={showOptimizationTips}
         onClose={() => setShowOptimizationTips(false)}
@@ -937,7 +897,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             </div>
           )}
         </div>
-      </Drawer>
+      </Sheet>
     </div>
   );
 };

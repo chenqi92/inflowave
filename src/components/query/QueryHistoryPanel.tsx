@@ -1,8 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Button, Input, Select, Tag, Typography, Form } from 'antd';
-import { Card, Space, message, Modal } from '@/components/ui';
+import { Button, Input, Select, Tag, Typography, Form } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
 // TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
-import { SearchOutlined, PlayCircleOutlined, DeleteOutlined, DatabaseOutlined } from '@/components/ui';
+import { Search, Trash2, Database, PlayCircle } from 'lucide-react';
 // TODO: Replace these icons: StarOutlined, ClockCircleOutlined, FileTextOutlined, ClearOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -19,8 +21,7 @@ interface QueryHistoryPanelProps {
 
 const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   connections,
-  onExecuteQuery,
-}) => {
+  onExecuteQuery}) => {
   const [loading, setLoading] = useState(false);
   const [historyList, setHistoryList] = useState<QueryHistoryItem[]>([]);
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
@@ -39,12 +40,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
       const result = await safeTauriInvoke('get_query_history', {
         connectionId: filterConnection || null,
         limit: 50,
-        offset: 0,
-      }) as QueryHistoryItem[];
+        offset: 0}) as QueryHistoryItem[];
       setHistoryList(result);
     } catch (error) {
       console.error('加载查询历史失败:', error);
-      message.error('加载查询历史失败');
+      toast({ title: "错误", description: "加载查询历史失败", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -56,12 +56,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
     try {
       const result = await safeTauriInvoke('get_saved_queries', {
         tags: null,
-        search: searchKeyword || null,
-      }) as SavedQuery[];
+        search: searchKeyword || null}) as SavedQuery[];
       setSavedQueries(result);
     } catch (error) {
       console.error('加载保存的查询失败:', error);
-      message.error('加载保存的查询失败');
+      toast({ title: "错误", description: "加载保存的查询失败", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -85,8 +84,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
         duration,
         rowCount,
         success,
-        error: error || null,
-      });
+        error: error || null});
       loadHistory();
     } catch (err) {
       console.error('添加查询历史失败:', err);
@@ -108,15 +106,14 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
         description: values.description || null,
         query: selectedQuery,
         database: selectedDatabase || null,
-        tags: values.tags || [],
-      });
-      message.success('查询保存成功');
+        tags: values.tags || []});
+      toast({ title: "成功", description: "查询保存成功" });
       setSaveDialogVisible(false);
       form.resetFields();
       loadSavedQueries();
     } catch (error) {
       console.error('保存查询失败:', error);
-      message.error('保存查询失败');
+      toast({ title: "错误", description: "保存查询失败", variant: "destructive" });
     }
   };
 
@@ -124,11 +121,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const deleteHistoryItem = async (historyId: string) => {
     try {
       await safeTauriInvoke('delete_query_history', { historyId });
-      message.success('历史记录已删除');
+      toast({ title: "成功", description: "历史记录已删除" });
       loadHistory();
     } catch (error) {
       console.error('删除历史记录失败:', error);
-      message.error('删除历史记录失败');
+      toast({ title: "错误", description: "删除历史记录失败", variant: "destructive" });
     }
   };
 
@@ -136,11 +133,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const deleteSavedQuery = async (queryId: string) => {
     try {
       await safeTauriInvoke('delete_saved_query', { queryId });
-      message.success('查询已删除');
+      toast({ title: "成功", description: "查询已删除" });
       loadSavedQueries();
     } catch (error) {
       console.error('删除查询失败:', error);
-      message.error('删除查询失败');
+      toast({ title: "错误", description: "删除查询失败", variant: "destructive" });
     }
   };
 
@@ -148,13 +145,12 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const clearHistory = async () => {
     try {
       const deletedCount = await safeTauriInvoke('clear_query_history', {
-        connectionId: filterConnection || null,
-      }) as number;
-      message.success(`已清空 ${deletedCount} 条历史记录`);
+        connectionId: filterConnection || null}) as number;
+      toast({ title: "成功", description: "已清空 ${deletedCount} 条历史记录" });
       loadHistory();
     } catch (error) {
       console.error('清空历史失败:', error);
-      message.error('清空历史失败');
+      toast({ title: "错误", description: "清空历史失败", variant: "destructive" });
     }
   };
 
@@ -204,25 +200,25 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   return (
     <Card
       title={
-        <Space>
+        <div className="flex gap-2">
           <Button
             type={activeTab === 'history' ? 'primary' : 'default'}
             onClick={() => setActiveTab('history')}
-            icon={<ClockCircleOutlined />}
+            icon={<Clock className="w-4 h-4"  />}
           >
             查询历史
           </Button>
           <Button
             type={activeTab === 'saved' ? 'primary' : 'default'}
             onClick={() => setActiveTab('saved')}
-            icon={<StarOutlined />}
+            icon={<Star className="w-4 h-4"  />}
           >
             保存的查询
           </Button>
-        </Space>
+        </div>
       }
       extra={
-        <Space>
+        <div className="flex gap-2">
           {activeTab === 'history' && (
             <Popconfirm
               title="确定要清空查询历史吗？"
@@ -238,15 +234,15 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           <Button size="small" onClick={activeTab === 'history' ? loadHistory : loadSavedQueries}>
             刷新
           </Button>
-        </Space>
+        </div>
       }
       size="small"
     >
       {/* 搜索和筛选 */}
-      <Space style={{ width: '100%', marginBottom: 16 }}>
+      <div className="flex gap-2" style={{ width: '100%', marginBottom: 16 }}>
         <Input
           placeholder="搜索查询..."
-          prefix={<SearchOutlined />}
+          prefix={<Search className="w-4 h-4"  />}
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
           style={{ flex: 1 }}
@@ -265,7 +261,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
             ))}
           </Select>
         )}
-      </Space>
+      </div>
 
       {/* 历史记录列表 */}
       {activeTab === 'history' && (
@@ -279,14 +275,14 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 <Tooltip title="重新执行">
                   <Button
                     type="text"
-                    icon={<PlayCircleOutlined />}
+                    icon={<PlayCircle />}
                     onClick={() => onExecuteQuery(item.query, item.database, item.connectionId)}
                   />
                 </Tooltip>,
                 <Tooltip title="保存查询">
                   <Button
                     type="text"
-                    icon={<StarOutlined />}
+                    icon={<Star className="w-4 h-4"  />}
                     onClick={() => saveQuery(item.query, item.database)}
                   />
                 </Tooltip>,
@@ -297,20 +293,20 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     okText="确定"
                     cancelText="取消"
                   >
-                    <Button type="text" danger icon={<DeleteOutlined />} />
+                    <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
                   </Popconfirm>
                 </Tooltip>,
               ]}
             >
               <List.Item.Meta
                 title={
-                  <Space>
+                  <div className="flex gap-2">
                     <Tag color="blue">{getConnectionName(item.connectionId)}</Tag>
                     <Tag color="green">{item.database}</Tag>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {formatTime(item.executedAt)}
                     </Text>
-                  </Space>
+                  </div>
                 }
                 description={
                   <div>
@@ -318,7 +314,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                       {item.query.length > 100 ? `${item.query.substring(0, 100)  }...` : item.query}
                     </Text>
                     <div style={{ marginTop: 4 }}>
-                      <Space size="small">
+                      <div className="flex gap-2" size="small">
                         <Text type="secondary" style={{ fontSize: 11 }}>
                           {item.duration}ms
                         </Text>
@@ -330,7 +326,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                             执行失败
                           </Tag>
                         )}
-                      </Space>
+                      </div>
                     </div>
                   </div>
                 }
@@ -352,14 +348,14 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 <Tooltip title="执行查询">
                   <Button
                     type="text"
-                    icon={<PlayCircleOutlined />}
+                    icon={<PlayCircle />}
                     onClick={() => {
                       // 这里需要选择连接和数据库
                       if (connections.length > 0) {
                         const defaultConnection = connections[0];
                         onExecuteQuery(item.query, item.database || '', defaultConnection.id);
                       } else {
-                        message.warning('请先添加连接');
+                        toast({ title: "警告", description: "请先添加连接" });
                       }
                     }}
                   />
@@ -371,18 +367,18 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     okText="确定"
                     cancelText="取消"
                   >
-                    <Button type="text" danger icon={<DeleteOutlined />} />
+                    <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
                   </Popconfirm>
                 </Tooltip>,
               ]}
             >
               <List.Item.Meta
                 title={
-                  <Space>
+                  <div className="flex gap-2">
                     <Text strong>{item.name}</Text>
-                    {item.favorite && <StarOutlined style={{ color: '#faad14' }} />}
+                    {item.favorite && <Star className="w-4 h-4" style={{ color: '#faad14' }}  />}
                     {item.database && <Tag color="green">{item.database}</Tag>}
-                  </Space>
+                  </div>
                 }
                 description={
                   <div>
@@ -397,14 +393,14 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                       </Text>
                     </div>
                     <div style={{ marginTop: 4 }}>
-                      <Space size="small">
+                      <div className="flex gap-2" size="small">
                         {item.tags.map(tag => (
                           <Tag key={tag} size="small">{tag}</Tag>
                         ))}
                         <Text type="secondary" style={{ fontSize: 11 }}>
                           {formatTime(item.updatedAt)}
                         </Text>
-                      </Space>
+                      </div>
                     </div>
                   </div>
                 }

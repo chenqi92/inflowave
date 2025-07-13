@@ -127,8 +127,7 @@ export class PerformancePredictor {
       meanSquaredError: 0,
       r2Score: 0,
       predictionCount: 0,
-      lastEvaluated: new Date(),
-    };
+      lastEvaluated: new Date()};
 
     this.initializeModels();
   }
@@ -179,8 +178,7 @@ export class PerformancePredictor {
         confidence: prediction.confidence,
         bottlenecks,
         recommendations,
-        riskFactors,
-      };
+        riskFactors};
 
       // 缓存结果
       this.predictionCache.set(cacheKey, result);
@@ -263,8 +261,7 @@ export class PerformancePredictor {
         queryFeatures,
         contextFeatures,
         actualPerformance: actualResult,
-        timestamp: new Date(),
-      };
+        timestamp: new Date()};
       
       // 添加到训练数据集
       this.trainingData.push(trainingData);
@@ -342,22 +339,17 @@ export class PerformancePredictor {
           joinCount: 0.3,
           complexityScore: 0.4,
           dataSize: 0.1,
-          systemLoad: 0.2,
-        },
+          systemLoad: 0.2},
         biases: { intercept: 100 },
         scalingFactors: {
           tableCount: 1.0,
           joinCount: 1.0,
           complexityScore: 1.0,
           dataSize: 0.001,
-          systemLoad: 0.01,
-        },
+          systemLoad: 0.01},
         thresholds: {
           slowQuery: 1000,
-          fastQuery: 100,
-        },
-      },
-    });
+          fastQuery: 100}}});
 
     // 决策树模型
     this.models.set('decision_tree', {
@@ -374,10 +366,7 @@ export class PerformancePredictor {
         thresholds: {
           tableCount: 3,
           joinCount: 2,
-          complexityScore: 50,
-        },
-      },
-    });
+          complexityScore: 50}}});
 
     // 神经网络模型
     this.models.set('neural_network', {
@@ -390,20 +379,14 @@ export class PerformancePredictor {
       parameters: {
         weights: {
           input_hidden: 0.5,
-          hidden_output: 0.3,
-        },
+          hidden_output: 0.3},
         biases: {
           hidden: 0.1,
-          output: 0.0,
-        },
+          output: 0.0},
         scalingFactors: {
-          normalization: 1.0,
-        },
+          normalization: 1.0},
         thresholds: {
-          activation: 0.5,
-        },
-      },
-    });
+          activation: 0.5}}});
   }
 
   /**
@@ -461,8 +444,7 @@ export class PerformancePredictor {
       complexityScore,
       selectivity,
       dataSize,
-      indexUsage,
-    };
+      indexUsage};
   }
 
   /**
@@ -478,8 +460,7 @@ export class PerformancePredictor {
         concurrentQueries: 1,
         timeOfDay: new Date().getHours(),
         dayOfWeek: new Date().getDay(),
-        dataFreshness: 1.0,
-      };
+        dataFreshness: 1.0};
     }
 
     const now = new Date();
@@ -614,8 +595,7 @@ export class PerformancePredictor {
       cpuUsage: queryFeatures.complexityScore * 0.1,
       ioOperations: queryFeatures.tableCount * 100,
       networkTraffic: queryFeatures.columnCount * 1024,
-      confidence: model.accuracy,
-    });
+      confidence: model.accuracy});
   }
 
   /**
@@ -652,8 +632,7 @@ export class PerformancePredictor {
       cpuUsage: queryFeatures.complexityScore * 0.2,
       ioOperations: queryFeatures.tableCount * 150,
       networkTraffic: queryFeatures.columnCount * 2048,
-      confidence: model.accuracy,
-    });
+      confidence: model.accuracy});
   }
 
   /**
@@ -688,8 +667,7 @@ export class PerformancePredictor {
       cpuUsage: queryFeatures.complexityScore * 0.15,
       ioOperations: queryFeatures.tableCount * 120,
       networkTraffic: queryFeatures.columnCount * 1536,
-      confidence: model.accuracy,
-    });
+      confidence: model.accuracy});
   }
 
   /**
@@ -711,8 +689,7 @@ export class PerformancePredictor {
       cpuUsage: queryFeatures.complexityScore * 0.1,
       ioOperations: queryFeatures.tableCount * 80,
       networkTraffic: queryFeatures.columnCount * 1024,
-      confidence: 0.6,
-    });
+      confidence: 0.6});
   }
 
   /**
@@ -733,8 +710,7 @@ export class PerformancePredictor {
         description: 'High CPU usage expected due to complex operations',
         probability: 0.8,
         impact: prediction.cpuUsage,
-        mitigation: 'Consider query optimization or adding more CPU cores',
-      });
+        mitigation: 'Consider query optimization or adding more CPU cores'});
     }
     
     // 内存瓶颈
@@ -745,8 +721,7 @@ export class PerformancePredictor {
         description: 'High memory usage expected due to large joins or aggregations',
         probability: 0.7,
         impact: prediction.memoryUsage,
-        mitigation: 'Optimize joins or increase available memory',
-      });
+        mitigation: 'Optimize joins or increase available memory'});
     }
     
     // I/O瓶颈
@@ -757,8 +732,7 @@ export class PerformancePredictor {
         description: 'High disk I/O expected due to table scans',
         probability: 0.6,
         impact: prediction.ioOperations,
-        mitigation: 'Add indexes or use SSD storage',
-      });
+        mitigation: 'Add indexes or use SSD storage'});
     }
     
     // 网络瓶颈
@@ -769,8 +743,7 @@ export class PerformancePredictor {
         description: 'High network traffic expected due to large result sets',
         probability: 0.5,
         impact: prediction.networkTraffic,
-        mitigation: 'Optimize data transfer or use local processing',
-      });
+        mitigation: 'Optimize data transfer or use local processing'});
     }
     
     return bottlenecks;
@@ -795,8 +768,7 @@ export class PerformancePredictor {
             title: 'Optimize CPU-intensive operations',
             description: 'Reduce computational complexity or parallelize operations',
             expectedImprovement: 30,
-            implementationCost: 'medium',
-          });
+            implementationCost: 'medium'});
           break;
         case 'memory':
           recommendations.push({
@@ -805,8 +777,7 @@ export class PerformancePredictor {
             title: 'Increase memory allocation',
             description: 'Add more RAM or optimize memory usage',
             expectedImprovement: 40,
-            implementationCost: 'low',
-          });
+            implementationCost: 'low'});
           break;
         case 'disk':
           recommendations.push({
@@ -815,8 +786,7 @@ export class PerformancePredictor {
             title: 'Optimize disk I/O',
             description: 'Add indexes or use faster storage',
             expectedImprovement: 50,
-            implementationCost: 'medium',
-          });
+            implementationCost: 'medium'});
           break;
         case 'network':
           recommendations.push({
@@ -825,8 +795,7 @@ export class PerformancePredictor {
             title: 'Optimize network usage',
             description: 'Reduce data transfer or improve network infrastructure',
             expectedImprovement: 25,
-            implementationCost: 'high',
-          });
+            implementationCost: 'high'});
           break;
       }
     });
@@ -839,8 +808,7 @@ export class PerformancePredictor {
         title: 'Overall query optimization needed',
         description: 'Query is predicted to be slow, consider comprehensive optimization',
         expectedImprovement: 60,
-        implementationCost: 'high',
-      });
+        implementationCost: 'high'});
     }
     
     return recommendations;
@@ -863,8 +831,7 @@ export class PerformancePredictor {
         riskLevel: 'high',
         description: 'Query has high complexity score',
         probability: 0.8,
-        impact: 'May cause performance degradation',
-      });
+        impact: 'May cause performance degradation'});
     }
     
     // 系统负载风险
@@ -874,8 +841,7 @@ export class PerformancePredictor {
         riskLevel: 'high',
         description: 'System is under high load',
         probability: 0.9,
-        impact: 'May cause query timeout or failure',
-      });
+        impact: 'May cause query timeout or failure'});
     }
     
     // 内存风险
@@ -885,8 +851,7 @@ export class PerformancePredictor {
         riskLevel: 'medium',
         description: 'Low memory availability',
         probability: 0.7,
-        impact: 'May cause out-of-memory errors',
-      });
+        impact: 'May cause out-of-memory errors'});
     }
     
     return riskFactors;
@@ -933,8 +898,7 @@ export class PerformancePredictor {
           title: 'Performance analysis unavailable',
           description: 'Unable to perform detailed analysis, consider manual optimization',
           expectedImprovement: 20,
-          implementationCost: 'medium',
-        },
+          implementationCost: 'medium'},
       ],
       riskFactors: [
         {
@@ -942,10 +906,8 @@ export class PerformancePredictor {
           riskLevel: 'medium',
           description: 'Performance characteristics unknown',
           probability: 0.5,
-          impact: 'Unpredictable performance',
-        },
-      ],
-    };
+          impact: 'Unpredictable performance'},
+      ]};
   }
 
   /**

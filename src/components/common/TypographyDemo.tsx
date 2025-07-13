@@ -1,6 +1,7 @@
 import React from 'react';
-import { Typography } from 'antd';
+import { Typography } from '@/components/ui';
 import { Space } from '@/components/ui';
+
 
 const { Text } = Typography;
 
@@ -9,42 +10,42 @@ const TypographyDemo: React.FC = () => {
     <div className="p-4 bg-white rounded-lg border">
       <h3 className="mb-4 text-lg font-semibold">Typography 样式测试</h3>
       
-      <Space direction="vertical" size="md" style={{ width: '100%' }}>
+      <div className="flex gap-2" direction="vertical" size="md" style={{ width: '100%' }}>
         <div>
           <Text strong>基础文本样式：</Text>
           <br />
-          <Space wrap>
+          <div className="flex gap-2" wrap>
             <Text>普通文本</Text>
             <Text type="secondary">次要文本</Text>
             <Text type="success">成功文本</Text>
             <Text type="warning">警告文本</Text>
             <Text type="danger">危险文本</Text>
-          </Space>
+          </div>
         </div>
 
         <div>
           <Text strong>文本装饰：</Text>
           <br />
-          <Space wrap>
+          <div className="flex gap-2" wrap>
             <Text strong>粗体文本</Text>
             <Text italic>斜体文本</Text>
             <Text underline>下划线文本</Text>
             <Text delete>删除线文本</Text>
             <Text code>代码文本</Text>
             <Text mark>标记文本</Text>
-          </Space>
+          </div>
         </div>
 
         <div>
           <Text strong>Tailwind CSS 尺寸类：</Text>
           <br />
-          <Space direction="vertical">
+          <div className="flex gap-2" direction="vertical">
             <Text className="text-xs">超小文本 (text-xs)</Text>
             <Text className="text-sm">小文本 (text-sm)</Text>
             <Text className="text-base">基础文本 (text-base)</Text>
             <Text className="text-lg">大文本 (text-lg) - 这里应该正常显示</Text>
             <Text className="text-xl">超大文本 (text-xl)</Text>
-          </Space>
+          </div>
         </div>
 
         <div>
@@ -74,7 +75,7 @@ const TypographyDemo: React.FC = () => {
             外层文本结束
           </Text>
         </div>
-      </Space>
+      </div>
     </div>
   );
 };

@@ -61,9 +61,7 @@ export class ExcelImportManager {
           sheet_to_json: this.mockSheetToJson.bind(this),
           sheet_to_csv: this.mockSheetToCsv.bind(this),
           decode_range: this.mockDecodeRange.bind(this),
-          encode_range: this.mockEncodeRange.bind(this),
-        },
-      };
+          encode_range: this.mockEncodeRange.bind(this)}};
     } catch (error) {
       console.error('XLSX 库加载失败:', error);
       throw new Error('Excel 导入功能需要 xlsx 库支持');
@@ -81,8 +79,7 @@ export class ExcelImportManager {
         cellText: true,
         cellDates: true,
         dateNF: 'yyyy-mm-dd',
-        ...options,
-      });
+        ...options});
 
       const worksheets: ExcelWorksheet[] = [];
 
@@ -97,8 +94,7 @@ export class ExcelImportManager {
         fileName: file.name,
         fileSize: file.size,
         worksheets,
-        activeSheet: workbook.SheetNames[0] || '',
-      };
+        activeSheet: workbook.SheetNames[0] || ''};
     } catch (error) {
       throw new Error(`Excel 文件解析失败: ${error}`);
     }
@@ -115,8 +111,7 @@ export class ExcelImportManager {
         data: [],
         headers: [],
         rowCount: 0,
-        columnCount: 0,
-      };
+        columnCount: 0};
     }
 
     // 转换为 JSON 格式
@@ -124,8 +119,7 @@ export class ExcelImportManager {
       header: 1,
       raw: false,
       dateNF: options.dateNF || 'yyyy-mm-dd',
-      defval: '',
-    });
+      defval: ''});
 
     if (jsonData.length === 0) {
       return {
@@ -133,8 +127,7 @@ export class ExcelImportManager {
         data: [],
         headers: [],
         rowCount: 0,
-        columnCount: 0,
-      };
+        columnCount: 0};
     }
 
     // 提取表头
@@ -157,8 +150,7 @@ export class ExcelImportManager {
       data: normalizedData,
       headers: headers.map((header, index) => header || `Column${index + 1}`),
       rowCount: normalizedData.length,
-      columnCount: maxCols,
-    };
+      columnCount: maxCols};
   }
 
   /**
@@ -185,8 +177,7 @@ export class ExcelImportManager {
         sheets: [sheetName],
         cellText: true,
         cellDates: true,
-        ...options,
-      });
+        ...options});
 
       const worksheet = workbook.Sheets[sheetName];
       if (!worksheet) {
@@ -217,8 +208,7 @@ export class ExcelImportManager {
         start: this.XLSX.utils.encode_cell({ r: range.s.r, c: range.s.c }),
         end: this.XLSX.utils.encode_cell({ r: range.e.r, c: range.e.c }),
         rows: range.e.r - range.s.r + 1,
-        cols: range.e.c - range.s.c + 1,
-      };
+        cols: range.e.c - range.s.c + 1};
     } catch (error) {
       throw new Error(`获取工作表范围失败: ${error}`);
     }
@@ -313,8 +303,7 @@ export class ExcelImportManager {
         dateNF: options.dateNF || 'yyyy-mm-dd',
         strip: false,
         blankrows: false,
-        skipHidden: false,
-      });
+        skipHidden: false});
     } catch (error) {
       throw new Error(`转换为 CSV 失败: ${error}`);
     }
@@ -328,8 +317,7 @@ export class ExcelImportManager {
       const worksheet = await this.parseSpecificWorksheet(file, sheetName, { header: 0 });
       return {
         headers: worksheet.headers,
-        data: worksheet.data.slice(0, maxRows),
-      };
+        data: worksheet.data.slice(0, maxRows)};
     } catch (error) {
       throw new Error(`预览数据失败: ${error}`);
     }
@@ -348,15 +336,11 @@ export class ExcelImportManager {
           C1: { v: 'City', t: 's' },
           A2: { v: 'John', t: 's' },
           B2: { v: 25, t: 'n' },
-          C2: { v: 'New York', t: 's' },
-        },
+          C2: { v: 'New York', t: 's' }},
         Sheet2: {
           '!ref': 'A1:B5',
           A1: { v: 'Product', t: 's' },
-          B1: { v: 'Price', t: 's' },
-        },
-      },
-    };
+          B1: { v: 'Price', t: 's' }}}};
   }
 
   private mockSheetToJson(worksheet: any, options: any): any[][] {
@@ -377,8 +361,7 @@ export class ExcelImportManager {
     // 模拟解码范围
     return {
       s: { r: 0, c: 0 },
-      e: { r: 9, c: 2 },
-    };
+      e: { r: 9, c: 2 }};
   }
 
   private mockEncodeRange(range: { s: { r: number; c: number }; e: { r: number; c: number } }): string {
@@ -397,8 +380,7 @@ export const getExcelFileInfo = async (file: File): Promise<{ sheets: string[]; 
   const sheets = await manager.getWorksheetNames(file);
   return {
     sheets,
-    size: file.size,
-  };
+    size: file.size};
 };
 
 export const isExcelFile = (file: File): boolean => {

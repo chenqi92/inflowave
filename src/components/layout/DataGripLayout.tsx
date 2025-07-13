@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Button, Col, Layout, Row, Tabs, Tag, Typography, Tooltip, Tree } from 'antd';
+import { Button, Col, Layout, Row, Tabs, Tag, Tooltip, Tree } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
-import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined, ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined } from '@/components/ui';
+import { Database, TrendingUp, RefreshCw, Settings, Table, Webhook, Book, History, FileUp, Tags, Zap, LayoutDashboard, PlayCircle, Square, Clock } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
@@ -28,7 +28,6 @@ type DataNode = {
 // Fix for invoke function
 const invoke = safeTauriInvoke;
 
-const { Text } = Typography;
 
 interface DatabaseStructure {
   databases: string[];
@@ -44,14 +43,12 @@ const DataGripLayout: React.FC = () => {
     connectionStatuses,
     setActiveConnection,
     connectToDatabase,
-    disconnectFromDatabase,
-  } = useConnectionStore();
+    disconnectFromDatabase} = useConnectionStore();
   const [structure, setStructure] = useState<DatabaseStructure>({
     databases: [],
     measurements: {},
     fields: {},
-    tags: {},
-  });
+    tags: {}});
   const [loading, setLoading] = useState(false);
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
@@ -80,23 +77,20 @@ const DataGripLayout: React.FC = () => {
 
       // 获取数据库列表
       const databases = await invoke<string[]>('get_databases', {
-        connectionId,
-      });
+        connectionId});
 
       const newStructure: DatabaseStructure = {
         databases,
         measurements: {},
         fields: {},
-        tags: {},
-      };
+        tags: {}};
 
       // 为每个数据库加载测量
       for (const db of databases) {
         try {
           const measurements = await invoke<string[]>('get_measurements', {
             connectionId,
-            database: db,
-          });
+            database: db});
           newStructure.measurements[db] = measurements;
 
           // 为第一个测量加载字段和标签（示例）
@@ -107,13 +101,11 @@ const DataGripLayout: React.FC = () => {
                 invoke<string[]>('get_field_keys', {
                   connectionId,
                   database: db,
-                  measurement,
-                }).catch(() => []),
+                  measurement}).catch(() => []),
                 invoke<string[]>('get_tag_keys', {
                   connectionId,
                   database: db,
-                  measurement,
-                }).catch(() => []),
+                  measurement}).catch(() => []),
               ]);
 
               newStructure.fields[`${db}.${measurement}`] = fields;
@@ -155,36 +147,34 @@ const DataGripLayout: React.FC = () => {
       const connectionNode: DataNode = {
         title: (
           <div className='flex items-center justify-between w-full'>
-            <Space>
-              <ApiOutlined
-                style={{ color: isConnected ? '#52c41a' : '#ff4d4f' }}
-              />
+            <div className="flex gap-2">
+              <Webhook className="w-4 h-4" style={{ color: isConnected ? '#52c41a' : '#ff4d4f' }}
+               />
               <span className={isActive ? 'font-bold' : ''}>{conn.name}</span>
               {isActive && (
                 <Tag color='blue' size='small'>
                   活跃
                 </Tag>
               )}
-            </Space>
-            <Space>
+            </div>
+            <div className="flex gap-2">
               <Tooltip title={isConnected ? '断开连接' : '连接'}>
                 <Button
                   type='text'
                   size='small'
-                  icon={isConnected ? <StopOutlined /> : <PlayCircleOutlined />}
+                  icon={isConnected ? <Square /> : <PlayCircle />}
                   onClick={e => {
                     e.stopPropagation();
                     handleConnectionToggle(conn.id!);
                   }}
                 />
               </Tooltip>
-            </Space>
+            </div>
           </div>
         ),
         key: `conn-${conn.id}`,
-        icon: <ApiOutlined />,
-        children: isActive && isConnected ? buildDatabaseNodes() : [],
-      };
+        icon: <Webhook className="w-4 h-4"  />,
+        children: isActive && isConnected ? buildDatabaseNodes() : []};
 
       treeData.push(connectionNode);
     });
@@ -196,18 +186,17 @@ const DataGripLayout: React.FC = () => {
   const buildDatabaseNodes = (): DataNode[] => {
     return structure.databases.map(db => ({
       title: (
-        <Space>
-          <DatabaseOutlined />
+        <div className="flex gap-2">
+          <Database className="w-4 h-4"  />
           <span>{db}</span>
-          <Text type='secondary'>
+          <span className="text-gray-500">
             ({structure.measurements[db]?.length || 0})
-          </Text>
-        </Space>
+          </span>
+        </div>
       ),
       key: `db-${db}`,
-      icon: <DatabaseOutlined />,
-      children: buildMeasurementNodes(db),
-    }));
+      icon: <Database className="w-4 h-4"  />,
+      children: buildMeasurementNodes(db)}));
   };
 
   // 构建测量节点
@@ -215,58 +204,53 @@ const DataGripLayout: React.FC = () => {
     const measurements = structure.measurements[database] || [];
     return measurements.map(measurement => ({
       title: (
-        <Space>
-          <TableOutlined />
+        <div className="flex gap-2">
+          <Table className="w-4 h-4"  />
           <span>{measurement}</span>
-        </Space>
+        </div>
       ),
       key: `measurement-${database}-${measurement}`,
-      icon: <TableOutlined />,
+      icon: <Table className="w-4 h-4"  />,
       children: [
         {
           title: (
-            <Space>
-              <FieldTimeOutlined />
+            <div className="flex gap-2">
+              <Clock />
               <span>Fields</span>
-              <Text type='secondary'>
+              <span className="text-gray-500">
                 ({structure.fields[`${database}.${measurement}`]?.length || 0})
-              </Text>
-            </Space>
+              </span>
+            </div>
           ),
           key: `fields-${database}-${measurement}`,
-          icon: <FieldTimeOutlined />,
+          icon: <Clock />,
           children: (structure.fields[`${database}.${measurement}`] || []).map(
             field => ({
               title: field,
               key: `field-${database}-${measurement}-${field}`,
-              icon: <FieldTimeOutlined />,
-              isLeaf: true,
-            })
-          ),
-        },
+              icon: <Clock />,
+              isLeaf: true})
+          )},
         {
           title: (
-            <Space>
-              <TagsOutlined />
+            <div className="flex gap-2">
+              <Tags className="w-4 h-4"  />
               <span>Tags</span>
-              <Text type='secondary'>
+              <span className="text-gray-500">
                 ({structure.tags[`${database}.${measurement}`]?.length || 0})
-              </Text>
-            </Space>
+              </span>
+            </div>
           ),
           key: `tags-${database}-${measurement}`,
-          icon: <TagsOutlined />,
+          icon: <Tags className="w-4 h-4"  />,
           children: (structure.tags[`${database}.${measurement}`] || []).map(
             tag => ({
               title: tag,
               key: `tag-${database}-${measurement}-${tag}`,
-              icon: <TagsOutlined />,
-              isLeaf: true,
-            })
-          ),
-        },
-      ],
-    }));
+              icon: <Tags className="w-4 h-4"  />,
+              isLeaf: true})
+          )},
+      ]}));
   };
 
   // 处理连接切换
@@ -349,30 +333,27 @@ const DataGripLayout: React.FC = () => {
                   {
                     key: 'database',
                     label: (
-                      <Space>
-                        <DatabaseOutlined />
+                      <div className="flex gap-2">
+                        <Database className="w-4 h-4"  />
                         <span>数据库</span>
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                   {
                     key: 'history',
                     label: (
-                      <Space>
-                        <HistoryOutlined />
+                      <div className="flex gap-2">
+                        <History className="w-4 h-4"  />
                         <span>历史</span>
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                   {
                     key: 'saved',
                     label: (
-                      <Space>
-                        <BookOutlined />
+                      <div className="flex gap-2">
+                        <Book className="w-4 h-4"  />
                         <span>收藏</span>
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                 ]}
               />
             }
@@ -380,7 +361,7 @@ const DataGripLayout: React.FC = () => {
               leftPanelTab === 'database' && (
                 <Button
                   type='text'
-                  icon={<ReloadOutlined />}
+                  icon={<RefreshCw className="w-4 h-4"  />}
                   size='small'
                   loading={loading}
                   onClick={() =>
@@ -394,9 +375,7 @@ const DataGripLayout: React.FC = () => {
               body: {
                 padding: 0,
                 height: 'calc(100vh - 57px)',
-                overflow: 'auto',
-              },
-            }}
+                overflow: 'auto'}}}
             style={{ height: '100%' }}
           >
             {leftPanelTab === 'database' && (
@@ -438,73 +417,67 @@ const DataGripLayout: React.FC = () => {
               {
                 key: 'datasource',
                 tab: (
-                  <Space>
-                    <SettingOutlined />
+                  <div className="flex gap-2">
+                    <Settings className="w-4 h-4"  />
                     <span>数据源管理</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
               {
                 key: 'database',
                 tab: (
-                  <Space>
-                    <DatabaseOutlined />
+                  <div className="flex gap-2">
+                    <Database className="w-4 h-4"  />
                     <span>数据库浏览</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
               {
                 key: 'query',
                 tab: (
-                  <Space>
-                    <PlayCircleOutlined />
+                  <div className="flex gap-2">
+                    <PlayCircle />
                     <span>查询编辑器</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
               {
                 key: 'dashboard',
                 tab: (
-                  <Space>
-                    <DashboardOutlined />
+                  <div className="flex gap-2">
+                    <LayoutDashboard />
                     <span>仪表板</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
               {
                 key: 'monitor',
                 tab: (
-                  <Space>
-                    <LineChartOutlined />
+                  <div className="flex gap-2">
+                    <TrendingUp className="w-4 h-4"  />
                     <span>实时监控</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
               {
                 key: 'performance',
                 tab: (
-                  <Space>
-                    <ThunderboltOutlined />
+                  <div className="flex gap-2">
+                    <Zap className="w-4 h-4"  />
                     <span>性能分析</span>
-                  </Space>
-                ),
-              },
+                  </div>
+                )},
             ]}
             activeTabKey={mainContentTab}
             onTabChange={setMainContentTab}
             tabBarExtraContent={
-              <Space>
+              <div className="flex gap-2">
                 <Button
-                  icon={<ImportOutlined />}
+                  icon={<FileUp className="w-4 h-4"  />}
                   onClick={() => setShowImportWizard(true)}
                   size='small'
                 >
                   导入数据
                 </Button>
-                <Button icon={<SettingOutlined />} size='small'>
+                <Button icon={<Settings className="w-4 h-4"  />} size='small'>
                   设置
                 </Button>
-              </Space>
+              </div>
             }
           >
             {mainContentTab === 'datasource' && (

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Typography, Button, Breadcrumb } from 'antd';
-import { HomeOutlined, RightOutlined } from '@/components/ui';
+import { Typography, Button, Breadcrumb } from '@/components/ui';
+import { Home, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -23,8 +23,7 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
   breadcrumb,
   toolbar,
   children,
-  className = '',
-}) => {
+  className = ''}) => {
   const navigate = useNavigate();
 
   // 生成面包屑导航
@@ -35,12 +34,11 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
           <Button 
             type="text" 
             size="small" 
-            icon={<HomeOutlined />}
+            icon={<Home className="w-4 h-4"  />}
             onClick={() => navigate('/dashboard')}
             style={{ padding: '0 4px', height: '20px' }}
           />
-        ),
-      },
+        )},
     ];
 
     if (breadcrumb && breadcrumb.length > 0) {
@@ -57,13 +55,11 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
             </Button>
           ) : (
             item.title
-          ),
-        });
+          )});
       });
     } else {
       items.push({
-        title,
-      });
+        title});
     }
 
     return items;
@@ -77,7 +73,7 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
         <div className="mb-4">
           <Breadcrumb
             items={generateBreadcrumb()}
-            separator={<RightOutlined style={{ fontSize: '10px' }} />}
+            separator={<ChevronRight className="w-4 h-4" style={{ fontSize: '10px' }}  />}
           />
         </div>
 

@@ -74,8 +74,7 @@ export class DataValidator {
       valid: errors.length === 0,
       errors,
       warnings,
-      suggestions,
-    };
+      suggestions};
   }
 
   /**
@@ -86,8 +85,7 @@ export class DataValidator {
       case 'required':
         return {
           valid: value !== null && value !== undefined && value !== '',
-          message: rule.message || '字段不能为空',
-        };
+          message: rule.message || '字段不能为空'};
 
       case 'dataType':
         return this.validateDataType(value, rule);
@@ -118,16 +116,14 @@ export class DataValidator {
         return {
           valid: isNumber,
           message: rule.message || '必须是数字',
-          suggestion: isNumber ? undefined : '请输入有效的数字',
-        };
+          suggestion: isNumber ? undefined : '请输入有效的数字'};
 
       case 'integer':
         const isInteger = Number.isInteger(Number(value));
         return {
           valid: isInteger,
           message: rule.message || '必须是整数',
-          suggestion: isInteger ? undefined : '请输入整数',
-        };
+          suggestion: isInteger ? undefined : '请输入整数'};
 
       case 'boolean':
         const booleanValues = ['true', 'false', '1', '0', 'yes', 'no', 'on', 'off'];
@@ -135,16 +131,14 @@ export class DataValidator {
         return {
           valid: isBoolean,
           message: rule.message || '必须是布尔值',
-          suggestion: isBoolean ? undefined : '请输入 true/false 或 1/0',
-        };
+          suggestion: isBoolean ? undefined : '请输入 true/false 或 1/0'};
 
       case 'timestamp':
         const isTimestamp = this.isValidTimestamp(value);
         return {
           valid: isTimestamp,
           message: rule.message || '必须是有效的时间戳',
-          suggestion: isTimestamp ? undefined : '请使用 ISO 8601 格式或 Unix 时间戳',
-        };
+          suggestion: isTimestamp ? undefined : '请使用 ISO 8601 格式或 Unix 时间戳'};
 
       default:
         return { valid: true, message: '' };
@@ -161,24 +155,21 @@ export class DataValidator {
     if (isNaN(numValue)) {
       return {
         valid: false,
-        message: '无法验证范围，值不是数字',
-      };
+        message: '无法验证范围，值不是数字'};
     }
 
     if (min !== undefined && numValue < min) {
       return {
         valid: false,
         message: rule.message || `值必须大于等于 ${min}`,
-        suggestion: `请输入大于等于 ${min} 的值`,
-      };
+        suggestion: `请输入大于等于 ${min} 的值`};
     }
 
     if (max !== undefined && numValue > max) {
       return {
         valid: false,
         message: rule.message || `值必须小于等于 ${max}`,
-        suggestion: `请输入小于等于 ${max} 的值`,
-      };
+        suggestion: `请输入小于等于 ${max} 的值`};
     }
 
     return { valid: true, message: '' };
@@ -195,8 +186,7 @@ export class DataValidator {
     return {
       valid: isValid,
       message: rule.message || '格式不正确',
-      suggestion: isValid ? undefined : '请检查输入格式',
-    };
+      suggestion: isValid ? undefined : '请检查输入格式'};
   }
 
   /**
@@ -211,13 +201,11 @@ export class DataValidator {
         return {
           valid: result.valid,
           message: result.message || rule.message,
-          suggestion: result.suggestion,
-        };
+          suggestion: result.suggestion};
       } catch (error) {
         return {
           valid: false,
-          message: '验证函数执行失败',
-        };
+          message: '验证函数执行失败'};
       }
     }
 
@@ -301,8 +289,7 @@ export class DataQualityAnalyzer {
       duplicateRows: duplicates.count,
       outliers: outliers.count,
       qualityScore,
-      issues,
-    };
+      issues};
   }
 
   /**
@@ -327,8 +314,7 @@ export class DataQualityAnalyzer {
       description: `发现 ${count} 个缺失值`,
       count,
       rows: [...new Set(missingRows)],
-      suggestion: '考虑使用默认值填充或删除包含缺失值的行',
-    };
+      suggestion: '考虑使用默认值填充或删除包含缺失值的行'};
   }
 
   /**
@@ -353,8 +339,7 @@ export class DataQualityAnalyzer {
       description: `发现 ${duplicateRows.length} 个重复行`,
       count: duplicateRows.length,
       rows: duplicateRows,
-      suggestion: '考虑删除重复行或合并重复数据',
-    };
+      suggestion: '考虑删除重复行或合并重复数据'};
   }
 
   /**
@@ -387,8 +372,7 @@ export class DataQualityAnalyzer {
       description: `发现 ${count} 个异常值`,
       count,
       rows: [...new Set(outlierRows)],
-      suggestion: '检查异常值是否为数据输入错误',
-    };
+      suggestion: '检查异常值是否为数据输入错误'};
   }
 
   /**
@@ -447,8 +431,7 @@ export class DataQualityAnalyzer {
           description: `字段 "${header}" 包含多种数据类型: ${Array.from(types).join(', ')}`,
           count: inconsistentRows.length,
           rows: inconsistentRows,
-          suggestion: '统一数据类型或重新定义字段类型',
-        });
+          suggestion: '统一数据类型或重新定义字段类型'});
       }
     });
 
@@ -765,24 +748,21 @@ export const createDefaultValidationRules = (dataType: string): ValidationRule[]
       rules.push({
         type: 'dataType',
         message: '必须是数字',
-        params: { dataType: 'number' },
-      });
+        params: { dataType: 'number' }});
       break;
     
     case 'timestamp':
       rules.push({
         type: 'dataType',
         message: '必须是有效的时间戳',
-        params: { dataType: 'timestamp' },
-      });
+        params: { dataType: 'timestamp' }});
       break;
     
     case 'boolean':
       rules.push({
         type: 'dataType',
         message: '必须是布尔值',
-        params: { dataType: 'boolean' },
-      });
+        params: { dataType: 'boolean' }});
       break;
   }
 

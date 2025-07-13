@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider } from 'antd';
-import { Layout, Typography, Spin } from 'antd';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { antdTheme } from '@/styles/antd-theme';
 import '@/styles/datagrip.css';
 
 // 错误处理
@@ -25,9 +22,8 @@ import UITest from './pages/UITest';
 import TestButton from './components/test/TestButton';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
-// Layout 组件直接导入
-import { Content } from '@/components/ui';
-const { Text } = Typography;
+// UI 组件导入
+import { Text } from '@/components/ui';
 
 // 主布局组件
 const MainLayout: React.FC = () => {
@@ -67,17 +63,17 @@ const MainLayout: React.FC = () => {
 
   if (isSpecialPage) {
     return (
-      <Layout className="desktop-layout">
+      <div className="desktop-layout min-h-screen bg-background">
         {/* 应用工具栏 */}
 
         {/* 主内容区 */}
-        <Content className="desktop-content">
+        <main className="desktop-content flex-1 p-4">
           <Routes>
             <Route path="/debug" element={<ConnectionDebug />} />
             <Route path="/typography-test" element={<TypographyTest />} />
             <Route path="/ui-test" element={<UITest />} />
           </Routes>
-        </Content>
+        </main>
 
         {/* 全局搜索 */}
         <GlobalSearch
@@ -93,7 +89,7 @@ const MainLayout: React.FC = () => {
         
         {/* 测试按钮 - 仅在开发环境显示 */}
         {(import.meta as any).env?.DEV && <TestButton />}
-      </Layout>
+      </div>
     );
   }
 
@@ -204,26 +200,20 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <Spin size="lg" />
-            <div className="mt-4">
-              <Text style={{ fontSize: '16px', color: '#666' }}>
-                正在启动 InfloWave...
-              </Text>
-            </div>
-          </div>
+      <div className="min-h-screen bg-muted/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Spin size="large" />
+          <Text className="text-base text-muted-foreground">
+            正在启动 InfloWave...
+          </Text>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
     <ErrorBoundary>
-      <ConfigProvider theme={antdTheme}>
-        <MainLayout />
-      </ConfigProvider>
+      <MainLayout />
     </ErrorBoundary>
   );
 };

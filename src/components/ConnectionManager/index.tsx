@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from 'antd';
-import { Card, Space, Modal } from '@/components/ui';
-import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined, MoreOutlined } from '@/components/ui';
-import type { ColumnType } from 'antd/es/table';
-import type { MenuProps } from '@/components/ui';
+import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Card, Space } from '@/components/ui';
+import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
+import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -34,8 +32,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     stopMonitoring,
     refreshAllStatuses,
     getPoolStats,
-    removeConnection,
-  } = useConnectionStore();
+    removeConnection} = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
   const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
@@ -148,8 +145,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       connected: { color: 'success', text: '已连接' },
       disconnected: { color: 'default', text: '已断开' },
       connecting: { color: 'processing', text: '连接中' },
-      error: { color: 'error', text: '错误' },
-    };
+      error: { color: 'error', text: '错误' }};
 
     const config = statusConfig[status.status] || statusConfig.disconnected;
     return (
@@ -178,8 +174,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             <Tag color="blue" className="ml-2">活跃</Tag>
           )}
         </div>
-      ),
-    },
+      )},
     {
       title: '连接信息',
       key: 'connectionInfo',
@@ -196,8 +191,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             </span>
           </div>
         </div>
-      ),
-    },
+      )},
     {
       title: '状态',
       key: 'status',
@@ -213,8 +207,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             )}
           </div>
         );
-      },
-    },
+      }},
     {
       title: '最后连接',
       key: 'lastConnected',
@@ -227,8 +220,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         ) : (
           <span className="text-gray-400">从未连接</span>
         );
-      },
-    },
+      }},
     {
       title: '操作',
       key: 'actions',
@@ -241,7 +233,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
           <div className="flex items-center space-x-1">
             <Button
               type={isConnected ? 'default' : 'primary'}
-              icon={isConnected ? <DisconnectOutlined /> : <WifiOutlined />}
+              icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
               size="small"
               loading={loading}
               onClick={() => handleConnectionToggle(record.id!)}
@@ -251,7 +243,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             </Button>
 
             <Button
-              icon={<EditOutlined />}
+              icon={<Edit className="w-4 h-4"  />}
               size="small"
               onClick={() => {
                 console.log('编辑连接:', record);
@@ -265,14 +257,13 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                 items: [
                   {
                     key: 'poolStats',
-                    icon: <EyeOutlined />,
+                    icon: <Eye className="w-4 h-4"  />,
                     label: '连接池统计',
                     disabled: !isConnected,
-                    onClick: () => handleViewPoolStats(record.id!),
-                  },
+                    onClick: () => handleViewPoolStats(record.id!)},
                   {
                     key: 'delete',
-                    icon: <DeleteOutlined />,
+                    icon: <Trash2 className="w-4 h-4"  />,
                     label: '删除连接',
                     danger: true,
                     onClick: () => {
@@ -286,10 +277,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                         maskClosable: true,
                         okButtonProps: { danger: true, size: 'small' },
                         cancelButtonProps: { size: 'small' },
-                        onOk: () => removeConnection(record.id!),
-                      });
-                    },
-                  },
+                        onOk: () => removeConnection(record.id!)});
+                    }},
                 ]
               }}
               trigger={['click']}
@@ -298,16 +287,14 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             </Dropdown>
           </div>
         );
-      },
-    },
+      }},
   ];
 
   // 合并连接数据和状态
   const dataSource: ConnectionWithStatus[] = connections.map(conn => ({
     ...conn,
     status: connectionStatuses[conn.id!],
-    poolStats: poolStats[conn.id!],
-  }));
+    poolStats: poolStats[conn.id!]}));
 
   return (
     <div className="h-full flex flex-col">
@@ -318,7 +305,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         </div>
         <Button
           type={monitoringActive ? 'default' : 'primary'}
-          icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+          icon={monitoringActive ? <PauseCircle /> : <PlayCircle />}
           onClick={handleMonitoringToggle}
           size="small"
         >
@@ -329,12 +316,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center space-x-6 text-sm">
           <div className="flex items-center space-x-2">
-            <SettingOutlined className="text-gray-500" />
+            <Settings className="w-4 h-4 text-gray-500"   />
             <span className="text-gray-600">总连接:</span>
             <span className="font-medium">{connections.length}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <WifiOutlined className="text-green-500" />
+            <Wifi className="w-4 h-4 text-green-500"   />
             <span className="text-gray-600">已连接:</span>
             <span className="font-medium text-green-600">
               {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
@@ -380,7 +367,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
 
 
       {/* 连接池统计模态框 */}
-      <Modal
+      <Dialog
         title="连接池统计信息"
         open={poolStatsModalVisible}
         onCancel={() => setPoolStatsModalVisible(false)}
@@ -430,7 +417,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             </div>
           </div>
         )}
-      </Modal>
+      </Dialog>
     </div>
   );
 };

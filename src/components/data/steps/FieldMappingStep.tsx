@@ -1,7 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Tooltip, Form } from 'antd';
-import { Card, Space, Modal } from '@/components/ui';
-import { InfoCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined, BulkOutlined, CheckCircleOutlined } from '@/components/ui';
+import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+import { BulkOutlined } from '@/components/ui';
+import { Info, Edit, Trash2, Plus, CheckCircle } from 'lucide-react';
 import { ImportWizardData, FieldMapping } from '../SmartImportWizard';
 import { createDefaultValidationRules } from '../DataValidationUtils';
 
@@ -23,8 +26,7 @@ interface MappingTemplate {
 const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
   wizardData,
   onDataUpdate,
-  measurements,
-}) => {
+  measurements}) => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
@@ -42,8 +44,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
         { fieldType: 'field', targetField: 'value', dataType: 'number' },
         { fieldType: 'field', targetField: 'temperature', dataType: 'number' },
         { fieldType: 'field', targetField: 'humidity', dataType: 'number' },
-      ],
-    },
+      ]},
     {
       name: '系统监控数据',
       description: '适用于系统性能监控数据导入',
@@ -54,8 +55,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
         { fieldType: 'field', targetField: 'cpu_usage', dataType: 'number' },
         { fieldType: 'field', targetField: 'memory_usage', dataType: 'number' },
         { fieldType: 'field', targetField: 'disk_usage', dataType: 'number' },
-      ],
-    },
+      ]},
     {
       name: '业务指标数据',
       description: '适用于业务KPI指标数据导入',
@@ -66,8 +66,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
         { fieldType: 'field', targetField: 'revenue', dataType: 'number' },
         { fieldType: 'field', targetField: 'orders', dataType: 'number' },
         { fieldType: 'field', targetField: 'users', dataType: 'number' },
-      ],
-    },
+      ]},
   ];
 
   // 智能推断字段映射
@@ -109,8 +108,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
         dataType,
         required: fieldType === 'time',
         defaultValue: '',
-        validationRules: createDefaultValidationRules(dataType),
-      };
+        validationRules: createDefaultValidationRules(dataType)};
     });
 
     onDataUpdate({ fieldMappings: mappings });
@@ -160,7 +158,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
     return name
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_{2,}/g, '_')
+      .replace(/_{2}/g, '_')
       .replace(/^_|_$/g, '');
   };
 
@@ -186,8 +184,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
   const bulkUpdateMappings = useCallback((updates: Partial<FieldMapping>) => {
     const newMappings = wizardData.fieldMappings.map(mapping => ({
       ...mapping,
-      ...updates,
-    }));
+      ...updates}));
     onDataUpdate({ fieldMappings: newMappings });
   }, [wizardData.fieldMappings, onDataUpdate]);
 
@@ -272,10 +269,10 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       key: 'sourceField',
       width: 150,
       render: (text: string, record: FieldMapping, index: number) => (
-        <Space>
+        <div className="flex gap-2">
           <Text strong>{text}</Text>
           <Tooltip title="查看样本数据">
-            <InfoCircleOutlined 
+            <Info 
               onClick={() => {
                 const samples = wizardData.preview.map(row => row[index]).slice(0, 5);
                 Modal.info({
@@ -288,14 +285,12 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
                         </div>
                       ))}
                     </div>
-                  ),
-                });
+                  )});
               }}
             />
           </Tooltip>
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '目标字段',
       dataIndex: 'targetField',
@@ -308,8 +303,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           placeholder="输入目标字段名"
           size="small"
         />
-      ),
-    },
+      )},
     {
       title: '字段类型',
       dataIndex: 'fieldType',
@@ -323,32 +317,31 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           size="small"
         >
           <Option value="time">
-            <Space>
+            <div className="flex gap-2">
               <Tag color="blue">时间</Tag>
               <Text>时间戳</Text>
-            </Space>
+            </div>
           </Option>
           <Option value="tag">
-            <Space>
+            <div className="flex gap-2">
               <Tag color="green">标签</Tag>
               <Text>索引字段</Text>
-            </Space>
+            </div>
           </Option>
           <Option value="field">
-            <Space>
+            <div className="flex gap-2">
               <Tag color="orange">字段</Tag>
               <Text>数值字段</Text>
-            </Space>
+            </div>
           </Option>
           <Option value="ignore">
-            <Space>
+            <div className="flex gap-2">
               <Tag color="default">忽略</Tag>
               <Text>不导入</Text>
-            </Space>
+            </div>
           </Option>
         </Select>
-      ),
-    },
+      )},
     {
       title: '数据类型',
       dataIndex: 'dataType',
@@ -367,8 +360,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           <Option value="boolean">布尔值</Option>
           <Option value="timestamp">时间戳</Option>
         </Select>
-      ),
-    },
+      )},
     {
       title: '必填',
       dataIndex: 'required',
@@ -381,8 +373,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           size="small"
           disabled={record.fieldType === 'time'}
         />
-      ),
-    },
+      )},
     {
       title: '默认值',
       dataIndex: 'defaultValue',
@@ -396,30 +387,28 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           size="small"
           disabled={record.fieldType === 'ignore'}
         />
-      ),
-    },
+      )},
     {
       title: '操作',
       key: 'action',
       width: 100,
       render: (text: any, record: FieldMapping, index: number) => (
-        <Space>
+        <div className="flex gap-2">
           <Button
             type="text"
             size="small"
-            icon={<EditOutlined />}
+            icon={<Edit className="w-4 h-4"  />}
             onClick={() => setEditingField(record.sourceField)}
           />
           <Button
             type="text"
             size="small"
-            icon={<DeleteOutlined />}
+            icon={<Trash2 className="w-4 h-4"  />}
             onClick={() => removeFieldMapping(index)}
             danger
           />
-        </Space>
-      ),
-    },
+        </div>
+      )},
   ];
 
   // 初始化字段映射
@@ -435,7 +424,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       <Card>
         <Row gutter={16} align="middle">
           <Col span={12}>
-            <Space>
+            <div className="flex gap-2">
               <Button
                 icon={<BulkOutlined />}
                 onClick={generateSmartMapping}
@@ -443,23 +432,23 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
                 智能映射
               </Button>
               <Button
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => setShowTemplateModal(true)}
               >
                 应用模板
               </Button>
-            </Space>
+            </div>
           </Col>
           <Col span={12}>
             <div className="text-right">
-              <Space>
+              <div className="flex gap-2">
                 <Text>已映射字段:</Text>
                 <Text strong>
                   {wizardData.fieldMappings.filter(m => m.fieldType !== 'ignore').length}
                 </Text>
                 <Text>/</Text>
                 <Text>{wizardData.fieldMappings.length}</Text>
-              </Space>
+              </div>
             </div>
           </Col>
         </Row>
@@ -517,8 +506,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
             columns={columns}
             dataSource={wizardData.fieldMappings.map((mapping, index) => ({
               ...mapping,
-              key: index,
-            }))}
+              key: index}))}
             pagination={false}
             size="small"
             scroll={{ x: 'max-content' }}

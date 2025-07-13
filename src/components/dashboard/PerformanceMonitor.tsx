@@ -1,9 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Row, Col, Statistic, Typography, Tag, Button, Alert } from 'antd';
+import { Row, Col, Statistic, Typography, Tag, Button, Alert } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
+
 // TODO: Replace these Ant Design components: Progress, Tooltip, 
-import { DatabaseOutlined, ReloadOutlined } from '@/components/ui';
-// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, ApiOutlined, WarningOutlined
+import { Database, RefreshCw } from 'lucide-react';
+// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, ApiOutlined, AlertTriangle
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -49,16 +50,14 @@ const PerformanceMonitor: React.FC = () => {
         memoryUsage: {
           used: Math.floor(Math.random() * 500) + 200, // 200-700 MB
           total: 1024,
-          percentage: 0,
-        },
+          percentage: 0},
         cpuUsage: Math.floor(Math.random() * 30) + 10, // 10-40%
         connectionCount: connections.length,
         queryCount: Math.floor(Math.random() * 1000) + 500,
         averageQueryTime: Math.floor(Math.random() * 200) + 50, // 50-250ms
         errorRate: Math.random() * 5, // 0-5%
         uptime: Date.now() - (Math.random() * 86400000), // 随机运行时间
-        lastUpdate: new Date(),
-      };
+        lastUpdate: new Date()};
 
       mockMetrics.memoryUsage.percentage = Math.round(
         (mockMetrics.memoryUsage.used / mockMetrics.memoryUsage.total) * 100
@@ -73,8 +72,7 @@ const PerformanceMonitor: React.FC = () => {
         status: Math.random() > 0.8 ? 'warning' : 'healthy',
         latency: Math.floor(Math.random() * 100) + 10,
         lastCheck: new Date(),
-        errorCount: Math.floor(Math.random() * 5),
-      }));
+        errorCount: Math.floor(Math.random() * 5)}));
 
       setConnectionHealth(healthData);
     } catch (error) {
@@ -151,14 +149,14 @@ const PerformanceMonitor: React.FC = () => {
       {/* 系统性能概览 */}
       <Card
         title={
-          <Space>
-            <ThunderboltOutlined />
+          <div className="flex gap-2">
+            <Zap className="w-4 h-4"  />
             系统性能监控
-          </Space>
+          </div>
         }
         extra={
           <Button
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw className="w-4 h-4"  />}
             onClick={fetchPerformanceMetrics}
             loading={loading}
             size="small"
@@ -208,7 +206,7 @@ const PerformanceMonitor: React.FC = () => {
             <Statistic
               title="运行时间"
               value={formatUptime(metrics.uptime)}
-              prefix={<ClockCircleOutlined />}
+              prefix={<Clock className="w-4 h-4"  />}
             />
           </Col>
         </Row>
@@ -223,14 +221,14 @@ const PerformanceMonitor: React.FC = () => {
                 <Statistic
                   title="活跃连接"
                   value={metrics.connectionCount}
-                  prefix={<DatabaseOutlined />}
+                  prefix={<Database className="w-4 h-4"  />}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
                   title="查询总数"
                   value={metrics.queryCount}
-                  prefix={<ApiOutlined />}
+                  prefix={<Webhook className="w-4 h-4"  />}
                 />
               </Col>
             </Row>
@@ -244,13 +242,12 @@ const PerformanceMonitor: React.FC = () => {
               suffix="%"
               precision={2}
               valueStyle={{
-                color: metrics.errorRate > 2 ? '#cf1322' : '#3f8600',
-              }}
+                color: metrics.errorRate > 2 ? '#cf1322' : '#3f8600'}}
               prefix={
                 metrics.errorRate > 2 ? (
-                  <WarningOutlined />
+                  <AlertTriangle />
                 ) : (
-                  <ThunderboltOutlined />
+                  <Zap className="w-4 h-4"  />
                 )
               }
             />

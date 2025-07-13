@@ -1,15 +1,14 @@
 import React from 'react';
-import { Typography } from 'antd';
-import { Card, Space } from '@/components/ui';
-// TODO: Replace these Ant Design components: Divider
+import { Typography, Card, Space, Divider } from '@/components/ui';
 
-const { Title, Paragraph, Text, Link } = Typography;
+
+const { Title, Paragraph, Text } = Typography;
 
 const TypographyTest: React.FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <Card title="Typography 组件样式测试" className="mb-6">
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div className="flex gap-2" direction="vertical" size="large" style={{ width: '100%' }}>
           
           {/* 标题测试 */}
           <div>
@@ -31,24 +30,24 @@ const TypographyTest: React.FC = () => {
               sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </Paragraph>
             
-            <Space wrap>
+            <div className="flex gap-2" wrap>
               <Text>普通文本</Text>
               <Text type="secondary">次要文本</Text>
               <Text type="success">成功文本</Text>
               <Text type="warning">警告文本</Text>
               <Text type="danger">危险文本</Text>
-            </Space>
+            </div>
             
             <br /><br />
             
-            <Space wrap>
+            <div className="flex gap-2" wrap>
               <Text strong>粗体文本</Text>
               <Text italic>斜体文本</Text>
               <Text underline>下划线文本</Text>
               <Text delete>删除线文本</Text>
               <Text code>代码文本</Text>
               <Text mark>标记文本</Text>
-            </Space>
+            </div>
           </div>
 
           <Divider />
@@ -56,14 +55,14 @@ const TypographyTest: React.FC = () => {
           {/* 尺寸测试 */}
           <div>
             <Title level={4}>文本尺寸测试</Title>
-            <Space direction="vertical">
+            <div className="flex gap-2" direction="vertical">
               <Text className="text-xs">超小文本 (text-xs)</Text>
               <Text className="text-sm">小文本 (text-sm)</Text>
               <Text className="text-base">基础文本 (text-base)</Text>
               <Text className="text-lg">大文本 (text-lg)</Text>
               <Text className="text-xl">超大文本 (text-xl)</Text>
               <Text className="text-2xl">2XL文本 (text-2xl)</Text>
-            </Space>
+            </div>
           </div>
 
           <Divider />
@@ -71,20 +70,20 @@ const TypographyTest: React.FC = () => {
           {/* 链接测试 */}
           <div>
             <Title level={4}>链接样式测试</Title>
-            <Space wrap>
-              <Link href="https://ant.design" target="_blank">
+            <div className="flex gap-2" wrap>
+              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline" target="_blank">
                 普通链接
-              </Link>
-              <Link href="https://ant.design" target="_blank" strong>
+              </a>
+              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline font-semibold" target="_blank">
                 粗体链接
-              </Link>
-              <Link href="https://ant.design" target="_blank" underline>
+              </a>
+              <a href="https://ant.design" className="text-blue-600 hover:text-blue-800 underline" target="_blank">
                 下划线链接
-              </Link>
-              <Link href="https://ant.design" target="_blank" disabled>
+              </a>
+              <a href="https://ant.design" className="text-gray-400 cursor-not-allowed" target="_blank">
                 禁用链接
-              </Link>
-            </Space>
+              </a>
+            </div>
           </div>
 
           <Divider />
@@ -159,12 +158,12 @@ greet('World');`}
               <Text underline>下划线</Text>、
               <Text type="danger">危险文本</Text>、
               <Text code>代码</Text>、
-              <Link href="#" target="_blank">链接</Link>
+              <a href="#" className="text-blue-600 hover:text-blue-800 underline" target="_blank">链接</a>
               等多种样式的组合。
             </Paragraph>
           </div>
 
-        </Space>
+        </div>
       </Card>
     </div>
   );

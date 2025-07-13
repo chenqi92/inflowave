@@ -1,111 +1,143 @@
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { cn } from '@/utils/cn';
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { cn } from "@/lib/utils"
+import { X } from "lucide-react"
 
-export interface ModalProps {
-  open: boolean;
-  onClose: () => void;
-  title?: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  width?: string | number;
-  className?: string;
-  maskClosable?: boolean;
-}
+const Modal = DialogPrimitive.Root
 
-const Modal: React.FC<ModalProps> = ({
-  open,
-  onClose,
-  title,
-  children,
-  footer,
-  width = 720,
-  className,
-  maskClosable = true,
-}) => {
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+const ModalTrigger = DialogPrimitive.Trigger
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [open]);
+const ModalPortal = DialogPrimitive.Portal
 
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && open) {
-        onClose();
-      }
-    };
+const ModalClose = DialogPrimitive.Close
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [open, onClose]);
+const ModalOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+))
+ModalOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-  if (!open) return null;
-
-  const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={maskClosable ? onClose : undefined}
-      />
-      
-      {/* Modal */}
-      <div
-        className={cn(
-          'relative bg-white rounded-lg shadow-xl max-h-[90vh] overflow-hidden',
-          className
-        )}
-        style={{ width: typeof width === 'number' ? `${width}px` : width }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        {title && (
-          <div className="modal-header flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-              className="modal-close-btn w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-150 ease-in-out"
-              aria-label="关闭弹框"
-              title="关闭"
-              type="button"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+const ModalContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    title?: string
+    footer?: React.ReactNode
+    width?: string | number
+    centered?: boolean
+  }
+>(({ className, children, title, footer, width = 520, centered = true, ...props }, ref) => (
+  <ModalPortal>
+    <ModalOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        !centered && "top-[100px] translate-y-0",
+        className
+      )}
+      style={{
+        width: typeof width === 'number' ? `${width}px` : width,
+        maxWidth: typeof width === 'number' ? `${width}px` : width
+      }}
+      {...props}
+    >
+      {title && (
+        <div className="flex items-center justify-between pb-4">
+          <div className="text-lg font-semibold leading-none tracking-tight">
+            {title}
           </div>
-        )}
-
-        {/* Content */}
-        <div className={cn(
-          "p-5 overflow-y-auto",
-          footer ? "max-h-[calc(90vh-180px)]" : "max-h-[calc(90vh-120px)]"
-        )}>
-          {children}
+          <ModalClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </ModalClose>
         </div>
-
-        {/* Footer */}
-        {footer && (
-          <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200 bg-gray-50 min-h-[60px]">
-            {footer}
-          </div>
-        )}
+      )}
+      <div className="grid gap-4">
+        {children}
       </div>
-    </div>
-  );
+      {footer && (
+        <div className="flex items-center justify-end space-x-2 pt-4 border-t">
+          {footer}
+        </div>
+      )}
+    </DialogPrimitive.Content>
+  </ModalPortal>
+))
+ModalContent.displayName = DialogPrimitive.Content.displayName
 
-  return createPortal(modalContent, document.body);
-};
+const ModalHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
+)
+ModalHeader.displayName = "ModalHeader"
 
-export { Modal };
+const ModalFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
+)
+ModalFooter.displayName = "ModalFooter"
+
+const ModalTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+ModalTitle.displayName = DialogPrimitive.Title.displayName
+
+const ModalDescription = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+ModalDescription.displayName = DialogPrimitive.Description.displayName
+
+export {
+  Modal,
+  ModalPortal,
+  ModalOverlay,
+  ModalClose,
+  ModalTrigger,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalTitle,
+  ModalDescription,
+}

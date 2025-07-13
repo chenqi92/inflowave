@@ -156,8 +156,7 @@ export class QueryAnalyticsService {
     return safeTauriInvoke<QueryExecutionPlan>('get_query_execution_plan', {
       connectionId,
       database,
-      query,
-    });
+      query});
   }
 
   /**
@@ -173,8 +172,7 @@ export class QueryAnalyticsService {
       connectionId,
       database,
       query,
-      executionResult,
-    });
+      executionResult});
   }
 
   /**
@@ -188,8 +186,7 @@ export class QueryAnalyticsService {
     return safeTauriInvoke<QueryRecommendation[]>('get_query_optimization_suggestions', {
       connectionId,
       database,
-      query,
-    });
+      query});
   }
 
   /**
@@ -205,8 +202,7 @@ export class QueryAnalyticsService {
   }> {
     return safeTauriInvoke('compare_query_plans', {
       plan1,
-      plan2,
-    });
+      plan2});
   }
 
   /**
@@ -222,8 +218,7 @@ export class QueryAnalyticsService {
       connectionId,
       database,
       query,
-      limit,
-    });
+      limit});
   }
 
   /**
@@ -258,8 +253,7 @@ export class DataCardinalityService {
       connectionId,
       database,
       table,
-      columns,
-    });
+      columns});
   }
 
   /**
@@ -275,8 +269,7 @@ export class DataCardinalityService {
       connectionId,
       database,
       table,
-      column,
-    });
+      column});
   }
 
   /**
@@ -296,8 +289,7 @@ export class DataCardinalityService {
     return safeTauriInvoke('get_data_quality_report', {
       connectionId,
       database,
-      table,
-    });
+      table});
   }
 
   /**
@@ -313,8 +305,7 @@ export class DataCardinalityService {
       connectionId,
       database,
       table,
-      columns,
-    });
+      columns});
   }
 
   /**
@@ -342,8 +333,7 @@ export class DataCardinalityService {
     return safeTauriInvoke('generate_data_profile_report', {
       connectionId,
       database,
-      table,
-    });
+      table});
   }
 }
 
@@ -360,8 +350,7 @@ export class PerformanceBottleneckService {
   ): Promise<PerformanceBottleneck[]> {
     return safeTauriInvoke<PerformanceBottleneck[]>('detect_performance_bottlenecks', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -380,8 +369,7 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('get_system_performance_metrics', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -411,8 +399,7 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('get_slow_query_log', {
       connectionId,
-      options,
-    });
+      options});
   }
 
   /**
@@ -440,8 +427,7 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('analyze_lock_waits', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -472,8 +458,7 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('get_connection_pool_stats', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -515,8 +500,7 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('generate_performance_report', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -528,8 +512,7 @@ export class PerformanceBottleneckService {
   ): Promise<void> {
     return safeTauriInvoke<void>('mark_bottleneck_resolved', {
       bottleneckId,
-      resolution,
-    });
+      resolution});
   }
 
   /**
@@ -541,8 +524,7 @@ export class PerformanceBottleneckService {
   ): Promise<void> {
     return safeTauriInvoke<void>('ignore_bottleneck', {
       bottleneckId,
-      reason,
-    });
+      reason});
   }
 }
 
@@ -588,8 +570,7 @@ export class AnalyticsService {
   }> {
     return safeTauriInvoke('get_analytics_dashboard', {
       connectionId,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -610,8 +591,7 @@ export class AnalyticsService {
     return safeTauriInvoke('generate_comprehensive_report', {
       connectionId,
       database,
-      timeRange,
-    });
+      timeRange});
   }
 
   /**
@@ -625,8 +605,7 @@ export class AnalyticsService {
     return safeTauriInvoke<void>('export_analytics_report', {
       reportData,
       format,
-      filePath,
-    });
+      filePath});
   }
 }
 

@@ -1,77 +1,57 @@
-import React from 'react';
-import { cn } from '@/utils/cn';
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Loader2 } from "lucide-react"
 
-export interface SpinProps {
-  spinning?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  tip?: string;
-  children?: React.ReactNode;
-  className?: string;
+interface SpinProps {
+  spinning?: boolean
+  size?: "small" | "default" | "large"
+  tip?: string
+  className?: string
+  children?: React.ReactNode
+  indicator?: React.ReactNode
 }
 
-const Spin: React.FC<SpinProps> = ({
-  spinning = true,
-  size = 'md',
-  tip,
-  children,
-  className,
-}) => {
-  const sizes = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
-  };
+const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
+  ({ spinning = false, size = "default", tip, className, children, indicator, ...props }, ref) => {
+    const sizeClasses = {
+      small: "h-4 w-4",
+      default: "h-6 w-6", 
+      large: "h-8 w-8"
+    }
 
-  const spinner = (
-    <div className="flex flex-col items-center justify-center">
-      <svg
-        className={cn(
-          'animate-spin text-blue-600',
-          sizes[size]
-        )}
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          className="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="4"
-        />
-        <path
-          className="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        />
-      </svg>
-      {tip && (
-        <div className="mt-2 text-sm text-gray-600">
-          {tip}
+    const defaultIndicator = (
+      <Loader2 className={cn("animate-spin", sizeClasses[size])} />
+    )
+
+    if (!children) {
+      return (
+        <div
+          ref={ref}
+          className={cn("flex flex-col items-center justify-center space-y-2", className)}
+          {...props}
+        >
+          {indicator || defaultIndicator}
+          {tip && <span className="text-sm text-muted-foreground">{tip}</span>}
         </div>
-      )}
-    </div>
-  );
+      )
+    }
 
-  if (!children) {
     return (
-      <div className={cn('flex items-center justify-center p-4', className)}>
-        {spinning && spinner}
+      <div ref={ref} className={cn("relative", className)} {...props}>
+        {children}
+        {spinning && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center space-y-2">
+              {indicator || defaultIndicator}
+              {tip && <span className="text-sm text-muted-foreground">{tip}</span>}
+            </div>
+          </div>
+        )}
       </div>
-    );
+    )
   }
+)
+Spin.displayName = "Spin"
 
-  return (
-    <div className={cn('relative', className)}>
-      {children}
-      {spinning && (
-        <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center z-10">
-          {spinner}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export { Spin };
+export { Spin }
+export type { SpinProps }

@@ -1,32 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Modal,
-  Input,
-  Select,
-  DatePicker,
-  Badge,
-  Tooltip,
-  message,
-  Collapse,
-  Alert,
-} from 'antd';
-import {
-  ReloadOutlined,
-  DeleteOutlined,
-  DownloadOutlined,
-  EyeOutlined,
-  FilterOutlined,
-  BugOutlined,
-  WarningOutlined,
-  InfoCircleOutlined,
-  ExclamationCircleOutlined,
-} from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Typography, Modal, Input, Select, DatePicker, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Badge, Tooltip, message, Collapse
+import { RefreshCw, Trash2, Download, Bug } from 'lucide-react';
+// TODO: Replace these icons: FilterOutlined
+import { AlertTriangle, Info, AlertCircle, Search, Trash2, Download, Eye } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
 
@@ -55,10 +32,10 @@ const ErrorLogViewer: React.FC = () => {
       const parsedLogs = parseLogContent(logContent);
       setLogs(parsedLogs);
       setFilteredLogs(parsedLogs);
-      message.success(`已加载 ${parsedLogs.length} 条错误日志`);
+      toast({ title: "成功", description: "已加载 ${parsedLogs.length} 条错误日志" });
     } catch (error) {
       console.error('加载错误日志失败:', error);
-      message.error('加载错误日志失败');
+      toast({ title: "错误", description: "加载错误日志失败", variant: "destructive" });
       setLogs([]);
       setFilteredLogs([]);
     } finally {
@@ -143,8 +120,7 @@ const ErrorLogViewer: React.FC = () => {
           componentStack,
           userAgent: additional.userAgent || '',
           pathname: additional.pathname || '',
-          additional,
-        };
+          additional};
 
         entries.push(logEntry);
       } catch (error) {
@@ -162,7 +138,7 @@ const ErrorLogViewer: React.FC = () => {
     // 搜索过滤
     if (searchText) {
       filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.toast.toLowerCase().includes(searchText.toLowerCase()) ||
         log.stack?.toLowerCase().includes(searchText.toLowerCase()) ||
         log.url?.toLowerCase().includes(searchText.toLowerCase())
       );
@@ -205,15 +181,14 @@ const ErrorLogViewer: React.FC = () => {
           await FileOperations.deleteFile('logs/error.log');
           setLogs([]);
           setFilteredLogs([]);
-          message.success('错误日志已清除');
+          toast({ title: "成功", description: "错误日志已清除" });
         } catch (error) {
-          message.error('清除日志失败');
+          toast({ title: "错误", description: "清除日志失败", variant: "destructive" });
         }
       },
       onCancel: () => {
         // 明确处理取消操作
-      },
-    });
+      }});
   };
 
   // 导出日志
@@ -229,9 +204,9 @@ const ErrorLogViewer: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      message.success('日志已导出');
+      toast({ title: "成功", description: "日志已导出" });
     } catch (error) {
-      message.error('导出日志失败');
+      toast({ title: "错误", description: "导出日志失败", variant: "destructive" });
     }
   };
 
@@ -239,13 +214,13 @@ const ErrorLogViewer: React.FC = () => {
   const getLevelDisplay = (level: string) => {
     switch (level) {
       case 'error':
-        return { icon: <ExclamationCircleOutlined />, color: 'red' };
+        return { icon: <AlertCircle />, color: 'red' };
       case 'warn':
-        return { icon: <WarningOutlined />, color: 'orange' };
+        return { icon: <AlertTriangle />, color: 'orange' };
       case 'info':
-        return { icon: <InfoCircleOutlined />, color: 'blue' };
+        return { icon: <Info className="w-4 h-4"  />, color: 'blue' };
       default:
-        return { icon: <BugOutlined />, color: 'default' };
+        return { icon: <Bug className="w-4 h-4"  />, color: 'default' };
     }
   };
 
@@ -278,8 +253,7 @@ const ErrorLogViewer: React.FC = () => {
         <Text className="text-xs">
           {new Date(timestamp).toLocaleString()}
         </Text>
-      ),
-    },
+      )},
     {
       title: '级别',
       dataIndex: 'level',
@@ -292,8 +266,7 @@ const ErrorLogViewer: React.FC = () => {
             {level.toUpperCase()}
           </Tag>
         );
-      },
-    },
+      }},
     {
       title: '类型',
       dataIndex: 'type',
@@ -303,8 +276,7 @@ const ErrorLogViewer: React.FC = () => {
         <Tag color={getTypeColor(type)} className="text-xs">
           {type.toUpperCase()}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '消息',
       dataIndex: 'message',
@@ -314,8 +286,7 @@ const ErrorLogViewer: React.FC = () => {
         <Tooltip title={message}>
           <Text className="text-xs">{message}</Text>
         </Tooltip>
-      ),
-    },
+      )},
     {
       title: '来源',
       dataIndex: 'url',
@@ -331,8 +302,7 @@ const ErrorLogViewer: React.FC = () => {
             <Text className="text-xs font-mono">{displayUrl}{lineInfo}</Text>
           </Tooltip>
         );
-      },
-    },
+      }},
     {
       title: '操作',
       key: 'actions',
@@ -341,7 +311,7 @@ const ErrorLogViewer: React.FC = () => {
         <Button
           type="link"
           size="small"
-          icon={<EyeOutlined />}
+          icon={<Eye className="w-4 h-4"  />}
           onClick={() => {
             setSelectedLog(record);
             setModalVisible(true);
@@ -349,8 +319,7 @@ const ErrorLogViewer: React.FC = () => {
         >
           详情
         </Button>
-      ),
-    },
+      )},
   ];
 
   // 组件挂载时加载日志
@@ -363,7 +332,7 @@ const ErrorLogViewer: React.FC = () => {
       {/* 头部统计和操作 */}
       <Card>
         <div className="flex items-center justify-between">
-          <Space size="large">
+          <div className="flex gap-2" size="large">
             <div>
               <Badge count={logs.length} overflowCount={9999} color="blue">
                 <Text strong>总日志数</Text>
@@ -383,36 +352,36 @@ const ErrorLogViewer: React.FC = () => {
               <Text strong>当前会话: </Text>
               <Text code className="text-xs">{errorLogger.getSessionId()}</Text>
             </div>
-          </Space>
+          </div>
 
-          <Space>
+          <div className="flex gap-2">
             <Button
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={loadErrorLogs}
               loading={loading}
             >
               刷新
             </Button>
             <Button
-              icon={<DownloadOutlined />}
+              icon={<Download className="w-4 h-4"  />}
               onClick={exportLogs}
             >
               导出
             </Button>
             <Button
-              icon={<DeleteOutlined />}
+              icon={<Trash2 className="w-4 h-4"  />}
               danger
               onClick={clearLogs}
             >
               清除
             </Button>
-          </Space>
+          </div>
         </div>
       </Card>
 
       {/* 过滤器 */}
       <Card>
-        <Space wrap>
+        <div className="flex gap-2" wrap>
           <Search
             placeholder="搜索错误消息..."
             value={searchText}
@@ -451,7 +420,7 @@ const ErrorLogViewer: React.FC = () => {
             style={{ width: 350 }}
             placeholder={['开始时间', '结束时间']}
           />
-        </Space>
+        </div>
       </Card>
 
       {/* 错误日志表格 */}
@@ -466,14 +435,13 @@ const ErrorLogViewer: React.FC = () => {
             pageSize: 50,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
+            showTotal: (total) => `共 ${total} 条`}}
           scroll={{ x: 'max-content' }}
         />
       </Card>
 
       {/* 错误详情弹窗 */}
-      <Modal
+      <Dialog
         title="错误详情"
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
@@ -546,7 +514,7 @@ const ErrorLogViewer: React.FC = () => {
             </Collapse>
           </div>
         )}
-      </Modal>
+      </Dialog>
     </div>
   );
 };

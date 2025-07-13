@@ -1,17 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Badge, Tooltip, Dropdown, Progress } from 'antd';
-import { Card } from '@/components/ui';
-import { 
-  PlayCircleOutlined, 
-  PauseCircleOutlined, 
-  SettingOutlined, 
-  DeleteOutlined, 
-  EditOutlined, 
-  WifiOutlined, 
-  DisconnectOutlined,
-  CopyOutlined,
-  InfoCircleOutlined
-} from '@/components/ui';
+import { Button, Badge, TooltipWrapper as Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card } from '@/components/ui';
+import { Settings, Trash2, Edit, Wifi, Unlink, Copy, Info, PlayCircle, PauseCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -40,8 +29,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
   onDelete,
   onTest,
   onViewStats,
-  className,
-}) => {
+  className}) => {
   const { connect, disconnect, testConnection } = useConnection();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -116,13 +104,13 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
     switch (status?.status) {
       case 'connected':
-        return <WifiOutlined className="text-green-500" />;
+        return <Wifi className="w-4 h-4 text-green-500"   />;
       case 'connecting':
         return <Progress type="circle" size={16} />;
       case 'error':
-        return <DisconnectOutlined className="text-red-500" />;
+        return <Unlink className="w-4 h-4 text-red-500"   />;
       default:
-        return <DisconnectOutlined className="text-gray-400" />;
+        return <Unlink className="w-4 h-4 text-gray-400"   />;
     }
   };
 
@@ -143,49 +131,43 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
     {
       key: 'test',
       label: '测试连接',
-      icon: <PlayCircleOutlined />,
+      icon: <PlayCircle />,
       onClick: handleTest,
-      disabled: isTesting,
-    },
+      disabled: isTesting},
     {
       key: 'copy',
       label: '复制连接字符串',
-      icon: <CopyOutlined />,
-      onClick: handleCopy,
-    },
+      icon: <Copy className="w-4 h-4"  />,
+      onClick: handleCopy},
     {
       key: 'edit',
       label: '编辑连接',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
         onEdit?.();
-      },
-    },
+      }},
     {
       key: 'stats',
       label: '查看统计',
-      icon: <InfoCircleOutlined />,
+      icon: <Info className="w-4 h-4"  />,
       onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
         onViewStats?.();
       },
-      disabled: !poolStats,
-    },
+      disabled: !poolStats},
     {
       key: 'divider',
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'delete',
       label: '删除连接',
-      icon: <DeleteOutlined />,
+      icon: <Trash2 className="w-4 h-4"  />,
       danger: true,
       onClick: (e: React.MouseEvent) => {
         e.stopPropagation();
         onDelete?.();
-      },
-    },
+      }},
   ];
 
   return (
@@ -263,7 +245,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             <Button
               type={status?.status === 'connected' ? 'default' : 'primary'}
               size="small"
-              icon={status?.status === 'connected' ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+              icon={status?.status === 'connected' ? <PauseCircle /> : <PlayCircle />}
               loading={isConnecting}
               onClick={handleConnect}
               danger={status?.status === 'connected'}
@@ -279,7 +261,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             <Button
               type="text"
               size="small"
-              icon={<SettingOutlined />}
+              icon={<Settings className="w-4 h-4"  />}
               onClick={(e) => e.stopPropagation()}
             />
           </Dropdown>

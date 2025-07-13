@@ -190,44 +190,36 @@ const createDefaultChart = (type: ChartType): Omit<ChartConfiguration, 'id'> => 
   series: [],
   xAxis: {
     type: 'category',
-    name: 'X轴',
-  },
+    name: 'X轴'},
   yAxis: [{
     type: 'value',
     name: 'Y轴',
-    position: 'left',
-  }],
+    position: 'left'}],
   legend: {
     show: true,
     position: 'top',
     orient: 'horizontal',
-    align: 'center',
-  },
+    align: 'center'},
   tooltip: {
     show: true,
     trigger: 'axis',
     axisPointer: {
       type: 'line',
-      animation: true,
-    },
-  },
+      animation: true}},
   grid: {
     show: true,
     left: '10%',
     top: '15%',
     right: '10%',
     bottom: '15%',
-    containLabel: true,
-  },
+    containLabel: true},
   animation: {
     enabled: true,
     duration: 1000,
     easing: 'quadraticOut',
     delay: 0,
-    threshold: 2000,
-  },
-  theme: 'default',
-});
+    threshold: 2000},
+  theme: 'default'});
 
 export const useVisualizationStore = create<VisualizationState>()(
   persist(
@@ -251,13 +243,11 @@ export const useVisualizationStore = create<VisualizationState>()(
         const newChart: ChartConfiguration = {
           ...createDefaultChart(config.type),
           ...config,
-          id,
-        };
+          id};
 
         set(state => ({
           charts: [...state.charts, newChart],
-          activeChartId: id,
-        }));
+          activeChartId: id}));
 
         return id;
       },
@@ -266,8 +256,7 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           charts: state.charts.map(chart =>
             chart.id === id ? { ...chart, ...updates } : chart
-          ),
-        }));
+          )}));
       },
 
       deleteChart: (id) => {
@@ -290,8 +279,7 @@ export const useVisualizationStore = create<VisualizationState>()(
             dataSources: newDataSources,
             loadingCharts: newLoadingCharts,
             realTimeCharts: newRealTimeCharts,
-            errors: newErrors,
-          };
+            errors: newErrors};
         });
       },
 
@@ -303,13 +291,11 @@ export const useVisualizationStore = create<VisualizationState>()(
         const duplicatedChart: ChartConfiguration = {
           ...chart,
           id: newId,
-          title: `${chart.title} (副本)`,
-        };
+          title: `${chart.title} (副本)`};
 
         set(state => ({
           charts: [...state.charts, duplicatedChart],
-          activeChartId: newId,
-        }));
+          activeChartId: newId}));
 
         return newId;
       },
@@ -327,22 +313,17 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           dataSources: {
             ...state.dataSources,
-            [chartId]: data,
-          },
+            [chartId]: data},
           loadingCharts: {
             ...state.loadingCharts,
-            [chartId]: false,
-          },
-        }));
+            [chartId]: false}}));
       },
 
       refreshChartData: (chartId, queryResult) => {
         set(state => ({
           dataSources: {
             ...state.dataSources,
-            [chartId]: queryResult,
-          },
-        }));
+            [chartId]: queryResult}}));
       },
 
       clearChartData: (chartId) => {
@@ -361,13 +342,11 @@ export const useVisualizationStore = create<VisualizationState>()(
           ...dashboard,
           id,
           createdAt: now,
-          updatedAt: now,
-        };
+          updatedAt: now};
 
         set(state => ({
           dashboards: [...state.dashboards, newDashboard],
-          activeDashboardId: id,
-        }));
+          activeDashboardId: id}));
 
         return id;
       },
@@ -378,15 +357,13 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === id 
               ? { ...dashboard, ...updates, updatedAt: new Date() }
               : dashboard
-          ),
-        }));
+          )}));
       },
 
       deleteDashboard: (id) => {
         set(state => ({
           dashboards: state.dashboards.filter(dashboard => dashboard.id !== id),
-          activeDashboardId: state.activeDashboardId === id ? null : state.activeDashboardId,
-        }));
+          activeDashboardId: state.activeDashboardId === id ? null : state.activeDashboardId}));
       },
 
       duplicateDashboard: (id) => {
@@ -400,13 +377,11 @@ export const useVisualizationStore = create<VisualizationState>()(
           id: newId,
           name: `${dashboard.name} (副本)`,
           createdAt: now,
-          updatedAt: now,
-        };
+          updatedAt: now};
 
         set(state => ({
           dashboards: [...state.dashboards, duplicatedDashboard],
-          activeDashboardId: newId,
-        }));
+          activeDashboardId: newId}));
 
         return newId;
       },
@@ -427,11 +402,9 @@ export const useVisualizationStore = create<VisualizationState>()(
                   ...dashboard,
                   charts: [...dashboard.charts.filter(c => c.id !== chartId), get().getChart(chartId)!].filter(Boolean),
                   layout: [...dashboard.layout.filter(l => l.chartId !== chartId), { chartId, ...layout }],
-                  updatedAt: new Date(),
-                }
+                  updatedAt: new Date()}
               : dashboard
-          ),
-        }));
+          )}));
       },
 
       removeChartFromDashboard: (dashboardId, chartId) => {
@@ -442,11 +415,9 @@ export const useVisualizationStore = create<VisualizationState>()(
                   ...dashboard,
                   charts: dashboard.charts.filter(c => c.id !== chartId),
                   layout: dashboard.layout.filter(l => l.chartId !== chartId),
-                  updatedAt: new Date(),
-                }
+                  updatedAt: new Date()}
               : dashboard
-          ),
-        }));
+          )}));
       },
 
       updateDashboardLayout: (dashboardId, layout) => {
@@ -455,15 +426,13 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === dashboardId
               ? { ...dashboard, layout, updatedAt: new Date() }
               : dashboard
-          ),
-        }));
+          )}));
       },
 
       // 实时更新
       enableRealTime: (chartId) => {
         set(state => ({
-          realTimeCharts: new Set([...state.realTimeCharts, chartId]),
-        }));
+          realTimeCharts: new Set([...state.realTimeCharts, chartId])}));
       },
 
       disableRealTime: (chartId) => {
@@ -485,8 +454,7 @@ export const useVisualizationStore = create<VisualizationState>()(
 
       addTheme: (theme) => {
         set(state => ({
-          availableThemes: [...new Set([...state.availableThemes, theme])],
-        }));
+          availableThemes: [...new Set([...state.availableThemes, theme])]}));
       },
 
       // 错误处理
@@ -494,9 +462,7 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           errors: {
             ...state.errors,
-            [chartId]: error,
-          },
-        }));
+            [chartId]: error}}));
       },
 
       clearError: (chartId) => {
@@ -520,13 +486,11 @@ export const useVisualizationStore = create<VisualizationState>()(
         const id = `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const importedChart: ChartConfiguration = {
           ...config,
-          id,
-        };
+          id};
 
         set(state => ({
           charts: [...state.charts, importedChart],
-          activeChartId: id,
-        }));
+          activeChartId: id}));
 
         return id;
       },
@@ -542,17 +506,14 @@ export const useVisualizationStore = create<VisualizationState>()(
           ...dashboard,
           id,
           createdAt: now,
-          updatedAt: now,
-        };
+          updatedAt: now};
 
         set(state => ({
           dashboards: [...state.dashboards, importedDashboard],
-          activeDashboardId: id,
-        }));
+          activeDashboardId: id}));
 
         return id;
-      },
-    }),
+      }}),
     {
       name: 'visualization-store',
       partialize: (state) => ({
@@ -562,8 +523,6 @@ export const useVisualizationStore = create<VisualizationState>()(
         availableThemes: state.availableThemes,
         activeChartId: state.activeChartId,
         activeDashboardId: state.activeDashboardId,
-        realTimeEnabled: state.realTimeEnabled,
-      }),
-    }
+        realTimeEnabled: state.realTimeEnabled})}
   )
 );

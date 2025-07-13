@@ -25,8 +25,7 @@ export const useQuery = () => {
     formatQuery: storeFormatQuery,
     getQuerySuggestions: storeGetSuggestions,
     clearQueryResult,
-    clearQueryError,
-  } = useQueryStore();
+    clearQueryError} = useQueryStore();
 
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -157,8 +156,7 @@ export const useQuery = () => {
     const request: QueryRequest = {
       connectionId,
       database: database || currentTab.database,
-      query: currentTab.query,
-    };
+      query: currentTab.query};
 
     return executeQuery(request);
   }, [getCurrentTab, executeQuery]);
@@ -206,8 +204,7 @@ export const useQuery = () => {
     const request: QueryRequest = {
       connectionId,
       database: historyItem.database,
-      query: historyItem.query,
-    };
+      query: historyItem.query};
 
     return executeQuery(request);
   }, [history, executeQuery]);
@@ -254,6 +251,5 @@ export const useQuery = () => {
     rerunFromHistory,
     clearQueryResult,
     clearLocalError,
-    clearAllErrors,
-  };
+    clearAllErrors};
 };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Layout } from 'antd';
 import { cn } from '@/utils/cn';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
@@ -15,7 +14,7 @@ import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
 import DevTools from '../../pages/DevTools';
 
-const { Header, Sider, Content } = Layout;
+
 
 export interface DataGripStyleLayoutProps {
   children?: React.ReactNode;
@@ -132,41 +131,45 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   return (
-    <Layout className="h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col">
       {/* 顶部主工具栏 */}
-      <Header className="h-12 px-4 bg-white border-b border-gray-200 flex items-center">
-        <MainToolbar 
-          currentView={currentView} 
+      <header className="h-12 px-4 bg-white border-b border-gray-200 flex items-center">
+        <MainToolbar
+          currentView={currentView}
           onViewChange={setCurrentView}
         />
-      </Header>
+      </header>
 
       {/* 主要内容区域 */}
-      <Layout className="flex-1">
+      <div className="flex-1 flex">
         {/* 左侧数据库面板 */}
-        <Sider
-          collapsible
-          collapsed={leftPanelCollapsed}
-          onCollapse={setLeftPanelCollapsed}
-          width={leftPanelWidth}
-          className="bg-white border-r border-gray-200"
-          theme="light"
+        <div
+          className={`bg-white border-r border-gray-200 transition-all duration-200 ${
+            leftPanelCollapsed ? 'w-12' : `w-[${leftPanelWidth}px]`
+          }`}
         >
-          <DatabaseExplorer 
-            collapsed={leftPanelCollapsed} 
+          <DatabaseExplorer
+            collapsed={leftPanelCollapsed}
             refreshTrigger={refreshTrigger}
           />
-        </Sider>
+          {/* 折叠按钮 */}
+          <button
+            className="absolute bottom-4 left-4 p-1 bg-gray-100 hover:bg-gray-200 rounded"
+            onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+          >
+            {leftPanelCollapsed ? '→' : '←'}
+          </button>
+        </div>
 
         {/* 右侧主要工作区域 */}
-        <Layout className="flex-1">
+        <div className="flex-1 flex flex-col">
           {/* 主要内容区域 */}
-          <Content className="flex-1 bg-white flex flex-col">
+          <main className="flex-1 bg-white flex flex-col">
             {renderMainContent()}
-          </Content>
-        </Layout>
-      </Layout>
-    </Layout>
+          </main>
+        </div>
+      </div>
+    </div>
   );
 };
 

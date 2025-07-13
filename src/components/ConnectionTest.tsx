@@ -1,7 +1,9 @@
 ﻿import React, { useState } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Button, Form, Input, InputNumber, Switch } from 'antd';
-import { Card, message } from '@/components/ui';
+import { Button, Form, Input, InputNumber, Switch } from '@/components/ui';
+import { Card, toast } from '@/components/ui';
+
+
 
 interface ConnectionConfig {
   id: string;
@@ -46,8 +48,7 @@ const ConnectionTest: React.FC = () => {
         ssl: values.ssl || false,
         timeout: values.timeout || 30,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+        updated_at: new Date().toISOString()};
 
       // 调用后端创建连接
       const connectionId = await safeTauriInvoke<string>('create_connection', { config });
@@ -60,9 +61,9 @@ const ConnectionTest: React.FC = () => {
       setTestResult(result);
       
       if (result.success) {
-        message.success(`连接成功！延迟: ${result.latency}ms`);
+        toast({ title: "成功", description: "连接成功！延迟: ${result.latency}ms" });
       } else {
-        message.error(`连接失败: ${result.error}`);
+        toast({ title: "错误", description: "连接失败: ${result.error}", variant: "destructive" });
       }
 
       // 清理测试连接
@@ -70,7 +71,7 @@ const ConnectionTest: React.FC = () => {
       
     } catch (error) {
       console.error('连接测试失败:', error);
-      message.error(`连接测试失败: ${error}`);
+      toast({ title: "错误", description: "连接测试失败: ${error}", variant: "destructive" });
       setTestResult({
         success: false,
         error: String(error)
@@ -91,8 +92,7 @@ const ConnectionTest: React.FC = () => {
             host: 'localhost',
             port: 8086,
             ssl: false,
-            timeout: 30,
-          }}
+            timeout: 30}}
         >
           <Form.Item
             label="连接名称"

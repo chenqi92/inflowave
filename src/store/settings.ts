@@ -124,8 +124,7 @@ const defaultSettings: UserSettings = {
     mode: 'auto',
     primaryColor: '#1890ff',
     borderRadius: 6,
-    compact: false,
-  },
+    compact: false},
   editor: {
     fontSize: 14,
     fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
@@ -136,16 +135,14 @@ const defaultSettings: UserSettings = {
     showMinimap: true,
     theme: 'vs-light',
     autoComplete: true,
-    autoFormat: true,
-  },
+    autoFormat: true},
   query: {
     maxHistorySize: 100,
     autoSaveInterval: 30,
     defaultLimit: 1000,
     timeout: 60,
     formatOnExecute: false,
-    confirmBeforeExecute: false,
-  },
+    confirmBeforeExecute: false},
   chart: {
     defaultChartType: 'line',
     animationEnabled: true,
@@ -154,15 +151,13 @@ const defaultSettings: UserSettings = {
     showLegend: true,
     gridEnabled: true,
     tooltipEnabled: true,
-    refreshInterval: 0,
-  },
+    refreshInterval: 0},
   security: {
     encryptPasswords: true,
     autoLockTimeout: 0,
     requirePasswordConfirmation: true,
     rememberConnections: true,
-    maxFailedAttempts: 3,
-  },
+    maxFailedAttempts: 3},
   performance: {
     connectionPoolSize: 10,
     queryTimeout: 30,
@@ -170,22 +165,19 @@ const defaultSettings: UserSettings = {
     cacheSize: 100,
     maxConcurrentQueries: 5,
     enablePagination: true,
-    defaultPageSize: 1000,
-  },
+    defaultPageSize: 1000},
   notification: {
     enableDesktopNotifications: true,
     enableSoundNotifications: false,
     notifyOnQueryComplete: true,
     notifyOnConnectionLost: true,
     notifyOnError: true,
-    soundVolume: 50,
-  },
+    soundVolume: 50},
   language: 'zh-CN',
   timezone: 'Asia/Shanghai',
   dateFormat: 'YYYY-MM-DD',
   timeFormat: 'HH:mm:ss',
-  numberFormat: '0,0.00',
-};
+  numberFormat: '0,0.00'};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -199,78 +191,63 @@ export const useSettingsStore = create<SettingsState>()(
       updateSettings: (updates) => {
         set(state => ({
           settings: { ...state.settings, ...updates },
-          hasUnsavedChanges: true,
-        }));
+          hasUnsavedChanges: true}));
       },
 
       updateTheme: (theme) => {
         set(state => ({
           settings: {
             ...state.settings,
-            theme: { ...state.settings.theme, ...theme },
-          },
-          hasUnsavedChanges: true,
-        }));
+            theme: { ...state.settings.theme, ...theme }},
+          hasUnsavedChanges: true}));
       },
 
       updateEditor: (editor) => {
         set(state => ({
           settings: {
             ...state.settings,
-            editor: { ...state.settings.editor, ...editor },
-          },
-          hasUnsavedChanges: true,
-        }));
+            editor: { ...state.settings.editor, ...editor }},
+          hasUnsavedChanges: true}));
       },
 
       updateQuery: (query) => {
         set(state => ({
           settings: {
             ...state.settings,
-            query: { ...state.settings.query, ...query },
-          },
-          hasUnsavedChanges: true,
-        }));
+            query: { ...state.settings.query, ...query }},
+          hasUnsavedChanges: true}));
       },
 
       updateChart: (chart) => {
         set(state => ({
           settings: {
             ...state.settings,
-            chart: { ...state.settings.chart, ...chart },
-          },
-          hasUnsavedChanges: true,
-        }));
+            chart: { ...state.settings.chart, ...chart }},
+          hasUnsavedChanges: true}));
       },
 
       updateSecurity: (security) => {
         set(state => ({
           settings: {
             ...state.settings,
-            security: { ...state.settings.security, ...security },
-          },
-          hasUnsavedChanges: true,
-        }));
+            security: { ...state.settings.security, ...security }},
+          hasUnsavedChanges: true}));
       },
 
       updatePerformance: (performance) => {
         set(state => ({
           settings: {
             ...state.settings,
-            performance: { ...state.settings.performance, ...performance },
-          },
-          hasUnsavedChanges: true,
-        }));
+            performance: { ...state.settings.performance, ...performance }},
+          hasUnsavedChanges: true}));
       },
 
       updateNotification: (notification) => {
         set(state => ({
           settings: {
             ...state.settings,
-            notification: { ...state.settings.notification, ...notification },
-          },
-          hasUnsavedChanges: true,
-        }));
+            notification: { ...state.settings.notification, ...notification }},
+          hasUnsavedChanges: true}));
       },
 
       // 文件操作
@@ -282,8 +259,7 @@ export const useSettingsStore = create<SettingsState>()(
           set({ 
             lastSaved: new Date(),
             hasUnsavedChanges: false,
-            isLoading: false,
-          });
+            isLoading: false});
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -298,8 +274,7 @@ export const useSettingsStore = create<SettingsState>()(
           set({ 
             settings: { ...defaultSettings, ...settings },
             isLoading: false,
-            hasUnsavedChanges: false,
-          });
+            hasUnsavedChanges: false});
         } catch (error) {
           set({ isLoading: false });
           console.warn('加载用户设置失败，使用默认设置:', error);
@@ -312,8 +287,7 @@ export const useSettingsStore = create<SettingsState>()(
           set({ 
             settings: defaultSettings,
             hasUnsavedChanges: false,
-            lastSaved: new Date(),
-          });
+            lastSaved: new Date()});
         } catch (error) {
           throw error;
         }
@@ -354,8 +328,7 @@ export const useSettingsStore = create<SettingsState>()(
       markSaved: () => {
         set({ 
           lastSaved: new Date(),
-          hasUnsavedChanges: false,
-        });
+          hasUnsavedChanges: false});
       },
 
       markUnsaved: () => {
@@ -364,14 +337,11 @@ export const useSettingsStore = create<SettingsState>()(
 
       clearUnsavedChanges: () => {
         set({ hasUnsavedChanges: false });
-      },
-    }),
+      }}),
     {
       name: 'settings-store',
       partialize: (state) => ({
         settings: state.settings,
-        lastSaved: state.lastSaved,
-      }),
-    }
+        lastSaved: state.lastSaved})}
   )
 );

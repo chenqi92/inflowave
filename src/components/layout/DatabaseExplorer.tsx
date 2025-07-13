@@ -1,30 +1,50 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from 'antd';
-import type { DataNode } from 'antd/es/tree';
-import type { MenuProps } from 'antd';
-import { 
-  DatabaseOutlined, 
-  TableOutlined, 
-  SearchOutlined,
-  ReloadOutlined,
-  MoreOutlined,
-  KeyOutlined,
-  FieldTimeOutlined,
-  TagsOutlined,
-  FunctionOutlined,
-  FileTextOutlined,
-  SettingOutlined,
-  LinkOutlined,
-  NumberOutlined,
-  FileOutlined,
-  BranchesOutlined
-} from '@ant-design/icons';
+import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from '@/components/ui';
+import {
+  Database,
+  Table,
+  RefreshCw,
+  Settings,
+  FileText,
+  File,
+  Hash,
+  Tags,
+  Key,
+  Clock,
+  Link,
+  Search,
+  MoreHorizontal,
+  Code,
+  GitBranch
+} from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 
 const { Search } = Input;
 const { TabPane } = Tabs;
+
+// Local type definitions to replace antd types
+interface DataNode {
+  key: string | number;
+  title: React.ReactNode;
+  children?: DataNode[];
+  icon?: React.ReactNode;
+  isLeaf?: boolean;
+  disabled?: boolean;
+  selectable?: boolean;
+  checkable?: boolean;
+}
+
+interface MenuProps {
+  items?: Array<{
+    key: string;
+    label: React.ReactNode;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  }>;
+}
 
 interface DatabaseExplorerProps {
   collapsed?: boolean;
@@ -94,8 +114,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId,
-      });
+        connectionId});
       console.log(`✅ 成功加载数据库列表:`, dbList);
       return dbList || [];
     } catch (error) {
@@ -119,8 +138,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
       const tables = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
-        database,
-      });
+        database});
       console.log(`✅ 成功加载表列表 (数据库: ${database}):`, tables);
       return tables || [];
     } catch (error) {
@@ -143,13 +161,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         safeTauriInvoke<string[]>('get_tag_keys', {
           connectionId,
           database,
-          measurement: table,
-        }).catch(() => []),
+          measurement: table}).catch(() => []),
         safeTauriInvoke<string[]>('get_field_keys', {
           connectionId,
           database,
-          measurement: table,
-        }).catch(() => []),
+          measurement: table}).catch(() => []),
       ]);
 
       // 将字段转换为带类型的格式
@@ -188,9 +204,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           </div>
         ),
         key: `connection-${connection.id}`,
-        icon: <LinkOutlined className="text-blue-600" />,
-        children: [],
-      };
+        icon: <Link className="w-4 h-4 text-blue-600"   />,
+        children: []};
 
       // 为活跃连接加载数据库
       if (connection.id === activeConnectionId && connection.id) {
@@ -205,7 +220,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               </span>
             ),
             key: `database-${connection.id}-${db}`,
-            icon: <DatabaseOutlined className="text-purple-600" />,
+            icon: <Database className="w-4 h-4 text-purple-600"   />,
             isLeaf: false,
             // 延迟加载表数据
           }));
@@ -251,9 +266,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             </div>
           ),
           key: `table-${connectionId}-${database}-${table}`,
-          icon: <TableOutlined className="text-green-600" />,
-          isLeaf: false,
-        }));
+          icon: <Table className="w-4 h-4 text-green-600"   />,
+          isLeaf: false}));
 
         // 更新树数据
         setTreeData(prevData => {
@@ -290,9 +304,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               </div>
             ),
             key: `tag-${connectionId}-${database}-${table}-${tag}`,
-            icon: <TagsOutlined className="text-orange-500" />,
-            isLeaf: true,
-          });
+            icon: <Tags className="w-4 h-4 text-orange-500"   />,
+            isLeaf: true});
         });
         
         // 直接添加字段列
@@ -303,18 +316,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               case 'float':
               case 'integer':
               case 'int64':
-                return <NumberOutlined className="text-blue-500" />;
+                return <Hash className="w-4 h-4 text-blue-500"   />;
               case 'string':
               case 'text':
-                return <FileTextOutlined className="text-gray-500" />;
+                return <FileText className="w-4 h-4 text-gray-500"   />;
               case 'time':
               case 'timestamp':
-                return <FieldTimeOutlined className="text-purple-500" />;
+                return <Clock className="text-purple-500" />;
               case 'boolean':
               case 'bool':
                 return <BranchesOutlined className="text-green-500" />;
               default:
-                return <FileOutlined className="text-gray-400" />;
+                return <File className="w-4 h-4 text-gray-400"   />;
             }
           };
 
@@ -330,8 +343,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             ),
             key: `field-${connectionId}-${database}-${table}-${field.name}`,
             icon: getFieldIcon(field.type),
-            isLeaf: true,
-          });
+            isLeaf: true});
         });
 
         // 更新树数据，同时更新表节点显示列数
@@ -383,19 +395,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         {
           key: 'refresh-db',
           label: '刷新数据库',
-          icon: <ReloadOutlined />,
-        },
+          icon: <RefreshCw className="w-4 h-4"  />},
         {
           key: 'new-query',
           label: '新建查询',
-          icon: <FileTextOutlined />,
-        },
+          icon: <FileText className="w-4 h-4"  />},
         { type: 'divider' },
         {
           key: 'db-properties',
           label: '属性',
-          icon: <SettingOutlined />,
-        },
+          icon: <Settings className="w-4 h-4"  />},
       ];
     }
 
@@ -404,19 +413,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         {
           key: 'refresh-table',
           label: '刷新表结构',
-          icon: <ReloadOutlined />,
-        },
+          icon: <RefreshCw className="w-4 h-4"  />},
         {
           key: 'query-table',
           label: '查询此表',
-          icon: <FileTextOutlined />,
-        },
+          icon: <FileText className="w-4 h-4"  />},
         { type: 'divider' },
         {
           key: 'table-properties',
           label: '表属性',
-          icon: <SettingOutlined />,
-        },
+          icon: <Settings className="w-4 h-4"  />},
       ];
     }
 
@@ -425,13 +431,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         {
           key: 'insert-column',
           label: '插入到查询',
-          icon: <FileTextOutlined />,
-        },
+          icon: <FileText className="w-4 h-4"  />},
         {
           key: 'copy-name',
           label: '复制列名',
-          icon: <FileOutlined />,
-        },
+          icon: <File className="w-4 h-4"  />},
       ];
     }
 
@@ -479,8 +483,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       if (titleMatch || filteredChildren.length > 0) {
         return {
           ...node,
-          children: filteredChildren.length > 0 ? filteredChildren : node.children,
-        };
+          children: filteredChildren.length > 0 ? filteredChildren : node.children};
       }
       
       return null;
@@ -524,14 +527,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         <Tooltip title="数据库浏览器" placement="right">
           <Button 
             type="text" 
-            icon={<DatabaseOutlined />}
+            icon={<Database className="w-4 h-4"  />}
             className="w-8 h-8"
           />
         </Tooltip>
         <Tooltip title="刷新" placement="right">
           <Button 
             type="text" 
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw className="w-4 h-4"  />}
             className="w-8 h-8"
             onClick={refreshTree}
             loading={loading}
@@ -557,7 +560,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           <Tooltip title="刷新">
             <Button 
               type="text" 
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               size="small"
               onClick={refreshTree}
               loading={loading}
@@ -580,13 +583,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         <Tabs 
           defaultActiveKey="explorer" 
           size="small"
-          className="h-full"
+          className="h-full flex items-center gap-1 ml-3"
           items={[
             {
               key: 'explorer',
               label: (
-                <span className="flex items-center gap-1 ml-3">
-                  <DatabaseOutlined />
+                <span >
+                  <Database className="w-4 h-4"  />
                   数据源
                 </span>
               ),
@@ -610,29 +613,27 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                     />
                   ) : (
                     <div className="text-center text-gray-500 mt-8">
-                      <DatabaseOutlined className="text-2xl mb-2" />
+                      <Database className="w-4 h-4 text-2xl mb-2"   />
                       <p>暂无连接</p>
                       <p className="text-sm mt-1">请在连接管理中添加数据库连接</p>
                     </div>
                   )}
                 </div>
-              ),
-            },
+              )},
             {
               key: 'favorites',
               label: (
                 <span className="flex items-center gap-1 ml-3">
-                  <KeyOutlined />
+                  <Key className="w-4 h-4"  />
                   收藏
                 </span>
               ),
               children: (
                 <div className="p-4 text-center text-gray-500">
-                  <KeyOutlined className="text-2xl mb-2" />
+                  <Key className="w-4 h-4 text-2xl mb-2"   />
                   <p>暂无收藏项</p>
                 </div>
-              ),
-            },
+              )},
           ]}
         />
       </div>

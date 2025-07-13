@@ -1,10 +1,7 @@
 import React from 'react';
-import { Tag, Typography, Badge, Tooltip } from 'antd';
-import { Space } from '@/components/ui';
-import { WifiOutlined, DisconnectOutlined, ExclamationCircleOutlined, LoadingOutlined, ClockCircleOutlined } from '@/components/ui';
+import { Tag, Text, Badge, TooltipWrapper as Tooltip, Space } from '@/components/ui';
+import { Wifi, Unlink, Loader2, Clock, AlertCircle } from 'lucide-react';
 import type { ConnectionStatus } from '@/types';
-
-const { Text } = Typography;
 
 interface ConnectionStatusIndicatorProps {
   status?: ConnectionStatus;
@@ -21,14 +18,13 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
   showLatency = true,
   showLastConnected = false,
   size = 'default',
-  style,
-}) => {
+  style}) => {
   if (!status) {
     return (
-      <Space style={style}>
+      <div className="flex gap-2" style={style}>
         <Badge status="default" />
         {showText && <Text type="secondary">未知状态</Text>}
-      </Space>
+      </div>
     );
   }
 
@@ -37,36 +33,32 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
       case 'connected':
         return {
           badgeStatus: 'success' as const,
-          icon: <WifiOutlined style={{ color: '#52c41a' }} />,
+          icon: <Wifi className="w-4 h-4" style={{ color: '#52c41a' }}  />,
           text: '已连接',
           color: '#52c41a',
-          tagColor: 'success',
-        };
+          tagColor: 'success'};
       case 'connecting':
         return {
           badgeStatus: 'processing' as const,
-          icon: <LoadingOutlined style={{ color: '#1890ff' }} />,
+          icon: <Loader2 className="w-4 h-4" style={{ color: '#1890ff' }}  />,
           text: '连接中',
           color: '#1890ff',
-          tagColor: 'processing',
-        };
+          tagColor: 'processing'};
       case 'error':
         return {
           badgeStatus: 'error' as const,
-          icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+          icon: <AlertCircle style={{ color: '#ff4d4f' }} />,
           text: '连接错误',
           color: '#ff4d4f',
-          tagColor: 'error',
-        };
+          tagColor: 'error'};
       case 'disconnected':
       default:
         return {
           badgeStatus: 'default' as const,
-          icon: <DisconnectOutlined style={{ color: '#d9d9d9' }} />,
+          icon: <Unlink className="w-4 h-4" style={{ color: '#d9d9d9' }}  />,
           text: '已断开',
           color: '#d9d9d9',
-          tagColor: 'default',
-        };
+          tagColor: 'default'};
     }
   };
 
@@ -103,36 +95,36 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
 
     if (size === 'large') {
       return (
-        <Space direction="vertical" size="small">
-          <Space>
+        <div className="flex gap-2" direction="vertical" size="small">
+          <div className="flex gap-2">
             {config.icon}
             {showText && (
               <Text strong style={{ color: config.color }}>
                 {config.text}
               </Text>
             )}
-          </Space>
+          </div>
           {showLatency && status.latency && (
-            <Space size="small">
-              <ClockCircleOutlined style={{ fontSize: '12px', color: '#8c8c8c' }} />
+            <div className="flex gap-2" size="small">
+              <Clock className="w-4 h-4" style={{ fontSize: '12px', color: '#8c8c8c' }}  />
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 {status.latency}ms
               </Text>
-            </Space>
+            </div>
           )}
           {showLastConnected && status.lastConnected && (
             <Text type="secondary" style={{ fontSize: '12px' }}>
               {new Date(status.lastConnected).toLocaleString()}
             </Text>
           )}
-        </Space>
+        </div>
       );
     }
 
     // Default size
     return (
       <Tooltip title={getTooltipContent()}>
-        <Space>
+        <div className="flex gap-2">
           <Badge status={config.badgeStatus} />
           {showText && (
             <Tag color={config.tagColor} style={{ margin: 0 }}>
@@ -144,7 +136,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
               {status.latency}ms
             </Text>
           )}
-        </Space>
+        </div>
       </Tooltip>
     );
   };

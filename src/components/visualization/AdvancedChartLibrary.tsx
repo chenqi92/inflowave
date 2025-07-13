@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Select, Button, Row, Col, Typography, Tooltip, Alert } from 'antd';
+import { Select, Button, Row, Col, Typography, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip
 import { Card, Space } from '@/components/ui';
-import { FullscreenOutlined, DownloadOutlined, SettingOutlined, ReloadOutlined } from '@/components/ui';
+import { Maximize, Download, Settings, RefreshCw } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 
@@ -53,8 +54,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
   onConfigChange,
   height = 400,
   loading = false,
-  showControls = true,
-}) => {
+  showControls = true}) => {
   const chartRef = useRef<ReactECharts>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(config.theme || 'light');
@@ -66,34 +66,28 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
         text: config.title,
         textStyle: {
           fontSize: 16,
-          fontWeight: 'bold',
-        },
-      },
+          fontWeight: 'bold'}},
       animation: config.animation !== false,
       grid: {
         left: '3%',
         right: '4%',
         bottom: '3%',
         containLabel: true,
-        ...config.grid,
-      },
+        ...config.grid},
       tooltip: {
         show: true,
         trigger: 'item',
-        ...config.tooltip,
-      },
+        ...config.tooltip},
       legend: {
         show: config.legend?.show !== false,
         top: config.legend?.position === 'top' ? '10%' : 'auto',
         bottom: config.legend?.position === 'bottom' ? '10%' : 'auto',
         left: config.legend?.position === 'left' ? '10%' : 'auto',
-        right: config.legend?.position === 'right' ? '10%' : 'auto',
-      },
+        right: config.legend?.position === 'right' ? '10%' : 'auto'},
       color: config.colors || [
         '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
         '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#d4a017'
-      ],
-    };
+      ]};
 
     switch (config.type) {
       case 'scatter':
@@ -154,8 +148,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
       itemStyle: {
         opacity: 0.8,
         shadowColor: 'rgba(0, 0, 0, 0.5)',
-        shadowBlur: 10,
-      },
+        shadowBlur: 10},
       markLine: {
         silent: true,
         lineStyle: {
@@ -645,7 +638,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
           <div className="flex justify-between items-center">
             <Text strong>{config.title}</Text>
             {showControls && (
-              <Space>
+              <div className="flex gap-2">
                 <Select
                   value={config.type}
                   onChange={(value) => {
@@ -672,15 +665,15 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
                   <Option value="dark">深色</Option>
                 </Select>
                 <Tooltip title="刷新">
-                  <Button size="small" icon={<ReloadOutlined />} onClick={refreshChart} />
+                  <Button size="small" icon={<RefreshCw className="w-4 h-4"  />} onClick={refreshChart} />
                 </Tooltip>
                 <Tooltip title="导出">
-                  <Button size="small" icon={<DownloadOutlined />} onClick={() => exportChart()} />
+                  <Button size="small" icon={<Download className="w-4 h-4"  />} onClick={() => exportChart()} />
                 </Tooltip>
                 <Tooltip title="全屏">
-                  <Button size="small" icon={<FullscreenOutlined />} onClick={toggleFullscreen} />
+                  <Button size="small" icon={<Maximize className="w-4 h-4"  />} onClick={toggleFullscreen} />
                 </Tooltip>
-              </Space>
+              </div>
             )}
           </div>
         }

@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Table, Button, Typography, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions } from 'antd';
-import { Card, Space, Modal, message, Button as UIButton } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Popconfirm, Descriptions,
-import { DatabaseOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined, ReloadOutlined, BarChartOutlined, ExclamationCircleOutlined, EditOutlined } from '@/components/ui';
+import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, toast, Card } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { useToast } from '@/hooks/use-toast';
+import { Database, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -14,7 +14,6 @@ import TableContextMenu from '@/components/database/TableContextMenu';
 import type { RetentionPolicy } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
-const { Title, Text } = Typography;
 const { Option } = Select;
 
 // 生成图表查询的辅助函数
@@ -69,6 +68,7 @@ interface DatabaseStats {
 }
 
 const Database: React.FC = () => {
+  const { toast } = useToast();
   const { activeConnectionId } = useConnectionStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -85,8 +85,7 @@ const Database: React.FC = () => {
   }>({
     visible: false,
     mode: 'create',
-    policy: undefined,
-  });
+    policy: undefined});
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -96,8 +95,7 @@ const Database: React.FC = () => {
     visible: false,
     x: 0,
     y: 0,
-    target: null,
-  });
+    target: null});
   const [form] = Form.useForm();
 
   // 加载数据库列表
@@ -109,8 +107,7 @@ const Database: React.FC = () => {
     setLoading(true);
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(Array.isArray(dbList) ? dbList : []);
 
       // 如果有数据库且没有选中的，选择第一个
@@ -118,7 +115,7 @@ const Database: React.FC = () => {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
       // Reset databases to prevent null/undefined errors
       setDatabases([]);
     } finally {
@@ -136,23 +133,20 @@ const Database: React.FC = () => {
       const [measurementList, retentionPolicyList, stats] = await Promise.all([
         safeTauriInvoke<string[]>('get_measurements', {
           connectionId: activeConnectionId,
-          database,
-        }).catch(() => []),
+          database}).catch(() => []),
         safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
           connectionId: activeConnectionId,
-          database,
-        }).catch(() => []),
+          database}).catch(() => []),
         safeTauriInvoke<DatabaseStats>('get_database_stats', {
           connectionId: activeConnectionId,
-          database,
-        }).catch(() => null),
+          database}).catch(() => null),
       ]);
 
       setMeasurements(Array.isArray(measurementList) ? measurementList : []);
       setRetentionPolicies(Array.isArray(retentionPolicyList) ? retentionPolicyList : []);
       setDatabaseStats(stats);
     } catch (error) {
-      message.error(`加载数据库详细信息失败: ${error}`);
+      toast({ title: "错误", description: "加载数据库详细信息失败: ${error}", variant: "destructive" });
       // Reset arrays to prevent null/undefined errors
       setMeasurements([]);
       setRetentionPolicies([]);
@@ -165,7 +159,7 @@ const Database: React.FC = () => {
   // 创建数据库
   const createDatabase = async (values: any) => {
     if (!activeConnectionId) {
-      message.warning('请先选择一个连接');
+      toast({ title: "警告", description: "请先选择一个连接" });
       return;
     }
 
@@ -174,33 +168,30 @@ const Database: React.FC = () => {
         connectionId: activeConnectionId,
         config: {
           name: values.name,
-          retentionPolicy: values.retentionPolicy,
-        },
-      });
+          retentionPolicy: values.retentionPolicy}});
 
-      message.success('数据库创建成功');
+      toast({ title: "成功", description: "数据库创建成功" });
       setCreateModalVisible(false);
       form.resetFields();
       await loadDatabases();
     } catch (error) {
-      message.error(`创建数据库失败: ${error}`);
+      toast({ title: "错误", description: "创建数据库失败: ${error}", variant: "destructive" });
     }
   };
 
   // 删除数据库
   const deleteDatabase = async (database: string) => {
     if (!activeConnectionId) {
-      message.warning('请先选择一个连接');
+      toast({ title: "警告", description: "请先选择一个连接" });
       return;
     }
 
     try {
       await safeTauriInvoke('drop_database', {
         connectionId: activeConnectionId,
-        database,
-      });
+        database});
 
-      message.success('数据库删除成功');
+      toast({ title: "成功", description: "数据库删除成功" });
 
       // 如果删除的是当前选中的数据库，清空选择
       if (selectedDatabase === database) {
@@ -212,7 +203,7 @@ const Database: React.FC = () => {
 
       await loadDatabases();
     } catch (error) {
-      message.error(`删除数据库失败: ${error}`);
+      toast({ title: "错误", description: "删除数据库失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -238,7 +229,7 @@ const Database: React.FC = () => {
           description="在连接管理页面选择一个连接并激活后，才能管理数据库。"
           type="warning"
           showIcon
-          icon={<ExclamationCircleOutlined />}
+          icon={<AlertCircle />}
           action={
             <Button size="small" type="primary">
               去连接
@@ -254,14 +245,14 @@ const Database: React.FC = () => {
       {/* 页面标题和操作 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Title level={2}>数据库管理</Title>
-          <Text type="secondary">
+          <h2 className="text-2xl font-bold mb-1">数据库管理</h2>
+          <p className="text-gray-500">
             管理 InfluxDB 数据库、测量和保留策略
-          </Text>
+          </p>
         </div>
-        <Space size="middle">
+        <div className="flex gap-2" size="middle">
           <Button
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw className="w-4 h-4"  />}
             onClick={loadDatabases}
             loading={loading}
           >
@@ -269,18 +260,18 @@ const Database: React.FC = () => {
           </Button>
           <Button
             type="primary"
-            icon={<PlusOutlined />}
+            icon={<Plus className="w-4 h-4"  />}
             onClick={() => setCreateModalVisible(true)}
           >
             创建数据库
           </Button>
-        </Space>
+        </div>
       </div>
 
       {/* 数据库选择器 */}
       <Card className="mb-6">
         <div className="flex items-center gap-4">
-          <Text strong className="text-base">选择数据库:</Text>
+          <span className="font-semibold text-base">选择数据库:</span>
           <Select
             style={{ width: 280 }}
             placeholder="选择数据库"
@@ -306,10 +297,10 @@ const Database: React.FC = () => {
                     }
                   }}
                 >
-                  <Space>
-                    <DatabaseOutlined />
+                  <div className="flex gap-2">
+                    <Database className="w-4 h-4"  />
                     {db}
-                  </Space>
+                  </div>
                 </DatabaseContextMenu>
               </Option>
             ))}
@@ -323,7 +314,7 @@ const Database: React.FC = () => {
               cancelText="取消"
               okType="danger"
             >
-              <Button danger icon={<DeleteOutlined />}>
+              <Button danger icon={<Trash2 className="w-4 h-4"  />}>
                 删除数据库
               </Button>
             </Popconfirm>
@@ -341,7 +332,7 @@ const Database: React.FC = () => {
                   <Statistic
                     title="测量数量"
                     value={databaseStats.measurementCount}
-                    prefix={<BarChartOutlined />}
+                    prefix={<BarChart className="w-4 h-4"  />}
                   />
                 </Col>
                 <Col span={6}>
@@ -397,29 +388,28 @@ const Database: React.FC = () => {
                           }
                         }}
                       >
-                        <Space>
-                          <BarChartOutlined />
-                          <Text strong>{name}</Text>
-                        </Space>
+                        <div className="flex gap-2">
+                          <BarChart className="w-4 h-4"  />
+                          <span className="font-semibold">{name}</span>
+                        </div>
                       </TableContextMenu>
-                    ),
-                  },
+                    )},
                   {
                     title: '操作',
                     key: 'actions',
                     width: 180,
                     render: (_, record: { name: string }) => (
-                      <Space size="small">
+                      <div className="flex gap-2" size="small">
                         <Tooltip title="查看详情">
                           <Button
                             type="text"
-                            icon={<InfoCircleOutlined />}
-                            onClick={() => message.info('查看测量详情功能开发中...')}
+                            icon={<Info className="w-4 h-4"  />}
+                            onClick={() => toast({ title: "信息", description: "查看测量详情功能开发中..." })}
                           />
                         </Tooltip>
                         <Popconfirm
                           title="确定要删除这个测量吗？"
-                          onConfirm={() => message.info('删除测量功能开发中...')}
+                          onConfirm={() => toast({ title: "信息", description: "删除测量功能开发中..." })}
                           okText="确定"
                           cancelText="取消"
                         >
@@ -427,23 +417,20 @@ const Database: React.FC = () => {
                             <Button
                               type="text"
                               danger
-                              icon={<DeleteOutlined />}
+                              icon={<Trash2 className="w-4 h-4"  />}
                             />
                           </Tooltip>
                         </Popconfirm>
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                 ]}
                 rowKey="name"
                 pagination={{
                   pageSize: 10,
                   showSizeChanger: true,
-                  showTotal: (total) => `共 ${total} 个测量`,
-                }}
+                  showTotal: (total) => `共 ${total} 个测量`}}
                 locale={{
-                  emptyText: '暂无测量数据',
-                }}
+                  emptyText: '暂无测量数据'}}
                 onRow={(record) => ({
                   onContextMenu: (event) => {
                     event.preventDefault();
@@ -454,11 +441,8 @@ const Database: React.FC = () => {
                       target: {
                         type: 'measurement',
                         name: record.name,
-                        database: selectedDatabase,
-                      },
-                    });
-                  },
-                })}
+                        database: selectedDatabase}});
+                  }})}
               />
             </Spin>
           </Card>
@@ -469,12 +453,11 @@ const Database: React.FC = () => {
             extra={
               <Button
                 type="primary"
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => setRetentionPolicyDialog({
                   visible: true,
                   mode: 'create',
-                  policy: undefined,
-                })}
+                  policy: undefined})}
               >
                 创建策略
               </Button>
@@ -489,42 +472,37 @@ const Database: React.FC = () => {
                     dataIndex: 'name',
                     key: 'name',
                     render: (name: string, record: RetentionPolicy) => (
-                      <Space>
-                        <Text strong>{name}</Text>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">{name}</span>
                         {record.default && <Tag color="blue">默认</Tag>}
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                   {
                     title: '保留时间',
                     dataIndex: 'duration',
-                    key: 'duration',
-                  },
+                    key: 'duration'},
                   {
                     title: '分片组时间',
                     dataIndex: 'shardGroupDuration',
-                    key: 'shardGroupDuration',
-                  },
+                    key: 'shardGroupDuration'},
                   {
                     title: '副本数',
                     dataIndex: 'replicaN',
-                    key: 'replicaN',
-                  },
+                    key: 'replicaN'},
                   {
                     title: '操作',
                     key: 'actions',
                     width: 120,
                     render: (_, record: RetentionPolicy) => (
-                      <Space size="small">
+                      <div className="flex gap-2" size="small">
                         <Tooltip title="编辑">
                           <Button
                             type="text"
-                            icon={<EditOutlined />}
+                            icon={<Edit className="w-4 h-4"  />}
                             onClick={() => setRetentionPolicyDialog({
                               visible: true,
                               mode: 'edit',
-                              policy: record,
-                            })}
+                              policy: record})}
                           />
                         </Tooltip>
                         {!record.default && (
@@ -536,12 +514,11 @@ const Database: React.FC = () => {
                                 await safeTauriInvoke('drop_retention_policy', {
                                   connectionId: activeConnectionId,
                                   database: selectedDatabase,
-                                  policyName: record.name,
-                                });
-                                message.success(`保留策略 "${record.name}" 删除成功`);
+                                  policyName: record.name});
+                                toast.success(`保留策略 "${record.name}" 删除成功`);
                                 loadDatabaseDetails(selectedDatabase);
                               } catch (error) {
-                                message.error(`删除保留策略失败: ${error}`);
+                                toast({ title: "错误", description: "删除保留策略失败: ${error}", variant: "destructive" });
                               }
                             }}
                             okText="确定"
@@ -552,20 +529,18 @@ const Database: React.FC = () => {
                               <Button
                                 type="text"
                                 danger
-                                icon={<DeleteOutlined />}
+                                icon={<Trash2 className="w-4 h-4"  />}
                               />
                             </Tooltip>
                           </Popconfirm>
                         )}
-                      </Space>
-                    ),
-                  },
+                      </div>
+                    )},
                 ]}
                 rowKey="name"
                 pagination={false}
                 locale={{
-                  emptyText: '暂无保留策略',
-                }}
+                  emptyText: '暂无保留策略'}}
               />
             </Spin>
           </Card>
@@ -581,12 +556,12 @@ const Database: React.FC = () => {
             switch (action) {
               case 'showMeasurements':
                 // 已经在当前页面显示
-                message.info('测量列表已在当前页面显示');
+                toast({ title: "信息", description: "测量列表已在当前页面显示" });
                 break;
 
               case 'showRetentionPolicies':
                 // 已经在当前页面显示
-                message.info('保留策略已在当前页面显示');
+                toast({ title: "信息", description: "保留策略已在当前页面显示" });
                 break;
 
               case 'showDatabaseInfo':
@@ -609,8 +584,7 @@ const Database: React.FC = () => {
                         )}
                       </Descriptions>
                     </div>
-                  ),
-                });
+                  )});
                 break;
 
               case 'showDatabaseStats':
@@ -634,10 +608,9 @@ const Database: React.FC = () => {
                           <Statistic title="磁盘使用" value={databaseStats.diskSize} suffix="MB" />
                         </Col>
                       </Row>
-                    ),
-                  });
+                    )});
                 } else {
-                  message.info('正在加载数据库统计信息...');
+                  toast({ title: "信息", description: "正在加载数据库统计信息..." });
                   loadDatabaseDetails(params.database);
                 }
                 break;
@@ -649,8 +622,7 @@ const Database: React.FC = () => {
                     database: params.database,
                     measurements,
                     retentionPolicies,
-                    exportTime: new Date().toISOString(),
-                  };
+                    exportTime: new Date().toISOString()};
 
                   const dataStr = JSON.stringify(structure, null, 2);
                   const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -661,9 +633,9 @@ const Database: React.FC = () => {
                   link.click();
                   URL.revokeObjectURL(url);
 
-                  message.success('数据库结构导出成功');
+                  toast({ title: "成功", description: "数据库结构导出成功" });
                 } catch (error) {
-                  message.error(`导出失败: ${error}`);
+                  toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -680,8 +652,7 @@ const Database: React.FC = () => {
                   onOk: () => deleteDatabase(params.database),
                   onCancel: () => {
                     // 明确处理取消操作
-                  },
-                });
+                  }});
                 break;
 
               case 'previewData':
@@ -703,8 +674,7 @@ const Database: React.FC = () => {
 
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   // 在新窗口或对话框中显示结果
                   Modal.info({
@@ -712,7 +682,7 @@ const Database: React.FC = () => {
                     width: 1000,
                     content: (
                       <div>
-                        <Text type="secondary">查询: {query}</Text>
+                        <span className="text-gray-500">查询: {query}</span>
                         <div className="mt-4">
                           {/* 这里可以添加一个简单的表格来显示结果 */}
                           <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
@@ -720,10 +690,9 @@ const Database: React.FC = () => {
                           </pre>
                         </div>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`数据预览失败: ${error}`);
+                  toast({ title: "错误", description: "数据预览失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -733,8 +702,7 @@ const Database: React.FC = () => {
                   const fields = await safeTauriInvoke('get_field_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
-                    measurement: params.measurement,
-                  });
+                    measurement: params.measurement});
 
                   Modal.info({
                     title: `字段信息 - ${params.measurement}`,
@@ -753,10 +721,9 @@ const Database: React.FC = () => {
                           )}
                         </ul>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取字段信息失败: ${error}`);
+                  toast({ title: "错误", description: "获取字段信息失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -766,8 +733,7 @@ const Database: React.FC = () => {
                   const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
-                    measurement: params.measurement,
-                  });
+                    measurement: params.measurement});
 
                   Modal.info({
                     title: `标签键 - ${params.measurement}`,
@@ -785,10 +751,9 @@ const Database: React.FC = () => {
                           )}
                         </ul>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取标签键失败: ${error}`);
+                  toast({ title: "错误", description: "获取标签键失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -798,11 +763,10 @@ const Database: React.FC = () => {
                   const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
-                    measurement: params.measurement,
-                  });
+                    measurement: params.measurement});
 
                   if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
-                    message.info('该测量没有标签键');
+                    toast({ title: "信息", description: "该测量没有标签键" });
                     return;
                   }
 
@@ -811,8 +775,7 @@ const Database: React.FC = () => {
                     connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
-                    tagKey: tagKeys[0],
-                  });
+                    tagKey: tagKeys[0]});
 
                   Modal.info({
                     title: `标签值 - ${params.measurement}`,
@@ -830,10 +793,9 @@ const Database: React.FC = () => {
                           )}
                         </ul>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取标签值失败: ${error}`);
+                  toast({ title: "错误", description: "获取标签值失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -843,25 +805,23 @@ const Database: React.FC = () => {
                   const query = `SHOW SERIES FROM "${params.measurement}"`;
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   Modal.info({
                     title: `序列信息 - ${params.measurement}`,
                     width: 800,
                     content: (
                       <div>
-                        <Text type="secondary">查询: {query}</Text>
+                        <span className="text-gray-500">查询: {query}</span>
                         <div className="mt-4">
                           <pre className="bg-gray-100 p-4 rounded max-h-96 overflow-auto">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取序列信息失败: ${error}`);
+                  toast({ title: "错误", description: "获取序列信息失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -871,8 +831,7 @@ const Database: React.FC = () => {
                   const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   Modal.info({
                     title: `记录统计 - ${params.measurement}`,
@@ -881,16 +840,15 @@ const Database: React.FC = () => {
                         <Statistic
                           title="总记录数"
                           value={result.rowCount || 0}
-                          prefix={<DatabaseOutlined />}
+                          prefix={<Database className="w-4 h-4"  />}
                         />
                         <div className="mt-4">
-                          <Text type="secondary">查询: {query}</Text>
+                          <span className="text-gray-500">查询: {query}</span>
                         </div>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取记录数失败: ${error}`);
+                  toast({ title: "错误", description: "获取记录数失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -900,8 +858,7 @@ const Database: React.FC = () => {
                   const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   Modal.info({
                     title: `时间范围 - ${params.measurement}`,
@@ -909,7 +866,7 @@ const Database: React.FC = () => {
                       <div>
                         <Descriptions column={1} bordered>
                           <Descriptions.Item label="查询">
-                            <Text code>{query}</Text>
+                            <code className="bg-gray-100 px-1 rounded">{query}</code>
                           </Descriptions.Item>
                           <Descriptions.Item label="结果">
                             <pre className="bg-gray-100 p-2 rounded">
@@ -918,10 +875,9 @@ const Database: React.FC = () => {
                           </Descriptions.Item>
                         </Descriptions>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取时间范围失败: ${error}`);
+                  toast({ title: "错误", description: "获取时间范围失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -931,11 +887,10 @@ const Database: React.FC = () => {
                   const fields = await safeTauriInvoke('get_field_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
-                    measurement: params.measurement,
-                  });
+                    measurement: params.measurement});
 
                   if (!Array.isArray(fields) || fields.length === 0) {
-                    message.info('该测量没有字段');
+                    toast({ title: "信息", description: "该测量没有字段" });
                     return;
                   }
 
@@ -945,8 +900,7 @@ const Database: React.FC = () => {
 
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   Modal.info({
                     title: `字段统计 - ${params.measurement}`,
@@ -958,17 +912,16 @@ const Database: React.FC = () => {
                           type="info"
                           className="mb-4"
                         />
-                        <Text type="secondary">查询: {query}</Text>
+                        <span className="text-gray-500">查询: {query}</span>
                         <div className="mt-4">
                           <pre className="bg-gray-100 p-4 rounded">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取字段统计失败: ${error}`);
+                  toast({ title: "错误", description: "获取字段统计失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -978,11 +931,10 @@ const Database: React.FC = () => {
                   const tagKeys = await safeTauriInvoke('get_tag_keys', {
                     connectionId: activeConnectionId,
                     database: params.database,
-                    measurement: params.measurement,
-                  });
+                    measurement: params.measurement});
 
                   if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
-                    message.info('该测量没有标签');
+                    toast({ title: "信息", description: "该测量没有标签" });
                     return;
                   }
 
@@ -992,8 +944,7 @@ const Database: React.FC = () => {
 
                   const result = await safeTauriInvoke('execute_query', {
                     connectionId: activeConnectionId,
-                    query,
-                  });
+                    query});
 
                   Modal.info({
                     title: `标签分布 - ${params.measurement}`,
@@ -1005,17 +956,16 @@ const Database: React.FC = () => {
                           type="info"
                           className="mb-4"
                         />
-                        <Text type="secondary">查询: {query}</Text>
+                        <span className="text-gray-500">查询: {query}</span>
                         <div className="mt-4">
                           <pre className="bg-gray-100 p-4 rounded max-h-64 overflow-auto">
                             {JSON.stringify(result, null, 2)}
                           </pre>
                         </div>
                       </div>
-                    ),
-                  });
+                    )});
                 } catch (error) {
-                  message.error(`获取标签分布失败: ${error}`);
+                  toast({ title: "错误", description: "获取标签分布失败: ${error}", variant: "destructive" });
                 }
                 break;
 
@@ -1030,7 +980,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                message.success('正在跳转到可视化页面...');
+                toast({ title: "成功", description: "正在跳转到可视化页面..." });
                 break;
 
               case 'createFieldChart':
@@ -1045,7 +995,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                message.success('正在跳转到可视化页面...');
+                toast({ title: "成功", description: "正在跳转到可视化页面..." });
                 break;
 
               case 'createTagChart':
@@ -1060,7 +1010,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                message.success('正在跳转到可视化页面...');
+                toast({ title: "成功", description: "正在跳转到可视化页面..." });
                 break;
 
               case 'customChart':
@@ -1071,11 +1021,11 @@ const Database: React.FC = () => {
                     measurement: params.measurement
                   }
                 });
-                message.success('正在跳转到可视化页面...');
+                toast({ title: "成功", description: "正在跳转到可视化页面..." });
                 break;
 
               case 'exportData':
-                message.info(`导出测量 "${params.measurement}" 为 ${params.format} 格式功能开发中...`);
+                toast.info(`导出测量 "${params.measurement}" 为 ${params.format} 格式功能开发中...`);
                 break;
 
               case 'deleteMeasurement':
@@ -1093,25 +1043,23 @@ const Database: React.FC = () => {
                       await safeTauriInvoke('drop_measurement', {
                         connectionId: activeConnectionId,
                         database: params.database,
-                        measurement: params.measurement,
-                      });
-                      message.success(`测量 "${params.measurement}" 删除成功`);
+                        measurement: params.measurement});
+                      toast.success(`测量 "${params.measurement}" 删除成功`);
                       loadDatabaseDetails(selectedDatabase);
                     } catch (error) {
-                      message.error(`删除测量失败: ${error}`);
+                      toast({ title: "错误", description: "删除测量失败: ${error}", variant: "destructive" });
                     }
                   },
                   onCancel: () => {
                     // 明确处理取消操作
-                  },
-                });
+                  }});
                 break;
 
               default:
-                message.info(`功能 "${action}" 开发中...`);
+                toast.info(`功能 "${action}" 开发中...`);
             }
           } catch (error) {
-            message.error(`操作失败: ${error}`);
+            toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
           }
         };
 
@@ -1128,7 +1076,7 @@ const Database: React.FC = () => {
       }, [contextMenu, activeConnectionId, selectedDatabase])}
 
       {/* 创建数据库模态框 */}
-      <Modal
+      <Dialog
         title="创建数据库"
         open={createModalVisible}
         onClose={() => {
@@ -1179,7 +1127,7 @@ const Database: React.FC = () => {
             <Input placeholder="例如: autogen" />
           </Form.Item>
         </Form>
-      </Modal>
+      </Dialog>
 
       {/* 保留策略管理对话框 */}
       <RetentionPolicyDialog
@@ -1191,8 +1139,7 @@ const Database: React.FC = () => {
         onClose={() => setRetentionPolicyDialog({
           visible: false,
           mode: 'create',
-          policy: undefined,
-        })}
+          policy: undefined})}
         onSuccess={() => {
           loadDatabaseDetails(selectedDatabase);
         }}

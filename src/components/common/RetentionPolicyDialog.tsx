@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Tooltip } from 'antd';
-import { Modal, Space, message, Button } from '@/components/ui';
-import { InfoCircleOutlined, QuestionCircleOutlined } from '@/components/ui';
+import { Form, Input, Alert, Select, Typography, Switch, InputNumber } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip
+import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
+import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
@@ -34,8 +35,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   database,
   connectionId,
   onClose,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [form] = Form.useForm<RetentionPolicyForm>();
   const [loading, setLoading] = useState(false);
 
@@ -48,16 +48,14 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           duration: policy.duration,
           shardDuration: policy.shardGroupDuration,
           replicaN: policy.replicaN,
-          default: policy.default,
-        });
+          default: policy.default});
       } else {
         form.resetFields();
         form.setFieldsValue({
           duration: '30d',
           shardDuration: '1h',
           replicaN: 1,
-          default: false,
-        });
+          default: false});
       }
     }
   }, [visible, mode, policy, form]);
@@ -74,20 +72,17 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         duration: values.duration,
         shard_duration: values.shardDuration,
         replica_n: values.replicaN,
-        default: values.default,
-      };
+        default: values.default};
 
       if (mode === 'create') {
         await safeTauriInvoke('create_retention_policy', {
           connectionId,
-          config,
-        });
+          config});
         message.success(`保留策略 "${values.name}" 创建成功`);
       } else {
         await safeTauriInvoke('alter_retention_policy', {
           connectionId,
-          config,
-        });
+          config});
         message.success(`保留策略 "${values.name}" 修改成功`);
       }
 
@@ -118,20 +113,18 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           await safeTauriInvoke('drop_retention_policy', {
             connectionId,
             database,
-            policyName: policy.name,
-          });
+            policyName: policy.name});
           message.success(`保留策略 "${policy.name}" 删除成功`);
           if (onSuccess) {
             onSuccess();
           }
           onClose();
         } catch (error) {
-          message.error(`删除保留策略失败: ${error}`);
+          toast({ title: "错误", description: "删除保留策略失败: ${error}", variant: "destructive" });
         } finally {
           setLoading(false);
         }
-      },
-    });
+      }});
   };
 
   // 持续时间选项
@@ -159,7 +152,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
     <Modal
       title={
         <div className="flex items-center gap-2">
-          <InfoCircleOutlined />
+          <Info className="w-4 h-4"  />
           {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
         </div>
       }
@@ -221,12 +214,12 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
 
           <Form.Item
             label={
-              <Space>
+              <div className="flex gap-2">
                 保留时间
                 <Tooltip title="数据在数据库中保留的时间，超过此时间的数据将被自动删除">
-                  <QuestionCircleOutlined />
+                  <HelpCircle className="w-4 h-4"  />
                 </Tooltip>
-              </Space>
+              </div>
             }
             name="duration"
             rules={[{ required: true, message: '请选择保留时间' }]}
@@ -247,12 +240,12 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
 
           <Form.Item
             label={
-              <Space>
+              <div className="flex gap-2">
                 分片组持续时间
                 <Tooltip title="每个分片组覆盖的时间范围，影响查询性能和存储效率">
-                  <QuestionCircleOutlined />
+                  <HelpCircle className="w-4 h-4"  />
                 </Tooltip>
-              </Space>
+              </div>
             }
             name="shardDuration"
           >
@@ -272,12 +265,12 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
 
           <Form.Item
             label={
-              <Space>
+              <div className="flex gap-2">
                 副本数
                 <Tooltip title="数据副本的数量，用于高可用性部署">
-                  <QuestionCircleOutlined />
+                  <HelpCircle className="w-4 h-4"  />
                 </Tooltip>
-              </Space>
+              </div>
             }
             name="replicaN"
           >
@@ -291,12 +284,12 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
 
           <Form.Item
             label={
-              <Space>
+              <div className="flex gap-2">
                 设为默认策略
                 <Tooltip title="将此策略设为数据库的默认保留策略">
-                  <QuestionCircleOutlined />
+                  <HelpCircle className="w-4 h-4"  />
                 </Tooltip>
-              </Space>
+              </div>
             }
             name="default"
             valuePropName="checked"

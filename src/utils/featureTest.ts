@@ -76,8 +76,7 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试连接管理
     await this.runTest(suite, '连接管理', async () => {
@@ -110,8 +109,7 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试查询执行
     await this.runTest(suite, '查询执行', async () => {
@@ -119,9 +117,7 @@ export class FeatureTester {
         request: {
           connectionId: 'test-connection',
           database: 'test-db',
-          query: 'SHOW DATABASES',
-        },
-      });
+          query: 'SHOW DATABASES'}});
       return '查询执行功能正常';
     });
 
@@ -150,8 +146,7 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试仪表板管理
     await this.runTest(suite, '仪表板管理', async () => {
@@ -181,16 +176,14 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试数据导入
     await this.runTest(suite, '数据导入', async () => {
       // 测试数据预览功能
       void await safeTauriInvoke('preview_data_conversion', {
         filePath: 'test.csv',
-        config: { format: 'csv', delimiter: ',' },
-      });
+        config: { format: 'csv', delimiter: ',' }});
       return '数据导入功能正常';
     });
 
@@ -199,8 +192,7 @@ export class FeatureTester {
       await safeTauriInvoke('export_query_data', {
         format: 'csv',
         data: { series: [] },
-        filename: 'test_export',
-      });
+        filename: 'test_export'});
       return '数据导出功能正常';
     });
 
@@ -208,8 +200,7 @@ export class FeatureTester {
     await this.runTest(suite, '保留策略管理', async () => {
       void await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
         connectionId: 'test-connection',
-        database: 'test-db',
-      });
+        database: 'test-db'});
       return '保留策略管理功能正常';
     });
 
@@ -226,30 +217,26 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试性能指标获取
     await this.runTest(suite, '性能指标', async () => {
       void await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
-        connectionId: 'test-connection',
-      });
+        connectionId: 'test-connection'});
       return '性能指标获取功能正常';
     });
 
     // 测试慢查询分析
     await this.runTest(suite, '慢查询分析', async () => {
       void await safeTauriInvoke('get_slow_query_analysis', {
-        connectionId: 'test-connection',
-      });
+        connectionId: 'test-connection'});
       return '慢查询分析功能正常';
     });
 
     // 测试系统资源监控
     await this.runTest(suite, '系统资源监控', async () => {
       void await safeTauriInvoke('get_system_resources', {
-        connectionId: 'test-connection',
-      });
+        connectionId: 'test-connection'});
       return '系统资源监控功能正常';
     });
 
@@ -266,8 +253,7 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试用户偏好设置
     await this.runTest(suite, '用户偏好设置', async () => {
@@ -289,8 +275,7 @@ export class FeatureTester {
       await safeTauriInvoke('send_notification', {
         title: '测试通知',
         message: '这是一个测试通知',
-        severity: 'info',
-      });
+        severity: 'info'});
       return '通知系统功能正常';
     });
 
@@ -307,8 +292,7 @@ export class FeatureTester {
       totalTests: 0,
       passedTests: 0,
       failedTests: 0,
-      skippedTests: 0,
-    };
+      skippedTests: 0};
 
     // 测试插件系统
     await this.runTest(suite, '插件系统', async () => {
@@ -350,8 +334,7 @@ export class FeatureTester {
         feature: testName,
         status: 'pass',
         message,
-        duration,
-      });
+        duration});
       suite.passedTests++;
       
       console.log(`✅ ${testName}: ${message} (${duration}ms)`);
@@ -363,8 +346,7 @@ export class FeatureTester {
         feature: testName,
         status: 'fail',
         message,
-        duration,
-      });
+        duration});
       suite.failedTests++;
       
       console.log(`❌ ${testName}: ${message} (${duration}ms)`);

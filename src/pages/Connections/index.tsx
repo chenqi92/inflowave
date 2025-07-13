@@ -1,7 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Tabs } from 'antd';
-import { Space, Modal } from '@/components/ui';
-import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined } from '@/components/ui';
+import { Title, Button, Tabs, TabsContent, TabsList, TabsTrigger, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Plus, RefreshCw, FileUp, FileDown, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -12,7 +11,6 @@ import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleCon
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
-const { Title } = Typography;
 
 interface ConnectionListItem extends ConnectionConfig {
   status?: ConnectionStatus;
@@ -27,8 +25,7 @@ const Connections: React.FC = () => {
     removeConnection,
     setConnectionStatus,
     clearConnections,
-    syncConnectionsToBackend,
-  } = useConnectionStore();
+    syncConnectionsToBackend} = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
@@ -250,8 +247,7 @@ const Connections: React.FC = () => {
       okText: '确认删除',
       cancelText: '取消',
       okButtonProps: { danger: true },
-      onOk: () => removeConnection(connectionId),
-    });
+      onOk: () => removeConnection(connectionId)});
   };
 
   // 获取连接状态
@@ -272,7 +268,7 @@ const Connections: React.FC = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Button
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw className="w-4 h-4"  />}
             onClick={loadConnections}
             loading={loading}
             size="small"
@@ -280,14 +276,14 @@ const Connections: React.FC = () => {
             刷新
           </Button>
           <Button
-            icon={<ImportOutlined />}
+            icon={<FileUp className="w-4 h-4"  />}
             onClick={() => showMessage.info('导入功能开发中...')}
             size="small"
           >
             导入
           </Button>
           <Button
-            icon={<ExportOutlined />}
+            icon={<FileDown className="w-4 h-4"  />}
             onClick={() => showMessage.info('导出功能开发中...')}
             size="small"
           >
@@ -295,7 +291,7 @@ const Connections: React.FC = () => {
           </Button>
           <Button
             type="primary"
-            icon={<PlusOutlined />}
+            icon={<Plus className="w-4 h-4"  />}
             onClick={() => handleOpenDialog()}
             size="small"
           >
@@ -318,18 +314,16 @@ const Connections: React.FC = () => {
                   onConnectionSelect={handleConnectionSelect}
                   onEditConnection={handleOpenDialog}
                 />
-              ),
-            },
+              )},
             {
               key: 'debug',
               label: (
-                <Space size="small">
-                  <BugOutlined />
+                <div className="flex gap-2" size="small">
+                  <Bug className="w-4 h-4"  />
                   调试面板
-                </Space>
+                </div>
               ),
-              children: <ConnectionDebugPanel />,
-            },
+              children: <ConnectionDebugPanel />},
           ]}
           className="h-full"
         />

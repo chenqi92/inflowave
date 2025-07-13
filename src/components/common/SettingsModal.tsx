@@ -1,35 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Modal, 
-  Form, 
-  Select, 
-  Button, 
-  Typography, 
-  Space, 
-  message, 
-  Row, 
-  Col, 
-  Alert, 
-  Tabs, 
-  InputNumber, 
-  Switch, 
-  Divider 
-} from 'antd';
+import { Modal, Form, Select, Button, Typography, Space, Row, Col, Alert, Tabs, InputNumber, Switch } from '@/components/ui';
+// TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
-import { 
-  SaveOutlined, 
-  ReloadOutlined, 
-  DeleteOutlined, 
-  InfoCircleOutlined, 
-  ExportOutlined, 
-  ImportOutlined, 
-  SettingOutlined, 
-  DatabaseOutlined, 
-  UserOutlined, 
-  BugOutlined,
-  BellOutlined,
-  CloseOutlined
-} from '@ant-design/icons';
+
+import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
@@ -95,9 +70,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         console.warn('保存配置到后端失败:', error);
       }
 
-      message.success('设置已保存');
+      toast({ title: "成功", description: "设置已保存" });
     } catch (error) {
-      message.error(`保存设置失败: ${error}`);
+      toast({ title: "错误", description: "保存设置失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -118,9 +93,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           const latestConfig = useAppStore.getState().config;
           form.setFieldsValue(latestConfig);
         }, 0);
-        message.success('设置已重置为默认值');
-      },
-    });
+        toast({ title: "成功", description: "设置已重置为默认值" });
+      }});
   };
 
   // 导出设置
@@ -130,8 +104,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         appConfig: config,
         connections: useConnectionStore.getState().connections,
         exportTime: new Date().toISOString(),
-        version: '1.0.0',
-      };
+        version: '1.0.0'};
 
       if (isBrowserEnvironment()) {
         // 浏览器环境：显示文件保存对话框
@@ -142,13 +115,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               suggestedName: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
               types: [{
                 description: 'JSON files',
-                accept: { 'application/json': ['.json'] },
-              }],
-            });
+                accept: { 'application/json': ['.json'] }}]});
             const writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(settings, null, 2));
             await writable.close();
-            message.success('设置已导出到指定位置');
+            toast({ title: "成功", description: "设置已导出到指定位置" });
           } else {
             // 降级到传统下载方式
             const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -160,11 +131,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            message.success('设置已导出到下载文件夹');
+            toast({ title: "成功", description: "设置已导出到下载文件夹" });
           }
         } catch (exportError) {
           if ((exportError as Error).name === 'AbortError') {
-            message.info('导出已取消');
+            toast({ title: "信息", description: "导出已取消" });
           } else {
             throw exportError;
           }
@@ -172,11 +143,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       } else {
         // Tauri 环境：调用原生文件保存对话框
         await safeTauriInvoke('export_settings', { settings });
-        message.success('设置已导出');
+        toast({ title: "成功", description: "设置已导出" });
       }
     } catch (error) {
       console.error('导出设置失败:', error);
-      message.error(`导出设置失败: ${error}`);
+      toast({ title: "错误", description: "导出设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -198,13 +169,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               if (settings.appConfig) {
                 setConfig(settings.appConfig);
                 form.setFieldsValue(settings.appConfig);
-                message.success('设置已导入');
+                toast({ title: "成功", description: "设置已导入" });
               } else {
-                message.error('无效的设置文件格式');
+                toast({ title: "错误", description: "无效的设置文件格式", variant: "destructive" });
               }
             } catch (parseError) {
               console.error('解析设置文件失败:', parseError);
-              message.error('设置文件格式错误');
+              toast({ title: "错误", description: "设置文件格式错误", variant: "destructive" });
             }
           }
         };
@@ -215,12 +186,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         if (settings) {
           setConfig(settings.appConfig);
           form.setFieldsValue(settings.appConfig);
-          message.success('设置已导入');
+          toast({ title: "成功", description: "设置已导入" });
         }
       }
     } catch (error) {
       console.error('导入设置失败:', error);
-      message.error(`导入设置失败: ${error}`);
+      toast({ title: "错误", description: "导入设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -239,9 +210,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           const latestConfig = useAppStore.getState().config;
           form.setFieldsValue(latestConfig);
         }, 0);
-        message.success('所有数据已清除');
-      },
-    });
+        toast({ title: "成功", description: "所有数据已清除" });
+      }});
   };
 
   // 清除连接配置（带确认）
@@ -254,9 +224,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       okType: 'danger',
       onOk: () => {
         clearConnections();
-        message.success('连接配置已清除');
-      },
-    });
+        toast({ title: "成功", description: "连接配置已清除" });
+      }});
   };
 
   const tabItems = [
@@ -264,7 +233,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       key: 'general',
       label: (
         <span className="flex items-center space-x-2">
-          <SettingOutlined />
+          <Settings className="w-4 h-4"  />
           <span>常规设置</span>
         </span>
       ),
@@ -375,12 +344,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </Col>
             </Row>
 
-            <Divider />
+            <div className="border-t border-gray-200 my-4" />
 
             <div className="flex justify-end">
-              <Space>
+              <div className="flex gap-2">
                 <Button
-                  icon={<ReloadOutlined />}
+                  icon={<RefreshCw className="w-4 h-4"  />}
                   onClick={handleResetSettings}
                 >
                   重置为默认
@@ -389,21 +358,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   type="primary"
                   htmlType="submit"
                   loading={loading}
-                  icon={<SaveOutlined />}
+                  icon={<Save className="w-4 h-4"  />}
                 >
                   保存设置
                 </Button>
-              </Space>
+              </div>
             </div>
           </Form>
         </div>
-      ),
-    },
+      )},
     {
       key: 'data',
       label: (
         <span className="flex items-center space-x-2">
-          <DatabaseOutlined />
+          <Database className="w-4 h-4"  />
           <span>数据管理</span>
         </span>
       ),
@@ -411,25 +379,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         <div className="max-h-96 overflow-y-auto space-y-4 px-1">
           <div>
             <Title level={5} className="mb-3">数据备份与恢复</Title>
-            <Space size="middle" wrap>
+            <div className="flex gap-2" size="middle" wrap>
               <Button
-                icon={<ExportOutlined />}
+                icon={<FileDown className="w-4 h-4"  />}
                 onClick={exportSettings}
                 type="dashed"
               >
                 导出设置
               </Button>
               <Button
-                icon={<ImportOutlined />}
+                icon={<FileUp className="w-4 h-4"  />}
                 onClick={importSettings}
                 type="dashed"
               >
                 导入设置
               </Button>
-            </Space>
+            </div>
           </div>
 
-          <Divider />
+          <div className="border-t border-gray-200 my-4" />
 
           <div>
             <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
@@ -441,7 +409,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               className="mb-4"
             />
             
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Text strong>清除所有连接配置</Text>
                 <br />
@@ -451,7 +419,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <br />
                 <Button
                   danger
-                  icon={<DeleteOutlined />}
+                  icon={<Trash2 className="w-4 h-4"  />}
                   onClick={clearConnectionsWithConfirm}
                   className="mt-2"
                   size="small"
@@ -469,7 +437,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <br />
                 <Button
                   danger
-                  icon={<DeleteOutlined />}
+                  icon={<Trash2 className="w-4 h-4"  />}
                   onClick={clearAllData}
                   className="mt-2"
                   size="small"
@@ -477,16 +445,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   重置所有设置
                 </Button>
               </div>
-            </Space>
+            </div>
           </div>
         </div>
-      ),
-    },
+      )},
     {
       key: 'about',
       label: (
         <span className="flex items-center space-x-2">
-          <InfoCircleOutlined />
+          <Info className="w-4 h-4"  />
           <span>关于</span>
         </span>
       ),
@@ -538,7 +505,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             </Col>
           </Row>
 
-          <Divider />
+          <div className="border-t border-gray-200 my-4" />
 
           <Alert
             message="功能特性"
@@ -554,16 +521,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             }
             type="info"
             showIcon
-            icon={<InfoCircleOutlined />}
+            icon={<Info className="w-4 h-4"  />}
           />
         </div>
-      ),
-    },
+      )},
     {
       key: 'notifications',
       label: (
         <span className="flex items-center space-x-2">
-          <BellOutlined />
+          <Bell className="w-4 h-4"  />
           <span>通知设置</span>
         </span>
       ),
@@ -577,7 +543,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           </div>
           
           {isBrowserEnvironment() && (
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <Alert
                 message="当前运行在浏览器预览模式"
                 description="您可以重新查看功能说明，或者重置提醒设置。"
@@ -586,25 +552,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 style={{ marginBottom: '16px' }}
               />
               
-              <Space>
+              <div className="flex gap-2">
                 <Button
                   type="primary"
-                  icon={<InfoCircleOutlined />}
+                  icon={<Info className="w-4 h-4"  />}
                   onClick={() => setBrowserModalVisible(true)}
                 >
                   查看功能说明
                 </Button>
                 <Button
-                  icon={<ReloadOutlined />}
+                  icon={<RefreshCw className="w-4 h-4"  />}
                   onClick={() => {
                     resetNoticeSettings();
-                    message.success('提醒设置已重置，下次启动时会再次显示功能说明');
+                    toast({ title: "成功", description: "提醒设置已重置，下次启动时会再次显示功能说明" });
                   }}
                 >
                   重置提醒设置
                 </Button>
-              </Space>
-            </Space>
+              </div>
+            </div>
           )}
           
           {!isBrowserEnvironment() && (
@@ -616,13 +582,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             />
           )}
         </div>
-      ),
-    },
+      )},
     {
       key: 'developer',
       label: (
         <span className="flex items-center space-x-2">
-          <BugOutlined />
+          <Bug className="w-4 h-4"  />
           <span>开发者工具</span>
         </span>
       ),
@@ -656,17 +621,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             </div>
           </div>
         </div>
-      ),
-    },
+      )},
   ];
 
   return (
     <>
-      <Modal
+      <Dialog
         title={
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <SettingOutlined />
+              <Settings className="w-4 h-4"  />
               <span>偏好设置</span>
             </div>
           </div>
@@ -677,8 +641,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         width={1000}
         styles={{
           body: { padding: '16px 0' },
-          header: { borderBottom: '1px solid #f0f0f0', marginBottom: 0 },
-        }}
+          header: { borderBottom: '1px solid #f0f0f0', marginBottom: 0 }}}
         destroyOnClose
         centered
         className="settings-modal"
@@ -689,7 +652,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           style={{ minHeight: '400px' }}
           tabBarStyle={{ width: '140px', marginRight: '16px' }}
         />
-      </Modal>
+      </Dialog>
 
       {/* 浏览器模式说明弹框 */}
       <BrowserModeModal

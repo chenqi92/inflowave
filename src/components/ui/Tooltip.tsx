@@ -1,156 +1,71 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { cn } from '@/utils/cn';
+import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import { cn } from "@/lib/utils"
 
-export interface TooltipProps {
-  title?: React.ReactNode;
-  placement?: 'top' | 'bottom' | 'left' | 'right' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-  trigger?: 'hover' | 'click';
-  children: React.ReactNode;
-  className?: string;
-  overlayClassName?: string;
+const TooltipProvider = TooltipPrimitive.Provider
+
+const Tooltip = TooltipPrimitive.Root
+
+const TooltipTrigger = TooltipPrimitive.Trigger
+
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      className
+    )}
+    {...props}
+  />
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
+
+interface TooltipWrapperProps {
+  children: React.ReactNode
+  title?: React.ReactNode
+  placement?: "top" | "bottom" | "left" | "right"
+  trigger?: "hover" | "focus" | "click"
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-const Tooltip: React.FC<TooltipProps> = ({
-  title,
-  placement = 'top',
-  trigger = 'hover',
-  children,
-  className,
-  overlayClassName,
-}) => {
-  const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const updatePosition = () => {
-      if (!triggerRef.current || !tooltipRef.current) return;
-
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
-      
-      let top = 0;
-      let left = 0;
-
-      switch (placement) {
-        case 'top':
-          top = triggerRect.top - tooltipRect.height - 8;
-          left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-          break;
-        case 'bottom':
-          top = triggerRect.bottom + 8;
-          left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-          break;
-        case 'left':
-          top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
-          left = triggerRect.left - tooltipRect.width - 8;
-          break;
-        case 'right':
-          top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
-          left = triggerRect.right + 8;
-          break;
-        case 'topLeft':
-          top = triggerRect.top - tooltipRect.height - 8;
-          left = triggerRect.left;
-          break;
-        case 'topRight':
-          top = triggerRect.top - tooltipRect.height - 8;
-          left = triggerRect.right - tooltipRect.width;
-          break;
-        case 'bottomLeft':
-          top = triggerRect.bottom + 8;
-          left = triggerRect.left;
-          break;
-        case 'bottomRight':
-          top = triggerRect.bottom + 8;
-          left = triggerRect.right - tooltipRect.width;
-          break;
-      }
-
-      setPosition({ top, left });
-    };
-
-    if (visible) {
-      updatePosition();
-      window.addEventListener('scroll', updatePosition);
-      window.addEventListener('resize', updatePosition);
-      return () => {
-        window.removeEventListener('scroll', updatePosition);
-        window.removeEventListener('resize', updatePosition);
-      };
+const TooltipWrapper = React.forwardRef<HTMLDivElement, TooltipWrapperProps>(
+  ({ children, title, placement = "top", trigger = "hover", open, onOpenChange, ...props }, ref) => {
+    if (!title) {
+      return <>{children}</>
     }
-  }, [visible, placement]);
 
-  const handleMouseEnter = () => {
-    if (trigger === 'hover') {
-      setVisible(true);
+    const triggerProps = {
+      ...(trigger === "hover" && {}),
+      ...(trigger === "focus" && { delayDuration: 0 }),
+      ...(trigger === "click" && { delayDuration: 0 }),
     }
-  };
 
-  const handleMouseLeave = () => {
-    if (trigger === 'hover') {
-      setVisible(false);
-    }
-  };
-
-  const handleClick = () => {
-    if (trigger === 'click') {
-      setVisible(!visible);
-    }
-  };
-
-  useEffect(() => {
-    if (trigger === 'click') {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          triggerRef.current &&
-          !triggerRef.current.contains(event.target as Node) &&
-          tooltipRef.current &&
-          !tooltipRef.current.contains(event.target as Node)
-        ) {
-          setVisible(false);
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [trigger]);
-
-  if (!title) {
-    return <>{children}</>;
+    return (
+      <TooltipProvider>
+        <Tooltip open={open} onOpenChange={onOpenChange} {...triggerProps}>
+          <TooltipTrigger asChild>
+            {children}
+          </TooltipTrigger>
+          <TooltipContent side={placement}>
+            {title}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
   }
+)
+TooltipWrapper.displayName = "TooltipWrapper"
 
-  return (
-    <>
-      <div
-        ref={triggerRef}
-        className={cn('inline-block', className)}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
-      >
-        {children}
-      </div>
-      {visible && (
-        <div
-          ref={tooltipRef}
-          className={cn(
-            'fixed z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none',
-            'max-w-xs break-words',
-            overlayClassName
-          )}
-          style={{
-            top: position.top,
-            left: position.left,
-          }}
-        >
-          {title}
-        </div>
-      )}
-    </>
-  );
-};
-
-export { Tooltip };
+export { 
+  Tooltip, 
+  TooltipTrigger, 
+  TooltipContent, 
+  TooltipProvider,
+  TooltipWrapper 
+}
+export type { TooltipWrapperProps }

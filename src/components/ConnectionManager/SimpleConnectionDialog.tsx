@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Alert, Steps, Input, InputNumber, Switch } from 'antd';
-import { Modal, Space } from '@/components/ui';
-import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@/components/ui';
+import { Button, Alert, AlertDescription, Steps, Input, InputNumber, Switch, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
@@ -29,8 +28,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   visible,
   connection,
   onCancel,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const { createConnection, editConnection, testConnection } = useConnection();
   const [currentStep, setCurrentStep] = useState(0);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
@@ -46,8 +44,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     password: '',
     database: '',
     ssl: false,
-    timeout: 30,
-  });
+    timeout: 30});
 
   const isEditing = !!connection?.id;
 
@@ -62,8 +59,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           password: connection.password || '',
           database: connection.database || '',
           ssl: connection.ssl || false,
-          timeout: connection.timeout || 30,
-        });
+          timeout: connection.timeout || 30});
       } else {
         setFormData({
           name: '',
@@ -73,8 +69,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           password: '',
           database: '',
           ssl: false,
-          timeout: 30,
-        });
+          timeout: 30});
       }
       setCurrentStep(0);
       setTestResult(null);
@@ -130,8 +125,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         id: 'temp-test',
         ...formData,
         createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       const result = await testConnection(tempConfig.id!);
       setTestResult(result);
@@ -144,8 +138,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       setTestResult({
         success: false,
         error: String(error),
-        latency: 0,
-      });
+        latency: 0});
     } finally {
       setIsTesting(false);
     }
@@ -161,8 +154,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         ...formData,
         id: connection?.id,
         createdAt: connection?.createdAt || new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       if (isEditing) {
         await editConnection(configData);
@@ -326,7 +318,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {testResult.success && (
           <div className="bg-green-50 border border-green-200 rounded p-3">
             <div className="flex items-center gap-2 text-green-700">
-              <CheckCircleOutlined />
+              <CheckCircle />
               <span className="font-medium">连接配置正确</span>
             </div>
             <div className="text-sm text-green-600 mt-1">
@@ -342,14 +334,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     {
       title: '配置连接',
       description: '填写连接参数',
-      icon: currentStep === 0 ? <LoadingOutlined /> : 
-            currentStep > 0 ? <CheckCircleOutlined /> : undefined,
-    },
+      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> : 
+            currentStep > 0 ? <CheckCircle /> : undefined},
     {
       title: '测试连接',
       description: '验证连接可用性',
-      icon: currentStep === 1 ? (testResult?.success ? <CheckCircleOutlined /> : <CloseCircleOutlined />) : undefined,
-    },
+      icon: currentStep === 1 ? (testResult?.success ? <CheckCircle /> : <XCircle />) : undefined},
   ];
 
   return (
@@ -381,7 +371,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             )}
           </div>
 
-          <Space size="small">
+          <div className="flex gap-2" size="small">
             <Button
               onClick={onCancel}
               size="small"
@@ -390,7 +380,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </Button>
 
             {currentStep === 0 ? (
-              <Space size="small">
+              <div className="flex gap-2" size="small">
                 {isEditing && (
                   <Button
                     type="primary"
@@ -405,12 +395,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   type={isEditing ? 'default' : 'primary'}
                   onClick={handleTestConnection}
                   loading={isTesting}
-                  icon={<InfoCircleOutlined />}
+                  icon={<Info className="w-4 h-4"  />}
                   size="small"
                 >
                   测试连接
                 </Button>
-              </Space>
+              </div>
             ) : (
               <Button
                 type="primary"
@@ -422,7 +412,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 保存连接
               </Button>
             )}
-          </Space>
+          </div>
         </div>
       </div>
     </Modal>

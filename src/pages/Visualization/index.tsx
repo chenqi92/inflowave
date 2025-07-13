@@ -1,10 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Row, Col, Button, Select, Form, Input, Typography, Alert, Spin } from 'antd';
-import { Card, Space, message } from '@/components/ui';
-import { Modal } from 'antd';
+import { Row, Col, Button, Select, Form, Input, Typography, Alert, Spin } from '@/components/ui';
+import { Card, Space, toast } from '@/components/ui';
+
+
+import { Dialog } from '@/components/ui';
 // TODO: Replace these Ant Design components: 
-import { LineChartOutlined, BarChartOutlined, PieChartOutlined, PlusOutlined, PlayCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SettingOutlined } from '@/components/ui';
-import { AreaChartOutlined } from '@ant-design/icons';
+import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
+import { AreaChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -38,11 +40,10 @@ const Visualization: React.FC = () => {
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(dbList);
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -54,8 +55,7 @@ const Visualization: React.FC = () => {
       const request: QueryRequest = {
         connectionId: activeConnectionId,
         database: chartConfig.database,
-        query: chartConfig.query,
-      };
+        query: chartConfig.query};
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       return result;
@@ -81,28 +81,22 @@ const Visualization: React.FC = () => {
         return {
           title: {
             text: chartConfig.title,
-            left: 'center',
-          },
+            left: 'center'},
           tooltip: {
             trigger: 'axis',
             axisPointer: {
-              type: 'cross',
-            },
-          },
+              type: 'cross'}},
           legend: {
             data: valueColumns,
-            bottom: 0,
-          },
+            bottom: 0},
           xAxis: {
             type: 'category',
             data: series.values.map(row => {
               const timeValue = timeIndex >= 0 ? row[timeIndex] : row[0];
               return new Date(timeValue).toLocaleTimeString();
-            }),
-          },
+            })},
           yAxis: {
-            type: 'value',
-          },
+            type: 'value'},
           series: valueColumns.map((col) => ({
             name: col,
             type: chartConfig.type,
@@ -110,54 +104,43 @@ const Visualization: React.FC = () => {
               const valueIndex = series.columns.indexOf(col);
               return row[valueIndex];
             }),
-            areaStyle: chartConfig.type === 'area' ? {} : undefined,
-          })),
+            areaStyle: chartConfig.type === 'area' ? {} : undefined})),
           grid: {
             left: '3%',
             right: '4%',
             bottom: '10%',
-            containLabel: true,
-          },
-        };
+            containLabel: true}};
 
       case 'bar':
         return {
           title: {
             text: chartConfig.title,
-            left: 'center',
-          },
+            left: 'center'},
           tooltip: {
-            trigger: 'axis',
-          },
+            trigger: 'axis'},
           legend: {
             data: valueColumns,
-            bottom: 0,
-          },
+            bottom: 0},
           xAxis: {
             type: 'category',
             data: series.values.map(row => {
               const timeValue = timeIndex >= 0 ? row[timeIndex] : row[0];
               return new Date(timeValue).toLocaleTimeString();
-            }),
-          },
+            })},
           yAxis: {
-            type: 'value',
-          },
+            type: 'value'},
           series: valueColumns.map(col => ({
             name: col,
             type: 'bar',
             data: series.values.map(row => {
               const valueIndex = series.columns.indexOf(col);
               return row[valueIndex];
-            }),
-          })),
+            })})),
           grid: {
             left: '3%',
             right: '4%',
             bottom: '10%',
-            containLabel: true,
-          },
-        };
+            containLabel: true}};
 
       case 'pie':
         const firstValueColumn = valueColumns[0];
@@ -169,16 +152,13 @@ const Visualization: React.FC = () => {
         return {
           title: {
             text: chartConfig.title,
-            left: 'center',
-          },
+            left: 'center'},
           tooltip: {
             trigger: 'item',
-            formatter: '{a} <br/>{b}: {c} ({d}%)',
-          },
+            formatter: '{a} <br/>{b}: {c} ({d}%)'},
           legend: {
             orient: 'vertical',
-            left: 'left',
-          },
+            left: 'left'},
           series: [
             {
               name: chartConfig.title,
@@ -186,18 +166,13 @@ const Visualization: React.FC = () => {
               radius: '50%',
               data: series.values.map(row => ({
                 value: row[valueIndex],
-                name: row[labelIndex],
-              })),
+                name: row[labelIndex]})),
               emphasis: {
                 itemStyle: {
                   shadowBlur: 10,
                   shadowOffsetX: 0,
-                  shadowColor: 'rgba(0, 0, 0, 0.5)',
-                },
-              },
-            },
-          ],
-        };
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'}}},
+          ]};
 
       default:
         return null;
@@ -212,8 +187,7 @@ const Visualization: React.FC = () => {
       type: values.type,
       query: values.query,
       database: values.database,
-      refreshInterval: values.refreshInterval,
-    };
+      refreshInterval: values.refreshInterval};
 
     // 测试查询
     setLoading(true);
@@ -221,13 +195,13 @@ const Visualization: React.FC = () => {
     setLoading(false);
 
     if (!result) {
-      message.error('查询执行失败，请检查查询语句');
+      toast({ title: "错误", description: "查询执行失败，请检查查询语句", variant: "destructive" });
       return;
     }
 
     const option = convertToEChartsOption(result, chartConfig);
     if (!option) {
-      message.error('无法生成图表，请检查数据格式');
+      toast({ title: "错误", description: "无法生成图表，请检查数据格式", variant: "destructive" });
       return;
     }
 
@@ -235,7 +209,7 @@ const Visualization: React.FC = () => {
     setCharts(prev => [...prev, chartConfig]);
     setCreateModalVisible(false);
     form.resetFields();
-    message.success('图表创建成功');
+    toast({ title: "成功", description: "图表创建成功" });
   };
 
   // 刷新图表数据
@@ -250,7 +224,7 @@ const Visualization: React.FC = () => {
             : chart
         );
         setCharts(updatedCharts);
-        message.success('图表数据已刷新');
+        toast({ title: "成功", description: "图表数据已刷新" });
       }
     }
   };
@@ -258,7 +232,7 @@ const Visualization: React.FC = () => {
   // 删除图表
   const deleteChart = (chartId: string) => {
     setCharts(prev => prev.filter(chart => chart.id !== chartId));
-    message.success('图表已删除');
+    toast({ title: "成功", description: "图表已删除" });
   };
 
   // 组件挂载时加载数据
@@ -270,28 +244,28 @@ const Visualization: React.FC = () => {
 
   // 工具栏
   const toolbar = (
-    <Space>
+    <div className="flex gap-2">
       <Button
-        icon={<ReloadOutlined />}
+        icon={<RefreshCw className="w-4 h-4"  />}
         onClick={() => loadDatabases()}
         loading={loading}
       >
         刷新
       </Button>
       <Button
-        icon={<SettingOutlined />}
+        icon={<Settings className="w-4 h-4"  />}
       >
         设置
       </Button>
       <Button
         type="primary"
-        icon={<PlusOutlined />}
+        icon={<Plus className="w-4 h-4"  />}
         onClick={() => setCreateModalVisible(true)}
         disabled={!activeConnectionId}
       >
         创建图表
       </Button>
-    </Space>
+    </div>
   );
 
   if (!activeConnectionId) {
@@ -306,7 +280,7 @@ const Visualization: React.FC = () => {
           description="在连接管理页面选择一个连接并激活后，才能创建数据可视化。"
           type="warning"
           showIcon
-          icon={<ExclamationCircleOutlined />}
+          icon={<AlertCircle />}
           action={
             <Button size="small" type="primary">
               去连接
@@ -338,11 +312,11 @@ const Visualization: React.FC = () => {
                     size="small"
                     title={chart.title}
                     extra={
-                      <Space>
+                      <div className="flex gap-2">
                         <Button
                           type="text"
                           size="small"
-                          icon={<PlayCircleOutlined />}
+                          icon={<PlayCircle />}
                           onClick={() => refreshChart(chart)}
                           title="刷新数据"
                         />
@@ -355,7 +329,7 @@ const Visualization: React.FC = () => {
                         >
                           删除
                         </Button>
-                      </Space>
+                      </div>
                     }
                   >
                     {chart.options ? (
@@ -375,7 +349,7 @@ const Visualization: React.FC = () => {
             </Row>
           ) : (
             <div className="text-center py-12">
-              <BarChartOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+              <BarChart className="w-4 h-4" style={{ fontSize: 48, color: '#d9d9d9' }}  />
               <div className="mt-4 text-gray-500">
                 暂无图表
               </div>
@@ -388,7 +362,7 @@ const Visualization: React.FC = () => {
       </div>
 
       {/* 创建图表模态框 */}
-      <Modal
+      <Dialog
         title="创建图表"
         open={createModalVisible}
         onOk={() => form.submit()}
@@ -430,28 +404,28 @@ const Visualization: React.FC = () => {
               optionFilterProp="children"
             >
               <Option value="line">
-                <Space>
-                  <LineChartOutlined />
+                <div className="flex gap-2">
+                  <TrendingUp className="w-4 h-4"  />
                   折线图
-                </Space>
+                </div>
               </Option>
               <Option value="area">
-                <Space>
-                  <AreaChartOutlined />
+                <div className="flex gap-2">
+                  <AreaChart className="w-4 h-4"  />
                   面积图
-                </Space>
+                </div>
               </Option>
               <Option value="bar">
-                <Space>
-                  <BarChartOutlined />
+                <div className="flex gap-2">
+                  <BarChart className="w-4 h-4"  />
                   柱状图
-                </Space>
+                </div>
               </Option>
               <Option value="pie">
-                <Space>
-                  <PieChartOutlined />
+                <div className="flex gap-2">
+                  <PieChart className="w-4 h-4"  />
                   饼图
-                </Space>
+                </div>
               </Option>
             </Select>
           </Form.Item>
@@ -506,7 +480,7 @@ const Visualization: React.FC = () => {
             </Select>
           </Form.Item>
         </Form>
-      </Modal>
+      </Dialog>
     </DesktopPageWrapper>
   );
 };

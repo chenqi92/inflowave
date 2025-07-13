@@ -1,17 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { Button, Tooltip, Dropdown, Select, Switch } from 'antd';
+import { Button, Tooltip, Dropdown, Select, Switch } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
-import {
-  FullscreenOutlined,
-  FullscreenExitOutlined,
-  DownloadOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
-  ReloadOutlined,
-  SettingOutlined,
-  PlayCircleOutlined,
-  PauseCircleOutlined
-} from '@/components/ui';
+import { Maximize, Minimize, Download, ZoomIn, ZoomOut, RefreshCw, Settings, PlayCircle, PauseCircle } from 'lucide-react';
 import * as echarts from 'echarts';
 import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
@@ -40,8 +30,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   allowEdit = false,
   autoRefresh = false,
   refreshInterval = 30000,
-  className,
-}) => {
+  className}) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -139,32 +128,26 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           const url = chartInstance.current!.getDataURL({
             type: 'png',
             pixelRatio: 2,
-            backgroundColor: '#fff',
-          });
+            backgroundColor: '#fff'});
           downloadFile(url, `${config.title || 'chart'}.png`);
-        },
-      },
+        }},
       {
         key: 'svg',
         label: 'SVG 矢量图',
         onClick: () => {
           const url = chartInstance.current!.getDataURL({
-            type: 'svg',
-          });
+            type: 'svg'});
           downloadFile(url, `${config.title || 'chart'}.svg`);
-        },
-      },
+        }},
       {
         key: 'json',
         label: 'JSON 数据',
         onClick: () => {
           const dataBlob = new Blob([JSON.stringify(data, null, 2)], {
-            type: 'application/json',
-          });
+            type: 'application/json'});
           const url = URL.createObjectURL(dataBlob);
           downloadFile(url, `${config.title || 'chart'}-data.json`);
-        },
-      },
+        }},
     ];
 
     return downloadMenu;
@@ -186,9 +169,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       ...config,
       settings: {
         ...config.settings,
-        [key]: value,
-      },
-    };
+        [key]: value}};
 
     onConfigChange?.(newConfig);
     updateChart(newConfig);
@@ -206,8 +187,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             onChange={(checked) => handleSettingsChange('showGrid', checked)}
           />
         </div>
-      ),
-    },
+      )},
     {
       key: 'legend',
       label: (
@@ -219,8 +199,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             onChange={(checked) => handleSettingsChange('showLegend', checked)}
           />
         </div>
-      ),
-    },
+      )},
     {
       key: 'tooltip',
       label: (
@@ -232,8 +211,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             onChange={(checked) => handleSettingsChange('showTooltip', checked)}
           />
         </div>
-      ),
-    },
+      )},
     {
       key: 'animation',
       label: (
@@ -245,29 +223,28 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             onChange={(checked) => handleSettingsChange('animation', checked)}
           />
         </div>
-      ),
-    },
+      )},
   ];
 
   return (
     <Card
       title={
-        <Space>
+        <div className="flex gap-2">
           <span>{config.title}</span>
           {selectedSeries.length > 0 && (
             <span className="text-sm text-gray-500">
               ({selectedSeries.length} 个系列已选择)
             </span>
           )}
-        </Space>
+        </div>
       }
       extra={
-        <Space>
+        <div className="flex gap-2">
           {autoRefresh && (
             <Tooltip title={isAutoRefreshing ? '暂停自动刷新' : '开始自动刷新'}>
               <Button
                 size="small"
-                icon={isAutoRefreshing ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                icon={isAutoRefreshing ? <PauseCircle /> : <PlayCircle />}
                 onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
                 type={isAutoRefreshing ? 'primary' : 'default'}
               />
@@ -277,7 +254,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Tooltip title="重新加载">
             <Button
               size="small"
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={() => window.location.reload()}
             />
           </Tooltip>
@@ -285,7 +262,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Tooltip title="放大">
             <Button
               size="small"
-              icon={<ZoomInOutlined />}
+              icon={<ZoomIn className="w-4 h-4"  />}
               onClick={handleZoomIn}
               disabled={zoomLevel >= 200}
             />
@@ -306,7 +283,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             placement="bottomRight"
           >
             <Tooltip title="下载">
-              <Button size="small" icon={<DownloadOutlined />} />
+              <Button size="small" icon={<Download className="w-4 h-4"  />} />
             </Tooltip>
           </Dropdown>
 
@@ -317,7 +294,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
               placement="bottomRight"
             >
               <Tooltip title="设置">
-                <Button size="small" icon={<SettingOutlined />} />
+                <Button size="small" icon={<Settings className="w-4 h-4"  />} />
               </Tooltip>
             </Dropdown>
           )}
@@ -325,24 +302,22 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Tooltip title={isFullscreen ? '退出全屏' : '全屏显示'}>
             <Button
               size="small"
-              icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+              icon={isFullscreen ? <Minimize className="w-4 h-4"  /> : <Maximize className="w-4 h-4"  />}
               onClick={handleFullscreen}
             />
           </Tooltip>
-        </Space>
+        </div>
       }
       className={`transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 m-0' : ''} ${className}`}
       style={{
-        height: isFullscreen ? '100vh' : height,
-      }}
+        height: isFullscreen ? '100vh' : height}}
     >
       <div
         ref={chartRef}
         className="w-full h-full"
         style={{
           transform: `scale(${zoomLevel / 100})`,
-          transformOrigin: 'top left',
-        }}
+          transformOrigin: 'top left'}}
       />
       
       {zoomLevel !== 100 && (
@@ -365,18 +340,14 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
       left: 'center',
       textStyle: {
         fontSize: 16,
-        fontWeight: 'normal',
-      },
-    },
+        fontWeight: 'normal'}},
     tooltip: {
       show: settings?.showTooltip !== false,
       trigger: type === 'pie' ? 'item' : 'axis',
       axisPointer: {
         type: 'cross',
         label: {
-          backgroundColor: '#6a7985',
-        },
-      },
+          backgroundColor: '#6a7985'}},
       formatter: (params: any) => {
         if (Array.isArray(params)) {
           return params
@@ -384,23 +355,19 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
             .join('<br/>');
         }
         return `${params.seriesName}: ${FormatUtils.formatNumber(params.value)}`;
-      },
-    },
+      }},
     legend: {
       show: settings?.showLegend !== false,
       top: 30,
-      type: 'scroll',
-    },
+      type: 'scroll'},
     grid: {
       show: settings?.showGrid !== false,
       left: '3%',
       right: '4%',
       bottom: '3%',
-      containLabel: true,
-    },
+      containLabel: true},
     animation: settings?.animation !== false,
-    color: settings?.colors || ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1'],
-  };
+    color: settings?.colors || ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1']};
 
   // 根据图表类型生成特定配置
   switch (type) {
@@ -410,12 +377,10 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         xAxis: {
           type: 'category',
           data: data.data?.map(row => row[xAxis.field]),
-          boundaryGap: false,
-        },
+          boundaryGap: false},
         yAxis: {
           type: 'value',
-          name: yAxis.field,
-        },
+          name: yAxis.field},
         series: [{
           name: yAxis.field,
           type: 'line',
@@ -423,31 +388,23 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
           smooth: settings?.smooth || false,
           areaStyle: type === 'area' ? { opacity: 0.3 } : undefined,
           label: {
-            show: settings?.showDataLabels || false,
-          },
-        }],
-      };
+            show: settings?.showDataLabels || false}}]};
 
     case 'bar':
       return {
         ...baseOption,
         xAxis: {
           type: 'category',
-          data: data.data?.map(row => row[xAxis.field]),
-        },
+          data: data.data?.map(row => row[xAxis.field])},
         yAxis: {
           type: 'value',
-          name: yAxis.field,
-        },
+          name: yAxis.field},
         series: [{
           name: yAxis.field,
           type: 'bar',
           data: data.data?.map(row => row[yAxis.field]),
           label: {
-            show: settings?.showDataLabels || false,
-          },
-        }],
-      };
+            show: settings?.showDataLabels || false}}]};
 
     case 'pie':
       return {
@@ -458,42 +415,31 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
           radius: '50%',
           data: data.data?.map(row => ({
             name: row[xAxis.field],
-            value: row[yAxis.field],
-          })),
+            value: row[yAxis.field]})),
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
               shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
+              shadowColor: 'rgba(0, 0, 0, 0.5)'}},
           label: {
-            show: settings?.showDataLabels !== false,
-          },
-        }],
-      };
+            show: settings?.showDataLabels !== false}}]};
 
     case 'scatter':
       return {
         ...baseOption,
         xAxis: {
           type: 'value',
-          name: xAxis.field,
-        },
+          name: xAxis.field},
         yAxis: {
           type: 'value',
-          name: yAxis.field,
-        },
+          name: yAxis.field},
         series: [{
           name: `${xAxis.field} vs ${yAxis.field}`,
           type: 'scatter',
           data: data.data?.map(row => [row[xAxis.field], row[yAxis.field]]),
           symbolSize: 8,
           label: {
-            show: settings?.showDataLabels || false,
-          },
-        }],
-      };
+            show: settings?.showDataLabels || false}}]};
 
     default:
       return baseOption;

@@ -89,10 +89,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       set(state => ({
         databases: {
           ...state.databases,
-          [connectionId]: databases,
-        },
-        loadingDatabases: false,
-      }));
+          [connectionId]: databases},
+        loadingDatabases: false}));
 
       return databases;
     } catch (error) {
@@ -138,9 +136,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set(state => ({
       selectedDatabase: {
         ...state.selectedDatabase,
-        [connectionId]: database,
-      },
-    }));
+        [connectionId]: database}}));
   },
 
   getSelectedDatabase: (connectionId) => {
@@ -158,10 +154,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       set(state => ({
         measurements: {
           ...state.measurements,
-          [key]: measurements,
-        },
-        loadingMeasurements: false,
-      }));
+          [key]: measurements},
+        loadingMeasurements: false}));
 
       return measurements;
     } catch (error) {
@@ -190,10 +184,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       set(state => ({
         fields: {
           ...state.fields,
-          [key]: fields,
-        },
-        loadingFields: false,
-      }));
+          [key]: fields},
+        loadingFields: false}));
 
       return fields;
     } catch (error) {
@@ -222,10 +214,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       set(state => ({
         tags: {
           ...state.tags,
-          [key]: tags,
-        },
-        loadingTags: false,
-      }));
+          [key]: tags},
+        loadingTags: false}));
 
       return tags;
     } catch (error) {
@@ -255,9 +245,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       set(state => ({
         series: {
           ...state.series,
-          [key]: series,
-        },
-      }));
+          [key]: series}}));
 
       return series;
     } catch (error) {
@@ -330,8 +318,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           fields: newFields,
           tags: newTags,
           series: newSeries,
-          selectedDatabase: newSelectedDatabase,
-        };
+          selectedDatabase: newSelectedDatabase};
       });
     } else {
       // 清除所有缓存
@@ -341,8 +328,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         fields: {},
         tags: {},
         series: {},
-        selectedDatabase: {},
-      });
+        selectedDatabase: {}});
     }
   },
 
@@ -384,8 +370,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           measurements: newMeasurements,
           fields: newFields,
           tags: newTags,
-          series: newSeries,
-        };
+          series: newSeries};
       });
     } else {
       get().clearCache(connectionId);
@@ -399,5 +384,4 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
-  },
-}));
+  }}));

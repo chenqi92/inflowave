@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber } from 'antd';
+import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber } from '@/components/ui';
 
 const { Step } = Steps;
-import { Modal, Space, Card, message } from '@/components/ui';
-import {
-  UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined,
-  FileTextOutlined, ImportOutlined
-} from '@/components/ui';
+import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Upload, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -44,8 +41,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   visible,
   onClose,
   connectionId,
-  database,
-}) => {
+  database}) => {
   const { connections } = useConnectionStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -58,8 +54,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
     tagColumns: [],
     fieldColumns: [],
     skipRows: 0,
-    batchSize: 1000,
-  });
+    batchSize: 1000});
   const [loading, setLoading] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importResult, setImportResult] = useState<any>(null);
@@ -75,13 +70,13 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                          file.name.endsWith('.txt');
       
       if (!isValidType) {
-        message.error('只支持 CSV、JSON 和文本文件');
+        toast({ title: "错误", description: "只支持 CSV、JSON 和文本文件", variant: "destructive" });
         return false;
       }
 
       const isLt100M = file.size! / 1024 / 1024 < 100;
       if (!isLt100M) {
-        message.error('文件大小不能超过 100MB');
+        toast({ title: "错误", description: "文件大小不能超过 100MB", variant: "destructive" });
         return false;
       }
 
@@ -90,13 +85,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
     onChange: (info) => {
       setFileList(info.fileList.slice(-1)); // 只保留最新的文件
     },
-    fileList,
-  };
+    fileList};
 
   // 预览文件数据
   const previewFile = async () => {
     if (fileList.length === 0) {
-      message.error('请先选择文件');
+      toast({ title: "错误", description: "请先选择文件", variant: "destructive" });
       return;
     }
 
@@ -113,13 +107,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       // 这里应该调用后端API预览数据
       const preview = await safeTauriInvoke<PreviewData>('preview_data_conversion', {
         filePath: file.name, // 实际应该是文件路径
-        config: importConfig,
-      });
+        config: importConfig});
 
       setPreviewData(preview);
       setCurrentStep(1);
     } catch (error) {
-      message.error(`预览文件失败: ${error}`);
+      toast({ title: "错误", description: "预览文件失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -147,8 +140,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       fieldColumns: numericColumns,
       tagColumns: previewData.columns.filter(col => 
         !timeColumns.includes(col) && !numericColumns.includes(col)
-      ),
-    }));
+      )}));
 
     setCurrentStep(2);
   };
@@ -156,7 +148,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   // 执行导入
   const executeImport = async () => {
     if (!connectionId || !database || !importConfig.measurement) {
-      message.error('请完善导入配置');
+      toast({ title: "错误", description: "请完善导入配置", variant: "destructive" });
       return;
     }
 
@@ -168,8 +160,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
         connectionId,
         database,
         filePath: fileList[0].name, // 实际应该是文件路径
-        config: importConfig,
-      };
+        config: importConfig};
 
       // 模拟进度更新
       const progressInterval = setInterval(() => {
@@ -189,9 +180,9 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       setImportResult(result);
       setCurrentStep(3);
       
-      message.success('数据导入完成');
+      toast({ title: "成功", description: "数据导入完成" });
     } catch (error) {
-      message.error(`导入失败: ${error}`);
+      toast({ title: "错误", description: "导入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -210,8 +201,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       tagColumns: [],
       fieldColumns: [],
       skipRows: 0,
-      batchSize: 1000,
-    });
+      batchSize: 1000});
     setImportProgress(0);
     setImportResult(null);
     form.resetFields();
@@ -222,10 +212,10 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
     // 步骤1: 文件选择
     <div key="file-selection">
       <Card title="选择数据文件" style={{ marginBottom: 16 }}>
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
           <Upload.Dragger {...uploadProps}>
             <p className="ant-upload-drag-icon">
-              <UploadOutlined />
+              <Upload className="w-4 h-4"  />
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
@@ -264,7 +254,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                   </Col>
                   <Col span={8}>
                     <Form.Item label="其他选项">
-                      <Space direction="vertical">
+                      <div className="flex gap-2" direction="vertical">
                         <Checkbox
                           checked={importConfig.hasHeader}
                           onChange={(e) => setImportConfig(prev => ({ ...prev, hasHeader: e.target.checked }))}
@@ -281,14 +271,14 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                             style={{ width: 80 }}
                           />
                         </div>
-                      </Space>
+                      </div>
                     </Form.Item>
                   </Col>
                 </>
               )}
             </Row>
           </Form>
-        </Space>
+        </div>
       </Card>
     </div>,
 
@@ -308,8 +298,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                 dataIndex: col,
                 key: col,
                 width: 120,
-                ellipsis: true,
-              }))}
+                ellipsis: true}))}
               dataSource={previewData.rows.slice(0, 10).map((row, index) => {
                 const record: any = { key: index };
                 previewData.columns.forEach((col, colIndex) => {
@@ -446,7 +435,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       onCancel={onClose}
       width={800}
       footer={
-        <Space>
+        <div className="flex gap-2">
           <Button onClick={onClose}>取消</Button>
           {currentStep > 0 && (
             <Button onClick={() => setCurrentStep(prev => prev - 1)}>
@@ -483,15 +472,15 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
               重新导入
             </Button>
           )}
-        </Space>
+        </div>
       }
       destroyOnClose
     >
       <Steps current={currentStep} style={{ marginBottom: 24 }}>
-        <Step title="选择文件" icon={<UploadOutlined />} />
-        <Step title="预览数据" icon={<FileTextOutlined />} />
-        <Step title="配置映射" icon={<SettingOutlined />} />
-        <Step title="导入完成" icon={<CheckCircleOutlined />} />
+        <Step title="选择文件" icon={<Upload className="w-4 h-4"  />} />
+        <Step title="预览数据" icon={<FileText className="w-4 h-4"  />} />
+        <Step title="配置映射" icon={<Settings className="w-4 h-4"  />} />
+        <Step title="导入完成" icon={<CheckCircle />} />
       </Steps>
 
       {stepContents[currentStep]}

@@ -1,56 +1,71 @@
-import React from 'react';
-import { cn } from '@/utils/cn';
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { FileX, Database, Search } from "lucide-react"
 
-export interface EmptyProps extends React.HTMLAttributes<HTMLDivElement> {
-  image?: React.ReactNode;
-  description?: React.ReactNode;
-  children?: React.ReactNode;
+interface EmptyProps {
+  className?: string
+  image?: React.ReactNode
+  imageStyle?: React.CSSProperties
+  description?: React.ReactNode
+  children?: React.ReactNode
 }
 
-const Empty: React.FC<EmptyProps> = ({
-  image,
-  description = 'No data',
-  children,
-  className,
-  ...props
-}) => {
-  const defaultImage = (
-    <svg
-      className="w-16 h-16 text-gray-300 mx-auto"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1}
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
+  ({ className, image, imageStyle, description, children, ...props }, ref) => {
+    const defaultImage = (
+      <FileX 
+        className="h-16 w-16 text-muted-foreground/50" 
+        style={imageStyle}
       />
-    </svg>
-  );
+    )
 
-  return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center py-12 px-4 text-center',
-        className
-      )}
-      {...props}
-    >
-      <div className="mb-4">
-        {image || defaultImage}
-      </div>
-      
-      {description && (
-        <div className="text-gray-500 text-sm mb-4">
-          {description}
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex min-h-[200px] flex-col items-center justify-center space-y-4 p-8 text-center",
+          className
+        )}
+        {...props}
+      >
+        <div className="flex flex-col items-center space-y-2">
+          {image || defaultImage}
+          {description && (
+            <p className="text-sm text-muted-foreground max-w-sm">
+              {description}
+            </p>
+          )}
         </div>
-      )}
-      
-      {children}
-    </div>
-  );
-};
+        {children}
+      </div>
+    )
+  }
+)
+Empty.displayName = "Empty"
 
-export { Empty };
+const EmptyDatabase = React.forwardRef<HTMLDivElement, Omit<EmptyProps, 'image'>>(
+  (props, ref) => (
+    <Empty
+      ref={ref}
+      image={<Database className="h-16 w-16 text-muted-foreground/50" />}
+      description="暂无数据库连接"
+      {...props}
+    />
+  )
+)
+EmptyDatabase.displayName = "EmptyDatabase"
+
+const EmptySearch = React.forwardRef<HTMLDivElement, Omit<EmptyProps, 'image'>>(
+  (props, ref) => (
+    <Empty
+      ref={ref}
+      image={<Search className="h-16 w-16 text-muted-foreground/50" />}
+      description="未找到搜索结果"
+      {...props}
+    />
+  )
+)
+EmptySearch.displayName = "EmptySearch"
+
+export { Empty, EmptyDatabase, EmptySearch }
+export type { EmptyProps }

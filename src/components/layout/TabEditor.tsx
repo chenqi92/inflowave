@@ -1,23 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Button, Space, Dropdown, Tooltip, Modal, Select } from 'antd';
-import type { MenuProps } from 'antd';
-import { 
-  PlusOutlined, 
-  CloseOutlined,
-  SaveOutlined,
-  FolderOpenOutlined,
-  MoreOutlined,
-  PlayCircleOutlined,
-  FileTextOutlined,
-  DatabaseOutlined,
-  TableOutlined
-} from '@ant-design/icons';
+import { Tabs, Button, Space, Dropdown, Tooltip, Dialog, Select } from '@/components/ui';
+import {
+  Save,
+  PlayCircle,
+  Database,
+  Plus,
+  X,
+  Table,
+  FolderOpen,
+  MoreHorizontal,
+  FileText
+} from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryResult, QueryRequest } from '@/types';
+
+// Local type definitions to replace antd types
+interface MenuProps {
+  items?: Array<{
+    key: string;
+    label: React.ReactNode;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  }>;
+}
 
 interface EditorTab {
   id: string;
@@ -44,8 +54,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       title: '查询-1',
       content: 'SELECT * FROM measurement_name LIMIT 10',
       type: 'query',
-      modified: false,
-    }
+      modified: false}
   ]);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
@@ -65,8 +74,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -107,8 +115,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       const request: QueryRequest = {
         connectionId: activeConnectionId,
         database: selectedDatabase,
-        query: currentTab.content.trim(),
-      };
+        query: currentTab.content.trim()};
 
       console.log('🚀 执行查询:', request);
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
@@ -143,8 +150,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
       content: type === 'query' ? 'SELECT * FROM ' : '',
       type,
-      modified: false,
-    };
+      modified: false};
     
     setTabs([...tabs, newTab]);
     setActiveKey(newTab.id);
@@ -166,8 +172,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
         },
         onCancel: () => {
           removeTab(targetKey);
-        },
-      });
+        }});
     } else {
       removeTab(targetKey);
     }
@@ -219,8 +224,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
-      automaticLayout: true,
-    });
+      automaticLayout: true});
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -238,27 +242,22 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     {
       key: 'save',
       label: '保存',
-      icon: <SaveOutlined />,
-    },
+      icon: <Save className="w-4 h-4" />},
     {
       key: 'save-as',
       label: '另存为',
-      icon: <SaveOutlined />,
-    },
+      icon: <Save className="w-4 h-4" />},
     { type: 'divider' },
     {
       key: 'close',
       label: '关闭',
-      icon: <CloseOutlined />,
-    },
+      icon: <X className="w-4 h-4"  />},
     {
       key: 'close-others',
-      label: '关闭其他',
-    },
+      label: '关闭其他'},
     {
       key: 'close-all',
-      label: '关闭全部',
-    },
+      label: '关闭全部'},
   ];
 
   // 新建菜单
@@ -266,21 +265,18 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     {
       key: 'new-query',
       label: 'SQL 查询',
-      icon: <FileTextOutlined />,
-      onClick: () => createNewTab('query'),
-    },
+      icon: <FileText className="w-4 h-4"  />,
+      onClick: () => createNewTab('query')},
     {
       key: 'new-table',
       label: '表设计器',
-      icon: <TableOutlined />,
-      onClick: () => createNewTab('table'),
-    },
+      icon: <Table className="w-4 h-4"  />,
+      onClick: () => createNewTab('table')},
     {
       key: 'new-database',
       label: '数据库设计器',
-      icon: <DatabaseOutlined />,
-      onClick: () => createNewTab('database'),
-    },
+      icon: <Database className="w-4 h-4"  />,
+      onClick: () => createNewTab('database')},
   ];
 
   const currentTab = tabs.find(tab => tab.id === activeKey);
@@ -303,7 +299,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
             }}
             addIcon={
               <Dropdown menu={{ items: newTabMenuItems }} placement="bottomLeft">
-                <Button type="text" icon={<PlusOutlined />} size="small" />
+                <Button type="text" icon={<Plus className="w-4 h-4"  />} size="small" />
               </Dropdown>
             }
             items={tabs.map(tab => ({
@@ -314,9 +310,9 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
                   trigger={['contextMenu']}
                 >
                   <span className="flex items-center gap-1">
-                    {tab.type === 'query' && <FileTextOutlined />}
-                    {tab.type === 'table' && <TableOutlined />}
-                    {tab.type === 'database' && <DatabaseOutlined />}
+                    {tab.type === 'query' && <FileText className="w-4 h-4"  />}
+                    {tab.type === 'table' && <Table className="w-4 h-4"  />}
+                    {tab.type === 'database' && <Database className="w-4 h-4"  />}
                     {tab.title}
                     {tab.modified && <span className="text-orange-500">*</span>}
                   </span>
@@ -330,7 +326,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
         </div>
 
         {/* 工具栏 */}
-        <Space size="small" className="px-3">
+        <div className="flex gap-2 px-3" size="small" >
           <Select
             value={selectedDatabase}
             onChange={setSelectedDatabase}
@@ -348,7 +344,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           <Tooltip title="执行 (Ctrl+Enter)">
             <Button 
               type="primary" 
-              icon={<PlayCircleOutlined />} 
+              icon={<PlayCircle />} 
               size="small"
               onClick={executeQuery}
               loading={loading}
@@ -359,7 +355,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           </Tooltip>
           <Tooltip title="保存 (Ctrl+S)">
             <Button 
-              icon={<SaveOutlined />} 
+              icon={<Save className="w-4 h-4"  />} 
               size="small"
               onClick={saveCurrentTab}
             />
@@ -376,7 +372,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               size="small"
             />
           </Dropdown>
-        </Space>
+        </div>
       </div>
 
       {/* 编辑器内容 */}
@@ -397,25 +393,23 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               roundedSelection: false,
               scrollbar: {
                 vertical: 'auto',
-                horizontal: 'auto',
-              },
+                horizontal: 'auto'},
               wordWrap: 'on',
               automaticLayout: true,
               suggestOnTriggerCharacters: true,
               quickSuggestions: true,
               parameterHints: { enabled: true },
               formatOnPaste: true,
-              formatOnType: true,
-            }}
+              formatOnType: true}}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-500">
             <div className="text-center">
-              <FileTextOutlined className="text-4xl mb-4" />
+              <FileText className="w-4 h-4 text-4xl mb-4"   />
               <p>暂无打开的文件</p>
               <Button 
                 type="primary" 
-                icon={<PlusOutlined />}
+                icon={<Plus className="w-4 h-4"  />}
                 onClick={() => createNewTab()}
                 className="mt-2"
               >

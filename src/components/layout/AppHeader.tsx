@@ -1,21 +1,15 @@
 import React from 'react';
-import type { MenuProps } from '@/components/ui';
-import { Button, Layout, Typography, Avatar, Badge, Dropdown } from 'antd';
-import { Space } from '@/components/ui';
-import { DatabaseOutlined, SettingOutlined, BulbOutlined, GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@/components/ui';
+import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space } from '@/components/ui';
+import { Database, Settings, Lightbulb, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';
-
-const { Header } = Layout;
-const { Text } = Typography;
 
 const AppHeader: React.FC = () => {
   const {
     sidebarCollapsed,
     setSidebarCollapsed,
     setTheme,
-    setLanguage,
-  } = useAppStore();
+    setLanguage} = useAppStore();
 
   const { activeConnectionId, connectionStatuses } = useConnectionStore();
 
@@ -28,80 +22,15 @@ const AppHeader: React.FC = () => {
     ? connectionStatuses[activeConnectionId]
     : null;
 
-  // 主题切换菜单
-  const themeMenuItems: MenuProps['items'] = [
-    {
-      key: 'light',
-      icon: <BulbOutlined />,
-      label: '浅色主题',
-      onClick: () => setTheme('light'),
-    },
-    {
-      key: 'dark',
-      icon: <BulbOutlined />,
-      label: '深色主题',
-      onClick: () => setTheme('dark'),
-    },
-    {
-      key: 'auto',
-      icon: <BulbOutlined />,
-      label: '跟随系统',
-      onClick: () => setTheme('auto'),
-    },
-  ];
-
-  // 语言切换菜单
-  const languageMenuItems: MenuProps['items'] = [
-    {
-      key: 'zh-CN',
-      icon: <GlobalOutlined />,
-      label: '简体中文',
-      onClick: () => setLanguage('zh-CN'),
-    },
-    {
-      key: 'en-US',
-      icon: <GlobalOutlined />,
-      label: 'English',
-      onClick: () => setLanguage('en-US'),
-    },
-  ];
-
-  // 用户菜单
-  const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'theme',
-      icon: <BulbOutlined />,
-      label: '主题设置',
-      children: themeMenuItems,
-    },
-    {
-      key: 'language',
-      icon: <GlobalOutlined />,
-      label: '语言设置',
-      children: languageMenuItems,
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '应用设置',
-      onClick: () => {
-        // 导航到设置页面
-        window.location.hash = '/settings';
-      },
-    },
-  ];
 
   // 连接状态显示
   const renderConnectionStatus = () => {
     if (!currentConnection || !currentStatus) {
       return (
-        <Space>
-          <DatabaseOutlined className='text-gray-400' />
+        <div className="flex gap-2">
+          <Database className="w-4 h-4 text-gray-400" />
           <Text type='secondary'>未连接</Text>
-        </Space>
+        </div>
       );
     }
 
@@ -109,20 +38,18 @@ const AppHeader: React.FC = () => {
       connected: '#52c41a',
       connecting: '#faad14',
       disconnected: '#ff4d4f',
-      error: '#ff4d4f',
-    }[currentStatus.status];
+      error: '#ff4d4f'}[currentStatus.status];
 
     const statusText = {
       connected: '已连接',
       connecting: '连接中',
       disconnected: '已断开',
-      error: '连接错误',
-    }[currentStatus.status];
+      error: '连接错误'}[currentStatus.status];
 
     return (
-      <Space>
-        <Badge color={statusColor} />
-        <DatabaseOutlined style={{ color: statusColor }} />
+      <div className="flex gap-2">
+        <Badge variant="secondary" style={{ backgroundColor: statusColor }} />
+        <Database className="w-4 h-4" style={{ color: statusColor }} />
         <div className='flex flex-col'>
           <Text strong className='text-sm'>
             {currentConnection.name}
@@ -132,28 +59,28 @@ const AppHeader: React.FC = () => {
             {currentStatus.latency && ` (${currentStatus.latency}ms)`}
           </Text>
         </div>
-      </Space>
+      </div>
     );
   };
 
   return (
-    <Header className='app-header'>
+    <header className='app-header flex items-center justify-between px-4 py-2 border-b bg-background'>
       {/* 左侧 */}
       <div className='flex items-center space-x-4'>
         {/* 菜单折叠按钮 */}
         <Button
-          type='text'
-          icon={
-            sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
-          }
+          variant="ghost"
+          size="sm"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className='text-lg'
-        />
+        >
+          {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </Button>
 
         {/* 应用标题 */}
         <div className='flex items-center space-x-2'>
-          <DatabaseOutlined className='text-xl text-primary-600' />
-          <Text strong className='text-lg'>
+          <Database className="h-5 w-5 text-primary" />
+          <Text className='text-lg font-semibold'>
             InfloWave
           </Text>
         </div>
@@ -167,18 +94,44 @@ const AppHeader: React.FC = () => {
       {/* 右侧 */}
       <div className='flex items-center space-x-2'>
         {/* 用户菜单 */}
-        <Dropdown
-          menu={{ items: userMenuItems }}
-          placement='bottomRight'
-          trigger={['click']}
-        >
-          <Button type='text' className='flex items-center space-x-1'>
-            <Avatar size='small' icon={<UserOutlined />} />
-            <Text>用户</Text>
-          </Button>
-        </Dropdown>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className='flex items-center space-x-1'>
+              <Avatar className="h-6 w-6">
+                <User className="h-4 w-4" />
+              </Avatar>
+              <Text>用户</Text>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setTheme('light')}>
+              <Lightbulb className="mr-2 h-4 w-4" />
+              浅色主题
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('dark')}>
+              <Lightbulb className="mr-2 h-4 w-4" />
+              深色主题
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('auto')}>
+              <Lightbulb className="mr-2 h-4 w-4" />
+              跟随系统
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage('zh-CN')}>
+              <Globe className="mr-2 h-4 w-4" />
+              简体中文
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage('en-US')}>
+              <Globe className="mr-2 h-4 w-4" />
+              English
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.hash = '/settings'}>
+              <Settings className="mr-2 h-4 w-4" />
+              应用设置
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </Header>
+    </header>
   );
 };
 

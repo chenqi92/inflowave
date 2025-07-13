@@ -1,18 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, Form, Tooltip, Switch, Slider, Input, Drawer } from 'antd';
+import { Button, Select, Form, Tooltip, Switch, Slider, Input, Sheet } from '@/components/ui';
 import { Card, Space, ColorPicker } from '@/components/ui';
-import {
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
-  AreaChartOutlined,
-  ScatterChartOutlined,
-  SettingOutlined,
-  PlayCircleOutlined,
-  SaveOutlined,
-  EyeOutlined,
-  CopyOutlined
-} from '@/components/ui';
+
+import { ScatterChartOutlined } from '@/components/ui';
+import { BarChart, TrendingUp, PieChart, AreaChart, Settings, Save, Eye, Copy, PlayCircle } from 'lucide-react';
 import { useQuery } from '@/hooks/useQuery';
 import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
@@ -33,8 +24,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   onChartCreate,
   onChartUpdate,
   initialChart,
-  className,
-}) => {
+  className}) => {
   const [form] = Form.useForm();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -53,9 +43,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         stack: false,
         showDataLabels: false,
         theme: 'default',
-        colors: ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1'],
-      },
-    }
+        colors: ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1']}}
   );
 
   const { createChart, updateChart } = useVisualizationStore();
@@ -65,8 +53,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
     return fields.map(field => ({
       label: `${field.name} (${field.type})`,
       value: field.name,
-      type: field.type,
-    }));
+      type: field.type}));
   }, [fields]);
 
   // 数值字段选项（用于Y轴）
@@ -76,8 +63,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       .map(field => ({
         label: `${field.name} (${field.type})`,
         value: field.name,
-        type: field.type,
-      }));
+        type: field.type}));
   }, [fields]);
 
   // 时间字段选项（用于X轴）
@@ -87,17 +73,16 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       .map(field => ({
         label: `${field.name} (${field.type})`,
         value: field.name,
-        type: field.type,
-      }));
+        type: field.type}));
   }, [fields]);
 
   // 图表类型选项
   const chartTypes = [
-    { label: '折线图', value: 'line', icon: <LineChartOutlined /> },
-    { label: '柱状图', value: 'bar', icon: <BarChartOutlined /> },
-    { label: '面积图', value: 'area', icon: <AreaChartOutlined /> },
+    { label: '折线图', value: 'line', icon: <TrendingUp className="w-4 h-4"  /> },
+    { label: '柱状图', value: 'bar', icon: <BarChart className="w-4 h-4"  /> },
+    { label: '面积图', value: 'area', icon: <AreaChart className="w-4 h-4"  /> },
     { label: '散点图', value: 'scatter', icon: <ScatterChartOutlined /> },
-    { label: '饼图', value: 'pie', icon: <PieChartOutlined /> },
+    { label: '饼图', value: 'pie', icon: <PieChart className="w-4 h-4"  /> },
   ];
 
   useEffect(() => {
@@ -117,9 +102,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       ...chartConfig,
       settings: {
         ...chartConfig.settings,
-        [setting]: value,
-      },
-    };
+        [setting]: value}};
     setChartConfig(newConfig);
   };
 
@@ -131,8 +114,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         ...values,
         id: chartConfig.id || `chart_${Date.now()}`,
         createdAt: chartConfig.createdAt || new Date(),
-        updatedAt: new Date(),
-      } as ChartConfig;
+        updatedAt: new Date()} as ChartConfig;
 
       if (chartConfig.id) {
         await updateChart(finalConfig);
@@ -329,21 +311,21 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
     <div className={`h-full ${className}`}>
       <Card
         title={
-          <Space>
-            <BarChartOutlined />
+          <div className="flex gap-2">
+            <BarChart className="w-4 h-4"  />
             <span>图表构建器</span>
             {queryResult && (
               <span className="text-sm text-gray-500">
                 数据源: {queryResult.rowCount} 行
               </span>
             )}
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             <Tooltip title="预览图表">
               <Button
-                icon={<EyeOutlined />}
+                icon={<Eye className="w-4 h-4"  />}
                 onClick={handlePreview}
                 type={previewMode ? 'primary' : 'default'}
               />
@@ -351,27 +333,27 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             
             <Tooltip title="高级设置">
               <Button
-                icon={<SettingOutlined />}
+                icon={<Settings className="w-4 h-4"  />}
                 onClick={() => setSettingsVisible(true)}
               />
             </Tooltip>
 
             <Tooltip title="复制配置">
               <Button
-                icon={<CopyOutlined />}
+                icon={<Copy className="w-4 h-4"  />}
                 onClick={handleCopyConfig}
               />
             </Tooltip>
 
             <Button
               type="primary"
-              icon={<SaveOutlined />}
+              icon={<Save className="w-4 h-4"  />}
               onClick={handleSaveChart}
               disabled={!chartConfig.title || !chartConfig.xAxis?.field || !chartConfig.yAxis?.field}
             >
               保存图表
             </Button>
-          </Space>
+          </div>
         }
         className="h-full"
       >
@@ -393,7 +375,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           {previewMode && queryResult && (
             <div className="flex-1 mt-4 border rounded p-4 bg-gray-50">
               <div className="text-center text-gray-500">
-                <BarChartOutlined className="text-4xl mb-2" />
+                <BarChart className="w-4 h-4 text-4xl mb-2"   />
                 <div>图表预览区域</div>
                 <div className="text-sm">
                   类型: {chartTypes.find(t => t.value === chartConfig.type)?.label}
@@ -408,7 +390,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       </Card>
 
       {/* 高级设置抽屉 */}
-      <Drawer
+      <Sheet
         title="高级设置"
         open={settingsVisible}
         onClose={() => setSettingsVisible(false)}
@@ -416,7 +398,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         placement="right"
       >
         {renderAdvancedSettings()}
-      </Drawer>
+      </Sheet>
     </div>
   );
 };

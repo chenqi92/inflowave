@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Button, Select, InputNumber, Form, message, Alert, Progress, Space, Typography, Divider, List, Tag } from 'antd';
-import { PlayCircleOutlined, DatabaseOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag } from '@/components/ui';
+// TODO: Replace these Ant Design components: message, Divider, List
+import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
+
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
@@ -43,8 +45,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       fields: ['temperature', 'humidity', 'pressure', 'battery_level'],
       tags: ['device_id', 'location', 'sensor_type'],
       recordCount: 1000,
-      timeRange: '24h',
-    },
+      timeRange: '24h'},
     {
       name: '系统监控数据',
       measurement: 'system_metrics',
@@ -52,8 +53,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       fields: ['cpu_usage', 'memory_usage', 'disk_usage', 'network_io'],
       tags: ['hostname', 'environment', 'service'],
       recordCount: 500,
-      timeRange: '12h',
-    },
+      timeRange: '12h'},
     {
       name: '业务指标数据',
       measurement: 'business_metrics',
@@ -61,8 +61,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       fields: ['revenue', 'order_count', 'active_users', 'conversion_rate'],
       tags: ['department', 'product', 'region'],
       recordCount: 300,
-      timeRange: '7d',
-    },
+      timeRange: '7d'},
     {
       name: '网络流量数据',
       measurement: 'network_traffic',
@@ -70,8 +69,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       fields: ['bytes_in', 'bytes_out', 'latency', 'packet_loss'],
       tags: ['interface', 'protocol', 'direction'],
       recordCount: 800,
-      timeRange: '6h',
-    },
+      timeRange: '6h'},
     {
       name: '应用性能数据',
       measurement: 'app_performance',
@@ -79,8 +77,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       fields: ['response_time', 'error_rate', 'throughput', 'concurrent_users'],
       tags: ['app_name', 'endpoint', 'method'],
       recordCount: 600,
-      timeRange: '4h',
-    },
+      timeRange: '4h'},
   ];
 
   // 生成DataPoint格式的数据
@@ -225,8 +222,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         measurement: task.measurement,
         tags,
         fields,
-        timestamp,
-      };
+        timestamp};
       data.push(dataPoint);
     }
     
@@ -251,8 +247,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(dbList);
       if (dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -265,12 +260,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   // 执行数据生成
   const generateData = async () => {
     if (!activeConnectionId) {
-      message.error('请先连接到InfluxDB');
+      toast({ title: "错误", description: "请先连接到InfluxDB", variant: "destructive" });
       return;
     }
 
     if (!selectedDatabase) {
-      message.error('请选择目标数据库');
+      toast({ title: "错误", description: "请选择目标数据库", variant: "destructive" });
       return;
     }
 
@@ -297,8 +292,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             connectionId: activeConnectionId,
             database: selectedDatabase,
             points: batch,
-            precision: 'ms',
-          };
+            precision: 'ms'};
           
           try {
             const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
@@ -320,12 +314,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         
         setCompletedTasks(prev => [...prev, task.name]);
         console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
-        message.success(`${task.name} 数据生成完成 (${task.recordCount} 条记录)`);
+        toast({ title: "成功", description: "${task.name} 数据生成完成 (${task.recordCount} 条记录)" });
       }
       
       setProgress(100);
       setCurrentTask('');
-      message.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
+      toast.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
       
       // 触发数据源面板刷新
       setTimeout(() => {
@@ -334,7 +328,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       
     } catch (error) {
       console.error('数据生成失败:', error);
-      message.error(`数据生成失败: ${error}`);
+      toast({ title: "错误", description: "数据生成失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -350,7 +344,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   // 清空数据
   const clearData = async () => {
     if (!activeConnectionId) {
-      message.error('请先连接到InfluxDB');
+      toast({ title: "错误", description: "请先连接到InfluxDB", variant: "destructive" });
       return;
     }
 
@@ -361,15 +355,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
           request: {
             connectionId: activeConnectionId,
             database: selectedDatabase,
-            query: `DROP MEASUREMENT "${task.measurement}"`,
-          }
+            query: `DROP MEASUREMENT "${task.measurement}"`}
         });
       }
       setCompletedTasks([]);
-      message.success('测试数据已清空');
+      toast({ title: "成功", description: "测试数据已清空" });
     } catch (error) {
       console.error('清空数据失败:', error);
-      message.error(`清空数据失败: ${error}`);
+      toast({ title: "错误", description: "清空数据失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -378,10 +371,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   return (
     <Card 
       title={
-        <Space>
-          <DatabaseOutlined />
+        <div className="flex gap-2">
+          <Database className="w-4 h-4"  />
           InfluxDB 测试数据生成器
-        </Space>
+        </div>
       }
       extra={
         <div className="flex items-center gap-4">
@@ -400,9 +393,9 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
               ))}
             </Select>
           </div>
-          <Space>
+          <div className="flex gap-2">
             <Button 
-              icon={<PlayCircleOutlined />}
+              icon={<PlayCircle />}
               type="primary"
               onClick={generateData}
               loading={loading}
@@ -411,14 +404,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
               生成数据
             </Button>
             <Button 
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={clearData}
               loading={loading}
               disabled={!activeConnectionId || !selectedDatabase}
             >
               清空数据
             </Button>
-          </Space>
+          </div>
         </div>
       }
     >
@@ -471,7 +464,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
           <List.Item
             extra={
               completedTasks.includes(task.name) ? (
-                <Tag color="success" icon={<CheckCircleOutlined />}>
+                <Tag color="success" icon={<CheckCircle />}>
                   已完成
                 </Tag>
               ) : (
@@ -499,7 +492,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         )}
       />
 
-      <Divider />
+      <div className="border-t border-gray-200 my-4" />
       
       <Alert
         message="数据生成说明"

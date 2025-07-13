@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress, Tooltip, List, Divider } from 'antd';
+import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, List, Divider
 import { Card, Space } from '@/components/ui';
-import { DashboardOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ReloadOutlined, SettingOutlined, DatabaseOutlined, ThunderboltOutlined, ClockCircleOutlined, WarningOutlined } from '@/components/ui';
+import { RefreshCw, Settings, Database, Zap, Clock, LayoutDashboard, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';
 
@@ -13,8 +14,7 @@ interface PerformanceMonitorProps {
 }
 
 const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
-  connectionId,
-}) => {
+  connectionId}) => {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('1h');
@@ -27,8 +27,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     try {
       const result = await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
         connectionId,
-        timeRange,
-      });
+        timeRange});
       setMetrics(result || {
         queryExecutionTime: [],
         writeLatency: [],
@@ -54,8 +53,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   const loadSlowQueries = async () => {
     try {
       const result = await safeTauriInvoke<SlowQueryInfo[]>('get_slow_query_analysis', {
-        limit: 20,
-      });
+        limit: 20});
       setSlowQueries(result || []);
     } catch (error) {
       console.error('加载慢查询失败:', error);
@@ -110,14 +108,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             {text.length > 50 ? `${text.substring(0, 50)  }...` : text}
           </Text>
         </Tooltip>
-      ),
-    },
+      )},
     {
       title: '数据库',
       dataIndex: 'database',
       key: 'database',
-      width: 120,
-    },
+      width: 120},
     {
       title: '执行时间',
       dataIndex: 'executionTime',
@@ -127,22 +123,19 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Tag color={time > 10000 ? 'red' : time > 5000 ? 'orange' : 'blue'}>
           {formatDuration(time)}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '返回行数',
       dataIndex: 'rowsReturned',
       key: 'rowsReturned',
       width: 100,
-      render: (rows: number) => (rows || 0).toLocaleString(),
-    },
+      render: (rows: number) => (rows || 0).toLocaleString()},
     {
       title: '时间',
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 150,
-      render: (time: string) => new Date(time).toLocaleString(),
-    },
+      render: (time: string) => new Date(time).toLocaleString()},
     {
       title: '优化',
       key: 'optimization',
@@ -153,13 +146,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Button
               type="text"
               size="small"
-              icon={<SettingOutlined />}
+              icon={<Settings className="w-4 h-4"  />}
               style={{ color: 'orange' }}
             />
           </Tooltip>
         ) : null
-      ),
-    },
+      )},
   ];
 
   useEffect(() => {
@@ -190,7 +182,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       <Card size="small" style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Space>
+            <div className="flex gap-2">
               <Select
                 value={timeRange}
                 onChange={setTimeRange}
@@ -202,7 +194,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 <Option value="7d">最近7天</Option>
               </Select>
               <Button
-                icon={<ReloadOutlined />}
+                icon={<RefreshCw className="w-4 h-4"  />}
                 onClick={loadMetrics}
                 loading={loading}
               >
@@ -214,7 +206,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               >
                 自动刷新
               </Button>
-            </Space>
+            </div>
           </Col>
         </Row>
       </Card>
@@ -226,7 +218,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Statistic
               title="查询执行次数"
               value={metrics?.queryExecutionTime?.length || 0}
-              prefix={<DashboardOutlined />}
+              prefix={<LayoutDashboard />}
             />
           </Card>
         </Col>
@@ -239,7 +231,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 : 0
               }
               suffix="ms"
-              prefix={<ClockCircleOutlined />}
+              prefix={<Clock className="w-4 h-4"  />}
             />
           </Card>
         </Col>
@@ -252,7 +244,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 : 0
               }
               suffix="ms"
-              prefix={<ThunderboltOutlined />}
+              prefix={<Zap className="w-4 h-4"  />}
             />
           </Card>
         </Col>
@@ -261,7 +253,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Statistic
               title="网络 I/O"
               value={formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}
-              prefix={<ExclamationCircleOutlined />}
+              prefix={<AlertCircle />}
             />
           </Card>
         </Col>
@@ -271,7 +263,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         {/* 系统资源 */}
         <Col span={12}>
           <Card title="系统资源" size="small">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Text>内存使用情况</Text>
                 <Progress
@@ -298,14 +290,14 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                   读取: {formatBytes(metrics?.diskIO?.readBytes || 0)} | 写入: {formatBytes(metrics?.diskIO?.writeBytes || 0)}
                 </div>
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
 
         {/* 网络状态 */}
         <Col span={12}>
           <Card title="网络 I/O 状态" size="small">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div>
                 <Text>输入流量</Text>
                 <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
@@ -313,7 +305,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </div>
                 <Text type="secondary">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</Text>
               </div>
-              <Divider />
+              <div className="border-t border-gray-200 my-4" />
               <div>
                 <Text>输出流量</Text>
                 <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
@@ -321,7 +313,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </div>
                 <Text type="secondary">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Text>
               </div>
-            </Space>
+            </div>
           </Card>
         </Col>
       </Row>
@@ -353,7 +345,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Statistic
               title="总存储大小"
               value={formatBytes(metrics?.storageAnalysis?.totalSize || 0)}
-              prefix={<DatabaseOutlined />}
+              prefix={<Database className="w-4 h-4"  />}
             />
           </Col>
           <Col span={8}>
@@ -376,7 +368,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
         {(metrics?.storageAnalysis?.recommendations?.length || 0) > 0 && (
           <>
-            <Divider />
+            <div className="border-t border-gray-200 my-4" />
             <Title level={5}>优化建议</Title>
             <List
               dataSource={metrics?.storageAnalysis?.recommendations || []}

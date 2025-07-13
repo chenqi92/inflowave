@@ -1,16 +1,7 @@
 import React from 'react';
-import { Table, Typography, Tag, Divider } from 'antd';
-import { Modal, Space } from '@/components/ui';
-import {
-  SettingOutlined,
-  FileOutlined,
-  EditOutlined,
-  EyeOutlined,
-  DatabaseOutlined,
-  ToolOutlined,
-  AppstoreOutlined,
-  QuestionCircleOutlined
-} from '@/components/ui';
+import { Table, Typography, Tag } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Settings, File, Edit, Eye, Database, Wrench, Grid3X3, HelpCircle } from 'lucide-react';
 
 const { Title, Text } = Typography;
 
@@ -21,21 +12,19 @@ interface KeyboardShortcutsProps {
 
 const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   visible,
-  onClose,
-}) => {
+  onClose}) => {
   // 快捷键数据
   const shortcutCategories = [
     {
       title: '文件操作',
-      icon: <FileOutlined />,
+      icon: <File className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+N', description: '新建SQL查询' },
         { key: 'Ctrl+Q', description: '退出应用' },
-      ],
-    },
+      ]},
     {
       title: '编辑操作',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+Z', description: '撤销' },
         { key: 'Ctrl+Y', description: '重做' },
@@ -45,11 +34,10 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         { key: 'Ctrl+F', description: '查找' },
         { key: 'Ctrl+H', description: '替换' },
         { key: 'Ctrl+Shift+P', description: '全局搜索' },
-      ],
-    },
+      ]},
     {
       title: '视图导航',
-      icon: <EyeOutlined />,
+      icon: <Eye className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+1', description: '仪表板' },
         { key: 'Ctrl+2', description: '连接管理' },
@@ -59,37 +47,33 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         { key: 'Ctrl+Plus', description: '放大' },
         { key: 'Ctrl+Minus', description: '缩小' },
         { key: 'Ctrl+0', description: '重置缩放' },
-      ],
-    },
+      ]},
     {
       title: '数据库操作',
-      icon: <DatabaseOutlined />,
+      icon: <Database className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+Shift+N', description: '新建连接' },
         { key: 'Ctrl+T', description: '测试连接' },
         { key: 'F5', description: '刷新结构' },
         { key: 'Ctrl+Enter', description: '执行查询' },
         { key: 'Ctrl+Shift+C', description: '停止查询' },
-      ],
-    },
+      ]},
     {
       title: '工具功能',
-      icon: <ToolOutlined />,
+      icon: <Wrench className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+Comma', description: '应用设置' },
         { key: 'F1', description: '用户手册' },
-      ],
-    },
+      ]},
     {
       title: '窗口管理',
-      icon: <AppstoreOutlined />,
+      icon: <Grid3X3 className="w-4 h-4"  />,
       shortcuts: [
         { key: 'Ctrl+M', description: '最小化' },
         { key: 'F11', description: '全屏' },
         { key: 'Escape', description: '退出全屏' },
         { key: 'F12', description: '开发者工具' },
-      ],
-    },
+      ]},
   ];
 
   // 表格列配置
@@ -103,22 +87,20 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         <Tag color="blue" style={{ fontFamily: 'monospace' }}>
           {text}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '功能描述',
       dataIndex: 'description',
-      key: 'description',
-    },
+      key: 'description'},
   ];
 
   return (
     <Modal
       title={
-        <Space>
-          <SettingOutlined />
+        <div className="flex gap-2">
+          <Settings className="w-4 h-4"  />
           <span>键盘快捷键</span>
-        </Space>
+        </div>
       }
       open={visible}
       onCancel={onClose}
@@ -130,10 +112,10 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         {shortcutCategories.map((category, index) => (
           <div key={category.title} style={{ marginBottom: 24 }}>
             <Title level={4} style={{ marginBottom: 16 }}>
-              <Space>
+              <div className="flex gap-2">
                 {category.icon}
                 {category.title}
-              </Space>
+              </div>
             </Title>
             
             <Table
@@ -150,12 +132,12 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         ))}
         
         <div style={{ marginTop: 24, padding: 16, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
-          <Space>
-            <QuestionCircleOutlined style={{ color: '#1890ff' }} />
+          <div className="flex gap-2">
+            <HelpCircle className="w-4 h-4" style={{ color: '#1890ff' }}  />
             <Text type="secondary">
               提示：大部分快捷键在相应的功能页面中生效。某些快捷键可能因操作系统而异。
             </Text>
-          </Space>
+          </div>
         </div>
       </div>
     </Modal>

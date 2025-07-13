@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Row, Col, Statistic, Progress, Alert, Table, Tag, Button, Select, DatePicker, Typography, Tooltip, List } from 'antd';
-import { Card, Space, Modal } from '@/components/ui';
-import { ReloadOutlined, WarningOutlined, CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined, BarChartOutlined } from '@/components/ui';
+import { Row, Col, Statistic, Progress, Alert, Table, Tag, Button, Select, DatePicker, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, List
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { RefreshCw, Info, BarChart, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import dayjs from 'dayjs';
@@ -102,8 +103,7 @@ interface PerformanceMonitorProps {
 const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   connectionId,
   autoRefresh = true,
-  refreshInterval = 30000,
-}) => {
+  refreshInterval = 30000}) => {
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const [metricsHistory, setMetricsHistory] = useState<PerformanceMetrics[]>([]);
   const [slowQueries, setSlowQueries] = useState<SlowQuery[]>([]);
@@ -126,8 +126,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     try {
       const result = await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
         connectionId,
-        timeRange: timeRange.map(t => t.toISOString()),
-      });
+        timeRange: timeRange.map(t => t.toISOString())});
       
       setMetrics(result);
       
@@ -152,8 +151,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       const result = await safeTauriInvoke<SlowQuery[]>('get_slow_queries', {
         connectionId,
         timeRange: timeRange.map(t => t.toISOString()),
-        limit: 100,
-      });
+        limit: 100});
       
       setSlowQueries(result);
     } catch (error) {
@@ -169,8 +167,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       const result = await safeTauriInvoke<AlertRecord[]>('get_alert_records', {
         connectionId,
         timeRange: timeRange.map(t => t.toISOString()),
-        limit: 50,
-      });
+        limit: 50});
       
       setAlertRecords(result);
     } catch (error) {
@@ -237,8 +234,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   const chartOptions = useMemo(() => ({
     title: {
       text: '性能指标趋势',
-      left: 'center',
-    },
+      left: 'center'},
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -257,8 +253,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: generateChartData.xData,
-    },
+      data: generateChartData.xData},
     yAxis: {
       type: 'value',
       axisLabel: {
@@ -333,8 +328,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Tooltip title={text}>
           <Text code>{text.substring(0, 50)}...</Text>
         </Tooltip>
-      ),
-    },
+      )},
     {
       title: '执行时间',
       dataIndex: 'duration',
@@ -344,19 +338,16 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Text style={{ color: duration > 5000 ? '#f5222d' : '#fa8c16' }}>
           {duration}ms
         </Text>
-      ),
-    },
+      )},
     {
       title: '开始时间',
       dataIndex: 'startTime',
       key: 'startTime',
-      render: (time: Date) => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
-    },
+      render: (time: Date) => dayjs(time).format('YYYY-MM-DD HH:mm:ss')},
     {
       title: '数据库',
       dataIndex: 'database',
-      key: 'database',
-    },
+      key: 'database'},
     {
       title: '状态',
       dataIndex: 'status',
@@ -365,14 +356,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Tag color={status === 'completed' ? 'green' : status === 'error' ? 'red' : 'orange'}>
           {status}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '返回行数',
       dataIndex: 'rowsReturned',
       key: 'rowsReturned',
-      sorter: (a: SlowQuery, b: SlowQuery) => a.rowsReturned - b.rowsReturned,
-    },
+      sorter: (a: SlowQuery, b: SlowQuery) => a.rowsReturned - b.rowsReturned},
   ];
 
   // 告警记录表格列
@@ -380,24 +369,20 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     {
       title: '告警名称',
       dataIndex: 'ruleName',
-      key: 'ruleName',
-    },
+      key: 'ruleName'},
     {
       title: '指标',
       dataIndex: 'metric',
-      key: 'metric',
-    },
+      key: 'metric'},
     {
       title: '当前值',
       dataIndex: 'value',
       key: 'value',
-      render: (value: number) => <Text strong>{value}</Text>,
-    },
+      render: (value: number) => <Text strong>{value}</Text>},
     {
       title: '阈值',
       dataIndex: 'threshold',
-      key: 'threshold',
-    },
+      key: 'threshold'},
     {
       title: '严重程度',
       dataIndex: 'severity',
@@ -406,8 +391,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Tag color={getSeverityColor(severity)}>
           {severity}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '状态',
       dataIndex: 'status',
@@ -416,14 +400,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         <Tag color={status === 'active' ? 'red' : 'green'}>
           {status === 'active' ? '活跃' : '已解决'}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '开始时间',
       dataIndex: 'startTime',
       key: 'startTime',
-      render: (time: Date) => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
-    },
+      render: (time: Date) => dayjs(time).format('YYYY-MM-DD HH:mm:ss')},
   ];
 
   if (!connectionId) {
@@ -446,7 +428,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <Title level={4}>性能监控</Title>
             <Text type="secondary">实时监控系统和数据库性能指标</Text>
           </div>
-          <Space>
+          <div className="flex gap-2">
             <RangePicker
               value={timeRange}
               onChange={(dates) => dates && setTimeRange(dates)}
@@ -454,7 +436,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               format="YYYY-MM-DD HH:mm:ss"
             />
             <Button
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={() => {
                 fetchMetrics();
                 fetchSlowQueries();
@@ -464,7 +446,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             >
               刷新
             </Button>
-          </Space>
+          </div>
         </div>
       </Card>
 

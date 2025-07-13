@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Alert, Switch } from 'antd';
-import { Modal, Space, message } from '@/components/ui';
-import { DownloadOutlined, TableOutlined, FileTextOutlined, FileExcelOutlined } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Switch } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Download, Table, FileText, FileSpreadsheet } from 'lucide-react';
 import type { QueryResult } from '@/types';
 
 interface ExportOptions {
@@ -25,8 +25,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   visible,
   onClose,
   queryResult,
-  defaultFilename,
-}) => {
+  defaultFilename}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -38,15 +37,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         format: 'csv',
         includeHeaders: true,
         delimiter: ',',
-        filename: defaultFilename || `influxdb-query-${timestamp}`,
-      });
+        filename: defaultFilename || `influxdb-query-${timestamp}`});
     }
   }, [visible, queryResult, defaultFilename, form]);
 
   // 执行导出
   const handleExport = async () => {
     if (!queryResult) {
-      message.error('没有可导出的查询结果');
+      toast({ title: "错误", description: "没有可导出的查询结果", variant: "destructive" });
       return;
     }
 
@@ -58,8 +56,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         format: values.format,
         includeHeaders: values.includeHeaders,
         delimiter: values.delimiter,
-        filename: values.filename,
-      };
+        filename: values.filename};
 
       // 简化的导出逻辑 - 实际应用中这里会调用真正的导出功能
       console.log('Export options:', options);
@@ -68,17 +65,17 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       // 模拟导出过程
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      message.success('导出功能开发中，请查看控制台输出');
+      toast({ title: "成功", description: "导出功能开发中，请查看控制台输出" });
       onClose();
     } catch (error) {
-      message.error(`导出失败: ${error}`);
+      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal
+    <Dialog
       title="导出查询结果"
       open={visible}
       onCancel={onClose}
@@ -90,7 +87,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
         <Button
           key="export"
           type="primary"
-          icon={<DownloadOutlined />}
+          icon={<Download className="w-4 h-4"  />}
           loading={loading}
           onClick={handleExport}
           disabled={!queryResult}
@@ -116,22 +113,22 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
             >
               <Select>
                 <Select.Option value="csv">
-                  <Space>
-                    <TableOutlined />
+                  <div className="flex gap-2">
+                    <Table className="w-4 h-4"  />
                     CSV 格式
-                  </Space>
+                  </div>
                 </Select.Option>
                 <Select.Option value="json">
-                  <Space>
-                    <FileTextOutlined />
+                  <div className="flex gap-2">
+                    <FileText className="w-4 h-4"  />
                     JSON 格式
-                  </Space>
+                  </div>
                 </Select.Option>
                 <Select.Option value="excel">
-                  <Space>
-                    <FileExcelOutlined />
+                  <div className="flex gap-2">
+                    <FileSpreadsheet />
                     Excel 格式
-                  </Space>
+                  </div>
                 </Select.Option>
               </Select>
             </Form.Item>
@@ -179,7 +176,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           showIcon
         />
       )}
-    </Modal>
+    </Dialog>
   );
 };
 

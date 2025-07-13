@@ -1,7 +1,9 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Button, Space, Alert, Row, Col, message, Typography, Switch, Upload, Steps, Input, Select, Table } from 'antd';
-import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Modal, Card } from '@/components/ui';
+import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Input, Select, Table } from '@/components/ui';
+// TODO: Replace these Ant Design components: message
+import { Upload, Database, CheckCircle } from 'lucide-react';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -35,8 +37,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   onClose,
   connectionId,
   database,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -61,8 +62,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     try {
       const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
-        database,
-      });
+        database});
       setMeasurements(measurementList);
     } catch (error) {
       console.error('加载测量列表失败:', error);
@@ -91,8 +91,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       setFileList([]);
       setImportData(null);
       setCurrentStep(0);
-    },
-  };
+    }};
 
   // 解析文件
   const parseFile = async (file: File) => {
@@ -116,13 +115,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         sourceField: header,
         targetField: header.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
         fieldType: index === 0 ? 'time' : 'field',
-        dataType: inferDataType(data.rows, index),
-      }));
+        dataType: inferDataType(data.rows, index)}));
       
       setFieldMappings(mappings);
       setCurrentStep(1);
     } catch (error) {
-      message.error(`文件解析失败: ${error}`);
+      toast({ title: "错误", description: "文件解析失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -210,21 +208,19 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         data: importData.rows,
         options: {
           batchSize: values.batchSize || 1000,
-          skipErrors: values.skipErrors || false,
-        },
-      };
+          skipErrors: values.skipErrors || false}};
 
       // 调用后端导入接口
       await safeTauriInvoke('import_data', importRequest);
 
-      message.success('数据导入成功');
+      toast({ title: "成功", description: "数据导入成功" });
       setCurrentStep(2);
       
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      message.error(`数据导入失败: ${error}`);
+      toast({ title: "错误", description: "数据导入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -235,8 +231,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     {
       title: '源字段',
       dataIndex: 'sourceField',
-      key: 'sourceField',
-    },
+      key: 'sourceField'},
     {
       title: '目标字段',
       dataIndex: 'targetField',
@@ -247,8 +242,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
           placeholder="输入目标字段名"
         />
-      ),
-    },
+      )},
     {
       title: '字段类型',
       dataIndex: 'fieldType',
@@ -263,8 +257,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           <Option value="tag">标签</Option>
           <Option value="field">字段</Option>
         </Select>
-      ),
-    },
+      )},
     {
       title: '数据类型',
       dataIndex: 'dataType',
@@ -281,8 +274,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           <Option value="boolean">布尔值</Option>
           <Option value="timestamp">时间戳</Option>
         </Select>
-      ),
-    },
+      )},
   ];
 
   // 数据预览表格列
@@ -291,19 +283,17 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     dataIndex: index,
     key: index,
     width: 150,
-    ellipsis: true,
-  })) || [];
+    ellipsis: true})) || [];
 
   const previewDataSource = importData?.preview.map((row, index) => ({
     key: index,
     ...row.reduce((acc: Record<string, string | number>, cell: string | number, cellIndex: number) => {
       acc[cellIndex] = cell;
       return acc;
-    }, {} as Record<string, string | number>),
-  })) || [];
+    }, {} as Record<string, string | number>)})) || [];
 
   return (
-    <Modal
+    <Dialog
       title="数据导入"
       open={visible}
       onCancel={onClose}
@@ -313,9 +303,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       <div className="space-y-6">
         {/* 步骤指示器 */}
         <Steps current={currentStep}>
-          <Step title="上传文件" icon={<UploadOutlined />} />
-          <Step title="配置映射" icon={<DatabaseOutlined />} />
-          <Step title="导入完成" icon={<CheckCircleOutlined />} />
+          <Step title="上传文件" icon={<Upload className="w-4 h-4"  />} />
+          <Step title="配置映射" icon={<Database className="w-4 h-4"  />} />
+          <Step title="导入完成" icon={<CheckCircle />} />
         </Steps>
 
         {/* 步骤 1: 文件上传 */}
@@ -324,7 +314,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             <div className="space-y-4">
               <Upload.Dragger {...uploadProps}>
                 <p className="ant-upload-drag-icon">
-                  <UploadOutlined />
+                  <Upload className="w-4 h-4"  />
                 </p>
                 <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
                 <p className="ant-upload-hint">
@@ -415,8 +405,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   columns={mappingColumns}
                   dataSource={fieldMappings.map((mapping, index) => ({
                     ...mapping,
-                    key: index,
-                  }))}
+                    key: index}))}
                   pagination={false}
                   size="small"
                 />
@@ -439,7 +428,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               <Button onClick={() => setCurrentStep(0)}>
                 上一步
               </Button>
-              <Space>
+              <div className="flex gap-2">
                 <Button onClick={onClose}>
                   取消
                 </Button>
@@ -451,7 +440,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 >
                   开始导入
                 </Button>
-              </Space>
+              </div>
             </div>
           </div>
         )}
@@ -460,12 +449,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         {currentStep === 2 && (
           <Card>
             <div className="text-center space-y-4">
-              <CheckCircleOutlined className="text-6xl text-green-500" />
+              <CheckCircle className="text-6xl text-green-500" />
               <Title level={3}>导入完成</Title>
               <Paragraph>
                 数据已成功导入到数据库 <strong>{database}</strong> 中。
               </Paragraph>
-              <Space>
+              <div className="flex gap-2">
                 <Button onClick={onClose}>
                   关闭
                 </Button>
@@ -477,12 +466,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 }}>
                   继续导入
                 </Button>
-              </Space>
+              </div>
             </div>
           </Card>
         )}
       </div>
-    </Modal>
+    </Dialog>
   );
 };
 

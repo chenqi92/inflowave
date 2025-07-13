@@ -1,12 +1,11 @@
 import React from 'react';
-import { Typography, Menu, Dropdown, Badge } from 'antd';
+import { Menu, Dropdown, Badge } from '@/components/ui';
 import { Space } from '@/components/ui';
+
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined, DownOutlined, WifiOutlined, ApiOutlined, ThunderboltOutlined, AppstoreOutlined } from '@/components/ui';
+import { Database, Search, BarChart, Edit, Settings, ChevronDown, Wifi, Webhook, Zap, Grid3X3, LayoutDashboard } from 'lucide-react';
 import type { MenuProps } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
-
-const { Text } = Typography;
 
 const AppMenuBar: React.FC = () => {
   const navigate = useNavigate();
@@ -22,52 +21,45 @@ const AppMenuBar: React.FC = () => {
   const dataMenuItems: MenuProps['items'] = [
     {
       key: '/query',
-      icon: <SearchOutlined />,
+      icon: <Search className="w-4 h-4"  />,
       label: '数据查询',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/database',
-      icon: <DatabaseOutlined />,
+      icon: <Database className="w-4 h-4"  />,
       label: '数据库管理',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/data-write',
-      icon: <EditOutlined />,
+      icon: <Edit className="w-4 h-4"  />,
       label: '数据写入',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
   ];
 
   // 分析工具子菜单
   const analysisMenuItems: MenuProps['items'] = [
     {
       key: '/visualization',
-      icon: <BarChartOutlined />,
+      icon: <BarChart className="w-4 h-4"  />,
       label: '数据可视化',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
     {
       key: '/performance',
-      icon: <ThunderboltOutlined />,
+      icon: <Zap className="w-4 h-4"  />,
       label: '性能监控',
-      disabled: !activeConnectionId,
-    },
+      disabled: !activeConnectionId},
   ];
 
   // 工具子菜单
   const toolsMenuItems: MenuProps['items'] = [
     {
       key: '/extensions',
-      icon: <AppstoreOutlined />,
-      label: '扩展管理',
-    },
+      icon: <Grid3X3 className="w-4 h-4"  />,
+      label: '扩展管理'},
     {
       key: '/settings',
-      icon: <SettingOutlined />,
-      label: '应用设置',
-    },
+      icon: <Settings className="w-4 h-4"  />,
+      label: '应用设置'},
   ];
 
   // 处理菜单点击
@@ -79,65 +71,57 @@ const AppMenuBar: React.FC = () => {
   const mainMenuItems: MenuProps['items'] = [
     {
       key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表板',
-    },
+      icon: <LayoutDashboard />,
+      label: '仪表板'},
     {
       key: '/connections',
-      icon: <ApiOutlined />,
-      label: '连接管理',
-    },
+      icon: <Webhook className="w-4 h-4"  />,
+      label: '连接管理'},
     {
       key: 'data',
       label: (
         <Dropdown
           menu={{
             items: dataMenuItems,
-            onClick: ({ key }) => handleMenuClick(key),
-          }}
+            onClick: ({ key }) => handleMenuClick(key)}}
           trigger={['hover']}
         >
-          <Space>
+          <div className="flex gap-2">
             数据管理
-            <DownOutlined style={{ fontSize: '10px' }} />
-          </Space>
+            <ChevronDown className="w-4 h-4" style={{ fontSize: '10px' }}  />
+          </div>
         </Dropdown>
-      ),
-    },
+      )},
     {
       key: 'analysis',
       label: (
         <Dropdown
           menu={{
             items: analysisMenuItems,
-            onClick: ({ key }) => handleMenuClick(key),
-          }}
+            onClick: ({ key }) => handleMenuClick(key)}}
           trigger={['hover']}
         >
-          <Space>
+          <div className="flex gap-2">
             分析工具
-            <DownOutlined style={{ fontSize: '10px' }} />
-          </Space>
+            <ChevronDown className="w-4 h-4" style={{ fontSize: '10px' }}  />
+          </div>
         </Dropdown>
-      ),
-    },
+      )},
     {
       key: 'tools',
       label: (
         <Dropdown
           menu={{
             items: toolsMenuItems,
-            onClick: ({ key }) => handleMenuClick(key),
-          }}
+            onClick: ({ key }) => handleMenuClick(key)}}
           trigger={['hover']}
         >
-          <Space>
+          <div className="flex gap-2">
             工具
-            <DownOutlined style={{ fontSize: '10px' }} />
-          </Space>
+            <ChevronDown className="w-4 h-4" style={{ fontSize: '10px' }}  />
+          </div>
         </Dropdown>
-      ),
-    },
+      )},
   ];
 
   // 获取当前选中的菜单项
@@ -157,10 +141,10 @@ const AppMenuBar: React.FC = () => {
         <div className="flex items-center space-x-6">
           {/* 应用标题 */}
           <div className="flex items-center space-x-2">
-            <DatabaseOutlined className="text-xl text-primary-600" />
-            <Text strong className="text-lg">
+            <Database className="w-4 h-4 text-xl text-primary-600"   />
+            <span className="text-lg font-semibold">
               InfloWave
-            </Text>
+            </span>
           </div>
 
           {/* 主菜单 */}
@@ -184,28 +168,28 @@ const AppMenuBar: React.FC = () => {
         {/* 右侧 - 连接状态 */}
         <div className="flex items-center space-x-4">
           {activeConnectionId && currentStatus ? (
-            <Space>
+            <div className="flex gap-2">
               <Badge 
                 status={currentStatus.status === 'connected' ? 'success' : 'error'} 
                 text={
-                  <Text className="text-sm">
+                  <span className="text-sm">
                     {currentStatus.status === 'connected' ? '已连接' : '未连接'}
-                  </Text>
+                  </span>
                 }
               />
               {currentStatus.latency && (
-                <Text className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500">
                   {currentStatus.latency}ms
-                </Text>
+                </span>
               )}
-            </Space>
+            </div>
           ) : (
-            <Space>
-              <WifiOutlined style={{ color: '#d9d9d9' }} />
-              <Text className="text-sm" type="secondary">
+            <div className="flex gap-2">
+              <Wifi className="w-4 h-4" style={{ color: '#d9d9d9' }}  />
+              <span className="text-sm text-gray-500">
                 无活跃连接
-              </Text>
-            </Space>
+              </span>
+            </div>
           )}
         </div>
       </div>

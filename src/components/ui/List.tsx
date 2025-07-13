@@ -1,279 +1,155 @@
-import React from 'react';
-import { cn } from '@/utils/cn';
-import { Spin } from './Spin';
-import { Empty } from './Empty';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-export interface ListItemProps {
-  children: React.ReactNode;
-  actions?: React.ReactNode[];
-  className?: string;
-  style?: React.CSSProperties;
-  onClick?: () => void;
+interface ListItemProps {
+  className?: string
+  children?: React.ReactNode
+  actions?: React.ReactNode[]
+  extra?: React.ReactNode
 }
 
-export interface ListItemMetaProps {
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  avatar?: React.ReactNode;
-  className?: string;
-}
-
-export interface ListProps<T = any> {
-  dataSource?: T[];
-  renderItem?: (item: T, index: number) => React.ReactNode;
-  loading?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-  size?: 'small' | 'default' | 'large';
-  split?: boolean;
-  bordered?: boolean;
-  header?: React.ReactNode;
-  footer?: React.ReactNode;
-  locale?: {
-    emptyText?: React.ReactNode;
-  };
-  pagination?: boolean | {
-    current?: number;
-    pageSize?: number;
-    total?: number;
-    onChange?: (page: number, pageSize?: number) => void;
-  };
-  grid?: {
-    gutter?: number;
-    column?: number;
-    xs?: number;
-    sm?: number;
-    md?: number;
-    lg?: number;
-    xl?: number;
-    xxl?: number;
-  };
-}
-
-// List.Item 组件
-const ListItem: React.FC<ListItemProps> & {
-  Meta: React.FC<ListItemMetaProps>;
-} = ({
-  children,
-  actions,
-  className,
-  style,
-  onClick,
-}) => {
-  return (
-    <div
-      className={cn(
-        'flex items-start justify-between py-3 px-0',
-        'border-b border-gray-100 last:border-b-0',
-        onClick && 'cursor-pointer hover:bg-gray-50',
-        className
-      )}
-      style={style}
-      onClick={onClick}
-    >
-      <div className="flex-1 min-w-0">
-        {children}
-      </div>
-      {actions && actions.length > 0 && (
-        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-          {actions.map((action, index) => (
-            <div key={index} className="flex items-center">
-              {action}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// List.Item.Meta 组件
-const ListItemMeta: React.FC<ListItemMetaProps> = ({
-  title,
-  description,
-  avatar,
-  className,
-}) => {
-  return (
-    <div className={cn('flex items-start gap-3', className)}>
-      {avatar && (
-        <div className="flex-shrink-0">
-          {avatar}
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        {title && (
-          <div className="text-sm font-medium text-gray-900 mb-1">
-            {title}
-          </div>
+const ListItem = React.forwardRef<HTMLDivElement, ListItemProps>(
+  ({ className, children, actions, extra, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center justify-between p-4 border-b border-border last:border-b-0",
+          className
         )}
-        {description && (
-          <div className="text-sm text-gray-500">
-            {description}
+        {...props}
+      >
+        <div className="flex-1">
+          {children}
+        </div>
+        {(actions || extra) && (
+          <div className="flex items-center space-x-2 ml-4">
+            {actions && (
+              <div className="flex items-center space-x-1">
+                {actions.map((action, index) => (
+                  <div key={index}>{action}</div>
+                ))}
+              </div>
+            )}
+            {extra && <div>{extra}</div>}
           </div>
         )}
       </div>
-    </div>
-  );
-};
+    )
+  }
+)
+ListItem.displayName = "ListItem"
 
-ListItem.Meta = ListItemMeta;
+interface ListItemMetaProps {
+  className?: string
+  avatar?: React.ReactNode
+  title?: React.ReactNode
+  description?: React.ReactNode
+}
 
-// 主 List 组件
-export const List: React.FC<ListProps> & {
-  Item: typeof ListItem;
-} = ({
-  dataSource = [],
-  renderItem,
-  loading = false,
-  className,
-  style,
-  size = 'default',
-  split = true,
-  bordered = false,
-  header,
-  footer,
-  locale = {},
-  pagination,
-  grid,
-}) => {
-  const sizeClasses = {
-    small: 'text-sm',
-    default: '',
-    large: 'text-base',
-  };
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex justify-center py-8">
-          <Spin size="large" />
-        </div>
-      );
-    }
-
-    if (!dataSource || dataSource.length === 0) {
-      return (
-        <div className="py-8">
-          <Empty description={locale.emptyText || '暂无数据'} />
-        </div>
-      );
-    }
-
-    if (grid) {
-      // 网格布局
-      const { column = 1, gutter = 16 } = grid;
-      return (
-        <div 
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: `repeat(${column}, 1fr)`,
-            gap: `${gutter}px`,
-          }}
-        >
-          {dataSource.map((item, index) => (
-            <div key={index}>
-              {renderItem ? renderItem(item, index) : item}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // 列表布局
+const ListItemMeta = React.forwardRef<HTMLDivElement, ListItemMetaProps>(
+  ({ className, avatar, title, description, ...props }, ref) => {
     return (
-      <div className={cn(!split && 'space-y-0')}>
-        {dataSource.map((item, index) => (
-          <div key={index}>
-            {renderItem ? renderItem(item, index) : item}
+      <div
+        ref={ref}
+        className={cn("flex items-start space-x-3", className)}
+        {...props}
+      >
+        {avatar && (
+          <div className="flex-shrink-0">
+            {avatar}
           </div>
-        ))}
+        )}
+        <div className="flex-1 min-w-0">
+          {title && (
+            <div className="text-sm font-medium text-foreground">
+              {title}
+            </div>
+          )}
+          {description && (
+            <div className="text-sm text-muted-foreground mt-1">
+              {description}
+            </div>
+          )}
+        </div>
       </div>
-    );
-  };
+    )
+  }
+)
+ListItemMeta.displayName = "ListItemMeta"
 
-  const renderPagination = () => {
-    if (!pagination || typeof pagination === 'boolean') {
-      return null;
+interface ListProps {
+  className?: string
+  children?: React.ReactNode
+  dataSource?: any[]
+  renderItem?: (item: any, index: number) => React.ReactNode
+  loading?: boolean
+  header?: React.ReactNode
+  footer?: React.ReactNode
+  bordered?: boolean
+  split?: boolean
+  size?: "small" | "default" | "large"
+}
+
+const List = React.forwardRef<HTMLDivElement, ListProps>(
+  ({ 
+    className, 
+    children, 
+    dataSource,
+    renderItem,
+    loading,
+    header,
+    footer,
+    bordered = true,
+    split = true,
+    size = "default",
+    ...props 
+  }, ref) => {
+    const sizeClasses = {
+      small: "text-sm",
+      default: "",
+      large: "text-base"
     }
 
-    const { current = 1, pageSize = 10, total = 0, onChange } = pagination;
-    const totalPages = Math.ceil(total / pageSize);
-
-    if (totalPages <= 1) {
-      return null;
-    }
+    const content = dataSource && renderItem 
+      ? dataSource.map((item, index) => renderItem(item, index))
+      : children
 
     return (
-      <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-        <button
-          onClick={() => onChange?.(current - 1, pageSize)}
-          disabled={current <= 1}
-          className={cn(
-            'px-3 py-1 text-sm border border-gray-300 rounded',
-            'hover:border-blue-500 hover:text-blue-500',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-500'
+      <div
+        ref={ref}
+        className={cn(
+          "bg-background",
+          bordered && "border border-border rounded-md",
+          sizeClasses[size],
+          className
+        )}
+        {...props}
+      >
+        {header && (
+          <div className="px-4 py-3 border-b border-border bg-muted/30">
+            {header}
+          </div>
+        )}
+        <div className={cn(!split && "divide-none")}>
+          {loading ? (
+            <div className="flex justify-center p-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            content
           )}
-        >
-          上一页
-        </button>
-        
-        <span className="text-sm text-gray-600">
-          第 {current} 页，共 {totalPages} 页
-        </span>
-        
-        <button
-          onClick={() => onChange?.(current + 1, pageSize)}
-          disabled={current >= totalPages}
-          className={cn(
-            'px-3 py-1 text-sm border border-gray-300 rounded',
-            'hover:border-blue-500 hover:text-blue-500',
-            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-500'
-          )}
-        >
-          下一页
-        </button>
-      </div>
-    );
-  };
-
-  return (
-    <div
-      className={cn(
-        'w-full',
-        sizeClasses[size],
-        bordered && 'border border-gray-200 rounded-md',
-        className
-      )}
-      style={style}
-    >
-      {header && (
-        <div className={cn(
-          'px-4 py-3 border-b border-gray-100 bg-gray-50',
-          bordered && 'rounded-t-md'
-        )}>
-          {header}
         </div>
-      )}
-      
-      <div className={cn(bordered ? 'px-4 py-2' : 'py-0')}>
-        {renderContent()}
+        {footer && (
+          <div className="px-4 py-3 border-t border-border bg-muted/30">
+            {footer}
+          </div>
+        )}
       </div>
-      
-      {footer && (
-        <div className={cn(
-          'px-4 py-3 border-t border-gray-100 bg-gray-50',
-          bordered && 'rounded-b-md'
-        )}>
-          {footer}
-        </div>
-      )}
-      
-      {renderPagination()}
-    </div>
-  );
-};
+    )
+  }
+)
+List.displayName = "List"
 
-List.Item = ListItem;
-
-export { ListItem, ListItemMeta };
+export { List, ListItem, ListItemMeta }
+export type { ListProps, ListItemProps, ListItemMetaProps }

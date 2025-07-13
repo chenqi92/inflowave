@@ -1,15 +1,10 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button, Result, Typography, Collapse, Space } from 'antd';
-import { 
-  BugOutlined, 
-  ReloadOutlined, 
-  FileTextOutlined,
-  WarningOutlined 
-} from '@ant-design/icons';
+import { Button, Card, Alert } from '@/components/ui';
+import { Bug, RefreshCw, FileText } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
 
-const { Text, Paragraph } = Typography;
-const { Panel } = Collapse;
+import { Text } from '@/components/ui';
 
 interface Props {
   children: ReactNode;
@@ -31,22 +26,19 @@ class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: null,
-    };
+      errorId: null};
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       error,
-      errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    };
+      errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`};
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({
-      errorInfo,
-    });
+      errorInfo});
 
     // 记录到错误日志系统
     errorLogger.logReactError(error, errorInfo);
@@ -73,8 +65,7 @@ class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: null,
-    });
+      errorId: null});
   };
 
   handleReportError = async () => {
@@ -88,15 +79,12 @@ class ErrorBoundary extends Component<Props, State> {
         error: {
           name: error?.name,
           message: error?.message,
-          stack: error?.stack,
-        },
+          stack: error?.stack},
         errorInfo: {
-          componentStack: errorInfo?.componentStack,
-        },
+          componentStack: errorInfo?.componentStack},
         userAgent: navigator.userAgent,
         url: window.location.href,
-        sessionId: errorLogger.getSessionId(),
-      };
+        sessionId: errorLogger.getSessionId()};
 
       // 记录详细报告
       await errorLogger.logCustomError(
@@ -125,7 +113,7 @@ class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-2xl w-full">
             <Result
               status="error"
-              icon={<BugOutlined className="text-red-500" />}
+              icon={<Bug className="w-4 h-4 text-red-500"   />}
               title="应用程序发生错误"
               subTitle={
                 <div className="space-y-2">
@@ -140,27 +128,27 @@ class ErrorBoundary extends Component<Props, State> {
                 </div>
               }
               extra={
-                <Space size="middle" wrap>
+                <div className="flex gap-2" size="middle" wrap>
                   <Button 
                     type="primary" 
-                    icon={<ReloadOutlined />}
+                    icon={<RefreshCw className="w-4 h-4"  />}
                     onClick={this.handleReload}
                   >
                     重新加载页面
                   </Button>
                   <Button 
-                    icon={<WarningOutlined />}
+                    icon={<AlertTriangle />}
                     onClick={this.handleReset}
                   >
                     尝试恢复
                   </Button>
                   <Button 
-                    icon={<FileTextOutlined />}
+                    icon={<FileText className="w-4 h-4"  />}
                     onClick={this.handleReportError}
                   >
                     保存错误报告
                   </Button>
-                </Space>
+                </div>
               }
             />
 

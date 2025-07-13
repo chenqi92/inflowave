@@ -1,15 +1,6 @@
 import React from 'react';
-import { Button, Tag, Avatar, Tooltip } from 'antd';
-import { Card, Space } from '@/components/ui';
-import { 
-  WifiOutlined, 
-  DisconnectOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  MoreOutlined,
-  DatabaseOutlined,
-  CheckCircleOutlined
-} from '@/components/ui';
+import { Button, Tag, Avatar, TooltipWrapper as Tooltip, Card, Space } from '@/components/ui';
+import { Wifi, Unlink, Edit, Trash2, Database, CheckCircle } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
 interface ConnectionListViewProps {
@@ -29,8 +20,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
   loading,
   onConnect,
   onEdit,
-  onDelete,
-}) => {
+  onDelete}) => {
   const getStatusColor = (status?: ConnectionStatus) => {
     if (!status) return 'default';
     switch (status.status) {
@@ -54,7 +44,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
   if (connections.length === 0) {
     return (
       <div className="text-center py-12">
-        <DatabaseOutlined className="text-6xl text-gray-300 mb-4" />
+        <Database className="w-4 h-4 text-6xl text-gray-300 mb-4"   />
         <h3 className="text-lg text-gray-500 mb-2">暂无连接配置</h3>
         <p className="text-gray-400">点击"新建连接"开始创建您的第一个数据库连接</p>
       </div>
@@ -80,7 +70,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <Avatar
-                  icon={<DatabaseOutlined />}
+                  icon={<Database className="w-4 h-4"  />}
                   className={`${
                     isConnected ? 'bg-green-500' : 'bg-gray-400'
                   } transition-colors duration-200`}
@@ -120,7 +110,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">SSL：</span>
                 <div className="flex items-center space-x-1">
-                  {connection.ssl && <CheckCircleOutlined className="text-green-500" />}
+                  {connection.ssl && <CheckCircle className="text-green-500" />}
                   <span className={connection.ssl ? 'text-green-600' : 'text-gray-400'}>
                     {connection.ssl ? '已启用' : '未启用'}
                   </span>
@@ -139,7 +129,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <Button
                 type={isConnected ? 'default' : 'primary'}
-                icon={isConnected ? <DisconnectOutlined /> : <WifiOutlined />}
+                icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
                 size="small"
                 loading={loading}
                 onClick={() => onConnect(connection.id!)}
@@ -148,10 +138,10 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
                 {isConnected ? '断开' : '连接'}
               </Button>
 
-              <Space size="small">
+              <div className="flex gap-2" size="small">
                 <Tooltip title="编辑连接">
                   <Button
-                    icon={<EditOutlined />}
+                    icon={<Edit className="w-4 h-4"  />}
                     size="small"
                     onClick={() => onEdit(connection)}
                   />
@@ -159,13 +149,13 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
                 
                 <Tooltip title="删除连接">
                   <Button
-                    icon={<DeleteOutlined />}
+                    icon={<Trash2 className="w-4 h-4"  />}
                     size="small"
                     danger
                     onClick={() => onDelete(connection.id!)}
                   />
                 </Tooltip>
-              </Space>
+              </div>
             </div>
 
             {/* 错误信息 */}

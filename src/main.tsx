@@ -9,7 +9,8 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
-import { MessageProvider } from '@/components/ui';
+import { ToastProvider } from '@/components/ui';
+
 import './styles/index.css';
 
 // 配置 dayjs
@@ -28,16 +29,15 @@ const InnerApp: React.FC = () => {
 const AppWrapper: React.FC = () => {
   
   return (
-    <MessageProvider>
+    <ToastProvider>
       <BrowserRouter
         future={{
           v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
+          v7_relativeSplatPath: true}}
       >
         <InnerApp />
       </BrowserRouter>
-    </MessageProvider>
+    </ToastProvider>
   );
 };
 

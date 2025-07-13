@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Table, Alert, Typography, Collapse } from 'antd';
+import { Button, Table, Alert, Typography } from '@/components/ui';
+// TODO: Replace these Ant Design components: Collapse
 import { Card, Space } from '@/components/ui';
-import { BugOutlined, ReloadOutlined, InfoCircleOutlined } from '@/components/ui';
+import { Bug, RefreshCw, Info } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -34,8 +35,7 @@ const ConnectionDebugPanel: React.FC = () => {
         backendConnections: backendConnections || [],
         connectionStatuses,
         activeConnectionId,
-        backendDebugInfo,
-      };
+        backendDebugInfo};
       
       setDebugInfo(info);
     } catch (error) {
@@ -88,8 +88,7 @@ const ConnectionDebugPanel: React.FC = () => {
     {
       title: '名称',
       dataIndex: 'name',
-      key: 'name',
-    },
+      key: 'name'},
     {
       title: '主机:端口',
       key: 'hostPort',
@@ -98,8 +97,7 @@ const ConnectionDebugPanel: React.FC = () => {
     {
       title: '用户名',
       dataIndex: 'username',
-      key: 'username',
-    },
+      key: 'username'},
     {
       title: '状态',
       key: 'status',
@@ -121,14 +119,14 @@ const ConnectionDebugPanel: React.FC = () => {
   return (
     <Card 
       title={
-        <Space>
-          <BugOutlined />
+        <div className="flex gap-2">
+          <Bug className="w-4 h-4"  />
           连接调试面板
-        </Space>
+        </div>
       }
       extra={
         <Button 
-          icon={<ReloadOutlined />} 
+          icon={<RefreshCw className="w-4 h-4"  />} 
           onClick={collectDebugInfo}
           loading={loading}
           type="primary"
@@ -139,7 +137,7 @@ const ConnectionDebugPanel: React.FC = () => {
     >
       {!debugInfo ? (
         <div className="text-center py-8">
-          <InfoCircleOutlined className="text-4xl text-gray-400 mb-4" />
+          <Info className="w-4 h-4 text-4xl text-gray-400 mb-4"   />
           <p className="text-gray-500">点击"收集调试信息"开始诊断连接问题</p>
         </div>
       ) : (

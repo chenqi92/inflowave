@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Button, Space, Alert, Row, Col, message, Typography, Switch, Upload, Steps, Progress, Tabs, Divider, Tooltip, Input, Select, Table } from 'antd';
-import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { Modal, Card } from '@/components/ui';
+import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Progress, Tabs, Input, Select, Table } from '@/components/ui';
+// TODO: Replace these Ant Design components: message, Divider, Tooltip
+import { Upload, Database, CheckCircle, Info, AlertCircle } from 'lucide-react';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -63,8 +65,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
   onClose,
   connectionId,
   database,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -85,8 +86,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
     encoding: csvEncoding,
     hasHeader: csvHasHeader,
     skipEmptyLines: true,
-    trimWhitespace: true,
-  };
+    trimWhitespace: true};
 
   // 重置状态
   const resetState = useCallback(() => {
@@ -107,8 +107,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
     try {
       const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
         connectionId,
-        database,
-      });
+        database});
       setMeasurements(measurementList);
     } catch (error) {
       console.error('加载测量列表失败:', error);
@@ -132,7 +131,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       // 文件大小限制 (50MB)
       const isLt50M = file.size / 1024 / 1024 < 50;
       if (!isLt50M) {
-        message.error('文件大小不能超过 50MB');
+        toast({ title: "错误", description: "文件大小不能超过 50MB", variant: "destructive" });
         return false;
       }
 
@@ -145,8 +144,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       setImportData(null);
       setValidationResult(null);
       setCurrentStep(0);
-    },
-  };
+    }};
 
   // 解析文件
   const parseFile = async (file: File) => {
@@ -156,8 +154,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       progress: 0,
       message: '正在解析文件...',
       processedRows: 0,
-      totalRows: 0,
-    });
+      totalRows: 0});
 
     try {
       const fileName = file.name;
@@ -189,8 +186,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         progress: 100,
         message: '文件解析完成',
         processedRows: data.totalRows,
-        totalRows: data.totalRows,
-      });
+        totalRows: data.totalRows});
       
       setCurrentStep(1);
     } catch (error) {
@@ -199,9 +195,8 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         progress: 0,
         message: `文件解析失败: ${error}`,
         processedRows: 0,
-        totalRows: 0,
-      });
-      message.error(`文件解析失败: ${error}`);
+        totalRows: 0});
+      toast({ title: "错误", description: "文件解析失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -388,8 +383,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         dataType,
         required: fieldType === 'time',
         defaultValue: '',
-        validation: '',
-      };
+        validation: ''};
     });
   };
 
@@ -437,7 +431,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
     return name
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_{2,}/g, '_')
+      .replace(/_{2}/g, '_')
       .replace(/^_|_$/g, '');
   };
 
@@ -452,7 +446,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       const result = await performDataValidation(importData, fieldMappings);
       setValidationResult(result);
     } catch (error) {
-      message.error(`数据验证失败: ${error}`);
+      toast({ title: "错误", description: "数据验证失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -532,9 +526,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         validRows,
         invalidRows: data.totalRows - validRows,
         nullValues,
-        duplicates,
-      },
-    };
+        duplicates}};
   };
 
   // 更新字段映射
@@ -563,9 +555,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           batchSize: values.batchSize || 1000,
           skipErrors: values.skipErrors || false,
           precision: values.precision || 'ns',
-          retentionPolicy: values.retentionPolicy || '',
-        },
-      };
+          retentionPolicy: values.retentionPolicy || ''}};
 
       // 模拟进度更新
       const updateProgress = (stage: ImportProgress['stage'], progress: number, message: string) => {
@@ -574,8 +564,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           progress,
           message,
           processedRows: Math.floor((progress / 100) * importData.totalRows),
-          totalRows: importData.totalRows,
-        });
+          totalRows: importData.totalRows});
       };
 
       updateProgress('processing', 0, '准备导入数据...');
@@ -584,7 +573,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       await safeTauriInvoke('advanced_import_data', importRequest);
       
       updateProgress('completed', 100, '数据导入完成');
-      message.success('数据导入成功');
+      toast({ title: "成功", description: "数据导入成功" });
       
       if (onSuccess) {
         onSuccess();
@@ -595,9 +584,8 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         progress: 0,
         message: `导入失败: ${error}`,
         processedRows: 0,
-        totalRows: importData?.totalRows || 0,
-      });
-      message.error(`数据导入失败: ${error}`);
+        totalRows: importData?.totalRows || 0});
+      toast({ title: "错误", description: "数据导入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -611,14 +599,13 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       key: 'sourceField',
       width: 150,
       render: (text: string, record: FieldMapping) => (
-        <Space>
+        <div className="flex gap-2">
           <Text>{text}</Text>
           <Tooltip title={`数据类型: ${record.dataType}`}>
-            <InfoCircleOutlined />
+            <Info className="w-4 h-4"  />
           </Tooltip>
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '目标字段',
       dataIndex: 'targetField',
@@ -631,8 +618,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           placeholder="输入目标字段名"
           size="small"
         />
-      ),
-    },
+      )},
     {
       title: '字段类型',
       dataIndex: 'fieldType',
@@ -650,8 +636,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           <Option value="field">字段</Option>
           <Option value="ignore">忽略</Option>
         </Select>
-      ),
-    },
+      )},
     {
       title: '数据类型',
       dataIndex: 'dataType',
@@ -670,8 +655,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           <Option value="boolean">布尔值</Option>
           <Option value="timestamp">时间戳</Option>
         </Select>
-      ),
-    },
+      )},
     {
       title: '必填',
       dataIndex: 'required',
@@ -683,8 +667,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           onChange={(checked) => updateFieldMapping(index, 'required', checked)}
           size="small"
         />
-      ),
-    },
+      )},
     {
       title: '默认值',
       dataIndex: 'defaultValue',
@@ -698,12 +681,11 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
           size="small"
           disabled={record.fieldType === 'ignore'}
         />
-      ),
-    },
+      )},
   ];
 
   return (
-    <Modal
+    <Dialog
       title="高级数据导入"
       open={visible}
       onCancel={onClose}
@@ -714,9 +696,9 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       <div className="space-y-6">
         {/* 步骤指示器 */}
         <Steps current={currentStep} size="small">
-          <Steps.Step title="选择文件" icon={<UploadOutlined />} />
-          <Steps.Step title="配置导入" icon={<DatabaseOutlined />} />
-          <Steps.Step title="执行导入" icon={<CheckCircleOutlined />} />
+          <Steps.Step title="选择文件" icon={<Upload className="w-4 h-4"  />} />
+          <Steps.Step title="配置导入" icon={<Database className="w-4 h-4"  />} />
+          <Steps.Step title="执行导入" icon={<CheckCircle />} />
         </Steps>
 
         {/* 步骤 1: 文件上传 */}
@@ -726,7 +708,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
               <div className="space-y-4">
                 <Upload.Dragger {...uploadProps}>
                   <p className="ant-upload-drag-icon">
-                    <UploadOutlined />
+                    <Upload className="w-4 h-4"  />
                   </p>
                   <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
                   <p className="ant-upload-hint">
@@ -904,8 +886,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                       columns={mappingColumns}
                       dataSource={fieldMappings.map((mapping, index) => ({
                         ...mapping,
-                        key: index,
-                      }))}
+                        key: index}))}
                       pagination={false}
                       size="small"
                       scroll={{ x: 'max-content' }}
@@ -922,15 +903,13 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                         dataIndex: index,
                         key: index,
                         width: 150,
-                        ellipsis: true,
-                      }))}
+                        ellipsis: true}))}
                       dataSource={importData.preview.map((row, index) => ({
                         key: index,
                         ...row.reduce((acc, cell, cellIndex) => {
                           acc[cellIndex] = cell;
                           return acc;
-                        }, {} as Record<number, any>),
-                      }))}
+                        }, {} as Record<number, any>)}))}
                       pagination={false}
                       scroll={{ x: 'max-content' }}
                       size="small"
@@ -1014,7 +993,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
               <Button onClick={() => setCurrentStep(0)}>
                 上一步
               </Button>
-              <Space>
+              <div className="flex gap-2">
                 <Button onClick={onClose}>
                   取消
                 </Button>
@@ -1025,7 +1004,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 >
                   开始导入
                 </Button>
-              </Space>
+              </div>
             </div>
           </div>
         )}
@@ -1036,7 +1015,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             <div className="text-center space-y-4">
               {importProgress?.stage === 'completed' ? (
                 <>
-                  <CheckCircleOutlined className="text-6xl text-green-500" />
+                  <CheckCircle className="text-6xl text-green-500" />
                   <Title level={3}>导入完成</Title>
                   <Paragraph>
                     成功导入 <strong>{importProgress.processedRows}</strong> 行数据到数据库 <strong>{database}</strong> 中。
@@ -1044,7 +1023,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 </>
               ) : importProgress?.stage === 'error' ? (
                 <>
-                  <ExclamationCircleOutlined className="text-6xl text-red-500" />
+                  <AlertCircle className="text-6xl text-red-500" />
                   <Title level={3}>导入失败</Title>
                   <Paragraph>
                     {importProgress.message}
@@ -1067,7 +1046,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 </>
               )}
 
-              <Space>
+              <div className="flex gap-2">
                 <Button onClick={onClose}>
                   关闭
                 </Button>
@@ -1086,12 +1065,12 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                     重新配置
                   </Button>
                 )}
-              </Space>
+              </div>
             </div>
           </Card>
         )}
       </div>
-    </Modal>
+    </Dialog>
   );
 };
 

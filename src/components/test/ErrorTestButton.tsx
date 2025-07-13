@@ -1,9 +1,13 @@
 import React from 'react';
-import { Button, Space, message } from 'antd';
-import { BugOutlined, WarningOutlined, InfoCircleOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { Button, Space, toast } from '@/components/ui';
+import { Bug, Info, Zap } from 'lucide-react';
+import { AlertTriangle, Bug, Zap, Info } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { errorLogger } from '@/utils/errorLogger';
 
 const ErrorTestButton: React.FC = () => {
+  const { toast } = useToast();
+
   // 测试JavaScript错误
   const testJSError = () => {
     try {
@@ -15,13 +19,13 @@ const ErrorTestButton: React.FC = () => {
         throw error;
       }, 0);
     }
-    message.info('JavaScript错误已触发，请查看错误日志');
+    toast({ title: "信息", description: "JavaScript错误已触发，请查看错误日志" });
   };
 
   // 测试Promise拒绝
   const testPromiseRejection = () => {
     Promise.reject(new Error('测试Promise拒绝 - 这是一个未处理的Promise拒绝'));
-    message.info('Promise拒绝已触发，请查看错误日志');
+    toast({ title: "信息", description: "Promise拒绝已触发，请查看错误日志" });
   };
 
   // 测试控制台错误
@@ -31,7 +35,7 @@ const ErrorTestButton: React.FC = () => {
       timestamp: Date.now(),
       additionalData: { userId: 123, action: 'test' }
     });
-    message.info('控制台错误已记录，请查看错误日志');
+    toast({ title: "信息", description: "控制台错误已记录，请查看错误日志" });
   };
 
   // 测试自定义错误记录
@@ -45,7 +49,7 @@ const ErrorTestButton: React.FC = () => {
         testType: 'custom-logging'
       }
     });
-    message.success('自定义错误已记录到日志');
+    toast({ title: "成功", description: "自定义错误已记录到日志" });
   };
 
   // 测试网络错误（模拟）
@@ -56,7 +60,7 @@ const ErrorTestButton: React.FC = () => {
     } catch (error) {
       // 这将被全局fetch拦截器捕获
     }
-    message.info('网络错误已触发，请查看错误日志');
+    toast({ title: "信息", description: "网络错误已触发，请查看错误日志" });
   };
 
   // 测试React组件错误
@@ -68,7 +72,7 @@ const ErrorTestButton: React.FC = () => {
 
   const testReactError = () => {
     setShowErrorComponent(true);
-    message.info('React组件错误已触发，请查看错误边界');
+    toast({ title: "信息", description: "React组件错误已触发，请查看错误边界" });
   };
 
   if (showErrorComponent) {
@@ -88,7 +92,7 @@ const ErrorTestButton: React.FC = () => {
       
       <Space wrap size="middle">
         <Button 
-          icon={<BugOutlined />}
+          icon={<Bug className="w-4 h-4" />}
           onClick={testJSError}
           type="primary"
           danger
@@ -97,7 +101,7 @@ const ErrorTestButton: React.FC = () => {
         </Button>
         
         <Button 
-          icon={<ThunderboltOutlined />}
+          icon={<Zap className="w-4 h-4" />}
           onClick={testPromiseRejection}
           type="primary"
           danger
@@ -106,7 +110,7 @@ const ErrorTestButton: React.FC = () => {
         </Button>
         
         <Button 
-          icon={<WarningOutlined />}
+          icon={<AlertTriangle />}
           onClick={testConsoleError}
           type="primary"
           danger
@@ -115,7 +119,7 @@ const ErrorTestButton: React.FC = () => {
         </Button>
         
         <Button 
-          icon={<InfoCircleOutlined />}
+          icon={<Info className="w-4 h-4" />}
           onClick={testCustomError}
           type="primary"
         >
@@ -123,7 +127,7 @@ const ErrorTestButton: React.FC = () => {
         </Button>
         
         <Button 
-          icon={<BugOutlined />}
+          icon={<Bug className="w-4 h-4" />}
           onClick={testNetworkError}
           type="primary"
           danger
@@ -132,7 +136,7 @@ const ErrorTestButton: React.FC = () => {
         </Button>
         
         <Button 
-          icon={<BugOutlined />}
+          icon={<Bug className="w-4 h-4" />}
           onClick={testReactError}
           type="primary"
           danger

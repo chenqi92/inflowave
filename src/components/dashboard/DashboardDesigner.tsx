@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Form, Input, Select, Row, Col, Empty } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
+import { Button, Typography, Form, Input, Select, Row, Col, Empty } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
 // TODO: Replace these Ant Design components: Dropdown, Menu, Grid, 
-import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, DashboardOutlined, BarChartOutlined, LineChartOutlined, PieChartOutlined, TableOutlined, SaveOutlined, EyeOutlined } from '@/components/ui';
+import { Plus, Edit, Trash2, Settings, BarChart, TrendingUp, PieChart, Table, Save, Eye, LayoutDashboard } from 'lucide-react';
 // TODO: Replace these icons: MoreOutlined
 // You may need to find alternatives or create custom icons
 import { Responsive, WidthProvider } from 'react-grid-layout';
@@ -26,8 +28,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   dashboardId,
   onSave,
   onCancel,
-  readOnly = false,
-}) => {
+  readOnly = false}) => {
   const { connections, activeConnectionId } = useConnectionStore();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
@@ -46,7 +47,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       setDashboard(dashboardData);
       setWidgets(dashboardData.widgets || []);
     } catch (error) {
-      message.error(`加载仪表板失败: ${error}`);
+      toast({ title: "错误", description: "加载仪表板失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -62,22 +63,21 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         widgets,
         layout: widgets.map(w => w.layout),
         createdAt: dashboard?.createdAt || new Date(),
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       if (dashboard?.id) {
         await safeTauriInvoke('update_dashboard', { dashboard: dashboardData });
-        message.success('仪表板已更新');
+        toast({ title: "成功", description: "仪表板已更新" });
       } else {
         await safeTauriInvoke('create_dashboard', { dashboard: dashboardData });
-        message.success('仪表板已创建');
+        toast({ title: "成功", description: "仪表板已创建" });
       }
 
       setDashboard(dashboardData);
       setShowDashboardModal(false);
       onSave?.(dashboardData);
     } catch (error) {
-      message.error(`保存仪表板失败: ${error}`);
+      toast({ title: "错误", description: "保存仪表板失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -97,8 +97,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       query: widget.config.query,
       database: widget.config.database,
       connectionId: widget.config.connectionId,
-      refreshInterval: widget.config.refreshInterval,
-    });
+      refreshInterval: widget.config.refreshInterval});
     setShowWidgetModal(true);
   };
 
@@ -113,39 +112,36 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           query: values.query,
           database: values.database,
           connectionId: values.connectionId,
-          refreshInterval: values.refreshInterval || 30,
-        },
+          refreshInterval: values.refreshInterval || 30},
         layout: editingWidget?.layout || {
           x: 0,
           y: 0,
           w: 6,
           h: 4,
           minW: 3,
-          minH: 2,
-        },
+          minH: 2},
         data: null,
-        lastUpdated: new Date(),
-      };
+        lastUpdated: new Date()};
 
       if (editingWidget) {
         setWidgets(prev => prev.map(w => w.id === editingWidget.id ? newWidget : w));
-        message.success('小部件已更新');
+        toast({ title: "成功", description: "小部件已更新" });
       } else {
         setWidgets(prev => [...prev, newWidget]);
-        message.success('小部件已添加');
+        toast({ title: "成功", description: "小部件已添加" });
       }
 
       setShowWidgetModal(false);
       form.resetFields();
     } catch (error) {
-      message.error(`保存小部件失败: ${error}`);
+      toast({ title: "错误", description: "保存小部件失败: ${error}", variant: "destructive" });
     }
   };
 
   // 删除小部件
   const handleDeleteWidget = (widgetId: string) => {
     setWidgets(prev => prev.filter(w => w.id !== widgetId));
-    message.success('小部件已删除');
+    toast({ title: "成功", description: "小部件已删除" });
   };
 
   // 布局变化处理
@@ -195,25 +191,22 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         {
           key: 'edit',
           label: '编辑',
-          icon: <EditOutlined />,
-          onClick: () => handleEditWidget(widget),
-        },
+          icon: <Edit className="w-4 h-4"  />,
+          onClick: () => handleEditWidget(widget)},
         {
           key: 'refresh',
           label: '刷新',
-          icon: <SettingOutlined />,
+          icon: <Settings className="w-4 h-4"  />,
           onClick: () => {
             // 刷新小部件数据
-            message.info('刷新功能开发中...');
-          },
-        },
+            toast({ title: "信息", description: "刷新功能开发中..." });
+          }},
         {
           key: 'delete',
           label: '删除',
-          icon: <DeleteOutlined />,
+          icon: <Trash2 className="w-4 h-4"  />,
           danger: true,
-          onClick: () => handleDeleteWidget(widget.id),
-        },
+          onClick: () => handleDeleteWidget(widget.id)},
       ]}
     />
   );
@@ -230,46 +223,44 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       <div style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Space>
+            <div className="flex gap-2">
               <Title level={4} style={{ margin: 0 }}>
                 {dashboard?.name || '新建仪表板'}
               </Title>
               {dashboard?.description && (
                 <Text type="secondary">{dashboard.description}</Text>
               )}
-            </Space>
+            </div>
           </Col>
           <Col>
-            <Space>
+            <div className="flex gap-2">
               {!readOnly && (
                 <>
                   <Button
                     type="primary"
-                    icon={<PlusOutlined />}
+                    icon={<Plus className="w-4 h-4"  />}
                     onClick={handleAddWidget}
                   >
                     添加小部件
                   </Button>
                   <Button
-                    icon={<SettingOutlined />}
+                    icon={<Settings className="w-4 h-4"  />}
                     onClick={() => {
                       dashboardForm.setFieldsValue({
                         name: dashboard?.name,
-                        description: dashboard?.description,
-                      });
+                        description: dashboard?.description});
                       setShowDashboardModal(true);
                     }}
                   >
                     设置
                   </Button>
                   <Button
-                    icon={<SaveOutlined />}
+                    icon={<Save className="w-4 h-4"  />}
                     onClick={() => {
                       if (dashboard) {
                         handleSaveDashboard({
                           name: dashboard.name,
-                          description: dashboard.description,
-                        });
+                          description: dashboard.description});
                       } else {
                         setShowDashboardModal(true);
                       }
@@ -284,7 +275,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                   {readOnly ? '关闭' : '取消'}
                 </Button>
               )}
-            </Space>
+            </div>
           </Col>
         </Row>
       </div>
@@ -331,7 +322,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             {!readOnly && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddWidget}>
+              <Button type="primary" icon={<Plus className="w-4 h-4"  />} onClick={handleAddWidget}>
                 添加第一个小部件
               </Button>
             )}

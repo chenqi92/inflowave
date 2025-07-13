@@ -62,12 +62,10 @@ export const useConnectionStore = create<ConnectionState>()(
           ...config,
           id,
           createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+          updatedAt: new Date()};
         
         set((state) => ({
-          connections: [...state.connections, newConnection],
-        }));
+          connections: [...state.connections, newConnection]}));
         
         return id;
       },
@@ -79,8 +77,7 @@ export const useConnectionStore = create<ConnectionState>()(
             conn.id === id
               ? { ...conn, ...updates, updatedAt: new Date() }
               : conn
-          ),
-        }));
+          )}));
       },
       
       // 删除连接
@@ -92,8 +89,7 @@ export const useConnectionStore = create<ConnectionState>()(
           return {
             connections: state.connections.filter((conn) => conn.id !== id),
             connectionStatuses: newStatuses,
-            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
-          };
+            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId};
         });
       },
       
@@ -102,9 +98,7 @@ export const useConnectionStore = create<ConnectionState>()(
         set((state) => ({
           connectionStatuses: {
             ...state.connectionStatuses,
-            [id]: status,
-          },
-        }));
+            [id]: status}}));
       },
       
       // 设置活跃连接
@@ -128,8 +122,7 @@ export const useConnectionStore = create<ConnectionState>()(
           connections: [],
           connectionStatuses: {},
           activeConnectionId: null,
-          poolStats: {},
-        });
+          poolStats: {}});
       },
 
       // 连接到数据库
@@ -141,10 +134,7 @@ export const useConnectionStore = create<ConnectionState>()(
               ...state.connectionStatuses,
               [id]: {
                 ...state.connectionStatuses[id],
-                status: 'connecting',
-              },
-            },
-          }));
+                status: 'connecting'}}}));
 
           await safeTauriInvoke('connect_to_database', { connectionId: id });
 
@@ -156,11 +146,8 @@ export const useConnectionStore = create<ConnectionState>()(
                 ...state.connectionStatuses[id],
                 status: 'connected',
                 lastConnected: new Date(),
-                error: undefined,
-              },
-            },
-            activeConnectionId: id,
-          }));
+                error: undefined}},
+            activeConnectionId: id}));
         } catch (error) {
           // 更新状态为错误
           set((state) => ({
@@ -169,10 +156,7 @@ export const useConnectionStore = create<ConnectionState>()(
               [id]: {
                 ...state.connectionStatuses[id],
                 status: 'error',
-                error: String(error),
-              },
-            },
-          }));
+                error: String(error)}}}));
           throw error;
         }
       },
@@ -189,11 +173,8 @@ export const useConnectionStore = create<ConnectionState>()(
               [id]: {
                 ...state.connectionStatuses[id],
                 status: 'disconnected',
-                error: undefined,
-              },
-            },
-            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
-          }));
+                error: undefined}},
+            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId}));
         } catch (error) {
           set((state) => ({
             connectionStatuses: {
@@ -201,10 +182,7 @@ export const useConnectionStore = create<ConnectionState>()(
               [id]: {
                 ...state.connectionStatuses[id],
                 status: 'error',
-                error: String(error),
-              },
-            },
-          }));
+                error: String(error)}}}));
           throw error;
         }
       },
@@ -251,9 +229,7 @@ export const useConnectionStore = create<ConnectionState>()(
           set((state) => ({
             poolStats: {
               ...state.poolStats,
-              [id]: stats,
-            },
-          }));
+              [id]: stats}}));
         } catch (error) {
           console.error('获取连接池统计信息失败:', error);
           throw error;
@@ -265,9 +241,7 @@ export const useConnectionStore = create<ConnectionState>()(
         set((state) => ({
           poolStats: {
             ...state.poolStats,
-            [id]: stats,
-          },
-        }));
+            [id]: stats}}));
       },
 
       // 同步连接到后端
@@ -287,15 +261,12 @@ export const useConnectionStore = create<ConnectionState>()(
           console.error('同步连接到后端失败:', error);
           throw error;
         }
-      },
-    }),
+      }}),
     {
       name: 'influx-gui-connection-store',
       partialize: (state) => ({
         connections: state.connections,
-        activeConnectionId: state.activeConnectionId,
-      }),
-    }
+        activeConnectionId: state.activeConnectionId})}
   )
 );
 
@@ -362,6 +333,4 @@ export const connectionUtils = {
     username: '',
     password: '',
     ssl: false,
-    timeout: 5000,
-  }),
-};
+    timeout: 5000})};

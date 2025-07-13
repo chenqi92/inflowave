@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Button, Form, Input, Select, Row, Col, Typography, Tooltip, Popconfirm, Alert } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DragOutlined, SettingOutlined, SaveOutlined, EyeOutlined, FullscreenOutlined } from '@/components/ui';
+import { Button, Form, Input, Select, Row, Col, Typography, Alert } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Popconfirm
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Plus, Edit, Trash2, Settings, Save, Eye, Maximize, GripVertical } from 'lucide-react';
 import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
 import AdvancedChartLibrary, { ChartType, AdvancedChartConfig } from './AdvancedChartLibrary';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -56,8 +57,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   database,
   onSave,
   onCancel,
-  readOnly = false,
-}) => {
+  readOnly = false}) => {
   const [dashboard, setDashboard] = useState<DashboardConfig>({
     id: dashboardId || `dashboard_${Date.now()}`,
     name: '新仪表盘',
@@ -68,8 +68,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
     autoRefresh: false,
     refreshInterval: 30000,
     createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+    updatedAt: new Date()});
 
   const [editingItem, setEditingItem] = useState<DashboardItem | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
@@ -108,13 +107,11 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         type: 'line',
         title: '新图表',
         data: [],
-        theme: dashboard.theme,
-      },
+        theme: dashboard.theme},
       query: '',
       refreshInterval: 30000,
       data: [],
-      loading: false,
-    };
+      loading: false};
 
     setEditingItem(newItem);
     setShowItemModal(true);
@@ -123,8 +120,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       type: newItem.type,
       chartType: newItem.chartConfig?.type,
       query: newItem.query,
-      refreshInterval: newItem.refreshInterval,
-    });
+      refreshInterval: newItem.refreshInterval});
   }, [dashboard.theme, form]);
 
   // 编辑仪表盘项目
@@ -136,8 +132,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       type: item.type,
       chartType: item.chartConfig?.type,
       query: item.query,
-      refreshInterval: item.refreshInterval,
-    });
+      refreshInterval: item.refreshInterval});
   }, [form]);
 
   // 删除仪表盘项目
@@ -145,8 +140,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
     setDashboard(prev => ({
       ...prev,
       items: prev.items.filter(item => item.id !== itemId),
-      layout: prev.layout.filter(layout => layout.i !== itemId),
-    }));
+      layout: prev.layout.filter(layout => layout.i !== itemId)}));
   }, []);
 
   // 保存仪表盘项目
@@ -165,9 +159,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         chartConfig: {
           ...editingItem.chartConfig,
           type: values.chartType,
-          title: values.title,
-        },
-      };
+          title: values.title}};
 
       // 如果是新项目，添加到仪表盘
       if (!dashboard.items.find(item => item.id === editingItem.id)) {
@@ -178,22 +170,19 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           w: 12,
           h: 8,
           minW: 4,
-          minH: 4,
-        };
+          minH: 4};
 
         setDashboard(prev => ({
           ...prev,
           items: [...prev.items, updatedItem],
-          layout: [...prev.layout, newLayout],
-        }));
+          layout: [...prev.layout, newLayout]}));
       } else {
         // 更新现有项目
         setDashboard(prev => ({
           ...prev,
           items: prev.items.map(item => 
             item.id === editingItem.id ? updatedItem : item
-          ),
-        }));
+          )}));
       }
 
       // 如果有查询，执行查询获取数据
@@ -205,9 +194,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       setEditingItem(null);
       form.resetFields();
       
-      message.success('项目保存成功');
+      toast({ title: "成功", description: "项目保存成功" });
     } catch (error) {
-      message.error('保存失败');
+      toast({ title: "错误", description: "保存失败", variant: "destructive" });
     }
   }, [editingItem, dashboard.items, form]);
 
@@ -217,15 +206,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       ...prev,
       items: prev.items.map(item =>
         item.id === itemId ? { ...item, loading: true, error: undefined } : item
-      ),
-    }));
+      )}));
 
     try {
       const result = await safeTauriInvoke('execute_query', {
         connectionId,
         database,
-        query,
-      });
+        query});
 
       const data = result.data || [];
 
@@ -240,12 +227,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                 lastUpdated: new Date(),
                 chartConfig: {
                   ...item.chartConfig,
-                  data,
-                },
-              }
+                  data}}
             : item
-        ),
-      }));
+        )}));
     } catch (error) {
       setDashboard(prev => ({
         ...prev,
@@ -253,8 +237,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           item.id === itemId
             ? { ...item, loading: false, error: String(error) }
             : item
-        ),
-      }));
+        )}));
     }
   }, [connectionId, database]);
 
@@ -271,8 +254,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   const handleLayoutChange = useCallback((layout: Layout[]) => {
     setDashboard(prev => ({
       ...prev,
-      layout,
-    }));
+      layout}));
   }, []);
 
   // 保存仪表盘
@@ -280,12 +262,10 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
     try {
       const updatedDashboard = {
         ...dashboard,
-        updatedAt: new Date(),
-      };
+        updatedAt: new Date()};
 
       await safeTauriInvoke('save_dashboard', {
-        dashboard: updatedDashboard,
-      });
+        dashboard: updatedDashboard});
 
       setDashboard(updatedDashboard);
       
@@ -293,9 +273,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         onSave(updatedDashboard);
       }
 
-      message.success('仪表盘保存成功');
+      toast({ title: "成功", description: "仪表盘保存成功" });
     } catch (error) {
-      message.error('保存失败');
+      toast({ title: "错误", description: "保存失败", variant: "destructive" });
     }
   }, [dashboard, onSave]);
 
@@ -307,8 +287,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       description: dashboard.description,
       theme: dashboard.theme,
       autoRefresh: dashboard.autoRefresh,
-      refreshInterval: dashboard.refreshInterval,
-    });
+      refreshInterval: dashboard.refreshInterval});
   }, [dashboard, settingsForm]);
 
   // 保存仪表盘设置
@@ -322,13 +301,12 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         description: values.description,
         theme: values.theme,
         autoRefresh: values.autoRefresh,
-        refreshInterval: values.refreshInterval,
-      }));
+        refreshInterval: values.refreshInterval}));
 
       setShowSettingsModal(false);
-      message.success('设置保存成功');
+      toast({ title: "成功", description: "设置保存成功" });
     } catch (error) {
-      message.error('设置保存失败');
+      toast({ title: "错误", description: "设置保存失败", variant: "destructive" });
     }
   }, [settingsForm]);
 
@@ -340,12 +318,12 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           <div className="flex justify-between items-center mb-2">
             <Text strong>{item.title}</Text>
             {!readOnly && !previewMode && (
-              <Space>
+              <div className="flex gap-2">
                 <Tooltip title="编辑">
                   <Button
                     type="text"
                     size="small"
-                    icon={<EditOutlined />}
+                    icon={<Edit className="w-4 h-4"  />}
                     onClick={() => editDashboardItem(item)}
                   />
                 </Tooltip>
@@ -357,12 +335,12 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                     <Button
                       type="text"
                       size="small"
-                      icon={<DeleteOutlined />}
+                      icon={<Trash2 className="w-4 h-4"  />}
                       danger
                     />
                   </Tooltip>
                 </Popconfirm>
-              </Space>
+              </div>
             )}
           </div>
           
@@ -399,17 +377,17 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         <Title level={4}>{dashboard.name}</Title>
         <Text type="secondary">{dashboard.description}</Text>
       </div>
-      <Space>
+      <div className="flex gap-2">
         {!readOnly && (
           <>
             <Button
-              icon={<PlusOutlined />}
+              icon={<Plus className="w-4 h-4"  />}
               onClick={addDashboardItem}
             >
               添加项目
             </Button>
             <Button
-              icon={<SettingOutlined />}
+              icon={<Settings className="w-4 h-4"  />}
               onClick={openDashboardSettings}
             >
               设置
@@ -417,32 +395,32 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           </>
         )}
         <Button
-          icon={<EyeOutlined />}
+          icon={<Eye className="w-4 h-4"  />}
           onClick={() => setPreviewMode(!previewMode)}
         >
           {previewMode ? '编辑模式' : '预览模式'}
         </Button>
         <Button
-          icon={<ReloadOutlined />}
+          icon={<RefreshCw className="w-4 h-4"  />}
           onClick={refreshAllItems}
           loading={dashboard.items.some(item => item.loading)}
         >
           刷新
         </Button>
         <Button
-          icon={<SaveOutlined />}
+          icon={<Save className="w-4 h-4"  />}
           type="primary"
           onClick={saveDashboard}
         >
           保存
         </Button>
         <Button
-          icon={<FullscreenOutlined />}
+          icon={<Maximize className="w-4 h-4"  />}
           onClick={() => setFullscreen(!fullscreen)}
         >
           全屏
         </Button>
-      </Space>
+      </div>
     </div>
   );
 

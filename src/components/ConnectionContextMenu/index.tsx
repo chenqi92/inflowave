@@ -1,7 +1,7 @@
 import React from 'react';
-import { Menu } from 'antd';
-import { Modal, message } from '@/components/ui';
-import { WifiOutlined, DisconnectOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, DatabaseOutlined, ExportOutlined } from '@/components/ui';
+import { Menu } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Wifi, Unlink, Edit, Trash2, Eye, RefreshCw, Database, FileDown } from 'lucide-react';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
@@ -21,14 +21,12 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   status,
   onEdit,
   onViewStats,
-  onClose,
-}) => {
+  onClose}) => {
   const {
     connectToDatabase,
     disconnectFromDatabase,
     removeConnection,
-    refreshAllStatuses,
-  } = useConnectionStore();
+    refreshAllStatuses} = useConnectionStore();
 
   const isConnected = status?.status === 'connected';
   const isConnecting = status?.status === 'connecting';
@@ -36,9 +34,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleConnect = async () => {
     try {
       await connectToDatabase(connection.id!);
-      message.success(`已连接到 ${connection.name}`);
+      toast({ title: "成功", description: "已连接到 ${connection.name}" });
     } catch (error) {
-      message.error(`连接失败: ${error}`);
+      toast({ title: "错误", description: "连接失败: ${error}", variant: "destructive" });
     }
     onClose?.();
   };
@@ -46,9 +44,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleDisconnect = async () => {
     try {
       await disconnectFromDatabase(connection.id!);
-      message.success(`已断开 ${connection.name}`);
+      toast({ title: "成功", description: "已断开 ${connection.name}" });
     } catch (error) {
-      message.error(`断开连接失败: ${error}`);
+      toast({ title: "错误", description: "断开连接失败: ${error}", variant: "destructive" });
     }
     onClose?.();
   };
@@ -57,12 +55,12 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     try {
       const result = await safeTauriInvoke('test_connection', { connectionId: connection.id });
       if (result) {
-        message.success('连接测试成功');
+        toast({ title: "成功", description: "连接测试成功" });
       } else {
-        message.error('连接测试失败');
+        toast({ title: "错误", description: "连接测试失败", variant: "destructive" });
       }
     } catch (error) {
-      message.error(`连接测试失败: ${error}`);
+      toast({ title: "错误", description: "连接测试失败: ${error}", variant: "destructive" });
     }
     onClose?.();
   };
@@ -76,25 +74,24 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       cancelText: '取消',
       onOk: () => {
         removeConnection(connection.id!);
-        message.success('连接已删除');
+        toast({ title: "成功", description: "连接已删除" });
         onClose?.();
-      },
-    });
+      }});
   };
 
   const handleRefreshStatus = async () => {
     try {
       await refreshAllStatuses();
-      message.success('状态已刷新');
+      toast({ title: "成功", description: "状态已刷新" });
     } catch (error) {
-      message.error(`刷新状态失败: ${error}`);
+      toast({ title: "错误", description: "刷新状态失败: ${error}", variant: "destructive" });
     }
     onClose?.();
   };
 
   const handleViewDatabases = async () => {
     if (!isConnected) {
-      message.warning('请先连接到数据库');
+      toast({ title: "警告", description: "请先连接到数据库" });
       return;
     }
 
@@ -112,10 +109,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
             </ul>
           </div>
         ),
-        width: 500,
-      });
+        width: 500});
     } catch (error) {
-      message.error(`获取数据库列表失败: ${error}`);
+      toast({ title: "错误", description: "获取数据库列表失败: ${error}", variant: "destructive" });
     }
     onClose?.();
   };
@@ -138,7 +134,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    message.success('配置已导出');
+    toast({ title: "成功", description: "配置已导出" });
     onClose?.();
   };
 
@@ -151,35 +147,29 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       children: [
         {
           key: 'connect',
-          icon: <WifiOutlined />,
+          icon: <Wifi className="w-4 h-4"  />,
           label: '连接',
           disabled: isConnected || isConnecting,
-          onClick: handleConnect,
-        },
+          onClick: handleConnect},
         {
           key: 'disconnect',
-          icon: <DisconnectOutlined />,
+          icon: <Unlink className="w-4 h-4"  />,
           label: '断开连接',
           disabled: !isConnected,
-          onClick: handleDisconnect,
-        },
+          onClick: handleDisconnect},
         {
           key: 'test',
-          icon: <ReloadOutlined />,
+          icon: <RefreshCw className="w-4 h-4"  />,
           label: '测试连接',
-          onClick: handleTestConnection,
-        },
+          onClick: handleTestConnection},
         {
           key: 'refresh',
-          icon: <ReloadOutlined />,
+          icon: <RefreshCw className="w-4 h-4"  />,
           label: '刷新状态',
-          onClick: handleRefreshStatus,
-        },
-      ],
-    },
+          onClick: handleRefreshStatus},
+      ]},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     // 数据库操作
     {
       key: 'database-group',
@@ -188,26 +178,22 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       children: [
         {
           key: 'view-databases',
-          icon: <DatabaseOutlined />,
+          icon: <Database className="w-4 h-4"  />,
           label: '查看数据库',
           disabled: !isConnected,
-          onClick: handleViewDatabases,
-        },
+          onClick: handleViewDatabases},
         {
           key: 'view-stats',
-          icon: <EyeOutlined />,
+          icon: <Eye className="w-4 h-4"  />,
           label: '连接池统计',
           disabled: !isConnected,
           onClick: () => {
             onViewStats?.(connection.id!);
             onClose?.();
-          },
-        },
-      ],
-    },
+          }},
+      ]},
     {
-      type: 'divider',
-    },
+      type: 'divider'},
     // 管理操作
     {
       key: 'management-group',
@@ -216,28 +202,24 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       children: [
         {
           key: 'edit',
-          icon: <EditOutlined />,
+          icon: <Edit className="w-4 h-4"  />,
           label: '编辑连接',
           onClick: () => {
             onEdit?.(connection);
             onClose?.();
-          },
-        },
+          }},
         {
           key: 'export',
-          icon: <ExportOutlined />,
+          icon: <FileDown className="w-4 h-4"  />,
           label: '导出配置',
-          onClick: handleExportConfig,
-        },
+          onClick: handleExportConfig},
         {
           key: 'delete',
-          icon: <DeleteOutlined />,
+          icon: <Trash2 className="w-4 h-4"  />,
           label: '删除连接',
           danger: true,
-          onClick: handleDelete,
-        },
-      ],
-    },
+          onClick: handleDelete},
+      ]},
   ];
 
   return (

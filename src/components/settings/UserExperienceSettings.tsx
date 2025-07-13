@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Divider, Tooltip } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
-import { SettingOutlined, EyeOutlined, SaveOutlined, ReloadOutlined, EditOutlined, PlusOutlined, KeyOutlined, BellOutlined, LayoutOutlined } from '@/components/ui';
+import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio } from '@/components/ui';
+, Tooltip
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
+import { LayoutOutlined } from '@/components/ui';
+import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { 
   UserPreferences, 
@@ -18,8 +22,7 @@ interface UserExperienceSettingsProps {
 }
 
 const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
-  onSettingsChange,
-}) => {
+  onSettingsChange}) => {
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [editingShortcut, setEditingShortcut] = useState<KeyboardShortcut | null>(null);
@@ -37,11 +40,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         form.setFieldsValue({
           notifications: prefs.notifications,
           accessibility: prefs.accessibility,
-          workspace: prefs.workspace,
-        });
+          workspace: prefs.workspace});
       }
     } catch (error) {
-      message.error(`加载用户偏好失败: ${error}`);
+      toast({ title: "错误", description: "加载用户偏好失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -54,15 +56,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         ...preferences!,
         notifications: values.notifications,
         accessibility: values.accessibility,
-        workspace: values.workspace,
-      };
+        workspace: values.workspace};
 
       await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
       onSettingsChange?.(updatedPreferences);
-      message.success('设置已保存');
+      toast({ title: "成功", description: "设置已保存" });
     } catch (error) {
-      message.error(`保存设置失败: ${error}`);
+      toast({ title: "错误", description: "保存设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -75,11 +76,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       form.setFieldsValue({
         notifications: defaultPrefs.notifications,
         accessibility: defaultPrefs.accessibility,
-        workspace: defaultPrefs.workspace,
-      });
-      message.success('已重置为默认设置');
+        workspace: defaultPrefs.workspace});
+      toast({ title: "成功", description: "已重置为默认设置" });
     } catch (error) {
-      message.error(`重置设置失败: ${error}`);
+      toast({ title: "错误", description: "重置设置失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -92,14 +92,13 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       
       const updatedPreferences = {
         ...preferences!,
-        shortcuts: updatedShortcuts,
-      };
+        shortcuts: updatedShortcuts};
 
       await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
-      message.success('快捷键已更新');
+      toast({ title: "成功", description: "快捷键已更新" });
     } catch (error) {
-      message.error(`更新快捷键失败: ${error}`);
+      toast({ title: "错误", description: "更新快捷键失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -117,28 +116,25 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
             {record.description}
           </Text>
         </div>
-      ),
-    },
+      )},
     {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
       width: 120,
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
-    },
+      render: (category: string) => <Tag color="blue">{category}</Tag>},
     {
       title: '快捷键',
       dataIndex: 'keys',
       key: 'keys',
       width: 200,
       render: (keys: string[]) => (
-        <Space>
+        <div className="flex gap-2">
           {keys.map((key, index) => (
             <Tag key={index} color="orange">{key}</Tag>
           ))}
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '状态',
       dataIndex: 'enabled',
@@ -148,8 +144,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         <Tag color={enabled ? 'green' : 'red'}>
           {enabled ? '启用' : '禁用'}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '操作',
       key: 'actions',
@@ -157,21 +152,19 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       render: (_: any, record: KeyboardShortcut) => (
         <Button
           type="text"
-          icon={<EditOutlined />}
+          icon={<Edit className="w-4 h-4"  />}
           onClick={() => {
             setEditingShortcut(record);
             shortcutForm.setFieldsValue({
               keys: record.keys.join('+'),
-              enabled: record.enabled,
-            });
+              enabled: record.enabled});
             setShowShortcutModal(true);
           }}
           size="small"
         >
           编辑
         </Button>
-      ),
-    },
+      )},
   ];
 
   useEffect(() => {
@@ -186,25 +179,25 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
     <div style={{ padding: '16px' }}>
       <Card
         title={
-          <Space>
-            <SettingOutlined />
+          <div className="flex gap-2">
+            <Settings className="w-4 h-4"  />
             <span>用户体验设置</span>
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             <Button onClick={resetToDefaults}>
               重置默认
             </Button>
             <Button
               type="primary"
-              icon={<SaveOutlined />}
+              icon={<Save className="w-4 h-4"  />}
               onClick={() => form.submit()}
               loading={loading}
             >
               保存设置
             </Button>
-          </Space>
+          </div>
         }
       >
         <Form
@@ -214,18 +207,17 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
           initialValues={{
             notifications: preferences.notifications,
             accessibility: preferences.accessibility,
-            workspace: preferences.workspace,
-          }}
+            workspace: preferences.workspace}}
         >
           <Tabs
             items={[
               {
                 key: 'shortcuts',
                 label: (
-                  <Space>
-                    <KeyOutlined />
+                  <div className="flex gap-2">
+                    <Key className="w-4 h-4"  />
                     快捷键
-                  </Space>
+                  </div>
                 ),
                 children: (
                   <div>
@@ -242,15 +234,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                       size="small"
                     />
                   </div>
-                ),
-              },
+                )},
               {
                 key: 'notifications',
                 label: (
-                  <Space>
-                    <BellOutlined />
+                  <div className="flex gap-2">
+                    <Bell className="w-4 h-4"  />
                     通知设置
-                  </Space>
+                  </div>
                 ),
                 children: (
                   <Row gutter={[24, 16]}>
@@ -317,15 +308,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                       </Form.Item>
                     </Col>
                   </Row>
-                ),
-              },
+                )},
               {
                 key: 'accessibility',
                 label: (
-                  <Space>
-                    <EyeOutlined />
+                  <div className="flex gap-2">
+                    <Eye className="w-4 h-4"  />
                     无障碍
-                  </Space>
+                  </div>
                 ),
                 children: (
                   <Row gutter={[24, 16]}>
@@ -376,15 +366,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                       </Form.Item>
                     </Col>
                   </Row>
-                ),
-              },
+                )},
               {
                 key: 'workspace',
                 label: (
-                  <Space>
+                  <div className="flex gap-2">
                     <LayoutOutlined />
                     工作区
-                  </Space>
+                  </div>
                 ),
                 children: (
                   <Row gutter={[24, 16]}>
@@ -426,8 +415,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                       </Form.Item>
                     </Col>
                   </Row>
-                ),
-              },
+                )},
             ]}
           />
         </Form>
@@ -453,8 +441,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               const updatedShortcut: KeyboardShortcut = {
                 ...editingShortcut,
                 keys: values.keys.split('+').map((k: string) => k.trim()),
-                enabled: values.enabled,
-              };
+                enabled: values.enabled};
               updateShortcut(updatedShortcut);
               setShowShortcutModal(false);
               setEditingShortcut(null);

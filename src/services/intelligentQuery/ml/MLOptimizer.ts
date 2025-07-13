@@ -151,8 +151,7 @@ export class MLOptimizer {
         confidence: finalPrediction.confidence,
         techniques: finalPrediction.techniques,
         reasoning: finalPrediction.reasoning,
-        alternatives,
-      };
+        alternatives};
     } catch (error) {
       console.error('ML optimization failed:', error);
       
@@ -162,8 +161,7 @@ export class MLOptimizer {
         confidence: 0.3,
         techniques: [],
         reasoning: ['ML optimization failed, using fallback'],
-        alternatives: [],
-      };
+        alternatives: []};
     }
   }
 
@@ -269,11 +267,9 @@ export class MLOptimizer {
       features: ['queryLength', 'tableCount', 'joinCount', 'complexityScore'],
       hyperparameters: {
         learningRate: 0.01,
-        regularization: 0.1,
-      },
+        regularization: 0.1},
       lastTrained: new Date(),
-      isActive: true,
-    });
+      isActive: true});
 
     // 随机森林模型 - 用于优化策略分类
     this.models.set('random_forest', {
@@ -287,11 +283,9 @@ export class MLOptimizer {
       hyperparameters: {
         nEstimators: 100,
         maxDepth: 10,
-        minSamplesSplit: 2,
-      },
+        minSamplesSplit: 2},
       lastTrained: new Date(),
-      isActive: true,
-    });
+      isActive: true});
 
     // 神经网络模型 - 用于复杂查询优化
     this.models.set('neural_network', {
@@ -306,11 +300,9 @@ export class MLOptimizer {
         hiddenLayers: [64, 32, 16],
         activation: 'relu',
         optimizer: 'adam',
-        learningRate: 0.001,
-      },
+        learningRate: 0.001},
       lastTrained: new Date(),
-      isActive: true,
-    });
+      isActive: true});
 
     // 强化学习模型 - 用于动态优化策略
     this.models.set('reinforcement_learning', {
@@ -324,8 +316,7 @@ export class MLOptimizer {
       hyperparameters: {
         algorithm: 'PPO',
         gamma: 0.99,
-        epsilon: 0.2,
-      },
+        epsilon: 0.2},
       lastTrained: new Date(),
       isActive: false, // 需要更多数据才能激活
     });
@@ -369,8 +360,7 @@ export class MLOptimizer {
         confidence: prediction.confidence,
         techniques: prediction.techniques,
         reasoning: [`Optimized using ${model.name}`, ...prediction.reasoning],
-        alternatives: [],
-      };
+        alternatives: []};
     } catch (error) {
       console.error(`Prediction failed for model ${model.id}:`, error);
       
@@ -379,8 +369,7 @@ export class MLOptimizer {
         confidence: 0.1,
         techniques: [],
         reasoning: [`Model ${model.name} failed`],
-        alternatives: [],
-      };
+        alternatives: []};
     }
   }
 
@@ -432,8 +421,7 @@ export class MLOptimizer {
         description: 'Machine learning recommended optimal indexes',
         impact: 'high',
         appliedTo: ['WHERE clauses'],
-        estimatedGain: 45,
-      });
+        estimatedGain: 45});
     }
 
     if (features.joinCount > 2) {
@@ -442,8 +430,7 @@ export class MLOptimizer {
         description: 'ML-optimized join order and strategy',
         impact: 'high',
         appliedTo: ['JOIN clauses'],
-        estimatedGain: 35,
-      });
+        estimatedGain: 35});
     }
 
     return {
@@ -451,8 +438,7 @@ export class MLOptimizer {
       confidence: model.accuracy,
       techniques,
       reasoning: ['Regression model predicted optimal execution path'],
-      alternatives: [],
-    };
+      alternatives: []};
   }
 
   /**
@@ -477,8 +463,7 @@ export class MLOptimizer {
           description: 'ML-driven intelligent indexing strategy',
           impact: 'high',
           appliedTo: ['Index selection'],
-          estimatedGain: 50,
-        });
+          estimatedGain: 50});
         break;
       case 'join_reordering':
         techniques.push({
@@ -486,8 +471,7 @@ export class MLOptimizer {
           description: 'ML-optimized join execution order',
           impact: 'medium',
           appliedTo: ['JOIN execution'],
-          estimatedGain: 30,
-        });
+          estimatedGain: 30});
         break;
       case 'aggregation_pushdown':
         techniques.push({
@@ -495,8 +479,7 @@ export class MLOptimizer {
           description: 'ML-guided aggregation optimization',
           impact: 'medium',
           appliedTo: ['GROUP BY, HAVING'],
-          estimatedGain: 25,
-        });
+          estimatedGain: 25});
         break;
     }
 
@@ -505,8 +488,7 @@ export class MLOptimizer {
       confidence: model.accuracy,
       techniques,
       reasoning: [`Classification model selected ${selectedStrategy} strategy`],
-      alternatives: [],
-    };
+      alternatives: []};
   }
 
   /**
@@ -526,16 +508,14 @@ export class MLOptimizer {
       description: 'Reinforcement learning adaptive optimization',
       impact: 'high',
       appliedTo: ['Execution strategy'],
-      estimatedGain: 40,
-    }];
+      estimatedGain: 40}];
 
     return {
       optimizedQuery: originalQuery,
       confidence: model.accuracy,
       techniques,
       reasoning: [`RL model selected ${selectedAction} as optimal action`],
-      alternatives: [],
-    };
+      alternatives: []};
   }
 
   /**
@@ -553,16 +533,14 @@ export class MLOptimizer {
       alternatives.push({
         query: originalQuery, // 这里应该是实际的替代查询
         score: 0.8,
-        tradeoffs: ['Higher accuracy', 'Slightly slower execution'],
-      });
+        tradeoffs: ['Higher accuracy', 'Slightly slower execution']});
     }
 
     if (features.joinCount > 1) {
       alternatives.push({
         query: originalQuery, // 这里应该是实际的替代查询
         score: 0.7,
-        tradeoffs: ['Better memory usage', 'May require more CPU'],
-      });
+        tradeoffs: ['Better memory usage', 'May require more CPU']});
     }
 
     return alternatives;
@@ -594,8 +572,7 @@ export class MLOptimizer {
     return {
       trainSet: data.slice(0, trainSize),
       validSet: data.slice(trainSize, trainSize + validSize),
-      testSet: data.slice(trainSize + validSize),
-    };
+      testSet: data.slice(trainSize + validSize)};
   }
 
   /**
@@ -714,8 +691,7 @@ class FeatureExtractor {
       queryFrequency: 0,
       avgPerformance: 0,
       lastOptimization: 0,
-      userPreference: 0,
-    };
+      userPreference: 0};
   }
 
   async extractBatch(data: MLTrainingData[]): Promise<FeatureVector[]> {
@@ -745,8 +721,7 @@ class FeatureExtractor {
         queryFrequency: 1, // 简化
         avgPerformance: item.performance.executionTime,
         lastOptimization: Date.now() - item.timestamp.getTime(),
-        userPreference: item.feedback.rating,
-      };
+        userPreference: item.feedback.rating};
       
       features.push(feature);
     }
@@ -781,8 +756,7 @@ class ModelEvaluator {
       f1Score: Math.random() * 0.2 + 0.7,
       mse: Math.random() * 0.1 + 0.05,
       mae: Math.random() * 0.1 + 0.05,
-      r2Score: Math.random() * 0.2 + 0.7,
-    };
+      r2Score: Math.random() * 0.2 + 0.7};
 
     this.metrics.set(model.id, metrics);
     return metrics;
@@ -832,8 +806,7 @@ class EnsembleStrategy {
       confidence: weightedConfidence / totalWeight,
       techniques: this.mergeTechniques(allTechniques),
       reasoning: [...new Set(allReasoning)],
-      alternatives: [],
-    };
+      alternatives: []};
   }
 
   async updateWeights(models: MLModel[]): Promise<void> {

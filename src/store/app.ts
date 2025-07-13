@@ -31,8 +31,7 @@ const defaultConfig: AppConfig = {
   maxQueryResults: 10000,
   autoSave: true,
   autoConnect: false,
-  logLevel: 'info',
-};
+  logLevel: 'info'};
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -46,15 +45,13 @@ export const useAppStore = create<AppState>()(
       // 设置配置
       setConfig: (newConfig) => {
         set((state) => ({
-          config: { ...state.config, ...newConfig },
-        }));
+          config: { ...state.config, ...newConfig }}));
       },
       
       // 设置主题
       setTheme: (theme) => {
         set((state) => ({
-          config: { ...state.config, theme },
-        }));
+          config: { ...state.config, theme }}));
         
         // 更新 HTML 类名以支持 CSS 主题切换
         const root = document.documentElement;
@@ -76,8 +73,7 @@ export const useAppStore = create<AppState>()(
       // 设置语言
       setLanguage: (language) => {
         set((state) => ({
-          config: { ...state.config, language },
-        }));
+          config: { ...state.config, language }}));
       },
       
       // 设置侧边栏折叠状态
@@ -98,16 +94,13 @@ export const useAppStore = create<AppState>()(
       // 重置配置
       resetConfig: () => {
         set({ config: defaultConfig });
-      },
-    }),
+      }}),
     {
       name: 'inflowave-app-store',
       partialize: (state) => ({
         config: state.config,
         sidebarCollapsed: state.sidebarCollapsed,
-        currentConnectionId: state.currentConnectionId,
-      }),
-    }
+        currentConnectionId: state.currentConnectionId})}
   )
 );
 

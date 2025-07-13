@@ -1,7 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Divider, Slider } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
-import { SettingOutlined, EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ControlOutlined, NotificationOutlined, LayoutOutlined } from '@/components/ui';
+import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Slider } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+
+import { NotificationOutlined, LayoutOutlined } from '@/components/ui';
+import { Settings, Eye, Edit, Trash2, Plus } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 
@@ -25,7 +28,7 @@ const UserPreferencesComponent: React.FC = () => {
       form.setFieldsValue(result);
     } catch (error) {
       console.error('加载用户偏好失败:', error);
-      message.error('加载用户偏好失败');
+      toast({ title: "错误", description: "加载用户偏好失败", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -38,10 +41,10 @@ const UserPreferencesComponent: React.FC = () => {
       const updatedPreferences = { ...preferences, ...values };
       await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
-      message.success('偏好设置已保存');
+      toast({ title: "成功", description: "偏好设置已保存" });
     } catch (error) {
       console.error('保存用户偏好失败:', error);
-      message.error('保存用户偏好失败');
+      toast({ title: "错误", description: "保存用户偏好失败", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -58,7 +61,7 @@ const UserPreferencesComponent: React.FC = () => {
       }
     } catch (error) {
       console.error('加载默认快捷键失败:', error);
-      message.error('加载默认快捷键失败');
+      toast({ title: "错误", description: "加载默认快捷键失败", variant: "destructive" });
     }
   };
 
@@ -89,31 +92,27 @@ const UserPreferencesComponent: React.FC = () => {
     {
       title: '名称',
       dataIndex: 'name',
-      key: 'name',
-    },
+      key: 'name'},
     {
       title: '描述',
       dataIndex: 'description',
-      key: 'description',
-    },
+      key: 'description'},
     {
       title: '快捷键',
       dataIndex: 'keys',
       key: 'keys',
       render: (keys: string[]) => (
-        <Space>
+        <div className="flex gap-2">
           {keys.map((key, index) => (
             <Tag key={index}>{key}</Tag>
           ))}
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
-      render: (category: string) => <Tag color="blue">{category}</Tag>,
-    },
+      render: (category: string) => <Tag color="blue">{category}</Tag>},
     {
       title: '状态',
       dataIndex: 'enabled',
@@ -122,22 +121,20 @@ const UserPreferencesComponent: React.FC = () => {
         <Tag color={enabled ? 'green' : 'red'}>
           {enabled ? '启用' : '禁用'}
         </Tag>
-      ),
-    },
+      )},
     {
       title: '操作',
       key: 'actions',
       render: (record: KeyboardShortcut) => (
-        <Space>
+        <div className="flex gap-2">
           <Button
             type="text"
             size="small"
-            icon={<EditOutlined />}
+            icon={<Edit className="w-4 h-4"  />}
             onClick={() => editShortcut(record)}
           />
-        </Space>
-      ),
-    },
+        </div>
+      )},
   ];
 
   useEffect(() => {
@@ -229,7 +226,7 @@ const UserPreferencesComponent: React.FC = () => {
 
         {/* 无障碍设置 */}
         <Card 
-          title={<><EyeOutlined /> 无障碍设置</>} 
+          title={<><Eye className="w-4 h-4"  /> 无障碍设置</>} 
           className="mb-6 shadow-sm hover:shadow-md transition-shadow"
           extra={<Typography.Text type="secondary">优化界面可访问性</Typography.Text>}
         >
@@ -308,15 +305,15 @@ const UserPreferencesComponent: React.FC = () => {
 
         {/* 键盘快捷键 */}
         <Card
-          title={<><ControlOutlined /> 键盘快捷键</>}
-          className="mb-6 shadow-sm hover:shadow-md transition-shadow"
+          title={<><Settings /> 键盘快捷键</>}
+          className="mb-6 shadow-sm hover:shadow-md transition-shadow flex gap-2"
           extra={
-            <Space>
+            <div >
               <Typography.Text type="secondary">自定义快捷键</Typography.Text>
               <Button onClick={loadDefaultShortcuts} size="small">
                 重置为默认
               </Button>
-            </Space>
+            </div>
           }
         >
           <Table
@@ -331,14 +328,14 @@ const UserPreferencesComponent: React.FC = () => {
         {/* 保存按钮 */}
         <div className="pt-6 border-t border-gray-200">
           <div className="flex justify-end">
-            <Space size="large">
+            <div className="flex gap-2" size="large">
               <Button onClick={() => form.resetFields()} size="large">
                 重置
               </Button>
-              <Button type="primary" htmlType="submit" loading={loading} size="large" icon={<SettingOutlined />}>
+              <Button type="primary" htmlType="submit" loading={loading} size="large" icon={<Settings className="w-4 h-4"  />}>
                 保存设置
               </Button>
-            </Space>
+            </div>
           </div>
         </div>
       </Form>

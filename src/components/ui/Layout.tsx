@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 
 // Layout component
 export interface LayoutProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -23,7 +23,6 @@ const Layout = forwardRef<HTMLDivElement, LayoutProps>(
     );
   }
 );
-
 Layout.displayName = 'Layout';
 
 // Header component
@@ -35,7 +34,7 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
       <header
         ref={ref}
         className={cn(
-          'bg-white border-b border-gray-200 px-6 py-4',
+          'flex items-center justify-between px-4 py-2 border-b bg-background',
           className
         )}
         {...props}
@@ -45,62 +44,58 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
     );
   }
 );
-
 Header.displayName = 'Header';
 
 // Sider component
 export interface SiderProps extends React.HTMLAttributes<HTMLDivElement> {
   collapsed?: boolean;
-  collapsible?: boolean;
   width?: number | string;
   collapsedWidth?: number | string;
+  trigger?: React.ReactNode;
+  collapsible?: boolean;
   onCollapse?: (collapsed: boolean) => void;
 }
 
 const Sider = forwardRef<HTMLDivElement, SiderProps>(
   ({ 
     className, 
-    collapsed = false, 
-    collapsible = false,
-    width = 280,
-    collapsedWidth = 100,
-    onCollapse,
     children, 
+    collapsed = false,
+    width = 200,
+    collapsedWidth = 80,
+    trigger,
+    collapsible = false,
+    onCollapse,
     ...props 
   }, ref) => {
     const currentWidth = collapsed ? collapsedWidth : width;
-    
+    const widthStyle = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
+
     return (
-      <div
+      <aside
         ref={ref}
         className={cn(
-          'bg-gray-50 border-r border-gray-200 transition-all duration-200',
+          'bg-white border-r border-gray-200 h-full transition-all duration-200 flex flex-col',
           className
         )}
-        style={{ width: typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth }}
+        style={{ width: widthStyle }}
         {...props}
       >
-        {children}
-        {collapsible && (
-          <button
-            className="absolute bottom-4 right-4 p-2 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-50"
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
+        {collapsible && trigger && (
+          <div 
+            className="border-t p-2 cursor-pointer hover:bg-gray-50"
             onClick={() => onCollapse?.(!collapsed)}
           >
-            <svg
-              className={cn('w-4 h-4 transition-transform', collapsed && 'rotate-180')}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+            {trigger}
+          </div>
         )}
-      </div>
+      </aside>
     );
   }
 );
-
 Sider.displayName = 'Sider';
 
 // Content component
@@ -112,7 +107,7 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(
       <main
         ref={ref}
         className={cn(
-          'flex-1 p-6 bg-gray-50 overflow-auto',
+          'flex-1 overflow-auto bg-background',
           className
         )}
         {...props}
@@ -122,7 +117,6 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(
     );
   }
 );
-
 Content.displayName = 'Content';
 
 // Footer component
@@ -134,7 +128,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'bg-white border-t border-gray-200 px-6 py-4 text-center text-gray-600',
+          'border-t bg-background px-4 py-2',
           className
         )}
         {...props}
@@ -144,13 +138,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
     );
   }
 );
-
 Footer.displayName = 'Footer';
 
-// Attach sub-components to Layout
-Layout.Header = Header;
-Layout.Sider = Sider;
-Layout.Content = Content;
-Layout.Footer = Footer;
-
 export { Layout, Header, Sider, Content, Footer };
+export type { LayoutProps, HeaderProps, SiderProps, ContentProps, FooterProps };

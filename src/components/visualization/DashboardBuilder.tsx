@@ -1,17 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Button, Tooltip, Form, Input, Select, Empty } from 'antd';
-import { Card, Space, Modal, Grid } from '@/components/ui';
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  DragOutlined,
-  SaveOutlined,
-  EyeOutlined,
-  CopyOutlined,
-  LayoutOutlined,
-  SettingOutlined
-} from '@/components/ui';
+import { Button, Tooltip, Form, Input, Select, Empty } from '@/components/ui';
+import { Card, Space, Grid, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+
+import { LayoutOutlined } from '@/components/ui';
+import { Plus, Trash2, Edit, Save, Eye, Copy, Settings, GripVertical } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useVisualizationStore } from '@/store/visualization';
@@ -43,8 +35,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   onPreview,
   charts = [],
   chartData = {},
-  className,
-}) => {
+  className}) => {
   const [currentDashboard, setCurrentDashboard] = useState<Partial<Dashboard>>(
     dashboard || {
       id: '',
@@ -57,9 +48,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         autoRefresh: false,
         showHeader: true,
         showGrid: true,
-        gridSize: 12,
-      },
-    }
+        gridSize: 12}}
   );
 
   const [gridItems, setGridItems] = useState<GridItem[]>(
@@ -78,8 +67,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const gridConfig = {
     cols: currentDashboard.settings?.gridSize || 12,
     rowHeight: 100,
-    margin: [16, 16],
-  };
+    margin: [16, 16]};
 
   const handleAddChart = (chartId: string) => {
     const newItem: GridItem = {
@@ -88,8 +76,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       x: 0,
       y: getNextAvailablePosition().y,
       w: 6,
-      h: 3,
-    };
+      h: 3};
 
     setGridItems([...gridItems, newItem]);
     setShowChartModal(false);
@@ -139,8 +126,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         ...values,
         id: currentDashboard.id || `dashboard_${Date.now()}`,
         layout: gridItems,
-        updatedAt: new Date(),
-      } as Dashboard;
+        updatedAt: new Date()} as Dashboard;
 
       if (currentDashboard.id) {
         await updateDashboard(dashboardData);
@@ -158,8 +144,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const handlePreviewDashboard = () => {
     const previewData: Dashboard = {
       ...currentDashboard,
-      layout: gridItems,
-    } as Dashboard;
+      layout: gridItems} as Dashboard;
     
     onPreview?.(previewData);
     setIsEditMode(false);
@@ -184,11 +169,11 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       <div className="relative w-full h-full group">
         {isEditMode && (
           <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Space>
+            <div className="flex gap-2">
               <Tooltip title="编辑图表">
                 <Button
                   size="small"
-                  icon={<EditOutlined />}
+                  icon={<Edit className="w-4 h-4"  />}
                   onClick={() => setSelectedChart(chart.id)}
                 />
               </Tooltip>
@@ -197,11 +182,11 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                 <Button
                   size="small"
                   danger
-                  icon={<DeleteOutlined />}
+                  icon={<Trash2 className="w-4 h-4"  />}
                   onClick={() => handleRemoveChart(item.id)}
                 />
               </Tooltip>
-            </Space>
+            </div>
           </div>
         )}
 
@@ -232,16 +217,13 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       listeners,
       setNodeRef,
       transform,
-      isDragging,
-    } = useDraggable({
+      isDragging} = useDraggable({
       id: item.id,
-      data: item,
-    });
+      data: item});
 
     const style = {
       transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-      opacity: isDragging ? 0.5 : 1,
-    };
+      opacity: isDragging ? 0.5 : 1};
 
     return (
       <div
@@ -253,7 +235,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       >
         {isEditMode && (
           <div className="absolute top-0 left-0 z-10 cursor-move">
-            <DragOutlined className="text-gray-400 hover:text-gray-600" />
+            <GripVertical className="text-gray-400 hover:text-gray-600" />
           </div>
         )}
         {renderGridItem(item)}
@@ -263,8 +245,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   const DroppableGrid: React.FC = () => {
     const { setNodeRef } = useDroppable({
-      id: 'dashboard-grid',
-    });
+      id: 'dashboard-grid'});
 
     return (
       <div ref={setNodeRef} className="dashboard-grid min-h-96 p-4 border-2 border-dashed border-gray-200 rounded-lg">
@@ -282,8 +263,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                 style={{
                   gridColumn: `span ${item.w}`,
                   gridRow: `span ${item.h}`,
-                  minHeight: item.h * gridConfig.rowHeight,
-                }}
+                  minHeight: item.h * gridConfig.rowHeight}}
               >
                 <DraggableGridItem item={item} />
               </div>
@@ -298,20 +278,20 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     <div className={`h-full flex flex-col ${className}`}>
       <Card
         title={
-          <Space>
+          <div className="flex gap-2">
             <LayoutOutlined />
             <span>{isEditMode ? '编辑仪表板' : '预览仪表板'}</span>
             <span className="text-sm text-gray-500">
               ({gridItems.length} 个图表)
             </span>
-          </Space>
+          </div>
         }
         extra={
-          <Space>
+          <div className="flex gap-2">
             {isEditMode ? (
               <>
                 <Button
-                  icon={<PlusOutlined />}
+                  icon={<Plus className="w-4 h-4"  />}
                   onClick={() => setShowChartModal(true)}
                   disabled={charts.length === 0}
                 >
@@ -320,13 +300,13 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
                 <Tooltip title="仪表板设置">
                   <Button
-                    icon={<SettingOutlined />}
+                    icon={<Settings className="w-4 h-4"  />}
                     onClick={() => setShowSettingsModal(true)}
                   />
                 </Tooltip>
 
                 <Button
-                  icon={<EyeOutlined />}
+                  icon={<Eye className="w-4 h-4"  />}
                   onClick={handlePreviewDashboard}
                 >
                   预览
@@ -334,7 +314,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
                 <Button
                   type="primary"
-                  icon={<SaveOutlined />}
+                  icon={<Save className="w-4 h-4"  />}
                   onClick={handleSaveDashboard}
                 >
                   保存仪表板
@@ -342,13 +322,13 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
               </>
             ) : (
               <Button
-                icon={<EditOutlined />}
+                icon={<Edit className="w-4 h-4"  />}
                 onClick={() => setIsEditMode(true)}
               >
                 编辑模式
               </Button>
             )}
-          </Space>
+          </div>
         }
         className="flex-shrink-0"
       >
@@ -364,7 +344,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       </Card>
 
       {/* 添加图表模态框 */}
-      <Modal
+      <Dialog
         title="添加图表"
         open={showChartModal}
         onCancel={() => setShowChartModal(false)}
@@ -400,10 +380,10 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
             </div>
           )}
         </div>
-      </Modal>
+      </Dialog>
 
       {/* 仪表板设置模态框 */}
-      <Modal
+      <Dialog
         title="仪表板设置"
         open={showSettingsModal}
         onCancel={() => setShowSettingsModal(false)}
@@ -411,8 +391,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           form.validateFields().then(values => {
             setCurrentDashboard({
               ...currentDashboard,
-              ...values,
-            });
+              ...values});
             setShowSettingsModal(false);
           });
         }}
@@ -461,7 +440,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
             </Select>
           </Form.Item>
         </Form>
-      </Modal>
+      </Dialog>
     </div>
   );
 };

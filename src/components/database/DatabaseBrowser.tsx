@@ -1,20 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tree, Input, Button, Tooltip, Badge, Dropdown, Empty, Spin } from 'antd';
+import { Tree, Input, Button, Tooltip, Badge, Dropdown, Empty, Spin } from '@/components/ui';
 import { Space } from '@/components/ui';
-import { 
-  DatabaseOutlined,
-  TableOutlined,
-  TagOutlined,
-  FieldTimeOutlined,
-  SearchOutlined,
-  ReloadOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-  EyeOutlined,
-  CopyOutlined,
-  BarChartOutlined
-} from '@/components/ui';
+import { Database, Table, Tag, Search, RefreshCw, Plus, Trash2, Info, Eye, Copy, BarChart, Clock } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
@@ -34,8 +21,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   selectedKeys,
   onSelect,
   onDoubleClick,
-  className,
-}) => {
+  className}) => {
   const [searchText, setSearchText] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [selectedNodeKeys, setSelectedNodeKeys] = useState<string[]>(selectedKeys || []);
@@ -52,8 +38,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
     fetchTags,
     addDatabase,
     deleteDatabase,
-    refreshDatabaseStructure,
-  } = useDatabase(connectionId);
+    refreshDatabaseStructure} = useDatabase(connectionId);
 
   const activeConnection = getActiveConnection();
   const currentConnectionId = connectionId || activeConnection?.id;
@@ -69,7 +54,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
         title: (
           <div className="flex items-center justify-between group">
             <div className="flex items-center gap-2">
-              <DatabaseOutlined className="text-blue-500" />
+              <Database className="w-4 h-4 text-blue-500"   />
               <span>{database.name}</span>
               {database.measurementCount !== undefined && (
                 <Badge 
@@ -84,12 +69,11 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
             </div>
           </div>
         ),
-        icon: <DatabaseOutlined />,
+        icon: <Database className="w-4 h-4"  />,
         children: [],
         isLeaf: false,
         database: database.name,
-        type: 'database',
-      }));
+        type: 'database'}));
   }, [databases, searchText]);
 
   // 加载子节点
@@ -107,7 +91,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           title: (
             <div className="flex items-center justify-between group">
               <div className="flex items-center gap-2">
-                <TableOutlined className="text-green-500" />
+                <Table className="w-4 h-4 text-green-500"   />
                 <span>{m.name}</span>
                 {m.seriesCount !== undefined && (
                   <Badge 
@@ -122,44 +106,41 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
               </div>
             </div>
           ),
-          icon: <TableOutlined />,
+          icon: <Table className="w-4 h-4"  />,
           children: [
             {
               key: `fields:${database}:${m.name}`,
               title: (
                 <div className="flex items-center gap-2">
-                  <FieldTimeOutlined className="text-purple-500" />
+                  <Clock className="text-purple-500" />
                   <span>字段</span>
                 </div>
               ),
-              icon: <FieldTimeOutlined />,
+              icon: <Clock />,
               children: [],
               isLeaf: false,
               database,
               measurement: m.name,
-              type: 'fields-group',
-            },
+              type: 'fields-group'},
             {
               key: `tags:${database}:${m.name}`,
               title: (
                 <div className="flex items-center gap-2">
-                  <TagOutlined className="text-orange-500" />
+                  <Tag className="w-4 h-4 text-orange-500"   />
                   <span>标签</span>
                 </div>
               ),
-              icon: <TagOutlined />,
+              icon: <Tag className="w-4 h-4"  />,
               children: [],
               isLeaf: false,
               database,
               measurement: m.name,
-              type: 'tags-group',
-            },
+              type: 'tags-group'},
           ],
           isLeaf: false,
           database,
           measurement: m.name,
-          type: 'measurement',
-        }));
+          type: 'measurement'}));
       } else if (type === 'fields-group' && database && measurement) {
         // 加载字段列表
         const fields = await fetchFields(database, measurement);
@@ -182,8 +163,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           measurement,
           field: f.name,
           fieldType: f.type,
-          type: 'field',
-        }));
+          type: 'field'}));
       } else if (type === 'tags-group' && database && measurement) {
         // 加载标签列表
         const tags = await fetchTags(database, measurement);
@@ -192,7 +172,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           title: (
             <div className="flex items-center justify-between group">
               <div className="flex items-center gap-2">
-                <TagOutlined className="text-orange-500" />
+                <Tag className="w-4 h-4 text-orange-500"   />
                 <span>{t.name}</span>
                 {t.valueCount !== undefined && (
                   <Badge 
@@ -211,8 +191,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           database,
           measurement,
           tag: t.name,
-          type: 'tag',
-        }));
+          type: 'tag'}));
       }
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -263,7 +242,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
-          <DatabaseOutlined className="text-4xl mb-2" />
+          <Database className="w-4 h-4 text-4xl mb-2"   />
           <div>请先选择一个连接</div>
         </div>
       </div>
@@ -276,7 +255,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
         <div className="text-red-500 text-center">
           <div className="mb-2">加载数据库结构失败</div>
           <div className="text-sm text-gray-600 mb-4">{error}</div>
-          <Button onClick={handleRefresh} icon={<ReloadOutlined />}>
+          <Button onClick={handleRefresh} icon={<RefreshCw className="w-4 h-4"  />}>
             重试
           </Button>
         </div>
@@ -288,10 +267,10 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
     <div className={`h-full flex flex-col database-management ${className}`}>
       {/* 工具栏 */}
       <div className="database-browser-toolbar">
-        <Space className="w-full" size="middle">
+        <div className="flex gap-2 w-full"  size="middle">
           <Input
             placeholder="搜索数据库..."
-            prefix={<SearchOutlined />}
+            prefix={<Search className="w-4 h-4"  />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
@@ -300,19 +279,19 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           />
           <Tooltip title="刷新">
             <Button
-              icon={<ReloadOutlined />}
+              icon={<RefreshCw className="w-4 h-4"  />}
               onClick={handleRefresh}
               loading={isLoading}
             />
           </Tooltip>
           <Tooltip title="新建数据库">
             <Button
-              icon={<PlusOutlined />}
+              icon={<Plus className="w-4 h-4"  />}
               onClick={handleAddDatabase}
               type="primary"
             />
           </Tooltip>
-        </Space>
+        </div>
       </div>
 
       {/* 树形结构 */}
@@ -352,32 +331,27 @@ const DatabaseContextMenu: React.FC<{ database: DatabaseInfo }> = ({ database })
     {
       key: 'browse',
       label: '浏览数据',
-      icon: <EyeOutlined />,
-      onClick: () => console.log('浏览数据库:', database.name),
-    },
+      icon: <Eye className="w-4 h-4"  />,
+      onClick: () => console.log('浏览数据库:', database.name)},
     {
       key: 'stats',
       label: '统计信息',
-      icon: <InfoCircleOutlined />,
-      onClick: () => console.log('查看统计:', database.name),
-    },
+      icon: <Info className="w-4 h-4"  />,
+      onClick: () => console.log('查看统计:', database.name)},
     {
       key: 'copy',
       label: '复制名称',
-      icon: <CopyOutlined />,
-      onClick: () => navigator.clipboard.writeText(database.name),
-    },
+      icon: <Copy className="w-4 h-4"  />,
+      onClick: () => navigator.clipboard.writeText(database.name)},
     {
       key: 'divider',
-      type: 'divider',
-    },
+      type: 'divider'},
     {
       key: 'delete',
       label: '删除数据库',
-      icon: <DeleteOutlined />,
+      icon: <Trash2 className="w-4 h-4"  />,
       danger: true,
-      onClick: () => console.log('删除数据库:', database.name),
-    },
+      onClick: () => console.log('删除数据库:', database.name)},
   ];
 
   return (
@@ -398,27 +372,23 @@ const MeasurementContextMenu: React.FC<{ database: string; measurement: string }
     {
       key: 'preview',
       label: '预览数据',
-      icon: <EyeOutlined />,
-      onClick: () => console.log('预览数据:', database, measurement),
-    },
+      icon: <Eye className="w-4 h-4"  />,
+      onClick: () => console.log('预览数据:', database, measurement)},
     {
       key: 'chart',
       label: '创建图表',
-      icon: <BarChartOutlined />,
-      onClick: () => console.log('创建图表:', database, measurement),
-    },
+      icon: <BarChart className="w-4 h-4"  />,
+      onClick: () => console.log('创建图表:', database, measurement)},
     {
       key: 'copy',
       label: '复制名称',
-      icon: <CopyOutlined />,
-      onClick: () => navigator.clipboard.writeText(measurement),
-    },
+      icon: <Copy className="w-4 h-4"  />,
+      onClick: () => navigator.clipboard.writeText(measurement)},
     {
       key: 'stats',
       label: '统计信息',
-      icon: <InfoCircleOutlined />,
-      onClick: () => console.log('查看统计:', database, measurement),
-    },
+      icon: <Info className="w-4 h-4"  />,
+      onClick: () => console.log('查看统计:', database, measurement)},
   ];
 
   return (
@@ -441,21 +411,18 @@ const FieldContextMenu: React.FC<{
     {
       key: 'select',
       label: `查询${fieldType === 'field' ? '字段' : '标签'}`,
-      icon: <EyeOutlined />,
-      onClick: () => console.log('查询:', database, measurement, field),
-    },
+      icon: <Eye className="w-4 h-4"  />,
+      onClick: () => console.log('查询:', database, measurement, field)},
     {
       key: 'copy',
       label: '复制名称',
-      icon: <CopyOutlined />,
-      onClick: () => navigator.clipboard.writeText(field),
-    },
+      icon: <Copy className="w-4 h-4"  />,
+      onClick: () => navigator.clipboard.writeText(field)},
     {
       key: 'info',
       label: '字段信息',
-      icon: <InfoCircleOutlined />,
-      onClick: () => console.log('字段信息:', database, measurement, field),
-    },
+      icon: <Info className="w-4 h-4"  />,
+      onClick: () => console.log('字段信息:', database, measurement, field)},
   ];
 
   return (

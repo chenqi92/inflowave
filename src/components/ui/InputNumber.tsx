@@ -1,239 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/utils/cn';
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Minus, Plus } from "lucide-react"
+import { Button } from "./Button"
 
-export interface InputNumberProps {
-  value?: number;
-  defaultValue?: number;
-  min?: number;
-  max?: number;
-  step?: number;
-  precision?: number;
-  disabled?: boolean;
-  readOnly?: boolean;
-  size?: 'small' | 'middle' | 'large';
-  placeholder?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  onChange?: (value: number | null) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  onPressEnter?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  controls?: boolean;
-  formatter?: (value: number | undefined) => string;
-  parser?: (displayValue: string | undefined) => number;
-  addonBefore?: React.ReactNode;
-  addonAfter?: React.ReactNode;
+export interface InputNumberProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+  value?: number
+  defaultValue?: number
+  min?: number
+  max?: number
+  step?: number
+  precision?: number
+  onChange?: (value: number | null) => void
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void
+  formatter?: (value: number | undefined) => string
+  parser?: (displayValue: string | undefined) => number
+  controls?: boolean
+  size?: "sm" | "default" | "lg"
+  addonBefore?: React.ReactNode
+  addonAfter?: React.ReactNode
 }
 
-const InputNumber: React.FC<InputNumberProps> = ({
-  value,
-  defaultValue,
-  min,
-  max,
-  step = 1,
-  precision,
-  disabled = false,
-  readOnly = false,
-  size = 'middle',
-  placeholder,
-  className,
-  style,
-  onChange,
-  onBlur,
-  onFocus,
-  onPressEnter,
-  controls = true,
-  formatter,
-  parser,
-  addonBefore,
-  addonAfter,
-}) => {
-  const [internalValue, setInternalValue] = useState<number | null>(
-    value !== undefined ? value : defaultValue || null
-  );
-  const [displayValue, setDisplayValue] = useState<string>('');
-  const [focused, setFocused] = useState(false);
+const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
+  ({ 
+    className, 
+    type = "number",
+    value,
+    defaultValue,
+    min,
+    max,
+    step = 1,
+    precision,
+    onChange,
+    onBlur,
+    onFocus,
+    formatter,
+    parser,
+    controls = true,
+    size = "default",
+    addonBefore,
+    addonAfter,
+    disabled,
+    ...props 
+  }, ref) => {
+    const [innerValue, setInnerValue] = React.useState<number | null>(
+      value !== undefined ? value : defaultValue || null
+    )
 
-  useEffect(() => {
-    if (value !== undefined) {
-      setInternalValue(value);
-    }
-  }, [value]);
+    const actualValue = value !== undefined ? value : innerValue
 
-  useEffect(() => {
-    if (internalValue !== null) {
-      const formatted = formatter ? formatter(internalValue) : String(internalValue);
-      setDisplayValue(formatted);
-    } else {
-      setDisplayValue('');
-    }
-  }, [internalValue, formatter]);
-
-  const formatValue = (val: number): number => {
-    if (precision !== undefined) {
-      return Number(val.toFixed(precision));
-    }
-    return val;
-  };
-
-  const validateValue = (val: number): number => {
-    if (min !== undefined && val < min) {
-      return min;
-    }
-    if (max !== undefined && val > max) {
-      return max;
-    }
-    return val;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    setDisplayValue(inputValue);
-
-    if (inputValue === '') {
-      setInternalValue(null);
-      onChange?.(null);
-      return;
+    const sizeClasses = {
+      sm: "h-8 px-2 text-sm",
+      default: "h-10 px-3",
+      lg: "h-12 px-4 text-lg"
     }
 
-    const parsedValue = parser ? parser(inputValue) : parseFloat(inputValue);
-    
-    if (!isNaN(parsedValue)) {
-      const formattedValue = formatValue(validateValue(parsedValue));
-      setInternalValue(formattedValue);
-      onChange?.(formattedValue);
+    const formatValue = (val: number | null): string => {
+      if (val === null || val === undefined || isNaN(val)) return ""
+      
+      if (formatter) {
+        return formatter(val)
+      }
+      
+      if (precision !== undefined) {
+        return val.toFixed(precision)
+      }
+      
+      return val.toString()
     }
-  };
 
-  const handleStep = (direction: 'up' | 'down') => {
-    if (disabled || readOnly) return;
-
-    const currentValue = internalValue || 0;
-    const newValue = direction === 'up' ? currentValue + step : currentValue - step;
-    const validatedValue = validateValue(formatValue(newValue));
-    
-    setInternalValue(validatedValue);
-    onChange?.(validatedValue);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      onPressEnter?.(e);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      handleStep('up');
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      handleStep('down');
+    const parseValue = (displayValue: string): number | null => {
+      if (!displayValue.trim()) return null
+      
+      if (parser) {
+        const parsed = parser(displayValue)
+        return isNaN(parsed) ? null : parsed
+      }
+      
+      const parsed = parseFloat(displayValue)
+      return isNaN(parsed) ? null : parsed
     }
-  };
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(true);
-    onFocus?.(e);
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setFocused(false);
-    onBlur?.(e);
-  };
-
-  const getSizeClasses = () => {
-    switch (size) {
-      case 'small':
-        return 'h-7 px-2 text-sm';
-      case 'large':
-        return 'h-10 px-3 text-base';
-      default:
-        return 'h-8 px-3 text-sm';
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const displayValue = e.target.value
+      const numValue = parseValue(displayValue)
+      
+      if (value === undefined) {
+        setInnerValue(numValue)
+      }
+      
+      onChange?.(numValue)
     }
-  };
 
-  const inputClasses = cn(
-    'border border-gray-300 rounded-md bg-white transition-colors',
-    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-    getSizeClasses(),
-    disabled && 'bg-gray-100 cursor-not-allowed',
-    readOnly && 'bg-gray-50',
-    className
-  );
+    const handleStep = (direction: 'up' | 'down') => {
+      if (disabled) return
+      
+      const currentValue = actualValue || 0
+      const newValue = direction === 'up' ? currentValue + step : currentValue - step
+      
+      let finalValue = newValue
+      if (min !== undefined && finalValue < min) finalValue = min
+      if (max !== undefined && finalValue > max) finalValue = max
+      
+      if (precision !== undefined) {
+        finalValue = parseFloat(finalValue.toFixed(precision))
+      }
+      
+      if (value === undefined) {
+        setInnerValue(finalValue)
+      }
+      
+      onChange?.(finalValue)
+    }
 
-  const controlsClasses = cn(
-    'flex flex-col border-l border-gray-300 ml-1',
-    size === 'small' && 'text-xs',
-    size === 'large' && 'text-sm'
-  );
-
-  const controlButtonClasses = cn(
-    'flex items-center justify-center w-6 bg-white hover:bg-gray-50 border-b border-gray-300 first:rounded-tr-md last:rounded-br-md last:border-b-0',
-    'transition-colors cursor-pointer select-none',
-    size === 'small' && 'h-3.5',
-    size === 'large' && 'h-5',
-    size === 'middle' && 'h-4',
-    disabled && 'cursor-not-allowed opacity-50 hover:bg-white'
-  );
-
-  const inputElement = (
-    <div className="flex items-center rounded-md border border-gray-300 bg-white overflow-hidden">
+    const inputElement = (
       <input
+        ref={ref}
         type="text"
-        value={displayValue}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readOnly}
         className={cn(
-          'flex-1 border-none outline-none bg-transparent',
-          getSizeClasses(),
-          'border-0 focus:ring-0'
+          "flex w-full rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          sizeClasses[size],
+          controls && "pr-8",
+          className
         )}
+        value={formatValue(actualValue)}
         onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        style={style}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        disabled={disabled}
+        {...props}
       />
-      {controls && (
-        <div className={controlsClasses}>
-          <div
-            className={controlButtonClasses}
-            onClick={() => handleStep('up')}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 4l4 4H2z" />
-            </svg>
-          </div>
-          <div
-            className={controlButtonClasses}
-            onClick={() => handleStep('down')}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 8L2 4h8z" />
-            </svg>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    )
 
-  if (addonBefore || addonAfter) {
-    return (
-      <div className={cn('flex items-center', className)}>
-        {addonBefore && (
-          <div className="px-3 py-1 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md text-sm">
-            {addonBefore}
-          </div>
-        )}
-        {inputElement}
-        {addonAfter && (
-          <div className="px-3 py-1 bg-gray-50 border border-l-0 border-gray-300 rounded-r-md text-sm">
-            {addonAfter}
-          </div>
-        )}
+    const stepperControls = controls && !disabled && (
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-4 w-6 p-0 hover:bg-muted"
+          onClick={() => handleStep('up')}
+          disabled={max !== undefined && actualValue !== null && actualValue >= max}
+        >
+          <Plus className="h-2 w-2" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-4 w-6 p-0 hover:bg-muted"
+          onClick={() => handleStep('down')}
+          disabled={min !== undefined && actualValue !== null && actualValue <= min}
+        >
+          <Minus className="h-2 w-2" />
+        </Button>
       </div>
-    );
+    )
+
+    if (addonBefore || addonAfter) {
+      return (
+        <div className="flex w-full">
+          {addonBefore && (
+            <div className="flex items-center px-3 border border-r-0 border-input bg-muted rounded-l-md text-sm">
+              {addonBefore}
+            </div>
+          )}
+          <div className="relative flex-1">
+            {inputElement}
+            {stepperControls}
+          </div>
+          {addonAfter && (
+            <div className="flex items-center px-3 border border-l-0 border-input bg-muted rounded-r-md text-sm">
+              {addonAfter}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className="relative">
+        {inputElement}
+        {stepperControls}
+      </div>
+    )
   }
+)
+InputNumber.displayName = "InputNumber"
 
-  return inputElement;
-};
-
-export { InputNumber };
+export { InputNumber }

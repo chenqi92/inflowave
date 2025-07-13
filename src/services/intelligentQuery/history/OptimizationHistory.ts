@@ -165,8 +165,7 @@ export class OptimizationHistory {
       context,
       performance: performance || this.createDefaultPerformance(),
       tags: this.generateTags(optimizationResult, context),
-      metadata: this.createMetadata(optimizationResult),
-    };
+      metadata: this.createMetadata(optimizationResult)};
 
     this.history.unshift(entry);
     
@@ -313,8 +312,7 @@ export class OptimizationHistory {
       queryTypeDistribution,
       performanceDistribution,
       userSatisfaction,
-      trends,
-    };
+      trends};
   }
 
   /**
@@ -377,8 +375,7 @@ export class OptimizationHistory {
   ): OptimizationHistoryEntry[] {
     const similarities = this.history.map(entry => ({
       entry,
-      similarity: this.calculateQuerySimilarity(query, entry.originalQuery),
-    }));
+      similarity: this.calculateQuerySimilarity(query, entry.originalQuery)}));
 
     return similarities
       .filter(item => item.similarity >= threshold)
@@ -453,8 +450,7 @@ export class OptimizationHistory {
       ioOperations: 0,
       networkTraffic: 0,
       rowsAffected: 0,
-      success: false,
-    };
+      success: false};
   }
 
   /**
@@ -495,8 +491,7 @@ export class OptimizationHistory {
       estimatedBenefit: result.estimatedPerformanceGain,
       actualBenefit: 0, // 将在性能数据更新时填充
       confidenceScore: this.calculateConfidenceScore(result),
-      engineVersion: '1.0.0',
-    };
+      engineVersion: '1.0.0'};
   }
 
   /**
@@ -526,8 +521,7 @@ export class OptimizationHistory {
           count: 0,
           totalGain: 0,
           successCount: 0,
-          ratings: [],
-        };
+          ratings: []};
 
         existing.count++;
         existing.totalGain += entry.performance.performanceGain;
@@ -545,8 +539,7 @@ export class OptimizationHistory {
         averageGain: stats.totalGain / stats.count,
         successRate: stats.successCount / stats.count,
         userRating: stats.ratings.length > 0 ? 
-          stats.ratings.reduce((sum, rating) => sum + rating, 0) / stats.ratings.length : 0,
-      }))
+          stats.ratings.reduce((sum, rating) => sum + rating, 0) / stats.ratings.length : 0}))
       .sort((a, b) => b.count - a.count);
   }
 
@@ -573,8 +566,7 @@ export class OptimizationHistory {
       good: 0,
       moderate: 0,
       minimal: 0,
-      negative: 0,
-    };
+      negative: 0};
 
     entries.forEach(entry => {
       const gain = entry.performance.performanceGain;
@@ -600,8 +592,7 @@ export class OptimizationHistory {
         totalRatings: 0,
         ratingDistribution: {},
         helpfulPercentage: 0,
-        commonIssues: [],
-      };
+        commonIssues: []};
     }
 
     const totalRatings = entriesWithFeedback.length;
@@ -625,8 +616,7 @@ export class OptimizationHistory {
       totalRatings,
       ratingDistribution,
       helpfulPercentage,
-      commonIssues,
-    };
+      commonIssues};
   }
 
   /**
@@ -647,8 +637,7 @@ export class OptimizationHistory {
         count: 0,
         totalGain: 0,
         successCount: 0,
-        ratings: [],
-      };
+        ratings: []};
 
       existing.count++;
       existing.totalGain += entry.performance.performanceGain;
@@ -667,8 +656,7 @@ export class OptimizationHistory {
           averageGain: data.totalGain / data.count,
           successRate: data.successCount / data.count,
           userSatisfaction: data.ratings.length > 0 ? 
-            data.ratings.reduce((sum, rating) => sum + rating, 0) / data.ratings.length : 0,
-        });
+            data.ratings.reduce((sum, rating) => sum + rating, 0) / data.ratings.length : 0});
       });
 
     return trends;
@@ -793,8 +781,7 @@ export class OptimizationHistory {
       queryType: entry.metadata.queryType,
       complexity: entry.metadata.complexity,
       estimatedBenefit: entry.metadata.estimatedBenefit,
-      actualBenefit: entry.metadata.actualBenefit,
-    };
+      actualBenefit: entry.metadata.actualBenefit};
 
     if (options.includePerformance) {
       serialized.originalExecutionTime = entry.performance.originalExecutionTime;

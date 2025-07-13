@@ -206,8 +206,7 @@ export class QueryAnalyzer {
       complexity,
       resourceUsage,
       warnings,
-      tags,
-    };
+      tags};
   }
 
   /**
@@ -286,8 +285,7 @@ export class QueryAnalyzer {
       errorRate,
       cacheHitRate: 0, // 由缓存组件提供
       optimizationSuccessRate: 0, // 由优化器提供
-      resourceUtilization,
-    };
+      resourceUtilization};
   }
 
   /**
@@ -338,8 +336,7 @@ export class QueryAnalyzer {
       groupBy,
       limit,
       offset,
-      timeRange,
-    };
+      timeRange};
   }
 
   /**
@@ -356,8 +353,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'table_count',
         weight: tableScore,
-        description: `${pattern.tables.length} tables involved`,
-      });
+        description: `${pattern.tables.length} tables involved`});
     }
     
     // 连接复杂度
@@ -367,8 +363,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'join_complexity',
         weight: joinScore,
-        description: `${pattern.joins.length} joins`,
-      });
+        description: `${pattern.joins.length} joins`});
     }
     
     // 条件复杂度
@@ -378,8 +373,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'condition_complexity',
         weight: conditionScore,
-        description: `${pattern.conditions.length} conditions`,
-      });
+        description: `${pattern.conditions.length} conditions`});
     }
     
     // 聚合复杂度
@@ -389,8 +383,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'aggregation_complexity',
         weight: aggregationScore,
-        description: `${pattern.aggregations.length} aggregations`,
-      });
+        description: `${pattern.aggregations.length} aggregations`});
     }
     
     // 排序复杂度
@@ -400,8 +393,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'sort_complexity',
         weight: sortScore,
-        description: `${pattern.orderBy.length} sort columns`,
-      });
+        description: `${pattern.orderBy.length} sort columns`});
     }
     
     // 时间范围复杂度（时序数据库专用）
@@ -411,8 +403,7 @@ export class QueryAnalyzer {
       factors.push({
         name: 'time_range',
         weight: timeScore,
-        description: 'Time range query',
-      });
+        description: 'Time range query'});
     }
     
     // 确定复杂度等级
@@ -430,8 +421,7 @@ export class QueryAnalyzer {
     return {
       score,
       level,
-      factors,
-    };
+      factors};
   }
 
   /**
@@ -471,8 +461,7 @@ export class QueryAnalyzer {
       estimatedMemory,
       estimatedCpu,
       estimatedIo,
-      estimatedNetwork,
-    };
+      estimatedNetwork};
   }
 
   /**
@@ -604,8 +593,7 @@ export class QueryAnalyzer {
         column: 'placeholder',
         operator: '=',
         value: 'placeholder',
-        type: 'WHERE',
-      });
+        type: 'WHERE'});
     }
     
     return conditions;
@@ -623,8 +611,7 @@ export class QueryAnalyzer {
           type: 'INNER',
           leftTable: 'placeholder',
           rightTable: 'placeholder',
-          condition: 'placeholder',
-        });
+          condition: 'placeholder'});
       });
     }
     
@@ -642,8 +629,7 @@ export class QueryAnalyzer {
         if (funcMatch) {
           aggregations.push({
             function: funcMatch[1].toUpperCase(),
-            column: funcMatch[2].trim(),
-          });
+            column: funcMatch[2].trim()});
         }
       });
     }
@@ -665,13 +651,11 @@ export class QueryAnalyzer {
         if (descMatch) {
           orderBy.push({
             column: descMatch[1],
-            direction: descMatch[2].toUpperCase() as 'ASC' | 'DESC',
-          });
+            direction: descMatch[2].toUpperCase() as 'ASC' | 'DESC'});
         } else {
           orderBy.push({
             column: trimmed,
-            direction: 'ASC',
-          });
+            direction: 'ASC'});
         }
       });
     }
@@ -711,16 +695,14 @@ export class QueryAnalyzer {
     if (timeMatch) {
       return {
         start: timeMatch[1],
-        end: timeMatch[2],
-      };
+        end: timeMatch[2]};
     }
     
     const nowMatch = query.match(/time\s*>=?\s*now\(\)\s*-\s*([^)]+)/i);
     if (nowMatch) {
       return {
         start: `now() - ${nowMatch[1]}`,
-        end: 'now()',
-      };
+        end: 'now()'};
     }
     
     return undefined;
@@ -733,18 +715,15 @@ export class QueryAnalyzer {
       {
         name: 'table_count',
         evaluate: (pattern) => pattern.tables.length * 10,
-        description: 'More tables increase complexity',
-      },
+        description: 'More tables increase complexity'},
       {
         name: 'join_complexity',
         evaluate: (pattern) => pattern.joins.length * 20,
-        description: 'Joins significantly increase complexity',
-      },
+        description: 'Joins significantly increase complexity'},
       {
         name: 'aggregation_complexity',
         evaluate: (pattern) => pattern.aggregations.length * 15,
-        description: 'Aggregations increase computation complexity',
-      },
+        description: 'Aggregations increase computation complexity'},
     ];
   }
 
@@ -764,8 +743,7 @@ export class QueryAnalyzer {
         sourceIndex,
         dependentIndex: targetIndex,
         type: 'data',
-        strength: 'medium',
-      };
+        strength: 'medium'};
     }
     
     return null;
@@ -795,8 +773,7 @@ export class QueryAnalyzer {
       query: 'placeholder',
       executionTime: r.executionTime,
       frequency: 1,
-      lastExecuted: new Date(),
-    }));
+      lastExecuted: new Date()}));
   }
 
   private identifyFrequentQueries(): FrequentQuery[] {
@@ -810,8 +787,7 @@ export class QueryAnalyzer {
           query: queryHash,
           frequency: history.length,
           avgExecutionTime: avgTime,
-          lastExecuted: new Date(),
-        });
+          lastExecuted: new Date()});
       }
     });
     
@@ -828,8 +804,7 @@ export class QueryAnalyzer {
       avgMemoryUsage: avgMemory,
       avgCpuUsage: avgCpu,
       avgIoUsage: avgIo,
-      avgNetworkUsage: avgNetwork,
-    };
+      avgNetworkUsage: avgNetwork};
   }
 
   private hasTimeIndex(tables: string[]): boolean {

@@ -1,17 +1,14 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, Typography, Table, Tabs, Alert, Row, Col, Tag } from 'antd';
-import { Card, Space, message } from '@/components/ui';
-// TODO: Replace these Ant Design components: DatePicker, InputNumber, Divider, 
-import { PlusOutlined, DeleteOutlined, UploadOutlined, SaveOutlined, ExclamationCircleOutlined, InfoCircleOutlined } from '@/components/ui';
-// TODO: Replace these icons: ClearOutlined
-// You may need to find alternatives or create custom icons
+import { Form, Input, Button, Select, Table, Tabs, Alert, Row, Col, Tag, toast, Card, Space } from '@/components/ui';
+import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { DatePicker, InputNumber, Divider } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ImportDialog from '@/components/common/ImportDialog';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 import dayjs from 'dayjs';
 
-const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -20,6 +17,7 @@ interface DataPointForm extends Omit<DataPoint, 'timestamp'> {
 }
 
 const DataWrite: React.FC = () => {
+  const { toast } = useToast();
   const { activeConnectionId } = useConnectionStore();
   const [loading, setLoading] = useState(false);
   const [databases, setDatabases] = useState<string[]>([]);
@@ -35,14 +33,13 @@ const DataWrite: React.FC = () => {
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId,
-      });
+        connectionId: activeConnectionId});
       setDatabases(dbList);
       if (dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      message.error(`加载数据库列表失败: ${error}`);
+      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -50,7 +47,7 @@ const DataWrite: React.FC = () => {
   const addDataPoint = () => {
     const values = form.getFieldsValue();
     if (!values.measurement) {
-      message.warning('请输入测量名称');
+      toast({ title: "警告", description: "请输入测量名称" });
       return;
     }
 
@@ -58,30 +55,29 @@ const DataWrite: React.FC = () => {
       measurement: values.measurement,
       tags: values.tags || {},
       fields: values.fields || {},
-      timestamp: values.timestamp || dayjs(),
-    };
+      timestamp: values.timestamp || dayjs()};
 
     setDataPoints(prev => [...prev, newDataPoint]);
     form.resetFields(['measurement', 'tags', 'fields', 'timestamp']);
-    message.success('数据点已添加到批次');
+    toast({ title: "成功", description: "数据点已添加到批次" });
   };
 
   // 删除数据点
   const removeDataPoint = (index: number) => {
     setDataPoints(prev => prev.filter((_, i) => i !== index));
-    message.success('数据点已删除');
+    toast({ title: "成功", description: "数据点已删除" });
   };
 
   // 清空所有数据点
   const clearDataPoints = () => {
     setDataPoints([]);
-    message.success('已清空所有数据点');
+    toast({ title: "成功", description: "已清空所有数据点" });
   };
 
   // 写入单个数据点
   const writeSinglePoint = async (values: any) => {
     if (!activeConnectionId || !selectedDatabase) {
-      message.warning('请先选择连接和数据库');
+      toast({ title: "警告", description: "请先选择连接和数据库" });
       return;
     }
 
@@ -91,26 +87,24 @@ const DataWrite: React.FC = () => {
         measurement: values.measurement,
         tags: values.tags || {},
         fields: values.fields || {},
-        timestamp: values.timestamp ? values.timestamp.toDate() : new Date(),
-      };
+        timestamp: values.timestamp ? values.timestamp.toDate() : new Date()};
 
       const request: BatchWriteRequest = {
         connectionId: activeConnectionId,
         database: selectedDatabase,
         points: [dataPoint],
-        precision: values.precision || 'ms',
-      };
+        precision: values.precision || 'ms'};
 
       const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
 
       if (result.success) {
-        message.success(`数据写入成功，写入 ${result.pointsWritten} 个数据点`);
+        toast({ title: "成功", description: "数据写入成功，写入 ${result.pointsWritten} 个数据点" });
         form.resetFields();
       } else {
-        message.error(`数据写入失败: ${result.errors[0]?.error || '未知错误'}`);
+        toast.error(`数据写入失败: ${result.errors[0]?.error || '未知错误'}`);
       }
     } catch (error) {
-      message.error(`数据写入失败: ${error}`);
+      toast({ title: "错误", description: "数据写入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -119,12 +113,12 @@ const DataWrite: React.FC = () => {
   // 批量写入数据点
   const writeBatchPoints = async () => {
     if (!activeConnectionId || !selectedDatabase) {
-      message.warning('请先选择连接和数据库');
+      toast({ title: "警告", description: "请先选择连接和数据库" });
       return;
     }
 
     if (dataPoints.length === 0) {
-      message.warning('请先添加数据点');
+      toast({ title: "警告", description: "请先添加数据点" });
       return;
     }
 
@@ -134,27 +128,25 @@ const DataWrite: React.FC = () => {
         measurement: point.measurement,
         tags: point.tags,
         fields: point.fields,
-        timestamp: point.timestamp ? point.timestamp.toDate() : new Date(),
-      }));
+        timestamp: point.timestamp ? point.timestamp.toDate() : new Date()}));
 
       const request: BatchWriteRequest = {
         connectionId: activeConnectionId,
         database: selectedDatabase,
         points,
-        precision: 'ms',
-      };
+        precision: 'ms'};
 
       const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
 
       if (result.success) {
-        message.success(`批量写入成功，写入 ${result.pointsWritten} 个数据点`);
+        toast({ title: "成功", description: "批量写入成功，写入 ${result.pointsWritten} 个数据点" });
         setDataPoints([]);
       } else {
-        message.error(`批量写入失败: ${result.errors.length} 个错误`);
+        toast({ title: "错误", description: "批量写入失败: ${result.errors.length} 个错误", variant: "destructive" });
         console.error('写入错误:', result.errors);
       }
     } catch (error) {
-      message.error(`批量写入失败: ${error}`);
+      toast({ title: "错误", description: "批量写入失败: ${error}", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -209,8 +201,7 @@ const DataWrite: React.FC = () => {
           measurement,
           tags,
           fields,
-          timestamp: dayjs(timestamp),
-        });
+          timestamp: dayjs(timestamp)});
       } catch (error) {
         console.error('解析行失败:', line, error);
       }
@@ -225,13 +216,13 @@ const DataWrite: React.FC = () => {
       const points = parseLineProtocol(values.lineProtocol);
       if (points.length > 0) {
         setDataPoints(prev => [...prev, ...points]);
-        message.success(`解析成功，添加了 ${points.length} 个数据点`);
+        toast({ title: "成功", description: "解析成功，添加了 ${points.length} 个数据点" });
         batchForm.resetFields();
       } else {
-        message.warning('未能解析出有效的数据点');
+        toast({ title: "警告", description: "未能解析出有效的数据点" });
       }
     } catch (error) {
-      message.error(`解析失败: ${error}`);
+      toast({ title: "错误", description: "解析失败: ${error}", variant: "destructive" });
     }
   };
 
@@ -250,7 +241,7 @@ const DataWrite: React.FC = () => {
           description="在连接管理页面选择一个连接并激活后，才能写入数据。"
           type="warning"
           showIcon
-          icon={<ExclamationCircleOutlined />}
+          icon={<AlertCircle />}
           action={
             <Button size="small" type="primary">
               去连接
@@ -266,42 +257,38 @@ const DataWrite: React.FC = () => {
     {
       title: '测量',
       dataIndex: 'measurement',
-      key: 'measurement',
-    },
+      key: 'measurement'},
     {
       title: '标签',
       dataIndex: 'tags',
       key: 'tags',
       render: (tags: Record<string, string>) => (
-        <Space wrap>
+        <div className="flex gap-2" wrap>
           {Object.entries(tags).map(([key, value]) => (
             <Tag key={key} color="blue">
               {key}={value}
             </Tag>
           ))}
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '字段',
       dataIndex: 'fields',
       key: 'fields',
       render: (fields: Record<string, any>) => (
-        <Space wrap>
+        <div className="flex gap-2" wrap>
           {Object.entries(fields).map(([key, value]) => (
             <Tag key={key} color="green">
               {key}={String(value)}
             </Tag>
           ))}
-        </Space>
-      ),
-    },
+        </div>
+      )},
     {
       title: '时间戳',
       dataIndex: 'timestamp',
       key: 'timestamp',
-      render: (timestamp: dayjs.Dayjs) => timestamp.format('YYYY-MM-DD HH:mm:ss'),
-    },
+      render: (timestamp: dayjs.Dayjs) => timestamp.format('YYYY-MM-DD HH:mm:ss')},
     {
       title: '操作',
       key: 'actions',
@@ -310,11 +297,10 @@ const DataWrite: React.FC = () => {
         <Button
           type="text"
           danger
-          icon={<DeleteOutlined />}
+          icon={<Trash2 className="w-4 h-4"  />}
           onClick={() => removeDataPoint(index)}
         />
-      ),
-    },
+      )},
   ];
 
   return (
@@ -322,10 +308,10 @@ const DataWrite: React.FC = () => {
       {/* 页面标题和数据库选择 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Title level={2}>数据写入</Title>
-          <Text type="secondary">
+          <h2 className="text-2xl font-bold mb-1">数据写入</h2>
+          <p className="text-gray-500">
             向 InfluxDB 写入时序数据
-          </Text>
+          </p>
         </div>
         <Select
           style={{ width: 200 }}
@@ -383,7 +369,7 @@ const DataWrite: React.FC = () => {
                       {(fields, { add, remove }) => (
                         <>
                           {fields.map(({ key, name, ...restField }) => (
-                            <Space key={key} style={{ display: 'flex', marginBottom: 8 }}>
+                            <div className="flex gap-2" key={key} style={{ display: 'flex', marginBottom: 8 }}>
                               <Form.Item
                                 {...restField}
                                 name={[name, 'key']}
@@ -400,15 +386,15 @@ const DataWrite: React.FC = () => {
                               </Form.Item>
                               <Button
                                 type="text"
-                                icon={<DeleteOutlined />}
+                                icon={<Trash2 className="w-4 h-4"  />}
                                 onClick={() => remove(name)}
                               />
-                            </Space>
+                            </div>
                           ))}
                           <Button
                             type="dashed"
                             onClick={() => add()}
-                            icon={<PlusOutlined />}
+                            icon={<Plus className="w-4 h-4"  />}
                           >
                             添加标签
                           </Button>
@@ -422,7 +408,7 @@ const DataWrite: React.FC = () => {
                       {(fields, { add, remove }) => (
                         <>
                           {fields.map(({ key, name, ...restField }) => (
-                            <Space key={key} style={{ display: 'flex', marginBottom: 8 }}>
+                            <div className="flex gap-2" key={key} style={{ display: 'flex', marginBottom: 8 }}>
                               <Form.Item
                                 {...restField}
                                 name={[name, 'key']}
@@ -442,15 +428,15 @@ const DataWrite: React.FC = () => {
                               </Form.Item>
                               <Button
                                 type="text"
-                                icon={<DeleteOutlined />}
+                                icon={<Trash2 className="w-4 h-4"  />}
                                 onClick={() => remove(name)}
                               />
-                            </Space>
+                            </div>
                           ))}
                           <Button
                             type="dashed"
                             onClick={() => add()}
-                            icon={<PlusOutlined />}
+                            icon={<Plus className="w-4 h-4"  />}
                           >
                             添加字段
                           </Button>
@@ -460,24 +446,23 @@ const DataWrite: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item>
-                    <Space>
+                    <div className="flex gap-2">
                       <Button
                         type="primary"
                         htmlType="submit"
                         loading={loading}
-                        icon={<SaveOutlined />}
+                        icon={<Save className="w-4 h-4"  />}
                       >
                         立即写入
                       </Button>
-                      <Button onClick={addDataPoint} icon={<PlusOutlined />}>
+                      <Button onClick={addDataPoint} icon={<Plus className="w-4 h-4"  />}>
                         添加到批次
                       </Button>
-                    </Space>
+                    </div>
                   </Form.Item>
                 </Form>
               </Card>
-            ),
-          },
+            )},
           {
             key: 'batch',
             label: '批量写入',
@@ -488,17 +473,17 @@ const DataWrite: React.FC = () => {
                     message="Line Protocol 格式说明"
                     description={
                       <div>
-                        <Paragraph>
-                          格式: <code>measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp</code>
-                        </Paragraph>
-                        <Paragraph>
-                          示例: <code>temperature,host=server01,region=us-west value=23.5,status="ok" 1609459200000</code>
-                        </Paragraph>
+                        <p className="mb-2">
+                          格式: <code className="bg-gray-100 px-1 rounded">measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp</code>
+                        </p>
+                        <p className="mb-0">
+                          示例: <code className="bg-gray-100 px-1 rounded">temperature,host=server01,region=us-west value=23.5,status="ok" 1609459200000</code>
+                        </p>
                       </div>
                     }
                     type="info"
                     showIcon
-                    icon={<InfoCircleOutlined />}
+                    icon={<Info className="w-4 h-4"  />}
                   />
 
                   <Divider />
@@ -532,9 +517,9 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                 <Card
                   title={`批次数据点 (${dataPoints.length})`}
                   extra={
-                    <Space>
+                    <div className="flex gap-2">
                       <Button
-                        icon={<ClearOutlined />}
+                        icon={<X className="w-4 h-4" />}
                         onClick={clearDataPoints}
                         disabled={dataPoints.length === 0}
                       >
@@ -542,14 +527,14 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                       </Button>
                       <Button
                         type="primary"
-                        icon={<SaveOutlined />}
+                        icon={<Save className="w-4 h-4"  />}
                         onClick={writeBatchPoints}
                         loading={loading}
                         disabled={dataPoints.length === 0}
                       >
                         批量写入
                       </Button>
-                    </Space>
+                    </div>
                   }
                 >
                   <Table
@@ -559,16 +544,13 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                     pagination={{
                       pageSize: 10,
                       showSizeChanger: true,
-                      showTotal: (total) => `共 ${total} 个数据点`,
-                    }}
+                      showTotal: (total) => `共 ${total} 个数据点`}}
                     locale={{
-                      emptyText: '暂无数据点，请添加数据点到批次',
-                    }}
+                      emptyText: '暂无数据点，请添加数据点到批次'}}
                   />
                 </Card>
               </div>
-            ),
-          },
+            )},
           {
             key: 'import',
             label: '文件导入',
@@ -578,7 +560,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                 extra={
                   <Button
                     type="primary"
-                    icon={<UploadOutlined />}
+                    icon={<Upload className="w-4 h-4"  />}
                     onClick={() => setImportDialogVisible(true)}
                     disabled={!selectedDatabase}
                   >
@@ -597,32 +579,32 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                   <Row gutter={16}>
                     <Col span={8}>
                       <Card size="small" title="CSV 格式">
-                        <Paragraph>
+                        <div className="text-sm">
                           • 第一行为表头<br/>
                           • 数据用逗号分隔<br/>
                           • 支持时间戳字段<br/>
                           • 自动推断数据类型
-                        </Paragraph>
+                        </div>
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small" title="JSON 格式">
-                        <Paragraph>
+                        <div className="text-sm">
                           • 对象数组格式<br/>
                           • 每个对象一行数据<br/>
                           • 支持嵌套字段<br/>
                           • 灵活的数据结构
-                        </Paragraph>
+                        </div>
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small" title="字段映射">
-                        <Paragraph>
+                        <div className="text-sm">
                           • 自动字段映射<br/>
                           • 支持标签和字段<br/>
                           • 时间字段识别<br/>
                           • 数据类型转换
-                        </Paragraph>
+                        </div>
                       </Card>
                     </Col>
                   </Row>
@@ -637,8 +619,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                   )}
                 </div>
               </Card>
-            ),
-          },
+            )},
         ]}
       />
 
@@ -649,7 +630,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
         connectionId={activeConnectionId}
         database={selectedDatabase}
         onSuccess={() => {
-          message.success('数据导入成功');
+          toast({ title: "成功", description: "数据导入成功" });
           setImportDialogVisible(false);
         }}
       />

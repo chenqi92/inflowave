@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from 'antd';
-import { Modal, Space, message } from '@/components/ui';
-import { CheckOutlined, EyeOutlined, InboxOutlined } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 
@@ -25,8 +25,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   connections,
   currentConnection,
   currentDatabase,
-  onSuccess,
-}) => {
+  onSuccess}) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -50,9 +49,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
           precision: 'ms',
           batchSize: 1000,
           retentionPolicy: '',
-          consistency: 'one',
-        },
-      });
+          consistency: 'one'}});
       setWriteResult(null);
       setPreviewData('');
       setShowPreview(false);
@@ -68,7 +65,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       setDatabases(dbList);
     } catch (error) {
       console.error('获取数据库列表失败:', error);
-      message.error('获取数据库列表失败');
+      toast({ title: "错误", description: "获取数据库列表失败", variant: "destructive" });
     }
   };
 
@@ -83,7 +80,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     try {
       const values = await form.validateFields(['data', 'format', 'measurement']);
       if (!values.data?.trim()) {
-        message.warning('请输入数据内容');
+        toast({ title: "警告", description: "请输入数据内容" });
         return;
       }
 
@@ -91,14 +88,13 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       const isValid = await safeTauriInvoke('validate_data_format', {
         data: values.data,
         format: values.format,
-        measurement: values.measurement,
-      });
+        measurement: values.measurement});
 
       if (isValid) {
-        message.success('数据格式验证通过');
+        toast({ title: "成功", description: "数据格式验证通过" });
       }
     } catch (error) {
-      message.error(`数据格式验证失败: ${error}`);
+      toast({ title: "错误", description: "数据格式验证失败: ${error}", variant: "destructive" });
     } finally {
       setValidating(false);
     }
@@ -109,7 +105,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     try {
       const values = await form.validateFields(['data', 'format', 'measurement']);
       if (!values.data?.trim()) {
-        message.warning('请输入数据内容');
+        toast({ title: "警告", description: "请输入数据内容" });
         return;
       }
 
@@ -118,13 +114,12 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         data: values.data,
         format: values.format,
         measurement: values.measurement,
-        limit: 10,
-      }) as string;
+        limit: 10}) as string;
 
       setPreviewData(preview);
       setShowPreview(true);
     } catch (error) {
-      message.error(`预览转换失败: ${error}`);
+      toast({ title: "错误", description: "预览转换失败: ${error}", variant: "destructive" });
     } finally {
       setPreviewing(false);
     }
@@ -143,27 +138,25 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         measurement: values.measurement,
         format: values.format,
         data: values.data,
-        options: values.options,
-      };
+        options: values.options};
 
       const result = await safeTauriInvoke('write_data', { request: writeConfig }) as DataWriteResult;
       setWriteResult(result);
 
       if (result.success) {
-        message.success('数据写入成功');
+        toast({ title: "成功", description: "数据写入成功" });
         onSuccess?.(result);
       } else {
-        message.error('数据写入失败');
+        toast({ title: "错误", description: "数据写入失败", variant: "destructive" });
       }
     } catch (error) {
-      message.error(`数据写入失败: ${error}`);
+      toast({ title: "错误", description: "数据写入失败: ${error}", variant: "destructive" });
       setWriteResult({
         success: false,
         message: `写入失败: ${error}`,
         pointsWritten: 0,
         errors: [String(error)],
-        duration: 0,
-      });
+        duration: 0});
     } finally {
       setLoading(false);
     }
@@ -186,7 +179,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         form.setFieldValue('format', 'line-protocol');
       }
 
-      message.success('文件内容已加载');
+      toast({ title: "成功", description: "文件内容已加载" });
     };
     reader.readAsText(file);
     return false; // 阻止默认上传行为
@@ -299,15 +292,15 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
               <Form.Item
                 name="data"
                 label={
-                  <Space>
+                  <div className="flex gap-2">
                     <span>数据内容</span>
                     <Button size="small" loading={validating} onClick={validateData}>
-                      <CheckOutlined /> 验证格式
+                      <Check className="w-4 h-4"  /> 验证格式
                     </Button>
                     <Button size="small" loading={previewing} onClick={previewConversion}>
-                      <EyeOutlined /> 预览转换
+                      <Eye className="w-4 h-4"  /> 预览转换
                     </Button>
-                  </Space>
+                  </div>
                 }
                 rules={[{ required: true, message: '请输入数据内容' }]}
               >
@@ -330,7 +323,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                 showUploadList={false}
               >
                 <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
+                  <Inbox />
                 </p>
                 <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
                 <p className="ant-upload-hint">

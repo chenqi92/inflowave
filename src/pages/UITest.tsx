@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, Table, Tabs, Typography, Alert, Tag, Empty, Spin, Form, Row, Col, Statistic } from 'antd';
-import { Card, CardHeader, CardTitle, CardContent, Space, Modal, message,  } from '@/components/ui';
-
-const { Title, Text, Paragraph } = Typography;
+import { Button, Input, Select, Table, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertTitle, AlertDescription, Tag, Empty, Spin, Form, Title, Text, Paragraph, Statistic, Row, Col } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 const UITest: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -12,18 +10,15 @@ const UITest: React.FC = () => {
     {
       key: 'name',
       title: 'Name',
-      dataIndex: 'name',
-    },
+      dataIndex: 'name'},
     {
       key: 'age',
       title: 'Age',
-      dataIndex: 'age',
-    },
+      dataIndex: 'age'},
     {
       key: 'email',
       title: 'Email',
-      dataIndex: 'email',
-    },
+      dataIndex: 'email'},
   ];
 
   const tableData = [
@@ -38,27 +33,10 @@ const UITest: React.FC = () => {
     { value: 'option3', label: 'Option 3' },
   ];
 
-  const tabItems = [
-    {
-      key: 'tab1',
-      label: 'Tab 1',
-      children: <div className="p-4">Content of Tab 1</div>,
-    },
-    {
-      key: 'tab2',
-      label: 'Tab 2',
-      children: <div className="p-4">Content of Tab 2</div>,
-    },
-    {
-      key: 'tab3',
-      label: 'Tab 3',
-      children: <div className="p-4">Content of Tab 3</div>,
-    },
-  ];
 
   const handleFormSubmit = (values: any) => {
     console.log('Form values:', values);
-    message.success('Form submitted successfully!');
+    toast({ title: "成功", description: "Form submitted successfully!" });
   };
 
   return (
@@ -71,16 +49,16 @@ const UITest: React.FC = () => {
           <CardTitle>Buttons</CardTitle>
         </CardHeader>
         <CardContent>
-          <Space wrap>
+          <div className="flex flex-wrap gap-2">
             <Button variant="default">Default</Button>
-            <Button variant="primary">Primary</Button>
+            <Button variant="default">Primary</Button>
             <Button variant="secondary">Secondary</Button>
             <Button variant="outline">Outline</Button>
             <Button variant="ghost">Ghost</Button>
-            <Button variant="danger">Danger</Button>
-            <Button loading>Loading</Button>
+            <Button variant="destructive">Danger</Button>
+            <Button disabled>Loading</Button>
             <Button disabled>Disabled</Button>
-          </Space>
+          </div>
         </CardContent>
       </Card>
 
@@ -171,17 +149,38 @@ const UITest: React.FC = () => {
           <CardTitle>Tabs</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs items={tabItems} />
+          <Tabs defaultValue="tab1">
+            <TabsList>
+              <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+              <TabsTrigger value="tab2">Tab 2</TabsTrigger>
+              <TabsTrigger value="tab3">Tab 3</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tab1" className="p-4">Content of Tab 1</TabsContent>
+            <TabsContent value="tab2" className="p-4">Content of Tab 2</TabsContent>
+            <TabsContent value="tab3" className="p-4">Content of Tab 3</TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
       {/* Alerts */}
-      <Space direction="vertical" className="w-full">
-        <Alert type="info" message="Info Alert" description="This is an info alert" showIcon />
-        <Alert type="success" message="Success Alert" description="This is a success alert" showIcon />
-        <Alert type="warning" message="Warning Alert" description="This is a warning alert" showIcon />
-        <Alert type="error" message="Error Alert" description="This is an error alert" showIcon />
-      </Space>
+      <div className="space-y-4">
+        <Alert>
+          <AlertTitle>Info Alert</AlertTitle>
+          <AlertDescription>This is an info alert</AlertDescription>
+        </Alert>
+        <Alert>
+          <AlertTitle>Success Alert</AlertTitle>
+          <AlertDescription>This is a success alert</AlertDescription>
+        </Alert>
+        <Alert variant="destructive">
+          <AlertTitle>Warning Alert</AlertTitle>
+          <AlertDescription>This is a warning alert</AlertDescription>
+        </Alert>
+        <Alert variant="destructive">
+          <AlertTitle>Error Alert</AlertTitle>
+          <AlertDescription>This is an error alert</AlertDescription>
+        </Alert>
+      </div>
 
       {/* Tags */}
       <Card>
@@ -189,15 +188,15 @@ const UITest: React.FC = () => {
           <CardTitle>Tags</CardTitle>
         </CardHeader>
         <CardContent>
-          <Space wrap>
+          <div className="flex flex-wrap gap-2">
             <Tag>Default</Tag>
-            <Tag color="primary">Primary</Tag>
-            <Tag color="success">Success</Tag>
-            <Tag color="warning">Warning</Tag>
-            <Tag color="error">Error</Tag>
-            <Tag color="processing">Processing</Tag>
+            <Tag variant="secondary">Primary</Tag>
+            <Tag variant="success">Success</Tag>
+            <Tag variant="warning">Warning</Tag>
+            <Tag variant="destructive">Error</Tag>
+            <Tag variant="processing">Processing</Tag>
             <Tag closable>Closable</Tag>
-          </Space>
+          </div>
         </CardContent>
       </Card>
 
@@ -208,19 +207,18 @@ const UITest: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Button onClick={() => setModalOpen(true)}>Open Modal</Button>
-          <Modal
-            open={modalOpen}
-            onClose={() => setModalOpen(false)}
-            title="Test Modal"
-            footer={
-              <Space>
-                <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-                <Button variant="primary" onClick={() => setModalOpen(false)}>OK</Button>
-              </Space>
-            }
-          >
-            <p>This is a test modal content.</p>
-          </Modal>
+          <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Test Modal</DialogTitle>
+              </DialogHeader>
+              <p>This is a test modal content.</p>
+              <div className="flex gap-2 justify-end mt-4">
+                <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+                <Button onClick={() => setModalOpen(false)}>OK</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
@@ -230,13 +228,13 @@ const UITest: React.FC = () => {
           <CardTitle>Messages</CardTitle>
         </CardHeader>
         <CardContent>
-          <Space>
-            <Button onClick={() => message.info('This is an info message')}>Info</Button>
-            <Button onClick={() => message.success('This is a success message')}>Success</Button>
-            <Button onClick={() => message.warning('This is a warning message')}>Warning</Button>
-            <Button onClick={() => message.error('This is an error message')}>Error</Button>
-            <Button onClick={() => message.loading('Loading...', 2000)}>Loading</Button>
-          </Space>
+          <div className="flex gap-2">
+            <Button onClick={() => toast({ title: "信息", description: "This is an info message" })}>Info</Button>
+            <Button onClick={() => toast({ title: "成功", description: "This is a success message" })}>Success</Button>
+            <Button onClick={() => toast({ title: "警告", description: "This is a warning message" })}>Warning</Button>
+            <Button onClick={() => toast({ title: "错误", description: "This is an error message", variant: "destructive" })}>Error</Button>
+            <Button onClick={() => toast({ title: "加载中", description: "Loading..." })}>Loading</Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -256,10 +254,10 @@ const UITest: React.FC = () => {
           <CardTitle>Loading Spinner</CardTitle>
         </CardHeader>
         <CardContent>
-          <Space>
-            <Spin size="sm" />
-            <Spin size="md" />
-            <Spin size="lg" />
+          <div className="flex gap-4 items-center">
+            <Spin size="small" />
+            <Spin size="default" />
+            <Spin size="large" />
             <Spin spinning={loading} tip="Loading...">
               <div className="p-8 bg-gray-100 rounded">
                 <Button onClick={() => setLoading(!loading)}>
@@ -267,7 +265,7 @@ const UITest: React.FC = () => {
                 </Button>
               </div>
             </Spin>
-          </Space>
+          </div>
         </CardContent>
       </Card>
     </div>

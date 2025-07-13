@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Typography } from 'antd';
-import { Card, Space, message } from '@/components/ui';
+import { Button, Typography } from '@/components/ui';
+import { Card, Space, toast } from '@/components/ui';
+
+
 import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Title, Text } = Typography;
@@ -21,9 +23,9 @@ const ConnectionDebug: React.FC = () => {
     try {
       const info = await invoke<DebugInfo>('debug_connection_manager');
       setDebugInfo(info);
-      message.success('调试信息获取成功');
+      toast({ title: "成功", description: "调试信息获取成功" });
     } catch (error) {
-      message.error(`获取调试信息失败: ${error}`);
+      toast({ title: "错误", description: "获取调试信息失败: ${error}", variant: "destructive" });
       console.error('Debug error:', error);
     } finally {
       setLoading(false);
@@ -34,7 +36,7 @@ const ConnectionDebug: React.FC = () => {
     <div className="p-4">
       <Title level={3}>连接管理器调试</Title>
       
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <div className="flex gap-2" direction="vertical" size="large" style={{ width: '100%' }}>
         <Button 
           type="primary" 
           onClick={handleDebug}
@@ -45,7 +47,7 @@ const ConnectionDebug: React.FC = () => {
 
         {debugInfo && (
           <Card title="调试信息" size="small">
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <div className="flex gap-2" direction="vertical" size="middle" style={{ width: '100%' }}>
               <div>
                 <Text strong>连接数量: </Text>
                 <Text>{debugInfo.connection_count}</Text>
@@ -69,10 +71,10 @@ const ConnectionDebug: React.FC = () => {
                   {JSON.stringify(debugInfo.statuses, null, 2)}
                 </pre>
               </div>
-            </Space>
+            </div>
           </Card>
         )}
-      </Space>
+      </div>
     </div>
   );
 };

@@ -46,8 +46,7 @@ export class ConnectionPoolManager {
     maxRetries: 3,
     retryInterval: 1000,
     healthCheckInterval: 60000, // 1分钟
-    enablePooling: true,
-  };
+    enablePooling: true};
 
   private constructor() {}
 
@@ -145,8 +144,7 @@ export class ConnectionPoolManager {
       // 根据查询频率调整空闲超时
       idleTimeout: usageStats.avgQueryInterval > 600000 ? 300000 : 600000,
       // 根据错误率调整重试配置
-      maxRetries: usageStats.errorRate > 0.1 ? 5 : 3,
-    };
+      maxRetries: usageStats.errorRate > 0.1 ? 5 : 3};
 
     return optimizedConfig;
   }
@@ -171,8 +169,7 @@ class ConnectionPool {
     failedConnections: 0,
     avgConnectionTime: 0,
     poolUtilization: 0,
-    lastHealthCheck: new Date(),
-  };
+    lastHealthCheck: new Date()};
 
   constructor(
     private connectionId: string,
@@ -246,8 +243,7 @@ class ConnectionPool {
           clearTimeout(timeout);
           reject(error);
         },
-        timestamp: Date.now(),
-      });
+        timestamp: Date.now()});
 
       this.stats.waitingRequests = this.waitingQueue.length;
     });
@@ -288,14 +284,12 @@ class ConnectionPool {
       status: 'idle',
       createdAt: new Date(),
       lastUsed: new Date(),
-      useCount: 0,
-    };
+      useCount: 0};
 
     try {
       await safeTauriInvoke('create_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id,
-      });
+        poolConnectionId: connection.id});
 
       this.connections.push(connection);
       this.stats.totalConnections++;
@@ -316,13 +310,11 @@ class ConnectionPool {
       status: 'active',
       createdAt: new Date(),
       lastUsed: new Date(),
-      useCount: 1,
-    };
+      useCount: 1};
 
     await safeTauriInvoke('create_direct_connection', {
       connectionId: this.connectionId,
-      directConnectionId: connection.id,
-    });
+      directConnectionId: connection.id});
 
     return connection;
   }
@@ -334,8 +326,7 @@ class ConnectionPool {
     try {
       await safeTauriInvoke('destroy_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id,
-      });
+        poolConnectionId: connection.id});
 
       const index = this.connections.indexOf(connection);
       if (index !== -1) {
@@ -394,8 +385,7 @@ class ConnectionPool {
     try {
       await safeTauriInvoke('test_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id,
-      });
+        poolConnectionId: connection.id});
     } catch (error) {
       connection.status = 'failed';
       this.stats.failedConnections++;

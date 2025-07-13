@@ -86,8 +86,7 @@ class ErrorLogger {
         sessionId: this.sessionId,
         appVersion: '1.0.5',
         timestamp: Date.now(),
-        url: window.location.href,
-      }
+        url: window.location.href}
     };
 
     await this.writeLogEntry(sessionInfo);
@@ -105,8 +104,7 @@ class ErrorLogger {
         lineNumber: event.lineno,
         columnNumber: event.colno,
         additional: {
-          error: event.error?.toString(),
-        }
+          error: event.error?.toString()}
       });
     });
 
@@ -119,8 +117,7 @@ class ErrorLogger {
         stack: event.reason?.stack,
         additional: {
           reason: event.reason?.toString(),
-          promise: event.promise,
-        }
+          promise: event.promise}
       });
     });
 
@@ -137,8 +134,7 @@ class ErrorLogger {
             additional: {
               url: args[0],
               status: response.status,
-              statusText: response.statusText,
-            }
+              statusText: response.statusText}
           });
         }
         return response;
@@ -150,8 +146,7 @@ class ErrorLogger {
           stack: (error as Error)?.stack,
           additional: {
             url: args[0],
-            error: error?.toString(),
-          }
+            error: error?.toString()}
         });
         throw error;
       }
@@ -168,8 +163,7 @@ class ErrorLogger {
         level: 'error',
         message: args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' '),
         additional: {
-          args: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg),
-        }
+          args: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg)}
       });
     };
 
@@ -180,8 +174,7 @@ class ErrorLogger {
         level: 'warn',
         message: args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' '),
         additional: {
-          args: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg),
-        }
+          args: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg)}
       });
     };
   }
@@ -200,8 +193,7 @@ class ErrorLogger {
       componentStack: errorInfo.componentStack,
       userAgent: navigator.userAgent,
       pathname: window.location.pathname,
-      additional: errorInfo.additional,
-    };
+      additional: errorInfo.additional};
 
     // 添加到缓冲区
     this.logBuffer.push(logEntry);
@@ -232,8 +224,7 @@ class ErrorLogger {
       componentStack: errorInfo.componentStack,
       additional: {
         errorName: error.name,
-        componentStack: errorInfo.componentStack,
-      }
+        componentStack: errorInfo.componentStack}
     });
   }
 

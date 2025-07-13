@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tooltip, List, Tabs } from 'antd';
-import { Card, Space, Modal } from '@/components/ui';
-import { CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined, WarningOutlined, ReloadOutlined } from '@/components/ui';
+import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, List
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Info, RefreshCw, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { ImportWizardData } from '../SmartImportWizard';
 import { DataValidator, DataQualityAnalyzer, DataQualityReport, QualityIssue } from '../DataValidationUtils';
 
@@ -23,8 +24,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
   dataValidator,
   qualityAnalyzer,
   loading,
-  onLoadingChange,
-}) => {
+  onLoadingChange}) => {
   const [validationDetails, setValidationDetails] = useState<{
     [key: string]: any;
   }>({});
@@ -55,8 +55,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
           invalidCount: 0,
           errors: [] as string[],
           warnings: [] as string[],
-          suggestions: [] as string[],
-        };
+          suggestions: [] as string[]};
         
         // 验证每个值
         for (const value of columnData) {
@@ -111,17 +110,17 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
   const getIssueTypeIcon = (type: string) => {
     switch (type) {
       case 'missing':
-        return <ExclamationCircleOutlined style={{ color: '#faad14' }} />;
+        return <AlertCircle style={{ color: '#faad14' }} />;
       case 'duplicate':
-        return <InfoCircleOutlined style={{ color: '#1890ff' }} />;
+        return <Info className="w-4 h-4" style={{ color: '#1890ff' }}  />;
       case 'invalid':
-        return <ExclamationCircleOutlined style={{ color: '#f5222d' }} />;
+        return <AlertCircle style={{ color: '#f5222d' }} />;
       case 'outlier':
-        return <WarningOutlined style={{ color: '#fa8c16' }} />;
+        return <AlertTriangle style={{ color: '#fa8c16' }} />;
       case 'inconsistent':
-        return <ExclamationCircleOutlined style={{ color: '#722ed1' }} />;
+        return <AlertCircle style={{ color: '#722ed1' }} />;
       default:
-        return <InfoCircleOutlined />;
+        return <Info className="w-4 h-4"  />;
     }
   };
 
@@ -229,7 +228,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
         extra={
           <Button 
             size="small" 
-            icon={<ReloadOutlined />}
+            icon={<RefreshCw className="w-4 h-4"  />}
             onClick={runQualityAnalysis}
             loading={loading}
           >
@@ -258,13 +257,13 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
               <List.Item.Meta
                 avatar={getIssueTypeIcon(issue.type)}
                 title={
-                  <Space>
+                  <div className="flex gap-2">
                     <Text strong>{issue.description}</Text>
                     <Tag color={getSeverityColor(issue.severity)}>
                       {issue.severity === 'high' ? '严重' : 
                        issue.severity === 'medium' ? '中等' : '轻微'}
                     </Tag>
-                  </Space>
+                  </div>
                 }
                 description={
                   <div>
@@ -295,8 +294,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
         title: '字段名',
         dataIndex: 'field',
         key: 'field',
-        render: (text: string) => <Text strong>{text}</Text>,
-      },
+        render: (text: string) => <Text strong>{text}</Text>},
       {
         title: '有效数据',
         dataIndex: 'validCount',
@@ -306,8 +304,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             <Text style={{ color: '#52c41a' }}>{count}</Text>
             <Text type="secondary"> / {count + record.invalidCount}</Text>
           </div>
-        ),
-      },
+        )},
       {
         title: '验证率',
         dataIndex: 'validationRate',
@@ -325,8 +322,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
               <Text style={{ fontSize: '12px' }}>{rate.toFixed(1)}%</Text>
             </div>
           );
-        },
-      },
+        }},
       {
         title: '错误数',
         dataIndex: 'invalidCount',
@@ -335,8 +331,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
           <Text style={{ color: count > 0 ? '#f5222d' : '#52c41a' }}>
             {count}
           </Text>
-        ),
-      },
+        )},
       {
         title: '状态',
         key: 'status',
@@ -347,14 +342,12 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
               {hasErrors ? '有问题' : '正常'}
             </Tag>
           );
-        },
-      },
+        }},
     ];
 
     const dataSource = Object.values(validationDetails).map((details: any, index) => ({
       ...details,
-      key: index,
-    }));
+      key: index}));
 
     return (
       <Card title="字段验证结果">
@@ -500,7 +493,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
           </div>
           <Button
             type="primary"
-            icon={<CheckCircleOutlined />}
+            icon={<CheckCircle />}
             loading={loading}
             onClick={runQualityAnalysis}
           >
