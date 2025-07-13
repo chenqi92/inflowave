@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Button, Card, Col, Layout, Row, Space, Tabs, Tag, Typography, Tooltip, Tree } from '@/components/ui';
+import { Button, Col, Layout, Row, Tabs, Tag, Typography, Tooltip, Tree } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { DashboardOutlined, DatabaseOutlined, LineChartOutlined, PlayCircleOutlined, ReloadOutlined, SettingOutlined, StopOutlined, TableOutlined, ApiOutlined, BookOutlined, FieldTimeOutlined, HistoryOutlined, ImportOutlined, TagsOutlined, ThunderboltOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

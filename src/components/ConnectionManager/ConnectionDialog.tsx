@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Switch, Button, Space, Alert, Steps } from '@/components/ui';
+import { Form, Input, InputNumber, Switch, Button, Alert, Steps } from 'antd';
+import { Modal, Space } from '@/components/ui';
 import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@/components/ui';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';

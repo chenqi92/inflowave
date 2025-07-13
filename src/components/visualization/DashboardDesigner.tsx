@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Card, Button, Space, Modal, Form, Input, Select, Row, Col, Typography, message, Tooltip, Popconfirm, Alert } from '@/components/ui';
+import { Button, Form, Input, Select, Row, Col, Typography, Tooltip, Popconfirm, Alert } from 'antd';
+import { Card, Space, Modal, message } from '@/components/ui';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DragOutlined, SettingOutlined, SaveOutlined, EyeOutlined, FullscreenOutlined } from '@/components/ui';
 import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
 import AdvancedChartLibrary, { ChartType, AdvancedChartConfig } from './AdvancedChartLibrary';

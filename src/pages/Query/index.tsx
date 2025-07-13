@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Button, Space, Typography, Select, Table, Tabs, message, Spin, Row, Col, Alert, Tree } from '@/components/ui';
+import { Button, Typography, Select, Table, Tabs, Spin, Row, Col, Alert, Tree } from 'antd';
+import { Card, Space, message } from '@/components/ui';
 import { PlayCircleOutlined, SaveOutlined, DatabaseOutlined, TableOutlined, ExclamationCircleOutlined, DownloadOutlined, HistoryOutlined, FieldTimeOutlined, TagsOutlined } from '@/components/ui';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';

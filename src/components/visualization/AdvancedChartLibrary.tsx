@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Select, Button, Row, Col, Typography, Space, Tooltip, Alert } from '@/components/ui';
+import { Select, Button, Row, Col, Typography, Tooltip, Alert } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { FullscreenOutlined, DownloadOutlined, SettingOutlined, ReloadOutlined } from '@/components/ui';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';

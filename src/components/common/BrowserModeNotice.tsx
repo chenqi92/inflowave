@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Card, Typography, Button, Space, Divider } from '@/components/ui';
+import { Alert, Typography, Button, Divider } from 'antd';
+import { Card, Space } from '@/components/ui';
 import {
   InfoCircleOutlined,
   CodeOutlined,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Alert, Card, Row, Col, Table, message, Typography, Switch, Upload, Steps, Progress, Tabs, Divider, Tooltip } from '@/components/ui';
-import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@/components/ui';
+import { Form, Button, Space, Alert, Row, Col, message, Typography, Switch, Upload, Steps, Progress, Tabs, Divider, Tooltip, Input, Select, Table } from 'antd';
+import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Modal, Card } from '@/components/ui';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 

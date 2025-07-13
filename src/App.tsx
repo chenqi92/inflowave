@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
-import { Layout, Typography, Spin } from '@/components/ui';
+import { Layout, Typography, Spin } from 'antd';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { antdTheme } from '@/styles/antd-theme';
 import '@/styles/datagrip.css';

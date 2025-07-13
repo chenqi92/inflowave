@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Button, Table, Alert, Space, Typography, Collapse } from '@/components/ui';
+import { Button, Table, Alert, Typography, Collapse } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { BugOutlined, ReloadOutlined, InfoCircleOutlined } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';

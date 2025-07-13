@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Typography, Space, Row, Col, Card, Tag, Divider } from '@/components/ui';
+import { Typography, Row, Col, Tag, Divider } from 'antd';
+import { Modal, Space, Card } from '@/components/ui';
 import {
   DatabaseOutlined,
   InfoCircleOutlined,

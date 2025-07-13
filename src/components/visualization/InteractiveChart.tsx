@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { Card, Button, Space, Tooltip, Dropdown, Select, Switch } from '@/components/ui';
+import { Button, Tooltip, Dropdown, Select, Switch } from 'antd';
+import { Card, Space } from '@/components/ui';
 import {
   FullscreenOutlined,
   FullscreenExitOutlined,

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Card, Button, Space, Select, Typography, message, Tooltip, Badge, Dropdown, Switch, Tabs, Drawer } from '@/components/ui';
+import { Button, Select, Typography, Tooltip, Badge, Dropdown, Switch, Tabs, Drawer } from 'antd';
+import { Card, Space, message } from '@/components/ui';
 import { 
   PlayCircleOutlined, 
   SaveOutlined, 

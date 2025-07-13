@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Typography, Button, Space, Tabs, Modal } from '@/components/ui';
+import { Typography, Button, Tabs } from 'antd';
+import { Space, Modal } from '@/components/ui';
 import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';

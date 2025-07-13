@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Select, Space, Typography, Table, message, Tabs, Alert, Row, Col, Tag } from '@/components/ui';
+import { Form, Input, Button, Select, Typography, Table, Tabs, Alert, Row, Col, Tag } from 'antd';
+import { Card, Space, message } from '@/components/ui';
 // TODO: Replace these Ant Design components: DatePicker, InputNumber, Divider, 
 import { PlusOutlined, DeleteOutlined, UploadOutlined, SaveOutlined, ExclamationCircleOutlined, InfoCircleOutlined } from '@/components/ui';
 // TODO: Replace these icons: ClearOutlined

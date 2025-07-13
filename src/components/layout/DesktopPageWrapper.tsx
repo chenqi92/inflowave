@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Button, Breadcrumb } from '@/components/ui';
+import { Typography, Button, Breadcrumb } from 'antd';
 import { HomeOutlined, RightOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 

@@ -1,28 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Input,
-  Select,
-  Table,
-  Tabs,
-  Typography,
-  Space,
-  Alert,
-  Tag,
-  Empty,
-  Spin,
-  Modal,
-  Form,
-  FormItem,
-  Row,
-  Col,
-  Statistic,
-  message,
-} from '@/components/ui';
+import { Button, Input, Select, Table, Tabs, Typography, Alert, Tag, Empty, Spin, Form, FormItem, Row, Col, Statistic } from 'antd';
+import { Card, CardHeader, CardTitle, CardContent, Space, Modal, message,  } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 

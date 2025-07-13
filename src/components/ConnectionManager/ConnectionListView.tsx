@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Button, Tag, Space, Avatar, Tooltip } from '@/components/ui';
+import { Button, Tag, Avatar, Tooltip } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { 
   WifiOutlined, 
   DisconnectOutlined, 

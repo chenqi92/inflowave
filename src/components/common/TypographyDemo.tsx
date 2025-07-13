@@ -1,5 +1,6 @@
 import React from 'react';
-import { Typography, Space } from '@/components/ui';
+import { Typography } from 'antd';
+import { Space } from '@/components/ui';
 
 const { Text } = Typography;
 

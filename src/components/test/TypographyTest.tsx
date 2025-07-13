@@ -1,5 +1,6 @@
 import React from 'react';
-import { Typography, Card, Space } from '@/components/ui';
+import { Typography } from 'antd';
+import { Card, Space } from '@/components/ui';
 // TODO: Replace these Ant Design components: Divider
 
 const { Title, Paragraph, Text, Link } = Typography;

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { Card, Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Space, Table, message } from '@/components/ui';
+import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from 'antd';
+import { Card, Space, message } from '@/components/ui';
 import { UploadOutlined, FileTextOutlined, FileExcelOutlined, DeleteOutlined } from '@/components/ui';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';

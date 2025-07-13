@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Space, Alert, message, Switch } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Switch } from 'antd';
+import { Modal, Space, message } from '@/components/ui';
 import { DownloadOutlined, TableOutlined, FileTextOutlined, FileExcelOutlined } from '@/components/ui';
 import type { QueryResult } from '@/types';
 

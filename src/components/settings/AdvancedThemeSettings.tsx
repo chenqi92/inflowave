@@ -1,30 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Switch,
-  Slider,
-  Select,
-  ColorPicker,
-  Typography,
-  Space,
-  Divider,
-  Button,
-  message,
-  Tooltip,
-  Preview,
-  Radio,
-  Checkbox,
-  InputNumber,
-  Popover,
-  Modal,
-  Upload,
-  List,
-  Tag,
-  Badge,
-  Alert,
-} from '@/components/ui';
+import { Row, Col, Switch, Slider, Select, Typography, Divider, Button, Tooltip, Radio, Checkbox, InputNumber, Upload, List, Tag, Badge, Alert } from 'antd';
+import { Card, ColorPicker, Space, message, Preview, Popover, Modal,  } from '@/components/ui';
 import {
   BgColorsOutlined,
   FontSizeOutlined,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Tag, Alert, Statistic } from '@/components/ui';
+import { Row, Col, Typography, Button, Tag, Alert, Statistic } from 'antd';
+import { Card, Space } from '@/components/ui';
 // TODO: Replace these Ant Design components: Timeline, Collapse, Progress, List, Avatar, Badge, 
 import { CheckCircleOutlined, DatabaseOutlined, LineChartOutlined, SettingOutlined } from '@/components/ui';
 // TODO: Replace these icons: RocketOutlined, StarOutlined, ThunderboltOutlined, ImportOutlined, MonitorOutlined, AppstoreOutlined

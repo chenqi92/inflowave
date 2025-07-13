@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Table, Typography, Space, Tag, Divider } from '@/components/ui';
+import { Table, Typography, Tag, Divider } from 'antd';
+import { Modal, Space } from '@/components/ui';
 import {
   SettingOutlined,
   FileOutlined,

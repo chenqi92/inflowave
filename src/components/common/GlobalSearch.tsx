@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Input, Typography, Space, Tag, Empty, Spin, Divider, List } from '@/components/ui';
+import { Input, Typography, Tag, Empty, Spin, Divider, List } from 'antd';
+import { Modal, Space } from '@/components/ui';
 import {
   SearchOutlined,
   DatabaseOutlined,

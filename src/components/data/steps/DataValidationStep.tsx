@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Card, Table, Alert, Row, Col, Typography, Progress, Button, Space, Tag, Statistic, Tooltip, Modal, List, Tabs } from '@/components/ui';
+import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tooltip, List, Tabs } from 'antd';
+import { Card, Space, Modal } from '@/components/ui';
 import { CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined, WarningOutlined, ReloadOutlined } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';
 import { DataValidator, DataQualityAnalyzer, DataQualityReport, QualityIssue } from '../DataValidationUtils';

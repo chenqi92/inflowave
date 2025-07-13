@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, Row, Col, Statistic, Progress, Alert, Table, Tag, Button, Select, DatePicker, Space, Typography, Tooltip, Modal, List } from '@/components/ui';
+import { Row, Col, Statistic, Progress, Alert, Table, Tag, Button, Select, DatePicker, Typography, Tooltip, List } from 'antd';
+import { Card, Space, Modal } from '@/components/ui';
 import { ReloadOutlined, WarningOutlined, CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined, BarChartOutlined } from '@/components/ui';
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';

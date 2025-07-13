@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Button, Select, Form, Space, Tooltip, Switch, Slider, ColorPicker, Input, Drawer } from '@/components/ui';
+import { Button, Select, Form, Tooltip, Switch, Slider, Input, Drawer } from 'antd';
+import { Card, Space, ColorPicker } from '@/components/ui';
 import {
   BarChartOutlined,
   LineChartOutlined,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tree, Input, Space, Button, Tooltip, Badge, Dropdown, Empty, Spin } from '@/components/ui';
+import { Tree, Input, Button, Tooltip, Badge, Dropdown, Empty, Spin } from 'antd';
+import { Space } from '@/components/ui';
 import { 
   DatabaseOutlined,
   TableOutlined,

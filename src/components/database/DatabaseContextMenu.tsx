@@ -1,5 +1,6 @@
 import React from 'react';
-import { message, Modal, Dropdown } from '@/components/ui';
+import { Dropdown } from 'antd';
+import { message, Modal } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { PlusOutlined, ReloadOutlined, InfoCircleOutlined, DeleteOutlined, CopyOutlined, TableOutlined, ExportOutlined, FileTextOutlined } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';

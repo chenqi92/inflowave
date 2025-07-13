@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button, Empty, Alert, Tabs } from '@/components/ui';
+import { Row, Col, Statistic, Typography, Button, Empty, Alert, Tabs } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { DatabaseOutlined, BarChartOutlined, PlusOutlined, SearchOutlined, DashboardOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
 // TODO: Replace these icons: ApiOutlined, ClockCircleOutlined, RocketOutlined
 // You may need to find alternatives or create custom icons

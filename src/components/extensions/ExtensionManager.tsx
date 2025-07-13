@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tabs, Button, Modal, Form, Input, Select, Space, Typography, Tag, Alert, message, Row, Col } from '@/components/ui';
+import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col } from 'antd';
+import { Card, Modal, Space, message } from '@/components/ui';
 // TODO: Replace these Ant Design components: List, Switch, Divider, 
 import { SettingOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, PlusOutlined } from '@/components/ui';
 // TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Space, Typography, Divider } from '@/components/ui';
+import { Layout, Typography, Divider } from 'antd';
+import { Space } from '@/components/ui';
 import { DatabaseOutlined, WifiOutlined, ClockCircleOutlined, HddOutlined } from '@/components/ui';
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';

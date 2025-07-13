@@ -1,6 +1,7 @@
 import React from 'react';
 import type { MenuProps } from '@/components/ui';
-import { Button, Layout, Space, Typography, Avatar, Badge, Dropdown } from '@/components/ui';
+import { Button, Layout, Typography, Avatar, Badge, Dropdown } from 'antd';
+import { Space } from '@/components/ui';
 import { DatabaseOutlined, SettingOutlined, BulbOutlined, GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@/components/ui';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';

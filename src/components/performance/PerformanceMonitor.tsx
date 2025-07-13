@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Alert, Button, Select, Space, Typography, Tag, Progress, Tooltip, List, Divider } from '@/components/ui';
+import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress, Tooltip, List, Divider } from 'antd';
+import { Card, Space } from '@/components/ui';
 import { DashboardOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ReloadOutlined, SettingOutlined, DatabaseOutlined, ThunderboltOutlined, ClockCircleOutlined, WarningOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';

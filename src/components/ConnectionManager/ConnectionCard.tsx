@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Button, Badge, Tooltip, Dropdown, Progress } from '@/components/ui';
+import { Button, Badge, Tooltip, Dropdown, Progress } from 'antd';
+import { Card } from '@/components/ui';
 import { 
   PlayCircleOutlined, 
   PauseCircleOutlined, 

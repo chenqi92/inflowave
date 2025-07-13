@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from 'antd';
 import { masterTestRunner } from '@/utils/masterTestRunner';
 
 const TestButton: React.FC = () => {

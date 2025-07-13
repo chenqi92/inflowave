@@ -1,24 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Table,
-  Progress,
-  Tag,
-  Space,
-  Button,
-  Row,
-  Col,
-  Typography,
-  Tabs,
-  Statistic,
-  List,
-  Badge,
-  Select,
-  Input,
-  Spin,
-  Empty,
-  Switch,
-} from '@/components/ui';
+import { Table, Progress, Tag, Button, Row, Col, Typography, Tabs, Statistic, List, Badge, Select, Input, Spin, Empty, Switch } from 'antd';
+import { Card, Space,  } from '@/components/ui';
 import {
   BarChartOutlined,
   LineChartOutlined,

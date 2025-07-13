@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions } from '@/components/ui';
+import { Table, Button, Typography, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions } from 'antd';
+import { Card, Space, Modal, message } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip, Popconfirm, Descriptions, 
 import { DatabaseOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined, ReloadOutlined, BarChartOutlined, ExclamationCircleOutlined, EditOutlined } from '@/components/ui';
 

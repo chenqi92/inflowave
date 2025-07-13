@@ -1,5 +1,6 @@
 import React from 'react';
-import { Space, Typography, Menu, Dropdown, Badge } from '@/components/ui';
+import { Typography, Menu, Dropdown, Badge } from 'antd';
+import { Space } from '@/components/ui';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined, DownOutlined, WifiOutlined, ApiOutlined, ThunderboltOutlined, AppstoreOutlined } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';

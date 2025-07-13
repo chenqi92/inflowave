@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Tag, Button, Alert } from '@/components/ui';
+import { Row, Col, Statistic, Typography, Tag, Button, Alert } from 'antd';
+import { Card, Space } from '@/components/ui';
 // TODO: Replace these Ant Design components: Progress, Tooltip, 
 import { DatabaseOutlined, ReloadOutlined } from '@/components/ui';
 // TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, ApiOutlined, WarningOutlined

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Space, Typography, Breadcrumb, Divider, Tooltip } from '@/components/ui';
+import { Button, Typography, Breadcrumb, Divider, Tooltip } from 'antd';
+import { Space } from '@/components/ui';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeOutlined,

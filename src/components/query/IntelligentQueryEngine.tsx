@@ -1,31 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Tabs,
-  Button,
-  Input,
-  Space,
-  Typography,
-  Row,
-  Col,
-  Spin,
-  Alert,
-  Progress,
-  Tag,
-  Descriptions,
-  List,
-  Statistic,
-  Switch,
-  Select,
-  Tooltip,
-  Modal,
-  Drawer,
-  Timeline,
-  Badge,
-  Collapse,
-  Table,
-  message,
-} from '@/components/ui';
+import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Descriptions, List, Statistic, Switch, Select, Tooltip, Drawer, Timeline, Badge, Collapse, Table } from 'antd';
+import { Card, Space, Modal, message,  } from '@/components/ui';
 import {
   ThunderboltOutlined,
   RocketOutlined,

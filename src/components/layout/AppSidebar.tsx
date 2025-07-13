@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu } from '@/components/ui';
+import { Layout, Menu } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DashboardOutlined, DatabaseOutlined, SearchOutlined, BarChartOutlined, EditOutlined, SettingOutlined, ApiOutlined } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';

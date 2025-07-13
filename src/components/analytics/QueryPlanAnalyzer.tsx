@@ -1,33 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Tree,
-  Table,
-  Descriptions,
-  Progress,
-  Tag,
-  Space,
-  Button,
-  Modal,
-  Alert,
-  Tooltip,
-  Row,
-  Col,
-  Typography,
-  Divider,
-  Tabs,
-  Statistic,
-  List,
-  Timeline,
-  Popover,
-  Badge,
-  Switch,
-  Select,
-  Input,
-  Spin,
-  Empty,
-  message,
-} from '@/components/ui';
+import { Tree, Table, Descriptions, Progress, Tag, Button, Alert, Tooltip, Row, Col, Typography, Divider, Tabs, Statistic, List, Timeline, Badge, Switch, Select, Input, Spin, Empty } from 'antd';
+import { Card, Space, Modal, Popover, message,  } from '@/components/ui';
 import {
   PlayCircleOutlined,
   BarChartOutlined,

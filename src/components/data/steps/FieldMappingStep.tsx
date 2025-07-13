@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Card, Table, Input, Select, Switch, Button, Space, Alert, Row, Col, Typography, Tag, Tooltip, Modal, Form } from '@/components/ui';
+import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Tooltip, Form } from 'antd';
+import { Card, Space, Modal } from '@/components/ui';
 import { InfoCircleOutlined, EditOutlined, DeleteOutlined, PlusOutlined, BulkOutlined, CheckCircleOutlined } from '@/components/ui';
 import { ImportWizardData, FieldMapping } from '../SmartImportWizard';
 import { createDefaultValidationRules } from '../DataValidationUtils';

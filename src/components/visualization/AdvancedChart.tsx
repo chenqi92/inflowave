@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, Select, Button, Space, Typography, Row, Col } from '@/components/ui';
+import { Select, Button, Typography, Row, Col } from 'antd';
+import { Card, Space } from '@/components/ui';
 // TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
 import { LineChartOutlined, BarChartOutlined, PieChartOutlined, SettingOutlined, DownloadOutlined, ReloadOutlined } from '@/components/ui';
 // TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, FullscreenOutlined

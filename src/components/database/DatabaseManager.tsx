@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tabs, Table, Button, Space, Typography, Modal, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from '@/components/ui';
+import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Popconfirm, Tooltip, Progress } from 'antd';
+import { Card, Space, Modal } from '@/components/ui';
 import { DatabaseOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined, InfoCircleOutlined, ReloadOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';

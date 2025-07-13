@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, Steps, Button, Space, Card, Alert, Typography, Progress, message } from '@/components/ui';
+import { Steps, Button, Alert, Typography, Progress } from 'antd';
+import { Modal, Space, Card, message } from '@/components/ui';
 import { UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined, EyeOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 

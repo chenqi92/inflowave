@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, message, Menu } from '@/components/ui';
+import { Menu } from 'antd';
+import { Modal, message } from '@/components/ui';
 import { WifiOutlined, DisconnectOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, DatabaseOutlined, ExportOutlined } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';

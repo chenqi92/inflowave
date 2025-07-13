@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Space, Alert, Select, message, Typography, Switch, InputNumber, Tooltip } from '@/components/ui';
+import { Form, Input, Button, Alert, Select, Typography, Switch, InputNumber, Tooltip } from 'antd';
+import { Modal, Space, message } from '@/components/ui';
 import { InfoCircleOutlined, QuestionCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';

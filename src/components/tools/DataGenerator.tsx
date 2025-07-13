@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Button, Select, InputNumber, Form, message, Alert, Progress, Space, Typography, Divider, List, Tag } from 'antd';
+import { Button, Select, InputNumber, Form, message, Alert, Progress, Space, Typography, Divider, List, Tag } from 'antd';
 import { PlayCircleOutlined, DatabaseOutlined, ReloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from '@/components/ui';
+import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Dropdown, Progress, Badge } from 'antd';
+import { Card, Space, Modal } from '@/components/ui';
 import { PlayCircleOutlined, PauseCircleOutlined, SettingOutlined, DeleteOutlined, EditOutlined, EyeOutlined, WifiOutlined, DisconnectOutlined, MoreOutlined } from '@/components/ui';
-import type { TableColumn } from '@/components/ui';
+import type { ColumnType } from 'antd/es/table';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
@@ -154,7 +155,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   };
 
   // 表格列定义
-  const columns: TableColumn<ConnectionWithStatus>[] = [
+  const columns: ColumnType<ConnectionWithStatus>[] = [
     {
       title: '连接名称',
       dataIndex: 'name',

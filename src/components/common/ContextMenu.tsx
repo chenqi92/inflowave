@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Modal, message, Menu } from '@/components/ui';
+import { Menu } from 'antd';
+import { Modal, message } from '@/components/ui';
 import { EyeOutlined, BarChartOutlined, DeleteOutlined, InfoCircleOutlined, TableOutlined, DownloadOutlined, LineChartOutlined, PieChartOutlined, SettingOutlined, CopyOutlined, SearchOutlined, ExportOutlined, TagsOutlined, FunctionOutlined, AreaChartOutlined, NumberOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { MenuProps } from '@/components/ui';

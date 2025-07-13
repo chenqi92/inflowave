@@ -1,5 +1,6 @@
 import React from 'react';
-import { Tag, Space, Typography, Badge, Tooltip } from '@/components/ui';
+import { Tag, Typography, Badge, Tooltip } from 'antd';
+import { Space } from '@/components/ui';
 import { WifiOutlined, DisconnectOutlined, ExclamationCircleOutlined, LoadingOutlined, ClockCircleOutlined } from '@/components/ui';
 import type { ConnectionStatus } from '@/types';
 

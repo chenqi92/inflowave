@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, Form, Select, Button, Table, Input, Space, Typography, Tag, Modal, message, Row, Col, Switch, Divider, Slider } from '@/components/ui';
+import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Divider, Slider } from 'antd';
+import { Card, Space, Modal, message } from '@/components/ui';
 import { SettingOutlined, EyeOutlined, EditOutlined, DeleteOutlined, PlusOutlined, ControlOutlined, NotificationOutlined, LayoutOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';

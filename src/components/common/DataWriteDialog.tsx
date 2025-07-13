@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Alert, Space, Typography, Tabs, message, Row, Col, Upload } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from 'antd';
+import { Modal, Space, message } from '@/components/ui';
 import { CheckOutlined, EyeOutlined, InboxOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';

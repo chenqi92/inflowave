@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Card, Form, Select, Button, Typography, Space, message, Row, Col, Alert, Tabs, InputNumber, Switch, Divider, PageHeader, Modal } from '@/components/ui';
+import { Form, Select, Button, Typography, Row, Col, Alert, Tabs, InputNumber, Switch, Divider } from 'antd';
+import { Card, Space, message, PageHeader, Modal } from '@/components/ui';
 import { 
   SaveOutlined, 
   ReloadOutlined, 
