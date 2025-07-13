@@ -54,7 +54,7 @@ const Visualization: React.FC = () => {
 
     try {
       const request: QueryRequest = {
-        connection_id: activeConnectionId,
+        connectionId: activeConnectionId,
         database: chartConfig.database,
         query: chartConfig.query};
 

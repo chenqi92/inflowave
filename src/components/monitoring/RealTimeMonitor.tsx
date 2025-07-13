@@ -66,7 +66,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connection_id: selectedConnection});
+        connectionId: selectedConnection});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -86,7 +86,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       try {
         const result = await safeTauriInvoke<QueryResult>('execute_query', {
           request: {
-            connection_id: selectedConnection,
+            connectionId: selectedConnection,
             database: selectedDatabase,
             query}});
         results[query] = result;

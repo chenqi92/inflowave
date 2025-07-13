@@ -114,7 +114,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connection_id: connectionId});
+        connectionId: connectionId});
       console.log(`✅ 成功加载数据库列表:`, dbList);
       return dbList || [];
     } catch (error) {
@@ -137,7 +137,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     try {
       // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
       const tables = await safeTauriInvoke<string[]>('get_measurements', {
-        connection_id: connectionId,
+        connectionId: connectionId,
         database});
       console.log(`✅ 成功加载表列表 (数据库: ${database}):`, tables);
       return tables || [];
@@ -159,11 +159,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       // 尝试分别获取字段和标签信息
       const [tags, fields] = await Promise.all([
         safeTauriInvoke<string[]>('get_tag_keys', {
-          connection_id: connectionId,
+          connectionId: connectionId,
           database,
           measurement: table}).catch(() => []),
         safeTauriInvoke<string[]>('get_field_keys', {
-          connection_id: connectionId,
+          connectionId: connectionId,
           database,
           measurement: table}).catch(() => []),
       ]);

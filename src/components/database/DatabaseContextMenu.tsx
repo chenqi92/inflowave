@@ -32,7 +32,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 创建新的 measurement (InfluxDB 中的表)
           try {
             const template = await safeTauriInvoke('create_measurement_template', {
-              connection_id: activeConnectionId,
+              connectionId: activeConnectionId,
               database: databaseName});
 
             // 显示创建模板
@@ -62,7 +62,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 刷新数据库结构
           try {
             await safeTauriInvoke('refresh_database_structure', {
-              connection_id: activeConnectionId,
+              connectionId: activeConnectionId,
               database: databaseName});
             toast({ title: "成功", description: "已刷新数据库 ${databaseName} 的结构" });
             onAction?.('refresh_database', databaseName);
@@ -75,7 +75,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 显示数据库信息
           try {
             const info = await safeTauriInvoke('get_database_info', {
-              connection_id: activeConnectionId,
+              connectionId: activeConnectionId,
               database: databaseName});
 
             // 显示数据库信息
@@ -104,7 +104,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
         case 'show_measurements':
           // 显示所有 measurements
           await safeTauriInvoke('show_measurements', {
-            connection_id: activeConnectionId,
+            connectionId: activeConnectionId,
             database: databaseName});
           toast({ title: "成功", description: "正在显示数据库 ${databaseName} 的所有 measurements" });
           break;
@@ -126,7 +126,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
         case 'export_database':
           // 导出整个数据库
           await safeTauriInvoke('export_database', {
-            connection_id: activeConnectionId,
+            connectionId: activeConnectionId,
             database: databaseName});
           toast({ title: "成功", description: "正在导出数据库 ${databaseName}" });
           break;
@@ -138,7 +138,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           );
           if (confirmed) {
             await safeTauriInvoke('drop_database', {
-              connection_id: activeConnectionId,
+              connectionId: activeConnectionId,
               database: databaseName});
             toast({ title: "成功", description: "数据库 ${databaseName} 已删除" });
           }

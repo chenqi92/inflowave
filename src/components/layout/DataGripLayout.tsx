@@ -77,7 +77,7 @@ const DataGripLayout: React.FC = () => {
 
       // 获取数据库列表
       const databases = await invoke<string[]>('get_databases', {
-        connection_id: connectionId});
+        connectionId: connectionId});
 
       const newStructure: DatabaseStructure = {
         databases,
@@ -89,7 +89,7 @@ const DataGripLayout: React.FC = () => {
       for (const db of databases) {
         try {
           const measurements = await invoke<string[]>('get_measurements', {
-            connection_id: connectionId,
+            connectionId: connectionId,
             database: db});
           newStructure.measurements[db] = measurements;
 
@@ -99,11 +99,11 @@ const DataGripLayout: React.FC = () => {
             try {
               const [fields, tags] = await Promise.all([
                 invoke<string[]>('get_field_keys', {
-                  connection_id: connectionId,
+                  connectionId: connectionId,
                   database: db,
                   measurement}).catch(() => []),
                 invoke<string[]>('get_tag_keys', {
-                  connection_id: connectionId,
+                  connectionId: connectionId,
                   database: db,
                   measurement}).catch(() => []),
               ]);

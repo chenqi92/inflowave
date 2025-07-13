@@ -61,7 +61,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     if (!connectionId) return;
     
     try {
-      const dbList = await safeTauriInvoke('get_databases', { connection_id: connectionId }) as string[];
+      const dbList = await safeTauriInvoke('get_databases', { connectionId: connectionId }) as string[];
       setDatabases(dbList);
     } catch (error) {
       console.error('获取数据库列表失败:', error);

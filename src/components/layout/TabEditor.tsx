@@ -75,7 +75,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connection_id: activeConnectionId});
+        connectionId: activeConnectionId});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -114,7 +114,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     setLoading(true);
     try {
       const request: QueryRequest = {
-        connection_id: activeConnectionId,
+        connectionId: activeConnectionId,
         database: selectedDatabase,
         query: currentTab.content.trim()};
 
