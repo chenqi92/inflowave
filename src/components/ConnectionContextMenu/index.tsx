@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu } from '@/components/ui';
+import { Menu, Popconfirm } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Eye, RefreshCw, Database, FileDown } from 'lucide-react';
 import type { MenuProps } from '@/components/ui';
@@ -27,6 +27,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     disconnectFromDatabase,
     removeConnection,
     refreshAllStatuses} = useConnectionStore();
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   const isConnected = status?.status === 'connected';
   const isConnecting = status?.status === 'connecting';
@@ -66,17 +67,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   };
 
   const handleDelete = () => {
-    Modal.confirm({
-      title: '确认删除连接',
-      content: `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`,
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: () => {
-        removeConnection(connection.id!);
-        toast({ title: "成功", description: "连接已删除" });
-        onClose?.();
-      }});
+    removeConnection(connection.id!);
+    toast({ title: "成功", description: "连接已删除" });
+    onClose?.();
   };
 
   const handleRefreshStatus = async () => {
@@ -218,19 +211,34 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
           icon: <Trash2 className="w-4 h-4"  />,
           label: '删除连接',
           danger: true,
-          onClick: handleDelete},
+          onClick: () => setShowDeleteConfirm(true)},
       ]},
   ];
 
   return (
-    <Menu
-      items={menuItems}
-      style={{ minWidth: 200 }}
-      onClick={(e) => {
-        // 阻止事件冒泡
-        e.domEvent.stopPropagation();
-      }}
-    />
+    <>
+      <Menu
+        items={menuItems}
+        style={{ minWidth: 200 }}
+        onClick={(e) => {
+          // 阻止事件冒泡
+          e.domEvent.stopPropagation();
+        }}
+      />
+
+      <Popconfirm
+        title="确认删除连接"
+        description={`确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`}
+        open={showDeleteConfirm}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+        okText="删除"
+        cancelText="取消"
+        okType="danger"
+      >
+        <div />
+      </Popconfirm>
+    </>
   );
 };
 

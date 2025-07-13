@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Card, Space } from '@/components/ui';
-import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
-import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle } from 'lucide-react';
+import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Popconfirm } from '@/components/ui';
+import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -252,39 +252,32 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               title="编辑连接"
             />
 
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'poolStats',
-                    icon: <Eye className="w-4 h-4"  />,
-                    label: '连接池统计',
-                    disabled: !isConnected,
-                    onClick: () => handleViewPoolStats(record.id!)},
-                  {
-                    key: 'delete',
-                    icon: <Trash2 className="w-4 h-4"  />,
-                    label: '删除连接',
-                    danger: true,
-                    onClick: () => {
-                      Modal.confirm({
-                        title: '确认删除',
-                        content: `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`,
-                        okText: '确认删除',
-                        cancelText: '取消',
-                        closable: true,
-                        keyboard: true,
-                        maskClosable: true,
-                        okButtonProps: { danger: true, size: 'small' },
-                        cancelButtonProps: { size: 'small' },
-                        onOk: () => removeConnection(record.id!)});
-                    }},
-                ]
-              }}
-              trigger={['click']}
-            >
-              <Button icon={<MoreOutlined />} size="small" />
-            </Dropdown>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button icon={<MoreHorizontal className="w-4 h-4" />} size="small" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  disabled={!isConnected}
+                  onClick={() => handleViewPoolStats(record.id!)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  连接池统计
+                </DropdownMenuItem>
+                <Popconfirm
+                  title="确认删除"
+                  description={`确定要删除连接 "${record.name}" 吗？此操作无法撤销。`}
+                  onConfirm={() => removeConnection(record.id!)}
+                  okText="确认删除"
+                  cancelText="取消"
+                >
+                  <DropdownMenuItem className="text-red-600 focus:text-red-600">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    删除连接
+                  </DropdownMenuItem>
+                </Popconfirm>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
       }},

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Form, FormItem, FormLabel, FormControl, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Space, Row, Col, Alert, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, toast, Divider, Input } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Form, FormItem, FormLabel, FormControl, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Space, Row, Col, Alert, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, toast, Divider, Input, Popconfirm } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
 
@@ -80,21 +80,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
   // 重置设置
   const handleResetSettings = () => {
-    Modal.confirm({
-      title: '确认重置设置',
-      content: '此操作将重置所有设置为默认值，您确定要继续吗？',
-      okText: '确认重置',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        resetConfig();
-        // 延迟设置表单值，确保 store 状态已更新
-        setTimeout(() => {
-          const latestConfig = useAppStore.getState().config;
-          form.setFieldsValue(latestConfig);
-        }, 0);
-        toast({ title: "成功", description: "设置已重置为默认值" });
-      }});
+    resetConfig();
+    // 延迟设置表单值，确保 store 状态已更新
+    setTimeout(() => {
+      const latestConfig = useAppStore.getState().config;
+      form.setFieldsValue(latestConfig);
+    }, 0);
+    toast({ title: "成功", description: "设置已重置为默认值" });
   };
 
   // 导出设置
@@ -197,35 +189,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
   // 清除所有数据
   const clearAllData = () => {
-    Modal.confirm({
-      title: '确认重置所有设置',
-      content: '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？',
-      okText: '确认重置',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        clearConnections();
-        resetConfig();
-        setTimeout(() => {
-          const latestConfig = useAppStore.getState().config;
-          form.setFieldsValue(latestConfig);
-        }, 0);
-        toast({ title: "成功", description: "所有数据已清除" });
-      }});
+    clearConnections();
+    resetConfig();
+    setTimeout(() => {
+      const latestConfig = useAppStore.getState().config;
+      form.setFieldsValue(latestConfig);
+    }, 0);
+    toast({ title: "成功", description: "所有数据已清除" });
   };
 
   // 清除连接配置（带确认）
   const clearConnectionsWithConfirm = () => {
-    Modal.confirm({
-      title: '确认清除连接配置',
-      content: '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？',
-      okText: '确认清除',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        clearConnections();
-        toast({ title: "成功", description: "连接配置已清除" });
-      }});
+    clearConnections();
+    toast({ title: "成功", description: "连接配置已清除" });
   };
 
   const tabItems = [
@@ -350,12 +326,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
             <div className="flex justify-end">
               <div className="flex gap-2">
-                <Button
-                  icon={<RefreshCw className="w-4 h-4"  />}
-                  onClick={handleResetSettings}
+                <Popconfirm
+                  title="确认重置设置"
+                  description="此操作将重置所有设置为默认值，您确定要继续吗？"
+                  onConfirm={handleResetSettings}
+                  okText="确认重置"
+                  cancelText="取消"
+                  okType="danger"
                 >
-                  重置为默认
-                </Button>
+                  <Button
+                    icon={<RefreshCw className="w-4 h-4"  />}
+                  >
+                    重置为默认
+                  </Button>
+                </Popconfirm>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -415,15 +399,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   删除所有保存的数据库连接配置
                 </Text>
                 <br />
-                <Button
-                  danger
-                  icon={<Trash2 className="w-4 h-4"  />}
-                  onClick={clearConnectionsWithConfirm}
-                  className="mt-2"
-                  size="small"
+                <Popconfirm
+                  title="确认清除连接配置"
+                  description="此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？"
+                  onConfirm={clearConnectionsWithConfirm}
+                  okText="确认清除"
+                  cancelText="取消"
+                  okType="danger"
                 >
-                  清除连接配置
-                </Button>
+                  <Button
+                    danger
+                    icon={<Trash2 className="w-4 h-4"  />}
+                    className="mt-2"
+                    size="small"
+                  >
+                    清除连接配置
+                  </Button>
+                </Popconfirm>
               </div>
 
               <div>
@@ -433,15 +425,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   将所有设置恢复为默认值，并清除所有用户数据
                 </Text>
                 <br />
-                <Button
-                  danger
-                  icon={<Trash2 className="w-4 h-4"  />}
-                  onClick={clearAllData}
-                  className="mt-2"
-                  size="small"
+                <Popconfirm
+                  title="确认重置所有设置"
+                  description="此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？"
+                  onConfirm={clearAllData}
+                  okText="确认重置"
+                  cancelText="取消"
+                  okType="danger"
                 >
-                  重置所有设置
-                </Button>
+                  <Button
+                    danger
+                    icon={<Trash2 className="w-4 h-4"  />}
+                    className="mt-2"
+                    size="small"
+                  >
+                    重置所有设置
+                  </Button>
+                </Popconfirm>
               </div>
             </div>
           </div>

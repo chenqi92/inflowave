@@ -96,6 +96,7 @@ const Database: React.FC = () => {
     x: 0,
     y: 0,
     target: null});
+  const [deleteMeasurementParams, setDeleteMeasurementParams] = useState<any>(null);
   const form = useForm();
 
   // 加载数据库列表
@@ -176,6 +177,23 @@ const Database: React.FC = () => {
       await loadDatabases();
     } catch (error) {
       toast({ title: "错误", description: "创建数据库失败: ${error}", variant: "destructive" });
+    }
+  };
+
+  // 删除测量
+  const deleteMeasurement = async () => {
+    if (!deleteMeasurementParams || !activeConnectionId) return;
+
+    try {
+      await safeTauriInvoke('drop_measurement', {
+        connectionId: activeConnectionId,
+        database: deleteMeasurementParams.database,
+        measurement: deleteMeasurementParams.measurement});
+      toast({ title: "成功", description: `测量 "${deleteMeasurementParams.measurement}" 删除成功` });
+      loadDatabaseDetails(selectedDatabase);
+      setDeleteMeasurementParams(null);
+    } catch (error) {
+      toast({ title: "错误", description: `删除测量失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -1029,30 +1047,8 @@ const Database: React.FC = () => {
                 break;
 
               case 'deleteMeasurement':
-                Modal.confirm({
-                  title: '确认删除测量',
-                  content: `确定要删除测量 "${params.measurement}" 吗？此操作将删除所有相关数据！`,
-                  okText: '删除',
-                  okType: 'danger',
-                  cancelText: '取消',
-                  closable: true,
-                  keyboard: true,
-                  maskClosable: true,
-                  onOk: async () => {
-                    try {
-                      await safeTauriInvoke('drop_measurement', {
-                        connectionId: activeConnectionId,
-                        database: params.database,
-                        measurement: params.measurement});
-                      toast.success(`测量 "${params.measurement}" 删除成功`);
-                      loadDatabaseDetails(selectedDatabase);
-                    } catch (error) {
-                      toast({ title: "错误", description: "删除测量失败: ${error}", variant: "destructive" });
-                    }
-                  },
-                  onCancel: () => {
-                    // 明确处理取消操作
-                  }});
+                // 删除测量的逻辑将通过 Popconfirm 组件处理
+                setDeleteMeasurementParams(params);
                 break;
 
               default:
@@ -1144,6 +1140,22 @@ const Database: React.FC = () => {
           loadDatabaseDetails(selectedDatabase);
         }}
       />
+
+      {/* 删除测量确认对话框 */}
+      {deleteMeasurementParams && (
+        <Popconfirm
+          title="确认删除测量"
+          description={`确定要删除测量 "${deleteMeasurementParams.measurement}" 吗？此操作将删除所有相关数据！`}
+          open={!!deleteMeasurementParams}
+          onConfirm={deleteMeasurement}
+          onCancel={() => setDeleteMeasurementParams(null)}
+          okText="删除"
+          cancelText="取消"
+          okType="danger"
+        >
+          <div />
+        </Popconfirm>
+      )}
     </div>
   );
 };

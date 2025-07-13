@@ -118,14 +118,14 @@ const AntParagraph = React.forwardRef<
 >(({
   className,
   children,
-  wrap,
-  code,
-  copyable,
-  ellipsis,
-  mark,
-  underline,
-  delete: del,
-  strong,
+  wrap = true,
+  code = false,
+  copyable = false,
+  ellipsis = false,
+  mark = false,
+  underline = false,
+  delete: del = false,
+  strong = false,
   type,
   ...props
 }, ref) => {
@@ -152,44 +152,27 @@ const AntParagraph = React.forwardRef<
 
   let content = children;
 
-  // Apply text modifications
-  if (code) {
-    content = (
-      <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
-        {content}
-      </code>
-    );
-  }
-
-  if (mark) {
-    content = <mark className="bg-yellow-200 px-1">{content}</mark>;
-  }
-
-  if (strong) {
-    content = <strong className="font-semibold">{content}</strong>;
-  }
-
-  if (underline) {
-    content = <u>{content}</u>;
-  }
-
-  if (del) {
-    content = <del className="line-through">{content}</del>;
-  }
+  // Build className for the paragraph element
+  let paragraphClassName = cn(
+    "leading-7 [&:not(:first-child)]:mt-6",
+    !wrap && "whitespace-nowrap",
+    ellipsis && "truncate",
+    type && typeVariants[type],
+    code && "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
+    mark && "bg-yellow-200 px-1",
+    strong && "font-semibold",
+    underline && "underline",
+    del && "line-through",
+    className
+  );
 
   return (
     <p
       ref={ref}
-      className={cn(
-        "leading-7 [&:not(:first-child)]:mt-6",
-        !wrap && "whitespace-nowrap",
-        ellipsis && "truncate",
-        type && typeVariants[type],
-        className
-      )}
+      className={paragraphClassName}
       {...domProps}
     >
-      {content}
+      {children}
       {copyable && (
         <button
           className="ml-2 text-xs text-muted-foreground hover:text-foreground"

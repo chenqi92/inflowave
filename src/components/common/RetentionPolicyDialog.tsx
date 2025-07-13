@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Modal } from '@/components/ui';
+import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
 import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
@@ -102,30 +102,22 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   const handleDelete = async () => {
     if (!policy) return;
 
-    Modal.confirm({
-      title: '确认删除保留策略',
-      content: `确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`,
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          setLoading(true);
-          await safeTauriInvoke('drop_retention_policy', {
-            connectionId,
-            database,
-            policyName: policy.name});
-          message.success(`保留策略 "${policy.name}" 删除成功`);
-          if (onSuccess) {
-            onSuccess();
-          }
-          onClose();
-        } catch (error) {
-          toast({ title: "错误", description: "删除保留策略失败: ${error}", variant: "destructive" });
-        } finally {
-          setLoading(false);
-        }
-      }});
+    try {
+      setLoading(true);
+      await safeTauriInvoke('drop_retention_policy', {
+        connectionId,
+        database,
+        policyName: policy.name});
+      toast({ title: "成功", description: `保留策略 "${policy.name}" 删除成功` });
+      if (onSuccess) {
+        onSuccess();
+      }
+      onClose();
+    } catch (error) {
+      toast({ title: "错误", description: `删除保留策略失败: ${error}`, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 持续时间选项
@@ -166,13 +158,21 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
             取消
           </Button>
           {mode === 'edit' && policy && !policy.default && (
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              loading={loading}
+            <Popconfirm
+              title="确认删除保留策略"
+              description={`确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`}
+              onConfirm={handleDelete}
+              okText="删除"
+              cancelText="取消"
+              okType="danger"
             >
-              删除
-            </Button>
+              <Button
+                variant="danger"
+                loading={loading}
+              >
+                删除
+              </Button>
+            </Popconfirm>
           )}
           <Button
             variant="primary"

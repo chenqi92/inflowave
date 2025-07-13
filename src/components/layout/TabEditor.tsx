@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Button, Space, Dropdown, Tooltip, Dialog, Select } from '@/components/ui';
+import { Tabs, Button, Space, Dropdown, Tooltip, Dialog, Select, Popconfirm } from '@/components/ui';
 import {
   Save,
   PlayCircle,
@@ -56,6 +56,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       type: 'query',
       modified: false}
   ]);
+  const [closingTab, setClosingTab] = useState<EditorTab | null>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   // 加载数据库列表
@@ -159,22 +160,28 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
   // 关闭标签
   const closeTab = (targetKey: string) => {
     const tab = tabs.find(t => t.id === targetKey);
-    
+
     if (tab?.modified) {
-      Modal.confirm({
-        title: '保存更改',
-        content: `"${tab.title}" 已修改，是否保存更改？`,
-        okText: '保存',
-        cancelText: '不保存',
-        onOk: () => {
-          // 保存逻辑
-          removeTab(targetKey);
-        },
-        onCancel: () => {
-          removeTab(targetKey);
-        }});
+      setClosingTab(tab);
     } else {
       removeTab(targetKey);
+    }
+  };
+
+  // 保存并关闭标签
+  const saveAndCloseTab = () => {
+    if (closingTab) {
+      // 保存逻辑
+      removeTab(closingTab.id);
+      setClosingTab(null);
+    }
+  };
+
+  // 不保存直接关闭标签
+  const closeTabWithoutSaving = () => {
+    if (closingTab) {
+      removeTab(closingTab.id);
+      setClosingTab(null);
     }
   };
 
@@ -419,6 +426,21 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           </div>
         )}
       </div>
+
+      {/* 关闭标签确认对话框 */}
+      {closingTab && (
+        <Popconfirm
+          title="保存更改"
+          description={`"${closingTab.title}" 已修改，是否保存更改？`}
+          open={!!closingTab}
+          onConfirm={saveAndCloseTab}
+          onCancel={closeTabWithoutSaving}
+          okText="保存"
+          cancelText="不保存"
+        >
+          <div />
+        </Popconfirm>
+      )}
     </div>
   );
 };
