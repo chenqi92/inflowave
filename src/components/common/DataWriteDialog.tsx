@@ -8,7 +8,6 @@ import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 const { TextArea } = Input;
 const { Option } = Select;
 const { Text } = Typography;
-const { Dragger } = Upload;
 
 interface DataWriteDialogProps {
   visible: boolean;
@@ -317,7 +316,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
             </Tabs.TabPane>
 
             <Tabs.TabPane tab="文件上传" key="upload">
-              <Dragger
+              <Upload.Dragger
                 beforeUpload={handleFileUpload}
                 accept=".csv,.json,.txt"
                 showUploadList={false}
@@ -329,7 +328,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                 <p className="ant-upload-hint">
                   支持 CSV、JSON、TXT 格式文件，文件大小不超过 10MB
                 </p>
-              </Dragger>
+              </Upload.Dragger>
             </Tabs.TabPane>
           </Tabs>
 

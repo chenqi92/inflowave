@@ -1,10 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button, Card, Alert } from '@/components/ui';
+import { Button, Card, Alert, Text, Collapse, Panel } from '@/components/ui';
 import { Bug, RefreshCw, FileText } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
-
-import { Text } from '@/components/ui';
 
 interface Props {
   children: ReactNode;

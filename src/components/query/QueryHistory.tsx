@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 
 
 import { X } from 'lucide-react';
-import { Trash2, Search, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
+import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 

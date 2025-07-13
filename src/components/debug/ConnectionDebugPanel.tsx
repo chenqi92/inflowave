@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Button, Table, Alert, Typography } from '@/components/ui';
-// TODO: Replace these Ant Design components: Collapse
+import { Button, Table, Alert, Typography, Collapse, Panel } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
 import { Bug, RefreshCw, Info } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 interface DebugInfo {
   frontendConnections: any[];

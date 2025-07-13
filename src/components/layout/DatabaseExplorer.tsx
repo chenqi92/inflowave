@@ -12,7 +12,7 @@ import {
   Key,
   Clock,
   Link,
-  Search,
+  Search as SearchIcon,
   MoreHorizontal,
   Code,
   GitBranch

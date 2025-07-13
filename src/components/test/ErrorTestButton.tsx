@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button, Space, toast } from '@/components/ui';
-import { Bug, Info, Zap } from 'lucide-react';
 import { AlertTriangle, Bug, Zap, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorLogger } from '@/utils/errorLogger';

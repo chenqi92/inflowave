@@ -26,6 +26,7 @@ use commands::dashboard::*;
 use commands::performance::*;
 use commands::user_experience::*;
 use commands::extensions::*;
+use commands::optimization_history::*;
 
 // Services
 use services::ConnectionService;
@@ -255,6 +256,15 @@ async fn main() {
             get_automation_rules,
             execute_automation_rule,
             get_integration_templates,
+
+            // Optimization history
+            load_optimization_history,
+            save_optimization_history,
+            add_optimization_history,
+            get_optimization_history,
+            delete_optimization_history,
+            update_optimization_feedback,
+            clear_optimization_history,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -308,6 +318,9 @@ async fn main() {
             app.manage(commands::extensions::APIIntegrationStorage::new(std::collections::HashMap::new()));
             app.manage(commands::extensions::WebhookStorage::new(std::collections::HashMap::new()));
             app.manage(commands::extensions::AutomationStorage::new(std::collections::HashMap::new()));
+
+            // Initialize optimization history storage
+            app.manage(std::sync::Mutex::new(Vec::<commands::optimization_history::OptimizationHistoryEntry>::new()));
 
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {

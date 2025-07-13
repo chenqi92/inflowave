@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Tag, Typography, Modal, Input, Select, DatePicker, Alert } from '@/components/ui';
-// TODO: Replace these Ant Design components: Badge, Tooltip, message, Collapse
-import { RefreshCw, Trash2, Download, Bug } from 'lucide-react';
+import { Card, Table, Button, Space, Tag, Typography, Modal, Input, Select, DatePicker, Alert, Collapse, Panel } from '@/components/ui';
+// TODO: Replace these Ant Design components: Badge, Tooltip, message
 // TODO: Replace these icons: FilterOutlined
-import { AlertTriangle, Info, AlertCircle, Search, Trash2, Download, Eye } from 'lucide-react';
+import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
 
@@ -11,7 +10,6 @@ const { Text, Paragraph } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
-const { Panel } = Collapse;
 
 const ErrorLogViewer: React.FC = () => {
   const [logs, setLogs] = useState<ErrorLogEntry[]>([]);

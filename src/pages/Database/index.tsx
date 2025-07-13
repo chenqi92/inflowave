@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, toast, Card } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, DialogContent, DialogHeader, DialogTitle, toast, Card } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
-import { Database, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
+import { Database as DatabaseIcon, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -298,7 +297,7 @@ const Database: React.FC = () => {
                   }}
                 >
                   <div className="flex gap-2">
-                    <Database className="w-4 h-4"  />
+                    <DatabaseIcon className="w-4 h-4"  />
                     {db}
                   </div>
                 </DatabaseContextMenu>
@@ -840,7 +839,7 @@ const Database: React.FC = () => {
                         <Statistic
                           title="总记录数"
                           value={result.rowCount || 0}
-                          prefix={<Database className="w-4 h-4"  />}
+                          prefix={<DatabaseIcon className="w-4 h-4"  />}
                         />
                         <div className="mt-4">
                           <span className="text-gray-500">查询: {query}</span>

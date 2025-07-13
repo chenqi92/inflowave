@@ -4,7 +4,7 @@ import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } 
 
 
 // TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
-import { Trash2, Edit, Plus, Search, Database, Save, X, PlayCircle } from 'lucide-react';
+import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle } from 'lucide-react';
 // TODO: Replace these icons: BookOutlined, TagOutlined
 // You may need to find alternatives or create custom icons
 import { safeTauriInvoke } from '@/utils/tauri';

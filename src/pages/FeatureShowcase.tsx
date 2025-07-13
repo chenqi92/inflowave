@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Progress, List, Avatar, Badge } from '@/components/ui';
+import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
 import { Database, TrendingUp, Settings, CheckCircle, Rocket, Star, Zap, FileUp, Monitor, Grid3X3 } from 'lucide-react';
 import { featureTester } from '../utils/featureTest';
-
-const { Panel } = Collapse;
 
 const FeatureShowcase: React.FC = () => {
   const [testResults, setTestResults] = useState<any[]>([]);

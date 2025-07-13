@@ -123,5 +123,11 @@ export { Separator } from './Separator';
 export { Layout, Header, Sider, Content, Footer } from './Layout';
 export type { LayoutProps, HeaderProps, SiderProps, ContentProps, FooterProps } from './Layout';
 
+export { Upload } from './Upload';
+export type { UploadFile, UploadProps } from './Upload';
+
+export { Collapse, Panel } from './Collapse';
+export type { CollapseProps, PanelProps } from './Collapse';
+
 // Message system - backward compatibility
 export { toast as message } from '../../hooks/use-toast';

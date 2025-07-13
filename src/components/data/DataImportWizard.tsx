@@ -3,7 +3,7 @@ import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps,
 
 const { Step } = Steps;
 import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-import { Upload, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
+import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -215,7 +215,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
         <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
           <Upload.Dragger {...uploadProps}>
             <p className="ant-upload-drag-icon">
-              <Upload className="w-4 h-4"  />
+              <UploadIcon className="w-4 h-4"  />
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
@@ -477,7 +477,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       destroyOnClose
     >
       <Steps current={currentStep} style={{ marginBottom: 24 }}>
-        <Step title="选择文件" icon={<Upload className="w-4 h-4"  />} />
+        <Step title="选择文件" icon={<UploadIcon className="w-4 h-4"  />} />
         <Step title="预览数据" icon={<FileText className="w-4 h-4"  />} />
         <Step title="配置映射" icon={<Settings className="w-4 h-4"  />} />
         <Step title="导入完成" icon={<CheckCircle />} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table } from '@/components/ui';
-// TODO: Replace these Ant Design components: Descriptions, List, Tooltip, Drawer, Timeline, Badge, Collapse
+import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table, Collapse, Panel } from '@/components/ui';
+// TODO: Replace these Ant Design components: Descriptions, List, Tooltip, Drawer, Timeline, Badge
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 
@@ -13,7 +13,6 @@ import CodeEditor from '@/components/common/CodeEditor';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
-const { Panel } = Collapse;
 
 interface IntelligentQueryEngineProps {
   className?: string;

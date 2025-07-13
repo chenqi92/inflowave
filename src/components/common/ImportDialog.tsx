@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Input, Select, Table } from '@/components/ui';
 // TODO: Replace these Ant Design components: message
-import { Upload, Database, CheckCircle } from 'lucide-react';
+import { Upload as UploadIcon, Database, CheckCircle } from 'lucide-react';
 import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
@@ -314,7 +314,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             <div className="space-y-4">
               <Upload.Dragger {...uploadProps}>
                 <p className="ant-upload-drag-icon">
-                  <Upload className="w-4 h-4"  />
+                  <UploadIcon className="w-4 h-4"  />
                 </p>
                 <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
                 <p className="ant-upload-hint">

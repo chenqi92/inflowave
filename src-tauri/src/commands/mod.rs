@@ -11,4 +11,5 @@ pub mod dashboard;
 pub mod performance;
 pub mod user_experience;
 pub mod extensions;
+pub mod optimization_history;
 

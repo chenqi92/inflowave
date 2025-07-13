@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
 import { Card, Space, toast } from '@/components/ui';
-import { Upload, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Upload as UploadIcon, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';
 import { ExcelImportManager } from '../ExcelImportUtils';
@@ -608,7 +608,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         <div className="space-y-4">
           <Upload.Dragger {...uploadProps}>
             <p className="ant-upload-drag-icon">
-              <Upload className="w-4 h-4"  />
+              <UploadIcon className="w-4 h-4"  />
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
