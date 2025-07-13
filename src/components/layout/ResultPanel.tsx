@@ -206,7 +206,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
   return (
     <div className="h-full bg-white border-t border-gray-200">
       <Tabs 
-        activeKey={activeTab}
+        value={activeTab}
         onValueChange={setActiveTab}
         size="small"
         className="h-full flex items-center gap-1"

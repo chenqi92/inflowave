@@ -235,7 +235,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       render: (value: string, _: FieldMapping, index: number) => (
         <Input
           value={value}
-          onValueChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
+          onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
           placeholder="输入目标字段名"
         />
       )},

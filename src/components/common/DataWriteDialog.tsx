@@ -277,7 +277,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
           </Row>
 
           {/* 数据输入 */}
-          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <Tabs.TabPane tab="手动输入" key="manual">
               <FormItem name="data"
                 label={

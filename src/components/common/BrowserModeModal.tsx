@@ -253,7 +253,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) 
         }}>
           <Checkbox 
             checked={dontShowAgain}
-            onValueChange={(e) => setDontShowAgain(e.target.checked)}
+            onCheckedChange={(checked) => setDontShowAgain(checked)}
           >
             <Text className="text-sm">不再显示此提醒</Text>
           </Checkbox>

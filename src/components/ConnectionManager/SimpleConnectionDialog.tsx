@@ -180,7 +180,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         <Input
           placeholder="例如: 生产环境 InfluxDB"
           value={formData.name}
-          onValueChange={(e) => handleInputChange('name', e.target.value)}
+          onChange={(e) => handleInputChange('name', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
           className={errors.name ? 'border-red-500' : ''}
@@ -196,7 +196,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <Input
             placeholder="localhost 或 192.168.1.100"
             value={formData.host}
-            onValueChange={(e) => handleInputChange('host', e.target.value)}
+            onChange={(e) => handleInputChange('host', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
             className={errors.host ? 'border-red-500' : ''}
@@ -226,7 +226,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <Input
             placeholder="可选"
             value={formData.username}
-            onValueChange={(e) => handleInputChange('username', e.target.value)}
+            onChange={(e) => handleInputChange('username', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
           />
@@ -238,7 +238,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             type="password"
             placeholder="可选"
             value={formData.password}
-            onValueChange={(e) => handleInputChange('password', e.target.value)}
+            onChange={(e) => handleInputChange('password', e.target.value)}
           />
         </div>
       </div>
@@ -248,7 +248,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         <Input
           placeholder="可选，连接后默认选择的数据库"
           value={formData.database}
-          onValueChange={(e) => handleInputChange('database', e.target.value)}
+          onChange={(e) => handleInputChange('database', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
         />

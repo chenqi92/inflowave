@@ -223,6 +223,7 @@ async fn main() {
             duplicate_dashboard,
 
             // Performance monitoring
+            get_performance_metrics,
             record_query_performance,
             get_slow_query_analysis,
             get_storage_analysis_report,

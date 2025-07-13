@@ -632,7 +632,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabPane tab="执行计划" key="plan">
               <Row gutter={[16, 16]}>
                 <Col span={14}>

@@ -413,7 +413,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
           </div>
         }
       >
-        <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabPane tab="概览" key="overview">
             <div className="space-y-6">
               {renderPerformanceMetrics()}

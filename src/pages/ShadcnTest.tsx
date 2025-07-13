@@ -59,7 +59,7 @@ const ShadcnTest: React.FC = () => {
                 <Input
                   placeholder="请输入内容"
                   value={inputValue}
-                  onValueChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => setInputValue(e.target.value)}
                 />
               </div>
               <div>

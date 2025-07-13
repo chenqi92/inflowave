@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Progress, Tag, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Input, Switch, Form, Spin } from '@/components/ui';
+import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Progress, Tag, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Input, Switch, Form, FormItem, Spin, Row, Col } from '@/components/ui';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { DatePickerWithRange } from '@/components/ui';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui';
@@ -378,12 +378,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         <Card size="small" style={{ marginBottom: '16px' }}>
           <Row gutter={[16, 16]} align="middle">
             <Col span={6}>
-              <Search
+              <Input
                 placeholder="搜索瓶颈..."
                 value={searchText}
-                onValueChange={(e) => setSearchText(e.target.value)}
-                onSearch={setSearchText}
-                allowClear
+                onChange={(e) => setSearchText(e.target.value)}
               />
             </Col>
             <Col span={3}>
@@ -937,7 +935,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabPane tab="瓶颈概览" key="overview">
               {renderOverview()}
             </TabPane>

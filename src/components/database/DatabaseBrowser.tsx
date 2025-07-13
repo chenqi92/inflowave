@@ -272,7 +272,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
             placeholder="搜索数据库..."
             prefix={<Search className="w-4 h-4"  />}
             value={searchText}
-            onValueChange={(e) => setSearchText(e.target.value)}
+            onChange={(e) => setSearchText(e.target.value)}
             allowClear
             className="flex-1"
             style={{ minWidth: '200px' }}

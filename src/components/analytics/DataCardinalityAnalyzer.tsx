@@ -679,7 +679,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <Tabs.TabPane tab="统计概览" key="overview">
               {renderOverview()}
             </Tabs.TabPane>

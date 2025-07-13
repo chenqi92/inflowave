@@ -583,7 +583,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         <Input
           placeholder="搜索连接、数据库、表..."
           value={searchValue}
-          onValueChange={(e) => setSearchValue(e.target.value)}
+          onChange={(e) => setSearchValue(e.target.value)}
           className="text-sm"
         />
       </div>
