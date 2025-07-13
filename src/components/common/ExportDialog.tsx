@@ -12,9 +12,6 @@ interface ExportOptions {
   filename?: string;
 }
 
-
-
-
 interface ExportDialogProps {
   visible: boolean;
   onClose: () => void;
@@ -79,7 +76,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     <Dialog
       title="导出查询结果"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={600}
       footer={[
         <Button key="cancel" onClick={onClose}>
@@ -89,7 +86,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           key="export"
           type="primary"
           icon={<Download className="w-4 h-4"  />}
-          loading={loading}
+          disabled={loading}
           onClick={handleExport}
           disabled={!queryResult}
         >
@@ -107,7 +104,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           />
 
           <Form form={form} layout="vertical">
-            <Form.Item
+            <FormItem
               label="导出格式"
               name="format"
               rules={[{ required: true, message: '请选择导出格式' }]}
@@ -132,25 +129,25 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                   </div>
                 </Select.Option>
               </Select>
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item
+            <FormItem
               label="文件名"
               name="filename"
               rules={[{ required: true, message: '请输入文件名' }]}
             >
               <Input placeholder="请输入文件名（不含扩展名）" />
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item
+            <FormItem
               label="包含表头"
               name="includeHeaders"
               valuePropName="checked"
             >
               <Switch />
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item
+            <FormItem
               label="分隔符"
               name="delimiter"
             >
@@ -159,7 +156,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                 <Select.Option value=";">分号 (;)</Select.Option>
                 <Select.Option value="\t">制表符 (\t)</Select.Option>
               </Select>
-            </Form.Item>
+            </FormItem>
           </Form>
 
           <Alert

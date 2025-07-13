@@ -80,7 +80,7 @@ const MainLayout: React.FC = () => {
 
         {/* 全局搜索 */}
         <GlobalSearch
-          visible={globalSearchVisible}
+          isOpen={globalSearchVisible}
           onClose={() => setGlobalSearchVisible(false)}
           onNavigate={(path, params) => {
             navigate(path, { state: params });
@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
 
       {/* 浏览器模式提醒弹框 */}
       <BrowserModeModal
-        visible={browserModalVisible}
+        open={browserModalVisible}
         onClose={() => setBrowserModalVisible(false)}
       />
     </>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster } from '@/components/ui';
 
-
 const ShadcnTest: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [checked, setChecked] = useState(false);
@@ -60,7 +59,7 @@ const ShadcnTest: React.FC = () => {
                 <Input
                   placeholder="请输入内容"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onValueChange={(e) => setInputValue(e.target.value)}
                 />
               </div>
               <div>

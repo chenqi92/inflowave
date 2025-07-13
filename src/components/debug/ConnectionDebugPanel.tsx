@@ -126,7 +126,7 @@ const ConnectionDebugPanel: React.FC = () => {
         <Button 
           icon={<RefreshCw className="w-4 h-4"  />} 
           onClick={collectDebugInfo}
-          loading={loading}
+          disabled={loading}
           type="primary"
         >
           收集调试信息

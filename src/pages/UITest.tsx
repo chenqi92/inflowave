@@ -33,7 +33,6 @@ const UITest: React.FC = () => {
     { value: 'option3', label: 'Option 3' },
   ];
 
-
   const handleFormSubmit = (values: any) => {
     console.log('Form values:', values);
     toast({ title: "成功", description: "Form submitted successfully!" });
@@ -69,21 +68,21 @@ const UITest: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Form onFinish={handleFormSubmit} className="max-w-md">
-            <Form.Item label="Name" name="name" required>
+            <FormItem label="Name" name="name" required>
               <Input placeholder="Enter your name" />
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item label="Email" name="email" required>
+            <FormItem label="Email" name="email" required>
               <Input type="email" placeholder="Enter your email" />
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item label="Country" name="country">
+            <FormItem label="Country" name="country">
               <Select options={selectOptions} placeholder="Select country" />
-            </Form.Item>
+            </FormItem>
 
-            <Form.Item>
+            <FormItem>
               <Button type="submit" variant="primary">Submit</Button>
-            </Form.Item>
+            </FormItem>
           </Form>
         </CardContent>
       </Card>

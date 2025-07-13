@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Typography } from '@/components/ui';
 import { Card, Space, toast } from '@/components/ui';
 
-
 import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Title, Text } = Typography;
@@ -40,7 +39,7 @@ const ConnectionDebug: React.FC = () => {
         <Button 
           type="primary" 
           onClick={handleDebug}
-          loading={loading}
+          disabled={loading}
         >
           获取调试信息
         </Button>

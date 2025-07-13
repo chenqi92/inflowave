@@ -4,7 +4,32 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Select = SelectPrimitive.Root
+// 扩展 Select 以支持 onChange 属性
+interface SelectProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> {
+  onChange?: (value: string) => void;
+}
+
+const Select = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Root>,
+  SelectProps
+>(({ onChange, onValueChange, ...props }, ref) => {
+  const handleValueChange = (value: string) => {
+    // 优先调用 onChange，如果没有则调用 onValueChange
+    if (onChange) {
+      onChange(value);
+    } else if (onValueChange) {
+      onValueChange(value);
+    }
+  };
+
+  return (
+    <SelectPrimitive.Root
+      onValueChange={handleValueChange}
+      {...props}
+    />
+  );
+});
+Select.displayName = "Select";
 
 const SelectGroup = SelectPrimitive.Group
 

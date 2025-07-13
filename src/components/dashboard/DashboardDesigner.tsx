@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Typography, Form, Input, Select, Row, Col, Empty, Modal } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 // TODO: Replace these Ant Design components: Dropdown, Menu, Grid, 
 import { Plus, Edit, Trash2, Settings, BarChart, TrendingUp, PieChart, Table, Save, Eye, LayoutDashboard } from 'lucide-react';
 // TODO: Replace these icons: MoreOutlined
@@ -16,7 +15,7 @@ import type { Dashboard, DashboardWidget } from '@/types';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const { Title, Text } = Typography;
-const { TextArea } = Input;
+const { Textarea } = Input;
 
 interface DashboardDesignerProps {
   dashboardId?: string;
@@ -240,8 +239,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                   <Button
                     type="primary"
                     icon={<Plus className="w-4 h-4"  />}
-                    onClick={handleAddWidget}
-                  >
+                    onClick={handleAddWidget}>
                     添加小部件
                   </Button>
                   <Button
@@ -251,8 +249,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                         name: dashboard?.name,
                         description: dashboard?.description});
                       setShowDashboardModal(true);
-                    }}
-                  >
+                    }}>
                     设置
                   </Button>
                   <Button
@@ -265,8 +262,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                       } else {
                         setShowDashboardModal(true);
                       }
-                    }}
-                  >
+                    }}>
                     保存
                   </Button>
                 </>
@@ -283,7 +279,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
 
       {/* 网格布局 */}
       <div style={{ height: 'calc(100% - 80px)' }}>
-        {widgets.length > 0 ? (
+        {widgets.length> 0 ? (
           <ResponsiveGridLayout
             className="layout"
             layouts={{ lg: widgets.map(w => ({ ...w.layout, i: w.id })) }}
@@ -292,8 +288,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
             rowHeight={60}
             onLayoutChange={handleLayoutChange}
             isDraggable={!readOnly}
-            isResizable={!readOnly}
-          >
+            isResizable={!readOnly}>
             {widgets.map(widget => (
               <div key={widget.id}>
                 <Card
@@ -303,15 +298,13 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                     !readOnly && (
                       <Dropdown
                         overlay={getWidgetMenu(widget)}
-                        trigger={['click']}
-                      >
+                        trigger={['click']}>
                         <Button type="text" icon={<MoreOutlined />} size="small" />
                       </Dropdown>
                     )
                   }
                   style={{ height: '100%' }}
-                  styles={{ body: { height: 'calc(100% - 40px)', padding: 8 } }}
-                >
+                  styles={{ body: { height: 'calc(100% - 40px)', padding: 8 } }}>
                   {renderWidgetContent(widget)}
                 </Card>
               </div>
@@ -320,8 +313,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         ) : (
           <Empty
             description="暂无小部件"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
+            image={Empty.PRESENTED_IMAGE_SIMPLE}>
             {!readOnly && (
               <Button type="primary" icon={<Plus className="w-4 h-4"  />} onClick={handleAddWidget}>
                 添加第一个小部件
@@ -335,42 +327,33 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       <Modal
         title={editingWidget ? '编辑小部件' : '添加小部件'}
         open={showWidgetModal}
-        onOk={() => form.submit()}
-        onCancel={() => setShowWidgetModal(false)}
-        width={600}
-      >
+        onOpenChange={(open) => !open && (() => setShowWidgetModal(false))()}
+        width={600}>
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSaveWidget}
-        >
-          <Form.Item
-            name="title"
+          onFinish={handleSaveWidget}>
+          <FormItem name="title"
             label="标题"
-            rules={[{ required: true, message: '请输入小部件标题' }]}
-          >
+            rules={[{ required: true, message: '请输入小部件标题' }]}>
             <Input placeholder="输入小部件标题" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
-            name="type"
+          <FormItem name="type"
             label="类型"
-            rules={[{ required: true, message: '请选择小部件类型' }]}
-          >
+            rules={[{ required: true, message: '请选择小部件类型' }]}>
             <Select placeholder="选择小部件类型">
               <Select.Option value="chart">图表</Select.Option>
               <Select.Option value="table">表格</Select.Option>
               <Select.Option value="metric">指标</Select.Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="connectionId"
+              <FormItem name="connectionId"
                 label="连接"
-                rules={[{ required: true, message: '请选择连接' }]}
-              >
+                rules={[{ required: true, message: '请选择连接' }]}>
                 <Select placeholder="选择连接">
                   {connections.map(conn => (
                     <Select.Option key={conn.id} value={conn.id}>
@@ -378,35 +361,29 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                     </Select.Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="database"
+              <FormItem name="database"
                 label="数据库"
-                rules={[{ required: true, message: '请输入数据库名称' }]}
-              >
+                rules={[{ required: true, message: '请输入数据库名称' }]}>
                 <Input placeholder="输入数据库名称" />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item
-            name="query"
+          <FormItem name="query"
             label="查询语句"
-            rules={[{ required: true, message: '请输入查询语句' }]}
-          >
-            <TextArea
+            rules={[{ required: true, message: '请输入查询语句' }]}>
+            <Textarea
               rows={4}
               placeholder="输入 InfluxQL 查询语句"
               style={{ fontFamily: 'monospace' }}
             />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
-            name="refreshInterval"
-            label="刷新间隔（秒）"
-          >
+          <FormItem name="refreshInterval"
+            label="刷新间隔（秒）">
             <Select defaultValue={30}>
               <Select.Option value={10}>10秒</Select.Option>
               <Select.Option value={30}>30秒</Select.Option>
@@ -414,7 +391,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
               <Select.Option value={300}>5分钟</Select.Option>
               <Select.Option value={600}>10分钟</Select.Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 
@@ -422,31 +399,24 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       <Modal
         title="仪表板设置"
         open={showDashboardModal}
-        onOk={() => dashboardForm.submit()}
-        onCancel={() => setShowDashboardModal(false)}
-      >
+        onOpenChange={(open) => !open && (() => setShowDashboardModal(false))()}>
         <Form
           form={dashboardForm}
           layout="vertical"
-          onFinish={handleSaveDashboard}
-        >
-          <Form.Item
-            name="name"
+          onFinish={handleSaveDashboard}>
+          <FormItem name="name"
             label="名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}
-          >
+            rules={[{ required: true, message: '请输入仪表板名称' }]}>
             <Input placeholder="输入仪表板名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
-            name="description"
-            label="描述"
-          >
-            <TextArea
+          <FormItem name="description"
+            label="描述">
+            <Textarea
               rows={3}
               placeholder="输入仪表板描述（可选）"
             />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </div>

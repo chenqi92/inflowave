@@ -230,7 +230,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             size="small" 
             icon={<RefreshCw className="w-4 h-4"  />}
             onClick={runQualityAnalysis}
-            loading={loading}
+            disabled={loading}
           >
             重新分析
           </Button>
@@ -409,7 +409,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
       <Modal
         title={`问题详情: ${selectedIssue.description}`}
         open={showDetailsModal}
-        onCancel={() => setShowDetailsModal(false)}
+        onOpenChange={(open) => !open && (() => setShowDetailsModal(false))()}
         footer={[
           <Button key="close" onClick={() => setShowDetailsModal(false)}>
             关闭
@@ -494,7 +494,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
           <Button
             type="primary"
             icon={<CheckCircle />}
-            loading={loading}
+            disabled={loading}
             onClick={runQualityAnalysis}
           >
             开始验证

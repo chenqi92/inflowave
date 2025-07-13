@@ -9,8 +9,6 @@ import DataExportDialog from '@/components/common/DataExportDialog';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 import TypographyDemo from '@/components/common/TypographyDemo';
 
-
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { connections = [], activeConnectionId, connectionStatuses = {} } = useConnectionStore();
@@ -101,7 +99,7 @@ const Dashboard: React.FC = () => {
 
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onValueChange={setActiveTab}
         items={[
           {
             key: 'overview',
@@ -363,7 +361,7 @@ const Dashboard: React.FC = () => {
 
       {/* 数据导出对话框 */}
       <DataExportDialog
-        visible={exportDialogVisible}
+        open={exportDialogVisible}
         onClose={() => setExportDialogVisible(false)}
         connections={connections}
         currentConnection={activeConnectionId}

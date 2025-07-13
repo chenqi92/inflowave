@@ -6,7 +6,6 @@ import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
-
 const { Option } = Select;
 const { Paragraph } = Typography;
 
@@ -164,7 +163,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           layout="vertical"
           requiredMark={false}
         >
-          <Form.Item
+          <FormItem
             label="策略名称"
             name="name"
             rules={[
@@ -176,9 +175,9 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
               placeholder="请输入策略名称"
               disabled={mode === 'edit'}
             />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label={
               <div className="flex gap-2">
                 保留时间
@@ -202,9 +201,9 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                 </Option>
               ))}
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label={
               <div className="flex gap-2">
                 分片组持续时间
@@ -227,9 +226,9 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                 </Option>
               ))}
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label={
               <div className="flex gap-2">
                 副本数
@@ -246,9 +245,9 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
               placeholder="副本数"
               style={{ width: '100%' }}
             />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label={
               <div className="flex gap-2">
                 设为默认策略
@@ -261,7 +260,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
             valuePropName="checked"
           >
             <Switch />
-          </Form.Item>
+          </FormItem>
         </Form>
 
         {/* 格式说明 */}
@@ -298,7 +297,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           >
             <Button
               variant="destructive"
-              loading={loading}
+              disabled={loading}
             >
               删除
             </Button>
@@ -306,7 +305,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         )}
         <Button
           variant="default"
-          loading={loading}
+          disabled={loading}
           onClick={handleSubmit}
         >
           {mode === 'create' ? '创建' : '保存'}

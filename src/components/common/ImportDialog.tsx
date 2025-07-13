@@ -240,7 +240,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       render: (value: string, _: FieldMapping, index: number) => (
         <Input
           value={value}
-          onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
+          onValueChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
           placeholder="输入目标字段名"
         />
       )},
@@ -251,7 +251,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       render: (value: string, _: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'fieldType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'fieldType', val)}
           style={{ width: 100 }}
         >
           <Option value="time">时间</Option>
@@ -266,7 +266,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'dataType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'dataType', val)}
           style={{ width: 120 }}
           disabled={record.fieldType === 'time'}
         >
@@ -297,7 +297,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     <Dialog
       title="数据导入"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={1000}
       footer={null}
     >
@@ -314,13 +314,13 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           <Card title="选择要导入的文件">
             <div className="space-y-4">
               <Upload.Dragger {...uploadProps}>
-                <p className="ant-upload-drag-icon">
-                  <UploadIcon className="w-4 h-4"  />
-                </p>
-                <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                <p className="ant-upload-hint">
-                  支持 CSV、JSON 格式文件。文件大小不超过 10MB。
-                </p>
+                <div className="flex flex-col items-center space-y-2">
+                  <UploadIcon className="w-8 h-8 text-gray-400" />
+                  <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+                  <p className="text-sm text-gray-500">
+                    支持 CSV、JSON 格式文件。文件大小不超过 10MB。
+                  </p>
+                </div>
               </Upload.Dragger>
 
               <Alert
@@ -350,7 +350,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               <Form form={form} layout="vertical">
                 <Row gutter={16}>
                   <Col span={12}>
-                    <Form.Item
+                    <FormItem
                       label="目标测量"
                       name="measurement"
                       rules={[{ required: true, message: '请输入测量名称' }]}
@@ -367,26 +367,26 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                           </Option>
                         ))}
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={6}>
-                    <Form.Item
+                    <FormItem
                       label="批次大小"
                       name="batchSize"
                       initialValue={1000}
                     >
                       <Input type="number" min={1} max={10000} />
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={6}>
-                    <Form.Item
+                    <FormItem
                       label="跳过错误"
                       name="skipErrors"
                       valuePropName="checked"
                       initialValue={false}
                     >
                       <Switch />
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                 </Row>
               </Form>
@@ -435,7 +435,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 </Button>
                 <Button
                   type="primary"
-                  loading={loading}
+                  disabled={loading}
                   onClick={handleImport}
                   disabled={!fieldMappings.some(m => m.fieldType === 'time')}
                 >

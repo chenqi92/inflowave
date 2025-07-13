@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, Input, Typography, Alert, Spin } from '@/components/ui';
 import { Card, Space, toast } from '@/components/ui';
 
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
 import { AreaChart } from 'lucide-react';
@@ -12,7 +11,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, QueryRequest } from '@/types';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
-
 
 // Remove Option destructuring as we'll use SelectItem instead
 
@@ -248,7 +246,7 @@ const Visualization: React.FC = () => {
       <Button
         icon={<RefreshCw className="w-4 h-4"  />}
         onClick={() => loadDatabases()}
-        loading={loading}
+        disabled={loading}
       >
         刷新
       </Button>
@@ -372,15 +370,15 @@ const Visualization: React.FC = () => {
           layout="vertical"
           onFinish={createChart}
         >
-          <Form.Item
+          <FormItem
             label="图表标题"
             name="title"
             rules={[{ required: true, message: '请输入图表标题' }]}
           >
             <Input placeholder="请输入图表标题" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="图表类型"
             name="type"
             rules={[{ required: true, message: '请选择图表类型' }]}
@@ -416,9 +414,9 @@ const Visualization: React.FC = () => {
                 </SelectItem>
               </SelectContent>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="数据库"
             name="database"
             rules={[{ required: true, message: '请选择数据库' }]}
@@ -435,20 +433,20 @@ const Visualization: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="查询语句"
             name="query"
             rules={[{ required: true, message: '请输入查询语句' }]}
           >
-            <Input.TextArea
+            <Textarea
               rows={4}
               placeholder="例如: SELECT mean(value) FROM temperature WHERE time >= now() - 1h GROUP BY time(5m)"
             />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="刷新间隔 (秒)"
             name="refreshInterval"
             tooltip="设置图表自动刷新间隔，0 表示不自动刷新"
@@ -466,7 +464,7 @@ const Visualization: React.FC = () => {
                 <SelectItem value="300">5 分钟</SelectItem>
               </SelectContent>
             </Select>
-          </Form.Item>
+          </FormItem>
 
           <div className="flex justify-end gap-2 mt-6">
             <Button

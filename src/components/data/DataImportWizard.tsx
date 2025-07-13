@@ -215,50 +215,50 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       <Card title="选择数据文件" style={{ marginBottom: 16 }}>
         <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
           <Upload.Dragger {...uploadProps}>
-            <p className="ant-upload-drag-icon">
-              <UploadIcon className="w-4 h-4"  />
-            </p>
-            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-            <p className="ant-upload-hint">
-              支持 CSV、JSON 和 Line Protocol 格式，文件大小不超过 100MB
-            </p>
+            <div className="flex flex-col items-center space-y-2">
+              <UploadIcon className="w-8 h-8 text-gray-400" />
+              <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+              <p className="text-sm text-gray-500">
+                支持 CSV、JSON 和 Line Protocol 格式，文件大小不超过 100MB
+              </p>
+            </div>
           </Upload.Dragger>
 
           <Form layout="vertical">
             <Row gutter={16}>
               <Col span={8}>
-                <Form.Item label="文件格式">
+                <FormItem label="文件格式">
                   <Select
                     value={importConfig.format}
-                    onChange={(value) => setImportConfig(prev => ({ ...prev, format: value }))}
+                    onValueChange={(value) => setImportConfig(prev => ({ ...prev, format: value }))}
                   >
                     <Option value="csv">CSV</Option>
                     <Option value="json">JSON</Option>
                     <Option value="line_protocol">Line Protocol</Option>
                   </Select>
-                </Form.Item>
+                </FormItem>
               </Col>
               {importConfig.format === 'csv' && (
                 <>
                   <Col span={8}>
-                    <Form.Item label="分隔符">
+                    <FormItem label="分隔符">
                       <Select
                         value={importConfig.delimiter}
-                        onChange={(value) => setImportConfig(prev => ({ ...prev, delimiter: value }))}
+                        onValueChange={(value) => setImportConfig(prev => ({ ...prev, delimiter: value }))}
                       >
                         <Option value=",">逗号 (,)</Option>
                         <Option value=";">分号 (;)</Option>
                         <Option value="\t">制表符</Option>
                         <Option value="|">竖线 (|)</Option>
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={8}>
-                    <Form.Item label="其他选项">
+                    <FormItem label="其他选项">
                       <div className="flex gap-2" direction="vertical">
                         <Checkbox
                           checked={importConfig.hasHeader}
-                          onChange={(e) => setImportConfig(prev => ({ ...prev, hasHeader: e.target.checked }))}
+                          onValueChange={(e) => setImportConfig(prev => ({ ...prev, hasHeader: e.target.checked }))}
                         >
                           包含标题行
                         </Checkbox>
@@ -268,12 +268,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                             min={0}
                             max={100}
                             value={importConfig.skipRows}
-                            onChange={(value) => setImportConfig(prev => ({ ...prev, skipRows: value || 0 }))}
+                            onValueChange={(value) => setImportConfig(prev => ({ ...prev, skipRows: value || 0 }))}
                             style={{ width: 80 }}
                           />
                         </div>
                       </div>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                 </>
               )}
@@ -322,19 +322,19 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
         <Form layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="目标测量名称" required>
+              <FormItem label="目标测量名称" required>
                 <Input
                   value={importConfig.measurement}
-                  onChange={(e) => setImportConfig(prev => ({ ...prev, measurement: e.target.value }))}
+                  onValueChange={(e) => setImportConfig(prev => ({ ...prev, measurement: e.target.value }))}
                   placeholder="输入测量名称"
                 />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item label="时间字段">
+              <FormItem label="时间字段">
                 <Select
                   value={importConfig.timeColumn}
-                  onChange={(value) => setImportConfig(prev => ({ ...prev, timeColumn: value }))}
+                  onValueChange={(value) => setImportConfig(prev => ({ ...prev, timeColumn: value }))}
                   placeholder="选择时间字段"
                   allowClear
                 >
@@ -342,50 +342,50 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                     <Option key={col} value={col}>{col}</Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="标签字段">
+              <FormItem label="标签字段">
                 <Select
                   mode="multiple"
                   value={importConfig.tagColumns}
-                  onChange={(value) => setImportConfig(prev => ({ ...prev, tagColumns: value }))}
+                  onValueChange={(value) => setImportConfig(prev => ({ ...prev, tagColumns: value }))}
                   placeholder="选择标签字段"
                 >
                   {previewData?.columns.map(col => (
                     <Option key={col} value={col}>{col}</Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item label="数值字段">
+              <FormItem label="数值字段">
                 <Select
                   mode="multiple"
                   value={importConfig.fieldColumns}
-                  onChange={(value) => setImportConfig(prev => ({ ...prev, fieldColumns: value }))}
+                  onValueChange={(value) => setImportConfig(prev => ({ ...prev, fieldColumns: value }))}
                   placeholder="选择数值字段"
                 >
                   {previewData?.columns.map(col => (
                     <Option key={col} value={col}>{col}</Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item label="批处理大小">
+          <FormItem label="批处理大小">
             <InputNumber
               min={100}
               max={10000}
               value={importConfig.batchSize}
-              onChange={(value) => setImportConfig(prev => ({ ...prev, batchSize: value || 1000 }))}
+              onValueChange={(value) => setImportConfig(prev => ({ ...prev, batchSize: value || 1000 }))}
               addonAfter="条/批"
             />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Card>
     </div>,
@@ -433,7 +433,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
     <Modal
       title="数据导入向导"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={800}
       footer={
         <div className="flex gap-2">
@@ -447,7 +447,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             <Button
               type="primary"
               onClick={previewFile}
-              loading={loading}
+              disabled={loading}
               disabled={fileList.length === 0}
             >
               预览数据
@@ -462,7 +462,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             <Button
               type="primary"
               onClick={executeImport}
-              loading={loading}
+              disabled={loading}
               disabled={!importConfig.measurement}
             >
               开始导入

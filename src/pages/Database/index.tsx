@@ -304,7 +304,7 @@ const Database: React.FC = () => {
           <Button
             icon={<RefreshCw className="w-4 h-4"  />}
             onClick={loadDatabases}
-            loading={loading}
+            disabled={loading}
           >
             刷新
           </Button>
@@ -1101,7 +1101,7 @@ const Database: React.FC = () => {
 
         return (
           <ContextMenu
-            visible={contextMenu.visible}
+            open={contextMenu.visible}
             x={contextMenu.x}
             y={contextMenu.y}
             target={contextMenu.target}
@@ -1144,7 +1144,7 @@ const Database: React.FC = () => {
           layout="vertical"
           onFinish={createDatabase}
         >
-          <Form.Item
+          <FormItem
             label="数据库名称"
             name="name"
             rules={[
@@ -1153,21 +1153,21 @@ const Database: React.FC = () => {
             ]}
           >
             <Input placeholder="请输入数据库名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="默认保留策略"
             name="retentionPolicy"
             tooltip="可选，如果不指定将使用系统默认策略"
           >
             <Input placeholder="例如: autogen" />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Dialog>
 
       {/* 保留策略管理对话框 */}
       <RetentionPolicyDialog
-        visible={retentionPolicyDialog.visible}
+        open={retentionPolicyDialog.visible}
         mode={retentionPolicyDialog.mode}
         policy={retentionPolicyDialog.policy}
         database={selectedDatabase}
@@ -1188,7 +1188,7 @@ const Database: React.FC = () => {
           description={`确定要删除测量 "${deleteMeasurementParams.measurement}" 吗？此操作将删除所有相关数据！`}
           open={!!deleteMeasurementParams}
           onConfirm={deleteMeasurement}
-          onCancel={() => setDeleteMeasurementParams(null)}
+          onOpenChange={(open) => !open && (() => setDeleteMeasurementParams(null))()}
           okText="删除"
           cancelText="取消"
           okType="danger"

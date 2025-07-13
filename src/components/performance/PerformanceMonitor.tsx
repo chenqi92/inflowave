@@ -185,7 +185,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             <div className="flex gap-2">
               <Select
                 value={timeRange}
-                onChange={setTimeRange}
+                onValueChange={setTimeRange}
                 style={{ width: 120 }}
               >
                 <Option value="1h">最近1小时</Option>
@@ -196,7 +196,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <Button
                 icon={<RefreshCw className="w-4 h-4"  />}
                 onClick={loadMetrics}
-                loading={loading}
+                disabled={loading}
               >
                 刷新
               </Button>

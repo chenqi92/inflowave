@@ -42,7 +42,7 @@ const TestFixes: React.FC = () => {
         <Table
           columns={columns}
           dataSource={dataSource}
-          loading={false}
+          disabled={false}
           rowKey="key"
           rowClassName="test-row"
           size="small"

@@ -48,9 +48,9 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   const [selectedDatabase, setSelectedDatabase] = useState(database || '');
   const [databases, setDatabases] = useState<string[]>([]);
   const [monitoringQueries, setMonitoringQueries] = useState<string[]>([
-    'SELECT mean(value) FROM cpu_usage WHERE time >= now() - 1m',
-    'SELECT mean(value) FROM memory_usage WHERE time >= now() - 1m',
-    'SELECT count(*) FROM errors WHERE time >= now() - 1m',
+    'SELECT mean(value) FROM cpu_usage WHERE time>= now() - 1m',
+    'SELECT mean(value) FROM memory_usage WHERE time>= now() - 1m',
+    'SELECT count(*) FROM errors WHERE time>= now() - 1m',
   ]);
   const [realTimeData, setRealTimeData] = useState<Record<string, QueryResult>>({});
   const [alertRules, setAlertRules] = useState<AlertRule[]>([]);
@@ -68,7 +68,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: selectedConnection});
       setDatabases(dbList || []);
-      if (dbList && dbList.length > 0 && !selectedDatabase) {
+      if (dbList && dbList.length> 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
@@ -117,7 +117,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
 
       switch (rule.condition) {
         case 'greater':
-          triggered = value > rule.threshold;
+          triggered = value> rule.threshold;
           break;
         case 'less':
           triggered = value < rule.threshold;
@@ -145,7 +145,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       }
     });
 
-    if (newAlerts.length > 0) {
+    if (newAlerts.length> 0) {
       setAlertEvents(prev => [...newAlerts, ...prev].slice(0, 100)); // 保留最近100条
       // 发送通知
       newAlerts.forEach(alert => {
@@ -258,7 +258,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   }, [selectedConnection]);
 
   useEffect(() => {
-    if (isMonitoring && refreshInterval > 0) {
+    if (isMonitoring && refreshInterval> 0) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -289,9 +289,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               <Select
                 placeholder="选择连接"
                 value={selectedConnection}
-                onChange={setSelectedConnection}
-                style={{ width: 200 }}
-              >
+                onValueChange={setSelectedConnection}
+                style={{ width: 200 }}>
                 {connections.map(conn => (
                   <Select.Option key={conn.id} value={conn.id}>
                     {conn.name}
@@ -301,9 +300,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               <Select
                 placeholder="选择数据库"
                 value={selectedDatabase}
-                onChange={setSelectedDatabase}
-                style={{ width: 200 }}
-              >
+                onValueChange={setSelectedDatabase}
+                style={{ width: 200 }}>
                 {databases.map(db => (
                   <Select.Option key={db} value={db}>
                     {db}
@@ -319,7 +317,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                 min={1}
                 max={300}
                 value={refreshInterval}
-                onChange={(value) => setRefreshInterval(value || 5)}
+                onValueChange={(value) => setRefreshInterval(value || 5)}
                 addonAfter="秒"
                 style={{ width: 100 }}
               />
@@ -327,8 +325,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                 type={isMonitoring ? 'danger' : 'primary'}
                 icon={isMonitoring ? <PauseCircle /> : <PlayCircle />}
                 onClick={toggleMonitoring}
-                disabled={!selectedConnection || !selectedDatabase}
-              >
+                disabled={!selectedConnection || !selectedDatabase}>
                 {isMonitoring ? '停止监控' : '开始监控'}
               </Button>
               <Button
@@ -337,8 +334,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                   setEditingAlert(null);
                   form.resetFields();
                   setShowAlertModal(true);
-                }}
-              >
+                }}>
                 告警设置
               </Button>
             </div>
@@ -347,15 +343,15 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       </Card>
 
       {/* 告警统计 */}
-      {alertStats.total > 0 && (
+      {alertStats.total> 0 && (
         <Alert
           message={`当前有 ${alertStats.total} 个未确认告警`}
           description={
             <div className="flex gap-2">
-              {alertStats.critical > 0 && <Tag color="red">严重: {alertStats.critical}</Tag>}
-              {alertStats.error > 0 && <Tag color="volcano">错误: {alertStats.error}</Tag>}
-              {alertStats.warning > 0 && <Tag color="orange">警告: {alertStats.warning}</Tag>}
-              {alertStats.info > 0 && <Tag color="blue">信息: {alertStats.info}</Tag>}
+              {alertStats.critical> 0 && <Tag color="red">严重: {alertStats.critical}</Tag>}
+              {alertStats.error> 0 && <Tag color="volcano">错误: {alertStats.error}</Tag>}
+              {alertStats.warning> 0 && <Tag color="orange">警告: {alertStats.warning}</Tag>}
+              {alertStats.info> 0 && <Tag color="blue">信息: {alertStats.info}</Tag>}
             </div>
           }
           type="warning"
@@ -385,8 +381,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                     />
                   }
                   valueStyle={{
-                    color: value && value > 80 ? '#cf1322' : 
-                           value && value > 60 ? '#fa8c16' : '#3f8600'
+                    color: value && value> 80 ? '#cf1322' : 
+                           value && value> 60 ? '#fa8c16' : '#3f8600'
                   }}
                 />
               </Card>
@@ -431,13 +427,11 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                   <Button
                     type="link"
                     onClick={() => acknowledgeAlert(alert.id)}
-                    size="small"
-                  >
+                    size="small">
                     确认
                   </Button>
                 ),
-              ].filter(Boolean)}
-            >
+              ].filter(Boolean)}>
               <List.Item.Meta
                 avatar={
                   <div style={{ color: getSeverityColor(alert.severity) }}>
@@ -473,89 +467,76 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       <Modal
         title={editingAlert ? '编辑告警规则' : '新建告警规则'}
         open={showAlertModal}
-        onOk={() => form.submit()}
-        onCancel={() => {
-          setShowAlertModal(false);
-          setEditingAlert(null);
-          form.resetFields();
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowAlertModal(false);
+            setEditingAlert(null);
+            form.resetFields();
+          }
         }}
-        width={600}
-      >
+        width={600}>
         <Form
           form={form}
           layout="vertical"
-          onFinish={saveAlertRule}
-        >
-          <Form.Item
-            name="name"
+          onFinish={saveAlertRule}>
+          <FormItem name="name"
             label="规则名称"
-            rules={[{ required: true, message: '请输入规则名称' }]}
-          >
+            rules={[{ required: true, message: '请输入规则名称' }]}>
             <Input placeholder="输入告警规则名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
-            name="query"
+          <FormItem name="query"
             label="监控查询"
-            rules={[{ required: true, message: '请输入查询语句' }]}
-          >
-            <Input.TextArea
+            rules={[{ required: true, message: '请输入查询语句' }]}>
+            <Textarea
               rows={3}
               placeholder="输入 InfluxQL 查询语句"
               style={{ fontFamily: 'monospace' }}
             />
-          </Form.Item>
+          </FormItem>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item
-                name="condition"
+              <FormItem name="condition"
                 label="条件"
-                rules={[{ required: true, message: '请选择条件' }]}
-              >
+                rules={[{ required: true, message: '请选择条件' }]}>
                 <Select placeholder="选择条件">
                   <Select.Option value="greater">大于</Select.Option>
                   <Select.Option value="less">小于</Select.Option>
                   <Select.Option value="equal">等于</Select.Option>
                   <Select.Option value="not_equal">不等于</Select.Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item
-                name="threshold"
+              <FormItem name="threshold"
                 label="阈值"
-                rules={[{ required: true, message: '请输入阈值' }]}
-              >
+                rules={[{ required: true, message: '请输入阈值' }]}>
                 <InputNumber
                   placeholder="输入阈值"
                   style={{ width: '100%' }}
                 />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item
-                name="severity"
+              <FormItem name="severity"
                 label="严重程度"
-                rules={[{ required: true, message: '请选择严重程度' }]}
-              >
+                rules={[{ required: true, message: '请选择严重程度' }]}>
                 <Select placeholder="选择严重程度">
                   <Select.Option value="info">信息</Select.Option>
                   <Select.Option value="warning">警告</Select.Option>
                   <Select.Option value="error">错误</Select.Option>
                   <Select.Option value="critical">严重</Select.Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item
-            name="enabled"
+          <FormItem name="enabled"
             valuePropName="checked"
-            label="启用规则"
-          >
+            label="启用规则">
             <Switch />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </div>

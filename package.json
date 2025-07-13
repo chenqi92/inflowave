@@ -35,7 +35,6 @@
     "prepare": "node scripts/prepare.js"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.0.0",
     "@hookform/resolvers": "^5.1.1",
     "@influxdata/influxdb-client": "^1.35.0",
     "@monaco-editor/react": "^4.6.0",
@@ -58,7 +57,6 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
-    "antd": "^5.26.4",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.3.2",
     "clsx": "^2.1.1",

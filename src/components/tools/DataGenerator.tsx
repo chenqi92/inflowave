@@ -383,7 +383,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             <span>目标数据库:</span>
             <Select
               value={selectedDatabase}
-              onChange={setSelectedDatabase}
+              onValueChange={setSelectedDatabase}
               style={{ minWidth: 150 }}
               placeholder="选择数据库"
             >
@@ -399,7 +399,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
               icon={<PlayCircle />}
               type="primary"
               onClick={generateData}
-              loading={loading}
+              disabled={loading}
               disabled={!activeConnectionId || !selectedDatabase}
             >
               生成数据
@@ -407,7 +407,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             <Button 
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={clearData}
-              loading={loading}
+              disabled={loading}
               disabled={!activeConnectionId || !selectedDatabase}
             >
               清空数据

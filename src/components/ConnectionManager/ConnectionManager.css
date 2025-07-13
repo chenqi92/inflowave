@@ -3,21 +3,21 @@
   font-size: 13px;
 }
 
-.connection-table .ant-table-tbody > tr:hover > td {
+.connection-table tbody tr:hover td {
   background-color: #f8fafc !important;
 }
 
-.connection-table .ant-table-tbody > tr.bg-blue-50 > td {
+.connection-table tbody tr.bg-blue-50 td {
   background-color: #eff6ff !important;
   border-color: #bfdbfe !important;
 }
 
-.connection-table .ant-table-tbody > tr.bg-blue-50:hover > td {
+.connection-table tbody tr.bg-blue-50:hover td {
   background-color: #dbeafe !important;
 }
 
 /* 确保按钮在操作列中对齐 */
-.connection-table .ant-table-tbody .ant-btn {
+.connection-table tbody button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,7 @@
 }
 
 /* 状态标签样式 */
-.connection-table .ant-tag {
+.connection-table .tag {
   border-radius: 4px;
   font-size: 11px;
   padding: 1px 6px;
@@ -36,7 +36,7 @@
 }
 
 /* 表格头部样式 */
-.connection-table .ant-table-thead > tr > th {
+.connection-table thead tr th {
   background-color: #fafafa;
   font-weight: 500;
   font-size: 12px;
@@ -44,24 +44,24 @@
 }
 
 /* 表格单元格样式 */
-.connection-table .ant-table-tbody > tr > td {
+.connection-table tbody tr td {
   padding: 8px 12px;
   font-size: 12px;
 }
 
 /* 响应式表格 */
 @media (max-width: 768px) {
-  .connection-table .ant-table-tbody > tr > td {
+  .connection-table tbody tr td {
     padding: 6px 4px;
     font-size: 11px;
   }
 
-  .connection-table .ant-table-thead > tr > th {
+  .connection-table thead tr th {
     padding: 6px 4px;
     font-size: 11px;
   }
 
-  .connection-table .ant-btn {
+  .connection-table button {
     padding: 0 6px;
     font-size: 11px;
     height: 24px;
@@ -69,33 +69,20 @@
 }
 
 /* 优化弹框层级 */
-.ant-modal-wrap {
+.dialog-overlay {
   z-index: 1000;
 }
 
-.ant-modal-wrap:has(.ant-modal-title:contains('新建连接')),
-.ant-modal-wrap:has(.ant-modal-title:contains('编辑连接')) {
+.dialog-overlay[data-priority="high"] {
   z-index: 1200 !important;
 }
 
 /* 确保新建/编辑连接弹框在连接管理弹框之上 */
-.ant-modal {
-  z-index: inherit;
-}
-
-.ant-modal-mask {
+.dialog-content {
   z-index: inherit;
 }
 
 /* 强制确保编辑对话框在最顶层 */
-.ant-modal-wrap[style*="z-index: 1200"] {
+.dialog-overlay[data-z-index="1200"] {
   z-index: 1200 !important;
-}
-
-.ant-modal-wrap[style*="z-index: 1200"] .ant-modal {
-  z-index: 1200 !important;
-}
-
-.ant-modal-wrap[style*="z-index: 1200"] .ant-modal-mask {
-  z-index: 1199 !important;
 }

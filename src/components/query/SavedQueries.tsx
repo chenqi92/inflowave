@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Typography, Input, Select, Tag, Form, Empty, Row, Col, Modal } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 // TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
 import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle } from 'lucide-react';
 // TODO: Replace these icons: BookOutlined, TagOutlined
@@ -12,7 +11,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import type { SavedQuery } from '@/types';
 
 const { Text, Paragraph } = Typography;
-const { Search, TextArea } = Input;
+const { Search, Textarea } = Input;
 const { Option } = Select;
 
 interface SavedQueriesProps {
@@ -185,13 +184,11 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
         <Tooltip title="删除">
           <Popconfirm
             title="确定删除这个查询吗？"
-            onConfirm={() => handleDeleteQuery(query.id)}
-          >
+            onConfirm={() => handleDeleteQuery(query.id)}>
             <Button type="text" icon={<Trash2 className="w-4 h-4"  />} danger />
           </Popconfirm>
         </Tooltip>,
-      ]}
-    >
+      ]}>
       <List.Item.Meta
         title={
           <div className="flex gap-2">
@@ -217,8 +214,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             )}
             <Paragraph
               ellipsis={{ rows: 3, expandable: true }}
-              style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace' }}
-            >
+              style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace' }}>
               {query.query}
             </Paragraph>
             <Text type="secondary" style={{ fontSize: '11px' }}>
@@ -237,73 +233,60 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
     <Form
       form={form}
       layout="vertical"
-      onFinish={editingQuery ? handleUpdateQuery : handleCreateQuery}
-    >
-      <Form.Item
-        name="name"
+      onFinish={editingQuery ? handleUpdateQuery : handleCreateQuery}>
+      <FormItem name="name"
         label="查询名称"
-        rules={[{ required: true, message: '请输入查询名称' }]}
-      >
+        rules={[{ required: true, message: '请输入查询名称' }]}>
         <Input placeholder="输入查询名称" />
-      </Form.Item>
+      </FormItem>
 
-      <Form.Item
-        name="description"
-        label="描述"
-      >
-        <TextArea
+      <FormItem name="description"
+        label="描述">
+        <Textarea
           placeholder="输入查询描述（可选）"
           rows={2}
         />
-      </Form.Item>
+      </FormItem>
 
-      <Form.Item
-        name="query"
+      <FormItem name="query"
         label="查询语句"
-        rules={[{ required: true, message: '请输入查询语句' }]}
-      >
-        <TextArea
+        rules={[{ required: true, message: '请输入查询语句' }]}>
+        <Textarea
           placeholder="输入 InfluxQL 查询语句"
           rows={6}
           style={{ fontFamily: 'monospace' }}
         />
-      </Form.Item>
+      </FormItem>
 
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item
-            name="database"
-            label="数据库"
-          >
+          <FormItem name="database"
+            label="数据库">
             <Select
               placeholder="选择数据库（可选）"
-              allowClear
-            >
+              allowClear>
               {allDatabases.map(db => (
                 <Option key={db} value={db}>{db}</Option>
               ))}
             </Select>
-          </Form.Item>
+          </FormItem>
         </Col>
         <Col span={12}>
-          <Form.Item
-            name="tags"
-            label="标签"
-          >
+          <FormItem name="tags"
+            label="标签">
             <Select
               mode="tags"
               placeholder="添加标签（可选）"
-              style={{ width: '100%' }}
-            >
+              style={{ width: '100%' }}>
               {allTags.map(tag => (
                 <Option key={tag} value={tag}>{tag}</Option>
               ))}
             </Select>
-          </Form.Item>
+          </FormItem>
         </Col>
       </Row>
 
-      <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+      <FormItem style={{ marginBottom: 0, textAlign: 'right' }}>
         <div className="flex gap-2">
           <Button onClick={handleCancelEdit}>
             取消
@@ -312,7 +295,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             {editingQuery ? '更新' : '保存'}
           </Button>
         </div>
-      </Form.Item>
+      </FormItem>
     </Form>
   );
 
@@ -325,7 +308,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             <Search
               placeholder="搜索查询..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onValueChange={(e) => setSearchText(e.target.value)}
               allowClear
             />
           </Col>
@@ -333,10 +316,9 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             <Select
               placeholder="筛选数据库"
               value={filterDatabase}
-              onChange={setFilterDatabase}
+              onValueChange={setFilterDatabase}
               allowClear
-              style={{ width: '100%' }}
-            >
+              style={{ width: '100%' }}>
               {allDatabases.map(db => (
                 <Option key={db} value={db}>{db}</Option>
               ))}
@@ -346,10 +328,9 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             <Select
               placeholder="筛选标签"
               value={filterTag}
-              onChange={setFilterTag}
+              onValueChange={setFilterTag}
               allowClear
-              style={{ width: '100%' }}
-            >
+              style={{ width: '100%' }}>
               {allTags.map(tag => (
                 <Option key={tag} value={tag}>{tag}</Option>
               ))}
@@ -359,8 +340,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             <Button
               type="primary"
               icon={<Plus className="w-4 h-4"  />}
-              onClick={() => setShowCreateModal(true)}
-            >
+              onClick={() => setShowCreateModal(true)}>
               新建查询
             </Button>
           </Col>
@@ -370,7 +350,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       {/* 查询列表 */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         <List
-          loading={loading}
+          disabled={loading}
           dataSource={filteredQueries}
           renderItem={renderQueryItem}
           locale={{
@@ -397,11 +377,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             </div>
           }
           open={visible}
-          onCancel={onClose}
+          onOpenChange={(open) => !open && (onClose)()}
           footer={null}
           width={1000}
-          style={{ top: 20 }}
-        >
+          style={{ top: 20 }}>
           {content}
         </Modal>
       ) : (
@@ -413,8 +392,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             </div>
           }
           style={{ height: '100%' }}
-          styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
-        >
+          styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}>
           {content}
         </Card>
       )}
@@ -428,11 +406,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           </div>
         }
         open={showCreateModal || !!editingQuery}
-        onCancel={handleCancelEdit}
+        onOpenChange={(open) => !open && (handleCancelEdit)()}
         footer={null}
         width={800}
-        destroyOnClose
-      >
+        destroyOnClose>
         {queryForm}
       </Modal>
     </>

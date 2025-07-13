@@ -219,7 +219,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
             placeholder="搜索数据库、测量、查询、设置..."
             prefix={<Search className="w-4 h-4" />}
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onValueChange={(e) => setSearchText(e.target.value)}
             onKeyDown={handleKeyDown}
             style={{ border: 'none', boxShadow: 'none' }}
           />

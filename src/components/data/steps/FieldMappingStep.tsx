@@ -299,7 +299,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Input
           value={value}
-          onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
+          onValueChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
           placeholder="输入目标字段名"
           size="small"
         />
@@ -312,7 +312,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'fieldType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'fieldType', val)}
           style={{ width: '100%' }}
           size="small"
         >
@@ -350,7 +350,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'dataType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'dataType', val)}
           style={{ width: '100%' }}
           size="small"
           disabled={record.fieldType === 'time' || record.fieldType === 'ignore'}
@@ -369,7 +369,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       render: (value: boolean, record: FieldMapping, index: number) => (
         <Switch
           checked={value}
-          onChange={(checked) => updateFieldMapping(index, 'required', checked)}
+          onValueChange={(checked) => updateFieldMapping(index, 'required', checked)}
           size="small"
           disabled={record.fieldType === 'time'}
         />
@@ -382,7 +382,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Input
           value={value}
-          onChange={(e) => updateFieldMapping(index, 'defaultValue', e.target.value)}
+          onValueChange={(e) => updateFieldMapping(index, 'defaultValue', e.target.value)}
           placeholder="默认值"
           size="small"
           disabled={record.fieldType === 'ignore'}
@@ -556,7 +556,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       <Modal
         title="选择映射模板"
         open={showTemplateModal}
-        onCancel={() => setShowTemplateModal(false)}
+        onOpenChange={(open) => !open && (() => setShowTemplateModal(false))()}
         footer={[
           <Button key="cancel" onClick={() => setShowTemplateModal(false)}>
             取消
@@ -581,7 +581,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
 
           <Select
             value={selectedTemplate}
-            onChange={setSelectedTemplate}
+            onValueChange={setSelectedTemplate}
             style={{ width: '100%' }}
             placeholder="选择模板"
           >

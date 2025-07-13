@@ -3,7 +3,6 @@ import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, 
 // TODO: Replace these Ant Design components: Descriptions, List, Tooltip, Drawer, Timeline, Badge
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 import { MemoryOutlined, CpuOutlined, HddOutlined, NetworkOutlined, ShareAltOutlined, ExperimentOutlined, SafetyCertificateOutlined } from '@/components/ui';
 import { Zap, Rocket, BarChart, Settings, Info, Eye, Download, RefreshCw, Lightbulb, Clock, Database, TrendingUp, Trophy, Flame, History, Webhook, Star, PlayCircle, PauseCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -148,7 +147,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 <div className="flex gap-2">
                   <Switch
                     checked={autoOptimize}
-                    onChange={setAutoOptimize}
+                    onValueChange={setAutoOptimize}
                     checkedChildren="自动优化"
                     unCheckedChildren="手动优化"
                   />
@@ -165,7 +164,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 <Col span={8}>
                   <Select
                     value={database}
-                    onChange={setDatabase}
+                    onValueChange={setDatabase}
                     placeholder="选择数据库"
                     style={{ width: '100%' }}
                   >
@@ -180,7 +179,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       type="primary"
                       icon={<Rocket className="w-4 h-4"  />}
                       onClick={optimizeQuery}
-                      loading={loading}
+                      disabled={loading}
                     >
                       优化查询
                     </Button>
@@ -216,7 +215,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 <Text strong>原始查询</Text>
                 <CodeEditor
                   value={query}
-                  onChange={setQuery}
+                  onValueChange={setQuery}
                   language="sql"
                   height="200px"
                   placeholder="输入您的SQL查询语句..."
@@ -669,7 +668,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           </div>
         }
       >
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
+        <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
           <Tabs.TabPane 
             tab={
               <span>
@@ -722,7 +721,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enableCaching}
-                onChange={(checked) => setOptimizationConfig(prev => ({
+                onValueChange={(checked) => setOptimizationConfig(prev => ({
                   ...prev,
                   enableCaching: checked
                 }))}
@@ -738,7 +737,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enableRouting}
-                onChange={(checked) => setOptimizationConfig(prev => ({
+                onValueChange={(checked) => setOptimizationConfig(prev => ({
                   ...prev,
                   enableRouting: checked
                 }))}
@@ -754,7 +753,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enablePrediction}
-                onChange={(checked) => setOptimizationConfig(prev => ({
+                onValueChange={(checked) => setOptimizationConfig(prev => ({
                   ...prev,
                   enablePrediction: checked
                 }))}
@@ -770,7 +769,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <div style={{ marginTop: '8px' }}>
               <Select
                 value={optimizationConfig.optimizationLevel}
-                onChange={(value) => setOptimizationConfig(prev => ({
+                onValueChange={(value) => setOptimizationConfig(prev => ({
                   ...prev,
                   optimizationLevel: value
                 }))}
@@ -788,7 +787,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <div style={{ marginTop: '8px' }}>
               <Select
                 value={optimizationConfig.maxOptimizationTime}
-                onChange={(value) => setOptimizationConfig(prev => ({
+                onValueChange={(value) => setOptimizationConfig(prev => ({
                   ...prev,
                   maxOptimizationTime: value
                 }))}

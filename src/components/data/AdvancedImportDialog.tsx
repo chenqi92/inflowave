@@ -615,7 +615,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       render: (value: string, _: FieldMapping, index: number) => (
         <Input
           value={value}
-          onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
+          onValueChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
           placeholder="输入目标字段名"
           size="small"
         />
@@ -628,7 +628,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       render: (value: string, _: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'fieldType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'fieldType', val)}
           style={{ width: '100%' }}
           size="small"
         >
@@ -646,7 +646,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Select
           value={value}
-          onChange={(val) => updateFieldMapping(index, 'dataType', val)}
+          onValueChange={(val) => updateFieldMapping(index, 'dataType', val)}
           style={{ width: '100%' }}
           size="small"
           disabled={record.fieldType === 'time' || record.fieldType === 'ignore'}
@@ -665,7 +665,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       render: (value: boolean, _: FieldMapping, index: number) => (
         <Switch
           checked={value}
-          onChange={(checked) => updateFieldMapping(index, 'required', checked)}
+          onValueChange={(checked) => updateFieldMapping(index, 'required', checked)}
           size="small"
         />
       )},
@@ -677,7 +677,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       render: (value: string, record: FieldMapping, index: number) => (
         <Input
           value={value}
-          onChange={(e) => updateFieldMapping(index, 'defaultValue', e.target.value)}
+          onValueChange={(e) => updateFieldMapping(index, 'defaultValue', e.target.value)}
           placeholder="默认值"
           size="small"
           disabled={record.fieldType === 'ignore'}
@@ -689,7 +689,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
     <Dialog
       title="高级数据导入"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={1400}
       style={{ top: 20 }}
       footer={null}
@@ -708,23 +708,23 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             <Card title="选择要导入的文件">
               <div className="space-y-4">
                 <Upload.Dragger {...uploadProps}>
-                  <p className="ant-upload-drag-icon">
-                    <UploadIcon className="w-4 h-4"  />
-                  </p>
-                  <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                  <p className="ant-upload-hint">
-                    支持 CSV、JSON、Excel 格式文件。文件大小不超过 50MB。
-                  </p>
+                  <div className="flex flex-col items-center space-y-2">
+                    <UploadIcon className="w-8 h-8 text-gray-400" />
+                    <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+                    <p className="text-sm text-gray-500">
+                      支持 CSV、JSON、Excel 格式文件。文件大小不超过 50MB。
+                    </p>
+                  </div>
                 </Upload.Dragger>
 
                 {/* CSV 解析选项 */}
                 <Card title="CSV 解析选项" size="small">
                   <Row gutter={16}>
                     <Col span={8}>
-                      <Form.Item label="分隔符">
+                      <FormItem label="分隔符">
                         <Select
                           value={csvDelimiter}
-                          onChange={setCsvDelimiter}
+                          onValueChange={setCsvDelimiter}
                           style={{ width: '100%' }}
                         >
                           <Option value=",">逗号 (,)</Option>
@@ -732,28 +732,28 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                           <Option value="	">制表符 (Tab)</Option>
                           <Option value="|">竖线 (|)</Option>
                         </Select>
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={8}>
-                      <Form.Item label="编码">
+                      <FormItem label="编码">
                         <Select
                           value={csvEncoding}
-                          onChange={setCsvEncoding}
+                          onValueChange={setCsvEncoding}
                           style={{ width: '100%' }}
                         >
                           <Option value="utf-8">UTF-8</Option>
                           <Option value="gbk">GBK</Option>
                           <Option value="gb2312">GB2312</Option>
                         </Select>
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={8}>
-                      <Form.Item label="包含表头">
+                      <FormItem label="包含表头">
                         <Switch
                           checked={csvHasHeader}
-                          onChange={setCsvHasHeader}
+                          onValueChange={setCsvHasHeader}
                         />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                   </Row>
                 </Card>
@@ -808,7 +808,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
               <Form form={form} layout="vertical">
                 <Row gutter={16}>
                   <Col span={8}>
-                    <Form.Item
+                    <FormItem
                       label="目标测量"
                       name="measurement"
                       rules={[{ required: true, message: '请输入测量名称' }]}
@@ -825,19 +825,19 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                           </Option>
                         ))}
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={4}>
-                    <Form.Item
+                    <FormItem
                       label="批次大小"
                       name="batchSize"
                       initialValue={1000}
                     >
                       <Input type="number" min={1} max={10000} />
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={4}>
-                    <Form.Item
+                    <FormItem
                       label="时间精度"
                       name="precision"
                       initialValue="ns"
@@ -848,24 +848,24 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                         <Option value="ms">毫秒</Option>
                         <Option value="s">秒</Option>
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={4}>
-                    <Form.Item
+                    <FormItem
                       label="跳过错误"
                       name="skipErrors"
                       valuePropName="checked"
                       initialValue={false}
                     >
                       <Switch />
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={4}>
-                    <Form.Item label="操作">
-                      <Button type="primary" onClick={validateData} loading={loading}>
+                    <FormItem label="操作">
+                      <Button type="primary" onClick={validateData} disabled={loading}>
                         验证数据
                       </Button>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                 </Row>
               </Form>
@@ -873,7 +873,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
 
             {/* 配置选项卡 */}
             <Card>
-              <Tabs activeKey={activeTab} onChange={setActiveTab}>
+              <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
                 <TabPane tab="字段映射" key="mapping">
                   <div className="space-y-4">
                     <Alert

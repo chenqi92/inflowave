@@ -187,7 +187,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
                 type="checkbox"
                 checked={isChecked}
                 disabled={node.disabled || node.disableCheckbox}
-                onChange={() => handleCheck(node.key, node)}
+                onValueChange={() => handleCheck(node.key, node)}
                 onClick={(e) => e.stopPropagation()}
                 className="mr-2"
               />

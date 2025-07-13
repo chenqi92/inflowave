@@ -162,20 +162,19 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
   const renderBasicSettings = () => (
     <div className="space-y-4">
-      <Form.Item
-        name="title"
+      <FormItem name="title"
         label="图表标题"
         rules={[{ required: true, message: '请输入图表标题' }]}
       >
         <Input
           placeholder="输入图表标题"
           value={chartConfig.title}
-          onChange={(e) => handleFieldChange('title', e.target.value)}
+          onValueChange={(e) => handleFieldChange('title', e.target.value)}
         />
-      </Form.Item>
+      </FormItem>
 
       <div className="grid grid-cols-2 gap-4">
-        <Form.Item
+        <FormItem
           name={['xAxis', 'field']}
           label="X轴字段"
           rules={[{ required: true, message: '请选择X轴字段' }]}
@@ -184,11 +183,11 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             placeholder="选择X轴字段"
             options={chartConfig.type === 'pie' ? fieldOptions : timeFieldOptions}
             value={chartConfig.xAxis?.field}
-            onChange={(value) => handleFieldChange('xAxis', { ...chartConfig.xAxis, field: value })}
+            onValueChange={(value) => handleFieldChange('xAxis', { ...chartConfig.xAxis, field: value })}
           />
-        </Form.Item>
+        </FormItem>
 
-        <Form.Item
+        <FormItem
           name={['yAxis', 'field']}
           label="Y轴字段"
           rules={[{ required: true, message: '请选择Y轴字段' }]}
@@ -197,21 +196,21 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             placeholder="选择Y轴字段"
             options={numericFieldOptions}
             value={chartConfig.yAxis?.field}
-            onChange={(value) => handleFieldChange('yAxis', { ...chartConfig.yAxis, field: value })}
+            onValueChange={(value) => handleFieldChange('yAxis', { ...chartConfig.yAxis, field: value })}
           />
-        </Form.Item>
+        </FormItem>
       </div>
 
       {chartConfig.type !== 'pie' && (
-        <Form.Item name="groupBy" label="分组字段（可选）">
+        <FormItem name="groupBy" label="分组字段（可选）">
           <Select
             placeholder="选择分组字段"
             options={fieldOptions}
             allowClear
             value={chartConfig.groupBy}
-            onChange={(value) => handleFieldChange('groupBy', value)}
+            onValueChange={(value) => handleFieldChange('groupBy', value)}
           />
-        </Form.Item>
+        </FormItem>
       )}
     </div>
   );
@@ -223,7 +222,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <label className="text-sm font-medium">显示网格</label>
           <Switch
             checked={chartConfig.settings?.showGrid}
-            onChange={(checked) => handleSettingsChange('showGrid', checked)}
+            onValueChange={(checked) => handleSettingsChange('showGrid', checked)}
           />
         </div>
 
@@ -231,7 +230,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <label className="text-sm font-medium">显示图例</label>
           <Switch
             checked={chartConfig.settings?.showLegend}
-            onChange={(checked) => handleSettingsChange('showLegend', checked)}
+            onValueChange={(checked) => handleSettingsChange('showLegend', checked)}
           />
         </div>
 
@@ -239,7 +238,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <label className="text-sm font-medium">显示提示框</label>
           <Switch
             checked={chartConfig.settings?.showTooltip}
-            onChange={(checked) => handleSettingsChange('showTooltip', checked)}
+            onValueChange={(checked) => handleSettingsChange('showTooltip', checked)}
           />
         </div>
 
@@ -247,7 +246,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <label className="text-sm font-medium">启用动画</label>
           <Switch
             checked={chartConfig.settings?.animation}
-            onChange={(checked) => handleSettingsChange('animation', checked)}
+            onValueChange={(checked) => handleSettingsChange('animation', checked)}
           />
         </div>
       </div>
@@ -258,7 +257,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             <label className="text-sm font-medium">平滑曲线</label>
             <Switch
               checked={chartConfig.settings?.smooth}
-              onChange={(checked) => handleSettingsChange('smooth', checked)}
+              onValueChange={(checked) => handleSettingsChange('smooth', checked)}
             />
           </div>
 
@@ -266,7 +265,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             <label className="text-sm font-medium">堆叠显示</label>
             <Switch
               checked={chartConfig.settings?.stack}
-              onChange={(checked) => handleSettingsChange('stack', checked)}
+              onValueChange={(checked) => handleSettingsChange('stack', checked)}
             />
           </div>
         </div>
@@ -276,7 +275,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         <label className="text-sm font-medium">显示数据标签</label>
         <Switch
           checked={chartConfig.settings?.showDataLabels}
-          onChange={(checked) => handleSettingsChange('showDataLabels', checked)}
+          onValueChange={(checked) => handleSettingsChange('showDataLabels', checked)}
         />
       </div>
 
@@ -287,7 +286,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           max={1}
           step={0.1}
           value={chartConfig.settings?.opacity || 1}
-          onChange={(value) => handleSettingsChange('opacity', value)}
+          onValueChange={(value) => handleSettingsChange('opacity', value)}
           marks={{ 0: '0%', 0.5: '50%', 1: '100%' }}
         />
       </div>
@@ -296,7 +295,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         <label className="text-sm font-medium">主题</label>
         <Select
           value={chartConfig.settings?.theme || 'default'}
-          onChange={(value) => handleSettingsChange('theme', value)}
+          onValueChange={(value) => handleSettingsChange('theme', value)}
           options={[
             { label: '默认', value: 'default' },
             { label: '深色', value: 'dark' },

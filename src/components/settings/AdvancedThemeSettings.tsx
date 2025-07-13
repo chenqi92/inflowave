@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert, Tooltip, List, Badge } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 import { SkinOutlined, ShareAltOutlined, MoonOutlined, SunOutlined, ExperimentOutlined, DiamondOutlined } from '@/components/ui';
 import { Settings, Eye, Upload, Download, RefreshCw, Copy, Lightbulb, Shrink, Expand, Image, Gift, Flame, Star, Heart, Zap, Crown, Palette, Type, Monitor, Square } from 'lucide-react';
 import { useSettingsStore } from '@/store/settings';
@@ -226,7 +225,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 <div style={{ textAlign: 'center' }}>
                   <Radio.Group
                     value={settings.theme.mode}
-                    onChange={(e) => updateTheme({ mode: e.target.value })}
+                    onValueChange={(e) => updateTheme({ mode: e.target.value })}
                     style={{ width: '100%' }}
                   >
                     <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
@@ -358,7 +357,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 <div style={{ marginTop: '8px' }}>
                   <ColorPicker
                     value={settings.theme.primaryColor}
-                    onChange={(value) => updateTheme({ primaryColor: typeof value === 'string' ? value : value.toHexString() })}
+                    onValueChange={(value) => updateTheme({ primaryColor: typeof value === 'string' ? value : value.toHexString() })}
                     showText
                     allowClear={false}
                     presets={[
@@ -389,7 +388,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                   <Text strong>紧凑模式</Text>
                   <Switch
                     checked={settings.theme.compact}
-                    onChange={(checked) => updateTheme({ compact: checked })}
+                    onValueChange={(checked) => updateTheme({ compact: checked })}
                   />
                 </Row>
                 <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -405,7 +404,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     max={20}
                     step={1}
                     value={settings.theme.borderRadius}
-                    onChange={(value) => updateTheme({ borderRadius: value })}
+                    onValueChange={(value) => updateTheme({ borderRadius: value })}
                     marks={{
                       0: '0px',
                       6: '6px',
@@ -466,7 +465,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                     <Select
                       style={{ width: '100%' }}
                       value={settings.editor.fontFamily}
-                      onChange={(value) => updateSettings({ 
+                      onValueChange={(value) => updateSettings({ 
                         editor: { ...settings.editor, fontFamily: value }
                       })}
                       placeholder="选择字体"
@@ -489,7 +488,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                       min={10}
                       max={24}
                       value={settings.editor.fontSize}
-                      onChange={(value) => updateSettings({ 
+                      onValueChange={(value) => updateSettings({ 
                         editor: { ...settings.editor, fontSize: value || 14 }
                       })}
                       style={{ width: '100%' }}
@@ -507,7 +506,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                       max={3}
                       step={0.1}
                       value={settings.editor.lineHeight}
-                      onChange={(value) => updateSettings({ 
+                      onValueChange={(value) => updateSettings({ 
                         editor: { ...settings.editor, lineHeight: value || 1.5 }
                       })}
                       style={{ width: '100%' }}

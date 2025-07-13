@@ -16,7 +16,6 @@ import { Modal } from '@/utils/modalAdapter';
 import type { AppConfig } from '@/types';
 import '@/styles/settings.css';
 
-
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const form = useForm();
@@ -255,7 +254,7 @@ const Settings: React.FC = () => {
                   >
                     <Row gutter={24}>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="主题"
                           name="theme"
                           tooltip="选择应用程序的外观主题"
@@ -265,10 +264,10 @@ const Settings: React.FC = () => {
                             <Option value="dark">深色主题</Option>
                             <Option value="auto">跟随系统</Option>
                           </Select>
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="语言"
                           name="language"
                           tooltip="选择应用程序的显示语言"
@@ -277,13 +276,13 @@ const Settings: React.FC = () => {
                             <Option value="zh-CN">简体中文</Option>
                             <Option value="en-US">English</Option>
                           </Select>
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                     </Row>
 
                     <Row gutter={24}>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="查询超时时间 (毫秒)"
                           name="queryTimeout"
                           tooltip="查询执行的最大等待时间"
@@ -294,10 +293,10 @@ const Settings: React.FC = () => {
                             step={1000}
                             style={{ width: '100%' }}
                           />
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="最大查询结果数"
                           name="maxQueryResults"
                           tooltip="单次查询返回的最大行数"
@@ -308,36 +307,36 @@ const Settings: React.FC = () => {
                             step={100}
                             style={{ width: '100%' }}
                           />
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                     </Row>
 
                     <Row gutter={24}>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="自动保存"
                           name="autoSave"
                           valuePropName="checked"
                           tooltip="自动保存查询和配置"
                         >
                           <Switch />
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="自动连接"
                           name="autoConnect"
                           valuePropName="checked"
                           tooltip="启动时自动连接到上次使用的数据库"
                         >
                           <Switch />
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                     </Row>
 
                     <Row gutter={24}>
                       <Col span={12}>
-                        <Form.Item
+                        <FormItem
                           label="日志级别"
                           name="logLevel"
                           tooltip="设置应用程序的日志详细程度"
@@ -348,19 +347,19 @@ const Settings: React.FC = () => {
                             <Option value="warn">警告 (Warn)</Option>
                             <Option value="error">错误 (Error)</Option>
                           </Select>
-                        </Form.Item>
+                        </FormItem>
                       </Col>
                     </Row>
 
                     <Divider />
 
                     <div className="pt-4 border-t border-gray-200">
-                      <Form.Item className="mb-0">
+                      <FormItem className="mb-0">
                         <div className="flex gap-2" size="middle">
                           <Button
                             type="primary"
                             htmlType="submit"
-                            loading={loading}
+                            disabled={loading}
                             icon={<Save className="w-4 h-4"  />}
                             size="large"
                             className="cursor-pointer"
@@ -376,7 +375,7 @@ const Settings: React.FC = () => {
                             重置为默认
                           </Button>
                         </div>
-                      </Form.Item>
+                      </FormItem>
                     </div>
                     </Form>
                   </Card>
@@ -663,7 +662,7 @@ const Settings: React.FC = () => {
 
         {/* 浏览器模式说明弹框 */}
         <BrowserModeModal
-          visible={browserModalVisible}
+          open={browserModalVisible}
           onClose={() => setBrowserModalVisible(false)}
         />
       </div>

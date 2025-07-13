@@ -47,64 +47,51 @@
   stroke-width: 2.5;
 }
 
-.connection-dialog .ant-modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+/* Dialog 组件样式 */
+.connection-dialog [data-dialog-content] {
+  padding: 0;
 }
 
-.connection-dialog .ant-modal-title {
+.connection-dialog [data-dialog-header] {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fafafa;
+}
+
+.connection-dialog [data-dialog-title] {
   font-size: 16px;
   font-weight: 600;
 }
 
-.connection-dialog .ant-modal-body {
+.connection-dialog [data-dialog-body] {
   padding: 20px;
 }
 
-.connection-dialog .ant-modal-close {
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.connection-dialog .ant-modal-close:hover {
-  background-color: #f3f4f6;
-}
-
 /* 表单样式优化 */
-.connection-dialog .ant-form-item {
+.connection-dialog .form-item {
   margin-bottom: 12px;
 }
 
-.connection-dialog .ant-form-item-label {
+.connection-dialog .form-label {
   padding-bottom: 4px;
-}
-
-.connection-dialog .ant-form-item-label > label {
   font-size: 13px;
   font-weight: 500;
   color: #374151;
 }
 
-.connection-dialog .ant-input,
-.connection-dialog .ant-input-number,
-.connection-dialog .ant-select-selector {
+.connection-dialog input,
+.connection-dialog select,
+.connection-dialog [data-select-trigger] {
   font-size: 13px;
   border-radius: 6px;
 }
 
-.connection-dialog .ant-input-number {
+.connection-dialog input[type="number"] {
   width: 100%;
 }
 
 /* 按钮样式统一 */
-.connection-dialog .ant-btn {
+.connection-dialog button {
   font-size: 12px;
   height: 28px;
   padding: 0 12px;
@@ -115,53 +102,43 @@
   gap: 4px;
 }
 
-.connection-dialog .ant-btn-sm {
+.connection-dialog .btn-sm {
   height: 28px;
   padding: 0 8px;
   font-size: 12px;
 }
 
 /* 步骤指示器样式 */
-.connection-dialog .ant-steps {
+.connection-dialog .steps {
   margin-bottom: 16px;
 }
 
-.connection-dialog .ant-steps-item-title {
+.connection-dialog .step-title {
   font-size: 13px;
 }
 
-.connection-dialog .ant-steps-item-description {
+.connection-dialog .step-description {
   font-size: 12px;
 }
 
 /* Switch组件样式 */
-.connection-dialog .ant-switch {
+.connection-dialog [data-switch] {
   min-width: 36px;
   height: 18px;
 }
 
-.connection-dialog .ant-switch-handle {
-  width: 14px;
-  height: 14px;
-  top: 2px;
-}
-
-.connection-dialog .ant-switch-handle::before {
-  border-radius: 7px;
-}
-
 /* Alert组件样式 */
-.connection-dialog .ant-alert {
+.connection-dialog .alert {
   border-radius: 6px;
   font-size: 13px;
 }
 
-.connection-dialog .ant-alert-message {
+.connection-dialog .alert-title {
   font-size: 13px;
   font-weight: 500;
 }
 
-.connection-dialog .ant-alert-description {
+.connection-dialog .alert-description {
   font-size: 12px;
   margin-top: 4px;
 }
@@ -187,53 +164,53 @@
 
 /* 响应式优化 */
 @media (max-width: 768px) {
-  .connection-dialog .ant-modal {
+  .connection-dialog [data-dialog] {
     margin: 0;
     max-width: none;
     width: 100vw !important;
     height: 100vh;
   }
-  
-  .connection-dialog .ant-modal-content {
+
+  .connection-dialog [data-dialog-content] {
     height: 100vh;
     border-radius: 0;
   }
-  
-  .connection-dialog .ant-modal-body {
+
+  .connection-dialog [data-dialog-body] {
     padding: 16px;
     height: calc(100vh - 120px);
     overflow-y: auto;
   }
-  
+
   .connection-dialog .grid-cols-2,
   .connection-dialog .grid-cols-3 {
     grid-template-columns: 1fr;
   }
-  
+
   .connection-dialog .col-span-2 {
     grid-column: span 1;
   }
 }
 
 /* 加载状态优化 */
-.connection-dialog .ant-btn-loading {
+.connection-dialog .btn-loading {
   pointer-events: none;
 }
 
-.connection-dialog .ant-btn-loading .ant-btn-loading-icon {
+.connection-dialog .btn-loading .loading-icon {
   margin-right: 4px;
 }
 
 /* 禁用状态优化 */
-.connection-dialog .ant-btn:disabled {
+.connection-dialog button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* 焦点状态优化 */
-.connection-dialog .ant-input:focus,
-.connection-dialog .ant-input-number:focus,
-.connection-dialog .ant-select-focused .ant-select-selector {
+.connection-dialog input:focus,
+.connection-dialog select:focus,
+.connection-dialog [data-select-trigger]:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }

@@ -402,10 +402,10 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             {wizardData.fileType === 'csv' && (
               <>
                 <Col span={6}>
-                  <Form.Item label="分隔符">
+                  <FormItem label="分隔符">
                     <Select
                       value={parseOptions.delimiter}
-                      onChange={(value) => updateParseOptions({ delimiter: value })}
+                      onValueChange={(value) => updateParseOptions({ delimiter: value })}
                       style={{ width: '100%' }}
                     >
                       <Option value=",">逗号 (,)</Option>
@@ -413,36 +413,36 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
                       <Option value="	">制表符 (Tab)</Option>
                       <Option value="|">竖线 (|)</Option>
                     </Select>
-                  </Form.Item>
+                  </FormItem>
                 </Col>
                 <Col span={6}>
-                  <Form.Item label="编码">
+                  <FormItem label="编码">
                     <Select
                       value={parseOptions.encoding}
-                      onChange={(value) => updateParseOptions({ encoding: value })}
+                      onValueChange={(value) => updateParseOptions({ encoding: value })}
                       style={{ width: '100%' }}
                     >
                       <Option value="utf-8">UTF-8</Option>
                       <Option value="gbk">GBK</Option>
                       <Option value="gb2312">GB2312</Option>
                     </Select>
-                  </Form.Item>
+                  </FormItem>
                 </Col>
                 <Col span={6}>
-                  <Form.Item label="包含表头">
+                  <FormItem label="包含表头">
                     <Switch
                       checked={parseOptions.hasHeader}
-                      onChange={(checked) => updateParseOptions({ hasHeader: checked })}
+                      onValueChange={(checked) => updateParseOptions({ hasHeader: checked })}
                     />
-                  </Form.Item>
+                  </FormItem>
                 </Col>
                 <Col span={6}>
-                  <Form.Item label="跳过空行">
+                  <FormItem label="跳过空行">
                     <Switch
                       checked={parseOptions.skipEmptyLines}
-                      onChange={(checked) => updateParseOptions({ skipEmptyLines: checked })}
+                      onValueChange={(checked) => updateParseOptions({ skipEmptyLines: checked })}
                     />
-                  </Form.Item>
+                  </FormItem>
                 </Col>
               </>
             )}
@@ -451,21 +451,21 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             {wizardData.fileType === 'json' && (
               <>
                 <Col span={8}>
-                  <Form.Item label="根路径" help="指定 JSON 数据的根路径，例如：data.records">
+                  <FormItem label="根路径" help="指定 JSON 数据的根路径，例如：data.records">
                     <Input
                       value={parseOptions.rootPath}
-                      onChange={(e) => updateParseOptions({ rootPath: e.target.value })}
+                      onValueChange={(e) => updateParseOptions({ rootPath: e.target.value })}
                       placeholder="留空表示根级别"
                     />
-                  </Form.Item>
+                  </FormItem>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="扁平化嵌套对象">
+                  <FormItem label="扁平化嵌套对象">
                     <Switch
                       checked={parseOptions.flattenNested}
-                      onChange={(checked) => updateParseOptions({ flattenNested: checked })}
+                      onValueChange={(checked) => updateParseOptions({ flattenNested: checked })}
                     />
-                  </Form.Item>
+                  </FormItem>
                 </Col>
               </>
             )}
@@ -474,10 +474,10 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             {wizardData.fileType === 'excel' && (
               <>
                 <Col span={8}>
-                  <Form.Item label="工作表">
+                  <FormItem label="工作表">
                     <Select
                       value={parseOptions.worksheet}
-                      onChange={(value) => {
+                      onValueChange={(value) => {
                         updateParseOptions({ worksheet: value });
                         onDataUpdate({ selectedWorksheet: value });
                       }}
@@ -487,49 +487,49 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
                         <Option key={sheet} value={sheet}>{sheet}</Option>
                       ))}
                     </Select>
-                  </Form.Item>
+                  </FormItem>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="表头行号">
+                  <FormItem label="表头行号">
                     <Input
                       type="number"
                       value={parseOptions.headerRow}
-                      onChange={(e) => updateParseOptions({ headerRow: parseInt(e.target.value) || 0 })}
+                      onValueChange={(e) => updateParseOptions({ headerRow: parseInt(e.target.value) || 0 })}
                       min={0}
                     />
-                  </Form.Item>
+                  </FormItem>
                 </Col>
               </>
             )}
 
             {/* 通用选项 */}
             <Col span={6}>
-              <Form.Item label="最大行数">
+              <FormItem label="最大行数">
                 <Input
                   type="number"
                   value={parseOptions.maxRows}
-                  onChange={(e) => updateParseOptions({ maxRows: parseInt(e.target.value) || 100000 })}
+                  onValueChange={(e) => updateParseOptions({ maxRows: parseInt(e.target.value) || 100000 })}
                   min={1}
                 />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={6}>
-              <Form.Item label="预览行数">
+              <FormItem label="预览行数">
                 <Input
                   type="number"
                   value={parseOptions.previewRows}
-                  onChange={(e) => updateParseOptions({ previewRows: parseInt(e.target.value) || 50 })}
+                  onValueChange={(e) => updateParseOptions({ previewRows: parseInt(e.target.value) || 50 })}
                   min={1}
                   max={1000}
                 />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={6}>
-              <Form.Item label="重新解析">
-                <Button onClick={reParseFile} loading={loading}>
+              <FormItem label="重新解析">
+                <Button onClick={reParseFile} disabled={loading}>
                   重新解析
                 </Button>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
         </Form>
@@ -607,13 +607,13 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       <Card title="选择文件">
         <div className="space-y-4">
           <Upload.Dragger {...uploadProps}>
-            <p className="ant-upload-drag-icon">
-              <UploadIcon className="w-4 h-4"  />
-            </p>
-            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-            <p className="ant-upload-hint">
-              支持 CSV、JSON、Excel 格式文件。文件大小不超过 100MB。
-            </p>
+            <div className="flex flex-col items-center space-y-2">
+              <UploadIcon className="w-8 h-8 text-gray-400" />
+              <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+              <p className="text-sm text-gray-500">
+                支持 CSV、JSON、Excel 格式文件。文件大小不超过 100MB。
+              </p>
+            </div>
           </Upload.Dragger>
 
           {/* 文件格式说明 */}

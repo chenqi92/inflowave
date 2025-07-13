@@ -276,7 +276,7 @@ const FeatureShowcase: React.FC = () => {
             size="large"
             icon={<Zap className="w-4 h-4"  />}
             onClick={runTests}
-            loading={testing}
+            disabled={testing}
             style={{ marginBottom: '16px' }}
           >
             {testing ? '测试运行中...' : '运行功能测试'}

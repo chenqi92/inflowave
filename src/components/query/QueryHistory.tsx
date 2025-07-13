@@ -6,7 +6,6 @@ const { RangePicker } = DatePicker;
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 
-
 import { X } from 'lucide-react';
 import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -271,7 +270,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             <Search
               placeholder="搜索查询..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onValueChange={(e) => setSearchText(e.target.value)}
               allowClear
             />
           </Col>
@@ -279,7 +278,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             <Select
               placeholder="筛选数据库"
               value={filterDatabase}
-              onChange={setFilterDatabase}
+              onValueChange={setFilterDatabase}
               allowClear
               style={{ width: '100%' }}
             >
@@ -310,7 +309,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
               <RangePicker
                 placeholder={['开始时间', '结束时间']}
                 value={filterDateRange}
-                onChange={setFilterDateRange}
+                onValueChange={setFilterDateRange}
                 style={{ width: '100%' }}
               />
             </Col>
@@ -354,7 +353,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       <div style={{ flex: 1, overflow: 'auto' }}>
         {activeTab === 'history' ? (
           <List
-            loading={loading}
+            disabled={loading}
             dataSource={filteredHistoryItems}
             renderItem={renderHistoryItem}
             locale={{
@@ -367,7 +366,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
           />
         ) : (
           <List
-            loading={loading}
+            disabled={loading}
             dataSource={filteredSavedQueries}
             renderItem={renderSavedQuery}
             locale={{
@@ -393,7 +392,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
           </div>
         }
         open={visible}
-        onCancel={onClose}
+        onOpenChange={(open) => !open && (onClose)()}
         footer={null}
         width={800}
         style={{ top: 20 }}

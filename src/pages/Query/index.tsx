@@ -358,16 +358,16 @@ const Query: React.FC = () => {
           <Button
             icon={<Database className="w-4 h-4"  />}
             onClick={loadDatabases}
-            loading={loadingDatabases}
+            disabled={loadingDatabases}
           >
             刷新数据库
           </Button>
           <Select
             placeholder="选择数据库"
             value={selectedDatabase}
-            onChange={setSelectedDatabase}
+            onValueChange={setSelectedDatabase}
             style={{ width: 200 }}
-            loading={loadingDatabases}
+            disabled={loadingDatabases}
           >
             {databases.map(db => (
               <Option key={db} value={db}>
@@ -410,7 +410,7 @@ const Query: React.FC = () => {
                 type="primary"
                 icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
-                loading={loading}
+                disabled={loading}
                 disabled={!selectedDatabase}
               >
                 执行查询
@@ -444,7 +444,7 @@ const Query: React.FC = () => {
               language="influxql"
               theme="vs-light"
               value={query}
-              onChange={(value) => setQuery(value || '')}
+              onValueChange={(value) => setQuery(value || '')}
               onMount={handleEditorDidMount}
               options={{
                 minimap: { enabled: false },
@@ -527,7 +527,7 @@ const Query: React.FC = () => {
 
       {/* 导出对话框 */}
       <ExportDialog
-        visible={exportDialogVisible}
+        open={exportDialogVisible}
         onClose={() => setExportDialogVisible(false)}
         queryResult={queryResult}
         defaultFilename={`query-${selectedDatabase}`}

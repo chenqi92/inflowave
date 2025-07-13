@@ -272,7 +272,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
             placeholder="搜索数据库..."
             prefix={<Search className="w-4 h-4"  />}
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onValueChange={(e) => setSearchText(e.target.value)}
             allowClear
             className="flex-1"
             style={{ minWidth: '200px' }}
@@ -281,7 +281,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
             <Button
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={handleRefresh}
-              loading={isLoading}
+              disabled={isLoading}
             />
           </Tooltip>
           <Tooltip title="新建数据库">

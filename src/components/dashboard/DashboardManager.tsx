@@ -7,7 +7,7 @@ import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
 
-const { TextArea } = Input;
+const { Textarea } = Input;
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -165,14 +165,12 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
           <Button
             type="primary"
             icon={<Plus className="w-4 h-4"  />}
-            onClick={() => setCreateModalVisible(true)}
-          >
+            onClick={() => setCreateModalVisible(true)}>
             创建仪表板
           </Button>
-        }
-      >
+        }>
         <List
-          loading={loading}
+          disabled={loading}
           dataSource={dashboards}
           locale={{ emptyText: '暂无仪表板' }}
           renderItem={(dashboard) => (
@@ -181,36 +179,29 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                 <Button
                   type="text"
                   icon={<Eye className="w-4 h-4"  />}
-                  onClick={() => onOpenDashboard(dashboard.id)}
-                >
+                  onClick={() => onOpenDashboard(dashboard.id)}>
                   查看
                 </Button>,
                 <Button
                   type="text"
                   icon={<Edit className="w-4 h-4"  />}
-                  onClick={() => openEditModal(dashboard)}
-                >
+                  onClick={() => openEditModal(dashboard)}>
                   编辑
                 </Button>,
                 <Button
                   type="text"
                   icon={<Copy className="w-4 h-4"  />}
-                  onClick={() => duplicateDashboard(dashboard)}
-                >
+                  onClick={() => duplicateDashboard(dashboard)}>
                   复制
                 </Button>,
                 <Popconfirm
                   title="确定要删除这个仪表板吗？"
-                  onConfirm={() => deleteDashboard(dashboard.id)}
-                  okText="确定"
-                  cancelText="取消"
-                >
+                  onConfirm={() => deleteDashboard(dashboard.id)}>
                   <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />}>
                     删除
                   </Button>
                 </Popconfirm>,
-              ]}
-            >
+              ]}>
               <List.Item.Meta
                 avatar={<BarChart className="w-4 h-4" style={{ fontSize: 24, color: '#1890ff' }}  />}
                 title={
@@ -250,44 +241,40 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       <Modal
         title="创建仪表板"
         open={createModalVisible}
-        onCancel={() => {
-          setCreateModalVisible(false);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-        okText="创建"
-        cancelText="取消"
-      >
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateModalVisible(false);
+            form.resetFields();
+          }
+        }}>
         <Form form={form} layout="vertical" onFinish={createDashboard}>
-          <Form.Item
-            name="name"
+          <FormItem name="name"
             label="仪表板名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}
-          >
+            rules={[{ required: true, message: '请输入仪表板名称' }]}>
             <Input placeholder="输入仪表板名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="description" label="描述">
-            <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
-          </Form.Item>
+          <FormItem name="description" label="描述">
+            <Textarea rows={3} placeholder="输入仪表板描述（可选）" />
+          </FormItem>
 
           <div className="border-t border-gray-200 my-4">布局设置</div>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="columns" label="列数" initialValue={12}>
+              <FormItem name="columns" label="列数" initialValue={12}>
                 <InputNumber min={1} max={24} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item name="rows" label="行数" initialValue={8}>
+              <FormItem name="rows" label="行数" initialValue={8}>
                 <InputNumber min={1} max={20} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item name="gap" label="间距" initialValue={16}>
+              <FormItem name="gap" label="间距" initialValue={16}>
                 <InputNumber min={0} max={50} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
@@ -295,18 +282,18 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="timeStart" label="开始时间" initialValue="now() - 1h">
+              <FormItem name="timeStart" label="开始时间" initialValue="now() - 1h">
                 <Input placeholder="now() - 1h" />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name="timeEnd" label="结束时间" initialValue="now()">
+              <FormItem name="timeEnd" label="结束时间" initialValue="now()">
                 <Input placeholder="now()" />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item name="refreshInterval" label="刷新间隔 (毫秒)" initialValue={30000}>
+          <FormItem name="refreshInterval" label="刷新间隔 (毫秒)" initialValue={30000}>
             <Select>
               <Option value={5000}>5 秒</Option>
               <Option value={10000}>10 秒</Option>
@@ -315,7 +302,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
               <Option value={300000}>5 分钟</Option>
               <Option value={600000}>10 分钟</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 
@@ -323,45 +310,41 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       <Modal
         title="编辑仪表板"
         open={editModalVisible}
-        onCancel={() => {
-          setEditModalVisible(false);
-          setSelectedDashboard(null);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-        okText="保存"
-        cancelText="取消"
-      >
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditModalVisible(false);
+            setSelectedDashboard(null);
+            form.resetFields();
+          }
+        }}>
         <Form form={form} layout="vertical" onFinish={updateDashboard}>
-          <Form.Item
-            name="name"
+          <FormItem name="name"
             label="仪表板名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}
-          >
+            rules={[{ required: true, message: '请输入仪表板名称' }]}>
             <Input placeholder="输入仪表板名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="description" label="描述">
-            <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
-          </Form.Item>
+          <FormItem name="description" label="描述">
+            <Textarea rows={3} placeholder="输入仪表板描述（可选）" />
+          </FormItem>
 
           <div className="border-t border-gray-200 my-4">布局设置</div>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="columns" label="列数">
+              <FormItem name="columns" label="列数">
                 <InputNumber min={1} max={24} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item name="rows" label="行数">
+              <FormItem name="rows" label="行数">
                 <InputNumber min={1} max={20} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={8}>
-              <Form.Item name="gap" label="间距">
+              <FormItem name="gap" label="间距">
                 <InputNumber min={0} max={50} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
@@ -369,18 +352,18 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="timeStart" label="开始时间">
+              <FormItem name="timeStart" label="开始时间">
                 <Input placeholder="now() - 1h" />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name="timeEnd" label="结束时间">
+              <FormItem name="timeEnd" label="结束时间">
                 <Input placeholder="now()" />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item name="refreshInterval" label="刷新间隔 (毫秒)">
+          <FormItem name="refreshInterval" label="刷新间隔 (毫秒)">
             <Select>
               <Option value={5000}>5 秒</Option>
               <Option value={10000}>10 秒</Option>
@@ -389,7 +372,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
               <Option value={300000}>5 分钟</Option>
               <Option value={600000}>10 分钟</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </div>

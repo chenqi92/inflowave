@@ -355,7 +355,7 @@ const ErrorLogViewer: React.FC = () => {
             <Button
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={loadErrorLogs}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -382,13 +382,13 @@ const ErrorLogViewer: React.FC = () => {
           <Search
             placeholder="搜索错误消息..."
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onValueChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
             allowClear
           />
           <Select
             value={levelFilter}
-            onChange={setLevelFilter}
+            onValueChange={setLevelFilter}
             style={{ width: 120 }}
             placeholder="级别"
           >
@@ -399,7 +399,7 @@ const ErrorLogViewer: React.FC = () => {
           </Select>
           <Select
             value={typeFilter}
-            onChange={setTypeFilter}
+            onValueChange={setTypeFilter}
             style={{ width: 140 }}
             placeholder="类型"
           >
@@ -412,7 +412,7 @@ const ErrorLogViewer: React.FC = () => {
           </Select>
           <RangePicker
             value={dateRange}
-            onChange={setDateRange}
+            onValueChange={setDateRange}
             showTime
             style={{ width: 350 }}
             placeholder={['开始时间', '结束时间']}
@@ -427,7 +427,7 @@ const ErrorLogViewer: React.FC = () => {
           dataSource={filteredLogs}
           rowKey="id"
           size="small"
-          loading={loading}
+          disabled={loading}
           pagination={{
             pageSize: 50,
             showSizeChanger: true,
@@ -441,7 +441,7 @@ const ErrorLogViewer: React.FC = () => {
       <Dialog
         title="错误详情"
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onOpenChange={(open) => !open && (() => setModalVisible(false))()}
         footer={[
           <Button key="close" onClick={() => setModalVisible(false)}>
             关闭

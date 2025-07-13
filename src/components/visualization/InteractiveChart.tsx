@@ -184,7 +184,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Switch
             size="small"
             checked={config.settings?.showGrid}
-            onChange={(checked) => handleSettingsChange('showGrid', checked)}
+            onValueChange={(checked) => handleSettingsChange('showGrid', checked)}
           />
         </div>
       )},
@@ -196,7 +196,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Switch
             size="small"
             checked={config.settings?.showLegend}
-            onChange={(checked) => handleSettingsChange('showLegend', checked)}
+            onValueChange={(checked) => handleSettingsChange('showLegend', checked)}
           />
         </div>
       )},
@@ -208,7 +208,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Switch
             size="small"
             checked={config.settings?.showTooltip}
-            onChange={(checked) => handleSettingsChange('showTooltip', checked)}
+            onValueChange={(checked) => handleSettingsChange('showTooltip', checked)}
           />
         </div>
       )},
@@ -220,7 +220,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <Switch
             size="small"
             checked={config.settings?.animation}
-            onChange={(checked) => handleSettingsChange('animation', checked)}
+            onValueChange={(checked) => handleSettingsChange('animation', checked)}
           />
         </div>
       )},

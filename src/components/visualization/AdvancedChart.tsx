@@ -319,7 +319,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Text strong>图表类型</Text>
                 <Select
                   value={config.type}
-                  onChange={(value) => updateConfig({ type: value })}
+                  onValueChange={(value) => updateConfig({ type: value })}
                   style={{ width: '100%', marginTop: 4 }}
                   size="small"
                 >
@@ -346,7 +346,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Text strong>颜色方案</Text>
                 <Select
                   value="default"
-                  onChange={(value) => updateConfig({ colorScheme: colorSchemes[value as keyof typeof colorSchemes] })}
+                  onValueChange={(value) => updateConfig({ colorScheme: colorSchemes[value as keyof typeof colorSchemes] })}
                   style={{ width: '100%', marginTop: 4 }}
                   size="small"
                 >
@@ -365,7 +365,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                   min={0}
                   max={3000}
                   value={config.animationDuration}
-                  onChange={(value) => updateConfig({ animationDuration: value })}
+                  onValueChange={(value) => updateConfig({ animationDuration: value })}
                   style={{ marginTop: 4 }}
                 />
               </div>
@@ -375,7 +375,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <div>
                   <Switch
                     checked={config.showLegend}
-                    onChange={(checked) => updateConfig({ showLegend: checked })}
+                    onValueChange={(checked) => updateConfig({ showLegend: checked })}
                     size="small"
                   />
                   <Text style={{ marginLeft: 8 }}>显示图例</Text>
@@ -383,7 +383,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <div>
                   <Switch
                     checked={config.showGrid}
-                    onChange={(checked) => updateConfig({ showGrid: checked })}
+                    onValueChange={(checked) => updateConfig({ showGrid: checked })}
                     size="small"
                   />
                   <Text style={{ marginLeft: 8 }}>显示网格</Text>
@@ -391,7 +391,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <div>
                   <Switch
                     checked={config.smooth}
-                    onChange={(checked) => updateConfig({ smooth: checked })}
+                    onValueChange={(checked) => updateConfig({ smooth: checked })}
                     size="small"
                   />
                   <Text style={{ marginLeft: 8 }}>平滑曲线</Text>

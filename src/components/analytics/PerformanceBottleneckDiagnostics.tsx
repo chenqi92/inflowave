@@ -161,7 +161,6 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
     return iconMap[status] || <Info className="w-4 h-4"  />;
   };
 
-
   // 格式化时间
   const formatTime = (ms: number): string => {
     if (ms >= 1000) {
@@ -382,7 +381,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               <Search
                 placeholder="搜索瓶颈..."
                 value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+                onValueChange={(e) => setSearchText(e.target.value)}
                 onSearch={setSearchText}
                 allowClear
               />
@@ -390,7 +389,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <Col span={3}>
               <Select
                 value={severityFilter}
-                onChange={setSeverityFilter}
+                onValueChange={setSeverityFilter}
                 style={{ width: '100%' }}
                 placeholder="严重程度"
               >
@@ -404,7 +403,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <Col span={3}>
               <Select
                 value={typeFilter}
-                onChange={setTypeFilter}
+                onValueChange={setTypeFilter}
                 style={{ width: '100%' }}
                 placeholder="类型"
               >
@@ -421,7 +420,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <Col span={3}>
               <Select
                 value={statusFilter}
-                onChange={setStatusFilter}
+                onValueChange={setStatusFilter}
                 style={{ width: '100%' }}
                 placeholder="状态"
               >
@@ -434,7 +433,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <Col span={4}>
               <RangePicker
                 value={timeRange}
-                onChange={setTimeRange}
+                onValueChange={setTimeRange}
                 style={{ width: '100%' }}
                 placeholder={['开始时间', '结束时间']}
               />
@@ -443,7 +442,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               <div className="flex gap-2">
                 <Switch
                   checked={autoRefresh}
-                  onChange={setAutoRefresh}
+                  onValueChange={setAutoRefresh}
                   size="small"
                 />
                 <Text type="secondary">自动刷新</Text>
@@ -904,7 +903,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               size="small"
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={getBottlenecks}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -938,7 +937,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
             <TabPane tab="瓶颈概览" key="overview">
               {renderOverview()}
             </TabPane>
@@ -964,7 +963,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         placement="right"
         width={600}
         onClose={() => setDetailsDrawerVisible(false)}
-        visible={detailsDrawerVisible}
+        open={detailsDrawerVisible}
       >
         {selectedBottleneck && (
           <div>
@@ -1066,12 +1065,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             <DialogTitle>诊断设置</DialogTitle>
           </DialogHeader>
         <Form layout="vertical">
-          <Form.Item label="自动刷新">
+          <FormItem label="自动刷新">
             <Row gutter={16}>
               <Col span={12}>
                 <Switch
                   checked={autoRefresh}
-                  onChange={setAutoRefresh}
+                  onValueChange={setAutoRefresh}
                   checkedChildren="开启"
                   unCheckedChildren="关闭"
                 />
@@ -1079,7 +1078,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               <Col span={12}>
                 <InputNumber
                   value={refreshInterval}
-                  onChange={(value) => setRefreshInterval(value || 30)}
+                  onValueChange={(value) => setRefreshInterval(value || 30)}
                   min={10}
                   max={300}
                   suffix="秒"
@@ -1088,15 +1087,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 />
               </Col>
             </Row>
-          </Form.Item>
+          </FormItem>
           
-          <Form.Item label="告警阈值">
+          <FormItem label="告警阈值">
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text>CPU使用率</Text>
                 <InputNumber
                   value={alertThresholds.cpuUsage}
-                  onChange={(value) => setAlertThresholds({...alertThresholds, cpuUsage: value || 80})}
+                  onValueChange={(value) => setAlertThresholds({...alertThresholds, cpuUsage: value || 80})}
                   min={0}
                   max={100}
                   suffix="%"
@@ -1107,7 +1106,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 <Text>内存使用率</Text>
                 <InputNumber
                   value={alertThresholds.memoryUsage}
-                  onChange={(value) => setAlertThresholds({...alertThresholds, memoryUsage: value || 85})}
+                  onValueChange={(value) => setAlertThresholds({...alertThresholds, memoryUsage: value || 85})}
                   min={0}
                   max={100}
                   suffix="%"
@@ -1118,7 +1117,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 <Text>磁盘I/O</Text>
                 <InputNumber
                   value={alertThresholds.diskIo}
-                  onChange={(value) => setAlertThresholds({...alertThresholds, diskIo: value || 90})}
+                  onValueChange={(value) => setAlertThresholds({...alertThresholds, diskIo: value || 90})}
                   min={0}
                   max={100}
                   suffix="%"
@@ -1129,7 +1128,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 <Text>网络I/O</Text>
                 <InputNumber
                   value={alertThresholds.networkIo}
-                  onChange={(value) => setAlertThresholds({...alertThresholds, networkIo: value || 95})}
+                  onValueChange={(value) => setAlertThresholds({...alertThresholds, networkIo: value || 95})}
                   min={0}
                   max={100}
                   suffix="%"
@@ -1137,16 +1136,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 />
               </Col>
             </Row>
-          </Form.Item>
+          </FormItem>
           
-          <Form.Item label="实时监控">
+          <FormItem label="实时监控">
             <Switch
               checked={realTimeMode}
-              onChange={setRealTimeMode}
+              onValueChange={setRealTimeMode}
               checkedChildren="开启"
               unCheckedChildren="关闭"
             />
-          </Form.Item>
+          </FormItem>
         </Form>
         </DialogContent>
       </Dialog>

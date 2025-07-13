@@ -7,7 +7,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
 
-const { TextArea } = Input;
+const { Textarea } = Input;
 const { Option } = Select;
 
 interface DataExportDialogProps {
@@ -174,7 +174,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
     <Dialog
       title="数据导出"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={900}
       footer={[
         <Button key="cancel" onClick={onClose}>
@@ -183,71 +183,60 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         <Button
           key="estimate"
           icon={<Info className="w-4 h-4"  />}
-          loading={estimating}
-          onClick={estimateExportSize}
-        >
+          disabled={estimating}
+          onClick={estimateExportSize}>
           预估大小
         </Button>,
         <Button
           key="export"
           type="primary"
           icon={<Download className="w-4 h-4"  />}
-          loading={loading}
+          disabled={loading}
           disabled={!canExport()}
-          onClick={executeExport}
-        >
+          onClick={executeExport}>
           开始导出
         </Button>,
-      ]}
-    >
+      ]}>
       <Form form={form} layout="vertical">
         {/* 基本配置 */}
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item
-              name="connectionId"
+            <FormItem name="connectionId"
               label="连接"
-              rules={[{ required: true, message: '请选择连接' }]}
-            >
+              rules={[{ required: true, message: '请选择连接' }]}>
               <Select placeholder="选择连接">
                 {connections.map(conn => (
                   <Option key={conn.id} value={conn.id}>{conn.name}</Option>
                 ))}
               </Select>
-            </Form.Item>
+            </FormItem>
           </Col>
           <Col span={12}>
-            <Form.Item
-              name="database"
+            <FormItem name="database"
               label="数据库"
-              rules={[{ required: true, message: '请输入数据库名' }]}
-            >
+              rules={[{ required: true, message: '请输入数据库名' }]}>
               <Input placeholder="数据库名" />
-            </Form.Item>
+            </FormItem>
           </Col>
         </Row>
 
         {/* 查询语句 */}
-        <Form.Item
-          name="query"
+        <FormItem name="query"
           label="查询语句"
-          rules={[{ required: true, message: '请输入查询语句' }]}
-        >
-          <TextArea
+          rules={[{ required: true, message: '请输入查询语句' }]}>
+          <Textarea
             rows={4}
             placeholder="输入 SQL 查询语句"
             style={{ fontFamily: 'monospace', fontSize: 13 }}
           />
-        </Form.Item>
+        </FormItem>
 
         {/* 导出格式和文件路径 */}
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item
-              name="format"
+            <FormItem name="format"
               label="导出格式"
-              rules={[{ required: true, message: '请选择导出格式' }]}
-            >
+              rules={[{ required: true, message: '请选择导出格式' }]}>
               <Select>
                 {exportFormats.map(format => (
                   <Option key={format.id} value={format.id}>
@@ -258,14 +247,12 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   </Option>
                 ))}
               </Select>
-            </Form.Item>
+            </FormItem>
           </Col>
           <Col span={12}>
-            <Form.Item
-              name="filePath"
+            <FormItem name="filePath"
               label="保存路径"
-              rules={[{ required: true, message: '请选择保存路径' }]}
-            >
+              rules={[{ required: true, message: '请选择保存路径' }]}>
               <Input
                 placeholder="选择保存路径"
                 readOnly
@@ -275,7 +262,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
                   </Button>
                 }
               />
-            </Form.Item>
+            </FormItem>
           </Col>
         </Row>
 
@@ -284,58 +271,57 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item name={['options', 'includeHeaders']} label="包含表头" valuePropName="checked">
+            <FormItem name={['options', 'includeHeaders']} label="包含表头" valuePropName="checked">
               <Switch />
-            </Form.Item>
+            </FormItem>
           </Col>
           <Col span={8}>
-            <Form.Item name={['options', 'compression']} label="压缩文件" valuePropName="checked">
+            <FormItem name={['options', 'compression']} label="压缩文件" valuePropName="checked">
               <Switch />
-            </Form.Item>
+            </FormItem>
           </Col>
           <Col span={8}>
-            <Form.Item name={['options', 'chunkSize']} label="批次大小">
+            <FormItem name={['options', 'chunkSize']} label="批次大小">
               <InputNumber min={1000} max={100000} step={1000} style={{ width: '100%' }} />
-            </Form.Item>
+            </FormItem>
           </Col>
         </Row>
 
-        <Form.Item
+        <FormItem
           noStyle
           shouldUpdate={(prevValues, currentValues) =>
             prevValues.format !== currentValues.format
-          }
-        >
+          }>
           {({ getFieldValue }) => {
             const format = getFieldValue('format');
             if (format === 'csv') {
               return (
                 <Row gutter={16}>
                   <Col span={12}>
-                    <Form.Item name={['options', 'delimiter']} label="分隔符">
+                    <FormItem name={['options', 'delimiter']} label="分隔符">
                       <Select>
                         <Option value=",">逗号 (,)</Option>
                         <Option value=";">分号 (;)</Option>
                         <Option value="\t">制表符 (\t)</Option>
                         <Option value="|">竖线 (|)</Option>
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                   <Col span={12}>
-                    <Form.Item name={['options', 'encoding']} label="编码">
+                    <FormItem name={['options', 'encoding']} label="编码">
                       <Select>
                         <Option value="utf-8">UTF-8</Option>
                         <Option value="gbk">GBK</Option>
                         <Option value="gb2312">GB2312</Option>
                       </Select>
-                    </Form.Item>
+                    </FormItem>
                   </Col>
                 </Row>
               );
             }
             return null;
           }}
-        </Form.Item>
+        </FormItem>
 
         {/* 预估信息 */}
         {estimateInfo && (
@@ -367,7 +353,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
                 {exportResult.filePath && (
                   <p>文件路径: {exportResult.filePath}</p>
                 )}
-                {exportResult.errors && exportResult.errors.length > 0 && (
+                {exportResult.errors && exportResult.errors.length> 0 && (
                   <div>
                     <p>错误信息:</p>
                     <ul>

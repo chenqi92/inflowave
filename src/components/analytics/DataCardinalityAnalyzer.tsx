@@ -349,13 +349,13 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               <Input
                 placeholder="搜索列名或数据类型"
                 value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+                onValueChange={(e) => setSearchText(e.target.value)}
               />
             </Col>
             <Col span={4}>
               <Select
                 value={qualityFilter}
-                onChange={(value) => setQualityFilter(value as typeof qualityFilter)}
+                onValueChange={(value) => setQualityFilter(value as typeof qualityFilter)}
                 placeholder="质量筛选"
                 options={[
                   { value: 'all', label: '所有质量' },
@@ -368,7 +368,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
             <Col span={4}>
               <Select
                 value={cardinalityFilter}
-                onChange={(value) => setCardinalityFilter(value as typeof cardinalityFilter)}
+                onValueChange={(value) => setCardinalityFilter(value as typeof cardinalityFilter)}
                 placeholder="基数筛选"
                 options={[
                   { value: 'all', label: '所有基数' },
@@ -383,7 +383,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               <div className="flex gap-2">
                 <Switch
                   checked={showAnomalies}
-                  onChange={setShowAnomalies}
+                  onValueChange={setShowAnomalies}
                   size="sm"
                 />
                 <Text type="secondary">显示异常</Text>
@@ -650,7 +650,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
           <div className="flex gap-2">
             <Select
               value={selectedTable}
-              onChange={(value) => setSelectedTable(value as string)}
+              onValueChange={(value) => setSelectedTable(value as string)}
               style={{ width: 200 }}
               placeholder="选择表"
               options={availableTables.map(table => ({
@@ -662,7 +662,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               size="small"
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={getCardinalityStats}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -689,7 +689,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
             <Tabs.TabPane tab="统计概览" key="overview">
               {renderOverview()}
             </Tabs.TabPane>

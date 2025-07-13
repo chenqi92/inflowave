@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col, Modal } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 // TODO: Replace these Ant Design components: List, Switch, Divider, 
 import { Settings, Trash2, Plus, PlayCircle, PauseCircle } from 'lucide-react';
 // TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined
@@ -12,7 +11,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
+const { Textarea } = Input;
 const { Option } = Select;
 
 const ExtensionManager: React.FC = () => {
@@ -217,7 +216,7 @@ const ExtensionManager: React.FC = () => {
 
   return (
     <div className="extension-manager">
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
+      <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
         {/* 插件管理 */}
         <Tabs.TabPane tab={<><Grid3X3 className="w-4 h-4"  /> 插件</>} key="plugins">
           <Card
@@ -226,8 +225,7 @@ const ExtensionManager: React.FC = () => {
               <Button type="primary" icon={<Plus className="w-4 h-4"  />}>
                 安装插件
               </Button>
-            }
-          >
+            }>
             <List
               dataSource={plugins}
               locale={{ emptyText: '暂无已安装的插件' }}
@@ -236,18 +234,16 @@ const ExtensionManager: React.FC = () => {
                   actions={[
                     <Switch
                       checked={plugin.enabled}
-                      onChange={(checked) => togglePlugin(plugin.id, checked)}
+                      onValueChange={(checked) => togglePlugin(plugin.id, checked)}
                     />,
                     <Button
                       type="text"
                       danger
                       icon={<Trash2 className="w-4 h-4"  />}
-                      onClick={() => uninstallPlugin(plugin.id)}
-                    >
+                      onClick={() => uninstallPlugin(plugin.id)}>
                       卸载
                     </Button>,
-                  ]}
-                >
+                  ]}>
                   <List.Item.Meta
                     title={
                       <div className="flex gap-2">
@@ -282,12 +278,10 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setApiModalVisible(true)}
-              >
+                onClick={() => setApiModalVisible(true)}>
                 新建集成
               </Button>
-            }
-          >
+            }>
             <List
               dataSource={apiIntegrations}
               locale={{ emptyText: '暂无API集成' }}
@@ -298,13 +292,11 @@ const ExtensionManager: React.FC = () => {
                       type="text"
                       icon={<ExperimentOutlined />}
                       onClick={() => testApiIntegration(integration)}
-                      loading={loading}
-                    >
+                      disabled={loading}>
                       测试
                     </Button>,
                     <Switch checked={integration.enabled} />,
-                  ]}
-                >
+                  ]}>
                   <List.Item.Meta
                     title={
                       <div className="flex gap-2">
@@ -328,12 +320,10 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setWebhookModalVisible(true)}
-              >
+                onClick={() => setWebhookModalVisible(true)}>
                 新建 Webhook
               </Button>
-            }
-          >
+            }>
             <List
               dataSource={webhooks}
               locale={{ emptyText: '暂无Webhook配置' }}
@@ -341,8 +331,7 @@ const ExtensionManager: React.FC = () => {
                 <List.Item
                   actions={[
                     <Switch checked={webhook.enabled} />,
-                  ]}
-                >
+                  ]}>
                   <List.Item.Meta
                     title={webhook.name}
                     description={
@@ -371,12 +360,10 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setAutomationModalVisible(true)}
-              >
+                onClick={() => setAutomationModalVisible(true)}>
                 新建规则
               </Button>
-            }
-          >
+            }>
             <List
               dataSource={automationRules}
               locale={{ emptyText: '暂无自动化规则' }}
@@ -386,13 +373,11 @@ const ExtensionManager: React.FC = () => {
                     <Button
                       type="text"
                       icon={<PlayCircle />}
-                      onClick={() => executeAutomationRule(rule.id)}
-                    >
+                      onClick={() => executeAutomationRule(rule.id)}>
                       执行
                     </Button>,
                     <Switch checked={rule.enabled} />,
-                  ]}
-                >
+                  ]}>
                   <List.Item.Meta
                     title={
                       <div className="flex gap-2">
@@ -421,35 +406,33 @@ const ExtensionManager: React.FC = () => {
       <Modal
         title="创建 API 集成"
         open={apiModalVisible}
-        onCancel={() => setApiModalVisible(false)}
-        onOk={() => apiForm.submit()}
-        width={600}
-      >
-        <Form form={apiForm} layout="vertical" onFinish={createApiIntegration}>
-          <Form.Item name="name" label="集成名称" rules={[{ required: true }]}>
+        onOpenChange={(open) => !open && (() => setApiModalVisible(false))()}
+        width={600}>
+        <Form form={form} layout="vertical" onFinish={createApiIntegration}>
+          <FormItem name="name" label="集成名称" rules={[{ required: true }]}>
             <Input placeholder="输入集成名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="type" label="集成类型" rules={[{ required: true }]}>
+          <FormItem name="type" label="集成类型" rules={[{ required: true }]}>
             <Select>
               <Option value="rest">REST API</Option>
               <Option value="graphql">GraphQL</Option>
               <Option value="webhook">Webhook</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="endpoint" label="API 端点" rules={[{ required: true }]}>
+          <FormItem name="endpoint" label="API 端点" rules={[{ required: true }]}>
             <Input placeholder="https://api.example.com" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="authType" label="认证类型">
+          <FormItem name="authType" label="认证类型">
             <Select>
               <Option value="none">无认证</Option>
               <Option value="basic">Basic Auth</Option>
               <Option value="bearer">Bearer Token</Option>
               <Option value="apikey">API Key</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 
@@ -457,31 +440,29 @@ const ExtensionManager: React.FC = () => {
       <Modal
         title="创建 Webhook"
         open={webhookModalVisible}
-        onCancel={() => setWebhookModalVisible(false)}
-        onOk={() => webhookForm.submit()}
-        width={600}
-      >
-        <Form form={webhookForm} layout="vertical" onFinish={createWebhook}>
-          <Form.Item name="name" label="Webhook 名称" rules={[{ required: true }]}>
+        onOpenChange={(open) => !open && (() => setWebhookModalVisible(false))()}
+        width={600}>
+        <Form form={form} layout="vertical" onFinish={createWebhook}>
+          <FormItem name="name" label="Webhook 名称" rules={[{ required: true }]}>
             <Input placeholder="输入 Webhook 名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="url" label="Webhook URL" rules={[{ required: true }]}>
+          <FormItem name="url" label="Webhook URL" rules={[{ required: true }]}>
             <Input placeholder="https://hooks.example.com/webhook" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="events" label="监听事件">
+          <FormItem name="events" label="监听事件">
             <Select mode="multiple" placeholder="选择要监听的事件">
               <Option value="query_completed">查询完成</Option>
               <Option value="connection_status">连接状态变化</Option>
               <Option value="export_completed">导出完成</Option>
               <Option value="alert_triggered">警报触发</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="secret" label="密钥（可选）">
+          <FormItem name="secret" label="密钥（可选）">
             <Input.Password placeholder="用于签名验证的密钥" />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 
@@ -489,27 +470,25 @@ const ExtensionManager: React.FC = () => {
       <Modal
         title="创建自动化规则"
         open={automationModalVisible}
-        onCancel={() => setAutomationModalVisible(false)}
-        onOk={() => automationForm.submit()}
-        width={700}
-      >
-        <Form form={automationForm} layout="vertical" onFinish={createAutomationRule}>
-          <Form.Item name="name" label="规则名称" rules={[{ required: true }]}>
+        onOpenChange={(open) => !open && (() => setAutomationModalVisible(false))()}
+        width={700}>
+        <Form form={form} layout="vertical" onFinish={createAutomationRule}>
+          <FormItem name="name" label="规则名称" rules={[{ required: true }]}>
             <Input placeholder="输入规则名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="description" label="规则描述">
-            <TextArea rows={2} placeholder="描述这个自动化规则的用途" />
-          </Form.Item>
+          <FormItem name="description" label="规则描述">
+            <Textarea rows={2} placeholder="描述这个自动化规则的用途" />
+          </FormItem>
 
-          <Form.Item name="triggerType" label="触发器类型" rules={[{ required: true }]}>
+          <FormItem name="triggerType" label="触发器类型" rules={[{ required: true }]}>
             <Select>
               <Option value="schedule">定时触发</Option>
               <Option value="event">事件触发</Option>
               <Option value="threshold">阈值触发</Option>
               <Option value="manual">手动触发</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </div>

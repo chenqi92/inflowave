@@ -132,7 +132,7 @@ const PerformanceMonitor: React.FC = () => {
 
   if (!metrics) {
     return (
-      <Card title="性能监控" loading={loading}>
+      <Card title="性能监控" disabled={loading}>
         <div className="text-center py-8">
           <Text type="secondary">正在加载性能数据...</Text>
         </div>
@@ -158,7 +158,7 @@ const PerformanceMonitor: React.FC = () => {
           <Button
             icon={<RefreshCw className="w-4 h-4"  />}
             onClick={fetchPerformanceMetrics}
-            loading={loading}
+            disabled={loading}
             size="small"
           >
             刷新

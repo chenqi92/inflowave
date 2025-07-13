@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 import { LayoutOutlined } from '@/components/ui';
 import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -160,8 +159,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               enabled: record.enabled});
             setShowShortcutModal(true);
           }}
-          size="small"
-        >
+          size="small">
           编辑
         </Button>
       )},
@@ -193,13 +191,11 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               type="primary"
               icon={<Save className="w-4 h-4"  />}
               onClick={() => form.submit()}
-              loading={loading}
-            >
+              disabled={loading}>
               保存设置
             </Button>
           </div>
-        }
-      >
+        }>
         <Form
           form={form}
           layout="vertical"
@@ -207,8 +203,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
           initialValues={{
             notifications: preferences.notifications,
             accessibility: preferences.accessibility,
-            workspace: preferences.workspace}}
-        >
+            workspace: preferences.workspace}}>
           <Tabs
             items={[
               {
@@ -246,66 +241,59 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'enabled']}
                         label="启用通知"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'queryCompletion']}
                         label="查询完成通知"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'connectionStatus']}
                         label="连接状态通知"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'systemAlerts']}
                         label="系统警报通知"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'sound']}
                         label="声音提醒"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'desktop']}
                         label="桌面通知"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['notifications', 'position']}
-                        label="通知位置"
-                      >
+                        label="通知位置">
                         <Select>
                           <Select.Option value="topRight">右上角</Select.Option>
                           <Select.Option value="topLeft">左上角</Select.Option>
                           <Select.Option value="bottomRight">右下角</Select.Option>
                           <Select.Option value="bottomLeft">左下角</Select.Option>
                         </Select>
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                   </Row>
                 )},
@@ -320,50 +308,45 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['accessibility', 'highContrast']}
                         label="高对比度模式"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['accessibility', 'fontSize']}
-                        label="字体大小"
-                      >
+                        label="字体大小">
                         <Radio.Group>
                           <Radio value="small">小</Radio>
                           <Radio value="medium">中</Radio>
                           <Radio value="large">大</Radio>
                           <Radio value="extraLarge">特大</Radio>
                         </Radio.Group>
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['accessibility', 'reducedMotion']}
                         label="减少动画效果"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['accessibility', 'screenReader']}
                         label="屏幕阅读器支持"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['accessibility', 'keyboardNavigation']}
                         label="键盘导航增强"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                   </Row>
                 )},
@@ -378,41 +361,37 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['workspace', 'layout']}
-                        label="布局模式"
-                      >
+                        label="布局模式">
                         <Select>
                           <Select.Option value="default">默认</Select.Option>
                           <Select.Option value="compact">紧凑</Select.Option>
                           <Select.Option value="wide">宽屏</Select.Option>
                         </Select>
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['workspace', 'openTabs']}
                         label="启动时恢复标签页"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         name={['workspace', 'pinnedQueries']}
                         label="固定常用查询"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                       
-                      <Form.Item
+                      <FormItem
                         name={['workspace', 'recentFiles']}
                         label="显示最近文件"
-                        valuePropName="checked"
-                      >
+                        valuePropName="checked">
                         <Switch />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                   </Row>
                 )},
@@ -425,14 +404,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       <Modal
         title="编辑快捷键"
         open={showShortcutModal}
-        onOk={() => shortcutForm.submit()}
-        onCancel={() => {
-          setShowShortcutModal(false);
-          setEditingShortcut(null);
-          shortcutForm.resetFields();
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowShortcutModal(false);
+            setEditingShortcut(null);
+            shortcutForm.resetFields();
+          }
         }}
-        width={500}
-      >
+        width={500}>
         {editingShortcut && (
           <Form
             form={shortcutForm}
@@ -446,30 +425,25 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               setShowShortcutModal(false);
               setEditingShortcut(null);
               shortcutForm.resetFields();
-            }}
-          >
+            }}>
             <div style={{ marginBottom: 16 }}>
               <Text strong>{editingShortcut.name}</Text>
               <br />
               <Text type="secondary">{editingShortcut.description}</Text>
             </div>
             
-            <Form.Item
-              name="keys"
+            <FormItem name="keys"
               label="快捷键组合"
               rules={[{ required: true, message: '请输入快捷键组合' }]}
-              extra="使用 + 号分隔多个按键，例如: Ctrl+Shift+P"
-            >
+              extra="使用 + 号分隔多个按键，例如: Ctrl+Shift+P">
               <Input placeholder="例如: Ctrl+Enter" />
-            </Form.Item>
+            </FormItem>
             
-            <Form.Item
-              name="enabled"
+            <FormItem name="enabled"
               label="启用此快捷键"
-              valuePropName="checked"
-            >
+              valuePropName="checked">
               <Switch />
-            </Form.Item>
+            </FormItem>
           </Form>
         )}
       </Modal>

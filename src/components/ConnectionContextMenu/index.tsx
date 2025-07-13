@@ -232,7 +232,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
         description={`确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`}
         open={showDeleteConfirm}
         onConfirm={handleDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
+        onOpenChange={(open) => !open && (() => setShowDeleteConfirm(false))()}
         okText="删除"
         cancelText="取消"
         okType="danger"

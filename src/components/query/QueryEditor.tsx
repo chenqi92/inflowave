@@ -3,7 +3,6 @@ import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space, Toolti
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { useToast } from '@/hooks/use-toast';
 
-
 import { FlaskConical } from 'lucide-react';
 import { Save, Database, History, Settings, Maximize, Minimize, Clock, Plus, X, Copy, Edit, Zap, Lightbulb, PlayCircle, Paintbrush } from 'lucide-react';
 import Editor from '@monaco-editor/react';
@@ -444,7 +443,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         type="editable-add"
         activeKey={activeTabId}
         items={tabItems}
-        onChange={setActiveTabId}
+        onValueChange={setActiveTabId}
         onEdit={(targetKey, action) => {
           if (action === 'add') {
             addNewTab();
@@ -510,7 +509,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Select
               placeholder="选择数据库"
               value={selectedDatabase}
-              onChange={onDatabaseChange}
+              onValueChange={onDatabaseChange}
               style={{ width: 150 }}
               size="small"
             >
@@ -562,7 +561,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 type="primary"
                 icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
-                loading={loading}
+                disabled={loading}
                 disabled={!selectedDatabase || !activeConnectionId || !currentTab?.query.trim()}
               >
                 执行 (Ctrl+Enter)
@@ -587,7 +586,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 <Button
                   icon={<Zap className="w-4 h-4"  />}
                   onClick={handleOptimizeQuery}
-                  loading={optimizationLoading}
+                  disabled={optimizationLoading}
                   disabled={!activeConnectionId || !currentTab?.query.trim()}
                 >
                   智能优化
@@ -617,7 +616,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 placeholder="选择模板"
                 style={{ width: 150 }}
                 size="small"
-                onChange={handleTemplateSelect}
+                onValueChange={handleTemplateSelect}
                 allowClear
               >
                 {queryTemplates.map(template => (
@@ -636,7 +635,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               language="influxql"
               theme="vs-light"
               value={currentTab?.query || ''}
-              onChange={(value) => updateCurrentTabQuery(value || '')}
+              onValueChange={(value) => updateCurrentTabQuery(value || '')}
               onMount={handleEditorDidMount}
               options={{
                 minimap: { enabled: false },
@@ -805,7 +804,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <span className="text-sm">自动应用优化</span>
             <Switch 
               checked={autoOptimize} 
-              onChange={setAutoOptimize}
+              onValueChange={setAutoOptimize}
             />
           </div>
 

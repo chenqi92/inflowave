@@ -253,11 +253,11 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   return (
     <>
       <KeyboardShortcuts
-        visible={shortcutsVisible}
+        open={shortcutsVisible}
         onClose={() => setShortcutsVisible(false)}
       />
       <AboutDialog
-        visible={aboutVisible}
+        open={aboutVisible}
         onClose={() => setAboutVisible(false)}
       />
     </>

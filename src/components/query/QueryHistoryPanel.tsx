@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { Button, Input, Select, Tag, Typography, Form, Modal } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 // TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
 import { Search, Trash2, Database, PlayCircle } from 'lucide-react';
 // TODO: Replace these icons: StarOutlined, ClockCircleOutlined, FileTextOutlined, ClearOutlined
@@ -13,7 +12,7 @@ import type { QueryHistoryItem, SavedQuery, Connection } from '@/types';
 
 const { Text } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
+const { Textarea } = Input;
 
 interface QueryHistoryPanelProps {
   connections: Connection[];
@@ -205,15 +204,13 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           <Button
             type={activeTab === 'history' ? 'primary' : 'default'}
             onClick={() => setActiveTab('history')}
-            icon={<Clock className="w-4 h-4"  />}
-          >
+            icon={<Clock className="w-4 h-4"  />}>
             查询历史
           </Button>
           <Button
             type={activeTab === 'saved' ? 'primary' : 'default'}
             onClick={() => setActiveTab('saved')}
-            icon={<Star className="w-4 h-4"  />}
-          >
+            icon={<Star className="w-4 h-4"  />}>
             保存的查询
           </Button>
         </div>
@@ -223,10 +220,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           {activeTab === 'history' && (
             <Popconfirm
               title="确定要清空查询历史吗？"
-              onConfirm={clearHistory}
-              okText="确定"
-              cancelText="取消"
-            >
+              onConfirm={clearHistory}>
               <Button size="small" icon={<ClearOutlined />}>
                 清空
               </Button>
@@ -237,15 +231,14 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           </Button>
         </div>
       }
-      size="small"
-    >
+      size="small">
       {/* 搜索和筛选 */}
       <div className="flex gap-2" style={{ width: '100%', marginBottom: 16 }}>
         <Input
           placeholder="搜索查询..."
           prefix={<Search className="w-4 h-4"  />}
           value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
+          onValueChange={(e) => setSearchKeyword(e.target.value)}
           style={{ flex: 1 }}
           allowClear
         />
@@ -253,10 +246,9 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           <Select
             placeholder="筛选连接"
             value={filterConnection}
-            onChange={setFilterConnection}
+            onValueChange={setFilterConnection}
             style={{ width: 150 }}
-            allowClear
-          >
+            allowClear>
             {connections.map(conn => (
               <Option key={conn.id} value={conn.id}>{conn.name}</Option>
             ))}
@@ -267,7 +259,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
       {/* 历史记录列表 */}
       {activeTab === 'history' && (
         <List
-          loading={loading}
+          disabled={loading}
           dataSource={filteredHistory}
           locale={{ emptyText: '暂无查询历史' }}
           renderItem={(item) => (
@@ -290,15 +282,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 <Tooltip title="删除">
                   <Popconfirm
                     title="确定要删除这条历史记录吗？"
-                    onConfirm={() => deleteHistoryItem(item.id)}
-                    okText="确定"
-                    cancelText="取消"
-                  >
+                    onConfirm={() => deleteHistoryItem(item.id)}>
                     <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
                   </Popconfirm>
                 </Tooltip>,
-              ]}
-            >
+              ]}>
               <List.Item.Meta
                 title={
                   <div className="flex gap-2">
@@ -312,7 +300,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 description={
                   <div>
                     <Text code style={{ fontSize: 12 }}>
-                      {item.query.length > 100 ? `${item.query.substring(0, 100)  }...` : item.query}
+                      {item.query.length> 100 ? `${item.query.substring(0, 100)  }...` : item.query}
                     </Text>
                     <div style={{ marginTop: 4 }}>
                       <div className="flex gap-2" size="small">
@@ -340,7 +328,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
       {/* 保存的查询列表 */}
       {activeTab === 'saved' && (
         <List
-          loading={loading}
+          disabled={loading}
           dataSource={filteredSavedQueries}
           locale={{ emptyText: '暂无保存的查询' }}
           renderItem={(item) => (
@@ -352,7 +340,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     icon={<PlayCircle />}
                     onClick={() => {
                       // 这里需要选择连接和数据库
-                      if (connections.length > 0) {
+                      if (connections.length> 0) {
                         const defaultConnection = connections[0];
                         onExecuteQuery(item.query, item.database || '', defaultConnection.id);
                       } else {
@@ -364,15 +352,11 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                 <Tooltip title="删除">
                   <Popconfirm
                     title="确定要删除这个保存的查询吗？"
-                    onConfirm={() => deleteSavedQuery(item.id)}
-                    okText="确定"
-                    cancelText="取消"
-                  >
+                    onConfirm={() => deleteSavedQuery(item.id)}>
                     <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
                   </Popconfirm>
                 </Tooltip>,
-              ]}
-            >
+              ]}>
               <List.Item.Meta
                 title={
                   <div className="flex gap-2">
@@ -390,7 +374,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     )}
                     <div style={{ marginTop: 4 }}>
                       <Text code style={{ fontSize: 12 }}>
-                        {item.query.length > 80 ? `${item.query.substring(0, 80)  }...` : item.query}
+                        {item.query.length> 80 ? `${item.query.substring(0, 80)  }...` : item.query}
                       </Text>
                     </div>
                     <div style={{ marginTop: 4 }}>
@@ -415,40 +399,34 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
       <Modal
         title="保存查询"
         open={saveDialogVisible}
-        onCancel={() => setSaveDialogVisible(false)}
-        onOk={() => form.submit()}
-        okText="保存"
-        cancelText="取消"
-      >
+        onOpenChange={(open) => !open && (() => setSaveDialogVisible(false))()}>
         <Form form={form} layout="vertical" onFinish={handleSaveQuery}>
-          <Form.Item
-            name="name"
+          <FormItem name="name"
             label="查询名称"
-            rules={[{ required: true, message: '请输入查询名称' }]}
-          >
+            rules={[{ required: true, message: '请输入查询名称' }]}>
             <Input placeholder="输入查询名称" />
-          </Form.Item>
+          </FormItem>
           
-          <Form.Item name="description" label="描述">
-            <TextArea rows={3} placeholder="输入查询描述（可选）" />
-          </Form.Item>
+          <FormItem name="description" label="描述">
+            <Textarea rows={3} placeholder="输入查询描述（可选）" />
+          </FormItem>
           
-          <Form.Item name="tags" label="标签">
+          <FormItem name="tags" label="标签">
             <Select
               mode="tags"
               placeholder="输入标签"
               style={{ width: '100%' }}
             />
-          </Form.Item>
+          </FormItem>
           
-          <Form.Item label="查询内容">
-            <TextArea
+          <FormItem label="查询内容">
+            <Textarea
               value={selectedQuery}
               rows={6}
               readOnly
               style={{ fontFamily: 'monospace', fontSize: 12 }}
             />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </Card>

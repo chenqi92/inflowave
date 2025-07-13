@@ -295,7 +295,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               <Select
                 placeholder="选择连接"
                 value={selectedConnection}
-                onChange={setSelectedConnection}
+                onValueChange={setSelectedConnection}
                 style={{ width: 200 }}
               >
                 {connections.map(conn => (
@@ -307,7 +307,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               <Select
                 placeholder="选择数据库"
                 value={selectedDatabase}
-                onChange={setSelectedDatabase}
+                onValueChange={setSelectedDatabase}
                 style={{ width: 200 }}
               >
                 {databases.map(db => (
@@ -325,7 +325,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 loadRetentionPolicies();
                 loadStorageInfo();
               }}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -410,7 +410,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   columns={policyColumns}
                   dataSource={retentionPolicies}
                   rowKey="name"
-                  loading={loading}
+                  disabled={loading}
                   pagination={false}
                   size="small"
                 />
@@ -472,11 +472,12 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       <Modal
         title={editingPolicy ? '编辑保留策略' : '新建保留策略'}
         open={showPolicyModal}
-        onOk={() => form.submit()}
-        onCancel={() => {
-          setShowPolicyModal(false);
-          setEditingPolicy(null);
-          form.resetFields();
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowPolicyModal(false);
+            setEditingPolicy(null);
+            form.resetFields();
+          }
         }}
         width={600}
       >
@@ -485,8 +486,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           layout="vertical"
           onFinish={editingPolicy ? handleUpdatePolicy : handleCreatePolicy}
         >
-          <Form.Item
-            name="name"
+          <FormItem name="name"
             label="策略名称"
             rules={[{ required: true, message: '请输入策略名称' }]}
           >
@@ -494,46 +494,42 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               placeholder="输入策略名称" 
               disabled={!!editingPolicy}
             />
-          </Form.Item>
+          </FormItem>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="duration"
+              <FormItem name="duration"
                 label="保留时间"
                 rules={[{ required: true, message: '请输入保留时间' }]}
               >
                 <Input placeholder="例如: 30d, 1w, 1h" />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="shardGroupDuration"
+              <FormItem name="shardGroupDuration"
                 label="分片组时间"
               >
                 <Input placeholder="例如: 1d, 1h (可选)" />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="replicaN"
+              <FormItem name="replicaN"
                 label="副本数"
                 initialValue={1}
               >
                 <InputNumber min={1} max={10} style={{ width: '100%' }} />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="default"
+              <FormItem name="default"
                 valuePropName="checked"
                 label="设为默认策略"
               >
                 <input type="checkbox" />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
         </Form>

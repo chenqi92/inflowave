@@ -113,11 +113,9 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     }
   };
 
-
   const renderConnectionForm = () => (
     <div className="space-y-4">
-      <Form.Item
-        name="name"
+      <FormItem name="name"
         label="连接名称"
         rules={[
           { required: true, message: '请输入连接名称' },
@@ -125,11 +123,10 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         ]}
       >
         <Input placeholder="输入连接名称" autoCapitalize="off" autoCorrect="off" size="small" />
-      </Form.Item>
+      </FormItem>
 
       <div className="grid grid-cols-3 gap-4">
-        <Form.Item
-          name="host"
+        <FormItem name="host"
           label="主机地址"
           className="col-span-2"
           rules={[
@@ -146,10 +143,9 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           ]}
         >
           <Input placeholder="localhost 或 192.168.1.100" autoCapitalize="off" autoCorrect="off" size="small" />
-        </Form.Item>
+        </FormItem>
 
-        <Form.Item
-          name="port"
+        <FormItem name="port"
           label="端口"
           rules={[
             { required: true, message: '请输入端口' },
@@ -157,33 +153,30 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           ]}
         >
           <InputNumber placeholder="8086" className="w-full" size="small" />
-        </Form.Item>
+        </FormItem>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Form.Item
-          name="username"
+        <FormItem name="username"
           label="用户名"
           rules={[
             { max: 50, message: '用户名长度不能超过50个字符' },
           ]}
         >
           <Input placeholder="可选" autoCapitalize="off" autoCorrect="off" size="small" />
-        </Form.Item>
+        </FormItem>
 
-        <Form.Item
-          name="password"
+        <FormItem name="password"
           label="密码"
           rules={[
             { max: 128, message: '密码长度不能超过128个字符' },
           ]}
         >
           <Input.Password placeholder="可选" size="small" />
-        </Form.Item>
+        </FormItem>
       </div>
 
-      <Form.Item
-        name="database"
+      <FormItem name="database"
         label="默认数据库"
         rules={[
           {
@@ -196,27 +189,25 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         ]}
       >
         <Input placeholder="可选，连接后默认选择的数据库" size="small" />
-      </Form.Item>
+      </FormItem>
 
       <div className="grid grid-cols-2 gap-4">
-        <Form.Item
-          name="ssl"
+        <FormItem name="ssl"
           label="启用SSL"
           valuePropName="checked"
           extra="使用SSL加密连接"
         >
           <Switch size="small" />
-        </Form.Item>
+        </FormItem>
 
-        <Form.Item
-          name="timeout"
+        <FormItem name="timeout"
           label="超时时间(秒)"
           rules={[
             { type: 'number', min: 5, max: 300, message: '超时时间范围: 5-300秒' },
           ]}
         >
           <InputNumber placeholder="30" className="w-full" size="small" />
-        </Form.Item>
+        </FormItem>
       </div>
     </div>
   );
@@ -278,7 +269,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     <Modal
       title={isEditing ? '编辑连接' : '新建连接'}
       open={visible}
-      onCancel={onCancel}
+      onOpenChange={(open) => !open && (onCancel)()}
       width={800}
       footer={null}
       destroyOnClose
@@ -329,7 +320,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                     <Button
                       type="primary"
                       onClick={handleSubmit}
-                      loading={isSubmitting}
+                      disabled={isSubmitting}
                       size="small"
                     >
                       保存连接
@@ -338,7 +329,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                   <Button
                     type={isEditing ? 'default' : 'primary'}
                     onClick={handleTestConnection}
-                    loading={isTesting}
+                    disabled={isTesting}
                     icon={<Info className="w-4 h-4"  />}
                     size="small"
                   >
@@ -349,7 +340,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                 <Button
                   type="primary"
                   onClick={handleSubmit}
-                  loading={isSubmitting}
+                  disabled={isSubmitting}
                   disabled={!testResult?.success}
                   size="small"
                 >

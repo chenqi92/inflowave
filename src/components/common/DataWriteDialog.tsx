@@ -6,7 +6,7 @@ import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 
-const { TextArea } = Input;
+const { Textarea } = Input;
 const { Option } = Select;
 const { Text } = Typography;
 
@@ -213,7 +213,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       <Modal
         title="数据写入"
         open={visible}
-        onCancel={onClose}
+        onOpenChange={(open) => !open && (onClose)()}
         width={800}
         footer={[
           <Button key="cancel" onClick={onClose}>
@@ -222,122 +222,109 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
           <Button
             key="write"
             type="primary"
-            loading={loading}
+            disabled={loading}
             disabled={!canWrite()}
-            onClick={writeData}
-          >
+            onClick={writeData}>
             写入数据
           </Button>,
-        ]}
-      >
+        ]}>
         <Form form={form} layout="vertical">
           {/* 基本配置 */}
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="connectionId"
+              <FormItem name="connectionId"
                 label="连接"
-                rules={[{ required: true, message: '请选择连接' }]}
-              >
-                <Select placeholder="选择连接" onChange={handleConnectionChange}>
+                rules={[{ required: true, message: '请选择连接' }]}>
+                <Select placeholder="选择连接" onValueChange={handleConnectionChange}>
                   {connections.map(conn => (
                     <Option key={conn.id} value={conn.id}>{conn.name}</Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="database"
+              <FormItem name="database"
                 label="数据库"
-                rules={[{ required: true, message: '请选择数据库' }]}
-              >
+                rules={[{ required: true, message: '请选择数据库' }]}>
                 <Select placeholder="选择数据库">
                   {databases.map(db => (
                     <Option key={db} value={db}>{db}</Option>
                   ))}
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                name="measurement"
+              <FormItem name="measurement"
                 label="测量名"
-                rules={[{ required: true, message: '请输入测量名' }]}
-              >
+                rules={[{ required: true, message: '请输入测量名' }]}>
                 <Input placeholder="输入测量名" />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="format"
+              <FormItem name="format"
                 label="数据格式"
-                rules={[{ required: true, message: '请选择数据格式' }]}
-              >
+                rules={[{ required: true, message: '请选择数据格式' }]}>
                 <Select>
                   <Option value="line-protocol">Line Protocol</Option>
                   <Option value="csv">CSV</Option>
                   <Option value="json">JSON</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           {/* 数据输入 */}
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
             <Tabs.TabPane tab="手动输入" key="manual">
-              <Form.Item
-                name="data"
+              <FormItem name="data"
                 label={
                   <div className="flex gap-2">
                     <span>数据内容</span>
-                    <Button size="small" loading={validating} onClick={validateData}>
+                    <Button size="small" disabled={validating} onClick={validateData}>
                       <Check className="w-4 h-4"  /> 验证格式
                     </Button>
-                    <Button size="small" loading={previewing} onClick={previewConversion}>
+                    <Button size="small" disabled={previewing} onClick={previewConversion}>
                       <Eye className="w-4 h-4"  /> 预览转换
                     </Button>
                   </div>
                 }
-                rules={[{ required: true, message: '请输入数据内容' }]}
-              >
-                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.format !== curr.format}>
+                rules={[{ required: true, message: '请输入数据内容' }]}>
+                <FormItem noStyle shouldUpdate={(prev, curr) => prev.format !== curr.format}>
                   {({ getFieldValue }) => (
-                    <TextArea
+                    <Textarea
                       rows={12}
                       placeholder={getDataPlaceholder(getFieldValue('format'))}
                       style={{ fontFamily: 'monospace', fontSize: 13 }}
                     />
                   )}
-                </Form.Item>
-              </Form.Item>
+                </FormItem>
+              </FormItem>
             </Tabs.TabPane>
 
             <Tabs.TabPane tab="文件上传" key="upload">
               <Upload.Dragger
                 beforeUpload={handleFileUpload}
                 accept=".csv,.json,.txt"
-                showUploadList={false}
-              >
-                <p className="ant-upload-drag-icon">
-                  <Inbox />
-                </p>
-                <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                <p className="ant-upload-hint">
-                  支持 CSV、JSON、TXT 格式文件，文件大小不超过 10MB
-                </p>
+                showUploadList={false}>
+                <div className="flex flex-col items-center space-y-2">
+                  <Inbox className="w-8 h-8 text-gray-400" />
+                  <p className="text-gray-600">点击或拖拽文件到此区域上传</p>
+                  <p className="text-sm text-gray-500">
+                    支持 CSV、JSON、TXT 格式文件，文件大小不超过 10MB
+                  </p>
+                </div>
               </Upload.Dragger>
             </Tabs.TabPane>
           </Tabs>
 
           {/* 高级选项 */}
-          <Form.Item label="高级选项">
+          <FormItem label="高级选项">
             <Row gutter={16}>
               <Col span={6}>
-                <Form.Item name={['options', 'precision']} label="时间精度">
+                <FormItem name={['options', 'precision']} label="时间精度">
                   <Select>
                     <Option value="ns">纳秒 (ns)</Option>
                     <Option value="u">微秒 (u)</Option>
@@ -346,30 +333,30 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                     <Option value="m">分钟 (m)</Option>
                     <Option value="h">小时 (h)</Option>
                   </Select>
-                </Form.Item>
+                </FormItem>
               </Col>
               <Col span={6}>
-                <Form.Item name={['options', 'batchSize']} label="批次大小">
+                <FormItem name={['options', 'batchSize']} label="批次大小">
                   <Input type="number" min={100} max={10000} />
-                </Form.Item>
+                </FormItem>
               </Col>
               <Col span={6}>
-                <Form.Item name={['options', 'retentionPolicy']} label="保留策略">
+                <FormItem name={['options', 'retentionPolicy']} label="保留策略">
                   <Input placeholder="默认" />
-                </Form.Item>
+                </FormItem>
               </Col>
               <Col span={6}>
-                <Form.Item name={['options', 'consistency']} label="一致性级别">
+                <FormItem name={['options', 'consistency']} label="一致性级别">
                   <Select>
                     <Option value="one">One</Option>
                     <Option value="quorum">Quorum</Option>
                     <Option value="all">All</Option>
                     <Option value="any">Any</Option>
                   </Select>
-                </Form.Item>
+                </FormItem>
               </Col>
             </Row>
-          </Form.Item>
+          </FormItem>
 
           {/* 写入结果 */}
           {writeResult && (
@@ -380,7 +367,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                 <div>
                   <p>写入数据点: {writeResult.pointsWritten}</p>
                   <p>耗时: {writeResult.duration}ms</p>
-                  {writeResult.errors && writeResult.errors.length > 0 && (
+                  {writeResult.errors && writeResult.errors.length> 0 && (
                     <div>
                       <p>错误信息:</p>
                       <ul>
@@ -403,17 +390,16 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       <Modal
         title="转换预览"
         open={showPreview}
-        onCancel={() => setShowPreview(false)}
+        onOpenChange={(open) => !open && (() => setShowPreview(false))()}
         footer={[
           <Button key="close" onClick={() => setShowPreview(false)}>
             关闭
           </Button>,
         ]}
-        width={600}
-      >
+        width={600}>
         <div>
           <Text strong>Line Protocol 格式预览 (前10行):</Text>
-          <TextArea
+          <Textarea
             value={previewData}
             rows={15}
             readOnly

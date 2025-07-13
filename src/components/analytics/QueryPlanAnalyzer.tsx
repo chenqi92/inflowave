@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Space, Popover, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tooltip, Divider, Badge, Switch, Select, Input, Tabs, TabsContent, TabsList, TabsTrigger, Tag, Spin } from '@/components/ui';
 
-
 import { CompareOutlined, ExpandAltOutlined, FundOutlined, HourglassOutlined, MemoryOutlined, NetworkOutlined, HddOutlined, CpuOutlined, ShareAltOutlined } from '@/components/ui';
 import { BarChart, Clock, Database, FileText, Info, Zap, Eye, Download, Lightbulb, RefreshCw, Code, Table, TrendingUp, PieChart, Book, Rocket, Settings, Trophy, PlayCircle, AlertTriangle, AlertCircle, CheckCircle, MinusCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -245,7 +244,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
           <div className="flex gap-2">
             <Switch
               checked={showActualStats}
-              onChange={setShowActualStats}
+              onValueChange={setShowActualStats}
               size="small"
             />
             <Text className="text-muted-foreground">显示实际统计</Text>
@@ -601,7 +600,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
               size="small"
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={getExecutionPlan}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -628,7 +627,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
         }
       >
         <Spin spinning={loading}>
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
             <TabPane tab="执行计划" key="plan">
               <Row gutter={[16, 16]}>
                 <Col span={14}>

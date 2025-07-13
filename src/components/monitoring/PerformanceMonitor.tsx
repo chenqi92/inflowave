@@ -431,7 +431,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <div className="flex gap-2">
             <RangePicker
               value={timeRange}
-              onChange={(dates) => dates && setTimeRange(dates)}
+              onValueChange={(dates) => dates && setTimeRange(dates)}
               showTime
               format="YYYY-MM-DD HH:mm:ss"
             />
@@ -442,7 +442,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 fetchSlowQueries();
                 fetchAlertRecords();
               }}
-              loading={loading}
+              disabled={loading}
             >
               刷新
             </Button>
@@ -579,7 +579,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         extra={
           <Select
             value={selectedMetric}
-            onChange={setSelectedMetric}
+            onValueChange={setSelectedMetric}
             style={{ width: 120 }}
           >
             <Option value="cpu">CPU 使用率</Option>
@@ -670,7 +670,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       <Modal
         title="告警记录"
         open={showAlertModal}
-        onCancel={() => setShowAlertModal(false)}
+        onOpenChange={(open) => !open && (() => setShowAlertModal(false))()}
         footer={null}
         width={1200}
       >
@@ -686,7 +686,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       <Modal
         title="慢查询记录"
         open={showSlowQueryModal}
-        onCancel={() => setShowSlowQueryModal(false)}
+        onOpenChange={(open) => !open && (() => setShowSlowQueryModal(false))()}
         footer={null}
         width={1400}
       >

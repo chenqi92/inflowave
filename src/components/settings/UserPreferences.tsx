@@ -3,12 +3,10 @@ import { useForm } from 'react-hook-form';
 import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Slider, Modal } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-
 import { NotificationOutlined, LayoutOutlined } from '@/components/ui';
 import { Settings, Eye, Edit, Trash2, Plus } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
-
 
 const { Option } = Select;
 
@@ -159,68 +157,66 @@ const UserPreferencesComponent: React.FC = () => {
         form={form}
         layout="vertical"
         onFinish={savePreferences}
-        initialValues={preferences}
-      >
+        initialValues={preferences}>
         {/* 通知设置 */}
         <Card 
           title={<><NotificationOutlined /> 通知设置</>} 
           className="mb-6 shadow-sm hover:shadow-md transition-shadow"
-          extra={<Typography.Text type="secondary">管理各类提醒和通知</Typography.Text>}
-        >
+          extra={<Typography.Text type="secondary">管理各类提醒和通知</Typography.Text>}>
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['notifications', 'enabled']} label="启用通知" valuePropName="checked">
+              <FormItem name={['notifications', 'enabled']} label="启用通知" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['notifications', 'desktop']} label="桌面通知" valuePropName="checked">
+              <FormItem name={['notifications', 'desktop']} label="桌面通知" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['notifications', 'queryCompletion']} label="查询完成通知" valuePropName="checked">
+              <FormItem name={['notifications', 'queryCompletion']} label="查询完成通知" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['notifications', 'connectionStatus']} label="连接状态通知" valuePropName="checked">
+              <FormItem name={['notifications', 'connectionStatus']} label="连接状态通知" valuePropName="checked">
                 <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={[16, 16]}>
-            <Col span={12}>
-              <Form.Item name={['notifications', 'systemAlerts']} label="系统警报" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name={['notifications', 'exportCompletion']} label="导出完成通知" valuePropName="checked">
-                <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['notifications', 'sound']} label="声音提醒" valuePropName="checked">
+              <FormItem name={['notifications', 'systemAlerts']} label="系统警报" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['notifications', 'position']} label="通知位置">
+              <FormItem name={['notifications', 'exportCompletion']} label="导出完成通知" valuePropName="checked">
+                <Switch />
+              </FormItem>
+            </Col>
+          </Row>
+
+          <Row gutter={[16, 16]}>
+            <Col span={12}>
+              <FormItem name={['notifications', 'sound']} label="声音提醒" valuePropName="checked">
+                <Switch />
+              </FormItem>
+            </Col>
+            <Col span={12}>
+              <FormItem name={['notifications', 'position']} label="通知位置">
                 <Select>
                   <Option value="topRight">右上角</Option>
                   <Option value="topLeft">左上角</Option>
                   <Option value="bottomRight">右下角</Option>
                   <Option value="bottomLeft">左下角</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
         </Card>
@@ -229,77 +225,75 @@ const UserPreferencesComponent: React.FC = () => {
         <Card 
           title={<><Eye className="w-4 h-4"  /> 无障碍设置</>} 
           className="mb-6 shadow-sm hover:shadow-md transition-shadow"
-          extra={<Typography.Text type="secondary">优化界面可访问性</Typography.Text>}
-        >
+          extra={<Typography.Text type="secondary">优化界面可访问性</Typography.Text>}>
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['accessibility', 'highContrast']} label="高对比度" valuePropName="checked">
+              <FormItem name={['accessibility', 'highContrast']} label="高对比度" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['accessibility', 'reducedMotion']} label="减少动画" valuePropName="checked">
+              <FormItem name={['accessibility', 'reducedMotion']} label="减少动画" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['accessibility', 'fontSize']} label="字体大小">
+              <FormItem name={['accessibility', 'fontSize']} label="字体大小">
                 <Select>
                   <Option value="small">小</Option>
                   <Option value="medium">中</Option>
                   <Option value="large">大</Option>
                   <Option value="extraLarge">特大</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['accessibility', 'keyboardNavigation']} label="键盘导航" valuePropName="checked">
+              <FormItem name={['accessibility', 'keyboardNavigation']} label="键盘导航" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item name={['accessibility', 'screenReader']} label="屏幕阅读器支持" valuePropName="checked">
+          <FormItem name={['accessibility', 'screenReader']} label="屏幕阅读器支持" valuePropName="checked">
             <Switch />
-          </Form.Item>
+          </FormItem>
         </Card>
 
         {/* 工作区设置 */}
         <Card 
           title={<><LayoutOutlined /> 工作区设置</>} 
           className="mb-6 shadow-sm hover:shadow-md transition-shadow"
-          extra={<Typography.Text type="secondary">自定义工作区布局</Typography.Text>}
-        >
+          extra={<Typography.Text type="secondary">自定义工作区布局</Typography.Text>}>
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['workspace', 'layout']} label="布局模式">
+              <FormItem name={['workspace', 'layout']} label="布局模式">
                 <Select>
                   <Option value="default">默认</Option>
                   <Option value="compact">紧凑</Option>
                   <Option value="wide">宽屏</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['workspace', 'openTabs']} label="启动时恢复标签页" valuePropName="checked">
+              <FormItem name={['workspace', 'openTabs']} label="启动时恢复标签页" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
           
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <Form.Item name={['workspace', 'pinnedQueries']} label="固定常用查询" valuePropName="checked">
+              <FormItem name={['workspace', 'pinnedQueries']} label="固定常用查询" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item name={['workspace', 'recentFiles']} label="显示最近文件" valuePropName="checked">
+              <FormItem name={['workspace', 'recentFiles']} label="显示最近文件" valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
         </Card>
@@ -309,14 +303,13 @@ const UserPreferencesComponent: React.FC = () => {
           title={<><Settings /> 键盘快捷键</>}
           className="mb-6 shadow-sm hover:shadow-md transition-shadow flex gap-2"
           extra={
-            <div >
+            <div>
               <Typography.Text type="secondary">自定义快捷键</Typography.Text>
               <Button onClick={loadDefaultShortcuts} size="small">
                 重置为默认
               </Button>
             </div>
-          }
-        >
+          }>
           <Table
             dataSource={preferences.shortcuts}
             columns={shortcutColumns}
@@ -333,7 +326,7 @@ const UserPreferencesComponent: React.FC = () => {
               <Button onClick={() => form.resetFields()} size="large">
                 重置
               </Button>
-              <Button type="primary" htmlType="submit" loading={loading} size="large" icon={<Settings className="w-4 h-4"  />}>
+              <Button type="primary" htmlType="submit" disabled={loading} size="large" icon={<Settings className="w-4 h-4"  />}>
                 保存设置
               </Button>
             </div>
@@ -346,36 +339,30 @@ const UserPreferencesComponent: React.FC = () => {
         title="编辑快捷键"
         open={shortcutModalVisible}
         width={600}
-        onCancel={() => {
-          setShortcutModalVisible(false);
-          setEditingShortcut(null);
-          shortcutForm.resetFields();
+        onOpenChange={(open) => {
+          if (!open) {
+            setShortcutModalVisible(false);
+            setEditingShortcut(null);
+            shortcutForm.resetFields();
+          }
         }}
-        onOk={() => shortcutForm.submit()}
-        okText="保存"
-        cancelText="取消"
-        width={600}
-        centered
-      >
+        centered>
         <Form
           form={shortcutForm}
           layout="vertical"
-          onFinish={saveShortcut}
-        >
-          <Form.Item name="name" label="名称" rules={[{ required: true }]}>
+          onFinish={saveShortcut}>
+          <FormItem name="name" label="名称" rules={[{ required: true }]}>
             <Input />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} />
-          </Form.Item>
+          <FormItem name="description" label="描述">
+            <Textarea rows={2} />
+          </FormItem>
 
-          <Form.Item 
-            name="keys" 
+          <FormItem name="keys" 
             label="快捷键" 
             rules={[{ required: true }]}
-            extra="示例: ['Ctrl', 'Shift', 'P'] 或 ['F5']"
-          >
+            extra="示例: ['Ctrl', 'Shift', 'P'] 或 ['F5']">
             <Select mode="tags" placeholder="输入快捷键组合">
               <Option value="Ctrl">Ctrl</Option>
               <Option value="Shift">Shift</Option>
@@ -398,9 +385,9 @@ const UserPreferencesComponent: React.FC = () => {
               <Option value="F11">F11</Option>
               <Option value="F12">F12</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="category" label="分类">
+          <FormItem name="category" label="分类">
             <Select>
               <Option value="连接">连接</Option>
               <Option value="查询">查询</Option>
@@ -408,11 +395,11 @@ const UserPreferencesComponent: React.FC = () => {
               <Option value="搜索">搜索</Option>
               <Option value="数据">数据</Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="enabled" label="启用" valuePropName="checked">
+          <FormItem name="enabled" label="启用" valuePropName="checked">
             <Switch />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </div>

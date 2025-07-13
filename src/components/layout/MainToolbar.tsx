@@ -435,7 +435,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
         {/* 设置模态框 */}
         <SettingsModal
-          visible={settingsVisible}
+          open={settingsVisible}
           onClose={() => setSettingsVisible(false)}
         />
       </div>

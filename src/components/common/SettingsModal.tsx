@@ -342,7 +342,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <Button
                   type="primary"
                   htmlType="submit"
-                  loading={loading}
+                  disabled={loading}
                   icon={<Save className="w-4 h-4"  />}
                 >
                   保存设置
@@ -651,7 +651,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
       {/* 浏览器模式说明弹框 */}
       <BrowserModeModal
-        visible={browserModalVisible}
+        open={browserModalVisible}
         onClose={() => setBrowserModalVisible(false)}
       />
     </>

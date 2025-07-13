@@ -82,24 +82,24 @@
   padding: 0;
 }
 
-.dashboard-manager .ant-card-head {
+.dashboard-manager .card-head {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.dashboard-manager .ant-list-item {
+.dashboard-manager .list-item {
   padding: 16px 24px;
   border-bottom: 1px solid #f5f5f5;
 }
 
-.dashboard-manager .ant-list-item:hover {
+.dashboard-manager .list-item:hover {
   background-color: #fafafa;
 }
 
-.dashboard-manager .ant-list-item-meta-avatar {
+.dashboard-manager .list-item-meta-avatar {
   margin-right: 16px;
 }
 
-.dashboard-manager .ant-list-item-action {
+.dashboard-manager .list-item-action {
   margin-left: 16px;
 }
 
@@ -202,16 +202,16 @@
   overflow: auto;
 }
 
-.table-container .ant-table {
+.table-container table {
   font-size: 12px;
 }
 
-.table-container .ant-table-thead > tr > th {
+.table-container table-thead > tr > th {
   padding: 8px;
   font-size: 12px;
 }
 
-.table-container .ant-table-tbody > tr > td {
+.table-container table-tbody > tr > td {
   padding: 6px 8px;
   font-size: 12px;
 }
@@ -281,7 +281,7 @@
   opacity: 1;
 }
 
-.widget-toolbar .ant-btn {
+.widget-toolbar button {
   margin-left: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }

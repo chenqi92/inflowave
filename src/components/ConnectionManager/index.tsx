@@ -235,7 +235,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               type={isConnected ? 'default' : 'primary'}
               icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
               size="small"
-              loading={loading}
+              disabled={loading}
               onClick={() => handleConnectionToggle(record.id!)}
               className={isConnected ? '' : 'bg-green-600 hover:bg-green-700 border-green-600'}
             >
@@ -346,7 +346,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
             size: 'small'
           }}
-          loading={loading}
+          disabled={loading}
           scroll={{ x: 'max-content', y: 'calc(100vh - 300px)' }}
           size="small"
           className="connection-table"
@@ -358,12 +358,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         />
       </div>
 
-
       {/* 连接池统计模态框 */}
       <Dialog
         title="连接池统计信息"
         open={poolStatsModalVisible}
-        onCancel={() => setPoolStatsModalVisible(false)}
+        onOpenChange={(open) => !open && (() => setPoolStatsModalVisible(false))()}
         footer={null}
         width={600}
       >

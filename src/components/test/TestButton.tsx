@@ -74,7 +74,7 @@ const TestButton: React.FC = () => {
         
         <Button
           variant="primary"
-          loading={isRunning}
+          disabled={isRunning}
           onClick={runTest}
           className="w-full"
         >

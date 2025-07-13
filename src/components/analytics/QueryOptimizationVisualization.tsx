@@ -380,7 +380,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
             <div className="flex gap-2">
               <Select
                 value={viewMode}
-                onChange={setViewMode}
+                onValueChange={setViewMode}
                 size="small"
                 style={{ width: 120 }}
               >
@@ -390,7 +390,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               </Select>
               <Switch
                 checked={highlightOptimizations}
-                onChange={setHighlightOptimizations}
+                onValueChange={setHighlightOptimizations}
                 size="small"
                 checkedChildren="突出优化"
                 unCheckedChildren="常规视图"
@@ -413,7 +413,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
           </div>
         }
       >
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
+        <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
           <TabPane tab="概览" key="overview">
             <div className="space-y-6">
               {renderPerformanceMetrics()}
@@ -460,7 +460,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                 <Text strong>执行步骤详情</Text>
                 <Switch
                   checked={showDetails}
-                  onChange={setShowDetails}
+                  onValueChange={setShowDetails}
                   size="small"
                   checkedChildren="详细"
                   unCheckedChildren="简洁"

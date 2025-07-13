@@ -20,7 +20,6 @@ import { useConnectionStore } from '@/store/connection';
 import { useToast } from '@/hooks/use-toast';
 import type { QueryResult } from '@/types';
 
-
 interface ResultPanelProps {
   collapsed?: boolean;
   queryResult?: QueryResult | null;
@@ -209,7 +208,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     <div className="h-full bg-white border-t border-gray-200">
       <Tabs 
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onValueChange={setActiveTab}
         size="small"
         className="h-full flex items-center gap-1"
         items={[

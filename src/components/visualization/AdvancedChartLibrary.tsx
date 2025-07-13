@@ -641,7 +641,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
               <div className="flex gap-2">
                 <Select
                   value={config.type}
-                  onChange={(value) => {
+                  onValueChange={(value) => {
                     if (onConfigChange) {
                       onConfigChange({ ...config, type: value });
                     }
@@ -657,7 +657,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
                 </Select>
                 <Select
                   value={currentTheme}
-                  onChange={changeTheme}
+                  onValueChange={changeTheme}
                   style={{ width: 80 }}
                   size="small"
                 >

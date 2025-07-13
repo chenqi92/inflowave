@@ -1,37 +1,37 @@
 /* Settings Modal Styles */
-.settings-modal .ant-modal-content {
+.settings-modal [data-dialog-content] {
   border-radius: 12px;
   overflow: hidden;
 }
 
-.settings-modal .ant-modal-header {
+.settings-modal [data-dialog-header] {
   background: #fafbfc;
   border-bottom: 1px solid #e2e8f0;
   padding: 16px 24px;
 }
 
-.settings-modal .ant-modal-title {
+.settings-modal [data-dialog-title] {
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
 }
 
-.settings-modal .ant-modal-body {
+.settings-modal [data-dialog-body] {
   padding: 0;
 }
 
 /* Tabs styling */
-.settings-modal .ant-tabs {
+.settings-modal [data-tabs] {
   height: 100%;
 }
 
-.settings-modal .ant-tabs-nav {
+.settings-modal [data-tabs]-nav {
   margin: 0;
   background: #f8fafc;
   border-right: 1px solid #e2e8f0;
 }
 
-.settings-modal .ant-tabs-tab {
+.settings-modal [data-tabs]-tab {
   margin: 0;
   padding: 12px 16px;
   border-radius: 0;
@@ -41,62 +41,62 @@
   transition: all 0.2s ease;
 }
 
-.settings-modal .ant-tabs-tab:hover {
+.settings-modal [data-tabs]-tab:hover {
   background: rgba(59, 130, 246, 0.05);
   color: #3b82f6;
 }
 
-.settings-modal .ant-tabs-tab-active {
+.settings-modal [data-tabs]-tab-active {
   background: #3b82f6;
   color: white !important;
   font-weight: 600;
 }
 
-.settings-modal .ant-tabs-tab-active .anticon {
+.settings-modal [data-tabs]-tab-active .icon {
   color: white !important;
 }
 
-.settings-modal .ant-tabs-tab-active span {
+.settings-modal [data-tabs]-tab-active span {
   color: white !important;
 }
 
-.settings-modal .ant-tabs-content {
+.settings-modal [data-tabs]-content {
   padding: 16px 24px;
   height: 100%;
 }
 
-.settings-modal .ant-tabs-tabpane {
+.settings-modal [data-tabs]-tabpane {
   height: 100%;
 }
 
 /* Form improvements */
-.settings-modal .ant-form-item {
+.settings-modal .form-item {
   margin-bottom: 16px;
 }
 
-.settings-modal .ant-form-item-label > label {
+.settings-modal .form-item-label > label {
   font-weight: 500;
   color: #374151;
   font-size: 13px;
 }
 
-.settings-modal .ant-input,
-.settings-modal .ant-select-selector,
-.settings-modal .ant-input-number {
+.settings-modal input,
+.settings-modal [data-select-trigger],
+.settings-modal input-number {
   border-radius: 6px;
   border: 1px solid #d1d5db;
   font-size: 13px;
 }
 
-.settings-modal .ant-input:focus,
-.settings-modal .ant-select-focused .ant-select-selector,
-.settings-modal .ant-input-number:focus {
+.settings-modal input:focus,
+.settings-modal .ant-select-focused [data-select-trigger],
+.settings-modal input-number:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 /* Button improvements */
-.settings-modal .ant-btn {
+.settings-modal button {
   border-radius: 6px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -104,79 +104,79 @@
   font-size: 13px;
 }
 
-.settings-modal .ant-btn-primary {
+.settings-modal button-primary {
   background: #3b82f6;
   border-color: #3b82f6;
 }
 
-.settings-modal .ant-btn-primary:hover {
+.settings-modal button-primary:hover {
   background: #2563eb;
   border-color: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.settings-modal .ant-btn-danger {
+.settings-modal button-danger {
   background: #ef4444;
   border-color: #ef4444;
 }
 
-.settings-modal .ant-btn-danger:hover {
+.settings-modal button-danger:hover {
   background: #dc2626;
   border-color: #dc2626;
 }
 
-.settings-modal .ant-btn-dashed:hover {
+.settings-modal button-dashed:hover {
   border-color: #3b82f6;
   color: #3b82f6;
 }
 
 /* Alert improvements */
-.settings-modal .ant-alert {
+.settings-modal .alert {
   border-radius: 6px;
   font-size: 13px;
 }
 
-.settings-modal .ant-alert-warning {
+.settings-modal .alert-warning {
   background: #fef3c7;
   border: 1px solid #f59e0b;
 }
 
-.settings-modal .ant-alert-info {
+.settings-modal .alert-info {
   background: #dbeafe;
   border: 1px solid #3b82f6;
 }
 
-.settings-modal .ant-alert-success {
+.settings-modal .alert-success {
   background: #d1fae5;
   border: 1px solid #10b981;
 }
 
 /* Typography improvements */
-.settings-modal .ant-typography h5 {
+.settings-modal .typography h5 {
   color: #111827;
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 8px;
 }
 
-.settings-modal .ant-typography-paragraph {
+.settings-modal .typography-paragraph {
   color: #6b7280;
   line-height: 1.5;
   font-size: 13px;
 }
 
 /* Switch improvements */
-.settings-modal .ant-switch {
+.settings-modal [data-switch] {
   background: #d1d5db;
 }
 
-.settings-modal .ant-switch-checked {
+.settings-modal [data-switch]-checked {
   background: #3b82f6;
 }
 
 /* Divider improvements */
-.settings-modal .ant-divider {
+.settings-modal .divider {
   border-color: #e5e7eb;
   margin: 16px 0;
 }
@@ -201,20 +201,20 @@
 }
 
 /* Compact spacing */
-.settings-modal .ant-space-compact {
+.settings-modal .space-compact {
   gap: 8px;
 }
 
-.settings-modal .ant-space-item {
+.settings-modal .space-item {
   margin-right: 8px;
 }
 
 /* Icon improvements */
-.settings-modal .anticon {
+.settings-modal .icon {
   font-size: 14px;
 }
 
-.settings-modal .ant-tabs-tab .anticon {
+.settings-modal [data-tabs]-tab .icon {
   margin-right: 8px;
 }
 
@@ -230,22 +230,22 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .settings-modal .ant-modal {
+  .settings-modal [data-dialog] {
     width: 95% !important;
     max-width: none;
   }
   
-  .settings-modal .ant-tabs {
+  .settings-modal [data-tabs] {
     flex-direction: column;
   }
   
-  .settings-modal .ant-tabs-nav {
+  .settings-modal [data-tabs]-nav {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
   }
   
-  .settings-modal .ant-tabs-content {
+  .settings-modal [data-tabs]-content {
     padding: 12px 16px;
   }
   
@@ -255,24 +255,24 @@
 }
 
 /* Focus improvements */
-.settings-modal .ant-btn:focus-visible {
+.settings-modal button:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
 /* Hover effects */
-.settings-modal .ant-btn:hover .anticon {
+.settings-modal button:hover .icon {
   transform: scale(1.05);
   transition: transform 0.2s ease;
 }
 
 /* Badge improvements */
-.settings-modal .ant-badge {
+.settings-modal .badge {
   font-size: 12px;
 }
 
 /* List improvements for error log */
-.settings-modal .ant-list-item {
+.settings-modal .list-item {
   padding: 8px 0;
   font-size: 12px;
 }
@@ -297,10 +297,10 @@
 }
 
 /* Tooltip improvements */
-.ant-tooltip {
+.tooltip {
   font-size: 12px;
 }
 
-.ant-tooltip-inner {
+.tooltip-inner {
   border-radius: 6px;
 }

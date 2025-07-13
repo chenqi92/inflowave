@@ -411,7 +411,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           <FileUploadStep
             wizardData={wizardData}
             onDataUpdate={updateWizardData}
-            loading={loading}
+            disabled={loading}
             onLoadingChange={setLoading}
             excelManager={excelManager}
           />
@@ -441,7 +441,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
             onDataUpdate={updateWizardData}
             dataValidator={dataValidator}
             qualityAnalyzer={qualityAnalyzer}
-            loading={loading}
+            disabled={loading}
             onLoadingChange={setLoading}
           />
         );
@@ -452,7 +452,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
             wizardData={wizardData}
             onDataUpdate={updateWizardData}
             dataCleaner={dataCleaner}
-            loading={loading}
+            disabled={loading}
             onLoadingChange={setLoading}
           />
         );
@@ -474,7 +474,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
             onExecute={executeImport}
             onClose={onClose}
             onReset={resetWizard}
-            loading={loading}
+            disabled={loading}
           />
         );
       
@@ -487,7 +487,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
     <Modal
       title="智能数据导入向导"
       open={visible}
-      onCancel={onClose}
+      onOpenChange={(open) => !open && (onClose)()}
       width={1400}
       style={{ top: 20 }}
       footer={null}
@@ -499,7 +499,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           <Steps 
             current={currentStep} 
             size="small"
-            onChange={(step) => {
+            onValueChange={(step) => {
               // 允许用户点击已完成的步骤
               if (step < currentStep) {
                 goToStep(step);
@@ -544,7 +544,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
                 <Button 
                   type="primary" 
                   onClick={handleStepComplete}
-                  loading={loading}
+                  disabled={loading}
                 >
                   {currentStep === steps.length - 2 ? '开始导入' : '下一步'}
                 </Button>

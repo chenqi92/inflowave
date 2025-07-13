@@ -4,8 +4,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { Button, Form, Input, InputNumber, Switch } from '@/components/ui';
 import { Card, toast } from '@/components/ui';
 
-
-
 interface ConnectionConfig {
   id: string;
   name: string;
@@ -93,67 +91,61 @@ const ConnectionTest: React.FC = () => {
             host: 'localhost',
             port: 8086,
             ssl: false,
-            timeout: 30}}
-        >
-          <Form.Item
+            timeout: 30}}>
+          <FormItem
             label="连接名称"
             name="name"
-            rules={[{ required: true, message: '请输入连接名称' }]}
-          >
+            rules={[{ required: true, message: '请输入连接名称' }]}>
             <Input placeholder="例如: 本地 InfluxDB" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="主机地址"
             name="host"
-            rules={[{ required: true, message: '请输入主机地址' }]}
-          >
+            rules={[{ required: true, message: '请输入主机地址' }]}>
             <Input placeholder="localhost 或 IP 地址" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="端口"
             name="port"
-            rules={[{ required: true, message: '请输入端口号' }]}
-          >
+            rules={[{ required: true, message: '请输入端口号' }]}>
             <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item label="用户名" name="username">
+          <FormItem label="用户名" name="username">
             <Input placeholder="可选" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item label="密码" name="password">
+          <FormItem label="密码" name="password">
             <Input.Password placeholder="可选" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item label="数据库" name="database">
+          <FormItem label="数据库" name="database">
             <Input placeholder="可选，默认连接后选择" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item label="使用 SSL" name="ssl" valuePropName="checked">
+          <FormItem label="使用 SSL" name="ssl" valuePropName="checked">
             <Switch />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="超时时间 (秒)"
             name="timeout"
-            rules={[{ required: true, message: '请输入超时时间' }]}
-          >
+            rules={[{ required: true, message: '请输入超时时间' }]}>
             <InputNumber min={1} max={300} style={{ width: '100%' }} />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={loading}
+          <FormItem>
+            <Button
+              type="primary"
+              htmlType="submit"
+              disabled={loading}
               size="large"
-              block
-            >
+              block>
               {loading ? '测试中...' : '测试连接'}
             </Button>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Card>
 
@@ -161,8 +153,7 @@ const ConnectionTest: React.FC = () => {
       {testResult && (
         <Card 
           title="测试结果" 
-          className={`mb-6 ${testResult.success ? 'border-green-500' : 'border-red-500'}`}
-        >
+          className={`mb-6 ${testResult.success ? 'border-green-500' : 'border-red-500'}`}>
           <div className="space-y-2">
             <div className="flex items-center">
               <span className="font-medium mr-2">状态:</span>

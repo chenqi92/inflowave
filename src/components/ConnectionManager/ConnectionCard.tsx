@@ -246,7 +246,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
               type={status?.status === 'connected' ? 'default' : 'primary'}
               size="small"
               icon={status?.status === 'connected' ? <PauseCircle /> : <PlayCircle />}
-              loading={isConnecting}
+              disabled={isConnecting}
               onClick={handleConnect}
               danger={status?.status === 'connected'}
             />

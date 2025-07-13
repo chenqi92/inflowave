@@ -23,14 +23,14 @@
   overflow: hidden;
 }
 
-.settings-tabs .ant-tabs-nav {
+.settings-tabs [data-tabs]-nav {
   margin: 0;
   padding: 0 24px;
   background: #fafbfc;
   border-bottom: 1px solid #e2e8f0;
 }
 
-.settings-tabs .ant-tabs-tab {
+.settings-tabs [data-tabs]-tab {
   padding: 16px 20px;
   margin: 0 8px 0 0;
   border-radius: 8px 8px 0 0;
@@ -39,88 +39,88 @@
   border: none;
 }
 
-.settings-tabs .ant-tabs-tab:hover {
+.settings-tabs [data-tabs]-tab:hover {
   background: rgba(59, 130, 246, 0.05);
   color: #3b82f6;
 }
 
-.settings-tabs .ant-tabs-tab-active {
+.settings-tabs [data-tabs]-tab-active {
   background: white;
   color: #3b82f6;
   border-bottom: 2px solid #3b82f6;
 }
 
-.settings-tabs .ant-tabs-content-holder {
+.settings-tabs [data-tabs]-content-holder {
   padding: 0;
 }
 
-.settings-tabs .ant-tabs-tabpane {
+.settings-tabs [data-tabs]-tabpane {
   padding: 0;
 }
 
 /* Card improvements */
-.settings-page .ant-card {
+.settings-page .card {
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
-.settings-page .ant-card:hover {
+.settings-page .card:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.settings-page .ant-card-head {
+.settings-page .card-head {
   border-bottom: 1px solid #f1f5f9;
   padding: 16px 24px;
 }
 
-.settings-page .ant-card-body {
+.settings-page .card-body {
   padding: 24px;
 }
 
 /* Form improvements */
-.settings-page .ant-form-item {
+.settings-page .form-item {
   margin-bottom: 24px;
 }
 
-.settings-page .ant-form-item-label > label {
+.settings-page .form-item-label > label {
   font-weight: 500;
   color: #374151;
 }
 
-.settings-page .ant-input,
-.settings-page .ant-select-selector,
-.settings-page .ant-input-number {
+.settings-page input,
+.settings-page [data-select-trigger],
+.settings-page input-number {
   border-radius: 8px;
   border: 1px solid #d1d5db;
   transition: all 0.2s ease;
 }
 
-.settings-page .ant-input:focus,
-.settings-page .ant-select-focused .ant-select-selector,
-.settings-page .ant-input-number:focus {
+.settings-page input:focus,
+.settings-page .ant-select-focused [data-select-trigger],
+.settings-page input-number:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Button improvements */
-.settings-page .ant-btn {
+.settings-page button {
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
-.settings-page .ant-btn:not(.ant-btn-loading):hover {
+.settings-page button:not(button-loading):hover {
   cursor: pointer;
 }
 
-.settings-page .ant-btn-primary {
+.settings-page button-primary {
   background: #3b82f6;
   border-color: #3b82f6;
   cursor: pointer;
 }
 
-.settings-page .ant-btn-primary:hover:not(:disabled) {
+.settings-page button-primary:hover:not(:disabled) {
   background: #2563eb;
   border-color: #2563eb;
   transform: translateY(-1px);
@@ -128,76 +128,76 @@
   cursor: pointer;
 }
 
-.settings-page .ant-btn-danger {
+.settings-page button-danger {
   background: #ef4444;
   border-color: #ef4444;
   cursor: pointer;
 }
 
-.settings-page .ant-btn-danger:hover:not(:disabled) {
+.settings-page button-danger:hover:not(:disabled) {
   background: #dc2626;
   border-color: #dc2626;
   cursor: pointer;
 }
 
-.settings-page .ant-btn-dashed {
+.settings-page button-dashed {
   border-style: dashed;
   cursor: pointer;
 }
 
-.settings-page .ant-btn-dashed:hover:not(:disabled) {
+.settings-page button-dashed:hover:not(:disabled) {
   border-color: #3b82f6;
   color: #3b82f6;
   cursor: pointer;
 }
 
-.settings-page .ant-btn:disabled {
+.settings-page button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 /* Ensure all clickable elements have pointer cursor */
-.settings-page .ant-btn,
-.settings-page .ant-tabs-tab,
-.settings-page .ant-select-selector,
-.settings-page .ant-switch,
-.settings-page .ant-input-number,
-.settings-page .ant-input {
+.settings-page button,
+.settings-page [data-tabs]-tab,
+.settings-page [data-select-trigger],
+.settings-page [data-switch],
+.settings-page input-number,
+.settings-page input {
   cursor: pointer;
 }
 
-.settings-page .ant-tabs-tab:hover {
+.settings-page [data-tabs]-tab:hover {
   cursor: pointer;
 }
 
 /* Alert improvements */
-.settings-page .ant-alert {
+.settings-page .alert {
   border-radius: 8px;
   border: none;
 }
 
-.settings-page .ant-alert-warning {
+.settings-page .alert-warning {
   background: #fef3c7;
   border-left: 4px solid #f59e0b;
 }
 
-.settings-page .ant-alert-info {
+.settings-page .alert-info {
   background: #dbeafe;
   border-left: 4px solid #3b82f6;
 }
 
-.settings-page .ant-alert-success {
+.settings-page .alert-success {
   background: #d1fae5;
   border-left: 4px solid #10b981;
 }
 
 /* Typography improvements */
-.settings-page .ant-typography h4 {
+.settings-page .typography h4 {
   color: #111827;
   font-weight: 600;
 }
 
-.settings-page .ant-typography-paragraph {
+.settings-page .typography-paragraph {
   color: #6b7280;
   line-height: 1.6;
 }
@@ -213,23 +213,23 @@
     border-radius: 0;
   }
   
-  .settings-page .ant-card {
+  .settings-page .card {
     border-radius: 8px;
   }
   
-  .settings-page .ant-card-body {
+  .settings-page .card-body {
     padding: 16px;
   }
 }
 
 /* Tab icons styling */
-.settings-tabs .ant-tabs-tab .anticon {
+.settings-tabs [data-tabs]-tab .icon {
   margin-right: 8px;
   font-size: 16px;
 }
 
 /* Back button styling */
-.settings-header .ant-btn[title="返回"] {
+.settings-header button[title="返回"] {
   width: 32px;
   height: 32px;
   display: flex;
@@ -240,114 +240,114 @@
   transition: all 0.2s ease;
 }
 
-.settings-header .ant-btn[title="返回"]:hover {
+.settings-header button[title="返回"]:hover {
   background: #f3f4f6;
   transform: translateX(-2px);
 }
 
 /* Divider improvements */
-.settings-page .ant-divider {
+.settings-page .divider {
   border-color: #e5e7eb;
   margin: 32px 0;
 }
 
 /* Badge improvements */
-.settings-page .ant-badge {
+.settings-page .badge {
   font-weight: 500;
 }
 
 /* Switch improvements */
-.settings-page .ant-switch {
+.settings-page [data-switch] {
   background: #d1d5db;
 }
 
-.settings-page .ant-switch-checked {
+.settings-page [data-switch]-checked {
   background: #3b82f6;
 }
 
 /* Select improvements */
-.settings-page .ant-select-dropdown {
+.settings-page [data-select-content] {
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Loading state improvements */
-.settings-page .ant-spin {
+.settings-page .spinner {
   color: #3b82f6;
 }
 
 /* Interactive feedback improvements */
-.settings-page .ant-btn:active {
+.settings-page button:active {
   transform: translateY(0);
 }
 
-.settings-page .ant-btn:hover .anticon {
+.settings-page button:hover .icon {
   transform: scale(1.1);
   transition: transform 0.2s ease;
 }
 
-.settings-page .ant-tabs-tab:hover .anticon {
+.settings-page [data-tabs]-tab:hover .icon {
   transform: scale(1.1);
   transition: transform 0.2s ease;
 }
 
 /* Focus improvements */
-.settings-page .ant-btn:focus,
-.settings-page .ant-input:focus,
+.settings-page button:focus,
+.settings-page input:focus,
 .settings-page .ant-select:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Card hover effects */
-.settings-page .ant-card:hover {
+.settings-page .card:hover {
   transform: translateY(-2px);
 }
 
 /* Space improvements */
-.settings-page .ant-space-item {
+.settings-page .space-item {
   display: flex;
   align-items: center;
 }
 
 /* Modal improvements */
-.settings-page .ant-modal-content {
+.settings-page [data-dialog]-content {
   border-radius: 12px;
 }
 
-.settings-page .ant-modal-header {
+.settings-page [data-dialog]-header {
   border-radius: 12px 12px 0 0;
 }
 
 /* Tooltip improvements */
-.ant-tooltip {
+.tooltip {
   z-index: 1060;
 }
 
 /* Badge improvements for connection status */
-.settings-page .ant-badge-dot {
+.settings-page .badge-dot {
   box-shadow: 0 0 0 1px #fff;
 }
 
 /* Navigation improvements */
-.settings-page .settings-header .ant-btn {
+.settings-page .settings-header button {
   transition: all 0.2s ease;
 }
 
-.settings-page .settings-header .ant-btn:hover {
+.settings-page .settings-header button:hover {
   background: rgba(59, 130, 246, 0.1);
   border-color: #3b82f6;
 }
 
 /* Accessibility improvements */
-.settings-page .ant-btn:focus-visible {
+.settings-page button:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
 /* Responsive improvements */
 @media (max-width: 576px) {
-  .settings-page .ant-btn {
+  .settings-page button {
     font-size: 14px;
     padding: 8px 12px;
   }

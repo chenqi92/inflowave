@@ -28,7 +28,6 @@ type DataNode = {
 // Fix for invoke function
 const invoke = safeTauriInvoke;
 
-
 interface DatabaseStructure {
   databases: string[];
   measurements: Record<string, string[]>;
@@ -327,7 +326,7 @@ const DataGripLayout: React.FC = () => {
             title={
               <Tabs
                 activeKey={leftPanelTab}
-                onChange={setLeftPanelTab}
+                onValueChange={setLeftPanelTab}
                 size='small'
                 items={[
                   {
@@ -363,7 +362,7 @@ const DataGripLayout: React.FC = () => {
                   type='text'
                   icon={<RefreshCw className="w-4 h-4"  />}
                   size='small'
-                  loading={loading}
+                  disabled={loading}
                   onClick={() =>
                     activeConnectionId &&
                     loadDatabaseStructure(activeConnectionId)
@@ -392,7 +391,7 @@ const DataGripLayout: React.FC = () => {
               <div style={{ height: '100%' }}>
                 <QueryHistory
                   onQuerySelect={handleQuerySelect}
-                  visible={true}
+                  open={true}
                 />
               </div>
             )}
@@ -400,7 +399,7 @@ const DataGripLayout: React.FC = () => {
               <div style={{ height: '100%' }}>
                 <SavedQueries
                   onQuerySelect={handleQuerySelect}
-                  visible={true}
+                  open={true}
                   databases={structure.databases}
                 />
               </div>
@@ -498,7 +497,7 @@ const DataGripLayout: React.FC = () => {
                   />
                 </Col>
                 <Col span={24} style={{ height: '50%' }}>
-                  <QueryResults result={queryResult} loading={queryLoading} />
+                  <QueryResults result={queryResult} disabled={queryLoading} />
                 </Col>
               </Row>
             )}
@@ -528,7 +527,7 @@ const DataGripLayout: React.FC = () => {
 
       {/* 数据导入向导 */}
       <DataImportWizard
-        visible={showImportWizard}
+        open={showImportWizard}
         onClose={() => setShowImportWizard(false)}
         connectionId={activeConnectionId}
         database={selectedDatabase}

@@ -398,7 +398,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
             language="sql"
             theme="vs-light"
             value={currentTab.content}
-            onChange={handleEditorChange}
+            onValueChange={handleEditorChange}
             onMount={handleEditorDidMount}
             options={{
               minimap: { enabled: false },
@@ -442,7 +442,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           description={`"${closingTab.title}" 已修改，是否保存更改？`}
           open={!!closingTab}
           onConfirm={saveAndCloseTab}
-          onCancel={closeTabWithoutSaving}
+          onOpenChange={(open) => !open && (closeTabWithoutSaving)()}
           okText="保存"
           cancelText="不保存"
         >

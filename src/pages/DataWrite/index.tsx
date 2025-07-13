@@ -11,7 +11,7 @@ import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
-const { TextArea } = Input;
+const { Textarea } = Input;
 
 interface DataPointForm extends Omit<DataPoint, 'timestamp'> {
   timestamp?: dayjs.Dayjs;
@@ -36,7 +36,7 @@ const DataWrite: React.FC = () => {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId});
       setDatabases(dbList);
-      if (dbList.length > 0 && !selectedDatabase) {
+      if (dbList.length> 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
@@ -215,7 +215,7 @@ const DataWrite: React.FC = () => {
   const handleLineProtocolSubmit = (values: any) => {
     try {
       const points = parseLineProtocol(values.lineProtocol);
-      if (points.length > 0) {
+      if (points.length> 0) {
         setDataPoints(prev => [...prev, ...points]);
         toast({ title: "成功", description: "解析成功，添加了 ${points.length} 个数据点" });
         batchForm.resetFields();
@@ -318,8 +318,7 @@ const DataWrite: React.FC = () => {
           style={{ width: 200 }}
           placeholder="选择数据库"
           value={selectedDatabase}
-          onChange={setSelectedDatabase}
-        >
+          onValueChange={setSelectedDatabase}>
           {databases.map(db => (
             <Option key={db} value={db}>
               {db}
@@ -338,53 +337,48 @@ const DataWrite: React.FC = () => {
                 <Form
                   form={form}
                   layout="vertical"
-                  onFinish={writeSinglePoint}
-                >
+                  onFinish={writeSinglePoint}>
                   <Row gutter={16}>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         label="测量名称"
                         name="measurement"
-                        rules={[{ required: true, message: '请输入测量名称' }]}
-                      >
+                        rules={[{ required: true, message: '请输入测量名称' }]}>
                         <Input placeholder="例如: temperature" />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                     <Col span={12}>
-                      <Form.Item
+                      <FormItem
                         label="时间戳"
                         name="timestamp"
-                        tooltip="留空则使用当前时间"
-                      >
+                        tooltip="留空则使用当前时间">
                         <DatePicker
                           showTime
                           style={{ width: '100%' }}
                           placeholder="选择时间戳"
                         />
-                      </Form.Item>
+                      </FormItem>
                     </Col>
                   </Row>
 
-                  <Form.Item label="标签 (Tags)">
+                  <FormItem label="标签 (Tags)">
                     <Form.List name="tagList">
                       {(fields, { add, remove }) => (
                         <>
                           {fields.map(({ key, name, ...restField }) => (
                             <div className="flex gap-2" key={key} style={{ display: 'flex', marginBottom: 8 }}>
-                              <Form.Item
+                              <FormItem
                                 {...restField}
                                 name={[name, 'key']}
-                                rules={[{ required: true, message: '请输入标签键' }]}
-                              >
+                                rules={[{ required: true, message: '请输入标签键' }]}>
                                 <Input placeholder="标签键" />
-                              </Form.Item>
-                              <Form.Item
+                              </FormItem>
+                              <FormItem
                                 {...restField}
                                 name={[name, 'value']}
-                                rules={[{ required: true, message: '请输入标签值' }]}
-                              >
+                                rules={[{ required: true, message: '请输入标签值' }]}>
                                 <Input placeholder="标签值" />
-                              </Form.Item>
+                              </FormItem>
                               <Button
                                 type="text"
                                 icon={<Trash2 className="w-4 h-4"  />}
@@ -395,38 +389,35 @@ const DataWrite: React.FC = () => {
                           <Button
                             type="dashed"
                             onClick={() => add()}
-                            icon={<Plus className="w-4 h-4"  />}
-                          >
+                            icon={<Plus className="w-4 h-4"  />}>
                             添加标签
                           </Button>
                         </>
                       )}
                     </Form.List>
-                  </Form.Item>
+                  </FormItem>
 
-                  <Form.Item label="字段 (Fields)">
+                  <FormItem label="字段 (Fields)">
                     <Form.List name="fieldList">
                       {(fields, { add, remove }) => (
                         <>
                           {fields.map(({ key, name, ...restField }) => (
                             <div className="flex gap-2" key={key} style={{ display: 'flex', marginBottom: 8 }}>
-                              <Form.Item
+                              <FormItem
                                 {...restField}
                                 name={[name, 'key']}
-                                rules={[{ required: true, message: '请输入字段键' }]}
-                              >
+                                rules={[{ required: true, message: '请输入字段键' }]}>
                                 <Input placeholder="字段键" />
-                              </Form.Item>
-                              <Form.Item
+                              </FormItem>
+                              <FormItem
                                 {...restField}
                                 name={[name, 'value']}
-                                rules={[{ required: true, message: '请输入字段值' }]}
-                              >
+                                rules={[{ required: true, message: '请输入字段值' }]}>
                                 <InputNumber
                                   placeholder="字段值"
                                   style={{ width: '100%' }}
                                 />
-                              </Form.Item>
+                              </FormItem>
                               <Button
                                 type="text"
                                 icon={<Trash2 className="w-4 h-4"  />}
@@ -437,30 +428,28 @@ const DataWrite: React.FC = () => {
                           <Button
                             type="dashed"
                             onClick={() => add()}
-                            icon={<Plus className="w-4 h-4"  />}
-                          >
+                            icon={<Plus className="w-4 h-4"  />}>
                             添加字段
                           </Button>
                         </>
                       )}
                     </Form.List>
-                  </Form.Item>
+                  </FormItem>
 
-                  <Form.Item>
+                  <FormItem>
                     <div className="flex gap-2">
                       <Button
                         type="primary"
                         htmlType="submit"
-                        loading={loading}
-                        icon={<Save className="w-4 h-4"  />}
-                      >
+                        disabled={loading}
+                        icon={<Save className="w-4 h-4"  />}>
                         立即写入
                       </Button>
                       <Button onClick={addDataPoint} icon={<Plus className="w-4 h-4"  />}>
                         添加到批次
                       </Button>
                     </div>
-                  </Form.Item>
+                  </FormItem>
                 </Form>
               </Card>
             )},
@@ -492,26 +481,24 @@ const DataWrite: React.FC = () => {
                   <Form
                     form={batchForm}
                     layout="vertical"
-                    onFinish={handleLineProtocolSubmit}
-                  >
-                    <Form.Item
+                    onFinish={handleLineProtocolSubmit}>
+                    <FormItem
                       label="Line Protocol 数据"
                       name="lineProtocol"
-                      rules={[{ required: true, message: '请输入 Line Protocol 数据' }]}
-                    >
-                      <TextArea
+                      rules={[{ required: true, message: '请输入 Line Protocol 数据' }]}>
+                      <Textarea
                         rows={8}
                         placeholder={`temperature,host=server01,region=us-west value=23.5,status="ok"
 cpu_usage,host=server01,cpu=cpu0 usage_percent=85.2
 memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                       />
-                    </Form.Item>
+                    </FormItem>
 
-                    <Form.Item>
+                    <FormItem>
                       <Button type="primary" htmlType="submit">
                         解析并添加到批次
                       </Button>
-                    </Form.Item>
+                    </FormItem>
                   </Form>
                 </Card>
 
@@ -522,22 +509,19 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                       <Button
                         icon={<X className="w-4 h-4" />}
                         onClick={clearDataPoints}
-                        disabled={dataPoints.length === 0}
-                      >
+                        disabled={dataPoints.length === 0}>
                         清空
                       </Button>
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4"  />}
                         onClick={writeBatchPoints}
-                        loading={loading}
-                        disabled={dataPoints.length === 0}
-                      >
+                        disabled={loading}
+                        disabled={dataPoints.length === 0}>
                         批量写入
                       </Button>
                     </div>
-                  }
-                >
+                  }>
                   <Table
                     columns={columns}
                     dataSource={dataPoints}
@@ -563,12 +547,10 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                     type="primary"
                     icon={<Upload className="w-4 h-4"  />}
                     onClick={() => setImportDialogVisible(true)}
-                    disabled={!selectedDatabase}
-                  >
+                    disabled={!selectedDatabase}>
                     导入文件
                   </Button>
-                }
-              >
+                }>
                 <div className="space-y-4">
                   <Alert
                     message="文件导入功能"
@@ -626,7 +608,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
 
       {/* 导入对话框 */}
       <ImportDialog
-        visible={importDialogVisible}
+        open={importDialogVisible}
         onClose={() => setImportDialogVisible(false)}
         connectionId={activeConnectionId}
         database={selectedDatabase}

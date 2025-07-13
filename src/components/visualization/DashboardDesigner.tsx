@@ -10,7 +10,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Text, Title } = Typography;
 const { Option } = Select;
-const { TextArea } = Input;
+const { Textarea } = Input;
 
 // 响应式网格布局
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -330,8 +330,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                 </Tooltip>
                 <Popconfirm
                   title="确定删除这个项目吗？"
-                  onConfirm={() => deleteDashboardItem(item.id)}
-                >
+                  onConfirm={() => deleteDashboardItem(item.id)}>
                   <Tooltip title="删除">
                     <Button
                       type="text"
@@ -356,7 +355,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
             <AdvancedChartLibrary
               config={item.chartConfig!}
               height={200}
-              loading={item.loading}
+              disabled={item.loading}
               showControls={false}
             />
           )}
@@ -383,42 +382,36 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           <>
             <Button
               icon={<Plus className="w-4 h-4"  />}
-              onClick={addDashboardItem}
-            >
+              onClick={addDashboardItem}>
               添加项目
             </Button>
             <Button
               icon={<Settings className="w-4 h-4"  />}
-              onClick={openDashboardSettings}
-            >
+              onClick={openDashboardSettings}>
               设置
             </Button>
           </>
         )}
         <Button
           icon={<Eye className="w-4 h-4"  />}
-          onClick={() => setPreviewMode(!previewMode)}
-        >
+          onClick={() => setPreviewMode(!previewMode)}>
           {previewMode ? '编辑模式' : '预览模式'}
         </Button>
         <Button
           icon={<RefreshCw className="w-4 h-4"  />}
           onClick={refreshAllItems}
-          loading={dashboard.items.some(item => item.loading)}
-        >
+          disabled={dashboard.items.some(item => item.loading)}>
           刷新
         </Button>
         <Button
           icon={<Save className="w-4 h-4"  />}
           type="primary"
-          onClick={saveDashboard}
-        >
+          onClick={saveDashboard}>
           保存
         </Button>
         <Button
           icon={<Maximize className="w-4 h-4"  />}
-          onClick={() => setFullscreen(!fullscreen)}
-        >
+          onClick={() => setFullscreen(!fullscreen)}>
           全屏
         </Button>
       </div>
@@ -441,8 +434,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           isDraggable={!readOnly && !previewMode}
           isResizable={!readOnly && !previewMode}
           margin={[16, 16]}
-          containerPadding={[0, 0]}
-        >
+          containerPadding={[0, 0]}>
           {dashboard.items.map((item) => (
             <div key={item.id} className="dashboard-item">
               <Card className="h-full" bodyStyle={{ padding: 12 }}>
@@ -457,46 +449,43 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       <Modal
         title={editingItem && dashboard.items.find(i => i.id === editingItem.id) ? '编辑项目' : '添加项目'}
         open={showItemModal}
-        onOk={saveDashboardItem}
-        onCancel={() => {
-          setShowItemModal(false);
-          setEditingItem(null);
-          form.resetFields();
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowItemModal(false);
+            setEditingItem(null);
+            form.resetFields();
+          }
         }}
-        width={800}
-      >
+        width={800}>
         <Form form={form} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              <FormItem
                 label="项目标题"
                 name="title"
-                rules={[{ required: true, message: '请输入项目标题' }]}
-              >
+                rules={[{ required: true, message: '请输入项目标题' }]}>
                 <Input placeholder="输入项目标题" />
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
+              <FormItem
                 label="项目类型"
                 name="type"
-                rules={[{ required: true, message: '请选择项目类型' }]}
-              >
+                rules={[{ required: true, message: '请选择项目类型' }]}>
                 <Select placeholder="选择项目类型">
                   <Option value="chart">图表</Option>
                   <Option value="metric">指标</Option>
                   <Option value="text">文本</Option>
                   <Option value="table">表格</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item
+          <FormItem
             label="图表类型"
             name="chartType"
-            rules={[{ required: true, message: '请选择图表类型' }]}
-          >
+            rules={[{ required: true, message: '请选择图表类型' }]}>
             <Select placeholder="选择图表类型">
               {chartTypeOptions.map(option => (
                 <Option key={option.value} value={option.value}>
@@ -504,26 +493,24 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                 </Option>
               ))}
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="查询语句"
             name="query"
-            rules={[{ required: true, message: '请输入查询语句' }]}
-          >
-            <TextArea
+            rules={[{ required: true, message: '请输入查询语句' }]}>
+            <Textarea
               rows={4}
               placeholder="输入 InfluxQL 查询语句"
             />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="刷新间隔 (毫秒)"
             name="refreshInterval"
-            rules={[{ required: true, message: '请输入刷新间隔' }]}
-          >
+            rules={[{ required: true, message: '请输入刷新间隔' }]}>
             <Input type="number" placeholder="30000" />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 
@@ -531,55 +518,48 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       <Modal
         title="仪表盘设置"
         open={showSettingsModal}
-        onOk={saveDashboardSettings}
-        onCancel={() => setShowSettingsModal(false)}
-        width={600}
-      >
+        onOpenChange={(open) => !open && (() => setShowSettingsModal(false))()}
+        width={600}>
         <Form form={settingsForm} layout="vertical">
-          <Form.Item
+          <FormItem
             label="仪表盘名称"
             name="name"
-            rules={[{ required: true, message: '请输入仪表盘名称' }]}
-          >
+            rules={[{ required: true, message: '请输入仪表盘名称' }]}>
             <Input placeholder="输入仪表盘名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item
+          <FormItem
             label="描述"
-            name="description"
-          >
-            <TextArea rows={3} placeholder="输入仪表盘描述" />
-          </Form.Item>
+            name="description">
+            <Textarea rows={3} placeholder="输入仪表盘描述" />
+          </FormItem>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              <FormItem
                 label="主题"
-                name="theme"
-              >
+                name="theme">
                 <Select>
                   <Option value="light">浅色</Option>
                   <Option value="dark">深色</Option>
                 </Select>
-              </Form.Item>
+              </FormItem>
             </Col>
             <Col span={12}>
-              <Form.Item
+              <FormItem
                 label="自动刷新"
                 name="autoRefresh"
-                valuePropName="checked"
-              >
+                valuePropName="checked">
                 <Switch />
-              </Form.Item>
+              </FormItem>
             </Col>
           </Row>
 
-          <Form.Item
+          <FormItem
             label="刷新间隔 (毫秒)"
-            name="refreshInterval"
-          >
+            name="refreshInterval">
             <Input type="number" placeholder="30000" />
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
 

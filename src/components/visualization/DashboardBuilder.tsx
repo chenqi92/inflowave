@@ -232,8 +232,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         style={style}
         className={`grid-item ${isDragging ? 'dragging' : ''}`}
         {...attributes}
-        {...listeners}
-      >
+        {...listeners}>
         {isEditMode && (
           <div className="absolute top-0 left-0 z-10 cursor-move">
             <GripVertical className="text-gray-400 hover:text-gray-600" />
@@ -264,8 +263,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                 style={{
                   gridColumn: `span ${item.w}`,
                   gridRow: `span ${item.h}`,
-                  minHeight: item.h * gridConfig.rowHeight}}
-              >
+                  minHeight: item.h * gridConfig.rowHeight}}>
                 <DraggableGridItem item={item} />
               </div>
             ))}
@@ -294,8 +292,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                 <Button
                   icon={<Plus className="w-4 h-4"  />}
                   onClick={() => setShowChartModal(true)}
-                  disabled={charts.length === 0}
-                >
+                  disabled={charts.length === 0}>
                   添加图表
                 </Button>
 
@@ -308,31 +305,27 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
                 <Button
                   icon={<Eye className="w-4 h-4"  />}
-                  onClick={handlePreviewDashboard}
-                >
+                  onClick={handlePreviewDashboard}>
                   预览
                 </Button>
 
                 <Button
                   type="primary"
                   icon={<Save className="w-4 h-4"  />}
-                  onClick={handleSaveDashboard}
-                >
+                  onClick={handleSaveDashboard}>
                   保存仪表板
                 </Button>
               </>
             ) : (
               <Button
                 icon={<Edit className="w-4 h-4"  />}
-                onClick={() => setIsEditMode(true)}
-              >
+                onClick={() => setIsEditMode(true)}>
                 编辑模式
               </Button>
             )}
           </div>
         }
-        className="flex-shrink-0"
-      >
+        className="flex-shrink-0">
         <DndContext onDragEnd={handleDragEnd}>
           <SortableContext items={gridItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
             <DroppableGrid />
@@ -348,10 +341,9 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       <Dialog
         title="添加图表"
         open={showChartModal}
-        onCancel={() => setShowChartModal(false)}
+        onOpenChange={(open) => !open && (() => setShowChartModal(false))()}
         footer={null}
-        width={800}
-      >
+        width={800}>
         <div className="space-y-4">
           <div className="text-sm text-gray-600 mb-4">选择一个已创建的图表添加到仪表板</div>
           
@@ -368,8 +360,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                   size="small"
                   hoverable
                   onClick={() => handleAddChart(chart.id)}
-                  className="cursor-pointer hover:border-blue-500"
-                >
+                  className="cursor-pointer hover:border-blue-500">
                   <div className="text-center">
                     <div className="font-medium">{chart.title}</div>
                     <div className="text-xs text-gray-500 mt-1">
@@ -387,51 +378,43 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       <Dialog
         title="仪表板设置"
         open={showSettingsModal}
-        onCancel={() => setShowSettingsModal(false)}
-        onOk={() => {
-          form.validateFields().then(values => {
-            setCurrentDashboard({
-              ...currentDashboard,
-              ...values});
+        onOpenChange={(open) => {
+          if (!open) {
             setShowSettingsModal(false);
-          });
-        }}
-      >
+          }
+        }}>
         <Form
           form={form}
           layout="vertical"
-          initialValues={currentDashboard}
-        >
-          <Form.Item
-            name="name"
+          initialValues={currentDashboard}>
+          <FormItem name="name"
             label="仪表板名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}
-          >
+            rules={[{ required: true, message: '请输入仪表板名称' }]}>
             <Input placeholder="输入仪表板名称" />
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="输入仪表板描述" />
-          </Form.Item>
+          <FormItem name="description" label="描述">
+            <Textarea rows={3} placeholder="输入仪表板描述" />
+          </FormItem>
 
-          <Form.Item name={['settings', 'theme']} label="主题">
+          <FormItem name={['settings', 'theme']} label="主题">
             <Select>
               <Select.Option value="default">默认</Select.Option>
               <Select.Option value="dark">深色</Select.Option>
               <Select.Option value="light">浅色</Select.Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name={['settings', 'gridSize']} label="网格列数">
+          <FormItem name={['settings', 'gridSize']} label="网格列数">
             <Select>
               <Select.Option value={8}>8 列</Select.Option>
               <Select.Option value={12}>12 列</Select.Option>
               <Select.Option value={16}>16 列</Select.Option>
               <Select.Option value={24}>24 列</Select.Option>
             </Select>
-          </Form.Item>
+          </FormItem>
 
-          <Form.Item name={['settings', 'refreshInterval']} label="刷新间隔（秒）">
+          <FormItem name={['settings', 'refreshInterval']} label="刷新间隔（秒）">
             <Select>
               <Select.Option value={10}>10 秒</Select.Option>
               <Select.Option value={30}>30 秒</Select.Option>
@@ -439,7 +422,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
               <Select.Option value={300}>5 分钟</Select.Option>
               <Select.Option value={600}>10 分钟</Select.Option>
             </Select>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Dialog>
     </div>

@@ -549,7 +549,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             icon={<RefreshCw className="w-4 h-4"  />}
             className="w-8 h-8"
             onClick={refreshTree}
-            loading={loading}
+            disabled={loading}
           />
         </Tooltip>
       </div>
@@ -575,7 +575,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               icon={<RefreshCw className="w-4 h-4"  />}
               size="small"
               onClick={refreshTree}
-              loading={loading}
+              disabled={loading}
             />
           </Tooltip>
         </div>
@@ -584,7 +584,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         <Input
           placeholder="搜索连接、数据库、表..."
           value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
+          onValueChange={(e) => setSearchValue(e.target.value)}
           className="text-sm"
         />
       </div>

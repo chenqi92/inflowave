@@ -131,7 +131,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
                 type={isConnected ? 'default' : 'primary'}
                 icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
                 size="small"
-                loading={loading}
+                disabled={loading}
                 onClick={() => onConnect(connection.id!)}
                 className={isConnected ? '' : 'bg-green-600 hover:bg-green-700 border-green-600'}
               >

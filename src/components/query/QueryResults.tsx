@@ -3,7 +3,18 @@ import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Card, Modal 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ColumnType } from 'antd/es/table';
+// 本地类型定义替代 antd 类型
+interface ColumnType<T = any> {
+  title?: React.ReactNode;
+  dataIndex?: string;
+  key?: string;
+  render?: (value: any, record: T, index: number) => React.ReactNode;
+  width?: number | string;
+  align?: 'left' | 'center' | 'right';
+  sorter?: boolean | ((a: T, b: T) => number);
+  filters?: Array<{ text: string; value: any }>;
+  onFilter?: (value: any, record: T) => boolean;
+}
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
@@ -226,7 +237,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
                   <span>图表类型:</span>
                   <Select
                     value={chartType}
-                    onChange={setChartType}
+                    onValueChange={setChartType}
                     style={{ width: 120 }}
                   >
                     <Select.Option value="line">
@@ -335,7 +346,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
       ) : (
         <Tabs
           activeKey={activeTab}
-          onChange={setActiveTab}
+          onValueChange={setActiveTab}
           items={tabItems}
           style={{ height: '100%' }}
           tabBarStyle={{ margin: 0, paddingLeft: 16, paddingRight: 16 }}
@@ -347,7 +358,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
         title="导出查询结果"
         open={exportModalVisible}
         onOk={handleExport}
-        onCancel={() => setExportModalVisible(false)}
+        onOpenChange={(open) => !open && (() => setExportModalVisible(false))()}
         okText="导出"
         cancelText="取消"
       >
@@ -356,7 +367,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
             <Typography.Text strong>导出格式:</Typography.Text>
             <Select
               value={exportFormat}
-              onChange={setExportFormat}
+              onValueChange={setExportFormat}
               style={{ width: '100%', marginTop: 8 }}
             >
               <Select.Option value="csv">CSV - 逗号分隔值</Select.Option>

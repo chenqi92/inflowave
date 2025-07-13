@@ -11,7 +11,6 @@ import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleCon
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
-
 interface ConnectionListItem extends ConnectionConfig {
   status?: ConnectionStatus;
 }
@@ -30,7 +29,6 @@ const Connections: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
-
 
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
@@ -159,8 +157,6 @@ const Connections: React.FC = () => {
     }
   };
 
-
-
   // 处理连接选择
   const handleConnectionSelect = (connectionId: string) => {
     // 导航到数据库页面或其他相关页面
@@ -270,7 +266,7 @@ const Connections: React.FC = () => {
           <Button
             icon={<RefreshCw className="w-4 h-4"  />}
             onClick={loadConnections}
-            loading={loading}
+            disabled={loading}
             size="small"
           >
             刷新
@@ -329,9 +325,9 @@ const Connections: React.FC = () => {
 
       {/* 连接配置对话框 */}
       <SimpleConnectionDialog
-        visible={isDialogVisible}
+        open={isDialogVisible}
         connection={editingConnection}
-        onCancel={handleCloseDialog}
+        onOpenChange={(open) => !open && (handleCloseDialog)()}
         onSuccess={handleConnectionSuccess}
       />
     </div>

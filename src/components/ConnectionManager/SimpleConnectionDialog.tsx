@@ -180,7 +180,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         <Input
           placeholder="例如: 生产环境 InfluxDB"
           value={formData.name}
-          onChange={(e) => handleInputChange('name', e.target.value)}
+          onValueChange={(e) => handleInputChange('name', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
           className={errors.name ? 'border-red-500' : ''}
@@ -196,7 +196,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <Input
             placeholder="localhost 或 192.168.1.100"
             value={formData.host}
-            onChange={(e) => handleInputChange('host', e.target.value)}
+            onValueChange={(e) => handleInputChange('host', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
             className={errors.host ? 'border-red-500' : ''}
@@ -211,7 +211,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <InputNumber
             placeholder="8086"
             value={formData.port}
-            onChange={(value) => handleInputChange('port', value || 8086)}
+            onValueChange={(value) => handleInputChange('port', value || 8086)}
             className={`w-full ${errors.port ? 'border-red-500' : ''}`}
             min={1}
             max={65535}
@@ -226,7 +226,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <Input
             placeholder="可选"
             value={formData.username}
-            onChange={(e) => handleInputChange('username', e.target.value)}
+            onValueChange={(e) => handleInputChange('username', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
           />
@@ -238,7 +238,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             type="password"
             placeholder="可选"
             value={formData.password}
-            onChange={(e) => handleInputChange('password', e.target.value)}
+            onValueChange={(e) => handleInputChange('password', e.target.value)}
           />
         </div>
       </div>
@@ -248,7 +248,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         <Input
           placeholder="可选，连接后默认选择的数据库"
           value={formData.database}
-          onChange={(e) => handleInputChange('database', e.target.value)}
+          onValueChange={(e) => handleInputChange('database', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
         />
@@ -271,7 +271,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <InputNumber
             placeholder="30"
             value={formData.timeout}
-            onChange={(value) => handleInputChange('timeout', value || 30)}
+            onValueChange={(value) => handleInputChange('timeout', value || 30)}
             className={`w-full ${errors.timeout ? 'border-red-500' : ''}`}
             min={5}
             max={300}
@@ -374,7 +374,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {isEditing && (
                   <Button
                     onClick={handleSubmit}
-                    loading={isSubmitting}
+                    disabled={isSubmitting}
                   >
                     保存连接
                   </Button>
@@ -382,7 +382,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <Button
                   variant={isEditing ? 'outline' : 'default'}
                   onClick={handleTestConnection}
-                  loading={isTesting}
+                  disabled={isTesting}
                 >
                   <Info className="w-4 h-4 mr-2" />
                   测试连接
@@ -391,7 +391,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             ) : (
               <Button
                 onClick={handleSubmit}
-                loading={isSubmitting}
+                disabled={isSubmitting}
                 disabled={!testResult?.success}
               >
                 保存连接
