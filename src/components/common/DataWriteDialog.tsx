@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from '@/components/ui';
 import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
@@ -25,7 +26,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   currentConnection,
   currentDatabase,
   onSuccess}) => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [previewing, setPreviewing] = useState(false);

@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Progress, Tabs, Input, Select, Table } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider, Tooltip
@@ -66,7 +67,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
   connectionId,
   database,
   onSuccess}) => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);

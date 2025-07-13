@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber } from '@/components/ui';
 
@@ -58,7 +59,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   const [loading, setLoading] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importResult, setImportResult] = useState<any>(null);
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 文件上传配置
   const uploadProps: UploadProps = {

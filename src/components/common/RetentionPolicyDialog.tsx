@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Input, Alert, Select, Typography, Switch, InputNumber } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
 import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
@@ -36,7 +37,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   connectionId,
   onClose,
   onSuccess}) => {
-  const [form] = Form.useForm<RetentionPolicyForm>();
+  const form = useForm<RetentionPolicyForm>();
   const [loading, setLoading] = useState(false);
 
   // 初始化表单值

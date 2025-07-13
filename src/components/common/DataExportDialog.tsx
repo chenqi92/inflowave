@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Input, Select, Button, Alert, Row, Col, Switch, InputNumber, Divider } from '@/components/ui';
 import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, Info, FileText, Code, FileSpreadsheet } from 'lucide-react';
@@ -27,7 +28,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   currentDatabase,
   query,
   onSuccess}) => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [loading, setLoading] = useState(false);
   const [estimating, setEstimating] = useState(false);
   const [exportFormats, setExportFormats] = useState<any[]>([]);

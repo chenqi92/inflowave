@@ -23,7 +23,7 @@ import TestButton from './components/test/TestButton';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
 // UI 组件导入
-import { Text } from '@/components/ui';
+import { Text, Spin } from '@/components/ui';
 
 // 主布局组件
 const MainLayout: React.FC = () => {

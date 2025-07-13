@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Input, Button, Select, Table, Tabs, Alert, Row, Col, Tag, toast, Card, Space } from '@/components/ui';
 import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -24,8 +25,8 @@ const DataWrite: React.FC = () => {
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [dataPoints, setDataPoints] = useState<DataPointForm[]>([]);
   const [importDialogVisible, setImportDialogVisible] = useState(false);
-  const [form] = Form.useForm();
-  const [batchForm] = Form.useForm();
+  const form = useForm();
+  const batchForm = useForm();
 
   // 加载数据库列表
   const loadDatabases = async () => {

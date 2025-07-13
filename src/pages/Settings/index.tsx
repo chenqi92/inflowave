@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Divider, Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Info, FileDown, FileUp, Settings, Database, User, Bug, ChevronLeft, Home, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -17,7 +18,7 @@ import '@/styles/settings.css';
 
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+  const form = useForm();
   const [browserModalVisible, setBrowserModalVisible] = useState(false);
   const navigate = useNavigate();
   const { config, setConfig, setTheme, setLanguage, resetConfig } = useAppStore();

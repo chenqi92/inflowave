@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, Input, Select, Row, Col, Typography, Alert } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip, Popconfirm
@@ -75,8 +76,8 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [form] = Form.useForm();
-  const [settingsForm] = Form.useForm();
+  const form = useForm();
+  const settingsForm = useForm();
   const layoutRef = useRef<any>(null);
 
   // 网格布局断点

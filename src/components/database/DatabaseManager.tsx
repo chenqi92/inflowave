@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Progress } from '@/components/ui';
 // TODO: Replace these Ant Design components: Popconfirm, Tooltip
@@ -28,7 +29,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   const [storageInfo, setStorageInfo] = useState<DatabaseStorageInfo | null>(null);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<RetentionPolicy | null>(null);
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 加载数据库列表
   const loadDatabases = async () => {

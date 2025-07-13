@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Tooltip, Form, Input, Select, Empty } from '@/components/ui';
 import { Card, Space, Grid, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -61,7 +62,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const [draggedItem, setDraggedItem] = useState<GridItem | null>(null);
 
   const { createDashboard, updateDashboard, getCharts } = useVisualizationStore();
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 网格布局配置
   const gridConfig = {

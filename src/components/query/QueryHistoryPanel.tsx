@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Button, Input, Select, Tag, Typography, Form } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
@@ -31,7 +32,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   const [saveDialogVisible, setSaveDialogVisible] = useState(false);
   const [selectedQuery, setSelectedQuery] = useState<string>('');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 加载查询历史
   const loadHistory = async () => {

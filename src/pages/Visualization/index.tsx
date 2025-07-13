@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Row, Col, Button, Select, Form, Input, Typography, Alert, Spin } from '@/components/ui';
 import { Card, Space, toast } from '@/components/ui';
 
@@ -32,7 +33,7 @@ const Visualization: React.FC = () => {
   const [databases, setDatabases] = useState<string[]>([]);
   const [charts, setCharts] = useState<ChartConfig[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 加载数据库列表
   const loadDatabases = async () => {

@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
 import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider, List
@@ -34,7 +35,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState(database);
   const [databases, setDatabases] = useState<string[]>([]);
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 预定义的数据生成任务
   const generatorTasks: GeneratorTask[] = [

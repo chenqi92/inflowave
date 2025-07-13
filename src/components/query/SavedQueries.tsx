@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Input, Select, Tag, Form, Empty, Row, Col } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -41,7 +42,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   const [filterTag, setFilterTag] = useState<string>('');
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [form] = Form.useForm<SavedQueryFormData>();
+  const form = useForm<SavedQueryFormData>();
 
   // 加载保存的查询
   const loadSavedQueries = async () => {

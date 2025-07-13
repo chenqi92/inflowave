@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Select, Form, Tooltip, Switch, Slider, Input, Sheet } from '@/components/ui';
 import { Card, Space, ColorPicker } from '@/components/ui';
@@ -25,7 +26,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   onChartUpdate,
   initialChart,
   className}) => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [chartConfig, setChartConfig] = useState<Partial<ChartConfig>>(

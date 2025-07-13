@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, DialogContent, DialogHeader, DialogTitle, toast, Card } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { Database as DatabaseIcon, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
@@ -95,7 +96,7 @@ const Database: React.FC = () => {
     x: 0,
     y: 0,
     target: null});
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 加载数据库列表
   const loadDatabases = async () => {

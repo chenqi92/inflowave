@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { Modal, Form, Select, Button, Typography, Space, Row, Col, Alert, Tabs, InputNumber, Switch } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
@@ -26,7 +27,7 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
+  const form = useForm();
   const [browserModalVisible, setBrowserModalVisible] = useState(false);
   const { config, setConfig, setTheme, setLanguage, resetConfig } = useAppStore();
   

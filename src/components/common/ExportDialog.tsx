@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Button, Alert, Switch } from '@/components/ui';
 import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -26,7 +27,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   onClose,
   queryResult,
   defaultFilename}) => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [loading, setLoading] = useState(false);
 
   // 初始化表单值

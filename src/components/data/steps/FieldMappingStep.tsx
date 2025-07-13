@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useMemo } from 'react';
 import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
@@ -30,7 +31,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [form] = Form.useForm();
+  const form = useForm();
 
   // 预定义映射模板
   const mappingTemplates: MappingTemplate[] = [

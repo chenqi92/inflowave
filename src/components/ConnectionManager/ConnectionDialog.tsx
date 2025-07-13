@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Switch, Button, Alert, AlertDescription, Steps, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -30,7 +31,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   onCancel,
   onSuccess}) => {
   const { createConnection, editConnection, testConnection } = useConnection();
-  const [form] = Form.useForm<FormData>();
+  const form = useForm<FormData>();
   const [currentStep, setCurrentStep] = useState(0);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

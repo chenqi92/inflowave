@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio } from '@/components/ui';
 , Tooltip
@@ -27,8 +28,8 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [editingShortcut, setEditingShortcut] = useState<KeyboardShortcut | null>(null);
   const [showShortcutModal, setShowShortcutModal] = useState(false);
-  const [form] = Form.useForm();
-  const [shortcutForm] = Form.useForm();
+  const form = useForm();
+  const shortcutForm = useForm();
 
   // 加载用户偏好设置
   const loadPreferences = async () => {

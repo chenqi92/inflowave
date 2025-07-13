@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from '@/components/ui';
+import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from '@/components/ui';
 import {
   Database,
   Table,
@@ -580,62 +580,49 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
 
       {/* 主要内容：标签页 */}
       <div className="flex-1 overflow-hidden">
-        <Tabs 
-          defaultActiveKey="explorer" 
-          size="small"
-          className="h-full flex items-center gap-1 ml-3"
-          items={[
-            {
-              key: 'explorer',
-              label: (
-                <span >
-                  <Database className="w-4 h-4"  />
-                  数据源
-                </span>
-              ),
-              children: (
-                <div className="px-2 h-full overflow-auto">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Spin tip="加载中..." />
-                    </div>
-                  ) : treeData.length > 0 ? (
-                    <Tree
-                      showIcon
-                      showLine={{ showLeafIcon: false }}
-                      loadData={loadData}
-                      treeData={filterTreeData(treeData)}
-                      expandedKeys={expandedKeys}
-                      onExpand={handleExpand}
-                      onSelect={handleSelect}
-                      className="bg-transparent database-explorer-tree"
-                      titleRender={(nodeData) => nodeData.title}
-                    />
-                  ) : (
-                    <div className="text-center text-gray-500 mt-8">
-                      <Database className="w-4 h-4 text-2xl mb-2"   />
-                      <p>暂无连接</p>
-                      <p className="text-sm mt-1">请在连接管理中添加数据库连接</p>
-                    </div>
-                  )}
-                </div>
-              )},
-            {
-              key: 'favorites',
-              label: (
-                <span className="flex items-center gap-1 ml-3">
-                  <Key className="w-4 h-4"  />
-                  收藏
-                </span>
-              ),
-              children: (
-                <div className="p-4 text-center text-gray-500">
-                  <Key className="w-4 h-4 text-2xl mb-2"   />
-                  <p>暂无收藏项</p>
-                </div>
-              )},
-          ]}
-        />
+        <Tabs defaultValue="explorer" className="h-full">
+          <TabsList className="ml-3">
+            <TabsTrigger value="explorer" className="flex items-center gap-1">
+              <Database className="w-4 h-4" />
+              数据源
+            </TabsTrigger>
+            <TabsTrigger value="favorites" className="flex items-center gap-1">
+              <Key className="w-4 h-4" />
+              收藏
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="explorer" className="px-2 h-full overflow-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Spin tip="加载中..." />
+              </div>
+            ) : treeData.length > 0 ? (
+              <Tree
+                showIcon
+                showLine={{ showLeafIcon: false }}
+                loadData={loadData}
+                treeData={filterTreeData(treeData)}
+                expandedKeys={expandedKeys}
+                onExpand={handleExpand}
+                onSelect={handleSelect}
+                className="bg-transparent database-explorer-tree"
+                titleRender={(nodeData) => nodeData.title}
+              />
+            ) : (
+              <div className="text-center text-gray-500 mt-8">
+                <Database className="w-4 h-4 text-2xl mb-2" />
+                <p>暂无连接</p>
+                <p className="text-sm mt-1">请在连接管理中添加数据库连接</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="favorites" className="p-4 text-center text-gray-500">
+            <Key className="w-4 h-4 text-2xl mb-2" />
+            <p>暂无收藏项</p>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

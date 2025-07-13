@@ -143,7 +143,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       key: 'save-as',
       label: '另存为',
       icon: <Save className="w-4 h-4" />},
-    { type: 'divider' },
+    { key: 'divider-1', type: 'divider' },
     {
       key: 'import',
       label: '导入数据',
@@ -190,7 +190,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       key: 'dev-tools',
       label: '开发者工具',
       icon: <Wrench className="w-4 h-4" />},
-    { type: 'divider' },
+    { key: 'divider-2', type: 'divider' },
     {
       key: 'preferences',
       label: '首选项',

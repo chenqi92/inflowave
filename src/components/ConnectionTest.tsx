@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Button, Form, Input, InputNumber, Switch } from '@/components/ui';
 import { Card, toast } from '@/components/ui';
@@ -27,7 +28,7 @@ interface ConnectionTestResult {
 }
 
 const ConnectionTest: React.FC = () => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
 

@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Slider } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
@@ -12,12 +13,12 @@ import type { UserPreferences, KeyboardShortcut } from '@/types';
 const { Option } = Select;
 
 const UserPreferencesComponent: React.FC = () => {
-  const [form] = Form.useForm();
+  const form = useForm();
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(false);
   const [shortcutModalVisible, setShortcutModalVisible] = useState(false);
   const [editingShortcut, setEditingShortcut] = useState<KeyboardShortcut | null>(null);
-  const [shortcutForm] = Form.useForm();
+  const shortcutForm = useForm();
 
   // 加载用户偏好
   const loadPreferences = async () => {

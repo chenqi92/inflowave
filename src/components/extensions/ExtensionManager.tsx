@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -28,9 +29,9 @@ const ExtensionManager: React.FC = () => {
   const [automationModalVisible, setAutomationModalVisible] = useState(false);
   const [testModalVisible, setTestModalVisible] = useState(false);
 
-  const [apiForm] = Form.useForm();
-  const [webhookForm] = Form.useForm();
-  const [automationForm] = Form.useForm();
+  const apiForm = useForm();
+  const webhookForm = useForm();
+  const automationForm = useForm();
 
   // 加载数据
   const loadPlugins = async () => {

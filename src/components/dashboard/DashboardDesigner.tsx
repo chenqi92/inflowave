@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Typography, Form, Input, Select, Row, Col, Empty } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -36,8 +37,8 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null);
   const [showWidgetModal, setShowWidgetModal] = useState(false);
   const [showDashboardModal, setShowDashboardModal] = useState(false);
-  const [form] = Form.useForm();
-  const [dashboardForm] = Form.useForm();
+  const form = useForm();
+  const dashboardForm = useForm();
 
   // 加载仪表板
   const loadDashboard = async (id: string) => {

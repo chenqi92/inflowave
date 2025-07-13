@@ -1,3 +1,4 @@
+import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
@@ -56,7 +57,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   const [alertEvents, setAlertEvents] = useState<AlertEvent[]>([]);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [editingAlert, setEditingAlert] = useState<AlertRule | null>(null);
-  const [form] = Form.useForm();
+  const form = useForm();
   const intervalRef = useRef<number | null>(null);
 
   // 加载数据库列表
