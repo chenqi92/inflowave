@@ -41,7 +41,7 @@ const Visualization: React.FC = () => {
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
+        connection_id: activeConnectionId});
       setDatabases(dbList);
     } catch (error) {
       toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
@@ -54,7 +54,7 @@ const Visualization: React.FC = () => {
 
     try {
       const request: QueryRequest = {
-        connectionId: activeConnectionId,
+        connection_id: activeConnectionId,
         database: chartConfig.database,
         query: chartConfig.query};
 

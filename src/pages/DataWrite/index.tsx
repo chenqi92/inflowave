@@ -34,7 +34,7 @@ const DataWrite: React.FC = () => {
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
+        connection_id: activeConnectionId});
       setDatabases(dbList);
       if (dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -91,7 +91,7 @@ const DataWrite: React.FC = () => {
         timestamp: values.timestamp ? values.timestamp.toDate() : new Date()};
 
       const request: BatchWriteRequest = {
-        connectionId: activeConnectionId,
+        connection_id: activeConnectionId,
         database: selectedDatabase,
         points: [dataPoint],
         precision: values.precision || 'ms'};
@@ -132,7 +132,7 @@ const DataWrite: React.FC = () => {
         timestamp: point.timestamp ? point.timestamp.toDate() : new Date()}));
 
       const request: BatchWriteRequest = {
-        connectionId: activeConnectionId,
+        connection_id: activeConnectionId,
         database: selectedDatabase,
         points,
         precision: 'ms'};

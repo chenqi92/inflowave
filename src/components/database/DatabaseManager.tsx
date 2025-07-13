@@ -74,7 +74,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: selectedConnection});
+        connection_id: selectedConnection});
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -99,7 +99,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     setLoading(true);
     try {
       const policies = await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
-        connectionId: selectedConnection,
+        connection_id: selectedConnection,
         database: selectedDatabase});
       setRetentionPolicies(policies || []);
     } catch (error) {
@@ -115,7 +115,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
     try {
       const info = await safeTauriInvoke<DatabaseStorageInfo>('get_storage_analysis_report', {
-        connectionId: selectedConnection,
+        connection_id: selectedConnection,
         database: selectedDatabase});
       setStorageInfo(info);
     } catch (error) {
@@ -134,7 +134,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         default: values.default || false};
 
       await safeTauriInvoke('create_retention_policy', {
-        connectionId: selectedConnection,
+        connection_id: selectedConnection,
         database: selectedDatabase,
         policy: policyConfig});
 
@@ -153,7 +153,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
     try {
       await safeTauriInvoke('alter_retention_policy', {
-        connectionId: selectedConnection,
+        connection_id: selectedConnection,
         database: selectedDatabase,
         policyName: editingPolicy.name,
         updates: {
@@ -176,7 +176,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   const handleDeletePolicy = async (policyName: string) => {
     try {
       await safeTauriInvoke('drop_retention_policy', {
-        connectionId: selectedConnection,
+        connection_id: selectedConnection,
         database: selectedDatabase,
         policyName});
 

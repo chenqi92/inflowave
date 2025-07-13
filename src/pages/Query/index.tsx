@@ -37,7 +37,7 @@ const Query: React.FC = () => {
     setLoadingDatabases(true);
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
+        connection_id: activeConnectionId});
       setDatabases(dbList);
 
       // 如果有数据库且没有选中的，选择第一个
@@ -57,7 +57,7 @@ const Query: React.FC = () => {
 
     try {
       const measurementList = await safeTauriInvoke<string[]>('get_measurements', {
-        connectionId: activeConnectionId,
+        connection_id: activeConnectionId,
         database});
       setMeasurements(measurementList);
 
@@ -78,11 +78,11 @@ const Query: React.FC = () => {
     try {
       const [fieldList, tagList] = await Promise.all([
         safeTauriInvoke<string[]>('get_field_keys', {
-          connectionId: activeConnectionId,
+          connection_id: activeConnectionId,
           database,
           measurement}).catch(() => []),
         safeTauriInvoke<string[]>('get_tag_keys', {
-          connectionId: activeConnectionId,
+          connection_id: activeConnectionId,
           database,
           measurement}).catch(() => []),
       ]);
@@ -233,7 +233,7 @@ const Query: React.FC = () => {
 
     try {
       const request: QueryRequest = {
-        connectionId: activeConnectionId,
+        connection_id: activeConnectionId,
         database: selectedDatabase,
         query: query.trim()};
 

@@ -55,7 +55,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
 
   const handleTestConnection = async () => {
     try {
-      const result = await safeTauriInvoke('test_connection', { connectionId: connection.id });
+      const result = await safeTauriInvoke('test_connection', { connection_id: connection.id });
       if (result) {
         toast({ title: "成功", description: "连接测试成功" });
       } else {
@@ -90,7 +90,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     }
 
     try {
-      const databases = await invoke<string[]>('get_databases', { connectionId: connection.id });
+      const databases = await invoke<string[]>('get_databases', { connection_id: connection.id });
       Modal.info({
         title: `数据库列表 - ${connection.name}`,
         content: (

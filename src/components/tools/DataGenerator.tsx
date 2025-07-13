@@ -248,7 +248,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
+        connection_id: activeConnectionId});
       setDatabases(dbList);
       if (dbList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(dbList[0]);
@@ -290,7 +290,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
           const batch = dataPoints.slice(j * batchSize, (j + 1) * batchSize);
           
           const request: BatchWriteRequest = {
-            connectionId: activeConnectionId,
+            connection_id: activeConnectionId,
             database: selectedDatabase,
             points: batch,
             precision: 'ms'};
@@ -354,7 +354,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       for (const task of generatorTasks) {
         await safeTauriInvoke('execute_query', {
           request: {
-            connectionId: activeConnectionId,
+            connection_id: activeConnectionId,
             database: selectedDatabase,
             query: `DROP MEASUREMENT "${task.measurement}"`}
         });
