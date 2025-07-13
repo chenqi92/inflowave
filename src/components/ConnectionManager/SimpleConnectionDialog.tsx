@@ -347,7 +347,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       title={isEditing ? '编辑连接' : '新建连接'}
       open={visible}
       onCancel={onCancel}
-      width={600}
+      width={800}
       footer={null}
       destroyOnClose
       zIndex={1200}

@@ -62,8 +62,8 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
     className, 
     collapsed = false, 
     collapsible = false,
-    width = 200,
-    collapsedWidth = 80,
+    width = 280,
+    collapsedWidth = 100,
     onCollapse,
     children, 
     ...props 

@@ -689,7 +689,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         open={showAlertModal}
         onCancel={() => setShowAlertModal(false)}
         footer={null}
-        width={1000}
+        width={1200}
       >
         <Table
           columns={alertColumns}
@@ -705,7 +705,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
         open={showSlowQueryModal}
         onCancel={() => setShowSlowQueryModal(false)}
         footer={null}
-        width={1200}
+        width={1400}
       >
         <Table
           columns={slowQueryColumns}

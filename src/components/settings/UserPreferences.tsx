@@ -346,6 +346,7 @@ const UserPreferencesComponent: React.FC = () => {
       <Modal
         title="编辑快捷键"
         open={shortcutModalVisible}
+        width={600}
         onCancel={() => {
           setShortcutModalVisible(false);
           setEditingShortcut(null);

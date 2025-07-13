@@ -132,7 +132,12 @@ const Connections: React.FC = () => {
         showMessage.success('连接配置已更新');
       } else {
         // 创建新连接
-        const connectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+        const connectionWithTimestamp = {
+          ...connection,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        const connectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
         if (connectionId) {
           const newConnection = { ...connection, id: connectionId };
           addConnection(newConnection);
@@ -169,29 +174,6 @@ const Connections: React.FC = () => {
         return;
       }
 
-      // 检查后端是否存在该连接
-      try {
-        const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
-        const backendConnection = backendConnections?.find(c => c.id === connectionId);
-        
-        if (!backendConnection) {
-          showMessage.error('后端连接不存在，正在重新创建...');
-          // 重新创建连接到后端
-          const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
-          if (newConnectionId && newConnectionId !== connectionId) {
-            // 更新前端连接ID
-            updateConnection(connectionId, { id: newConnectionId });
-            showMessage.success('连接已重新创建，请重试');
-            await loadConnections();
-            return;
-          }
-        }
-      } catch (backendError) {
-        console.error('检查后端连接失败:', backendError);
-        showMessage.error('无法验证连接状态，请检查后端服务');
-        return;
-      }
-
       const { connectToDatabase, disconnectFromDatabase } = useConnectionStore.getState();
       const status = connectionStatuses[connectionId];
       
@@ -199,9 +181,37 @@ const Connections: React.FC = () => {
         await disconnectFromDatabase(connectionId);
         showMessage.success('连接已断开');
       } else {
-        await connectToDatabase(connectionId);
-        showMessage.success('连接成功');
-        handleConnectionSelect(connectionId);
+        try {
+          await connectToDatabase(connectionId);
+          showMessage.success('连接成功');
+          handleConnectionSelect(connectionId);
+        } catch (connectError) {
+          // 如果连接失败，尝试重新创建连接配置
+          console.warn('直接连接失败，尝试重新创建连接配置:', connectError);
+          try {
+            const connectionWithTimestamp = {
+              ...connection,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
+            if (newConnectionId) {
+              // 使用新的连接ID重新尝试连接
+              await connectToDatabase(newConnectionId);
+              showMessage.success('连接成功');
+              
+              // 更新前端连接ID（如果发生了变化）
+              if (newConnectionId !== connectionId) {
+                updateConnection(connectionId, { ...connection, id: newConnectionId });
+              }
+              
+              handleConnectionSelect(newConnectionId);
+            }
+          } catch (recreateError) {
+            console.error('重新创建连接失败:', recreateError);
+            showMessage.error(`连接失败: ${recreateError}`);
+          }
+        }
       }
     } catch (error) {
       console.error('连接操作失败:', error);

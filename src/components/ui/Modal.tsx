@@ -19,7 +19,7 @@ const Modal: React.FC<ModalProps> = ({
   title,
   children,
   footer,
-  width = 520,
+  width = 720,
   className,
   maskClosable = true,
 }) => {

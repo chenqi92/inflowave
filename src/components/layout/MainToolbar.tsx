@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
+import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
 
 interface MainToolbarProps {
@@ -36,12 +37,33 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const { activeConnectionId, connections } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
 
-  const handleConnectionMenuClick = ({ key }: { key: string }) => {
-    // 选择连接
-    const { setActiveConnectionId } = useConnectionStore.getState();
-    setActiveConnectionId(key);
+  const handleConnectionMenuClick = async ({ key }: { key: string }) => {
+    // 选择并连接到数据库
+    const { setActiveConnection, connectToDatabase, connections } = useConnectionStore.getState();
+    const connection = connections.find(c => c.id === key);
+    
+    if (!connection) {
+      showMessage.error('连接配置不存在');
+      return;
+    }
+    
+    setConnecting(true);
+    try {
+      setActiveConnection(key);
+      await connectToDatabase(key);
+      showMessage.success(`已连接到 ${connection.name}`);
+      console.log(`成功连接到: ${key}`);
+    } catch (error) {
+      console.error('连接失败:', error);
+      showMessage.error(`连接 ${connection.name} 失败: ${error}`);
+      // 如果连接失败，清除活跃连接
+      setActiveConnection(null);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const connectionMenuItems: MenuProps['items'] = [
@@ -140,7 +162,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         break;
       case 'dev-tools':
         // 开发者工具
-        navigate('/dev-tools');
+        onViewChange?.('dev-tools');
         break;
       case 'preferences':
         // 首选项
@@ -189,9 +211,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             type={activeConnection ? 'primary' : 'default'}
             icon={activeConnection ? <LinkOutlined /> : <DisconnectOutlined />}
             className="h-8"
+            loading={connecting}
           >
-            {activeConnection ? activeConnection.name : '选择连接'}
-            {activeConnection && (
+            {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
+            {activeConnection && !connecting && (
               <Badge 
                 status="success" 
                 className="ml-1" 

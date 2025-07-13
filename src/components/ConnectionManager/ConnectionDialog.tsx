@@ -284,7 +284,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       title={isEditing ? '编辑连接' : '新建连接'}
       open={visible}
       onCancel={onCancel}
-      width={600}
+      width={800}
       footer={null}
       destroyOnClose
     >

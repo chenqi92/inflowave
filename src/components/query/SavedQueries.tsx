@@ -400,7 +400,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           open={visible}
           onCancel={onClose}
           footer={null}
-          width={800}
+          width={1000}
           style={{ top: 20 }}
         >
           {content}
@@ -431,7 +431,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
         open={showCreateModal || !!editingQuery}
         onCancel={handleCancelEdit}
         footer={null}
-        width={600}
+        width={800}
         destroyOnClose
       >
         {queryForm}

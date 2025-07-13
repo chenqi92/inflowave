@@ -66,7 +66,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ collapsed = false, queryResul
     dataIndex: col,
     key: col,
     ellipsis: true,
-    width: 120,
+    width: 150,
   })) || [];
   
   // 将 InfluxDB 的结果转换为表格数据格式

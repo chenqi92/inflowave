@@ -15,11 +15,11 @@ export const antdTheme: ThemeConfig = {
     
     // 字体
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    fontSize: 14,
-    
+    fontSize: 15,
+
     // 间距
-    padding: 16,
-    margin: 16,
+    padding: 20,
+    margin: 20,
     
     // 阴影
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
@@ -30,7 +30,7 @@ export const antdTheme: ThemeConfig = {
   components: {
     Button: {
       borderRadius: 6,
-      controlHeight: 40,
+      controlHeight: 44,
       fontWeight: 500,
     },
     Table: {
@@ -40,15 +40,15 @@ export const antdTheme: ThemeConfig = {
     },
     Card: {
       borderRadius: 8,
-      paddingLG: 24,
+      paddingLG: 28,
     },
     Input: {
       borderRadius: 6,
-      controlHeight: 40,
+      controlHeight: 44,
     },
     Select: {
       borderRadius: 6,
-      controlHeight: 40,
+      controlHeight: 44,
     },
     Tree: {
       borderRadius: 6,

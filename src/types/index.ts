@@ -11,6 +11,9 @@ export interface ConnectionConfig {
   database?: string;
   ssl: boolean;
   timeout: number;
+  created_at?: string;
+  updated_at?: string;
+  // 保持向后兼容性
   createdAt?: Date;
   updatedAt?: Date;
 }

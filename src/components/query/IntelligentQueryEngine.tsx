@@ -725,7 +725,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       </ul>
                     </div>
                   ),
-                  width: 600,
+                  width: 800,
                 });
               }}
               size="small"

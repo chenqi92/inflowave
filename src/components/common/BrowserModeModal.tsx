@@ -43,7 +43,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
       open={visible}
       onCancel={handleClose}
       footer={null}
-      width={680}
+      width={800}
       centered
       closeIcon={<CloseOutlined />}
     >

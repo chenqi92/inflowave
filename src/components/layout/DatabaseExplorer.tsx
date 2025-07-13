@@ -68,7 +68,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         if (connection) {
           try {
             // 重新创建连接到后端
-            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
+            const connectionWithTimestamp = {
+              ...connection,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
             console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
             
             // 如果ID发生变化，需要通知用户

@@ -368,7 +368,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         open={showChartModal}
         onCancel={() => setShowChartModal(false)}
         footer={null}
-        width={600}
+        width={800}
       >
         <div className="space-y-4">
           <div className="text-sm text-gray-600 mb-4">选择一个已创建的图表添加到仪表板</div>

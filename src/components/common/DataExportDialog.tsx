@@ -182,7 +182,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       title="数据导出"
       open={visible}
       onCancel={onClose}
-      width={700}
+      width={900}
       footer={[
         <Button key="cancel" onClick={onClose}>
           取消

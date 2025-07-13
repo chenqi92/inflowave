@@ -14,7 +14,7 @@ const ConnectionModal: React.FC<ConnectionModalProps> = ({ visible, onClose }) =
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={1200}
+      width={1400}
       style={{ top: 20 }}
       bodyStyle={{ padding: 0, maxHeight: 'calc(100vh - 120px)', overflow: 'auto' }}
       zIndex={1000}

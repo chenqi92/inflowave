@@ -706,7 +706,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
       title="高级数据导入"
       open={visible}
       onCancel={onClose}
-      width={1200}
+      width={1400}
       style={{ top: 20 }}
       footer={null}
     >

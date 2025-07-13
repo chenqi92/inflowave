@@ -20,7 +20,12 @@ export class ConnectionAPI {
    * 创建新连接
    */
   static async createConnection(config: ConnectionConfig): Promise<string> {
-    return safeTauriInvoke<string>('create_connection', { config });
+    const configWithTimestamp = {
+      ...config,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    return safeTauriInvoke<string>('create_connection', { config: configWithTimestamp });
   }
 
   /**

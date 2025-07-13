@@ -674,7 +674,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         open={visible}
         onCancel={onClose}
         footer={null}
-        width={800}
+        width={1000}
         styles={{
           body: { padding: '16px 0' },
           header: { borderBottom: '1px solid #f0f0f0', marginBottom: 0 },

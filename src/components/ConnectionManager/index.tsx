@@ -68,35 +68,35 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         return;
       }
 
-      // 检查后端是否存在该连接
-      try {
-        const backendConnections = await safeTauriInvoke<any[]>('get_connections');
-        const backendConnection = backendConnections?.find((c: any) => c.id === connectionId);
-        
-        if (!backendConnection) {
-          showMessage.error('后端连接不存在，正在重新创建...');
-          // 重新创建连接到后端
-          const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connection });
-          if (newConnectionId && newConnectionId !== connectionId) {
-            showMessage.success('连接已重新创建，请重新加载页面');
-            refreshAllStatuses();
-            return;
-          }
-        }
-      } catch (backendError) {
-        console.error('检查后端连接失败:', backendError);
-        showMessage.error('无法验证连接状态，请检查后端服务');
-        return;
-      }
-
       const status = connectionStatuses[connectionId];
       if (status?.status === 'connected') {
         await disconnectFromDatabase(connectionId);
         showMessage.success('连接已断开');
       } else {
-        await connectToDatabase(connectionId);
-        showMessage.success('连接成功');
-        onConnectionSelect?.(connectionId);
+        try {
+          await connectToDatabase(connectionId);
+          showMessage.success('连接成功');
+          onConnectionSelect?.(connectionId);
+        } catch (connectError) {
+          // 如果连接失败，尝试重新创建连接配置
+          console.warn('直接连接失败，尝试重新创建连接配置:', connectError);
+          try {
+            const connectionWithTimestamp = {
+              ...connection,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
+            if (newConnectionId) {
+              await connectToDatabase(newConnectionId);
+              showMessage.success('连接成功');
+              onConnectionSelect?.(newConnectionId);
+            }
+          } catch (recreateError) {
+            console.error('重新创建连接失败:', recreateError);
+            showMessage.error(`连接失败: ${recreateError}`);
+          }
+        }
       }
     } catch (error) {
       console.error('连接操作失败:', error);

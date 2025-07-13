@@ -13,6 +13,7 @@ import DatabasePage from '../../pages/Database';
 import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
+import DevTools from '../../pages/DevTools';
 
 const { Header, Sider, Content } = Layout;
 
@@ -23,8 +24,8 @@ export interface DataGripStyleLayoutProps {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(false);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(300);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(380);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(380);
   const [currentView, setCurrentView] = useState('datasource');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -67,6 +68,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             <PerformancePage />
           </div>
         );
+      case 'dev-tools':
+        return (
+          <div className="h-full">
+            <DevTools />
+          </div>
+        );
       case 'query':
       default:
         return (
@@ -91,7 +98,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                   
                   const handleMouseMove = (e: MouseEvent) => {
                     const deltaY = startY - e.clientY;
-                    const newHeight = Math.max(200, Math.min(600, startHeight + deltaY));
+                    const newHeight = Math.max(250, Math.min(700, startHeight + deltaY));
                     setBottomPanelHeight(newHeight);
                   };
                   
