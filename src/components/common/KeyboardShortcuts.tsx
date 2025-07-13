@@ -103,7 +103,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
         </div>
       }
       open={visible}
-      onOpenChange={(open) => !open && (onClose)()}
+      onOpenChange={(open) => { if (!open) onClose(); }}
       footer={null}
       width={800}
       style={{ top: 20 }}

@@ -98,7 +98,7 @@ const Dashboard: React.FC = () => {
       />
 
       <Tabs
-        activeKey={activeTab}
+        value={activeTab}
         onValueChange={setActiveTab}
         items={[
           {

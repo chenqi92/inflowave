@@ -345,7 +345,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
         </div>
       ) : (
         <Tabs
-          activeKey={activeTab}
+          value={activeTab}
           onValueChange={setActiveTab}
           items={tabItems}
           style={{ height: '100%' }}

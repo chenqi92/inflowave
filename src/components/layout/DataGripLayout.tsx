@@ -325,7 +325,7 @@ const DataGripLayout: React.FC = () => {
           <Card
             title={
               <Tabs
-                activeKey={leftPanelTab}
+                value={leftPanelTab}
                 onValueChange={setLeftPanelTab}
                 size='small'
                 items={[

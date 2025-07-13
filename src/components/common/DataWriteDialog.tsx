@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from '@/components/ui';
+import { Form, Input, Select, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
 import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -278,7 +278,12 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
 
           {/* 数据输入 */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <Tabs.TabPane tab="手动输入" key="manual">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manual">手动输入</TabsTrigger>
+              <TabsTrigger value="upload">文件上传</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="manual">
               <FormItem name="data"
                 label={
                   <div className="flex gap-2">
@@ -302,9 +307,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                   )}
                 </FormItem>
               </FormItem>
-            </Tabs.TabPane>
+            </TabsContent>
 
-            <Tabs.TabPane tab="文件上传" key="upload">
+            <TabsContent value="upload">
               <Upload.Dragger
                 beforeUpload={handleFileUpload}
                 accept=".csv,.json,.txt"
@@ -317,7 +322,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                   </p>
                 </div>
               </Upload.Dragger>
-            </Tabs.TabPane>
+            </TabsContent>
           </Tabs>
 
           {/* 高级选项 */}

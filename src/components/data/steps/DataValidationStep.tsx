@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs, Modal, Tooltip } from '@/components/ui';
+import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs, TabsList, TabsTrigger, TabsContent, Modal, Tooltip } from '@/components/ui';
 // TODO: Replace these Ant Design components: List
 import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Info, RefreshCw, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
@@ -7,7 +7,6 @@ import { ImportWizardData } from '../SmartImportWizard';
 import { DataValidator, DataQualityAnalyzer, DataQualityReport, QualityIssue } from '../DataValidationUtils';
 
 const { Text, Title } = Typography;
-const { TabPane } = Tabs;
 
 interface DataValidationStepProps {
   wizardData: ImportWizardData;
@@ -504,21 +503,27 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
 
       {/* 验证结果 */}
       {wizardData.qualityReport && (
-        <Tabs defaultActiveKey="overview">
-          <TabPane tab="质量概览" key="overview">
+        <Tabs defaultValue="overview">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">质量概览</TabsTrigger>
+            <TabsTrigger value="issues">问题分析</TabsTrigger>
+            <TabsTrigger value="fields">字段验证</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
             <div className="space-y-4">
               {renderQualityOverview()}
               {renderQualitySuggestions()}
             </div>
-          </TabPane>
-          
-          <TabPane tab="问题分析" key="issues">
+          </TabsContent>
+
+          <TabsContent value="issues">
             {renderIssuesList()}
-          </TabPane>
-          
-          <TabPane tab="字段验证" key="fields">
+          </TabsContent>
+
+          <TabsContent value="fields">
             {renderFieldValidation()}
-          </TabPane>
+          </TabsContent>
         </Tabs>
       )}
 

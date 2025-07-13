@@ -373,7 +373,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
             </div>
           }
           open={visible}
-          onOpenChange={(open) => !open && (onClose)()}
+          onOpenChange={(open) => { if (!open) onClose(); }}
           footer={null}
           width={1000}
           style={{ top: 20 }}>
@@ -402,7 +402,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           </div>
         }
         open={showCreateModal || !!editingQuery}
-        onOpenChange={(open) => !open && (handleCancelEdit)()}
+        onOpenChange={(open) => { if (!open) handleCancelEdit(); }}
         footer={null}
         width={800}
         destroyOnClose>

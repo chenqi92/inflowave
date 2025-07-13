@@ -441,7 +441,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           description={`"${closingTab.title}" 已修改，是否保存更改？`}
           open={!!closingTab}
           onConfirm={saveAndCloseTab}
-          onOpenChange={(open) => !open && (closeTabWithoutSaving)()}
+          onOpenChange={(open) => { if (!open) closeTabWithoutSaving(); }}
           okText="保存"
           cancelText="不保存"
         >

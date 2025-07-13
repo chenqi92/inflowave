@@ -441,7 +441,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     return (
       <Tabs
         type="editable-add"
-        activeKey={activeTabId}
+        value={activeTabId}
         items={tabItems}
         onValueChange={setActiveTabId}
         onEdit={(targetKey, action) => {

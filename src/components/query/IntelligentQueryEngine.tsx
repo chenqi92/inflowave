@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table, Collapse, Panel } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table, Collapse, Panel } from '@/components/ui';
 // TODO: Replace these Ant Design components: Descriptions, List, Tooltip, Drawer, Timeline, Badge
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
@@ -668,42 +668,39 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           </div>
         }
       >
-        <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
-          <Tabs.TabPane 
-            tab={
-              <span>
-                <Rocket className="w-4 h-4"  />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="optimizer">
+              <span className="flex items-center gap-2">
+                <Rocket className="w-4 h-4" />
                 查询优化器
               </span>
-            } 
-            key="optimizer"
-          >
-            {renderOptimizer()}
-          </Tabs.TabPane>
-          
-          <Tabs.TabPane 
-            tab={
-              <span>
-                <TrendingUp className="w-4 h-4"  />
+            </TabsTrigger>
+            <TabsTrigger value="performance">
+              <span className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
                 性能监控
               </span>
-            } 
-            key="performance"
-          >
-            {renderPerformanceMonitor()}
-          </Tabs.TabPane>
-          
-          <Tabs.TabPane 
-            tab={
-              <span>
-                <History className="w-4 h-4"  />
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <span className="flex items-center gap-2">
+                <History className="w-4 h-4" />
                 优化历史
               </span>
-            } 
-            key="history"
-          >
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="optimizer">
+            {renderOptimizer()}
+          </TabsContent>
+
+          <TabsContent value="performance">
+            {renderPerformanceMonitor()}
+          </TabsContent>
+
+          <TabsContent value="history">
             {renderOptimizationHistory()}
-          </Tabs.TabPane>
+          </TabsContent>
         </Tabs>
       </Card>
 

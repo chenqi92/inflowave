@@ -680,15 +680,23 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       >
         <Spin spinning={loading}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <Tabs.TabPane tab="统计概览" key="overview">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">统计概览</TabsTrigger>
+              <TabsTrigger value="distribution">数据分布</TabsTrigger>
+              <TabsTrigger value="quality">质量报告</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview">
               {renderOverview()}
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="数据分布" key="distribution">
+            </TabsContent>
+
+            <TabsContent value="distribution">
               {renderDistribution()}
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="质量报告" key="quality">
+            </TabsContent>
+
+            <TabsContent value="quality">
               {renderQualityReport()}
-            </Tabs.TabPane>
+            </TabsContent>
           </Tabs>
         </Spin>
       </Card>

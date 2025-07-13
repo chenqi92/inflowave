@@ -611,7 +611,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
   return (
     <>
-      <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden settings-modal">
           <DialogHeader className="border-b border-gray-200 pb-4">
             <DialogTitle className="flex items-center space-x-2">

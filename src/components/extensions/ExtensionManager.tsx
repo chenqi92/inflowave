@@ -267,10 +267,9 @@ const ExtensionManager: React.FC = () => {
               )}
             />
           </Card>
-        </Tabs.TabPane>
+        </TabsContent>
 
-        {/* API 集成 */}
-        <Tabs.TabPane tab={<><Webhook className="w-4 h-4"  /> API 集成</>} key="api">
+        <TabsContent value="api">
           <Card
             title="API 集成"
             extra={
@@ -309,10 +308,9 @@ const ExtensionManager: React.FC = () => {
               )}
             />
           </Card>
-        </Tabs.TabPane>
+        </TabsContent>
 
-        {/* Webhook */}
-        <Tabs.TabPane tab={<><Link className="w-4 h-4"  /> Webhook</>} key="webhooks">
+        <TabsContent value="webhooks">
           <Card
             title="Webhook 配置"
             extra={
@@ -349,10 +347,9 @@ const ExtensionManager: React.FC = () => {
               )}
             />
           </Card>
-        </Tabs.TabPane>
+        </TabsContent>
 
-        {/* 自动化规则 */}
-        <Tabs.TabPane tab={<><RobotOutlined /> 自动化</>} key="automation">
+        <TabsContent value="automation">
           <Card
             title="自动化规则"
             extra={
@@ -398,7 +395,7 @@ const ExtensionManager: React.FC = () => {
               )}
             />
           </Card>
-        </Tabs.TabPane>
+        </TabsContent>
       </Tabs>
 
       {/* API 集成创建对话框 */}
