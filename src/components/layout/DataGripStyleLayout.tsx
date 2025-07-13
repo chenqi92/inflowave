@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/utils/cn';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
@@ -23,8 +24,6 @@ export interface DataGripStyleLayoutProps {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(false);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(380);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(380);
   const [currentView, setCurrentView] = useState('datasource');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -76,56 +75,36 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       case 'query':
       default:
         return (
-          <>
+          <ResizablePanelGroup direction="vertical">
             {/* 上半部分：编辑器 */}
-            <div 
+            <ResizablePanel
+              defaultSize={bottomPanelCollapsed ? 100 : 60}
+              minSize={30}
               className="bg-white overflow-hidden"
-              style={{ 
-                height: bottomPanelCollapsed ? '100%' : `calc(100% - ${bottomPanelHeight}px - 4px)` 
-              }}
             >
               <TabEditor onQueryResult={setQueryResult} />
-            </div>
+            </ResizablePanel>
 
-            {/* 分割线 */}
+            {/* 分割线和下半部分：结果面板 */}
             {!bottomPanelCollapsed && (
-              <div 
-                className="h-1 bg-gray-200 cursor-row-resize hover:bg-gray-300 transition-colors"
-                onMouseDown={(e) => {
-                  const startY = e.clientY;
-                  const startHeight = bottomPanelHeight;
-                  
-                  const handleMouseMove = (e: MouseEvent) => {
-                    const deltaY = startY - e.clientY;
-                    const newHeight = Math.max(250, Math.min(700, startHeight + deltaY));
-                    setBottomPanelHeight(newHeight);
-                  };
-                  
-                  const handleMouseUp = () => {
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                  };
-                  
-                  document.addEventListener('mousemove', handleMouseMove);
-                  document.addEventListener('mouseup', handleMouseUp);
-                }}
-              />
-            )}
+              <>
+                <ResizableHandle withHandle className="h-2 bg-gray-200 hover:bg-gray-300 transition-colors" />
 
-            {/* 下半部分：结果面板 */}
-            {!bottomPanelCollapsed && (
-              <div 
-                className="bg-gray-50 border-t border-gray-200 overflow-hidden"
-                style={{ height: `${bottomPanelHeight}px` }}
-              >
-                <ResultPanel 
-                  collapsed={bottomPanelCollapsed} 
-                  queryResult={queryResult} 
-                  onClearResult={() => setQueryResult(null)}
-                />
-              </div>
+                <ResizablePanel
+                  defaultSize={40}
+                  minSize={20}
+                  maxSize={70}
+                  className="bg-gray-50 border-t border-gray-200 overflow-hidden"
+                >
+                  <ResultPanel
+                    collapsed={bottomPanelCollapsed}
+                    queryResult={queryResult}
+                    onClearResult={() => setQueryResult(null)}
+                  />
+                </ResizablePanel>
+              </>
             )}
-          </>
+          </ResizablePanelGroup>
         );
     }
   };
@@ -140,34 +119,46 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         />
       </header>
 
-      {/* 主要内容区域 */}
-      <div className="flex-1 flex">
-        {/* 左侧数据库面板 */}
-        <div
-          className={`bg-white border-r border-gray-200 transition-all duration-200 ${
-            leftPanelCollapsed ? 'w-12' : `w-[${leftPanelWidth}px]`
-          }`}
-        >
-          <DatabaseExplorer
-            collapsed={leftPanelCollapsed}
-            refreshTrigger={refreshTrigger}
-          />
-          {/* 折叠按钮 */}
-          <button
-            className="absolute bottom-4 left-4 p-1 bg-gray-100 hover:bg-gray-200 rounded"
-            onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+      {/* 主要内容区域 - 使用可调整大小的面板 */}
+      <div className="flex-1">
+        <ResizablePanelGroup direction="horizontal">
+          {/* 左侧数据库面板 */}
+          <ResizablePanel
+            defaultSize={25}
+            minSize={15}
+            maxSize={40}
+            collapsible={true}
+            collapsedSize={3}
+            className={cn(
+              "bg-white border-r border-gray-200 transition-all duration-200",
+              leftPanelCollapsed && "min-w-12"
+            )}
           >
-            {leftPanelCollapsed ? '→' : '←'}
-          </button>
-        </div>
+            <div className="h-full relative">
+              <DatabaseExplorer
+                collapsed={leftPanelCollapsed}
+                refreshTrigger={refreshTrigger}
+              />
+              {/* 折叠按钮 */}
+              <button
+                className="absolute bottom-4 left-4 p-1 bg-gray-100 hover:bg-gray-200 rounded z-10"
+                onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+              >
+                {leftPanelCollapsed ? '→' : '←'}
+              </button>
+            </div>
+          </ResizablePanel>
 
-        {/* 右侧主要工作区域 */}
-        <div className="flex-1 flex flex-col">
-          {/* 主要内容区域 */}
-          <main className="flex-1 bg-white flex flex-col">
-            {renderMainContent()}
-          </main>
-        </div>
+          {/* 分割线 */}
+          <ResizableHandle withHandle className="w-2 bg-gray-200 hover:bg-gray-300 transition-colors" />
+
+          {/* 右侧主要工作区域 */}
+          <ResizablePanel defaultSize={75} minSize={50}>
+            <main className="h-full bg-white flex flex-col">
+              {renderMainContent()}
+            </main>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );
