@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Divider, Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Info, FileDown, FileUp, Settings, Database, User, Bug, ChevronLeft, Home, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -351,7 +351,7 @@ const Settings: React.FC = () => {
                       </Col>
                     </Row>
 
-                    <Divider />
+                    <Separator />
 
                     <div className="pt-4 border-t border">
                       <FormItem className="mb-0">
@@ -452,7 +452,7 @@ const Settings: React.FC = () => {
                         </Button>
                       </div>
 
-                      <Divider />
+                      <Separator />
 
                       <div>
                         <Text strong>重置所有设置</Text>
@@ -532,7 +532,7 @@ const Settings: React.FC = () => {
                     </Col>
                   </Row>
 
-                  <Divider />
+                  <Separator />
 
                   <Alert
                     message="功能特性"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List, Typography } from '@/components/ui';
+import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List, Typography, Separator } from '@/components/ui';
 
 import { BranchesOutlined, TargetOutlined } from '@/components/ui';
 import { Zap, Clock, Database, BarChart, TrendingUp, PieChart, Info, Lightbulb, Flame, Rocket, Trophy, Eye, Settings, RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
@@ -417,7 +417,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
           <TabPane tab="概览" key="overview">
             <div className="space-y-6">
               {renderPerformanceMetrics()}
-              <Divider />
+              <Separator />
               <Row gutter={[16, 16]}>
                 <Col span={12}>
                   <Card title="查询对比" size="small">

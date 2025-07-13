@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Form, FormItem, FormLabel, FormControl, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Space, Row, Col, Alert, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, toast, Divider, Input, Popconfirm } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Form, FormItem, FormLabel, FormControl, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Space, Row, Col, Alert, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, toast, Input, Popconfirm, Separator } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell, FileDown, FileUp } from 'lucide-react';
@@ -321,7 +321,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </Col>
             </Row>
 
-            <Divider />
+            <Separator />
 
             <div className="flex justify-end">
               <div className="flex gap-2">

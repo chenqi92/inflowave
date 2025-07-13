@@ -132,76 +132,52 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     }
   };
 
-  const fileMenuItems = [
+  // 工具菜单项
+  const toolsMenuItems = [
     {
-      key: 'new-query',
-      label: '新建查询',
-      icon: <FolderOpen className="w-4 h-4" />},
+      key: 'console',
+      icon: <Bug className="w-4 h-4" />,
+      label: '控制台',
+      shortcut: 'Ctrl+`'
+    },
     {
-      key: 'open',
-      label: '打开文件',
-      icon: <FolderOpen className="w-4 h-4" />},
+      key: 'dev-tools',
+      icon: <Wrench className="w-4 h-4" />,
+      label: '开发者工具',
+      shortcut: 'F12'
+    },
+    { key: 'divider-7', type: 'divider' },
     {
-      key: 'save',
-      label: '保存',
-      icon: <Save className="w-4 h-4" />},
+      key: '/extensions',
+      icon: <HelpCircle className="w-4 h-4" />,
+      label: '扩展管理'
+    },
     {
-      key: 'save-as',
-      label: '另存为',
-      icon: <Save className="w-4 h-4" />},
-    { key: 'divider-1', type: 'divider' },
-    {
-      key: 'import',
-      label: '导入数据',
-      icon: <FileUp className="w-4 h-4" />},
-    {
-      key: 'export',
-      label: '导出数据',
-      icon: <FileDown className="w-4 h-4" />},
+      key: '/settings',
+      icon: <Settings className="w-4 h-4" />,
+      label: '首选项',
+      shortcut: 'Ctrl+,'
+    },
   ];
 
   const handleToolsMenuClick = ({ key }: { key: string }) => {
     switch (key) {
-      case 'query-history':
-        // 查询历史
-        console.log('打开查询历史');
-        break;
       case 'console':
-        // 控制台
         console.log('打开控制台');
         break;
       case 'dev-tools':
-        // 开发者工具
-        onViewChange?.('dev-tools');
+        console.log('打开开发者工具');
         break;
-      case 'preferences':
-        // 首选项
+      case '/extensions':
+        navigate('/extensions');
+        break;
+      case '/settings':
         setSettingsVisible(true);
         break;
       default:
         console.log('未处理的工具菜单项:', key);
     }
   };
-
-  const toolsMenuItems = [
-    {
-      key: 'query-history',
-      label: '查询历史',
-      icon: <History className="w-4 h-4" />},
-    {
-      key: 'console',
-      label: '控制台',
-      icon: <Bug className="w-4 h-4" />},
-    {
-      key: 'dev-tools',
-      label: '开发者工具',
-      icon: <Wrench className="w-4 h-4" />},
-    { key: 'divider-2', type: 'divider' },
-    {
-      key: 'preferences',
-      label: '首选项',
-      icon: <Settings className="w-4 h-4" />},
-  ];
 
   const handleTimeRangeChange = (range: TimeRange) => {
     setSelectedTimeRange(range);

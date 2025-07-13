@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch, Separator, Textarea } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Option, Button, Alert, Switch, Separator, Textarea, Row, Col, InputNumber } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, Info, FileText, Code, FileSpreadsheet } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -264,7 +264,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         </Row>
 
         {/* 高级选项 */}
-        <Divider>高级选项</Divider>
+        <Separator />
         
         <Row gutter={16}>
           <Col span={8}>

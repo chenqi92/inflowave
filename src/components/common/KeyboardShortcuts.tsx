@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Typography, Tag, Modal } from '@/components/ui';
+import { Table, Typography, Tag, Modal, Separator } from '@/components/ui';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Settings, File, Edit, Eye, Database, Wrench, Grid3X3, HelpCircle } from 'lucide-react';
 
@@ -127,7 +127,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
               style={{ marginBottom: 16 }}
             />
             
-            {index < shortcutCategories.length - 1 && <Divider />}
+            {index < shortcutCategories.length - 1 && <Separator />}
           </div>
         ))}
         

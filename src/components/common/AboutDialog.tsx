@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Tag, Divider, Space, Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Text, Tag, Space, Card, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
 import { Link } from 'react-router-dom';
 
 import { Database, Info, Bug, Heart, Rocket, Users, Wrench, Github } from 'lucide-react';
@@ -67,7 +67,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
           </Card>
         </div>
 
-        <Divider />
+        <Separator />
 
         {/* 主要功能 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,7 +100,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
           </Card>
         </div>
 
-        <Divider />
+        <Separator />
 
         {/* 项目信息 */}
         <Card className="space-y-4">
@@ -140,7 +140,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
           </div>
         </Card>
 
-        <Divider />
+        <Separator />
 
         {/* 支持信息 */}
         <Card>
@@ -160,7 +160,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
                 <span>报告问题</span>
               </Link>
               
-              <Divider orientation="vertical" className="h-4" />
+              <Separator orientation="vertical" className="h-4" />
               
               <Link href={`${appInfo.repository}/discussions`} target="_blank" className="flex items-center gap-2 text-primary hover:text-blue-800">
                 <Users className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Input, Text, Tag, Empty, Spin, Divider, ListItem, ListItemMeta } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Input, Text, Tag, Empty, Spin, ListItem, ListItemMeta, Separator } from '@/components/ui';
 import { Search, Database, Table, Settings, FileText, Zap, List } from 'lucide-react';
 
 interface SearchResult {
@@ -225,7 +225,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
           />
         </div>
 
-        <Divider style={{ margin: '12px 0' }} />
+        <Separator style={{ margin: '12px 0' }} />
 
         {/* 搜索结果 */}
         <div style={{ maxHeight: 400, overflow: 'auto' }}>
@@ -308,7 +308,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
         {/* 底部提示 */}
         {results.length > 0 && (
           <>
-            <Divider style={{ margin: '8px 0' }} />
+            <Separator style={{ margin: '8px 0' }} />
             <div style={{ padding: '8px 16px', textAlign: 'center' }}>
               <Text type="secondary" style={{ fontSize: 11 }}>
                 找到 {results.length} 个结果

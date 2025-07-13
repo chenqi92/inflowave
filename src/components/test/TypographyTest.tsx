@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Card, Space, Divider } from '@/components/ui';
+import { Typography, Card, Space, Separator } from '@/components/ui';
 
 
 const { Title, Paragraph, Text } = Typography;
@@ -20,7 +20,7 @@ const TypographyTest: React.FC = () => {
             <Title level={5}>H5 标题</Title>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 文本样式测试 */}
           <div>
@@ -50,7 +50,7 @@ const TypographyTest: React.FC = () => {
             </Space>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 尺寸测试 */}
           <div>
@@ -65,7 +65,7 @@ const TypographyTest: React.FC = () => {
             </div>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 链接测试 */}
           <div>
@@ -86,7 +86,7 @@ const TypographyTest: React.FC = () => {
             </div>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 列表测试 */}
           <div>
@@ -108,7 +108,7 @@ const TypographyTest: React.FC = () => {
             </div>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 引用测试 */}
           <div>
@@ -121,7 +121,7 @@ const TypographyTest: React.FC = () => {
             </div>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 代码块测试 */}
           <div>
@@ -146,7 +146,7 @@ greet('World');`}
             </div>
           </div>
 
-          <Divider />
+          <Separator />
 
           {/* 混合样式测试 */}
           <div>

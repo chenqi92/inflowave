@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Card, Space, Typography } from '@/components/ui';
 import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DatePicker, InputNumber, Divider } from '@/components/ui';
+import { DatePicker, InputNumber, Separator } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import ImportDialog from '@/components/common/ImportDialog';
@@ -476,7 +476,7 @@ const DataWrite: React.FC = () => {
                     icon={<Info className="w-4 h-4"  />}
                   />
 
-                  <Divider />
+                  <Separator />
 
                   <Form
                     form={batchForm}

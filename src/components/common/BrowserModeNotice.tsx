@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Space, Alert, Button, Divider, Text } from '@/components/ui';
+import { Card, Space, Alert, Button, Text, Separator } from '@/components/ui';
 import { Info, Code, Globe, Monitor } from 'lucide-react';
 import { isBrowserEnvironment } from '@/utils/tauri';
 
@@ -67,7 +67,7 @@ const BrowserModeNotice: React.FC = () => {
           </div>
         </div>
 
-        <Divider />
+        <Separator />
 
         {/* 可用功能 */}
         <div style={{ marginBottom: '32px' }}>
@@ -301,7 +301,7 @@ const BrowserModeNotice: React.FC = () => {
           </div>
         </div>
 
-        <Divider />
+        <Separator />
 
         <div style={{ textAlign: 'center' }}>
           <div className="flex gap-2" size="large">

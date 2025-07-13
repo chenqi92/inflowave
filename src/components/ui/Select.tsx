@@ -180,3 +180,6 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton}
+
+// Backward compatibility alias
+export { SelectItem as Option }

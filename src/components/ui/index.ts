@@ -5,7 +5,7 @@ export type { ButtonProps } from './Button';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Option } from './Select';
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
 
@@ -75,8 +75,6 @@ export type { SpinProps } from './Spin';
 
 export { Tag, tagVariants } from './Tag';
 
-export { Divider } from './Divider';
-export type { DividerProps } from './Divider';
 
 export { Space } from './Space';
 export type { SpaceProps } from './Space';

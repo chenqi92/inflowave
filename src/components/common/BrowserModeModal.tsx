@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, Button, Space, Divider, Checkbox, Dialog, DialogContent, DialogHeader, DialogTitle, Alert } from '@/components/ui';
+import { Text, Button, Space, Checkbox, Dialog, DialogContent, DialogHeader, DialogTitle, Alert, Separator } from '@/components/ui';
 import { Info, Code, Globe, Monitor, X } from 'lucide-react';
 import { isBrowserEnvironment } from '@/utils/tauri';
 import { useNoticeStore } from '@/store/notice';
@@ -100,7 +100,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) 
           </div>
         </div>
 
-        <Divider />
+        <Separator />
 
         {/* 可用功能 */}
         <div style={{ marginBottom: '24px' }}>
@@ -220,7 +220,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) 
           </div>
         </div>
 
-        <Divider />
+        <Separator />
 
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div className="flex gap-2" size="middle">
