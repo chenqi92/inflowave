@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, Table, Tabs, Typography, Alert, Tag, Empty, Spin, Form, FormItem, Row, Col, Statistic } from 'antd';
+import { Button, Input, Select, Table, Tabs, Typography, Alert, Tag, Empty, Spin, Form, Row, Col, Statistic } from 'antd';
 import { Card, CardHeader, CardTitle, CardContent, Space, Modal, message,  } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
@@ -91,21 +91,21 @@ const UITest: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Form onFinish={handleFormSubmit} className="max-w-md">
-            <FormItem label="Name" name="name" required>
+            <Form.Item label="Name" name="name" required>
               <Input placeholder="Enter your name" />
-            </FormItem>
-            
-            <FormItem label="Email" name="email" required>
+            </Form.Item>
+
+            <Form.Item label="Email" name="email" required>
               <Input type="email" placeholder="Enter your email" />
-            </FormItem>
-            
-            <FormItem label="Country" name="country">
+            </Form.Item>
+
+            <Form.Item label="Country" name="country">
               <Select options={selectOptions} placeholder="Select country" />
-            </FormItem>
-            
-            <FormItem>
+            </Form.Item>
+
+            <Form.Item>
               <Button type="submit" variant="primary">Submit</Button>
-            </FormItem>
+            </Form.Item>
           </Form>
         </CardContent>
       </Card>

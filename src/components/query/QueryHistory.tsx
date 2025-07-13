@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Empty, Row, Col, List, Tooltip, Popconfirm, DatePicker, RangePicker } from 'antd';
+import { Button, Typography, Input, Select, Tag, Empty, Row, Col, List, Tooltip, Popconfirm, DatePicker } from 'antd';
+
+const { RangePicker } = DatePicker;
 import { Card, Space, Modal, message } from '@/components/ui';
 import {
   PlayCircleOutlined, DeleteOutlined, SearchOutlined, DatabaseOutlined, EditOutlined,

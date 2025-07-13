@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from './Button';
+import { Button } from 'antd';
 import { cn } from '@/utils/cn';
 
 export interface PopconfirmProps {

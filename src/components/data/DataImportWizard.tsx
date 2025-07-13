@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Step, Upload, Progress, Checkbox, InputNumber } from 'antd';
+import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber } from 'antd';
+
+const { Step } = Steps;
 import { Modal, Space, Card, message } from '@/components/ui';
 import {
   UploadOutlined, DatabaseOutlined, CheckCircleOutlined, SettingOutlined,

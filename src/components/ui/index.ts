@@ -78,7 +78,7 @@ export { Steps, Step } from './Steps';
 export type { StepsProps, StepProps } from './Steps';
 
 // Export new components for QueryHistory
-export { DatePicker, RangePicker } from './DatePicker';
+export { DatePicker } from './DatePicker';
 export type { DatePickerProps, RangePickerProps } from './DatePicker';
 
 export { List, ListItem, ListItemMeta } from './List';

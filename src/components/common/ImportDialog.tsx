@@ -7,6 +7,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 
 const { Option } = Select;
 const { Title, Paragraph } = Typography;
+const { Step } = Steps;
 
 interface ImportDialogProps {
   visible: boolean;
