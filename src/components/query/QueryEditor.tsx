@@ -561,8 +561,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 type="primary"
                 icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
-                disabled={loading}
-                disabled={!selectedDatabase || !activeConnectionId || !currentTab?.query.trim()}
+                disabled={loading || !selectedDatabase || !activeConnectionId || !currentTab?.query.trim()}
               >
                 执行 (Ctrl+Enter)
               </Button>
@@ -586,8 +585,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 <Button
                   icon={<Zap className="w-4 h-4"  />}
                   onClick={handleOptimizeQuery}
-                  disabled={optimizationLoading}
-                  disabled={!activeConnectionId || !currentTab?.query.trim()}
+                  disabled={optimizationLoading || !activeConnectionId || !currentTab?.query.trim()}
                 >
                   智能优化
                 </Button>

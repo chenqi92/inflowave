@@ -399,16 +399,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
               icon={<PlayCircle />}
               type="primary"
               onClick={generateData}
-              disabled={loading}
-              disabled={!activeConnectionId || !selectedDatabase}
+              disabled={loading || !activeConnectionId || !selectedDatabase}
             >
               生成数据
             </Button>
             <Button 
               icon={<RefreshCw className="w-4 h-4"  />}
               onClick={clearData}
-              disabled={loading}
-              disabled={!activeConnectionId || !selectedDatabase}
+              disabled={loading || !activeConnectionId || !selectedDatabase}
             >
               清空数据
             </Button>

@@ -50,6 +50,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       return;
     }
 
+    // 视图切换动作
+    if (action.startsWith('view:')) {
+      const view = action.replace('view:', '');
+      const viewMap: Record<string, string> = {
+        'datasource': '/connections',
+        'query': '/query',
+        'visualization': '/visualization',
+        'performance': '/performance'
+      };
+      if (viewMap[view]) {
+        navigate(viewMap[view]);
+        showMessage.success(`切换到${view === 'datasource' ? '数据源管理' : view === 'query' ? '查询编辑器' : view === 'visualization' ? '数据可视化' : '性能监控'}`);
+      }
+      return;
+    }
+
     switch (action) {
       // 文件菜单
       case 'new_query':
@@ -131,14 +147,26 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       // 查看菜单
       case 'toggle_sidebar':
+      case 'toggle-sidebar':
         if (onToggleSidebar) {
           onToggleSidebar();
+        } else {
+          document.dispatchEvent(new CustomEvent('toggle-sidebar'));
         }
         break;
 
       case 'toggle_statusbar':
+      case 'toggle-statusbar':
         if (onToggleStatusbar) {
           onToggleStatusbar();
+        }
+        break;
+
+      case 'fullscreen':
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else {
+          document.documentElement.requestFullscreen();
         }
         break;
 
@@ -159,12 +187,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       // 数据库菜单
       case 'new_connection':
+      case 'new-connection':
         navigate('/connections');
+        showMessage.success('打开连接管理');
         break;
 
       case 'test_connection':
+      case 'test-connection':
         if (activeConnectionId) {
-          // TODO: 实现测试连接功能
           showMessage.info('测试连接功能开发中...');
         } else {
           showMessage.warning('请先选择一个连接');
@@ -172,71 +202,86 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'refresh_structure':
+      case 'refresh-structure':
         if (activeConnectionId) {
-          // TODO: 实现刷新结构功能
           showMessage.info('刷新结构功能开发中...');
+          // 触发刷新事件
+          document.dispatchEvent(new CustomEvent('refresh-database-tree'));
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
-      case 'execute_query':
+      case 'database-info':
         if (activeConnectionId) {
-          // TODO: 实现执行查询功能
-          showMessage.info('执行查询功能开发中...');
+          showMessage.info('数据库信息功能开发中...');
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
+        break;
+
+      // 查询菜单
+      case 'execute_query':
+      case 'execute-query':
+        if (activeConnectionId) {
+          document.dispatchEvent(new CustomEvent('execute-query', { detail: { source: 'menu' } }));
+          showMessage.info('执行查询...');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
       case 'stop_query':
-        // TODO: 实现停止查询功能
-        showMessage.info('停止查询功能开发中...');
+      case 'stop-query':
+        document.dispatchEvent(new CustomEvent('stop-query', { detail: { source: 'menu' } }));
+        showMessage.info('已停止查询');
         break;
 
-      case 'view_table_structure':
-        if (activeConnectionId) {
-          navigate('/database');
-        } else {
-          showMessage.warning('请先建立数据库连接');
-        }
+      case 'query-history':
+        showMessage.info('查询历史功能开发中...');
         break;
 
-      case 'view_table_data':
-        if (activeConnectionId) {
-          navigate('/query');
-        } else {
-          showMessage.warning('请先建立数据库连接');
-        }
+      case 'save-query':
+        document.dispatchEvent(new CustomEvent('save-query', { detail: { source: 'menu' } }));
         break;
 
       // 工具菜单
       case 'keyboard_shortcuts':
+      case 'shortcuts':
         setShortcutsVisible(true);
+        break;
+
+      case 'console':
+        showMessage.info('控制台功能开发中...');
+        break;
+
+      case 'dev-tools':
+        document.dispatchEvent(new CustomEvent('toggle-dev-tools'));
         break;
 
       // 帮助菜单
       case 'user_manual':
-        // TODO: 打开用户手册
+      case 'user-manual':
         showMessage.info('用户手册开发中...');
         break;
 
       case 'quick_start':
-        // TODO: 打开快速入门
+      case 'quick-start':
         showMessage.info('快速入门开发中...');
         break;
 
       case 'shortcuts_help':
+      case 'shortcuts-help':
         setShortcutsVisible(true);
         break;
 
       case 'check_updates':
-        // TODO: 检查更新
+      case 'check-updates':
         showMessage.info('检查更新功能开发中...');
         break;
 
       case 'report_issue':
-        // TODO: 反馈问题
+      case 'report-issue':
         showMessage.info('反馈问题功能开发中...');
         break;
 

@@ -13,9 +13,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  FolderOpen
-} from 'lucide-react';
-import { 
   Database, 
   PlayCircle, 
   Square, 
@@ -32,12 +29,17 @@ import {
   BarChart,
   Edit,
   Zap,
-  Wrench
+  Wrench,
+  FolderOpen,
+  Plus,
+  Clock
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
+import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
+import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -49,7 +51,11 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(null);
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
+  
+  // 启用全局快捷键
+  useGlobalShortcuts();
 
   const handleConnectionMenuClick = async ({ key }: { key: string }) => {
     // 选择并连接到数据库
@@ -197,114 +203,258 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       icon: <Settings className="w-4 h-4" />},
   ];
 
+  const handleTimeRangeChange = (range: TimeRange) => {
+    setSelectedTimeRange(range);
+    console.log('时间范围已更改:', range);
+    // TODO: 通知其他组件时间范围变化
+  };
+
   return (
     <TooltipProvider>
       <div className="datagrip-toolbar flex items-center justify-between w-full">
-        {/* 左侧：主要操作按钮 */}
-        <div className="flex gap-2">
-          {/* 连接管理 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={activeConnection ? 'default' : 'outline'}
-                className="h-8"
-                disabled={connecting}
-              >
-                {activeConnection ? <Link className="w-4 h-4 mr-2" /> : <Unlink className="w-4 h-4 mr-2" />}
-                {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
-                {activeConnection && !connecting && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 bg-green-500 text-white"
-                  >
-                    ●
-                  </Badge>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {connectionMenuItems.map((item) => (
-                <DropdownMenuItem
-                  key={item.key}
-                  onClick={() => handleConnectionMenuClick({ key: item.key })}
+        {/* 五大功能区域布局 */}
+        <div className="flex items-center gap-1">
+          {/* 区域1: 连接管理 */}
+          <div className="flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-lg">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={activeConnection ? 'default' : 'outline'}
+                  className="h-8 min-w-32"
+                  disabled={connecting}
                 >
-                  {item.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* 执行相关 */}
-          <Button
-            variant="default"
-            className="h-8"
-            disabled={!activeConnection}
-          >
-            <PlayCircle className="w-4 h-4 mr-2" />
-            执行
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-8"
-            disabled={!activeConnection}
-          >
-            <Square className="w-4 h-4 mr-2" />
-            停止
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* 文件操作 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8"
-              >
-                <FolderOpen className="w-4 h-4 mr-2" />
-                文件
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {fileMenuItems.map((item) => (
-                item.type === 'divider' ? (
-                  <div key={item.key} className="border-t my-1" />
-                ) : (
+                  {activeConnection ? <Link className="w-4 h-4 mr-2" /> : <Unlink className="w-4 h-4 mr-2" />}
+                  {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
+                  {activeConnection && !connecting && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-2 bg-green-500 text-white"
+                    >
+                      ●
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {connectionMenuItems.map((item) => (
                   <DropdownMenuItem
                     key={item.key}
-                    onClick={() => handleFileMenuClick({ key: item.key })}
+                    onClick={() => handleConnectionMenuClick({ key: item.key })}
                   >
-                    {item.icon}
-                    <span className="ml-2">{item.label}</span>
+                    {item.label}
                   </DropdownMenuItem>
-                )
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* InfluxDB特色: 时间范围选择器 */}
+            {activeConnection && (
+              <TimeRangeSelector
+                value={selectedTimeRange || undefined}
+                onChange={handleTimeRangeChange}
+                className="ml-2"
+              />
+            )}
+          </div>
 
-          <Button
-            variant="outline"
-            className="h-8"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            保存
-          </Button>
+          <Separator orientation="vertical" className="h-6 mx-2" />
 
-          {/* 工具菜单 */}
+          {/* 区域2: 文件操作 */}
+          <div className="flex items-center gap-1 px-3 py-1 bg-blue-50 rounded-lg">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => handleFileMenuClick({ key: 'new-query' })}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>新建查询 (Ctrl+N)</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => handleFileMenuClick({ key: 'open' })}
+                >
+                  <FolderOpen className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>打开文件 (Ctrl+O)</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => handleFileMenuClick({ key: 'save' })}
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>保存 (Ctrl+S)</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <Separator orientation="vertical" className="h-6 mx-2" />
+
+          {/* 区域3: 执行控制 */}
+          <div className="flex items-center gap-1 px-3 py-1 bg-green-50 rounded-lg">
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8"
+              disabled={!activeConnection}
+            >
+              <PlayCircle className="w-4 h-4 mr-1" />
+              执行
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!activeConnection}
+            >
+              <Square className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <Separator orientation="vertical" className="h-6 mx-2" />
+
+          {/* 区域4: 核心视图切换 (突出显示) */}
+          <div className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border-2 border-purple-200">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'datasource' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-9 transition-all ${
+                    currentView === 'datasource' 
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
+                      : 'hover:bg-purple-200'
+                  }`}
+                  onClick={() => onViewChange?.('datasource')}
+                >
+                  <Database className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据源管理</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'query' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-9 transition-all ${
+                    currentView === 'query' 
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
+                      : 'hover:bg-purple-200'
+                  }`}
+                  onClick={() => onViewChange?.('query')}
+                  disabled={!activeConnection}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>查询编辑器</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'visualization' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-9 transition-all ${
+                    currentView === 'visualization' 
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
+                      : 'hover:bg-purple-200'
+                  }`}
+                  onClick={() => onViewChange?.('visualization')}
+                  disabled={!activeConnection}
+                >
+                  <BarChart className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>数据可视化</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={currentView === 'performance' ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`h-9 transition-all ${
+                    currentView === 'performance' 
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
+                      : 'hover:bg-purple-200'
+                  }`}
+                  onClick={() => onViewChange?.('performance')}
+                  disabled={!activeConnection}
+                >
+                  <Zap className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>性能监控</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <Separator orientation="vertical" className="h-6 mx-2" />
+
+          {/* 区域5: 工具功能 */}
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  disabled={!activeConnection}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新 (F5)</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* 右侧：设置和帮助 */}
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setSettingsVisible(true)}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>设置 (Ctrl+,)</TooltipContent>
+          </Tooltip>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
-                className="h-8"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
               >
-                <Wrench className="w-4 h-4 mr-2" />
-                工具
+                <Wrench className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent align="end">
               {toolsMenuItems.map((item) => (
                 item.type === 'divider' ? (
                   <div key={item.key} className="border-t my-1" />
@@ -320,117 +470,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* 视图切换 */}
-          <div className="flex gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'datasource' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => onViewChange?.('datasource')}
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>数据源管理</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'database' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => onViewChange?.('database')}
-                  disabled={!activeConnection}
-                >
-                  <Database className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>数据库浏览</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'query' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => onViewChange?.('query')}
-                  disabled={!activeConnection}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>查询编辑器</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'visualization' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => onViewChange?.('visualization')}
-                  disabled={!activeConnection}
-                >
-                  <BarChart className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>数据可视化</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'performance' ? 'default' : 'outline'}
-                  className="h-8"
-                  onClick={() => onViewChange?.('performance')}
-                  disabled={!activeConnection}
-                >
-                  <Zap className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>性能监控</TooltipContent>
-            </Tooltip>
-          </div>
-
-          <Separator orientation="vertical" className="h-6" />
-
-          {/* 刷新 */}
-          <Button
-            variant="outline"
-            className="h-8"
-            disabled={!activeConnection}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            刷新
-          </Button>
-      </div>
-
-        {/* 右侧：导航和帮助 */}
-        <div className="flex gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8"
-                onClick={() => setSettingsVisible(true)}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                设置
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>偏好设置</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-8"
-              >
-                <HelpCircle className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>帮助</TooltipContent>
-          </Tooltip>
         </div>
 
         {/* 设置模态框 */}

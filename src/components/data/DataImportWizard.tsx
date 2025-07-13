@@ -429,8 +429,17 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
         <DialogHeader>
           <DialogTitle>数据导入向导</DialogTitle>
         </DialogHeader>
-      footer={
-        <div className="flex gap-2">
+      <Steps current={currentStep} style={{ marginBottom: 24 }}>
+        <Step title="选择文件" icon={<UploadIcon className="w-4 h-4"  />} />
+        <Step title="预览数据" icon={<FileText className="w-4 h-4"  />} />
+        <Step title="配置映射" icon={<Settings className="w-4 h-4"  />} />
+        <Step title="导入完成" icon={<CheckCircle />} />
+      </Steps>
+
+        {stepContents[currentStep]}
+        
+        {/* Dialog Footer */}
+        <div className="flex gap-2 pt-4 border-t">
           <Button onClick={onClose}>取消</Button>
           {currentStep > 0 && (
             <Button onClick={() => setCurrentStep(prev => prev - 1)}>
@@ -441,8 +450,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             <Button
               type="primary"
               onClick={previewFile}
-              disabled={loading}
-              disabled={fileList.length === 0}
+              disabled={loading || fileList.length === 0}
             >
               预览数据
             </Button>
@@ -456,8 +464,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             <Button
               type="primary"
               onClick={executeImport}
-              disabled={loading}
-              disabled={!importConfig.measurement}
+              disabled={loading || !importConfig.measurement}
             >
               开始导入
             </Button>
@@ -468,18 +475,8 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             </Button>
           )}
         </div>
-      }
-      destroyOnClose
-    >
-      <Steps current={currentStep} style={{ marginBottom: 24 }}>
-        <Step title="选择文件" icon={<UploadIcon className="w-4 h-4"  />} />
-        <Step title="预览数据" icon={<FileText className="w-4 h-4"  />} />
-        <Step title="配置映射" icon={<Settings className="w-4 h-4"  />} />
-        <Step title="导入完成" icon={<CheckCircle />} />
-      </Steps>
-
-      {stepContents[currentStep]}
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

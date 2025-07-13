@@ -410,8 +410,7 @@ const Query: React.FC = () => {
                 type="primary"
                 icon={<PlayCircle />}
                 onClick={handleExecuteQuery}
-                disabled={loading}
-                disabled={!selectedDatabase}
+                disabled={loading || !selectedDatabase}
               >
                 执行查询
               </Button>

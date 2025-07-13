@@ -391,8 +391,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting}
-                disabled={!testResult?.success}
+                disabled={isSubmitting || !testResult?.success}
               >
                 保存连接
               </Button>

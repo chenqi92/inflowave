@@ -158,6 +158,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           showIcon
         />
       )}
+      </DialogContent>
     </Dialog>
   );
 };
