@@ -1,8 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Table, Button, Typography, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions } from 'antd';
-import { Card, Space, Modal, message } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Popconfirm, Descriptions, 
+import { Card, Space, Modal, message, Button as UIButton } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Popconfirm, Descriptions,
 import { DatabaseOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined, ReloadOutlined, BarChartOutlined, ExclamationCircleOutlined, EditOutlined } from '@/components/ui';
+import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -249,7 +250,7 @@ const Database: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 database-management">
       {/* 页面标题和操作 */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -258,7 +259,7 @@ const Database: React.FC = () => {
             管理 InfluxDB 数据库、测量和保留策略
           </Text>
         </div>
-        <Space>
+        <Space size="middle">
           <Button
             icon={<ReloadOutlined />}
             onClick={loadDatabases}
@@ -278,14 +279,18 @@ const Database: React.FC = () => {
 
       {/* 数据库选择器 */}
       <Card className="mb-6">
-        <div className="flex items-center space-x-4">
-          <Text strong>选择数据库:</Text>
+        <div className="flex items-center gap-4">
+          <Text strong className="text-base">选择数据库:</Text>
           <Select
-            style={{ width: 200 }}
+            style={{ width: 280 }}
             placeholder="选择数据库"
             value={selectedDatabase}
             onChange={setSelectedDatabase}
             loading={loading}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+            }
           >
             {(databases || []).map(db => (
               <Option key={db} value={db}>
@@ -402,12 +407,12 @@ const Database: React.FC = () => {
                   {
                     title: '操作',
                     key: 'actions',
-                    width: 150,
+                    width: 180,
                     render: (_, record: { name: string }) => (
-                      <Space>
+                      <Space size="small">
                         <Tooltip title="查看详情">
                           <Button
-                            variant="ghost"
+                            type="text"
                             icon={<InfoCircleOutlined />}
                             onClick={() => message.info('查看测量详情功能开发中...')}
                           />
@@ -420,7 +425,8 @@ const Database: React.FC = () => {
                         >
                           <Tooltip title="删除">
                             <Button
-                              variant="danger"
+                              type="text"
+                              danger
                               icon={<DeleteOutlined />}
                             />
                           </Tooltip>
@@ -507,12 +513,12 @@ const Database: React.FC = () => {
                   {
                     title: '操作',
                     key: 'actions',
-                    width: 100,
+                    width: 120,
                     render: (_, record: RetentionPolicy) => (
-                      <Space>
+                      <Space size="small">
                         <Tooltip title="编辑">
                           <Button
-                            variant="ghost"
+                            type="text"
                             icon={<EditOutlined />}
                             onClick={() => setRetentionPolicyDialog({
                               visible: true,
@@ -544,7 +550,8 @@ const Database: React.FC = () => {
                           >
                             <Tooltip title="删除">
                               <Button
-                                variant="danger"
+                                type="text"
+                                danger
                                 icon={<DeleteOutlined />}
                               />
                             </Tooltip>
@@ -1124,13 +1131,29 @@ const Database: React.FC = () => {
       <Modal
         title="创建数据库"
         open={createModalVisible}
-        onOk={() => form.submit()}
-        onCancel={() => {
+        onClose={() => {
           setCreateModalVisible(false);
           form.resetFields();
         }}
-        okText="创建"
-        cancelText="取消"
+        width={500}
+        footer={
+          <div className="flex justify-end gap-3">
+            <UIButton
+              onClick={() => {
+                setCreateModalVisible(false);
+                form.resetFields();
+              }}
+            >
+              取消
+            </UIButton>
+            <UIButton
+              variant="primary"
+              onClick={() => form.submit()}
+            >
+              创建
+            </UIButton>
+          </div>
+        }
       >
         <Form
           form={form}

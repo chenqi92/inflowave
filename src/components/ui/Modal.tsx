@@ -75,12 +75,12 @@ const Modal: React.FC<ModalProps> = ({
                 e.stopPropagation();
                 onClose();
               }}
-              className="modal-close-btn w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200 ease-in-out"
+              className="modal-close-btn w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-150 ease-in-out"
               aria-label="关闭弹框"
               title="关闭"
               type="button"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -88,13 +88,16 @@ const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className={cn(
+          "p-5 overflow-y-auto",
+          footer ? "max-h-[calc(90vh-180px)]" : "max-h-[calc(90vh-120px)]"
+        )}>
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200 bg-gray-50 min-h-[60px]">
             {footer}
           </div>
         )}

@@ -19,6 +19,7 @@ import { useDatabase } from '@/hooks/useDatabase';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
 import type { TreeNodeData, DatabaseInfo, MeasurementInfo, FieldInfo, TagInfo } from '@/types';
+import '@/styles/database-management.css';
 
 interface DatabaseBrowserProps {
   connectionId?: string;
@@ -284,32 +285,30 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   }
 
   return (
-    <div className={`h-full flex flex-col ${className}`}>
+    <div className={`h-full flex flex-col database-management ${className}`}>
       {/* 工具栏 */}
-      <div className="p-3 border-b bg-gray-50">
-        <Space className="w-full">
+      <div className="database-browser-toolbar">
+        <Space className="w-full" size="middle">
           <Input
             placeholder="搜索数据库..."
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
-            size="small"
             className="flex-1"
+            style={{ minWidth: '200px' }}
           />
           <Tooltip title="刷新">
-            <Button 
-              icon={<ReloadOutlined />} 
+            <Button
+              icon={<ReloadOutlined />}
               onClick={handleRefresh}
               loading={isLoading}
-              size="small"
             />
           </Tooltip>
           <Tooltip title="新建数据库">
-            <Button 
-              icon={<PlusOutlined />} 
+            <Button
+              icon={<PlusOutlined />}
               onClick={handleAddDatabase}
-              size="small"
               type="primary"
             />
           </Tooltip>

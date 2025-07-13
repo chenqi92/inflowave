@@ -1,0 +1,298 @@
+/* 数据库管理页面样式优化 */
+
+/* 统一按钮大小 */
+.database-management .ant-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.database-management .ant-btn-sm,
+.database-management .ant-btn-small {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.database-management .ant-btn-lg,
+.database-management .ant-btn-large {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+/* 统一输入框大小 */
+.database-management .ant-input {
+  height: 32px;
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.database-management .ant-input-lg,
+.database-management .ant-input-large {
+  height: 32px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+/* 统一选择器大小 */
+.database-management .ant-select {
+  font-size: 14px;
+}
+
+.database-management .ant-select-selector {
+  height: 32px !important;
+  padding: 6px 10px !important;
+  border-radius: 6px;
+}
+
+.database-management .ant-select-lg .ant-select-selector,
+.database-management .ant-select-large .ant-select-selector {
+  height: 32px !important;
+  padding: 6px 10px !important;
+}
+
+.database-management .ant-select-selection-item {
+  line-height: 18px !important;
+  display: flex;
+  align-items: center;
+}
+
+/* 数据库浏览器工具栏优化 */
+.database-browser-toolbar {
+  padding: 16px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fafafa;
+}
+
+.database-browser-toolbar .ant-space {
+  width: 100%;
+  gap: 12px !important;
+}
+
+.database-browser-toolbar .ant-input {
+  min-width: 200px;
+  flex: 1;
+}
+
+/* 表格操作按钮优化 */
+.database-management .ant-table-tbody .ant-btn {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.database-management .ant-table-tbody .ant-btn-text {
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+/* 卡片标题按钮优化 */
+.database-management .ant-card-extra .ant-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+/* 模态框按钮优化 */
+.database-management .ant-modal-footer .ant-btn {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 14px;
+  min-width: 70px;
+}
+
+/* 自定义模态框样式 */
+.database-management .modal-header {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.database-management .modal-close-btn {
+  background: transparent;
+  border: 1px solid #d9d9d9;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.database-management .modal-close-btn:hover {
+  background: #f5f5f5;
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+/* 间距优化 */
+.database-management .ant-space-middle {
+  gap: 12px !important;
+}
+
+.database-management .ant-card {
+  margin-bottom: 24px;
+}
+
+.database-management .ant-card-head {
+  padding: 16px 24px;
+  min-height: 56px;
+}
+
+.database-management .ant-card-body {
+  padding: 24px;
+}
+
+/* 表格样式优化 */
+.database-management .ant-table {
+  font-size: 14px;
+}
+
+.database-management .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 16px;
+  height: 48px;
+}
+
+.database-management .ant-table-tbody > tr > td {
+  padding: 12px 16px;
+  font-size: 14px;
+  height: 48px;
+}
+
+/* 统计卡片优化 */
+.database-management .ant-statistic {
+  text-align: center;
+}
+
+.database-management .ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.database-management .ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1890ff;
+}
+
+/* 工具提示优化 */
+.database-management .ant-tooltip {
+  font-size: 14px;
+}
+
+/* 标签优化 */
+.database-management .ant-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 2px 8px;
+  line-height: 1.4;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .database-management .ant-btn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  
+  .database-management .ant-input {
+    height: 36px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  
+  .database-management .ant-select-selector {
+    height: 36px !important;
+    padding: 8px 10px !important;
+  }
+  
+  .database-management .ant-card-body {
+    padding: 16px;
+  }
+  
+  .database-management .ant-table-thead > tr > th,
+  .database-management .ant-table-tbody > tr > td {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .database-browser-toolbar {
+    background: #1f1f1f;
+    border-bottom-color: #434343;
+  }
+  
+  .database-management .ant-table-thead > tr > th {
+    background-color: #1f1f1f;
+    color: #fff;
+  }
+}
+
+/* 数据库浏览器树形组件优化 */
+.database-management .ant-tree {
+  font-size: 14px;
+}
+
+.database-management .ant-tree-treenode {
+  padding: 2px 0;
+}
+
+.database-management .ant-tree-node-content-wrapper {
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 24px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.database-management .ant-tree-iconEle {
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 搜索框优化 */
+.database-management .ant-input-search .ant-input-group-addon {
+  background: transparent;
+  border: none;
+}
+
+.database-management .ant-input-search .ant-btn {
+  height: 42px;
+  border: none;
+  box-shadow: none;
+}
+
+/* 分页器优化 */
+.database-management .ant-pagination {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.database-management .ant-pagination .ant-pagination-item {
+  border-radius: 4px;
+  min-width: 32px;
+  height: 32px;
+  line-height: 30px;
+}
+
+.database-management .ant-pagination .ant-pagination-prev,
+.database-management .ant-pagination .ant-pagination-next {
+  border-radius: 4px;
+  min-width: 32px;
+  height: 32px;
+  line-height: 30px;
+}

@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Alert, Select, Typography, Switch, InputNumber, Tooltip } from 'antd';
-import { Modal, Space, message } from '@/components/ui';
+import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Tooltip } from 'antd';
+import { Modal, Space, message, Button } from '@/components/ui';
 import { InfoCircleOutlined, QuestionCircleOutlined } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
@@ -158,37 +158,37 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   return (
     <Modal
       title={
-        <Space>
+        <div className="flex items-center gap-2">
           <InfoCircleOutlined />
           {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
-        </Space>
+        </div>
       }
       open={visible}
-      onCancel={onClose}
+      onClose={onClose}
       width={600}
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          取消
-        </Button>,
-        ...(mode === 'edit' && policy && !policy.default ? [
-          <Button
-            key="delete"
-            danger
-            onClick={handleDelete}
-            loading={loading}
-          >
-            删除
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button onClick={onClose}>
+            取消
           </Button>
-        ] : []),
-        <Button
-          key="submit"
-          type="primary"
-          loading={loading}
-          onClick={handleSubmit}
-        >
-          {mode === 'create' ? '创建' : '保存'}
-        </Button>,
-      ]}
+          {mode === 'edit' && policy && !policy.default && (
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              loading={loading}
+            >
+              删除
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            loading={loading}
+            onClick={handleSubmit}
+          >
+            {mode === 'create' ? '创建' : '保存'}
+          </Button>
+        </div>
+      }
     >
       <div className="space-y-6">
         {/* 说明信息 */}

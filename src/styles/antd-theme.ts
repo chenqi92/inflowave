@@ -30,33 +30,46 @@ export const antdTheme: ThemeConfig = {
   components: {
     Button: {
       borderRadius: 6,
-      controlHeight: 44,
+      controlHeight: 32,
       fontWeight: 500,
+      paddingInline: 12,
     },
     Table: {
       borderRadius: 8,
       headerBg: '#fafafa',
       headerSplitColor: '#f0f0f0',
+      cellPaddingBlock: 8,
+      cellPaddingInline: 12,
     },
     Card: {
       borderRadius: 8,
-      paddingLG: 28,
+      paddingLG: 20,
+      headerHeight: 48,
     },
     Input: {
       borderRadius: 6,
-      controlHeight: 44,
+      controlHeight: 32,
+      paddingBlock: 6,
+      paddingInline: 10,
     },
     Select: {
       borderRadius: 6,
-      controlHeight: 44,
+      controlHeight: 32,
+      optionPadding: '6px 10px',
     },
     Tree: {
       borderRadius: 6,
       nodeSelectedBg: '#e6f7ff',
       nodeHoverBg: '#f5f5f5',
+      titleHeight: 28,
     },
     Modal: {
       borderRadius: 8,
+      contentBg: '#ffffff',
+      headerBg: '#ffffff',
+    },
+    Space: {
+      size: 8,
     },
   },
 };
