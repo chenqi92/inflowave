@@ -9,6 +9,7 @@ export interface ResultProps {
   extra?: React.ReactNode;
   className?: string;
   children?: React.ReactNode;
+  wrap?: boolean; // Ant Design compatibility
 }
 
 const statusConfig = {
@@ -56,41 +57,50 @@ const Result: React.FC<ResultProps> = ({
   icon,
   extra,
   className,
-  children
+  children,
+  wrap = true,
+  ...props
 }) => {
   const config = statusConfig[status];
 
+  // Filter out Ant Design specific props that shouldn't be passed to DOM
+  const { wrap: _wrap, ...domProps } = props as any;
+
   return (
-    <div className={cn(
-      'flex flex-col items-center justify-center text-center p-8 rounded-lg border',
-      config.bgColor,
-      config.borderColor,
-      className
-    )}>
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center text-center p-8 rounded-lg border',
+        config.bgColor,
+        config.borderColor,
+        !wrap && 'whitespace-nowrap',
+        className
+      )}
+      {...domProps}
+    >
       {icon && (
         <div className={cn('mb-4 text-4xl', config.color)}>
           {icon}
         </div>
       )}
-      
+
       {title && (
         <h3 className={cn('text-lg font-semibold mb-2', config.color)}>
           {title}
         </h3>
       )}
-      
+
       {subTitle && (
         <div className="text-gray-600 mb-4 max-w-md">
           {subTitle}
         </div>
       )}
-      
+
       {children && (
         <div className="mb-4">
           {children}
         </div>
       )}
-      
+
       {extra && (
         <div className="flex flex-wrap gap-2 justify-center">
           {extra}

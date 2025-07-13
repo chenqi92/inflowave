@@ -9,7 +9,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
-import { ToastProvider } from '@/components/ui';
+import { ToastProvider, TooltipProvider } from '@/components/ui';
 
 import './styles/index.css';
 
@@ -27,17 +27,19 @@ const InnerApp: React.FC = () => {
 
 // 主应用组件
 const AppWrapper: React.FC = () => {
-  
+
   return (
-    <ToastProvider>
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true}}
-      >
-        <InnerApp />
-      </BrowserRouter>
-    </ToastProvider>
+    <TooltipProvider>
+      <ToastProvider>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true}}
+        >
+          <InnerApp />
+        </BrowserRouter>
+      </ToastProvider>
+    </TooltipProvider>
   );
 };
 

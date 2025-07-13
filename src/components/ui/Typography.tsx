@@ -99,5 +99,114 @@ const Paragraph = React.forwardRef<
 })
 Paragraph.displayName = "Paragraph"
 
-export { Title, Text, Paragraph }
-export type { TypographyProps }
+// Ant Design compatible Paragraph component
+interface AntParagraphProps extends TypographyProps {
+  wrap?: boolean;
+  code?: boolean;
+  copyable?: boolean;
+  ellipsis?: boolean;
+  mark?: boolean;
+  underline?: boolean;
+  delete?: boolean;
+  strong?: boolean;
+  type?: "secondary" | "success" | "warning" | "danger";
+}
+
+const AntParagraph = React.forwardRef<
+  HTMLParagraphElement,
+  AntParagraphProps
+>(({
+  className,
+  children,
+  wrap,
+  code,
+  copyable,
+  ellipsis,
+  mark,
+  underline,
+  delete: del,
+  strong,
+  type,
+  ...props
+}, ref) => {
+  // Filter out Ant Design specific props that shouldn't be passed to DOM
+  const {
+    wrap: _wrap,
+    code: _code,
+    copyable: _copyable,
+    ellipsis: _ellipsis,
+    mark: _mark,
+    underline: _underline,
+    delete: _delete,
+    strong: _strong,
+    type: _type,
+    ...domProps
+  } = props as any;
+
+  const typeVariants = {
+    secondary: "text-muted-foreground",
+    success: "text-green-600",
+    warning: "text-yellow-600",
+    danger: "text-red-600"
+  };
+
+  let content = children;
+
+  // Apply text modifications
+  if (code) {
+    content = (
+      <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+        {content}
+      </code>
+    );
+  }
+
+  if (mark) {
+    content = <mark className="bg-yellow-200 px-1">{content}</mark>;
+  }
+
+  if (strong) {
+    content = <strong className="font-semibold">{content}</strong>;
+  }
+
+  if (underline) {
+    content = <u>{content}</u>;
+  }
+
+  if (del) {
+    content = <del className="line-through">{content}</del>;
+  }
+
+  return (
+    <p
+      ref={ref}
+      className={cn(
+        "leading-7 [&:not(:first-child)]:mt-6",
+        !wrap && "whitespace-nowrap",
+        ellipsis && "truncate",
+        type && typeVariants[type],
+        className
+      )}
+      {...domProps}
+    >
+      {content}
+      {copyable && (
+        <button
+          className="ml-2 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            if (typeof children === 'string') {
+              navigator.clipboard.writeText(children);
+            }
+          }}
+        >
+          📋
+        </button>
+      )}
+    </p>
+  );
+});
+
+AntParagraph.displayName = "AntParagraph";
+
+export { Title, Text, Paragraph, AntParagraph }
+export type { TypographyProps, AntParagraphProps }

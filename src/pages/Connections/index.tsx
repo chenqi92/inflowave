@@ -303,30 +303,28 @@ const Connections: React.FC = () => {
       {/* 连接管理器 */}
       <div className="flex-1 overflow-hidden">
         <Tabs
-          defaultActiveKey="manager"
-          size="small"
-          items={[
-            {
-              key: 'manager',
-              label: '连接列表',
-              children: (
-                <ConnectionManager
-                  onConnectionSelect={handleConnectionSelect}
-                  onEditConnection={handleOpenDialog}
-                />
-              )},
-            {
-              key: 'debug',
-              label: (
-                <div className="flex gap-2" size="small">
-                  <Bug className="w-4 h-4"  />
-                  调试面板
-                </div>
-              ),
-              children: <ConnectionDebugPanel />},
-          ]}
+          defaultValue="manager"
           className="h-full"
-        />
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manager">连接列表</TabsTrigger>
+            <TabsTrigger value="debug">
+              <div className="flex gap-2">
+                <Bug className="w-4 h-4" />
+                调试面板
+              </div>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="manager" className="mt-4">
+            <ConnectionManager
+              onConnectionSelect={handleConnectionSelect}
+              onEditConnection={handleOpenDialog}
+            />
+          </TabsContent>
+          <TabsContent value="debug" className="mt-4">
+            <ConnectionDebugPanel />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* 连接配置对话框 */}

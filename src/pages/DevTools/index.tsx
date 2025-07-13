@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Database, Bug, Wrench } from 'lucide-react';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 import DataGenerator from '@/components/tools/DataGenerator';
@@ -42,11 +42,22 @@ const DevTools: React.FC = () => {
     >
       <div className="h-full">
         <Tabs
-          defaultActiveKey="data-generator"
-          items={tabItems}
-          size="large"
+          defaultValue="data-generator"
           className="h-full"
-        />
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            {tabItems.map((item) => (
+              <TabsTrigger key={item.key} value={item.key}>
+                {item.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {tabItems.map((item) => (
+            <TabsContent key={item.key} value={item.key} className="mt-4">
+              {item.children}
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </DesktopPageWrapper>
   );

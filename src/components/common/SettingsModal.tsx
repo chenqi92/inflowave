@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Modal, Form, Select, Button, Typography, Space, Row, Col, Alert, Tabs, InputNumber, Switch } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Form, FormItem, FormLabel, FormControl, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Space, Row, Col, Alert, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, toast, Divider, Input } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
 
-import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell, FileDown } from 'lucide-react';
+import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell, FileDown, FileUp } from 'lucide-react';
 import { Info, X } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -18,7 +18,6 @@ import type { AppConfig } from '@/types';
 import '@/styles/settings-modal.css';
 
 const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
 
 interface SettingsModalProps {
   visible: boolean;
@@ -232,12 +231,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const tabItems = [
     {
       key: 'general',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Settings className="w-4 h-4"  />
-          <span>常规设置</span>
-        </span>
-      ),
+      icon: <Settings className="w-4 h-4" />,
+      label: '常规设置',
       children: (
         <div className="max-h-96 overflow-y-auto px-1">
           <Form
@@ -248,104 +243,110 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           >
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="主题"
-                  name="theme"
-                  tooltip="选择应用程序的外观主题"
-                >
-                  <Select>
-                    <Option value="light">浅色主题</Option>
-                    <Option value="dark">深色主题</Option>
-                    <Option value="auto">跟随系统</Option>
-                  </Select>
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>主题</FormLabel>
+                  <FormControl>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择主题" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="light">浅色主题</SelectItem>
+                        <SelectItem value="dark">深色主题</SelectItem>
+                        <SelectItem value="auto">跟随系统</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="语言"
-                  name="language"
-                  tooltip="选择应用程序的显示语言"
-                >
-                  <Select>
-                    <Option value="zh-CN">简体中文</Option>
-                    <Option value="en-US">English</Option>
-                  </Select>
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>语言</FormLabel>
+                  <FormControl>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择语言" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="zh-CN">简体中文</SelectItem>
+                        <SelectItem value="en-US">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="查询超时时间 (毫秒)"
-                  name="queryTimeout"
-                  tooltip="查询执行的最大等待时间"
-                >
-                  <InputNumber
-                    min={1000}
-                    max={300000}
-                    step={1000}
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>查询超时时间 (毫秒)</FormLabel>
+                  <FormControl>
+                    <InputNumber
+                      min={1000}
+                      max={300000}
+                      step={1000}
+                      className="w-full"
+                    />
+                  </FormControl>
+                </FormItem>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="最大查询结果数"
-                  name="maxQueryResults"
-                  tooltip="单次查询返回的最大行数"
-                >
-                  <InputNumber
-                    min={100}
-                    max={100000}
-                    step={100}
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>最大查询结果数</FormLabel>
+                  <FormControl>
+                    <InputNumber
+                      min={100}
+                      max={100000}
+                      step={100}
+                      className="w-full"
+                    />
+                  </FormControl>
+                </FormItem>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="自动保存"
-                  name="autoSave"
-                  valuePropName="checked"
-                  tooltip="自动保存查询和配置"
-                >
-                  <Switch />
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>自动保存</FormLabel>
+                  <FormControl>
+                    <Switch />
+                  </FormControl>
+                </FormItem>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="自动连接"
-                  name="autoConnect"
-                  valuePropName="checked"
-                  tooltip="启动时自动连接到上次使用的数据库"
-                >
-                  <Switch />
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>自动连接</FormLabel>
+                  <FormControl>
+                    <Switch />
+                  </FormControl>
+                </FormItem>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="日志级别"
-                  name="logLevel"
-                  tooltip="设置应用程序的日志详细程度"
-                >
-                  <Select>
-                    <Option value="debug">调试 (Debug)</Option>
-                    <Option value="info">信息 (Info)</Option>
-                    <Option value="warn">警告 (Warn)</Option>
-                    <Option value="error">错误 (Error)</Option>
-                  </Select>
-                </Form.Item>
+                <FormItem>
+                  <FormLabel>日志级别</FormLabel>
+                  <FormControl>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择日志级别" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="debug">调试 (Debug)</SelectItem>
+                        <SelectItem value="info">信息 (Info)</SelectItem>
+                        <SelectItem value="warn">警告 (Warn)</SelectItem>
+                        <SelectItem value="error">错误 (Error)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
               </Col>
             </Row>
 
-            <div className="border-t border-gray-200 my-4" />
+            <Divider />
 
             <div className="flex justify-end">
               <div className="flex gap-2">
@@ -370,12 +371,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       )},
     {
       key: 'data',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Database className="w-4 h-4"  />
-          <span>数据管理</span>
-        </span>
-      ),
+      icon: <Database className="w-4 h-4" />,
+      label: '数据管理',
       children: (
         <div className="max-h-96 overflow-y-auto space-y-4 px-1">
           <div>
@@ -452,12 +449,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       )},
     {
       key: 'about',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Info className="w-4 h-4"  />
-          <span>关于</span>
-        </span>
-      ),
+      icon: <Info className="w-4 h-4" />,
+      label: '关于',
       children: (
         <div className="max-h-96 overflow-y-auto px-1">
           <Row gutter={16}>
@@ -528,12 +521,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       )},
     {
       key: 'notifications',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Bell className="w-4 h-4"  />
-          <span>通知设置</span>
-        </span>
-      ),
+      icon: <Bell className="w-4 h-4" />,
+      label: '通知设置',
       children: (
         <div className="max-h-96 overflow-y-auto px-1">
           <div className="mb-4">
@@ -586,12 +575,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       )},
     {
       key: 'developer',
-      label: (
-        <span className="flex items-center space-x-2">
-          <Bug className="w-4 h-4"  />
-          <span>开发者工具</span>
-        </span>
-      ),
+      icon: <Bug className="w-4 h-4" />,
+      label: '开发者工具',
       children: (
         <div className="max-h-96 overflow-y-auto space-y-4 px-1">
           {/* 错误测试工具 - 仅开发环境显示 */}
@@ -627,32 +612,42 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
   return (
     <>
-      <Dialog
-        title={
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Settings className="w-4 h-4"  />
+      <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-hidden settings-modal">
+          <DialogHeader className="border-b border-gray-200 pb-4">
+            <DialogTitle className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
               <span>偏好设置</span>
-            </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <Tabs defaultValue="general" orientation="vertical" className="flex h-full">
+              <TabsList className="flex flex-col h-full w-40 mr-4 bg-gray-50">
+                {tabItems.map((item) => (
+                  <TabsTrigger
+                    key={item.key}
+                    value={item.key}
+                    className="w-full justify-start text-left data-[state=active]:bg-white"
+                  >
+                    <div className="flex items-center space-x-2">
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <div className="flex-1 overflow-y-auto">
+                {tabItems.map((item) => (
+                  <TabsContent key={item.key} value={item.key} className="mt-0 h-full">
+                    <div className="p-4">
+                      {item.children}
+                    </div>
+                  </TabsContent>
+                ))}
+              </div>
+            </Tabs>
           </div>
-        }
-        open={visible}
-        onCancel={onClose}
-        footer={null}
-        width={1000}
-        styles={{
-          body: { padding: '16px 0' },
-          header: { borderBottom: '1px solid #f0f0f0', marginBottom: 0 }}}
-        destroyOnClose
-        centered
-        className="settings-modal"
-      >
-        <Tabs
-          items={tabItems}
-          tabPosition="left"
-          style={{ minHeight: '400px' }}
-          tabBarStyle={{ width: '140px', marginRight: '16px' }}
-        />
+        </DialogContent>
       </Dialog>
 
       {/* 浏览器模式说明弹框 */}

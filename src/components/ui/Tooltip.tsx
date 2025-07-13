@@ -45,17 +45,16 @@ const TooltipWrapper = React.forwardRef<HTMLDivElement, TooltipWrapperProps>(
       ...(trigger === "click" && { delayDuration: 0 }),
     }
 
+    // Don't wrap with TooltipProvider since it's already provided at the app level
     return (
-      <TooltipProvider>
-        <Tooltip open={open} onOpenChange={onOpenChange} {...triggerProps}>
-          <TooltipTrigger asChild>
-            {children}
-          </TooltipTrigger>
-          <TooltipContent side={placement}>
-            {title}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip open={open} onOpenChange={onOpenChange} {...triggerProps}>
+        <TooltipTrigger asChild>
+          {children}
+        </TooltipTrigger>
+        <TooltipContent side={placement}>
+          {title}
+        </TooltipContent>
+      </Tooltip>
     )
   }
 )

@@ -8,7 +8,7 @@ const TypographyTest: React.FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <Card title="Typography 组件样式测试" className="mb-6">
-        <div className="flex gap-2" direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           
           {/* 标题测试 */}
           <div>
@@ -30,24 +30,24 @@ const TypographyTest: React.FC = () => {
               sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </Paragraph>
             
-            <div className="flex gap-2" wrap>
+            <Space wrap>
               <Text>普通文本</Text>
               <Text type="secondary">次要文本</Text>
               <Text type="success">成功文本</Text>
               <Text type="warning">警告文本</Text>
               <Text type="danger">危险文本</Text>
-            </div>
+            </Space>
             
             <br /><br />
             
-            <div className="flex gap-2" wrap>
+            <Space wrap>
               <Text strong>粗体文本</Text>
               <Text italic>斜体文本</Text>
               <Text underline>下划线文本</Text>
               <Text delete>删除线文本</Text>
               <Text code>代码文本</Text>
               <Text mark>标记文本</Text>
-            </div>
+            </Space>
           </div>
 
           <Divider />
@@ -163,7 +163,7 @@ greet('World');`}
             </Paragraph>
           </div>
 
-        </div>
+        </Space>
       </Card>
     </div>
   );

@@ -21,8 +21,8 @@ import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 
-const { Search } = Input;
-const { TabPane } = Tabs;
+// Note: Using Input directly for search functionality
+// Note: Using TabsContent instead of TabPane
 
 // Local type definitions to replace antd types
 interface DataNode {
@@ -569,12 +569,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         </div>
 
         {/* 搜索框 */}
-        <Search
+        <Input
           placeholder="搜索连接、数据库、表..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          size="small"
-          allowClear
+          className="text-sm"
         />
       </div>
 

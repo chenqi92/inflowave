@@ -11,7 +11,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './Dialog';
 
-export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './Table';
+export { Table, BaseTable, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './Table';
 
 export { Skeleton } from './Skeleton';
 
@@ -55,10 +55,10 @@ export { Progress } from './Progress';
 export { Result } from './Result';
 export type { ResultProps } from './Result';
 
-import { Title, Text, Paragraph } from './Typography';
+import { Title, Text, Paragraph, AntParagraph } from './Typography';
 
-export { Title, Text, Paragraph } from './Typography';
-export type { TypographyProps } from './Typography';
+export { Title, Text, Paragraph, AntParagraph } from './Typography';
+export type { TypographyProps, AntParagraphProps } from './Typography';
 
 // Export Typography as a namespace object
 export const Typography = {

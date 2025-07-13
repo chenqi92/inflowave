@@ -20,6 +20,7 @@ import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
 import UITest from './pages/UITest';
 import TestButton from './components/test/TestButton';
+import TestFixes from './test-fixes';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
 // UI 组件导入
@@ -72,6 +73,7 @@ const MainLayout: React.FC = () => {
             <Route path="/debug" element={<ConnectionDebug />} />
             <Route path="/typography-test" element={<TypographyTest />} />
             <Route path="/ui-test" element={<UITest />} />
+            <Route path="/test-fixes" element={<TestFixes />} />
           </Routes>
         </main>
 
