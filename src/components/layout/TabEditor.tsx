@@ -13,7 +13,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryResult, QueryRequest } from '@/types';
 
-// Local type definitions to replace antd types
 interface MenuProps {
   items?: Array<{
     key: string;

@@ -8,7 +8,6 @@ import { showMessage } from '@/utils/message';
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
 
-// Local type definitions to replace antd types
 interface DataNode {
   key: string | number;
   title: React.ReactNode;

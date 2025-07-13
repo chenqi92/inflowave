@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Progress, Tag, Button, Badge, Select, Input, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Spin } from '@/components/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
+import { Card, Progress, Tag, Button, Badge, Select, Input, Switch, Tabs, Spin } from '@/components/ui';
+import { Table } from '@/components/ui';
 
-import { ClearOutlined } from '@/components/ui';
+import { X } from 'lucide-react';
 import { BarChart, TrendingUp, Database, Info, RefreshCw, Download, Eye, Bug, Copy, FileText, Key, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { DataCardinalityService, type DataCardinalityStats, type DataAnomaly } from '@/services/analyticsService';
@@ -206,10 +206,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
         return (
           <div className="flex gap-2">
             <Progress
-              percent={value * 100}
-              size="small"
-              strokeColor={getQualityScoreColor(0.5)}
-              style={{ width: '60px' }}
+              value={value * 100}
+              className="w-[60px]"
             />
             <Tag color={label.color as 'default' | 'primary' | 'success' | 'warning' | 'error' | 'processing'}>{label.text}</Tag>
           </div>
@@ -235,10 +233,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       width: 120,
       render: (value: number) => (
         <Progress
-          percent={value * 100}
-          size="small"
-          strokeColor={getQualityScoreColor(value)}
-          format={(percent) => `${(percent! / 100).toFixed(2)}`}
+          value={value * 100}
+          className="w-full"
         />
       ),
       sorter: true},
@@ -249,10 +245,11 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       width: 80,
       render: (anomalies: DataAnomaly[]) => (
         <Badge
-          count={anomalies.length}
-          overflowCount={99}
-          style={{ backgroundColor: anomalies.length > 0 ? '#ff4d4f' : '#52c41a' }}
-        />
+          variant={anomalies.length > 0 ? 'destructive' : 'default'}
+          className="text-xs"
+        >
+          {anomalies.length}
+        </Badge>
       ),
       sorter: true},
     {
@@ -263,20 +260,22 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       render: (_text: string, record: DataCardinalityStats) => (
         <div className="flex gap-2">
           <Button
-            size="small"
-            icon={<Eye className="w-4 h-4"  />}
+            size="sm"
             onClick={() => setSelectedStats(record)}
+            className="flex items-center gap-1"
           >
+            <Eye className="w-4 h-4" />
             详情
           </Button>
           <Button
-            size="small"
-            icon={<BarChart className="w-4 h-4"  />}
+            size="sm"
             onClick={() => {
               setSelectedStats(record);
               setActiveTab('distribution');
             }}
+            className="flex items-center gap-1"
           >
+            <BarChart className="w-4 h-4" />
             分布
           </Button>
         </div>
@@ -296,18 +295,16 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
 
     return (
       <div>
-        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="平均质量分数"
-                value={avgQuality}
-                precision={2}
-                suffix="/ 1.0"
-                valueStyle={{ color: getQualityScoreColor(avgQuality) }}
-              />
-            </Card>
-          </Col>
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <Card className="p-4">
+            <Statistic
+              title="平均质量分数"
+              value={avgQuality}
+              precision={2}
+              suffix="/ 1.0"
+              valueStyle={{ color: getQualityScoreColor(avgQuality) }}
+            />
+          </Card>
           <Col span={6}>
             <Card>
               <Statistic

@@ -5,11 +5,11 @@ import { isBrowserEnvironment } from '@/utils/tauri';
 import { useNoticeStore } from '@/store/notice';
 
 interface BrowserModeModalProps {
-  visible: boolean;
+  isOpen: boolean;
   onClose: () => void;
 }
 
-const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose }) => {
+const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const { dismissBrowserModeNotice } = useNoticeStore();
 
@@ -25,7 +25,7 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ visible, onClose })
   }
 
   return (
-    <Dialog open={visible} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">

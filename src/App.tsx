@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
 
       {/* 浏览器模式提醒弹框 */}
       <BrowserModeModal
-        open={browserModalVisible}
+        isOpen={browserModalVisible}
         onClose={() => setBrowserModalVisible(false)}
       />
     </>

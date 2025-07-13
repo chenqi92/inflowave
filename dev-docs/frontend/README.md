@@ -160,7 +160,6 @@ npm run tauri:dev
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.1",
-    "antd": "^5.12.8",
     "zustand": "^4.4.7",
     "echarts": "^5.4.3",
     "echarts-for-react": "^3.0.2",

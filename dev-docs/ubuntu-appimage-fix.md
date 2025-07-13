@@ -76,9 +76,6 @@ AppImage 打包器需要 PNG 格式的方形图标文件，但原始的 `tauri.c
 使用提供的测试脚本验证配置：
 
 ```powershell
-# 仅检查配置
-.\scripts\test-linux-build.ps1 -CheckOnly
-
 # 完整构建测试
 .\scripts\test-linux-build.ps1 -FullBuild
 ```

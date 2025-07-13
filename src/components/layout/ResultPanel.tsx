@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, Table, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toast } from '@/components/ui';
-// TODO: Replace antd types: MenuProps 
 import { 
   TableIcon, 
   Bug, 

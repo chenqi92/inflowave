@@ -13,14 +13,14 @@ interface SearchResult {
 }
 
 interface GlobalSearchProps {
-  visible: boolean;
+  isOpen: boolean;
   onClose: () => void;
   onNavigate?: (path: string, params?: any) => void;
   onExecuteQuery?: (query: string) => void;
 }
 
 const GlobalSearch: React.FC<GlobalSearchProps> = ({
-  visible,
+  isOpen,
   onClose,
   onNavigate,
   onExecuteQuery}) => {
@@ -188,24 +188,24 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
   // 对话框打开时聚焦输入框
   useEffect(() => {
-    if (visible && inputRef.current) {
+    if (isOpen && inputRef.current) {
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
-  }, [visible]);
+  }, [isOpen]);
 
   // 重置状态
   useEffect(() => {
-    if (!visible) {
+    if (!isOpen) {
       setSearchText('');
       setResults([]);
       setSelectedIndex(0);
     }
-  }, [visible]);
+  }, [isOpen]);
 
   return (
-    <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl p-0">
         <DialogHeader className="hidden">
           <DialogTitle>全局搜索</DialogTitle>
