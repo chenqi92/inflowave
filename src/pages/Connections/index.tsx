@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Title, Button, Tabs, TabsContent, TabsList, TabsTrigger, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Title, Button, Tabs, TabsContent, TabsList, TabsTrigger, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
 import { Plus, RefreshCw, FileUp, FileDown, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
@@ -252,49 +252,6 @@ const Connections: React.FC = () => {
 
   return (
     <div className="h-full bg-white flex flex-col">
-      {/* 页面标题和操作 */}
-      <div className="flex justify-between items-center p-4 border-b border">
-        <div>
-          <h1 className="text-lg font-semibold text-gray-900">
-            连接管理
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            管理 InfluxDB 数据库连接 ({connections.length} 个连接)
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            icon={<RefreshCw className="w-4 h-4"  />}
-            onClick={loadConnections}
-            disabled={loading}
-            size="small"
-          >
-            刷新
-          </Button>
-          <Button
-            icon={<FileUp className="w-4 h-4"  />}
-            onClick={() => showMessage.info('导入功能开发中...')}
-            size="small"
-          >
-            导入
-          </Button>
-          <Button
-            icon={<FileDown className="w-4 h-4"  />}
-            onClick={() => showMessage.info('导出功能开发中...')}
-            size="small"
-          >
-            导出
-          </Button>
-          <Button
-            type="primary"
-            icon={<Plus className="w-4 h-4"  />}
-            onClick={() => handleOpenDialog()}
-            size="small"
-          >
-            新建连接
-          </Button>
-        </div>
-      </div>
 
       {/* 连接管理器 */}
       <div className="flex-1 overflow-hidden">

@@ -297,10 +297,11 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   return (
     <>
-      <KeyboardShortcuts
-        open={shortcutsVisible}
+      {/* 临时注释掉 KeyboardShortcuts 组件以修复显示问题 */}
+      {/* <KeyboardShortcuts
+        visible={shortcutsVisible}
         onClose={() => setShortcutsVisible(false)}
-      />
+      /> */}
       <AboutDialog
         open={aboutVisible}
         onClose={() => setAboutVisible(false)}

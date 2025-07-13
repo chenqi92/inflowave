@@ -13,6 +13,12 @@ interface KeyboardShortcutsProps {
 const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   visible,
   onClose}) => {
+  
+  // 临时调试：强制不显示
+  console.log('KeyboardShortcuts visible prop:', visible);
+  
+  // 如果 visible 是 true，强制设为 false 作为临时修复
+  const actualVisible = false;
   // 快捷键数据
   const shortcutCategories = [
     {
@@ -102,7 +108,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
           <span>键盘快捷键</span>
         </div>
       }
-      open={visible}
+      open={actualVisible}
       onOpenChange={(open) => { if (!open) onClose(); }}
       footer={null}
       width={800}
