@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils';
 
 export interface PanelProps {
   header: ReactNode;
-  key: string;
   children: ReactNode;
   disabled?: boolean;
   className?: string;
+  // Note: 'key' is handled by React automatically and should not be in props interface
 }
 
 export interface CollapseProps {
@@ -76,9 +76,10 @@ export const Collapse: React.FC<CollapseProps> = ({
     )}>
       {React.Children.map(children, (child, index) => {
         if (!React.isValidElement(child)) return null;
-        
-        const { header, key: panelKey, children: panelChildren, disabled = false } = child.props;
-        const key = panelKey || index.toString();
+
+        const { header, children: panelChildren, disabled = false } = child.props;
+        // Use React's key if available, otherwise fall back to index
+        const key = child.key || index.toString();
         const isActive = currentActiveKeys.includes(key);
         
         return (

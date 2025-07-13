@@ -13,6 +13,8 @@ interface SpinProps {
 
 const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
   ({ spinning = false, size = "default", tip, className, children, indicator, ...props }, ref) => {
+    // Remove custom props to prevent them from being passed to DOM
+    const { spinning: _, size: __, tip: ___, indicator: ____, ...domProps } = props as any;
     const sizeClasses = {
       small: "h-4 w-4",
       default: "h-6 w-6", 
@@ -28,7 +30,7 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
         <div
           ref={ref}
           className={cn("flex flex-col items-center justify-center space-y-2", className)}
-          {...props}
+          {...domProps}
         >
           {indicator || defaultIndicator}
           {tip && <span className="text-sm text-muted-foreground">{tip}</span>}
@@ -37,7 +39,7 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
     }
 
     return (
-      <div ref={ref} className={cn("relative", className)} {...props}>
+      <div ref={ref} className={cn("relative", className)} {...domProps}>
         {children}
         {spinning && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">

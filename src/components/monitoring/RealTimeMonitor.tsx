@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress } from '@/components/ui';
+import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { RefreshCw, Settings, TrendingUp, Bell, PlayCircle, PauseCircle, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';

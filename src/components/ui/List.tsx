@@ -92,9 +92,9 @@ interface ListProps {
 }
 
 const List = React.forwardRef<HTMLDivElement, ListProps>(
-  ({ 
-    className, 
-    children, 
+  ({
+    className,
+    children,
     dataSource,
     renderItem,
     loading,
@@ -103,8 +103,10 @@ const List = React.forwardRef<HTMLDivElement, ListProps>(
     bordered = true,
     split = true,
     size = "default",
-    ...props 
+    ...props
   }, ref) => {
+    // Remove custom props to prevent them from being passed to DOM
+    const { dataSource: _, renderItem: __, loading: ___, header: ____, footer: _____, bordered: ______, split: _______, size: ________, ...domProps } = props as any;
     const sizeClasses = {
       small: "text-sm",
       default: "",
@@ -124,7 +126,7 @@ const List = React.forwardRef<HTMLDivElement, ListProps>(
           sizeClasses[size],
           className
         )}
-        {...props}
+        {...domProps}
       >
         {header && (
           <div className="px-4 py-3 border-b border-border bg-muted/30">

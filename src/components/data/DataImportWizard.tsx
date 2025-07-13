@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber } from '@/components/ui';
+import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber, Modal } from '@/components/ui';
 
 const { Step } = Steps;
 import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';

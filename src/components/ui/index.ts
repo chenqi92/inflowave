@@ -52,6 +52,9 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 
 export { Progress } from './Progress';
 
+export { Result } from './Result';
+export type { ResultProps } from './Result';
+
 import { Title, Text, Paragraph } from './Typography';
 
 export { Title, Text, Paragraph } from './Typography';

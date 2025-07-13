@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Card } from '@/components/ui';
+import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Card, Modal } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';

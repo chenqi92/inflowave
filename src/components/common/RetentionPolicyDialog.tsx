@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Alert, Select, Typography, Switch, InputNumber } from '@/components/ui';
+import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Modal } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
 import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';

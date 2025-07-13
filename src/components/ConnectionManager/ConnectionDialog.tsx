@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Switch, Button, Alert, AlertDescription, Steps, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Form, Input, InputNumber, Switch, Button, Alert, AlertDescription, Steps, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';

@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form } from '@/components/ui';
+import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
 import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, Input, Select, Button, Alert, Typography, Tabs, Row, Col, Upload } from '@/components/ui';
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';

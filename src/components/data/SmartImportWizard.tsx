@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Steps, Button, Alert, Typography, Progress } from '@/components/ui';
+import { Steps, Button, Alert, Typography, Progress, Modal } from '@/components/ui';
 import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';

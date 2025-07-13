@@ -34,7 +34,7 @@ Title.displayName = "Title"
 
 const Text = React.forwardRef<
   HTMLSpanElement,
-  TypographyProps & { 
+  TypographyProps & {
     type?: "secondary" | "success" | "warning" | "danger"
     strong?: boolean
     code?: boolean
@@ -43,10 +43,13 @@ const Text = React.forwardRef<
   const variants = {
     secondary: "text-muted-foreground",
     success: "text-green-600",
-    warning: "text-yellow-600", 
+    warning: "text-yellow-600",
     danger: "text-red-600"
   }
-  
+
+  // Remove code, strong, and type from props to prevent them from being passed to DOM
+  const { code: _, strong: __, type: ___, ...domProps } = props as any;
+
   if (code) {
     return (
       <code
@@ -56,13 +59,13 @@ const Text = React.forwardRef<
           type && variants[type],
           className
         )}
-        {...props}
+        {...domProps}
       >
         {children}
       </code>
     )
   }
-  
+
   return (
     <span
       ref={ref}
@@ -72,7 +75,7 @@ const Text = React.forwardRef<
         type && variants[type],
         className
       )}
-      {...props}
+      {...domProps}
     >
       {children}
     </span>

@@ -4,7 +4,7 @@ import { Modal, Form, Select, Button, Typography, Space, Row, Col, Alert, Tabs, 
 // TODO: Replace these Ant Design components: message, Divider
 import { Card } from '@/components/ui';
 
-import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell } from 'lucide-react';
+import { Save, RefreshCw, Trash2, Download, Upload, Settings, Database, User, Bug, Bell, FileDown } from 'lucide-react';
 import { Info, X } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';

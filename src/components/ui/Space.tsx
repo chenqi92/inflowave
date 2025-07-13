@@ -12,16 +12,18 @@ interface SpaceProps {
 }
 
 const Space = React.forwardRef<HTMLDivElement, SpaceProps>(
-  ({ 
-    className, 
-    direction = "horizontal", 
-    size = "small", 
+  ({
+    className,
+    direction = "horizontal",
+    size = "small",
     align = "center",
     wrap = false,
     split,
-    children, 
-    ...props 
+    children,
+    ...props
   }, ref) => {
+    // Remove custom props to prevent them from being passed to DOM
+    const { direction: _, size: __, align: ___, wrap: ____, split: _____, ...domProps } = props as any;
     const isHorizontal = direction === "horizontal"
     
     const sizeMap = {
@@ -63,7 +65,7 @@ const Space = React.forwardRef<HTMLDivElement, SpaceProps>(
           className
         )}
         style={style}
-        {...props}
+        {...domProps}
       >
         {childrenArray.map((child, index) => (
           <React.Fragment key={index}>

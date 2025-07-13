@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Progress } from '@/components/ui';
+import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Progress, Modal } from '@/components/ui';
 // TODO: Replace these Ant Design components: Popconfirm, Tooltip
 import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Database, Plus, Edit, Trash2, Settings, Info, RefreshCw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
