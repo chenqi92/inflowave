@@ -1,22 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert } from '@/components/ui';
-import {
-  Database,
-  Table,
-  RefreshCw,
-  Settings,
-  FileText,
-  File,
-  Hash,
-  Tags,
-  Key,
-  Clock,
-  Link,
-  Search as SearchIcon,
-  MoreHorizontal,
-  Code,
-  GitBranch
-} from 'lucide-react';
+import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';

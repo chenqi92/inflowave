@@ -1,16 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Tabs, Button, Space, Dropdown, Tooltip, Dialog, Select, Popconfirm } from '@/components/ui';
 import {
-  Save,
-  PlayCircle,
-  Database,
-  Plus,
-  X,
-  Table,
-  FolderOpen,
-  MoreHorizontal,
-  FileText
-} from 'lucide-react';
+  Tabs, TabsContent, TabsList, TabsTrigger, Button, Space, Dropdown,
+  Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,
+  Dialog, Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Popconfirm
+} from '@/components/ui';
+import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore } from '@/store/connection';
@@ -289,96 +284,109 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
   const currentTab = tabs.find(tab => tab.id === activeKey);
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <TooltipProvider>
+      <div className="h-full flex flex-col bg-white">
       {/* 标签页头部 */}
       <div className="flex items-center justify-between border-b border-gray-200">
-        <div className="flex-1">
-          <Tabs
-            type="editable-card"
-            activeKey={activeKey}
-            onChange={setActiveKey}
-            onEdit={(targetKey, action) => {
-              if (action === 'add') {
-                createNewTab();
-              } else if (action === 'remove') {
-                closeTab(targetKey as string);
-              }
-            }}
-            addIcon={
-              <Dropdown menu={{ items: newTabMenuItems }} placement="bottomLeft">
-                <Button type="text" icon={<Plus className="w-4 h-4"  />} size="small" />
-              </Dropdown>
-            }
-            items={tabs.map(tab => ({
-              key: tab.id,
-              label: (
-                <Dropdown
-                  menu={{ items: getTabContextMenu(tab) }}
-                  trigger={['contextMenu']}
+        <div className="flex-1 flex items-center">
+          <div className="flex items-center border-b border-gray-200 flex-1">
+            {tabs.map(tab => (
+              <div
+                key={tab.id}
+                className={`flex items-center gap-1 px-3 py-2 border-r border-gray-200 cursor-pointer hover:bg-gray-50 ${
+                  activeKey === tab.id ? 'bg-white border-b-2 border-blue-500' : 'bg-gray-50'
+                }`}
+                onClick={() => setActiveKey(tab.id)}
+              >
+                {tab.type === 'query' && <FileText className="w-4 h-4" />}
+                {tab.type === 'table' && <Table className="w-4 h-4" />}
+                {tab.type === 'database' && <Database className="w-4 h-4" />}
+                <span className="text-sm">{tab.title}</span>
+                {tab.modified && <span className="text-orange-500 text-xs">*</span>}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeTab(tab.id);
+                  }}
+                  className="ml-1 p-0 h-4 w-4"
                 >
-                  <span className="flex items-center gap-1">
-                    {tab.type === 'query' && <FileText className="w-4 h-4"  />}
-                    {tab.type === 'table' && <Table className="w-4 h-4"  />}
-                    {tab.type === 'database' && <Database className="w-4 h-4"  />}
-                    {tab.title}
-                    {tab.modified && <span className="text-orange-500">*</span>}
-                  </span>
-                </Dropdown>
-              ),
-              children: null, // 内容在下面单独渲染
-            }))}
-            size="small"
-            className="editor-tabs"
-          />
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={createNewTab}
+              className="ml-2"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* 工具栏 */}
         <div className="flex gap-2 px-3" size="small" >
           <Select
             value={selectedDatabase}
-            onChange={setSelectedDatabase}
-            placeholder="选择数据库"
-            style={{ minWidth: 150 }}
-            size="small"
+            onValueChange={setSelectedDatabase}
             disabled={!activeConnectionId || databases.length === 0}
           >
-            {databases.map(db => (
-              <Select.Option key={db} value={db}>
-                {db}
-              </Select.Option>
-            ))}
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="选择数据库" />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.map(db => (
+                <SelectItem key={db} value={db}>
+                  {db}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-          <Tooltip title="执行 (Ctrl+Enter)">
-            <Button 
-              type="primary" 
-              icon={<PlayCircle />} 
-              size="small"
-              onClick={executeQuery}
-              loading={loading}
-              disabled={!activeConnectionId || !selectedDatabase}
-            >
-              执行
-            </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={executeQuery}
+                disabled={loading || !activeConnectionId || !selectedDatabase}
+              >
+                <PlayCircle className="w-4 h-4 mr-1" />
+                {loading ? '执行中...' : '执行'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>执行 (Ctrl+Enter)</TooltipContent>
           </Tooltip>
-          <Tooltip title="保存 (Ctrl+S)">
-            <Button 
-              icon={<Save className="w-4 h-4"  />} 
-              size="small"
-              onClick={saveCurrentTab}
-            />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveCurrentTab}
+              >
+                <Save className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>保存 (Ctrl+S)</TooltipContent>
           </Tooltip>
-          <Tooltip title="打开文件">
-            <Button 
-              icon={<FolderOpenOutlined />} 
-              size="small"
-            />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+              >
+                <FolderOpen className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>打开文件</TooltipContent>
           </Tooltip>
-          <Dropdown menu={{ items: [] }}>
-            <Button 
-              icon={<MoreOutlined />} 
-              size="small"
-            />
-          </Dropdown>
+          <Button
+            variant="outline"
+            size="sm"
+          >
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
@@ -441,7 +449,8 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
           <div />
         </Popconfirm>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

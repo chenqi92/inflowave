@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, Table, Tabs, Spin, Row, Col, Alert, Tree, Card } from '@/components/ui';
-import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock } from 'lucide-react';
+import { Button, Select, Tabs, Spin, Row, Col, Alert, Tree, Card } from '@/components/ui';
+import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';

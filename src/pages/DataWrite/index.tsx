@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Button, Select, Table, Tabs, Alert, Row, Col, Tag, toast, Card, Space } from '@/components/ui';
-import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar } from 'lucide-react';
+import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Card, Space } from '@/components/ui';
+import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker, InputNumber, Divider } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';

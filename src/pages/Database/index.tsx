@@ -1,7 +1,37 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, DialogContent, DialogHeader, DialogTitle, toast, Card } from '@/components/ui';
-import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  Button,
+  Tag,
+  Form,
+  Input,
+  Spin,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Statistic,
+  Row,
+  Col,
+  Alert,
+  Popconfirm,
+  Tooltip,
+  TooltipProvider,
+  Descriptions,
+  DescriptionsItem,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Typography
+} from '@/components/ui';
+import { useToast, toast } from '@/hooks/use-toast';
 import { Database as DatabaseIcon, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
 import { Modal } from '@/utils/modalAdapter';
 import '@/styles/database-management.css';
@@ -15,7 +45,7 @@ import TableContextMenu from '@/components/database/TableContextMenu';
 import type { RetentionPolicy } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
-const { Option } = Select;
+const { Text } = Typography;
 
 // 生成图表查询的辅助函数
 const generateChartQuery = (params: any): string => {
@@ -174,7 +204,7 @@ const Database: React.FC = () => {
 
       toast({ title: "成功", description: "数据库创建成功" });
       setCreateModalVisible(false);
-      form.resetFields();
+      form.reset();
       await loadDatabases();
     } catch (error) {
       toast({ title: "错误", description: "创建数据库失败: ${error}", variant: "destructive" });
@@ -260,7 +290,8 @@ const Database: React.FC = () => {
   }
 
   return (
-    <div className="p-6 database-management">
+    <TooltipProvider>
+      <div className="p-6 database-management">
       {/* 页面标题和操作 */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -269,7 +300,7 @@ const Database: React.FC = () => {
             管理 InfluxDB 数据库、测量和保留策略
           </p>
         </div>
-        <div className="flex gap-2" size="middle">
+        <div className="flex gap-2">
           <Button
             icon={<RefreshCw className="w-4 h-4"  />}
             onClick={loadDatabases}
@@ -291,38 +322,33 @@ const Database: React.FC = () => {
       <Card className="mb-6">
         <div className="flex items-center gap-4">
           <span className="font-semibold text-base">选择数据库:</span>
-          <Select
-            style={{ width: 280 }}
-            placeholder="选择数据库"
-            value={selectedDatabase}
-            onChange={setSelectedDatabase}
-            loading={loading}
-            showSearch
-            filterOption={(input, option) =>
-              (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-            }
-          >
-            {(databases || []).map(db => (
-              <Option key={db} value={db}>
-                <DatabaseContextMenu
-                  databaseName={db}
-                  onAction={(action, dbName) => {
-                    console.log('数据库操作:', action, dbName);
-                    // 根据操作类型执行相应的处理
-                    if (action === 'refresh_database') {
-                      loadDatabaseDetails(dbName);
-                    } else if (action === 'drop_database') {
-                      loadDatabases(); // 重新加载数据库列表
-                    }
-                  }}
-                >
-                  <div className="flex gap-2">
-                    <DatabaseIcon className="w-4 h-4"  />
-                    {db}
-                  </div>
-                </DatabaseContextMenu>
-              </Option>
-            ))}
+          <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="选择数据库" />
+            </SelectTrigger>
+            <SelectContent>
+              {(databases || []).map(db => (
+                <SelectItem key={db} value={db}>
+                  <DatabaseContextMenu
+                    databaseName={db}
+                    onAction={(action, dbName) => {
+                      console.log('数据库操作:', action, dbName);
+                      // 根据操作类型执行相应的处理
+                      if (action === 'refresh_database') {
+                        loadDatabaseDetails(dbName);
+                      } else if (action === 'drop_database') {
+                        loadDatabases(); // 重新加载数据库列表
+                      }
+                    }}
+                  >
+                    <div className="flex gap-2">
+                      <DatabaseIcon className="w-4 h-4"  />
+                      {db}
+                    </div>
+                  </DatabaseContextMenu>
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           {selectedDatabase && (
             <Popconfirm
@@ -345,41 +371,50 @@ const Database: React.FC = () => {
         <>
           {/* 数据库统计信息 */}
           {databaseStats && (
-            <Card title="数据库统计" className="mb-6">
-              <Row gutter={16}>
-                <Col span={6}>
-                  <Statistic
-                    title="测量数量"
-                    value={databaseStats.measurementCount}
-                    prefix={<BarChart className="w-4 h-4"  />}
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="序列数量"
-                    value={databaseStats.seriesCount}
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="数据点数量"
-                    value={databaseStats.pointCount}
-                  />
-                </Col>
-                <Col span={6}>
-                  <Statistic
-                    title="磁盘使用"
-                    value={databaseStats.diskSize}
-                    suffix="MB"
-                  />
-                </Col>
-              </Row>
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>数据库统计</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Row gutter={16}>
+                  <Col span={6}>
+                    <Statistic
+                      title="测量数量"
+                      value={databaseStats.measurementCount}
+                      prefix={<BarChart className="w-4 h-4"  />}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title="序列数量"
+                      value={databaseStats.seriesCount}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title="数据点数量"
+                      value={databaseStats.pointCount}
+                    />
+                  </Col>
+                  <Col span={6}>
+                    <Statistic
+                      title="磁盘使用"
+                      value={databaseStats.diskSize}
+                      suffix="MB"
+                    />
+                  </Col>
+                </Row>
+              </CardContent>
             </Card>
           )}
 
           {/* 测量列表 */}
-          <Card title="测量列表" className="mb-6">
-            <Spin spinning={loading}>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>测量列表</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Spin spinning={loading}>
               <Table
                 dataSource={measurements?.map(m => ({ name: m })) || []}
                 columns={[
@@ -418,7 +453,7 @@ const Database: React.FC = () => {
                     key: 'actions',
                     width: 180,
                     render: (_, record: { name: string }) => (
-                      <div className="flex gap-2" size="small">
+                      <div className="flex gap-2">
                         <Tooltip title="查看详情">
                           <Button
                             type="text"
@@ -463,26 +498,29 @@ const Database: React.FC = () => {
                         database: selectedDatabase}});
                   }})}
               />
-            </Spin>
+              </Spin>
+            </CardContent>
           </Card>
 
           {/* 保留策略 */}
-          <Card
-            title="保留策略"
-            extra={
-              <Button
-                type="primary"
-                icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setRetentionPolicyDialog({
-                  visible: true,
-                  mode: 'create',
-                  policy: undefined})}
-              >
-                创建策略
-              </Button>
-            }
-          >
-            <Spin spinning={loading}>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>保留策略</CardTitle>
+                <Button
+                  type="primary"
+                  icon={<Plus className="w-4 h-4"  />}
+                  onClick={() => setRetentionPolicyDialog({
+                    visible: true,
+                    mode: 'create',
+                    policy: undefined})}
+                >
+                  创建策略
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Spin spinning={loading}>
               <Table
                 dataSource={Array.isArray(retentionPolicies) ? retentionPolicies : []}
                 columns={[
@@ -513,7 +551,7 @@ const Database: React.FC = () => {
                     key: 'actions',
                     width: 120,
                     render: (_, record: RetentionPolicy) => (
-                      <div className="flex gap-2" size="small">
+                      <div className="flex gap-2">
                         <Tooltip title="编辑">
                           <Button
                             type="text"
@@ -561,7 +599,8 @@ const Database: React.FC = () => {
                 locale={{
                   emptyText: '暂无保留策略'}}
               />
-            </Spin>
+              </Spin>
+            </CardContent>
           </Card>
         </>
       )}
@@ -591,14 +630,14 @@ const Database: React.FC = () => {
                   content: (
                     <div className="space-y-4">
                       <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label="数据库名称">{params.database}</Descriptions.Item>
-                        <Descriptions.Item label="测量数量">{measurements.length}</Descriptions.Item>
-                        <Descriptions.Item label="保留策略数量">{retentionPolicies.length}</Descriptions.Item>
+                        <DescriptionsItem label="数据库名称">{params.database}</DescriptionsItem>
+                        <DescriptionsItem label="测量数量">{measurements.length}</DescriptionsItem>
+                        <DescriptionsItem label="保留策略数量">{retentionPolicies.length}</DescriptionsItem>
                         {databaseStats && (
                           <>
-                            <Descriptions.Item label="序列数量">{databaseStats.seriesCount}</Descriptions.Item>
-                            <Descriptions.Item label="数据点数量">{databaseStats.pointCount}</Descriptions.Item>
-                            <Descriptions.Item label="磁盘使用">{databaseStats.diskSize} MB</Descriptions.Item>
+                            <DescriptionsItem label="序列数量">{databaseStats.seriesCount}</DescriptionsItem>
+                            <DescriptionsItem label="数据点数量">{databaseStats.pointCount}</DescriptionsItem>
+                            <DescriptionsItem label="磁盘使用">{databaseStats.diskSize} MB</DescriptionsItem>
                           </>
                         )}
                       </Descriptions>
@@ -884,14 +923,14 @@ const Database: React.FC = () => {
                     content: (
                       <div>
                         <Descriptions column={1} bordered>
-                          <Descriptions.Item label="查询">
+                          <DescriptionsItem label="查询">
                             <code className="bg-gray-100 px-1 rounded">{query}</code>
-                          </Descriptions.Item>
-                          <Descriptions.Item label="结果">
+                          </DescriptionsItem>
+                          <DescriptionsItem label="结果">
                             <pre className="bg-gray-100 p-2 rounded">
                               {JSON.stringify(result, null, 2)}
                             </pre>
-                          </Descriptions.Item>
+                          </DescriptionsItem>
                         </Descriptions>
                       </div>
                     )});
@@ -1078,7 +1117,7 @@ const Database: React.FC = () => {
         open={createModalVisible}
         onClose={() => {
           setCreateModalVisible(false);
-          form.resetFields();
+          form.reset();
         }}
         width={500}
         footer={
@@ -1086,14 +1125,14 @@ const Database: React.FC = () => {
             <Button
               onClick={() => {
                 setCreateModalVisible(false);
-                form.resetFields();
+                form.reset();
               }}
             >
               取消
             </Button>
             <Button
               variant="default"
-              onClick={() => form.submit()}
+              onClick={() => form.handleSubmit(createDatabase)()}
             >
               创建
             </Button>
@@ -1157,7 +1196,8 @@ const Database: React.FC = () => {
           <div />
         </Popconfirm>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

@@ -1,11 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Row, Col, Button, Select, Form, Input, Typography, Alert, Spin } from '@/components/ui';
+import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, Input, Typography, Alert, Spin } from '@/components/ui';
 import { Card, Space, toast } from '@/components/ui';
 
 
-import { Dialog } from '@/components/ui';
-// TODO: Replace these Ant Design components: 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
 import { AreaChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
@@ -15,7 +14,7 @@ import type { QueryResult, QueryRequest } from '@/types';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
 
-const { Option } = Select;
+// Remove Option destructuring as we'll use SelectItem instead
 
 interface ChartConfig {
   id: string;
@@ -209,7 +208,7 @@ const Visualization: React.FC = () => {
     chartConfig.options = option;
     setCharts(prev => [...prev, chartConfig]);
     setCreateModalVisible(false);
-    form.resetFields();
+    form.reset();
     toast({ title: "成功", description: "图表创建成功" });
   };
 
@@ -363,23 +362,11 @@ const Visualization: React.FC = () => {
       </div>
 
       {/* 创建图表模态框 */}
-      <Dialog
-        title="创建图表"
-        open={createModalVisible}
-        onOk={() => form.submit()}
-        onCancel={() => {
-          setCreateModalVisible(false);
-          form.resetFields();
-        }}
-        width={600}
-        confirmLoading={loading}
-        okText="创建"
-        cancelText="取消"
-        closable={true}
-        keyboard={true}
-        maskClosable={true}
-        destroyOnClose={true}
-      >
+      <Dialog open={createModalVisible} onOpenChange={setCreateModalVisible}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>创建图表</DialogTitle>
+          </DialogHeader>
         <Form
           form={form}
           layout="vertical"
@@ -398,36 +385,36 @@ const Visualization: React.FC = () => {
             name="type"
             rules={[{ required: true, message: '请选择图表类型' }]}
           >
-            <Select 
-              placeholder="选择图表类型" 
-              style={{ width: '100%' }}
-              showSearch
-              optionFilterProp="children"
-            >
-              <Option value="line">
-                <div className="flex gap-2">
-                  <TrendingUp className="w-4 h-4"  />
-                  折线图
-                </div>
-              </Option>
-              <Option value="area">
-                <div className="flex gap-2">
-                  <AreaChart className="w-4 h-4"  />
-                  面积图
-                </div>
-              </Option>
-              <Option value="bar">
-                <div className="flex gap-2">
-                  <BarChart className="w-4 h-4"  />
-                  柱状图
-                </div>
-              </Option>
-              <Option value="pie">
-                <div className="flex gap-2">
-                  <PieChart className="w-4 h-4"  />
-                  饼图
-                </div>
-              </Option>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="选择图表类型" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="line">
+                  <div className="flex gap-2">
+                    <TrendingUp className="w-4 h-4"  />
+                    折线图
+                  </div>
+                </SelectItem>
+                <SelectItem value="area">
+                  <div className="flex gap-2">
+                    <AreaChart className="w-4 h-4"  />
+                    面积图
+                  </div>
+                </SelectItem>
+                <SelectItem value="bar">
+                  <div className="flex gap-2">
+                    <BarChart className="w-4 h-4"  />
+                    柱状图
+                  </div>
+                </SelectItem>
+                <SelectItem value="pie">
+                  <div className="flex gap-2">
+                    <PieChart className="w-4 h-4"  />
+                    饼图
+                  </div>
+                </SelectItem>
+              </SelectContent>
             </Select>
           </Form.Item>
 
@@ -436,17 +423,17 @@ const Visualization: React.FC = () => {
             name="database"
             rules={[{ required: true, message: '请选择数据库' }]}
           >
-            <Select 
-              placeholder="选择数据库" 
-              style={{ width: '100%' }}
-              showSearch
-              optionFilterProp="children"
-            >
-              {databases.map(db => (
-                <Option key={db} value={db}>
-                  {db}
-                </Option>
-              ))}
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="选择数据库" />
+              </SelectTrigger>
+              <SelectContent>
+                {databases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    {db}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </Form.Item>
 
@@ -466,21 +453,40 @@ const Visualization: React.FC = () => {
             name="refreshInterval"
             tooltip="设置图表自动刷新间隔，0 表示不自动刷新"
           >
-            <Select 
-              placeholder="选择刷新间隔" 
-              style={{ width: '100%' }}
-              showSearch
-              optionFilterProp="children"
-            >
-              <Option value={0}>不自动刷新</Option>
-              <Option value={5}>5 秒</Option>
-              <Option value={10}>10 秒</Option>
-              <Option value={30}>30 秒</Option>
-              <Option value={60}>1 分钟</Option>
-              <Option value={300}>5 分钟</Option>
+            <Select>
+              <SelectTrigger>
+                <SelectValue placeholder="选择刷新间隔" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">不自动刷新</SelectItem>
+                <SelectItem value="5">5 秒</SelectItem>
+                <SelectItem value="10">10 秒</SelectItem>
+                <SelectItem value="30">30 秒</SelectItem>
+                <SelectItem value="60">1 分钟</SelectItem>
+                <SelectItem value="300">5 分钟</SelectItem>
+              </SelectContent>
             </Select>
           </Form.Item>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateModalVisible(false);
+                form.reset();
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={() => form.handleSubmit(createChart)()}
+              disabled={loading}
+            >
+              {loading ? '创建中...' : '创建'}
+            </Button>
+          </div>
         </Form>
+        </DialogContent>
       </Dialog>
     </DesktopPageWrapper>
   );

@@ -155,7 +155,8 @@ function main() {
   const patterns = [
     'src/**/*.tsx',
     'src/**/*.ts',
-    '!src/components/ui/**''!node_modules/**'
+    '!src/components/ui/**',
+    '!node_modules/**'
   ];
 
   let totalFiles = 0;
