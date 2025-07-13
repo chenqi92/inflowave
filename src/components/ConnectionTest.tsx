@@ -68,7 +68,7 @@ const ConnectionTest: React.FC = () => {
       }
 
       // 清理测试连接
-      await safeTauriInvoke('delete_connection', { connectionId });
+      await safeTauriInvoke('delete_connection', { connection_id: connectionId });
       
     } catch (error) {
       console.error('连接测试失败:', error);

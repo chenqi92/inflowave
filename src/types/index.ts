@@ -86,7 +86,7 @@ export interface Tag {
 
 // 查询相关类型
 export interface QueryRequest {
-  connectionId: string;
+  connection_id: string;
   database: string;
   query: string;
   format?: 'json' | 'csv' | 'table';
@@ -134,7 +134,7 @@ export interface DataPoint {
 }
 
 export interface BatchWriteRequest {
-  connectionId: string;
+  connection_id: string;
   database: string;
   points: DataPoint[];
   precision?: 'ns' | 'us' | 'ms' | 's' | 'm' | 'h';
@@ -294,7 +294,7 @@ export interface ErrorResponse {
 
 // 事件相关类型
 export interface ConnectionStatusEvent {
-  connectionId: string;
+  connection_id: string;
   status: ConnectionStatus;
 }
 
@@ -350,7 +350,7 @@ export interface SortConfig {
 
 // 数据写入相关类型
 export interface DataWriteConfig {
-  connectionId: string;
+  connection_id: string;
   database: string;
   measurement: string;
   format: 'line-protocol' | 'csv' | 'json';
@@ -385,7 +385,7 @@ export interface QueryHistoryItem {
   id: string;
   query: string;
   database: string;
-  connectionId: string;
+  connection_id: string;
   executedAt: Date;
   duration: number;
   rowCount: number;
@@ -460,7 +460,7 @@ export interface SqlGenerationResult {
 
 // 数据导出相关类型
 export interface DataExportConfig {
-  connectionId: string;
+  connection_id: string;
   database: string;
   query: string;
   format: 'csv' | 'excel' | 'json' | 'sql';
@@ -528,7 +528,7 @@ export interface DashboardWidget {
   config: {
     query: string;
     database: string;
-    connectionId: string;
+    connection_id: string;
     refreshInterval?: number;
   };
   data?: Record<string, unknown>;
@@ -558,7 +558,7 @@ export interface SlowQueryInfo {
 }
 
 export interface ConnectionHealthMetrics {
-  connectionId: string;
+  connection_id: string;
   status: 'healthy' | 'warning' | 'critical';
   responseTime: number;
   uptime: number;

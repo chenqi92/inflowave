@@ -9,17 +9,17 @@ use serde::{Deserialize, Serialize};
 #[tauri::command]
 pub async fn get_databases(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<Vec<String>, String> {
-    debug!("处理获取数据库列表命令: {}", connection_id);
-    
+    debug!("处理获取数据库列表命令: {}", connectionId);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
     client.get_databases().await
         .map_err(|e| {
             error!("获取数据库列表失败: {}", e);
@@ -31,18 +31,18 @@ pub async fn get_databases(
 #[tauri::command]
 pub async fn create_database(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database_name: String,
 ) -> Result<(), String> {
-    debug!("处理创建数据库命令: {} - {}", connection_id, database_name);
-    
+    debug!("处理创建数据库命令: {} - {}", connectionId, database_name);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
     client.create_database(&database_name).await
         .map_err(|e| {
             error!("创建数据库失败: {}", e);
@@ -54,18 +54,18 @@ pub async fn create_database(
 #[tauri::command]
 pub async fn drop_database(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database_name: String,
 ) -> Result<(), String> {
-    debug!("处理删除数据库命令: {} - {}", connection_id, database_name);
-    
+    debug!("处理删除数据库命令: {} - {}", connectionId, database_name);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
     client.drop_database(&database_name).await
         .map_err(|e| {
             error!("删除数据库失败: {}", e);
@@ -77,18 +77,18 @@ pub async fn drop_database(
 #[tauri::command]
 pub async fn get_retention_policies(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<Vec<RetentionPolicy>, String> {
-    debug!("处理获取保留策略命令: {} - {}", connection_id, database);
-    
+    debug!("处理获取保留策略命令: {} - {}", connectionId, database);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
     client.get_retention_policies(&database).await
         .map_err(|e| {
             error!("获取保留策略失败: {}", e);
@@ -100,13 +100,13 @@ pub async fn get_retention_policies(
 #[tauri::command]
 pub async fn create_retention_policy(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     config: RetentionPolicyConfig,
 ) -> Result<(), String> {
-    debug!("处理创建保留策略命令: {} - {}", connection_id, config.name);
-    
+    debug!("处理创建保留策略命令: {} - {}", connectionId, config.name);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -143,14 +143,14 @@ pub async fn create_retention_policy(
 #[tauri::command]
 pub async fn drop_retention_policy(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     policy_name: String,
 ) -> Result<(), String> {
-    debug!("处理删除保留策略命令: {} - {} - {}", connection_id, database, policy_name);
+    debug!("处理删除保留策略命令: {} - {} - {}", connectionId, database, policy_name);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -175,12 +175,12 @@ pub async fn drop_retention_policy(
 #[tauri::command]
 pub async fn get_database_info(
     database_service: State<'_, DatabaseService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<DatabaseInfo, String> {
-    debug!("处理获取数据库信息命令: {} - {}", connection_id, database);
+    debug!("处理获取数据库信息命令: {} - {}", connectionId, database);
 
-    database_service.get_database_info(&connection_id, &database).await
+    database_service.get_database_info(&connectionId, &database).await
         .map_err(|e| {
             error!("获取数据库信息失败: {}", e);
             format!("获取数据库信息失败: {}", e)
@@ -191,12 +191,12 @@ pub async fn get_database_info(
 #[tauri::command]
 pub async fn get_database_stats(
     database_service: State<'_, DatabaseService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<DatabaseStats, String> {
-    debug!("处理获取数据库统计信息命令: {} - {}", connection_id, database);
+    debug!("处理获取数据库统计信息命令: {} - {}", connectionId, database);
 
-    database_service.get_database_stats(&connection_id, &database).await
+    database_service.get_database_stats(&connectionId, &database).await
         .map_err(|e| {
             error!("获取数据库统计信息失败: {}", e);
             format!("获取数据库统计信息失败: {}", e)
@@ -207,16 +207,16 @@ pub async fn get_database_stats(
 #[tauri::command]
 pub async fn execute_table_query(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     table: String,
     query_type: String,
     limit: Option<u32>,
 ) -> Result<QueryResult, String> {
-    debug!("处理表查询命令: {} - {} - {} - {}", connection_id, database, table, query_type);
+    debug!("处理表查询命令: {} - {} - {} - {}", connectionId, database, table, query_type);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -245,14 +245,14 @@ pub async fn execute_table_query(
 #[tauri::command]
 pub async fn get_table_structure(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     table: String,
 ) -> Result<serde_json::Value, String> {
-    debug!("处理获取表结构命令: {} - {} - {}", connection_id, database, table);
+    debug!("处理获取表结构命令: {} - {} - {}", connectionId, database, table);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -288,11 +288,11 @@ pub async fn get_table_structure(
 #[tauri::command]
 pub async fn generate_insert_template(
     _connection_service: State<'_, ConnectionService>,
-    _connection_id: String,
+    _connectionId: String,
     database: String,
     table: String,
 ) -> Result<String, String> {
-    debug!("处理生成插入模板命令: {} - {} - {}", _connection_id, database, table);
+    debug!("处理生成插入模板命令: {} - {} - {}", _connectionId, database, table);
 
     // 生成 Line Protocol 格式的插入模板
     let template = format!(
@@ -316,17 +316,17 @@ pub async fn generate_insert_template(
 #[tauri::command]
 pub async fn export_table_data(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     table: String,
     format: String,
     limit: Option<u32>,
     file_path: String,
 ) -> Result<String, String> {
-    debug!("处理导出表数据命令: {} - {} - {} - {}", connection_id, database, table, format);
+    debug!("处理导出表数据命令: {} - {} - {} - {}", connectionId, database, table, format);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -403,13 +403,13 @@ fn export_to_json(result: &QueryResult, file_path: &str) -> Result<String, Strin
 #[tauri::command]
 pub async fn refresh_database_structure(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<(), String> {
-    debug!("处理刷新数据库结构命令: {} - {}", connection_id, database);
+    debug!("处理刷新数据库结构命令: {} - {}", connectionId, database);
 
     let manager = connection_service.get_manager();
-    let _client = manager.get_connection(&connection_id).await
+    let _client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -424,10 +424,10 @@ pub async fn refresh_database_structure(
 #[tauri::command]
 pub async fn create_measurement_template(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<String, String> {
-    debug!("处理创建测量模板命令: {} - {}", connection_id, database);
+    debug!("处理创建测量模板命令: {} - {}", connectionId, database);
 
     let _manager = connection_service.get_manager();
 
@@ -455,13 +455,13 @@ new_measurement,host=server01,region=us-west cpu_usage=80.5,memory_usage=65.2 {}
 #[tauri::command]
 pub async fn show_measurements(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<Vec<String>, String> {
-    debug!("处理显示测量列表命令: {} - {}", connection_id, database);
+    debug!("处理显示测量列表命令: {} - {}", connectionId, database);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -478,13 +478,13 @@ pub async fn show_measurements(
 #[tauri::command]
 pub async fn alter_retention_policy(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     config: RetentionPolicyConfig,
 ) -> Result<(), String> {
-    debug!("处理修改保留策略命令: {} - {}", connection_id, config.name);
+    debug!("处理修改保留策略命令: {} - {}", connectionId, config.name);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -528,14 +528,14 @@ pub async fn alter_retention_policy(
 #[tauri::command]
 pub async fn drop_measurement(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     measurement: String,
 ) -> Result<(), String> {
-    debug!("处理删除测量命令: {} - {} - {}", connection_id, database, measurement);
+    debug!("处理删除测量命令: {} - {} - {}", connectionId, database, measurement);
 
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -557,18 +557,18 @@ pub async fn drop_measurement(
 #[tauri::command]
 pub async fn get_measurements(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
 ) -> Result<Vec<String>, String> {
-    debug!("处理获取测量列表命令: {} - {}", connection_id, database);
-    
+    debug!("处理获取测量列表命令: {} - {}", connectionId, database);
+
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
-    
+
     client.get_measurements(&database).await
         .map_err(|e| {
             error!("获取测量列表失败: {}", e);
@@ -580,14 +580,14 @@ pub async fn get_measurements(
 #[tauri::command]
 pub async fn get_field_keys(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     measurement: Option<String>,
 ) -> Result<Vec<String>, String> {
-    debug!("处理获取字段键命令: {} - {} - {:?}", connection_id, database, measurement);
+    debug!("处理获取字段键命令: {} - {} - {:?}", connectionId, database, measurement);
     
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -622,14 +622,14 @@ pub async fn get_field_keys(
 #[tauri::command]
 pub async fn get_tag_keys(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     measurement: Option<String>,
 ) -> Result<Vec<String>, String> {
-    debug!("处理获取标签键命令: {} - {} - {:?}", connection_id, database, measurement);
+    debug!("处理获取标签键命令: {} - {} - {:?}", connectionId, database, measurement);
     
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -664,15 +664,15 @@ pub async fn get_tag_keys(
 #[tauri::command]
 pub async fn get_tag_values(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     tag_key: String,
     measurement: Option<String>,
 ) -> Result<Vec<String>, String> {
-    debug!("处理获取标签值命令: {} - {} - {} - {:?}", connection_id, database, tag_key, measurement);
+    debug!("处理获取标签值命令: {} - {} - {} - {:?}", connectionId, database, tag_key, measurement);
     
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
@@ -707,14 +707,14 @@ pub async fn get_tag_values(
 #[tauri::command]
 pub async fn get_table_schema(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
     database: String,
     measurement: String,
 ) -> Result<TableSchema, String> {
-    debug!("处理获取表结构命令: {} - {} - {}", connection_id, database, measurement);
+    debug!("处理获取表结构命令: {} - {} - {}", connectionId, database, measurement);
     
     let manager = connection_service.get_manager();
-    let client = manager.get_connection(&connection_id).await
+    let client = manager.get_connection(&connectionId).await
         .map_err(|e| {
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)

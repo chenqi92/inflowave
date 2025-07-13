@@ -114,7 +114,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId});
+        connection_id: connectionId});
       console.log(`✅ 成功加载数据库列表:`, dbList);
       return dbList || [];
     } catch (error) {
@@ -137,7 +137,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     try {
       // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
       const tables = await safeTauriInvoke<string[]>('get_measurements', {
-        connectionId,
+        connection_id: connectionId,
         database});
       console.log(`✅ 成功加载表列表 (数据库: ${database}):`, tables);
       return tables || [];
@@ -159,11 +159,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       // 尝试分别获取字段和标签信息
       const [tags, fields] = await Promise.all([
         safeTauriInvoke<string[]>('get_tag_keys', {
-          connectionId,
+          connection_id: connectionId,
           database,
           measurement: table}).catch(() => []),
         safeTauriInvoke<string[]>('get_field_keys', {
-          connectionId,
+          connection_id: connectionId,
           database,
           measurement: table}).catch(() => []),
       ]);
@@ -222,6 +222,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             key: `database-${connection.id}-${db}`,
             icon: <Database className="w-4 h-4 text-purple-600"   />,
             isLeaf: false,
+            children: [], // 空数组表示有子节点但未加载
             // 延迟加载表数据
           }));
         } catch (error) {
@@ -267,7 +268,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           ),
           key: `table-${connectionId}-${database}-${table}`,
           icon: <Table className="w-4 h-4 text-green-600"   />,
-          isLeaf: false}));
+          isLeaf: false,
+          children: [] // 空数组表示有子节点但未加载
+        }));
 
         // 更新树数据
         setTreeData(prevData => {
@@ -325,7 +328,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 return <Clock className="text-purple-500" />;
               case 'boolean':
               case 'bool':
-                return <BranchesOutlined className="text-green-500" />;
+                return <GitBranch className="w-4 h-4 text-green-500" />;
               default:
                 return <File className="w-4 h-4 text-gray-400"   />;
             }
@@ -465,13 +468,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     }
   };
 
+  // 提取节点文本内容用于搜索
+  const extractTextFromNode = (node: DataNode): string => {
+    // 从key中提取实际的名称
+    const key = node.key as string;
+    if (key.startsWith('connection-')) {
+      // 从连接store中获取连接名称
+      const connectionId = key.replace('connection-', '');
+      const connection = getConnection(connectionId);
+      return connection?.name || '';
+    } else if (key.startsWith('database-')) {
+      // 提取数据库名称
+      const parts = key.split('-');
+      return parts[2] || '';
+    } else if (key.startsWith('table-')) {
+      // 提取表名称
+      const parts = key.split('-');
+      return parts[3] || '';
+    } else if (key.startsWith('field-') || key.startsWith('tag-')) {
+      // 提取字段/标签名称
+      const parts = key.split('-');
+      return parts[4] || '';
+    }
+    return '';
+  };
+
   // 搜索过滤
   const filterTreeData = (data: DataNode[]): DataNode[] => {
-    if (!searchValue) return data;
+    if (!searchValue.trim()) return data;
 
     const filterNode = (node: DataNode): DataNode | null => {
-      const title = typeof node.title === 'string' ? node.title : '';
-      const titleMatch = title.toLowerCase().includes(searchValue.toLowerCase());
+      const nodeText = extractTextFromNode(node);
+      const titleMatch = nodeText.toLowerCase().includes(searchValue.toLowerCase());
       
       let filteredChildren: DataNode[] = [];
       if (node.children) {
@@ -599,14 +627,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             ) : treeData.length > 0 ? (
               <Tree
                 showIcon
-                showLine={{ showLeafIcon: false }}
+                showLine
                 loadData={loadData}
                 treeData={filterTreeData(treeData)}
                 expandedKeys={expandedKeys}
                 onExpand={handleExpand}
                 onSelect={handleSelect}
                 className="bg-transparent database-explorer-tree"
-                titleRender={(nodeData) => nodeData.title}
               />
             ) : (
               <div className="text-center text-gray-500 mt-8">

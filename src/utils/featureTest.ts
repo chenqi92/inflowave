@@ -91,7 +91,7 @@ export class FeatureTester {
     await this.runTest(suite, '数据库结构', async () => {
       // 这里需要一个有效的连接ID
       void await safeTauriInvoke('get_database_structure', {
-        connectionId: 'test-connection'
+        connection_id: 'test-connection'
       });
       return '数据库结构获取功能正常';
     });
@@ -115,7 +115,7 @@ export class FeatureTester {
     await this.runTest(suite, '查询执行', async () => {
       void await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
-          connectionId: 'test-connection',
+          connection_id: 'test-connection',
           database: 'test-db',
           query: 'SHOW DATABASES'}});
       return '查询执行功能正常';
@@ -199,7 +199,7 @@ export class FeatureTester {
     // 测试保留策略管理
     await this.runTest(suite, '保留策略管理', async () => {
       void await safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
-        connectionId: 'test-connection',
+        connection_id: 'test-connection',
         database: 'test-db'});
       return '保留策略管理功能正常';
     });
@@ -222,21 +222,21 @@ export class FeatureTester {
     // 测试性能指标获取
     await this.runTest(suite, '性能指标', async () => {
       void await safeTauriInvoke<PerformanceMetrics>('get_performance_metrics', {
-        connectionId: 'test-connection'});
+        connection_id: 'test-connection'});
       return '性能指标获取功能正常';
     });
 
     // 测试慢查询分析
     await this.runTest(suite, '慢查询分析', async () => {
       void await safeTauriInvoke('get_slow_query_analysis', {
-        connectionId: 'test-connection'});
+        connection_id: 'test-connection'});
       return '慢查询分析功能正常';
     });
 
     // 测试系统资源监控
     await this.runTest(suite, '系统资源监控', async () => {
       void await safeTauriInvoke('get_system_resources', {
-        connectionId: 'test-connection'});
+        connection_id: 'test-connection'});
       return '系统资源监控功能正常';
     });
 

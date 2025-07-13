@@ -74,14 +74,14 @@ export class ConnectionAPI {
    * 断开数据库连接
    */
   static async disconnectFromDatabase(connectionId: string): Promise<void> {
-    return safeTauriInvoke<void>('disconnect_from_database', { connection_id: connectionId });
+    return safeTauriInvoke<void>('disconnect_from_database', { connectionId: connectionId });
   }
 
   /**
    * 获取连接状态
    */
   static async getConnectionStatus(connectionId: string): Promise<ConnectionStatus | null> {
-    return safeTauriInvoke<ConnectionStatus | null>('get_connection_status', { connection_id: connectionId });
+    return safeTauriInvoke<ConnectionStatus | null>('get_connection_status', { connectionId: connectionId });
   }
 
   /**

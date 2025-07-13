@@ -109,7 +109,7 @@ const Database: React.FC = () => {
     setLoading(true);
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connection_id: activeConnectionId});
+        connectionId: activeConnectionId});
       setDatabases(Array.isArray(dbList) ? dbList : []);
 
       // 如果有数据库且没有选中的，选择第一个

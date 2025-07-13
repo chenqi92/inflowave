@@ -288,7 +288,7 @@ class ConnectionPool {
 
     try {
       await safeTauriInvoke('create_pool_connection', {
-        connectionId: this.connectionId,
+        connection_id: this.connectionId,
         poolConnectionId: connection.id});
 
       this.connections.push(connection);
@@ -325,7 +325,7 @@ class ConnectionPool {
   private async destroyConnection(connection: PoolConnection): Promise<void> {
     try {
       await safeTauriInvoke('destroy_pool_connection', {
-        connectionId: this.connectionId,
+        connection_id: this.connectionId,
         poolConnectionId: connection.id});
 
       const index = this.connections.indexOf(connection);
@@ -384,7 +384,7 @@ class ConnectionPool {
   private async testConnection(connection: PoolConnection): Promise<void> {
     try {
       await safeTauriInvoke('test_pool_connection', {
-        connectionId: this.connectionId,
+        connection_id: this.connectionId,
         poolConnectionId: connection.id});
     } catch (error) {
       connection.status = 'failed';

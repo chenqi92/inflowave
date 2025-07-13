@@ -41,7 +41,7 @@ const Visualization: React.FC = () => {
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connection_id: activeConnectionId});
+        connectionId: activeConnectionId});
       setDatabases(dbList);
     } catch (error) {
       toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });

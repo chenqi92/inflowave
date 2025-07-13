@@ -25,12 +25,12 @@ pub async fn create_connection(
 #[tauri::command]
 pub async fn test_connection(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<ConnectionTestResult, String> {
-    debug!("处理测试连接命令: {}", connection_id);
-    
+    debug!("处理测试连接命令: {}", connectionId);
+
     connection_service
-        .test_connection(&connection_id)
+        .test_connection(&connectionId)
         .await
         .map_err(|e| {
             error!("测试连接失败: {}", e);
@@ -68,11 +68,11 @@ pub async fn get_connections(
 #[tauri::command]
 pub async fn get_connection(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<Option<ConnectionConfig>, String> {
-    debug!("处理获取连接命令: {}", connection_id);
-    
-    Ok(connection_service.get_connection(&connection_id).await)
+    debug!("处理获取连接命令: {}", connectionId);
+
+    Ok(connection_service.get_connection(&connectionId).await)
 }
 
 /// 更新连接
@@ -96,12 +96,12 @@ pub async fn update_connection(
 #[tauri::command]
 pub async fn delete_connection(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<(), String> {
-    debug!("处理删除连接命令: {}", connection_id);
-    
+    debug!("处理删除连接命令: {}", connectionId);
+
     connection_service
-        .delete_connection(&connection_id)
+        .delete_connection(&connectionId)
         .await
         .map_err(|e| {
             error!("删除连接失败: {}", e);
@@ -113,11 +113,11 @@ pub async fn delete_connection(
 #[tauri::command]
 pub async fn get_connection_status(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<Option<ConnectionStatus>, String> {
-    debug!("处理获取连接状态命令: {}", connection_id);
-    
-    Ok(connection_service.get_connection_status(&connection_id).await)
+    debug!("处理获取连接状态命令: {}", connectionId);
+
+    Ok(connection_service.get_connection_status(&connectionId).await)
 }
 
 /// 获取所有连接状态
@@ -154,12 +154,12 @@ pub async fn get_connection_count(
 #[tauri::command]
 pub async fn connect_to_database(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<(), String> {
-    debug!("处理连接数据库命令: {}", connection_id);
+    debug!("处理连接数据库命令: {}", connectionId);
 
     connection_service
-        .connect_to_database(&connection_id)
+        .connect_to_database(&connectionId)
         .await
         .map_err(|e| {
             error!("连接数据库失败: {}", e);
@@ -171,12 +171,12 @@ pub async fn connect_to_database(
 #[tauri::command]
 pub async fn disconnect_from_database(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<(), String> {
-    debug!("处理断开数据库连接命令: {}", connection_id);
+    debug!("处理断开数据库连接命令: {}", connectionId);
 
     connection_service
-        .disconnect_from_database(&connection_id)
+        .disconnect_from_database(&connectionId)
         .await
         .map_err(|e| {
             error!("断开数据库连接失败: {}", e);
@@ -221,12 +221,12 @@ pub async fn stop_connection_monitoring(
 #[tauri::command]
 pub async fn get_connection_pool_stats(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    connectionId: String,
 ) -> Result<serde_json::Value, String> {
-    debug!("获取连接池统计信息: {}", connection_id);
+    debug!("获取连接池统计信息: {}", connectionId);
 
     connection_service
-        .get_pool_stats(&connection_id)
+        .get_pool_stats(&connectionId)
         .await
         .map_err(|e| {
             error!("获取连接池统计信息失败: {}", e);

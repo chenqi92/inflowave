@@ -79,7 +79,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setEstimating(true);
 
       const estimate = await safeTauriInvoke('estimate_export_size', {
-        connectionId: values.connectionId,
+        connection_id: values.connectionId,
         database: values.database,
         query: values.query,
         format: values.format});
@@ -127,7 +127,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setExportResult(null);
 
       const exportConfig: DataExportConfig = {
-        connectionId: values.connectionId,
+        connection_id: values.connectionId,
         database: values.database,
         query: values.query,
         format: values.format,

@@ -63,7 +63,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   // 执行健康检查
   const performHealthCheck = async (connId: string) => {
     try {
-      await safeTauriInvoke('perform_health_check', { connectionId: connId });
+      await safeTauriInvoke('perform_health_check', { connection_id: connId });
       loadMetrics();
     } catch (error) {
       console.error('健康检查失败:', error);

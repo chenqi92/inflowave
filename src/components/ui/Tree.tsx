@@ -29,8 +29,9 @@ interface TreeProps {
   onSelect?: (selectedKeys: string[], info: { selected: boolean; node: TreeNode }) => void
   onCheck?: (checkedKeys: string[], info: { checked: boolean; node: TreeNode }) => void
   showIcon?: boolean
-  showLine?: boolean
+  showLine?: boolean | { showLeafIcon?: boolean }
   blockNode?: boolean
+  loadData?: (node: TreeNode) => Promise<void>
 }
 
 const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
@@ -52,6 +53,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     showIcon = false,
     showLine = false,
     blockNode = false,
+    loadData,
     ...props 
   }, ref) => {
     const [internalExpandedKeys, setInternalExpandedKeys] = React.useState<string[]>(() => {
@@ -81,11 +83,21 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     const actualSelectedKeys = selectedKeys !== undefined ? selectedKeys : internalSelectedKeys
     const actualCheckedKeys = checkedKeys !== undefined ? checkedKeys : internalCheckedKeys
 
-    const handleExpand = (key: string, node: TreeNode) => {
+    const handleExpand = async (key: string, node: TreeNode) => {
       const expanded = !actualExpandedKeys.includes(key)
       const newExpandedKeys = expanded 
         ? [...actualExpandedKeys, key]
         : actualExpandedKeys.filter(k => k !== key)
+
+      // 如果是展开节点且有loadData函数，先加载数据
+      if (expanded && loadData && (!node.children || node.children.length === 0) && !node.isLeaf) {
+        try {
+          await loadData(node)
+        } catch (error) {
+          console.error('Failed to load node data:', error)
+          return
+        }
+      }
 
       if (expandedKeys === undefined) {
         setInternalExpandedKeys(newExpandedKeys)
@@ -130,7 +142,8 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     }
 
     const renderNode = (node: TreeNode, level = 0): React.ReactNode => {
-      const hasChildren = node.children && node.children.length > 0
+      // 有子节点的条件：要么有children且不为空，要么明确标记为非叶子节点
+      const hasChildren = (node.children && node.children.length > 0) || (!node.isLeaf && node.children !== undefined)
       const isExpanded = actualExpandedKeys.includes(node.key)
       const isSelected = actualSelectedKeys.includes(node.key)
       const isChecked = actualCheckedKeys.includes(node.key)
@@ -163,7 +176,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
                     <ChevronRight className="h-3 w-3" />
                   )}
                 </button>
-              ) : showLine ? (
+              ) : (showLine === true || (typeof showLine === 'object' && showLine)) ? (
                 <div className="w-3 h-3 border-l border-b border-border" />
               ) : null}
             </div>

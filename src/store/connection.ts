@@ -164,7 +164,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 断开数据库连接
       disconnectFromDatabase: async (id: string) => {
         try {
-          await safeTauriInvoke('disconnect_from_database', { connectionId: id });
+          await safeTauriInvoke('disconnect_from_database', { connection_id: id });
 
           // 更新状态为已断开
           set((state) => ({
@@ -225,7 +225,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 获取连接池统计信息
       getPoolStats: async (id: string) => {
         try {
-          const stats = await safeTauriInvoke('get_connection_pool_stats', { connectionId: id });
+          const stats = await safeTauriInvoke('get_connection_pool_stats', { connection_id: id });
           set((state) => ({
             poolStats: {
               ...state.poolStats,
