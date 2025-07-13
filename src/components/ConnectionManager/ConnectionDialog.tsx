@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Switch, Button, Alert, AlertDescription, Steps, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Button, Alert, AlertDescription, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Switch } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
@@ -8,7 +9,7 @@ import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import './ConnectionDialog.css';
 
 interface ConnectionDialogProps {
-  visible: boolean;
+  open: boolean;
   connection?: ConnectionConfig;
   onCancel: () => void;
   onSuccess: (connection: ConnectionConfig) => void;
@@ -26,12 +27,23 @@ interface FormData {
 }
 
 export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
-  visible,
+  open,
   connection,
   onCancel,
   onSuccess}) => {
   const { createConnection, editConnection, testConnection } = useConnection();
-  const form = useForm<FormData>();
+  const form = useForm<FormData>({
+    defaultValues: {
+      name: '',
+      host: '',
+      port: 8086,
+      username: '',
+      password: '',
+      database: '',
+      ssl: false,
+      timeout: 30
+    }
+  });
   const [currentStep, setCurrentStep] = useState(0);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,32 +52,27 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   const isEditing = !!connection?.id;
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       if (connection) {
-        form.setFieldsValue({
-          name: connection.name,
-          host: connection.host,
-          port: connection.port,
-          username: connection.username,
-          password: connection.password,
-          database: connection.database,
-          ssl: connection.ssl,
-          timeout: connection.timeout});
+        form.setValue('name', connection.name);
+        form.setValue('host', connection.host);
+        form.setValue('port', connection.port);
+        form.setValue('username', connection.username);
+        form.setValue('password', connection.password);
+        form.setValue('database', connection.database || '');
+        form.setValue('ssl', connection.ssl);
+        form.setValue('timeout', connection.timeout);
       } else {
-        form.resetFields();
-        form.setFieldsValue({
-          port: 8086,
-          ssl: false,
-          timeout: 30});
+        form.reset();
       }
       setCurrentStep(0);
       setTestResult(null);
     }
-  }, [visible, connection, form]);
+  }, [open, connection, form]);
 
   const handleTestConnection = async () => {
     try {
-      const values = await form.validateFields();
+      const values = form.getValues();
       setIsTesting(true);
       setTestResult(null);
 
@@ -89,9 +96,8 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: FormData) => {
     try {
-      const values = await form.validateFields();
       setIsSubmitting(true);
 
       const configData: ConnectionConfig = {
@@ -115,99 +121,151 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
 
   const renderConnectionForm = () => (
     <div className="space-y-4">
-      <FormItem name="name"
-        label="连接名称"
-        rules={[
-          { required: true, message: '请输入连接名称' },
-          { min: 1, max: 100, message: '连接名称长度为1-100个字符' },
-        ]}
-      >
-        <Input placeholder="输入连接名称" autoCapitalize="off" autoCorrect="off" size="small" />
-      </FormItem>
+      <FormField
+        control={form.control}
+        name="name"
+        rules={{ 
+          required: '请输入连接名称',
+          minLength: { value: 1, message: '连接名称长度为1-100个字符' },
+          maxLength: { value: 100, message: '连接名称长度为1-100个字符' }
+        }}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>连接名称</FormLabel>
+            <FormControl>
+              <Input placeholder="输入连接名称" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <div className="grid grid-cols-3 gap-4">
-        <FormItem name="host"
-          label="主机地址"
-          className="col-span-2"
-          rules={[
-            { required: true, message: '请输入主机地址' },
-            {
-              validator: (_, value) => {
-                if (!value) return Promise.resolve();
-                // 可以是IP地址或主机名
-                const ipError = ValidationUtils.ipAddress(value);
-                const hostnameError = ValidationUtils.hostname(value);
-                return ipError && hostnameError ? Promise.reject(ipError) : Promise.resolve();
-              }
-            }
-          ]}
-        >
-          <Input placeholder="localhost 或 192.168.1.100" autoCapitalize="off" autoCorrect="off" size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="host"
+          rules={{ required: '请输入主机地址' }}
+          render={({ field }) => (
+            <FormItem className="col-span-2">
+              <FormLabel>主机地址</FormLabel>
+              <FormControl>
+                <Input placeholder="localhost 或 192.168.1.100" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <FormItem name="port"
-          label="端口"
-          rules={[
-            { required: true, message: '请输入端口' },
-            { type: 'number', min: 1, max: 65535, message: '端口范围: 1-65535' },
-          ]}
-        >
-          <InputNumber placeholder="8086" className="w-full" size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="port"
+          rules={{ 
+            required: '请输入端口',
+            min: { value: 1, message: '端口范围: 1-65535' },
+            max: { value: 65535, message: '端口范围: 1-65535' }
+          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>端口</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="8086" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <FormItem name="username"
-          label="用户名"
-          rules={[
-            { max: 50, message: '用户名长度不能超过50个字符' },
-          ]}
-        >
-          <Input placeholder="可选" autoCapitalize="off" autoCorrect="off" size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="username"
+          rules={{ maxLength: { value: 50, message: '用户名长度不能超过50个字符' } }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>用户名</FormLabel>
+              <FormControl>
+                <Input placeholder="可选" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <FormItem name="password"
-          label="密码"
-          rules={[
-            { max: 128, message: '密码长度不能超过128个字符' },
-          ]}
-        >
-          <Input.Password placeholder="可选" size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="password"
+          rules={{ maxLength: { value: 128, message: '密码长度不能超过128个字符' } }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>密码</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="可选" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
-      <FormItem name="database"
-        label="默认数据库"
-        rules={[
-          {
-            validator: (_, value) => {
-              if (!value) return Promise.resolve();
-              const error = ValidationUtils.databaseName(value);
-              return error ? Promise.reject(error) : Promise.resolve();
-            }
-          }
-        ]}
-      >
-        <Input placeholder="可选，连接后默认选择的数据库" size="small" />
-      </FormItem>
+      <FormField
+        control={form.control}
+        name="database"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>默认数据库</FormLabel>
+            <FormControl>
+              <Input placeholder="可选" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <div className="grid grid-cols-2 gap-4">
-        <FormItem name="ssl"
-          label="启用SSL"
-          valuePropName="checked"
-          extra="使用SSL加密连接"
-        >
-          <Switch size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="ssl"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-0.5">
+                <FormLabel>启用SSL</FormLabel>
+                <div className="text-sm text-muted-foreground">使用SSL加密连接</div>
+              </div>
+              <FormControl>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
-        <FormItem name="timeout"
-          label="超时时间(秒)"
-          rules={[
-            { type: 'number', min: 5, max: 300, message: '超时时间范围: 5-300秒' },
-          ]}
-        >
-          <InputNumber placeholder="30" className="w-full" size="small" />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name="timeout"
+          rules={{ 
+            min: { value: 5, message: '超时时间范围: 5-300秒' },
+            max: { value: 300, message: '超时时间范围: 5-300秒' }
+          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>超时时间(秒)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="30" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
     </div>
   );
@@ -266,91 +324,95 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   ];
 
   return (
-    <Modal
-      title={isEditing ? '编辑连接' : '新建连接'}
-      open={visible}
-      onOpenChange={(open) => !open && (onCancel)()}
-      width={800}
-      footer={null}
-      destroyOnClose
-    >
-      <div className="space-y-4">
-        {/* 步骤指示器 */}
-        <Steps current={currentStep} items={steps} size="small" />
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? '编辑连接' : '新建连接'}</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* 步骤指示器 */}
+          <div className="flex items-center space-x-4">
+            {steps.map((step, index) => (
+              <div key={index} className="flex items-center">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                  index <= currentStep ? 'border-primary bg-primary text-primary-foreground' : 'border-muted'
+                }`}>
+                  {step.icon || (index + 1)}
+                </div>
+                <div className="ml-2 flex-1">
+                  <div className="text-sm font-medium">{step.title}</div>
+                  <div className="text-xs text-muted-foreground">{step.description}</div>
+                </div>
+                {index < steps.length - 1 && <div className="w-8 h-px bg-muted ml-4" />}
+              </div>
+            ))}
+          </div>
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          validateMessages={{
-            required: '${label}是必填项',
-            types: {
-              number: '${label}必须是数字'},
-            number: {
-              min: '${label}最小值为${min}',
-              max: '${label}最大值为${max}'}}}
-        >
-          {currentStep === 0 && renderConnectionForm()}
-          {currentStep === 1 && renderTestResult()}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              {currentStep === 0 && renderConnectionForm()}
+              {currentStep === 1 && renderTestResult()}
 
-          {/* 操作按钮 */}
-          <div className="flex justify-between pt-3 border-t border-gray-200">
-            <div>
-              {currentStep === 1 && (
-                <Button
-                  onClick={() => setCurrentStep(0)}
-                  size="small"
-                >
-                  返回修改
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-2" size="small">
-              <Button
-                onClick={onCancel}
-                size="small"
-              >
-                取消
-              </Button>
-
-              {currentStep === 0 ? (
-                <div className="flex gap-2" size="small">
-                  {isEditing && (
+              {/* 操作按钮 */}
+              <div className="flex justify-between pt-3 border-t">
+                <div>
+                  {currentStep === 1 && (
                     <Button
-                      type="primary"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      size="small"
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(0)}
                     >
+                      返回修改
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onCancel}
+                  >
+                    取消
+                  </Button>
+
+                  {currentStep === 0 ? (
+                    <div className="flex gap-2">
+                      {isEditing && (
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                          保存连接
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant={isEditing ? "outline" : "default"}
+                        onClick={handleTestConnection}
+                        disabled={isTesting}
+                      >
+                        {isTesting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Info className="w-4 h-4 mr-2" />}
+                        测试连接
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || !testResult?.success}
+                    >
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       保存连接
                     </Button>
                   )}
-                  <Button
-                    type={isEditing ? 'default' : 'primary'}
-                    onClick={handleTestConnection}
-                    disabled={isTesting}
-                    icon={<Info className="w-4 h-4"  />}
-                    size="small"
-                  >
-                    测试连接
-                  </Button>
                 </div>
-              ) : (
-                <Button
-                  type="primary"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  disabled={!testResult?.success}
-                  size="small"
-                >
-                  保存连接
-                </Button>
-              )}
-            </div>
-          </div>
-        </Form>
-      </div>
-    </Modal>
+              </div>
+            </form>
+          </Form>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

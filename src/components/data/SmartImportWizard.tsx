@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Steps, Button, Alert, Typography, Progress, Modal } from '@/components/ui';
-import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Alert, Progress } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -17,10 +17,8 @@ import DataCleaningStep from './steps/DataCleaningStep';
 import ImportConfigStep from './steps/ImportConfigStep';
 import ImportExecutionStep from './steps/ImportExecutionStep';
 
-const { Title, Text } = Typography;
-
 interface SmartImportWizardProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   connectionId: string | null;
   database: string;
@@ -92,7 +90,7 @@ interface ImportProgress {
 }
 
 const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
-  visible,
+  open,
   onClose,
   connectionId,
   database,
@@ -206,12 +204,12 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   }, [connectionId, database]);
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadMeasurements();
     } else {
       resetWizard();
     }
-  }, [visible, loadMeasurements, resetWizard]);
+  }, [open, loadMeasurements, resetWizard]);
 
   // 更新向导数据
   const updateWizardData = useCallback((updates: Partial<ImportWizardData>) => {
@@ -484,15 +482,11 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   };
 
   return (
-    <Modal
-      title="智能数据导入向导"
-      open={visible}
-      onOpenChange={(open) => !open && (onClose)()}
-      width={1400}
-      style={{ top: 20 }}
-      footer={null}
-      destroyOnClose
-    >
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>智能数据导入向导</DialogTitle>
+        </DialogHeader>
       <div className="space-y-6">
         {/* 步骤指示器 */}
         <Card>
@@ -590,7 +584,8 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
           </Card>
         )}
       </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

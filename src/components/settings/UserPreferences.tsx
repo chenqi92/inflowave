@@ -1,22 +1,26 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Select, Button, Table, Input, Typography, Tag, Row, Col, Switch, Slider, Modal } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-import { NotificationOutlined, LayoutOutlined } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Input, Switch, Slider } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Badge } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { Settings, Eye, Edit, Trash2, Plus } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
 
-const { Option } = Select;
-
 const UserPreferencesComponent: React.FC = () => {
-  const form = useForm();
+  const form = useForm<UserPreferences>({
+    defaultValues: {
+      theme: 'light',
+      language: 'zh-CN',
+      autoSave: true,
+      keyboardShortcuts: []
+    }
+  });
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(false);
-  const [shortcutModalVisible, setShortcutModalVisible] = useState(false);
+  const [shortcutModalOpen, setShortcutModalOpen] = useState(false);
   const [editingShortcut, setEditingShortcut] = useState<KeyboardShortcut | null>(null);
-  const shortcutForm = useForm();
+  const shortcutForm = useForm<KeyboardShortcut>();
 
   // 加载用户偏好
   const loadPreferences = async () => {
@@ -24,7 +28,10 @@ const UserPreferencesComponent: React.FC = () => {
     try {
       const result = await safeTauriInvoke('get_user_preferences') as UserPreferences;
       setPreferences(result);
-      form.setFieldsValue(result);
+      // Set form values with shadcn form
+      Object.keys(result).forEach(key => {
+        form.setValue(key as keyof UserPreferences, result[key as keyof UserPreferences]);
+      });
     } catch (error) {
       console.error('加载用户偏好失败:', error);
       toast({ title: "错误", description: "加载用户偏好失败", variant: "destructive" });
@@ -56,7 +63,10 @@ const UserPreferencesComponent: React.FC = () => {
       if (preferences) {
         const updatedPreferences = { ...preferences, shortcuts };
         setPreferences(updatedPreferences);
-        form.setFieldsValue(updatedPreferences);
+        // Set form values with shadcn form
+        Object.keys(updatedPreferences).forEach(key => {
+          form.setValue(key as keyof UserPreferences, updatedPreferences[key as keyof UserPreferences]);
+        });
       }
     } catch (error) {
       console.error('加载默认快捷键失败:', error);
@@ -67,8 +77,11 @@ const UserPreferencesComponent: React.FC = () => {
   // 编辑快捷键
   const editShortcut = (shortcut: KeyboardShortcut) => {
     setEditingShortcut(shortcut);
-    shortcutForm.setFieldsValue(shortcut);
-    setShortcutModalVisible(true);
+    // Set shortcut form values
+    Object.keys(shortcut).forEach(key => {
+      shortcutForm.setValue(key as keyof KeyboardShortcut, shortcut[key as keyof KeyboardShortcut]);
+    });
+    setShortcutModalOpen(true);
   };
 
   // 保存快捷键

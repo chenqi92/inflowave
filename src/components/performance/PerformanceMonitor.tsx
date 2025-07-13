@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress, Tooltip } from '@/components/ui';
-// TODO: Replace these Ant Design components: List, Divider
-import { Card, Space } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Alert, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Progress, Separator } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { RefreshCw, Settings, Database, Zap, Clock, LayoutDashboard, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';
 
-const { Title, Text } = Typography;
-const { Option } = Select;
+// Removed Typography and Select Option destructuring - using direct components
 
 interface PerformanceMonitorProps {
   connectionId?: string;
@@ -103,11 +102,18 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       key: 'query',
       ellipsis: true,
       render: (text: string) => (
-        <Tooltip title={text}>
-          <Text code style={{ fontSize: 12 }}>
-            {text.length > 50 ? `${text.substring(0, 50)  }...` : text}
-          </Text>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <code className="text-xs">
+                {text.length > 50 ? `${text.substring(0, 50)}...` : text}
+              </code>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{text}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )},
     {
       title: '数据库',
@@ -120,9 +126,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       key: 'executionTime',
       width: 100,
       render: (time: number) => (
-        <Tag color={time > 10000 ? 'red' : time > 5000 ? 'orange' : 'blue'}>
+        <Badge variant={time > 10000 ? 'destructive' : time > 5000 ? 'secondary' : 'default'}>
           {formatDuration(time)}
-        </Tag>
+        </Badge>
       )},
     {
       title: '返回行数',
@@ -142,14 +148,22 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       width: 80,
       render: (record: SlowQueryInfo) => (
         record.optimization ? (
-          <Tooltip title={record.optimization.suggestions.join(', ')}>
-            <Button
-              type="text"
-              size="small"
-              icon={<Settings className="w-4 h-4"  />}
-              style={{ color: 'orange' }}
-            />
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-orange-500"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{record.optimization.suggestions.join(', ')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : null
       )},
   ];
@@ -179,213 +193,256 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   return (
     <div className="performance-monitor">
       {/* 控制栏 */}
-      <Card size="small" style={{ marginBottom: 16 }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <div className="flex gap-2">
-              <Select
-                value={timeRange}
-                onValueChange={setTimeRange}
-                style={{ width: 120 }}
-              >
-                <Option value="1h">最近1小时</Option>
-                <Option value="6h">最近6小时</Option>
-                <Option value="24h">最近24小时</Option>
-                <Option value="7d">最近7天</Option>
-              </Select>
-              <Button
-                icon={<RefreshCw className="w-4 h-4"  />}
-                onClick={loadMetrics}
-                disabled={loading}
-              >
-                刷新
-              </Button>
-              <Button
-                type={autoRefresh ? 'primary' : 'default'}
-                onClick={() => setAutoRefresh(!autoRefresh)}
-              >
-                自动刷新
-              </Button>
-            </div>
-          </Col>
-        </Row>
+      <Card className="p-4 mb-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1h">最近1小时</SelectItem>
+                <SelectItem value="6h">最近6小时</SelectItem>
+                <SelectItem value="24h">最近24小时</SelectItem>
+                <SelectItem value="7d">最近7天</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadMetrics}
+              disabled={loading}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
+            <Button
+              variant={autoRefresh ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+            >
+              自动刷新
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {/* 概览指标 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="查询执行次数"
-              value={metrics?.queryExecutionTime?.length || 0}
-              prefix={<LayoutDashboard />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="平均执行时间"
-              value={metrics?.queryExecutionTime?.length > 0 
-                ? Math.round(metrics.queryExecutionTime.reduce((a, b) => a + b, 0) / metrics.queryExecutionTime.length)
-                : 0
-              }
-              suffix="ms"
-              prefix={<Clock className="w-4 h-4"  />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="写入延迟"
-              value={metrics?.writeLatency?.length > 0 
-                ? Math.round(metrics.writeLatency.reduce((a, b) => a + b, 0) / metrics.writeLatency.length)
-                : 0
-              }
-              suffix="ms"
-              prefix={<Zap className="w-4 h-4"  />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="网络 I/O"
-              value={formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}
-              prefix={<AlertCircle />}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]}>
-        {/* 系统资源 */}
-        <Col span={12}>
-          <Card title="系统资源" size="small">
-            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text>内存使用情况</Text>
-                <Progress
-                  percent={metrics?.memoryUsage?.length > 0 
-                    ? Math.round(metrics.memoryUsage[metrics.memoryUsage.length - 1])
-                    : 0
-                  }
-                  status={metrics?.memoryUsage?.length > 0 && metrics.memoryUsage[metrics.memoryUsage.length - 1] > 80 ? 'exception' : 'normal'}
-                />
-              </div>
-              <div>
-                <Text>CPU 使用率</Text>
-                <Progress
-                  percent={metrics?.cpuUsage?.length > 0 
-                    ? Math.round(metrics.cpuUsage[metrics.cpuUsage.length - 1])
-                    : 0
-                  }
-                  status={metrics?.cpuUsage?.length > 0 && metrics.cpuUsage[metrics.cpuUsage.length - 1] > 80 ? 'exception' : 'normal'}
-                />
-              </div>
-              <div>
-                <Text>磁盘 I/O</Text>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  读取: {formatBytes(metrics?.diskIO?.readBytes || 0)} | 写入: {formatBytes(metrics?.diskIO?.writeBytes || 0)}
-                </div>
-              </div>
+      <div className="grid grid-cols-4 gap-4 mb-4">
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">查询执行次数</p>
+              <p className="text-2xl font-bold">{metrics?.queryExecutionTime?.length || 0}</p>
             </div>
-          </Card>
-        </Col>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">平均执行时间</p>
+              <p className="text-2xl font-bold">
+                {metrics?.queryExecutionTime?.length > 0 
+                  ? Math.round(metrics.queryExecutionTime.reduce((a, b) => a + b, 0) / metrics.queryExecutionTime.length)
+                  : 0
+                }ms
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <Zap className="w-4 h-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">写入延迟</p>
+              <p className="text-2xl font-bold">
+                {metrics?.writeLatency?.length > 0 
+                  ? Math.round(metrics.writeLatency.reduce((a, b) => a + b, 0) / metrics.writeLatency.length)
+                  : 0
+                }ms
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">网络 I/O</p>
+              <p className="text-2xl font-bold">{formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* 系统资源 */}
+        <Card className="p-4">
+          <h3 className="text-lg font-medium mb-4">系统资源</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm mb-2">内存使用情况</p>
+              <Progress
+                value={metrics?.memoryUsage?.length > 0 
+                  ? Math.round(metrics.memoryUsage[metrics.memoryUsage.length - 1])
+                  : 0
+                }
+                className={metrics?.memoryUsage?.length > 0 && metrics.memoryUsage[metrics.memoryUsage.length - 1] > 80 ? 'text-destructive' : ''}
+              />
+            </div>
+            <div>
+              <p className="text-sm mb-2">CPU 使用率</p>
+              <Progress
+                value={metrics?.cpuUsage?.length > 0 
+                  ? Math.round(metrics.cpuUsage[metrics.cpuUsage.length - 1])
+                  : 0
+                }
+                className={metrics?.cpuUsage?.length > 0 && metrics.cpuUsage[metrics.cpuUsage.length - 1] > 80 ? 'text-destructive' : ''}
+              />
+            </div>
+            <div>
+              <p className="text-sm mb-2">磁盘 I/O</p>
+              <p className="text-xs text-muted-foreground">
+                读取: {formatBytes(metrics?.diskIO?.readBytes || 0)} | 写入: {formatBytes(metrics?.diskIO?.writeBytes || 0)}
+              </p>
+            </div>
+          </div>
+        </Card>
 
         {/* 网络状态 */}
-        <Col span={12}>
-          <Card title="网络 I/O 状态" size="small">
-            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <Text>输入流量</Text>
-                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                  {formatBytes(metrics?.networkIO?.bytesIn || 0)}
-                </div>
-                <Text type="secondary">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</Text>
-              </div>
-              <div className="border-t border-gray-200 my-4" />
-              <div>
-                <Text>输出流量</Text>
-                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                  {formatBytes(metrics?.networkIO?.bytesOut || 0)}
-                </div>
-                <Text type="secondary">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Text>
-              </div>
+        <Card className="p-4">
+          <h3 className="text-lg font-medium mb-4">网络 I/O 状态</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm mb-1">输入流量</p>
+              <p className="text-lg font-bold">
+                {formatBytes(metrics?.networkIO?.bytesIn || 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</p>
             </div>
-          </Card>
-        </Col>
-      </Row>
+            <Separator />
+            <div>
+              <p className="text-sm mb-1">输出流量</p>
+              <p className="text-lg font-bold">
+                {formatBytes(metrics?.networkIO?.bytesOut || 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</p>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* 慢查询分析 */}
-      <Card title="慢查询分析" style={{ marginTop: 16 }} size="small">
+      <Card className="p-4 mt-4">
+        <h3 className="text-lg font-medium mb-4">慢查询分析</h3>
         {slowQueries.length > 0 ? (
-          <Table
-            dataSource={slowQueries}
-            columns={slowQueryColumns}
-            rowKey="id"
-            size="small"
-            pagination={{ pageSize: 10 }}
-          />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>查询</TableHead>
+                <TableHead>数据库</TableHead>
+                <TableHead>执行时间</TableHead>
+                <TableHead>返回行数</TableHead>
+                <TableHead>时间</TableHead>
+                <TableHead>优化</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slowQueries.slice(0, 10).map((query, index) => (
+                <TableRow key={query.id || index}>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <code className="text-xs">
+                            {query.query.length > 50 ? `${query.query.substring(0, 50)}...` : query.query}
+                          </code>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{query.query}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
+                  <TableCell>{query.database}</TableCell>
+                  <TableCell>
+                    <Badge variant={query.executionTime > 10000 ? 'destructive' : query.executionTime > 5000 ? 'secondary' : 'default'}>
+                      {formatDuration(query.executionTime)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{(query.rowsReturned || 0).toLocaleString()}</TableCell>
+                  <TableCell>{new Date(query.timestamp).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {query.optimization ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-orange-500">
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{query.optimization.suggestions.join(', ')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         ) : (
-          <Alert
-            message="暂无慢查询"
-            description="当前时间范围内没有检测到慢查询"
-            type="success"
-            showIcon
-          />
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <div>
+              <h4>暂无慢查询</h4>
+              <p>当前时间范围内没有检测到慢查询</p>
+            </div>
+          </Alert>
         )}
       </Card>
 
       {/* 存储分析 */}
-      <Card title="存储分析" style={{ marginTop: 16 }} size="small">
-        <Row gutter={[16, 16]}>
-          <Col span={8}>
-            <Statistic
-              title="总存储大小"
-              value={formatBytes(metrics?.storageAnalysis?.totalSize || 0)}
-              prefix={<Database className="w-4 h-4"  />}
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title="压缩比"
-              value={metrics?.storageAnalysis?.compressionRatio || 0}
-              precision={2}
-              suffix="x"
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title="保留策略效果"
-              value={(metrics?.storageAnalysis?.retentionPolicyEffectiveness || 0) * 100}
-              precision={1}
-              suffix="%"
-            />
-          </Col>
-        </Row>
+      <Card className="p-4 mt-4">
+        <h3 className="text-lg font-medium mb-4">存储分析</h3>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <Database className="w-4 h-4 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">总存储大小</p>
+              <p className="text-2xl font-bold">{formatBytes(metrics?.storageAnalysis?.totalSize || 0)}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">压缩比</p>
+            <p className="text-2xl font-bold">{(metrics?.storageAnalysis?.compressionRatio || 0).toFixed(2)}x</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">保留策略效果</p>
+            <p className="text-2xl font-bold">{((metrics?.storageAnalysis?.retentionPolicyEffectiveness || 0) * 100).toFixed(1)}%</p>
+          </div>
+        </div>
 
         {(metrics?.storageAnalysis?.recommendations?.length || 0) > 0 && (
           <>
-            <div className="border-t border-gray-200 my-4" />
-            <Title level={5}>优化建议</Title>
-            <List
-              dataSource={metrics?.storageAnalysis?.recommendations || []}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <Tag color={item.priority === 'high' ? 'red' : item.priority === 'medium' ? 'orange' : 'blue'}>
-                        {item.priority}
-                      </Tag>
-                    }
-                    title={item.description}
-                    description={`预计节省: ${formatBytes(item.estimatedSavings)}`}
-                  />
-                </List.Item>
-              )}
-            />
+            <Separator className="my-4" />
+            <h4 className="text-md font-medium mb-4">优化建议</h4>
+            <div className="space-y-3">
+              {(metrics?.storageAnalysis?.recommendations || []).map((item, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
+                  <Badge variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'secondary' : 'default'}>
+                    {item.priority}
+                  </Badge>
+                  <div>
+                    <p className="font-medium">{item.description}</p>
+                    <p className="text-sm text-muted-foreground">预计节省: {formatBytes(item.estimatedSavings)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
       </Card>

@@ -1,19 +1,13 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Button, Select, Table, Form, Input, Typography, Row, Col, Alert, Steps, Upload, Progress, Checkbox, InputNumber, Modal } from '@/components/ui';
-
-const { Step } = Steps;
-import { Space, Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
-const { Title, Text } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
-
 interface DataImportWizardProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   connectionId?: string;
   database?: string;
@@ -39,7 +33,7 @@ interface PreviewData {
 }
 
 const DataImportWizard: React.FC<DataImportWizardProps> = ({
-  visible,
+  open,
   onClose,
   connectionId,
   database}) => {
@@ -205,7 +199,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       batchSize: 1000});
     setImportProgress(0);
     setImportResult(null);
-    form.resetFields();
+    form.reset();
   };
 
   // 步骤内容
@@ -430,11 +424,11 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   ];
 
   return (
-    <Modal
-      title="数据导入向导"
-      open={visible}
-      onOpenChange={(open) => !open && (onClose)()}
-      width={800}
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>数据导入向导</DialogTitle>
+        </DialogHeader>
       footer={
         <div className="flex gap-2">
           <Button onClick={onClose}>取消</Button>

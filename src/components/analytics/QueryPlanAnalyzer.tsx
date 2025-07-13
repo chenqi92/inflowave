@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Popover, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tooltip, Divider, Badge, Switch, Select, Input, Tabs, TabsContent, TabsList, TabsTrigger, Tag, Spin } from '@/components/ui';
-
-import { CompareOutlined, ExpandAltOutlined, FundOutlined, HourglassOutlined, MemoryOutlined, NetworkOutlined, HddOutlined, CpuOutlined, ShareAltOutlined } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, Clock, Database, FileText, Info, Zap, Eye, Download, Lightbulb, RefreshCw, Code, Table, TrendingUp, PieChart, Book, Rocket, Settings, Trophy, PlayCircle, AlertTriangle, AlertCircle, CheckCircle, MinusCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { QueryAnalyticsService, type QueryExecutionPlan, type PlanNode, type QueryRecommendation } from '@/services/analyticsService';
 import { showMessage } from '@/utils/message';
 
-import { Text } from '@/components/ui';
+// Removed Text destructuring - using direct elements
 
 interface QueryPlanAnalyzerProps {
   query: string;
@@ -110,41 +109,55 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
               <div className="flex gap-2">
-                <Tag variant="secondary">
+                <Badge variant="secondary">
                   {node.nodeType}
-                </Tag>
-                <Text strong>{node.operation}</Text>
+                </Badge>
+                <span className="font-medium">{node.operation}</span>
                 {node.table && (
-                  <Text type="secondary">
-                    <Database className="w-4 h-4"  /> {node.table}
-                  </Text>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Database className="w-4 h-4" /> {node.table}
+                  </span>
                 )}
                 {node.index && (
-                  <Text type="secondary">
-                    <Table className="w-4 h-4"  /> {node.index}
-                  </Text>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Table className="w-4 h-4" /> {node.index}
+                  </span>
                 )}
               </div>
             </div>
             <div>
               <div className="flex gap-2">
                 {hasWarnings && (
-                  <Tooltip title={node.warnings.join(', ')}>
-                    <AlertTriangle style={{ color: '#faad14' }} />
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{node.warnings.join(', ')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 {isInaccurate && (
-                  <Tooltip title="行数估计不准确">
-                    <AlertCircle style={{ color: '#ff4d4f' }} />
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>行数估计不准确</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
-                <Text className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-xs">
                   {formatNumber(node.estimatedRows)} rows
-                </Text>
+                </span>
                 {showActualStats && node.actualRows !== undefined && (
-                  <Text className="text-muted-foreground text-xs">
+                  <span className="text-muted-foreground text-xs">
                     (实际: {formatNumber(node.actualRows)})
-                  </Text>
+                  </span>
                 )}
               </div>
             </div>
@@ -152,18 +165,18 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
           
           <div style={{ marginTop: '4px' }}>
             <div className="flex gap-2">
-              <Text type="secondary" style={{ fontSize: '11px' }}>
-                <Clock className="w-4 h-4"  /> 成本: {formatNumber(node.estimatedCost)}
-              </Text>
+              <span className="text-muted-foreground text-xs flex items-center gap-1">
+                <Clock className="w-3 h-3" /> 成本: {formatNumber(node.estimatedCost)}
+              </span>
               {showActualStats && node.actualCost !== undefined && (
-                <Text type="secondary" style={{ fontSize: '11px' }}>
+                <span className="text-muted-foreground text-xs">
                   (实际: {formatNumber(node.actualCost)})
-                </Text>
+                </span>
               )}
               {showActualStats && node.executionTime !== undefined && (
-                <Text type="secondary" style={{ fontSize: '11px' }}>
-                  <HourglassOutlined /> {node.executionTime}ms
-                </Text>
+                <span className="text-muted-foreground text-xs flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {node.executionTime}ms
+                </span>
               )}
             </div>
           </div>
@@ -247,7 +260,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
               onValueChange={setShowActualStats}
               size="small"
             />
-            <Text className="text-muted-foreground">显示实际统计</Text>
+            <span className="text-muted-foreground">显示实际统计</span>
             <Button
               size="small"
               icon={<ExpandAltOutlined />}
@@ -299,18 +312,13 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
 
     return (
       <div>
-        <Card
-          title={
-            <div className="flex gap-2">
-              <Tag variant="secondary">
-                {selectedNode.nodeType}
-              </Tag>
-              <span>{selectedNode.operation}</span>
-            </div>
-          }
-          size="small"
-          style={{ marginBottom: '16px' }}
-        >
+        <Card className="p-4 mb-4">
+          <div className="flex gap-2 mb-4">
+            <Badge variant="secondary">
+              {selectedNode.nodeType}
+            </Badge>
+            <span className="font-medium">{selectedNode.operation}</span>
+          </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-2">
               <div><span className="font-medium">表名:</span> {selectedNode.table || '-'}</div>
@@ -399,19 +407,16 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
 
         {/* 警告信息 */}
         {selectedNode.warnings.length > 0 && (
-          <Card title="警告信息" size="small">
-            <List
-              size="small"
-              dataSource={selectedNode.warnings}
-              renderItem={(warning) => (
-                <List.Item>
-                  <div className="flex gap-2">
-                    <AlertTriangle style={{ color: '#faad14' }} />
-                    <Text>{warning}</Text>
-                  </div>
-                </List.Item>
-              )}
-            />
+          <Card className="p-4">
+            <h4 className="font-medium mb-4">警告信息</h4>
+            <div className="space-y-2">
+              {selectedNode.warnings.map((warning, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 bg-yellow-50 rounded">
+                  <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm">{warning}</span>
+                </div>
+              ))}
+            </div>
           </Card>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Alert, Switch } from '@/components/ui';
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, FileText, FileSpreadsheet } from 'lucide-react';
 import type { QueryResult } from '@/types';
 
@@ -13,14 +13,14 @@ interface ExportOptions {
 }
 
 interface ExportDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   queryResult: QueryResult | null;
   defaultFilename?: string;
 }
 
 const ExportDialog: React.FC<ExportDialogProps> = ({
-  visible,
+  open,
   onClose,
   queryResult,
   defaultFilename}) => {
@@ -29,15 +29,15 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
 
   // 初始化表单值
   useEffect(() => {
-    if (visible && queryResult) {
+    if (open && queryResult) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      form.setFieldsValue({
+      form.reset({
         format: 'csv',
         includeHeaders: true,
         delimiter: ',',
         filename: defaultFilename || `influxdb-query-${timestamp}`});
     }
-  }, [visible, queryResult, defaultFilename, form]);
+  }, [open, queryResult, defaultFilename, form]);
 
   // 执行导出
   const handleExport = async () => {
@@ -47,7 +47,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
     }
 
     try {
-      const values = await form.validateFields();
+      const values = form.getValues();
       setLoading(true);
 
       const options: ExportOptions = {
@@ -73,27 +73,11 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   };
 
   return (
-    <Dialog
-      title="导出查询结果"
-      open={visible}
-      onOpenChange={(open) => !open && (onClose)()}
-      width={600}
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          取消
-        </Button>,
-        <Button
-          key="export"
-          type="primary"
-          icon={<Download className="w-4 h-4"  />}
-          disabled={loading}
-          onClick={handleExport}
-          disabled={!queryResult}
-        >
-          导出
-        </Button>,
-      ]}
-    >
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>导出查询结果</DialogTitle>
+        </DialogHeader>
       {queryResult ? (
         <div>
           <Alert

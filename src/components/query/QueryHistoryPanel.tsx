@@ -1,18 +1,14 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Input, Select, Tag, Typography, Form, Modal } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-// TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
-import { Search, Trash2, Database, PlayCircle } from 'lucide-react';
-// TODO: Replace these icons: StarOutlined, ClockCircleOutlined, FileTextOutlined, ClearOutlined
-// You may need to find alternatives or create custom icons
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
+import { Search, Trash2, Database, PlayCircle, Star, Clock, FileText, X } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery, Connection } from '@/types';
 
-const { Text } = Typography;
-const { Option } = Select;
-const { Textarea } = Input;
+// Removed Typography and Input destructuring - using direct components
 
 interface QueryHistoryPanelProps {
   connections: Connection[];
@@ -258,141 +254,192 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
 
       {/* 历史记录列表 */}
       {activeTab === 'history' && (
-        <List
-          disabled={loading}
-          dataSource={filteredHistory}
-          locale={{ emptyText: '暂无查询历史' }}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Tooltip title="重新执行">
-                  <Button
-                    type="text"
-                    icon={<PlayCircle />}
-                    onClick={() => onExecuteQuery(item.query, item.database, item.connectionId)}
-                  />
-                </Tooltip>,
-                <Tooltip title="保存查询">
-                  <Button
-                    type="text"
-                    icon={<Star className="w-4 h-4"  />}
-                    onClick={() => saveQuery(item.query, item.database)}
-                  />
-                </Tooltip>,
-                <Tooltip title="删除">
-                  <Popconfirm
-                    title="确定要删除这条历史记录吗？"
-                    onConfirm={() => deleteHistoryItem(item.id)}>
-                    <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
-                  </Popconfirm>
-                </Tooltip>,
-              ]}>
-              <List.Item.Meta
-                title={
-                  <div className="flex gap-2">
-                    <Tag color="blue">{getConnectionName(item.connectionId)}</Tag>
-                    <Tag color="green">{item.database}</Tag>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {formatTime(item.executedAt)}
-                    </Text>
-                  </div>
-                }
-                description={
-                  <div>
-                    <Text code style={{ fontSize: 12 }}>
-                      {item.query.length> 100 ? `${item.query.substring(0, 100)  }...` : item.query}
-                    </Text>
-                    <div style={{ marginTop: 4 }}>
-                      <div className="flex gap-2" size="small">
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {item.duration}ms
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {item.rowCount} 行
-                        </Text>
-                        {!item.success && (
-                          <Tag color="red" style={{ fontSize: 10 }}>
-                            执行失败
-                          </Tag>
-                        )}
-                      </div>
+        <div className="space-y-2">
+          {filteredHistory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Clock className="w-8 h-8 mb-2" />
+              <p className="text-sm">暂无查询历史</p>
+            </div>
+          ) : (
+            filteredHistory.map((item) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex gap-2 mb-2">
+                      <Badge variant="secondary">{getConnectionName(item.connectionId)}</Badge>
+                      <Badge variant="outline">{item.database}</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(item.executedAt)}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {item.query.length > 100 ? `${item.query.substring(0, 100)}...` : item.query}
+                      </code>
+                    </div>
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>{item.duration}ms</span>
+                      <span>{item.rowCount} 行</span>
+                      {!item.success && (
+                        <Badge variant="destructive" className="text-xs">
+                          执行失败
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                }
-              />
-            </List.Item>
+                  <div className="flex gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onExecuteQuery(item.query, item.database, item.connectionId)}
+                          >
+                            <PlayCircle className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>重新执行</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => saveQuery(item.query, item.database)}
+                          >
+                            <Star className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>保存查询</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>删除历史记录</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            确定要删除这条历史记录吗？此操作无法撤销。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteHistoryItem(item.id)}>
+                            删除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </Card>
+            ))
           )}
-        />
+        </div>
       )}
 
       {/* 保存的查询列表 */}
       {activeTab === 'saved' && (
-        <List
-          disabled={loading}
-          dataSource={filteredSavedQueries}
-          locale={{ emptyText: '暂无保存的查询' }}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Tooltip title="执行查询">
-                  <Button
-                    type="text"
-                    icon={<PlayCircle />}
-                    onClick={() => {
-                      // 这里需要选择连接和数据库
-                      if (connections.length> 0) {
-                        const defaultConnection = connections[0];
-                        onExecuteQuery(item.query, item.database || '', defaultConnection.id);
-                      } else {
-                        toast({ title: "警告", description: "请先添加连接" });
-                      }
-                    }}
-                  />
-                </Tooltip>,
-                <Tooltip title="删除">
-                  <Popconfirm
-                    title="确定要删除这个保存的查询吗？"
-                    onConfirm={() => deleteSavedQuery(item.id)}>
-                    <Button type="text" danger icon={<Trash2 className="w-4 h-4"  />} />
-                  </Popconfirm>
-                </Tooltip>,
-              ]}>
-              <List.Item.Meta
-                title={
-                  <div className="flex gap-2">
-                    <Text strong>{item.name}</Text>
-                    {item.favorite && <Star className="w-4 h-4" style={{ color: '#faad14' }}  />}
-                    {item.database && <Tag color="green">{item.database}</Tag>}
-                  </div>
-                }
-                description={
-                  <div>
+        <div className="space-y-2">
+          {filteredSavedQueries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <FileText className="w-8 h-8 mb-2" />
+              <p className="text-sm">暂无保存的查询</p>
+            </div>
+          ) : (
+            filteredSavedQueries.map((item) => (
+              <Card key={item.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex gap-2 mb-2 items-center">
+                      <h4 className="font-medium">{item.name}</h4>
+                      {item.favorite && <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />}
+                      {item.database && <Badge variant="outline">{item.database}</Badge>}
+                    </div>
                     {item.description && (
-                      <Text type="secondary" style={{ fontSize: 12 }}>
+                      <p className="text-sm text-muted-foreground mb-2">
                         {item.description}
-                      </Text>
+                      </p>
                     )}
-                    <div style={{ marginTop: 4 }}>
-                      <Text code style={{ fontSize: 12 }}>
-                        {item.query.length> 80 ? `${item.query.substring(0, 80)  }...` : item.query}
-                      </Text>
+                    <div className="mb-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {item.query.length > 80 ? `${item.query.substring(0, 80)}...` : item.query}
+                      </code>
                     </div>
-                    <div style={{ marginTop: 4 }}>
-                      <div className="flex gap-2" size="small">
-                        {item.tags.map(tag => (
-                          <Tag key={tag} size="small">{tag}</Tag>
-                        ))}
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {formatTime(item.updatedAt)}
-                        </Text>
-                      </div>
+                    <div className="flex gap-2 items-center text-xs text-muted-foreground">
+                      {item.tags?.map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                      <span>{formatTime(item.updatedAt)}</span>
                     </div>
                   </div>
-                }
-              />
-            </List.Item>
+                  <div className="flex gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (connections.length > 0) {
+                                const defaultConnection = connections[0];
+                                onExecuteQuery(item.query, item.database || '', defaultConnection.id);
+                              } else {
+                                toast({ title: "警告", description: "请先添加连接" });
+                              }
+                            }}
+                          >
+                            <PlayCircle className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>执行查询</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>删除保存的查询</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            确定要删除这个保存的查询吗？此操作无法撤销。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteSavedQuery(item.id)}>
+                            删除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </Card>
+            ))
           )}
-        />
+        </div>
       )}
 
       {/* 保存查询对话框 */}

@@ -1,18 +1,14 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Form, Empty, Row, Col, Modal } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-// TODO: Replace these Ant Design components: List, Tooltip, Popconfirm, 
-import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle } from 'lucide-react';
-// TODO: Replace these icons: BookOutlined, TagOutlined
-// You may need to find alternatives or create custom icons
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Textarea } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
+import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle, BookOpen, Tag } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { SavedQuery } from '@/types';
 
-const { Text, Paragraph } = Typography;
-const { Search, Textarea } = Input;
-const { Option } = Select;
+// Removed Typography and Input destructuring - using direct components
 
 interface SavedQueriesProps {
   onQuerySelect?: (query: string, database?: string) => void;

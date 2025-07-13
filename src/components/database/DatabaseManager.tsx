@@ -1,16 +1,16 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, Table, Button, Typography, Form, Input, Select, Tag, Row, Col, Statistic, Alert, InputNumber, Progress, Modal } from '@/components/ui';
-// TODO: Replace these Ant Design components: Popconfirm, Tooltip
-import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Progress } from '@/components/ui';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Database, Plus, Edit, Trash2, Settings, Info, RefreshCw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
 import type { RetentionPolicy, RetentionPolicyConfig, DatabaseStorageInfo } from '@/types';
 
-const { Title, Text } = Typography;
-const { TabPane } = Tabs;
+// Removed Typography and Tabs destructuring - using direct components
 
 interface DatabaseManagerProps {
   connectionId?: string;
@@ -190,75 +190,93 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   // 编辑保留策略
   const handleEditPolicy = (policy: RetentionPolicy) => {
     setEditingPolicy(policy);
-    form.setFieldsValue({
-      name: policy.name,
-      duration: policy.duration,
-      shardGroupDuration: policy.shardGroupDuration,
-      replicaN: policy.replicationFactor,
-      default: policy.default});
+    form.setValue('name', policy.name);
+    form.setValue('duration', policy.duration);
+    form.setValue('shardGroupDuration', policy.shardGroupDuration);
+    form.setValue('replicaN', policy.replicationFactor);
+    form.setValue('default', policy.default);
     setShowPolicyModal(true);
   };
 
-  // 保留策略表格列
-  const policyColumns = [
-    {
-      title: '策略名称',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name: string, record: RetentionPolicy) => (
-        <div className="flex gap-2">
-          <Text strong>{name}</Text>
-          {record.default && <Tag color="blue">默认</Tag>}
-        </div>
-      )},
-    {
-      title: '保留时间',
-      dataIndex: 'duration',
-      key: 'duration',
-      render: (duration: string) => <Tag color="green">{duration}</Tag>},
-    {
-      title: '分片组时间',
-      dataIndex: 'shardGroupDuration',
-      key: 'shardGroupDuration',
-      render: (duration: string) => <Tag color="orange">{duration}</Tag>},
-    {
-      title: '副本数',
-      dataIndex: 'replicationFactor',
-      key: 'replicationFactor',
-      width: 80,
-      align: 'center' as const},
-    {
-      title: '操作',
-      key: 'actions',
-      width: 150,
-      render: (_: any, record: RetentionPolicy) => (
-        <div className="flex gap-2">
-          <Tooltip title="编辑">
-            <Button
-              type="text"
-              icon={<Edit className="w-4 h-4"  />}
-              onClick={() => handleEditPolicy(record)}
-              size="small"
-            />
-          </Tooltip>
-          {!record.default && (
-            <Tooltip title="删除">
-              <Popconfirm
-                title="确定删除这个保留策略吗？"
-                onConfirm={() => handleDeletePolicy(record.name)}
-              >
-                <Button
-                  type="text"
-                  icon={<Trash2 className="w-4 h-4"  />}
-                  danger
-                  size="small"
-                />
-              </Popconfirm>
-            </Tooltip>
-          )}
-        </div>
-      )},
-  ];
+  // 渲染保留策略表格
+  const renderPolicyTable = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>策略名称</TableHead>
+          <TableHead>保留时间</TableHead>
+          <TableHead>分片组时间</TableHead>
+          <TableHead className="text-center">副本数</TableHead>
+          <TableHead className="text-center">操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {retentionPolicies.map((policy) => (
+          <TableRow key={policy.name}>
+            <TableCell>
+              <div className="flex gap-2 items-center">
+                <span className="font-medium">{policy.name}</span>
+                {policy.default && <Badge variant="default">默认</Badge>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant="secondary">{policy.duration}</Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline">{policy.shardGroupDuration}</Badge>
+            </TableCell>
+            <TableCell className="text-center">
+              {policy.replicationFactor}
+            </TableCell>
+            <TableCell>
+              <div className="flex gap-1 justify-center">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditPolicy(policy)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>编辑</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {!policy.default && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>删除保留策略</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          确定删除保留策略 "{policy.name}" 吗？此操作无法撤销。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeletePolicy(policy.name)}>
+                          删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
 
   // 格式化字节数
   const formatBytes = (bytes: number) => {
@@ -397,7 +415,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                     icon={<Plus className="w-4 h-4"  />}
                     onClick={() => {
                       setEditingPolicy(null);
-                      form.resetFields();
+                      form.reset();
                       setShowPolicyModal(true);
                     }}
                     disabled={!selectedDatabase}
@@ -406,14 +424,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   </Button>
                 }
               >
-                <Table
-                  columns={policyColumns}
-                  dataSource={retentionPolicies}
-                  rowKey="name"
-                  disabled={loading}
-                  pagination={false}
-                  size="small"
-                />
+{renderPolicyTable()}
               </Card>
             )},
           {

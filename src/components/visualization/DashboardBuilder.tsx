@@ -1,9 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
-import { Button, Tooltip, Form, Input, Select, Empty } from '@/components/ui';
-import { Card, Space, Grid, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-import { LayoutOutlined } from '@/components/ui';
+import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Plus, Trash2, Edit, Save, Eye, Copy, Settings, GripVertical } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -171,22 +170,39 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         {isEditMode && (
           <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="flex gap-2">
-              <Tooltip title="编辑图表">
-                <Button
-                  size="small"
-                  icon={<Edit className="w-4 h-4"  />}
-                  onClick={() => setSelectedChart(chart.id)}
-                />
-              </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedChart(chart.id)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>编辑图表</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               
-              <Tooltip title="删除图表">
-                <Button
-                  size="small"
-                  danger
-                  icon={<Trash2 className="w-4 h-4"  />}
-                  onClick={() => handleRemoveChart(item.id)}
-                />
-              </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveChart(item.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>删除图表</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         )}
@@ -202,10 +218,10 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           />
         ) : (
           <Card className="w-full h-full flex items-center justify-center">
-            <Empty
-              description="暂无数据"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
+            <div className="flex flex-col items-center justify-center text-muted-foreground">
+              <div className="text-2xl mb-2">📊</div>
+              <p className="text-sm">暂无数据</p>
+            </div>
           </Card>
         )}
       </div>
@@ -250,10 +266,10 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     return (
       <div ref={setNodeRef} className="dashboard-grid min-h-96 p-4 border-2 border-dashed border-gray-200 rounded-lg">
         {gridItems.length === 0 ? (
-          <Empty
-            description="暂无图表，点击添加图表开始构建仪表板"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+            <div className="text-4xl mb-4">📊</div>
+            <p className="text-center">暂无图表，点击添加图表开始构建仪表板</p>
+          </div>
         ) : (
           <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${gridConfig.cols}, 1fr)` }}>
             {gridItems.map(item => (
@@ -348,10 +364,10 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           <div className="text-sm text-gray-600 mb-4">选择一个已创建的图表添加到仪表板</div>
           
           {charts.length === 0 ? (
-            <Empty
-              description="暂无可用图表，请先创建图表"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <div className="text-2xl mb-2">📈</div>
+              <p className="text-sm">暂无可用图表，请先创建图表</p>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {charts.map(chart => (

@@ -1,17 +1,14 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Select, Button, Alert, Row, Col, Switch, InputNumber, Divider } from '@/components/ui';
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch, Separator, Textarea } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, Info, FileText, Code, FileSpreadsheet } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
 
-const { Textarea } = Input;
-const { Option } = Select;
-
 interface DataExportDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   connections: Connection[];
   currentConnection?: string;
@@ -21,7 +18,7 @@ interface DataExportDialogProps {
 }
 
 const DataExportDialog: React.FC<DataExportDialogProps> = ({
-  visible,
+  open,
   onClose,
   connections,
   currentConnection,

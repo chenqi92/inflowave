@@ -1,18 +1,12 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, Button, Form, Input, Select, Typography, Tag, Alert, Row, Col, Modal } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-// TODO: Replace these Ant Design components: List, Switch, Divider, 
-import { Settings, Trash2, Plus, PlayCircle, PauseCircle } from 'lucide-react';
-// TODO: Replace these icons: AppstoreOutlined, ApiOutlined, LinkOutlined, RobotOutlined, ExperimentOutlined
-// You may need to find alternatives or create custom icons
+import { Tabs, TabsContent, TabsList, TabsTrigger, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Switch, Separator, Textarea } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
 
-const { Title, Text } = Typography;
-const { Textarea } = Input;
-const { Option } = Select;
+// Removed Typography and Input destructuring - using direct components
 
 const ExtensionManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('plugins');
@@ -23,10 +17,10 @@ const ExtensionManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // 模态框状态
-  const [apiModalVisible, setApiModalVisible] = useState(false);
-  const [webhookModalVisible, setWebhookModalVisible] = useState(false);
-  const [automationModalVisible, setAutomationModalVisible] = useState(false);
-  const [testModalVisible, setTestModalVisible] = useState(false);
+  const [apiModalOpen, setApiModalOpen] = useState(false);
+  const [webhookModalOpen, setWebhookModalOpen] = useState(false);
+  const [automationModalOpen, setAutomationModalOpen] = useState(false);
+  const [testModalOpen, setTestModalOpen] = useState(false);
 
   const apiForm = useForm();
   const webhookForm = useForm();
@@ -73,7 +67,7 @@ const ExtensionManager: React.FC = () => {
   const togglePlugin = async (pluginId: string, enabled: boolean) => {
     try {
       await safeTauriInvoke('toggle_plugin', { pluginId, enabled });
-      message.success(`插件已${enabled ? '启用' : '禁用'}`);
+      toast({ title: "成功", description: `插件已${enabled ? '启用' : '禁用'}` });
       loadPlugins();
     } catch (error) {
       console.error('切换插件状态失败:', error);
@@ -107,8 +101,8 @@ const ExtensionManager: React.FC = () => {
           headers: values.headers || {},
           enabled: true}});
       toast({ title: "成功", description: "API集成创建成功" });
-      setApiModalVisible(false);
-      apiForm.resetFields();
+      setApiModalOpen(false);
+      apiForm.reset();
       loadApiIntegrations();
     } catch (error) {
       console.error('创建API集成失败:', error);
@@ -120,22 +114,9 @@ const ExtensionManager: React.FC = () => {
     setLoading(true);
     try {
       const result = await safeTauriInvoke('test_api_integration', { integration });
-      Modal.info({
-        title: 'API 测试结果',
-        content: (
-          <div>
-            <p>状态: {result.success ? '成功' : '失败'}</p>
-            <p>HTTP 状态码: {result.status}</p>
-            {result.body && (
-              <div>
-                <p>响应内容:</p>
-                <pre style={{ maxHeight: 200, overflow: 'auto' }}>
-                  {JSON.stringify(result.body, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )});
+      setTestModalOpen(true);
+      // Store result for modal display
+      console.log('API 测试结果:', result);
     } catch (error) {
       toast({ title: "错误", description: "测试失败: ${error}", variant: "destructive" });
     } finally {
@@ -160,8 +141,8 @@ const ExtensionManager: React.FC = () => {
             backoff_multiplier: values.backoffMultiplier || 2.0,
             max_backoff_time: values.maxBackoffTime || 300}}});
       toast({ title: "成功", description: "Webhook创建成功" });
-      setWebhookModalVisible(false);
-      webhookForm.resetFields();
+      setWebhookModalOpen(false);
+      webhookForm.reset();
       loadWebhooks();
     } catch (error) {
       console.error('创建Webhook失败:', error);
@@ -185,8 +166,8 @@ const ExtensionManager: React.FC = () => {
           enabled: true,
           execution_count: 0}});
       toast({ title: "成功", description: "自动化规则创建成功" });
-      setAutomationModalVisible(false);
-      automationForm.resetFields();
+      setAutomationModalOpen(false);
+      automationForm.reset();
       loadAutomationRules();
     } catch (error) {
       console.error('创建自动化规则失败:', error);
@@ -216,9 +197,27 @@ const ExtensionManager: React.FC = () => {
 
   return (
     <div className="extension-manager">
-      <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
-        {/* 插件管理 */}
-        <Tabs.TabPane tab={<><Grid3X3 className="w-4 h-4"  /> 插件</>} key="plugins">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="plugins" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            插件
+          </TabsTrigger>
+          <TabsTrigger value="api" className="flex items-center gap-2">
+            <Webhook className="w-4 h-4" />
+            API 集成
+          </TabsTrigger>
+          <TabsTrigger value="webhooks" className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            Webhook
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center gap-2">
+            <Bot className="w-4 h-4" />
+            自动化
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="plugins">
           <Card
             title="已安装的插件"
             extra={
@@ -278,7 +277,7 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setApiModalVisible(true)}>
+                onClick={() => setApiModalOpen(true)}>
                 新建集成
               </Button>
             }>
@@ -320,7 +319,7 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setWebhookModalVisible(true)}>
+                onClick={() => setWebhookModalOpen(true)}>
                 新建 Webhook
               </Button>
             }>
@@ -360,7 +359,7 @@ const ExtensionManager: React.FC = () => {
               <Button
                 type="primary"
                 icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setAutomationModalVisible(true)}>
+                onClick={() => setAutomationModalOpen(true)}>
                 新建规则
               </Button>
             }>

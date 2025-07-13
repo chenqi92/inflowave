@@ -1,19 +1,15 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Progress, Tabs, Input, Select, Table } from '@/components/ui';
-// TODO: Replace these Ant Design components: message, Divider, Tooltip
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Separator } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Upload as UploadIcon, Database, CheckCircle, Info, AlertCircle } from 'lucide-react';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
-const { Option } = Select;
-const { Title, Paragraph, Text } = Typography;
-const { TabPane } = Tabs;
-
 interface AdvancedImportDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   connectionId: string | null;
   database: string;
@@ -62,7 +58,7 @@ interface ImportProgress {
 }
 
 const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
-  visible,
+  open,
   onClose,
   connectionId,
   database,
@@ -98,7 +94,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
     setValidationResult(null);
     setImportProgress(null);
     setActiveTab('mapping');
-    form.resetFields();
+    form.reset();
   }, [form]);
 
   // 加载测量列表

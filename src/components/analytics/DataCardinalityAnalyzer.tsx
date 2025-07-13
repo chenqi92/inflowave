@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Progress, Tag, Button, Badge, Select, Input, Switch, Tabs, Spin } from '@/components/ui';
-import { Table } from '@/components/ui';
+import { Card, Progress, Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 
 import { X } from 'lucide-react';
 import { BarChart, TrendingUp, Database, Info, RefreshCw, Download, Eye, Bug, Copy, FileText, Key, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
@@ -8,7 +7,7 @@ import { useConnectionStore } from '@/store/connection';
 import { DataCardinalityService, type DataCardinalityStats, type DataAnomaly } from '@/services/analyticsService';
 import { showMessage } from '@/utils/message';
 
-import { Text } from '@/components/ui';
+// Removed Text destructuring - using direct elements
 
 interface DataCardinalityAnalyzerProps {
   database: string;
@@ -305,30 +304,25 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               valueStyle={{ color: getQualityScoreColor(avgQuality) }}
             />
           </Card>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="高质量列数"
-                value={highQualityCount}
-                suffix={`/ ${cardinalityStats.length}`}
-                valueStyle={{ color: '#52c41a' }}
-                prefix={<CheckCircle />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic
-                title="唯一列数"
-                value={uniqueColumns}
-                suffix={`/ ${cardinalityStats.length}`}
-                valueStyle={{ color: '#1890ff' }}
-                prefix={<Key className="w-4 h-4"  />}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
+          <Card className="p-4">
+            <Statistic
+              title="高质量列数"
+              value={highQualityCount}
+              suffix={`/ ${cardinalityStats.length}`}
+              valueStyle={{ color: '#52c41a' }}
+              prefix={<CheckCircle />}
+            />
+          </Card>
+          <Card className="p-4">
+            <Statistic
+              title="唯一列数"
+              value={uniqueColumns}
+              suffix={`/ ${cardinalityStats.length}`}
+              valueStyle={{ color: '#1890ff' }}
+              prefix={<Key className="w-4 h-4"  />}
+            />
+          </Card>
+          <Card className="p-4">
               <Statistic
                 title="异常总数"
                 value={totalAnomalies}
@@ -336,20 +330,19 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 prefix={<Bug className="w-4 h-4"  />}
               />
             </Card>
-          </Col>
-        </Row>
+        </div>
 
         {/* 过滤器 */}
-        <Card style={{ marginBottom: '16px' }}>
-          <Row gutter={[16, 16]} align="middle">
-            <Col span={8}>
+        <Card className="mb-4 p-4">
+          <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="col-span-4">
               <Input
                 placeholder="搜索列名或数据类型"
                 value={searchText}
-                onValueChange={(e) => setSearchText(e.target.value)}
+                onChange={(e) => setSearchText(e.target.value)}
               />
-            </Col>
-            <Col span={4}>
+            </div>
+            <div className="col-span-2">
               <Select
                 value={qualityFilter}
                 onValueChange={(value) => setQualityFilter(value as typeof qualityFilter)}

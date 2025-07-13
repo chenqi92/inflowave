@@ -1,16 +1,15 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
-import { Button, Form, Input, Select, Row, Col, Typography, Alert, Modal } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Popconfirm
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Plus, Edit, Trash2, Settings, Save, Eye, Maximize, GripVertical } from 'lucide-react';
 import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
 import AdvancedChartLibrary, { ChartType, AdvancedChartConfig } from './AdvancedChartLibrary';
 import { safeTauriInvoke } from '@/utils/tauri';
 
-const { Text, Title } = Typography;
-const { Option } = Select;
-const { Textarea } = Input;
+// Removed Typography and Input destructuring - using direct components
 
 // 响应式网格布局
 const ResponsiveGridLayout = WidthProvider(Responsive);

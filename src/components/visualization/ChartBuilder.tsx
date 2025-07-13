@@ -1,9 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, Form, Tooltip, Switch, Slider, Input, Sheet } from '@/components/ui';
-import { Card, Space, ColorPicker } from '@/components/ui';
-
-import { ScatterChartOutlined } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Switch, Slider, Input, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui';
+import { Card } from '@/components/ui';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, TrendingUp, PieChart, AreaChart, Settings, Save, Eye, Copy, PlayCircle } from 'lucide-react';
 import { useQuery } from '@/hooks/useQuery';
 import { useVisualizationStore } from '@/store/visualization';
@@ -26,7 +25,15 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   onChartUpdate,
   initialChart,
   className}) => {
-  const form = useForm();
+  const form = useForm<ChartConfig>({
+    defaultValues: {
+      title: '',
+      type: 'line',
+      xField: '',
+      yField: '',
+      settings: {}
+    }
+  });
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [chartConfig, setChartConfig] = useState<Partial<ChartConfig>>(
@@ -89,7 +96,12 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   useEffect(() => {
     if (initialChart) {
       setChartConfig(initialChart);
-      form.setFieldsValue(initialChart);
+      // Set form values with shadcn form
+      Object.keys(initialChart).forEach(key => {
+        if (key in initialChart) {
+          form.setValue(key as keyof ChartConfig, initialChart[key as keyof ChartConfig]);
+        }
+      });
     }
   }, [initialChart, form]);
 
@@ -109,7 +121,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
   const handleSaveChart = async () => {
     try {
-      const values = await form.validateFields();
+      const values = form.getValues();
       const finalConfig: ChartConfig = {
         ...chartConfig,
         ...values,

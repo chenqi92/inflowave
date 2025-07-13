@@ -1,19 +1,14 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Button, Space, Alert, Row, Col, Typography, Switch, Upload, Steps, Input, Select, Table } from '@/components/ui';
-// TODO: Replace these Ant Design components: message
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { Upload as UploadIcon, Database, CheckCircle } from 'lucide-react';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Card, Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
 
-const { Option } = Select;
-const { Title, Paragraph } = Typography;
-const { Step } = Steps;
-
 interface ImportDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
   connectionId: string | null;
   database: string;
@@ -34,7 +29,7 @@ interface FieldMapping {
 }
 
 const ImportDialog: React.FC<ImportDialogProps> = ({
-  visible,
+  open,
   onClose,
   connectionId,
   database,
@@ -53,7 +48,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     setFileList([]);
     setImportData(null);
     setFieldMappings([]);
-    form.resetFields();
+    form.reset();
   }, [form]);
 
   // 加载测量列表
@@ -71,12 +66,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   }, [connectionId, database]);
 
   useEffect(() => {
-    if (visible) {
+    if (open) {
       loadMeasurements();
     } else {
       resetState();
     }
-  }, [visible, connectionId, database, loadMeasurements, resetState]);
+  }, [open, connectionId, database, loadMeasurements, resetState]);
 
   // 文件上传配置
   const uploadProps: UploadProps = {
@@ -197,7 +192,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     if (!connectionId || !importData) return;
 
     try {
-      const values = await form.validateFields();
+      const values = form.getValues();
       setLoading(true);
 
       // 准备导入数据
@@ -294,20 +289,30 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     }, {} as Record<string, string | number>)})) || [];
 
   return (
-    <Dialog
-      title="数据导入"
-      open={visible}
-      onOpenChange={(open) => !open && (onClose)()}
-      width={1000}
-      footer={null}
-    >
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>数据导入</DialogTitle>
+        </DialogHeader>
       <div className="space-y-6">
         {/* 步骤指示器 */}
-        <Steps current={currentStep}>
-          <Step title="上传文件" icon={<Upload className="w-4 h-4"  />} />
-          <Step title="配置映射" icon={<Database className="w-4 h-4"  />} />
-          <Step title="导入完成" icon={<CheckCircle />} />
-        </Steps>
+        <div className="flex items-center justify-between mb-6">
+          {[
+            { title: "上传文件", icon: <UploadIcon className="w-4 h-4" /> },
+            { title: "配置映射", icon: <Database className="w-4 h-4" /> },
+            { title: "导入完成", icon: <CheckCircle className="w-4 h-4" /> }
+          ].map((step, index) => (
+            <div key={index} className="flex items-center">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                index <= currentStep ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-muted'
+              }`}>
+                {step.icon}
+              </div>
+              <div className="ml-2 text-sm font-medium">{step.title}</div>
+              {index < 2 && <div className="flex-1 h-px bg-border mx-4" />}
+            </div>
+          ))}
+        </div>
 
         {/* 步骤 1: 文件上传 */}
         {currentStep === 0 && (
@@ -472,6 +477,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           </Card>
         )}
       </div>
+      </DialogContent>
     </Dialog>
   );
 };
