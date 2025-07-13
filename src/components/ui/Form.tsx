@@ -86,7 +86,17 @@ const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField()
+  // Try to get form field context, but don't fail if it doesn't exist
+  let error, formItemId;
+  try {
+    const formField = useFormField();
+    error = formField.error;
+    formItemId = formField.formItemId;
+  } catch {
+    // If not in FormField context, just use regular label
+    error = undefined;
+    formItemId = undefined;
+  }
 
   return (
     <Label
@@ -103,7 +113,21 @@ const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  // Try to get form field context, but don't fail if it doesn't exist
+  let error, formItemId, formDescriptionId, formMessageId;
+  try {
+    const formField = useFormField();
+    error = formField.error;
+    formItemId = formField.formItemId;
+    formDescriptionId = formField.formDescriptionId;
+    formMessageId = formField.formMessageId;
+  } catch {
+    // If not in FormField context, just use regular slot
+    error = undefined;
+    formItemId = undefined;
+    formDescriptionId = undefined;
+    formMessageId = undefined;
+  }
 
   return (
     <Slot
@@ -142,7 +166,18 @@ const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
+  // Try to get form field context, but don't fail if it doesn't exist
+  let error, formMessageId;
+  try {
+    const formField = useFormField();
+    error = formField.error;
+    formMessageId = formField.formMessageId;
+  } catch {
+    // If not in FormField context, just show children
+    error = undefined;
+    formMessageId = undefined;
+  }
+
   const body = error ? String(error?.message ?? "") : children
 
   if (!body) {

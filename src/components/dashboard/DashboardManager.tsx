@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Modal } from '@/components/ui';
-// TODO: Replace these Ant Design components: List, Popconfirm, Divider
+import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Modal, List } from '@/components/ui';
+// TODO: Replace these Ant Design components: Popconfirm, Divider
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';

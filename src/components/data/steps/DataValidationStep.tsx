@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs, TabsList, TabsTrigger, TabsContent, Modal, Tooltip } from '@/components/ui';
-// TODO: Replace these Ant Design components: List
+import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs, TabsList, TabsTrigger, TabsContent, Modal, Tooltip, List } from '@/components/ui';
+// List component has been added to imports
 import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Info, RefreshCw, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { ImportWizardData } from '../SmartImportWizard';

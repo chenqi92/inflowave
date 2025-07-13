@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator } from '@/components/ui';
+import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator, List, Tag, Text } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, Clock, Database, FileText, Info, Zap, Eye, Download, Lightbulb, RefreshCw, Code, Table, TrendingUp, PieChart, Book, Rocket, Settings, Trophy, PlayCircle, AlertTriangle, AlertCircle, CheckCircle, MinusCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';

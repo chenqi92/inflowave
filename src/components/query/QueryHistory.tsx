@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Empty, Row, Col, DatePicker, Card, Space } from '@/components/ui';
-// TODO: Replace these Ant Design components: List, Tooltip, Popconfirm
+import { Button, Typography, Input, Select, Tag, Empty, Row, Col, DatePicker, Card, Space, List } from '@/components/ui';
+// TODO: Replace these Ant Design components: Tooltip, Popconfirm
 
 const { RangePicker } = DatePicker;
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';

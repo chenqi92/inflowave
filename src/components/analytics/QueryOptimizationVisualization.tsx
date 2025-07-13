@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch } from '@/components/ui';
+import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Divider, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List } from '@/components/ui';
 
 import { BranchesOutlined, TargetOutlined } from '@/components/ui';
 import { Zap, Clock, Database, BarChart, TrendingUp, PieChart, Info, Lightbulb, Flame, Rocket, Trophy, Eye, Settings, RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
