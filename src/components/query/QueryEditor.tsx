@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Badge, Drawer
+import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space, Tooltip } from '@/components/ui';
+// TODO: Replace these Ant Design components: Badge, Drawer
 import { useToast } from '@/hooks/use-toast';
 
 

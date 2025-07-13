@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip
-import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button, Modal } from '@/components/ui';
+import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm, Tooltip } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
@@ -142,48 +141,14 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   ];
 
   return (
-    <Modal
-      title={
-        <div className="flex items-center gap-2">
-          <Info className="w-4 h-4"  />
-          {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
-        </div>
-      }
-      open={visible}
-      onClose={onClose}
-      width={600}
-      footer={
-        <div className="flex justify-end gap-3">
-          <Button onClick={onClose}>
-            取消
-          </Button>
-          {mode === 'edit' && policy && !policy.default && (
-            <Popconfirm
-              title="确认删除保留策略"
-              description={`确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`}
-              onConfirm={handleDelete}
-              okText="删除"
-              cancelText="取消"
-              okType="danger"
-            >
-              <Button
-                variant="danger"
-                loading={loading}
-              >
-                删除
-              </Button>
-            </Popconfirm>
-          )}
-          <Button
-            variant="primary"
-            loading={loading}
-            onClick={handleSubmit}
-          >
-            {mode === 'create' ? '创建' : '保存'}
-          </Button>
-        </div>
-      }
-    >
+    <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Info className="w-4 h-4" />
+            {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
+          </DialogTitle>
+        </DialogHeader>
       <div className="space-y-6">
         {/* 说明信息 */}
         <Alert
@@ -316,7 +281,39 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           showIcon
         />
       </div>
-    </Modal>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button onClick={onClose}>
+          取消
+        </Button>
+        {mode === 'edit' && policy && !policy.default && (
+          <Popconfirm
+            title="确认删除保留策略"
+            description={`确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`}
+            onConfirm={handleDelete}
+            okText="删除"
+            cancelText="取消"
+            okType="danger"
+          >
+            <Button
+              variant="destructive"
+              loading={loading}
+            >
+              删除
+            </Button>
+          </Popconfirm>
+        )}
+        <Button
+          variant="default"
+          loading={loading}
+          onClick={handleSubmit}
+        >
+          {mode === 'create' ? '创建' : '保存'}
+        </Button>
+      </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

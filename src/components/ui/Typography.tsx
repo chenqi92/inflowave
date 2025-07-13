@@ -39,7 +39,7 @@ const Text = React.forwardRef<
     strong?: boolean
     code?: boolean
   }
->(({ className, type, strong, code, children, ...props }, ref) => {
+>(({ className, type, strong, code, children, ...domProps }, ref) => {
   const variants = {
     secondary: "text-muted-foreground",
     success: "text-green-600",
@@ -47,8 +47,7 @@ const Text = React.forwardRef<
     danger: "text-red-600"
   }
 
-  // Remove code, strong, and type from props to prevent them from being passed to DOM
-  const { code: _, strong: __, type: ___, ...domProps } = props as any;
+  // Props are already filtered out in the destructuring above
 
   if (code) {
     return (
@@ -127,21 +126,9 @@ const AntParagraph = React.forwardRef<
   delete: del = false,
   strong = false,
   type,
-  ...props
+  ...domProps
 }, ref) => {
-  // Filter out Ant Design specific props that shouldn't be passed to DOM
-  const {
-    wrap: _wrap,
-    code: _code,
-    copyable: _copyable,
-    ellipsis: _ellipsis,
-    mark: _mark,
-    underline: _underline,
-    delete: _delete,
-    strong: _strong,
-    type: _type,
-    ...domProps
-  } = props as any;
+  // Ant Design specific props are already filtered out in the destructuring above
 
   const typeVariants = {
     secondary: "text-muted-foreground",

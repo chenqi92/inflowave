@@ -1083,20 +1083,20 @@ const Database: React.FC = () => {
         width={500}
         footer={
           <div className="flex justify-end gap-3">
-            <UIButton
+            <Button
               onClick={() => {
                 setCreateModalVisible(false);
                 form.resetFields();
               }}
             >
               取消
-            </UIButton>
-            <UIButton
-              variant="primary"
+            </Button>
+            <Button
+              variant="default"
               onClick={() => form.submit()}
             >
               创建
-            </UIButton>
+            </Button>
           </div>
         }
       >

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, List, Divider
+import { Row, Col, Statistic, Table, Alert, Button, Select, Typography, Tag, Progress, Tooltip } from '@/components/ui';
+// TODO: Replace these Ant Design components: List, Divider
 import { Card, Space } from '@/components/ui';
 import { RefreshCw, Settings, Database, Zap, Clock, LayoutDashboard, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
