@@ -226,13 +226,13 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '操作',
       key: 'actions',
-      width: 200,
+      width: 180,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
 
         return (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Button
               type={isConnected ? 'default' : 'primary'}
               icon={isConnected ? <DisconnectOutlined /> : <WifiOutlined />}
@@ -243,7 +243,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             >
               {isConnected ? '断开' : '连接'}
             </Button>
-            
+
             <Button
               icon={<EditOutlined />}
               size="small"
@@ -253,7 +253,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               }}
               title="编辑连接"
             />
-            
+
             <Dropdown
               menu={{
                 items: [
@@ -278,7 +278,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                         closable: true,
                         keyboard: true,
                         maskClosable: true,
-                        okButtonProps: { danger: true },
+                        okButtonProps: { danger: true, size: 'small' },
+                        cancelButtonProps: { size: 'small' },
                         onOk: () => removeConnection(record.id!),
                       });
                     },
@@ -303,98 +304,73 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   }));
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Card
-        title="连接管理"
-        extra={
-          <Button
-            type={monitoringActive ? 'default' : 'primary'}
-            icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-            onClick={handleMonitoringToggle}
-            size="small"
-          >
-            {monitoringActive ? '停止监控' : '启动监控'}
-          </Button>
-        }
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          borderRadius: '0',
-          boxShadow: 'none'
-        }}
-        bodyStyle={{
-          height: 'calc(100% - 65px)',
-          overflow: 'auto',
-          padding: '24px'
-        }}
-      >
-        {/* 统计信息 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={12} sm={6}>
-            <div style={{ textAlign: 'center' }}>
-              <Statistic
-                title="总连接数"
-                value={connections.length}
-                prefix={<SettingOutlined />}
-              />
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{ textAlign: 'center' }}>
-              <Statistic
-                title="已连接"
-                value={Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
-                valueStyle={{ color: '#3f8600' }}
-                prefix={<WifiOutlined />}
-              />
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{ textAlign: 'center' }}>
-              <Statistic
-                title="监控状态"
-                value={monitoringActive ? '运行中' : '已停止'}
-                valueStyle={{ color: monitoringActive ? '#3f8600' : '#cf1322' }}
-              />
-            </div>
-          </Col>
-          <Col xs={12} sm={6}>
-            <div style={{ textAlign: 'center' }}>
-              <Statistic
-                title="监控间隔"
-                value={monitoringInterval}
-                suffix="秒"
-              />
-            </div>
-          </Col>
-        </Row>
-
-        {/* 连接表格 */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <Table
-            columns={columns}
-            dataSource={dataSource}
-            rowKey="id"
-            pagination={{
-              pageSize: 8,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-              size: 'default'
-            }}
-            loading={loading}
-            scroll={{ x: 'max-content' }}
-            size="middle"
-            className="connection-table"
-            rowClassName={(record) => 
-              activeConnectionId === record.id 
-                ? 'bg-blue-50 border-blue-200' 
-                : 'hover:bg-gray-50'
-            }
-          />
+    <div className="h-full flex flex-col">
+      {/* 工具栏 */}
+      <div className="flex justify-between items-center p-3 border-b border-gray-200">
+        <div className="text-sm text-gray-600">
+          连接状态监控
         </div>
-      </Card>
+        <Button
+          type={monitoringActive ? 'default' : 'primary'}
+          icon={monitoringActive ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+          onClick={handleMonitoringToggle}
+          size="small"
+        >
+          {monitoringActive ? '停止监控' : '启动监控'}
+        </Button>
+      </div>
+      {/* 统计信息 */}
+      <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center space-x-6 text-sm">
+          <div className="flex items-center space-x-2">
+            <SettingOutlined className="text-gray-500" />
+            <span className="text-gray-600">总连接:</span>
+            <span className="font-medium">{connections.length}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <WifiOutlined className="text-green-500" />
+            <span className="text-gray-600">已连接:</span>
+            <span className="font-medium text-green-600">
+              {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-600">监控:</span>
+            <span className={`font-medium ${monitoringActive ? 'text-green-600' : 'text-red-600'}`}>
+              {monitoringActive ? '运行中' : '已停止'}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-600">间隔:</span>
+            <span className="font-medium">{monitoringInterval}秒</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 连接表格 */}
+      <div className="flex-1 overflow-hidden">
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            size: 'small'
+          }}
+          loading={loading}
+          scroll={{ x: 'max-content', y: 'calc(100vh - 300px)' }}
+          size="small"
+          className="connection-table"
+          rowClassName={(record) =>
+            activeConnectionId === record.id
+              ? 'bg-blue-50'
+              : 'hover:bg-gray-50'
+          }
+        />
+      </div>
 
 
       {/* 连接池统计模态框 */}

@@ -138,12 +138,27 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   // 加载指定表的字段和标签信息
   const loadTableSchema = async (connectionId: string, database: string, table: string): Promise<{ tags: string[]; fields: Array<{ name: string; type: string }> }> => {
     try {
-      const schema = await safeTauriInvoke<{ tags: string[]; fields: Array<{ name: string; type: string }> }>('get_table_schema', {
-        connectionId,
-        database,
-        measurement: table,
-      });
-      return schema || { tags: [], fields: [] };
+      // 尝试分别获取字段和标签信息
+      const [tags, fields] = await Promise.all([
+        safeTauriInvoke<string[]>('get_tag_keys', {
+          connectionId,
+          database,
+          measurement: table,
+        }).catch(() => []),
+        safeTauriInvoke<string[]>('get_field_keys', {
+          connectionId,
+          database,
+          measurement: table,
+        }).catch(() => []),
+      ]);
+
+      // 将字段转换为带类型的格式
+      const fieldsWithType = fields.map(fieldName => ({
+        name: fieldName,
+        type: 'float' // 默认类型，因为 InfluxDB 字段类型需要额外查询
+      }));
+
+      return { tags: tags || [], fields: fieldsWithType };
     } catch (error) {
       console.error(`加载表 ${table} 的架构失败:`, error);
       

@@ -1,12 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Typography, Button, Space, Tabs, Modal } from '@/components/ui';
-import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined, TableOutlined, AppstoreOutlined, DeleteOutlined } from '@/components/ui';
+import { PlusOutlined, ReloadOutlined, ImportOutlined, ExportOutlined, BugOutlined } from '@/components/ui';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
-import ConnectionListView from '@/components/ConnectionManager/ConnectionListView';
+
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -31,7 +31,7 @@ const Connections: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
+
 
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
@@ -239,124 +239,71 @@ const Connections: React.FC = () => {
   const activeConnectionId = useConnectionStore(state => state.activeConnectionId);
 
   return (
-    <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col p-6">
+    <div className="h-full bg-white flex flex-col">
       {/* 页面标题和操作 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                连接管理
-              </h1>
-              <p className="text-gray-600 text-sm">
-                管理和配置 InfluxDB 数据库连接，支持多环境管理和实时监控
-              </p>
-              <div className="flex items-center mt-2 text-xs text-gray-500">
-                <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-600">
-                  {connections.length} 个连接
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            {/* 视图切换 */}
-            <div className="flex border border-gray-300 rounded-md overflow-hidden">
-              <Button
-                type={viewMode === 'card' ? 'primary' : 'default'}
-                icon={<AppstoreOutlined />}
-                onClick={() => setViewMode('card')}
-                className={`rounded-none border-0 ${viewMode === 'card' ? 'shadow-none' : 'bg-white hover:bg-gray-50'}`}
-                size="small"
-              >
-                卡片
-              </Button>
-              <Button
-                type={viewMode === 'table' ? 'primary' : 'default'}
-                icon={<TableOutlined />}
-                onClick={() => setViewMode('table')}
-                className={`rounded-none border-0 border-l border-gray-300 ${viewMode === 'table' ? 'shadow-none' : 'bg-white hover:bg-gray-50'}`}
-                size="small"
-              >
-                表格
-              </Button>
-            </div>
-
-            <div className="flex space-x-3">
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={loadConnections}
-                loading={loading}
-                className="border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-colors"
-                title="刷新连接列表"
-              >
-                刷新
-              </Button>
-              <Button
-                icon={<ImportOutlined />}
-                onClick={() => showMessage.info('导入功能开发中...')}
-                className="border-gray-300 hover:border-green-400 hover:text-green-600 transition-colors"
-                title="导入连接配置"
-              >
-                导入
-              </Button>
-              <Button
-                icon={<ExportOutlined />}
-                onClick={() => showMessage.info('导出功能开发中...')}
-                className="border-gray-300 hover:border-purple-400 hover:text-purple-600 transition-colors"
-                title="导出连接配置"
-              >
-                导出
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => handleOpenDialog()}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-sm"
-                size="large"
-              >
-                新建连接
-              </Button>
-            </div>
-          </div>
+      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">
+            连接管理
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            管理 InfluxDB 数据库连接 ({connections.length} 个连接)
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={loadConnections}
+            loading={loading}
+            size="small"
+          >
+            刷新
+          </Button>
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => showMessage.info('导入功能开发中...')}
+            size="small"
+          >
+            导入
+          </Button>
+          <Button
+            icon={<ExportOutlined />}
+            onClick={() => showMessage.info('导出功能开发中...')}
+            size="small"
+          >
+            导出
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => handleOpenDialog()}
+            size="small"
+          >
+            新建连接
+          </Button>
         </div>
       </div>
 
       {/* 连接管理器 */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <Tabs
           defaultActiveKey="manager"
+          size="small"
           items={[
             {
               key: 'manager',
-              label: '连接管理',
-              children: viewMode === 'table' ? (
-                <ConnectionManager 
+              label: '连接列表',
+              children: (
+                <ConnectionManager
                   onConnectionSelect={handleConnectionSelect}
                   onEditConnection={handleOpenDialog}
-                />
-              ) : (
-                <ConnectionListView
-                  connections={connections}
-                  connectionStatuses={connectionStatuses}
-                  activeConnectionId={activeConnectionId}
-                  loading={loading}
-                  onConnect={handleConnectionToggle}
-                  onEdit={handleOpenDialog}
-                  onDelete={handleDeleteConnection}
                 />
               ),
             },
             {
               key: 'debug',
               label: (
-                <Space>
+                <Space size="small">
                   <BugOutlined />
                   调试面板
                 </Space>
@@ -364,7 +311,7 @@ const Connections: React.FC = () => {
               children: <ConnectionDebugPanel />,
             },
           ]}
-          style={{ height: '100%' }}
+          className="h-full"
         />
       </div>
 
