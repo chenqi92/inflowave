@@ -282,7 +282,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   // 仪表盘设置
   const openDashboardSettings = useCallback(() => {
     setShowSettingsModal(true);
-    settingsForm.setFieldsValue({
+    settingsForm.reset({
       name: dashboard.name,
       description: dashboard.description,
       theme: dashboard.theme,

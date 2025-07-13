@@ -1,7 +1,7 @@
 import React from 'react';
-import { Table, Typography, Result, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui';
+import { Table, Typography, Result, Tooltip, TooltipTrigger, TooltipContent, AntParagraph } from '@/components/ui';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 // Test component to verify fixes
 const TestFixes: React.FC = () => {
@@ -53,9 +53,9 @@ const TestFixes: React.FC = () => {
       {/* Test 3: Typography with Ant Design props */}
       <div>
         <h2>3. Typography Test</h2>
-        <Paragraph wrap={true} code={false} copyable={false}>
+        <AntParagraph wrap={true} code={false} copyable={false}>
           This paragraph should not pass invalid props to DOM
-        </Paragraph>
+        </AntParagraph>
         <Text strong type="success">
           This text should render correctly
         </Text>

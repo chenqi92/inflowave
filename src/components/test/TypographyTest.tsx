@@ -91,21 +91,21 @@ const TypographyTest: React.FC = () => {
           {/* 列表测试 */}
           <div>
             <Title level={4}>列表样式测试</Title>
-            <Paragraph>
+            <div>
               <ul>
                 <li>无序列表项 1</li>
                 <li>无序列表项 2</li>
                 <li>无序列表项 3</li>
               </ul>
-            </Paragraph>
-            
-            <Paragraph>
+            </div>
+
+            <div>
               <ol>
                 <li>有序列表项 1</li>
                 <li>有序列表项 2</li>
                 <li>有序列表项 3</li>
               </ol>
-            </Paragraph>
+            </div>
           </div>
 
           <Divider />
@@ -113,12 +113,12 @@ const TypographyTest: React.FC = () => {
           {/* 引用测试 */}
           <div>
             <Title level={4}>引用样式测试</Title>
-            <Paragraph>
+            <div>
               <blockquote>
                 这是一个引用块。引用块通常用于显示来自其他来源的文本或重要信息。
                 它应该有适当的缩进和边框样式。
               </blockquote>
-            </Paragraph>
+            </div>
           </div>
 
           <Divider />
@@ -130,10 +130,10 @@ const TypographyTest: React.FC = () => {
               这是内联代码：<Text code>console.log('Hello World')</Text>
             </Paragraph>
             
-            <Paragraph>
-              <pre style={{ 
-                background: '#f6f8fa', 
-                padding: '16px', 
+            <div>
+              <pre style={{
+                background: '#f6f8fa',
+                padding: '16px',
                 borderRadius: '6px',
                 overflow: 'auto'
               }}>
@@ -143,7 +143,7 @@ const TypographyTest: React.FC = () => {
 
 greet('World');`}
               </pre>
-            </Paragraph>
+            </div>
           </div>
 
           <Divider />

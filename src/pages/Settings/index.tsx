@@ -38,7 +38,7 @@ const Settings: React.FC = () => {
 
   // 初始化表单值
   useEffect(() => {
-    form.setFieldsValue(stableConfig);
+    form.reset(stableConfig);
   }, [stableConfig]); // 使用稳定的 config 对象
 
   // 保存设置
@@ -75,7 +75,7 @@ const Settings: React.FC = () => {
     // 延迟设置表单值，确保 store 状态已更新
     setTimeout(() => {
       const latestConfig = useAppStore.getState().config;
-      form.setFieldsValue(latestConfig);
+      form.reset(latestConfig);
     }, 0);
     toast({ title: "成功", description: "设置已重置为默认值" });
   };
@@ -129,7 +129,7 @@ const Settings: React.FC = () => {
               
               if (settings.appConfig) {
                 setConfig(settings.appConfig);
-                form.setFieldsValue(settings.appConfig);
+                form.reset(settings.appConfig);
                 toast({ title: "成功", description: "设置已导入" });
               } else {
                 toast({ title: "错误", description: "无效的设置文件格式", variant: "destructive" });
@@ -146,7 +146,7 @@ const Settings: React.FC = () => {
         const settings = await safeTauriInvoke('import_settings');
         if (settings) {
           setConfig(settings.appConfig);
-          form.setFieldsValue(settings.appConfig);
+          form.reset(settings.appConfig);
           toast({ title: "成功", description: "设置已导入" });
         }
       }
@@ -169,7 +169,7 @@ const Settings: React.FC = () => {
         resetConfig();
         setTimeout(() => {
           const latestConfig = useAppStore.getState().config;
-          form.setFieldsValue(latestConfig);
+          form.reset(latestConfig);
         }, 0);
         toast({ title: "成功", description: "所有数据已清除" });
       }});

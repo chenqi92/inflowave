@@ -261,47 +261,35 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
           {/* 区域2: 文件操作 */}
           <div className="flex items-center gap-1 px-3 py-1 bg-blue-50 rounded-lg">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => handleFileMenuClick({ key: 'new-query' })}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>新建查询 (Ctrl+N)</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => handleFileMenuClick({ key: 'open' })}
-                >
-                  <FolderOpen className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>打开文件 (Ctrl+O)</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => handleFileMenuClick({ key: 'save' })}
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>保存 (Ctrl+S)</TooltipContent>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              onClick={() => handleFileMenuClick({ key: 'new-query' })}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-xs">新建</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              onClick={() => handleFileMenuClick({ key: 'open' })}
+            >
+              <FolderOpen className="w-4 h-4" />
+              <span className="text-xs">打开</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              onClick={() => handleFileMenuClick({ key: 'save' })}
+            >
+              <Save className="w-4 h-4" />
+              <span className="text-xs">保存</span>
+            </Button>
           </div>
 
           <Separator orientation="vertical" className="h-6 mx-2" />
@@ -311,20 +299,21 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant="default"
               size="sm"
-              className="h-8"
+              className="h-12 px-3 flex flex-col items-center justify-center gap-1"
               disabled={!activeConnection}
             >
-              <PlayCircle className="w-4 h-4 mr-1" />
-              执行
+              <PlayCircle className="w-4 h-4" />
+              <span className="text-xs">执行</span>
             </Button>
-            
+
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
+              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
               disabled={!activeConnection}
             >
               <Square className="w-4 h-4" />
+              <span className="text-xs">停止</span>
             </Button>
           </div>
 
@@ -332,126 +321,103 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
           {/* 区域4: 核心视图切换 (突出显示) */}
           <div className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border-2 border-purple-200">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'datasource' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={`h-9 transition-all ${
-                    currentView === 'datasource' 
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
-                      : 'hover:bg-purple-200'
-                  }`}
-                  onClick={() => onViewChange?.('datasource')}
-                >
-                  <Database className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>数据源管理</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'query' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={`h-9 transition-all ${
-                    currentView === 'query' 
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
-                      : 'hover:bg-purple-200'
-                  }`}
-                  onClick={() => onViewChange?.('query')}
-                  disabled={!activeConnection}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>查询编辑器</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'visualization' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={`h-9 transition-all ${
-                    currentView === 'visualization' 
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
-                      : 'hover:bg-purple-200'
-                  }`}
-                  onClick={() => onViewChange?.('visualization')}
-                  disabled={!activeConnection}
-                >
-                  <BarChart className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>数据可视化</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentView === 'performance' ? 'default' : 'ghost'}
-                  size="sm"
-                  className={`h-9 transition-all ${
-                    currentView === 'performance' 
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md' 
-                      : 'hover:bg-purple-200'
-                  }`}
-                  onClick={() => onViewChange?.('performance')}
-                  disabled={!activeConnection}
-                >
-                  <Zap className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>性能监控</TooltipContent>
-            </Tooltip>
+            <Button
+              variant={currentView === 'datasource' ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+                currentView === 'datasource'
+                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
+                  : 'hover:bg-purple-200'
+              }`}
+              onClick={() => onViewChange?.('datasource')}
+            >
+              <Database className="w-4 h-4" />
+              <span className="text-xs">数据源</span>
+            </Button>
+
+            <Button
+              variant={currentView === 'query' ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+                currentView === 'query'
+                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
+                  : 'hover:bg-purple-200'
+              }`}
+              onClick={() => onViewChange?.('query')}
+              disabled={!activeConnection}
+            >
+              <Edit className="w-4 h-4" />
+              <span className="text-xs">查询</span>
+            </Button>
+
+            <Button
+              variant={currentView === 'visualization' ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+                currentView === 'visualization'
+                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
+                  : 'hover:bg-purple-200'
+              }`}
+              onClick={() => onViewChange?.('visualization')}
+              disabled={!activeConnection}
+            >
+              <BarChart className="w-4 h-4" />
+              <span className="text-xs">可视化</span>
+            </Button>
+
+            <Button
+              variant={currentView === 'performance' ? 'default' : 'ghost'}
+              size="sm"
+              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+                currentView === 'performance'
+                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
+                  : 'hover:bg-purple-200'
+              }`}
+              onClick={() => onViewChange?.('performance')}
+              disabled={!activeConnection}
+            >
+              <Zap className="w-4 h-4" />
+              <span className="text-xs">监控</span>
+            </Button>
           </div>
 
           <Separator orientation="vertical" className="h-6 mx-2" />
 
           {/* 区域5: 工具功能 */}
           <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  disabled={!activeConnection}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>刷新 (F5)</TooltipContent>
-            </Tooltip>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              disabled={!activeConnection}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span className="text-xs">刷新</span>
+            </Button>
           </div>
         </div>
 
         {/* 右侧：设置和帮助 */}
         <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setSettingsVisible(true)}
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>设置 (Ctrl+,)</TooltipContent>
-          </Tooltip>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+            onClick={() => setSettingsVisible(true)}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-xs">设置</span>
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
               >
                 <Wrench className="w-4 h-4" />
+                <span className="text-xs">工具</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

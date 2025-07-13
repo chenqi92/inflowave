@@ -36,7 +36,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       const prefs = await safeTauriInvoke<UserPreferences>('get_user_preferences');
       setPreferences(prefs);
       if (prefs) {
-        form.setFieldsValue({
+        form.reset({
           notifications: prefs.notifications,
           accessibility: prefs.accessibility,
           workspace: prefs.workspace});
@@ -72,7 +72,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       const defaultPrefs = await safeTauriInvoke<UserPreferences>('get_default_user_preferences');
       await safeTauriInvoke('update_user_preferences', { preferences: defaultPrefs });
       setPreferences(defaultPrefs);
-      form.setFieldsValue({
+      form.reset({
         notifications: defaultPrefs.notifications,
         accessibility: defaultPrefs.accessibility,
         workspace: defaultPrefs.workspace});

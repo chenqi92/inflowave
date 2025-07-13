@@ -72,9 +72,10 @@ const AppHeader: React.FC = () => {
           variant="ghost"
           size="sm"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className='text-lg'
+          className='h-12 w-16 p-1 flex flex-col items-center justify-center gap-1'
         >
           {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          <span className="text-xs">{sidebarCollapsed ? '展开' : '折叠'}</span>
         </Button>
 
         {/* 应用标题 */}

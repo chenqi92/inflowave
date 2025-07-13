@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button, Card, Alert, Text, Collapse, Panel, Result, Paragraph } from '@/components/ui';
+import { Button, Card, Alert, Text, Collapse, Panel, Result, AntParagraph } from '@/components/ui';
 import { Bug, RefreshCw, FileText } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
@@ -166,55 +166,52 @@ class ErrorBoundary extends Component<Props, State> {
                       {error && (
                         <div>
                           <Text strong>错误消息:</Text>
-                          <Paragraph 
-                            code 
-                            copyable 
+                          <AntParagraph
+                            code
+                            copyable
                             className="bg-red-50 p-3 rounded border border-red-200"
                           >
                             {error.message}
-                          </Paragraph>
+                          </AntParagraph>
                         </div>
                       )}
 
                       {error?.stack && (
                         <div>
                           <Text strong>错误堆栈:</Text>
-                          <Paragraph 
-                            code 
-                            copyable 
+                          <AntParagraph
+                            code
+                            copyable
                             className="bg-gray-50 p-3 rounded border text-xs"
                             style={{ whiteSpace: 'pre-wrap' }}
                           >
                             {error.stack}
-                          </Paragraph>
+                          </AntParagraph>
                         </div>
                       )}
 
                       {errorInfo?.componentStack && (
                         <div>
                           <Text strong>组件堆栈:</Text>
-                          <Paragraph 
-                            code 
-                            copyable 
+                          <AntParagraph
+                            code
+                            copyable
                             className="bg-blue-50 p-3 rounded border text-xs"
                             style={{ whiteSpace: 'pre-wrap' }}
                           >
                             {errorInfo.componentStack}
-                          </Paragraph>
+                          </AntParagraph>
                         </div>
                       )}
 
                       <div>
                         <Text strong>环境信息:</Text>
-                        <Paragraph 
-                          code 
-                          className="bg-gray-50 p-3 rounded border text-xs"
-                        >
+                        <div className="bg-gray-50 p-3 rounded border text-xs font-mono">
                           <div>URL: {window.location.href}</div>
                           <div>用户代理: {navigator.userAgent}</div>
                           <div>时间戳: {new Date().toISOString()}</div>
                           <div>会话 ID: {errorLogger.getSessionId()}</div>
-                        </Paragraph>
+                        </div>
                       </div>
                     </div>
                   </Panel>

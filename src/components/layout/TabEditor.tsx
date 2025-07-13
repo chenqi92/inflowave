@@ -344,47 +344,39 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               ))}
             </SelectContent>
           </Select>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                onClick={executeQuery}
-                disabled={loading || !activeConnectionId || !selectedDatabase}
-              >
-                <PlayCircle className="w-4 h-4 mr-1" />
-                {loading ? '执行中...' : '执行'}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>执行 (Ctrl+Enter)</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={saveCurrentTab}
-              >
-                <Save className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>保存 (Ctrl+S)</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-              >
-                <FolderOpen className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>打开文件</TooltipContent>
-          </Tooltip>
+          <Button
+            size="sm"
+            onClick={executeQuery}
+            disabled={loading || !activeConnectionId || !selectedDatabase}
+            className="h-12 px-3 flex flex-col items-center justify-center gap-1"
+          >
+            <PlayCircle className="w-4 h-4" />
+            <span className="text-xs">{loading ? '执行中...' : '执行'}</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
+            onClick={saveCurrentTab}
+            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+          >
+            <Save className="w-4 h-4" />
+            <span className="text-xs">保存</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span className="text-xs">打开</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
           >
             <MoreHorizontal className="w-4 h-4" />
+            <span className="text-xs">更多</span>
           </Button>
         </div>
       </div>
