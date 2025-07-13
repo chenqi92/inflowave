@@ -1,0 +1,253 @@
+/* 连接弹框样式优化 */
+.connection-dialog {
+  font-size: 13px;
+}
+
+/* 自定义Modal样式 */
+.connection-dialog .modal-header {
+  background-color: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.connection-dialog .modal-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #6b7280;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.connection-dialog .modal-close-btn:hover {
+  color: #374151;
+  background-color: #f3f4f6;
+  transform: scale(1.05);
+}
+
+.connection-dialog .modal-close-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.connection-dialog .modal-close-btn:active {
+  background-color: #e5e7eb;
+  transform: scale(0.95);
+}
+
+/* 关闭按钮图标样式 */
+.connection-dialog .modal-close-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
+.connection-dialog .ant-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.connection-dialog .ant-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.connection-dialog .ant-modal-body {
+  padding: 20px;
+}
+
+.connection-dialog .ant-modal-close {
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.connection-dialog .ant-modal-close:hover {
+  background-color: #f3f4f6;
+}
+
+/* 表单样式优化 */
+.connection-dialog .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.connection-dialog .ant-form-item-label {
+  padding-bottom: 4px;
+}
+
+.connection-dialog .ant-form-item-label > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.connection-dialog .ant-input,
+.connection-dialog .ant-input-number,
+.connection-dialog .ant-select-selector {
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.connection-dialog .ant-input-number {
+  width: 100%;
+}
+
+/* 按钮样式统一 */
+.connection-dialog .ant-btn {
+  font-size: 12px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.connection-dialog .ant-btn-sm {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+/* 步骤指示器样式 */
+.connection-dialog .ant-steps {
+  margin-bottom: 16px;
+}
+
+.connection-dialog .ant-steps-item-title {
+  font-size: 13px;
+}
+
+.connection-dialog .ant-steps-item-description {
+  font-size: 12px;
+}
+
+/* Switch组件样式 */
+.connection-dialog .ant-switch {
+  min-width: 36px;
+  height: 18px;
+}
+
+.connection-dialog .ant-switch-handle {
+  width: 14px;
+  height: 14px;
+  top: 2px;
+}
+
+.connection-dialog .ant-switch-handle::before {
+  border-radius: 7px;
+}
+
+/* Alert组件样式 */
+.connection-dialog .ant-alert {
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.connection-dialog .ant-alert-message {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.connection-dialog .ant-alert-description {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* 错误提示样式 */
+.connection-dialog .text-red-600 {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* 标签样式 */
+.connection-dialog label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+/* 网格布局间距优化 */
+.connection-dialog .grid {
+  gap: 12px;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .connection-dialog .ant-modal {
+    margin: 0;
+    max-width: none;
+    width: 100vw !important;
+    height: 100vh;
+  }
+  
+  .connection-dialog .ant-modal-content {
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .connection-dialog .ant-modal-body {
+    padding: 16px;
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+  
+  .connection-dialog .grid-cols-2,
+  .connection-dialog .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .connection-dialog .col-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* 加载状态优化 */
+.connection-dialog .ant-btn-loading {
+  pointer-events: none;
+}
+
+.connection-dialog .ant-btn-loading .ant-btn-loading-icon {
+  margin-right: 4px;
+}
+
+/* 禁用状态优化 */
+.connection-dialog .ant-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 焦点状态优化 */
+.connection-dialog .ant-input:focus,
+.connection-dialog .ant-input-number:focus,
+.connection-dialog .ant-select-focused .ant-select-selector {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* 成功状态样式 */
+.connection-dialog .bg-green-50 {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.connection-dialog .text-green-700 {
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 500;
+}

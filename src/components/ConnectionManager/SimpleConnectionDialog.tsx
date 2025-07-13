@@ -4,6 +4,7 @@ import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOu
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
+import './ConnectionDialog.css';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -178,8 +179,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   };
 
   const renderConnectionForm = () => (
-    <div className="space-y-4">
-      <div className="space-y-2">
+    <div className="space-y-3">
+      <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
           连接名称 <span className="text-red-500">*</span>
         </label>
@@ -189,13 +190,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           onChange={(e) => handleInputChange('name', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
+          size="small"
           className={errors.name ? 'border-red-500' : ''}
         />
-        {errors.name && <div className="text-sm text-red-600">{errors.name}</div>}
+        {errors.name && <div className="text-xs text-red-600">{errors.name}</div>}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 space-y-2">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="col-span-2 space-y-1">
           <label className="block text-sm font-medium text-gray-700">
             主机地址 <span className="text-red-500">*</span>
           </label>
@@ -205,12 +207,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             onChange={(e) => handleInputChange('host', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
+            size="small"
             className={errors.host ? 'border-red-500' : ''}
           />
-          {errors.host && <div className="text-sm text-red-600">{errors.host}</div>}
+          {errors.host && <div className="text-xs text-red-600">{errors.host}</div>}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">
             端口 <span className="text-red-500">*</span>
           </label>
@@ -219,15 +222,16 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             value={formData.port}
             onChange={(value) => handleInputChange('port', value || 8086)}
             className={`w-full ${errors.port ? 'border-red-500' : ''}`}
+            size="small"
             min={1}
             max={65535}
           />
-          {errors.port && <div className="text-sm text-red-600">{errors.port}</div>}
+          {errors.port && <div className="text-xs text-red-600">{errors.port}</div>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">用户名</label>
           <Input
             placeholder="可选"
@@ -235,20 +239,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             onChange={(e) => handleInputChange('username', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
+            size="small"
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">密码</label>
           <Input.Password
             placeholder="可选"
             value={formData.password}
             onChange={(e) => handleInputChange('password', e.target.value)}
+            size="small"
           />
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">默认数据库</label>
         <Input
           placeholder="可选，连接后默认选择的数据库"
@@ -256,32 +262,35 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           onChange={(e) => handleInputChange('database', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
+          size="small"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">启用SSL</label>
           <div className="flex items-center space-x-2">
             <Switch
               checked={formData.ssl}
               onChange={(checked) => handleInputChange('ssl', checked)}
+              size="small"
             />
             <span className="text-sm text-gray-500">使用SSL加密连接</span>
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label className="block text-sm font-medium text-gray-700">超时时间(秒)</label>
           <InputNumber
             placeholder="30"
             value={formData.timeout}
             onChange={(value) => handleInputChange('timeout', value || 30)}
             className={`w-full ${errors.timeout ? 'border-red-500' : ''}`}
+            size="small"
             min={5}
             max={300}
           />
-          {errors.timeout && <div className="text-sm text-red-600">{errors.timeout}</div>}
+          {errors.timeout && <div className="text-xs text-red-600">{errors.timeout}</div>}
         </div>
       </div>
     </div>
@@ -346,17 +355,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     <Modal
       title={isEditing ? '编辑连接' : '新建连接'}
       open={visible}
-      onCancel={onCancel}
+      onClose={onCancel}
       width={800}
-      footer={null}
-      destroyOnClose
-      zIndex={1200}
       maskClosable={true}
-      keyboard={true}
-      centered
-      getContainer={false}
+      className="connection-dialog"
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* 步骤指示器 */}
         <Steps current={currentStep} items={steps} size="small" />
 
@@ -364,27 +368,34 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {currentStep === 1 && renderTestResult()}
 
         {/* 操作按钮 */}
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex justify-between pt-3 border-t border-gray-200">
           <div>
             {currentStep === 1 && (
-              <Button onClick={() => setCurrentStep(0)}>
+              <Button
+                onClick={() => setCurrentStep(0)}
+                size="small"
+              >
                 返回修改
               </Button>
             )}
           </div>
 
-          <Space>
-            <Button onClick={onCancel}>
+          <Space size="small">
+            <Button
+              onClick={onCancel}
+              size="small"
+            >
               取消
             </Button>
-            
+
             {currentStep === 0 ? (
-              <Space>
+              <Space size="small">
                 {isEditing && (
                   <Button
                     type="primary"
                     onClick={handleSubmit}
                     loading={isSubmitting}
+                    size="small"
                   >
                     保存连接
                   </Button>
@@ -394,6 +405,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   onClick={handleTestConnection}
                   loading={isTesting}
                   icon={<InfoCircleOutlined />}
+                  size="small"
                 >
                   测试连接
                 </Button>
@@ -404,6 +416,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onClick={handleSubmit}
                 loading={isSubmitting}
                 disabled={!testResult?.success}
+                size="small"
               >
                 保存连接
               </Button>

@@ -4,6 +4,7 @@ import { InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOu
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
+import './ConnectionDialog.css';
 
 interface ConnectionDialogProps {
   visible: boolean;
@@ -127,7 +128,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           { min: 1, max: 100, message: '连接名称长度为1-100个字符' },
         ]}
       >
-        <Input placeholder="输入连接名称" autoCapitalize="off" autoCorrect="off" />
+        <Input placeholder="输入连接名称" autoCapitalize="off" autoCorrect="off" size="small" />
       </Form.Item>
 
       <div className="grid grid-cols-3 gap-4">
@@ -148,7 +149,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             }
           ]}
         >
-          <Input placeholder="localhost 或 192.168.1.100" autoCapitalize="off" autoCorrect="off" />
+          <Input placeholder="localhost 或 192.168.1.100" autoCapitalize="off" autoCorrect="off" size="small" />
         </Form.Item>
 
         <Form.Item
@@ -159,7 +160,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { type: 'number', min: 1, max: 65535, message: '端口范围: 1-65535' },
           ]}
         >
-          <InputNumber placeholder="8086" className="w-full" />
+          <InputNumber placeholder="8086" className="w-full" size="small" />
         </Form.Item>
       </div>
 
@@ -171,7 +172,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { max: 50, message: '用户名长度不能超过50个字符' },
           ]}
         >
-          <Input placeholder="可选" autoCapitalize="off" autoCorrect="off" />
+          <Input placeholder="可选" autoCapitalize="off" autoCorrect="off" size="small" />
         </Form.Item>
 
         <Form.Item
@@ -181,7 +182,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { max: 128, message: '密码长度不能超过128个字符' },
           ]}
         >
-          <Input.Password placeholder="可选" />
+          <Input.Password placeholder="可选" size="small" />
         </Form.Item>
       </div>
 
@@ -198,7 +199,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           }
         ]}
       >
-        <Input placeholder="可选，连接后默认选择的数据库" />
+        <Input placeholder="可选，连接后默认选择的数据库" size="small" />
       </Form.Item>
 
       <div className="grid grid-cols-2 gap-4">
@@ -208,7 +209,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           valuePropName="checked"
           extra="使用SSL加密连接"
         >
-          <Switch />
+          <Switch size="small" />
         </Form.Item>
 
         <Form.Item
@@ -218,7 +219,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { type: 'number', min: 5, max: 300, message: '超时时间范围: 5-300秒' },
           ]}
         >
-          <InputNumber placeholder="30" className="w-full" />
+          <InputNumber placeholder="30" className="w-full" size="small" />
         </Form.Item>
       </div>
     </div>
@@ -288,7 +289,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       footer={null}
       destroyOnClose
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* 步骤指示器 */}
         <Steps current={currentStep} items={steps} size="small" />
 
@@ -311,27 +312,34 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           {currentStep === 1 && renderTestResult()}
 
           {/* 操作按钮 */}
-          <div className="flex justify-between pt-4 border-t">
+          <div className="flex justify-between pt-3 border-t border-gray-200">
             <div>
               {currentStep === 1 && (
-                <Button onClick={() => setCurrentStep(0)}>
+                <Button
+                  onClick={() => setCurrentStep(0)}
+                  size="small"
+                >
                   返回修改
                 </Button>
               )}
             </div>
 
-            <Space>
-              <Button onClick={onCancel}>
+            <Space size="small">
+              <Button
+                onClick={onCancel}
+                size="small"
+              >
                 取消
               </Button>
-              
+
               {currentStep === 0 ? (
-                <Space>
+                <Space size="small">
                   {isEditing && (
                     <Button
                       type="primary"
                       onClick={handleSubmit}
                       loading={isSubmitting}
+                      size="small"
                     >
                       保存连接
                     </Button>
@@ -341,6 +349,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                     onClick={handleTestConnection}
                     loading={isTesting}
                     icon={<InfoCircleOutlined />}
+                    size="small"
                   >
                     测试连接
                   </Button>
@@ -351,6 +360,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                   onClick={handleSubmit}
                   loading={isSubmitting}
                   disabled={!testResult?.success}
+                  size="small"
                 >
                   保存连接
                 </Button>
