@@ -27,6 +27,7 @@ const Connections: React.FC = () => {
     removeConnection,
     setConnectionStatus,
     clearConnections,
+    syncConnectionsToBackend,
   } = useConnectionStore();
 
   const [loading, setLoading] = useState(false);
@@ -59,8 +60,14 @@ const Connections: React.FC = () => {
           console.log(`已同步 ${backendConnections.length} 个连接配置`);
         }
       } else if (connections.length > 0) {
-        // 如果后端没有连接但前端有，可能需要将前端连接推送到后端
-        console.log('后端无连接配置，保持前端配置');
+        // 如果后端没有连接但前端有，将前端连接推送到后端
+        console.log('后端无连接配置，尝试同步前端连接到后端');
+        try {
+          await syncConnectionsToBackend();
+          console.log('前端连接已同步到后端');
+        } catch (syncError) {
+          console.warn('同步前端连接到后端失败:', syncError);
+        }
       }
     } catch (error) {
       console.error('同步连接配置失败:', error);
@@ -211,6 +218,18 @@ const Connections: React.FC = () => {
           } catch (recreateError) {
             console.error('重新创建连接失败:', recreateError);
             showMessage.error(`连接失败: ${recreateError}`);
+
+            // 最后尝试同步所有连接
+            try {
+              console.log('尝试同步所有连接到后端...');
+              await syncConnectionsToBackend();
+              await connectToDatabase(connectionId);
+              showMessage.success('连接成功');
+              handleConnectionSelect(connectionId);
+            } catch (finalError) {
+              console.error('最终连接尝试失败:', finalError);
+              showMessage.error(`连接失败: ${finalError}`);
+            }
           }
         }
       }

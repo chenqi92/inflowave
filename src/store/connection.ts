@@ -269,6 +269,25 @@ export const useConnectionStore = create<ConnectionState>()(
           },
         }));
       },
+
+      // 同步连接到后端
+      syncConnectionsToBackend: async () => {
+        try {
+          const { connections } = get();
+          if (connections.length === 0) {
+            console.log('没有连接需要同步');
+            return;
+          }
+
+          console.log(`开始同步 ${connections.length} 个连接到后端`);
+          const syncedIds = await safeTauriInvoke<string[]>('sync_connections', { configs: connections });
+          console.log(`成功同步 ${syncedIds.length} 个连接`);
+          return syncedIds;
+        } catch (error) {
+          console.error('同步连接到后端失败:', error);
+          throw error;
+        }
+      },
     }),
     {
       name: 'influx-gui-connection-store',

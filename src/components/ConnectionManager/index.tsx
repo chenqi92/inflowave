@@ -82,13 +82,18 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
           // 如果连接失败，尝试重新创建连接配置
           console.warn('直接连接失败，尝试重新创建连接配置:', connectError);
           try {
+            // 确保连接配置有正确的时间戳
             const connectionWithTimestamp = {
               ...connection,
-              created_at: new Date().toISOString(),
+              created_at: connection.created_at || new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+
+            console.log('重新创建连接配置:', connectionWithTimestamp.name);
             const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
+
             if (newConnectionId) {
+              console.log('连接配置重新创建成功，尝试连接:', newConnectionId);
               await connectToDatabase(newConnectionId);
               showMessage.success('连接成功');
               onConnectionSelect?.(newConnectionId);

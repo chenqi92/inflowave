@@ -72,7 +72,7 @@ impl ConnectionService {
         let service = Self::new(encryption);
 
         // 自动加载保存的连接
-        if let Err(e) = service.load_from_storage().await {
+        if let Err(e) = service.load_from_storage_internal().await {
             warn!("加载连接配置失败: {}", e);
         }
 
@@ -255,6 +255,12 @@ impl ConnectionService {
         self.manager.clone()
     }
 
+    /// 检查连接配置是否存在
+    pub async fn connection_config_exists(&self, connection_id: &str) -> bool {
+        let configs = self.configs.read().await;
+        configs.contains_key(connection_id)
+    }
+
     /// 加载连接配置
     pub async fn load_connections(&self, configs: Vec<ConnectionConfig>) -> Result<()> {
         info!("加载 {} 个连接配置", configs.len());
@@ -269,7 +275,7 @@ impl ConnectionService {
     }
 
     /// 加载单个连接配置
-    async fn load_single_connection(&self, config: ConnectionConfig) -> Result<()> {
+    pub async fn load_single_connection(&self, config: ConnectionConfig) -> Result<()> {
         let connection_id = config.id.clone();
         
         // 存储配置
@@ -336,8 +342,13 @@ impl ConnectionService {
         Ok(())
     }
 
-    /// 从文件加载连接配置
-    async fn load_from_storage(&self) -> Result<()> {
+    /// 从文件加载连接配置（公共方法）
+    pub async fn load_from_storage(&self) -> Result<()> {
+        self.load_from_storage_internal().await
+    }
+
+    /// 从文件加载连接配置（内部实现）
+    async fn load_from_storage_internal(&self) -> Result<()> {
         debug!("从文件加载连接配置: {:?}", self.storage_path);
 
         // 检查文件是否存在
@@ -370,9 +381,27 @@ impl ConnectionService {
     pub async fn connect_to_database(&self, connection_id: &str) -> Result<()> {
         debug!("连接到数据库: {}", connection_id);
 
-        // 检查连接是否存在
+        // 检查连接是否存在，如果不存在尝试从配置重新加载
         if !self.manager.connection_exists(connection_id).await {
-            return Err(anyhow::anyhow!("连接 '{}' 不存在", connection_id));
+            debug!("连接在管理器中不存在，检查配置: {}", connection_id);
+
+            // 尝试从配置中找到连接并重新加载
+            let config = {
+                let configs = self.configs.read().await;
+                configs.get(connection_id).cloned()
+            };
+
+            if let Some(config) = config {
+                info!("找到连接配置，尝试重新加载到管理器: {}", connection_id);
+                if let Err(e) = self.load_single_connection(config).await {
+                    error!("重新加载连接失败: {} - {}", connection_id, e);
+                    return Err(anyhow::anyhow!("连接 '{}' 不存在且重新加载失败: {}", connection_id, e));
+                }
+                info!("连接重新加载成功: {}", connection_id);
+            } else {
+                error!("连接配置不存在: {}", connection_id);
+                return Err(anyhow::anyhow!("连接 '{}' 不存在，请检查连接配置是否正确保存", connection_id));
+            }
         }
 
         // 测试连接

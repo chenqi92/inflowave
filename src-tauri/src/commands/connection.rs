@@ -1,7 +1,7 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::services::ConnectionService;
 use tauri::State;
-use log::{debug, error};
+use log::{debug, error, info};
 use std::collections::HashMap;
 
 /// 创建连接
@@ -41,11 +41,17 @@ pub async fn test_connection(
 /// 初始化连接服务（加载保存的连接）
 #[tauri::command]
 pub async fn initialize_connections(
-    _connection_service: State<'_, ConnectionService>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("初始化连接服务，加载保存的连接");
-    // 暂时返回成功，在后续版本中实现完整的加载机制
-    Ok(())
+
+    connection_service
+        .load_from_storage()
+        .await
+        .map_err(|e| {
+            error!("加载连接配置失败: {}", e);
+            format!("加载连接配置失败: {}", e)
+        })
 }
 
 /// 获取所有连接
@@ -247,4 +253,36 @@ pub async fn debug_connection_manager(
     });
 
     Ok(debug_info)
+}
+
+/// 同步连接配置（从前端批量创建到后端）
+#[tauri::command]
+pub async fn sync_connections(
+    connection_service: State<'_, ConnectionService>,
+    configs: Vec<ConnectionConfig>,
+) -> Result<Vec<String>, String> {
+    debug!("处理同步连接配置命令，共 {} 个连接", configs.len());
+
+    let mut created_ids = Vec::new();
+    let mut errors = Vec::new();
+
+    for config in configs {
+        match connection_service.create_connection(config.clone()).await {
+            Ok(id) => {
+                created_ids.push(id);
+                debug!("同步连接成功: {}", config.name);
+            }
+            Err(e) => {
+                error!("同步连接失败: {} - {}", config.name, e);
+                errors.push(format!("连接 '{}': {}", config.name, e));
+            }
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(format!("部分连接同步失败: {}", errors.join("; ")));
+    }
+
+    info!("成功同步 {} 个连接配置", created_ids.len());
+    Ok(created_ids)
 }

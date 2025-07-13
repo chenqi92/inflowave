@@ -124,6 +124,8 @@ async fn main() {
             start_connection_monitoring,
             stop_connection_monitoring,
             get_connection_pool_stats,
+            sync_connections,
+            debug_connection_manager,
             debug_connection_manager,
 
             // Database operations
@@ -279,7 +281,7 @@ async fn main() {
             let encryption_service = create_encryption_service()
                 .expect("Failed to create encryption service");
 
-            // Initialize connection service (without auto-load for now due to setup constraints)
+            // Initialize connection service (connections will be loaded via initialize_connections command)
             let connection_service = ConnectionService::new(encryption_service);
 
             // Store services in app state
