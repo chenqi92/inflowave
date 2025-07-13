@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
-import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button, Modal } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
@@ -79,12 +79,12 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         await safeTauriInvoke('create_retention_policy', {
           connectionId,
           config});
-        message.success(`保留策略 "${values.name}" 创建成功`);
+        toast({ title: "成功", description: `保留策略 "${values.name}" 创建成功` });
       } else {
         await safeTauriInvoke('alter_retention_policy', {
           connectionId,
           config});
-        message.success(`保留策略 "${values.name}" 修改成功`);
+        toast({ title: "成功", description: `保留策略 "${values.name}" 修改成功` });
       }
 
       if (onSuccess) {
@@ -92,7 +92,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       }
       onClose();
     } catch (error) {
-      message.error(`${mode === 'create' ? '创建' : '修改'}保留策略失败: ${error}`);
+      toast({ title: "错误", description: `${mode === 'create' ? '创建' : '修改'}保留策略失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

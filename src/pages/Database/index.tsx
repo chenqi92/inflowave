@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Table, Button, Tag, Form, Input, Spin, Select, Statistic, Row, Col, Alert, Popconfirm, Tooltip, Descriptions, Dialog, DialogContent, DialogHeader, DialogTitle, toast, Card } from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 import { Database as DatabaseIcon, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
+import { Modal } from '@/utils/modalAdapter';
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';

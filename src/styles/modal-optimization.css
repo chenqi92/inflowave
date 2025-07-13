@@ -1,253 +1,298 @@
 /* Modal 关闭按钮优化样式 */
 
-/* Ant Design Modal 关闭按钮优化 */
-.ant-modal-close {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 6px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: all 0.2s ease-in-out !important;
-  color: #64748b !important;
-  background: transparent !important;
-  border: none !important;
-  position: absolute !important;
-  top: 16px !important;
-  right: 16px !important;
-  z-index: 10 !important;
+/* Modal 关闭按钮优化 */
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  cursor: pointer;
 }
 
-.ant-modal-close:hover {
-  background: #f1f5f9 !important;
-  color: #334155 !important;
-  transform: scale(1.05) !important;
+.modal-close:hover {
+  background: #f1f5f9;
+  color: #334155;
+  transform: scale(1.05);
 }
 
-.ant-modal-close:active {
-  transform: scale(0.95) !important;
+.modal-close:active {
+  transform: scale(0.95);
 }
 
-.ant-modal-close:focus {
-  outline: 2px solid #3b82f6 !important;
-  outline-offset: 2px !important;
+.modal-close:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
-.ant-modal-close .ant-modal-close-x {
-  width: 18px !important;
-  height: 18px !important;
-  line-height: 18px !important;
-  font-size: 14px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+.modal-close .close-icon {
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Modal 头部样式优化 */
-.ant-modal-header {
-  border-bottom: 1px solid #e2e8f0 !important;
-  padding: 16px 24px !important;
-  margin: 0 !important;
-  background: #fafbfc !important;
-  border-radius: 8px 8px 0 0 !important;
+.modal-header {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  margin: 0;
+  background: #fafbfc;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.ant-modal-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
-  margin: 0 !important;
-  line-height: 1.5 !important;
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Modal 内容区域优化 */
-.ant-modal-content {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid #e2e8f0 !important;
+.modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  position: relative;
+  max-width: 520px;
+  margin: 0 auto;
 }
 
-.ant-modal-body {
-  padding: 20px 24px !important;
-  color: #334155 !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
+.modal-body {
+  padding: 20px 24px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* Modal 底部按钮区域优化 */
-.ant-modal-footer {
-  border-top: 1px solid #e2e8f0 !important;
-  padding: 16px 24px !important;
-  background: #f8fafc !important;
-  margin: 0 !important;
-  border-radius: 0 0 12px 12px !important;
+.modal-footer {
+  border-top: 1px solid #e2e8f0;
+  padding: 16px 24px;
+  background: #f8fafc;
+  margin: 0;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.ant-modal-footer .ant-btn {
-  border-radius: 6px !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease-in-out !important;
-  height: 36px !important;
-  padding: 4px 16px !important;
+.modal-footer .btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  height: 36px;
+  padding: 4px 16px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.ant-modal-footer .ant-btn:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+.modal-footer .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.ant-modal-footer .ant-btn-primary {
-  background: #3b82f6 !important;
-  border-color: #3b82f6 !important;
+.modal-footer .btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
 }
 
-.ant-modal-footer .ant-btn-primary:hover {
-  background: #2563eb !important;
-  border-color: #2563eb !important;
+.modal-footer .btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
 }
 
 /* Modal 遮罩层优化 */
-.ant-modal-mask {
-  background: rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(4px) !important;
+.modal-mask {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 响应式优化 */
 @media (max-width: 768px) {
-  .ant-modal {
-    width: 95% !important;
-    max-width: none !important;
-    margin: 0 auto !important;
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    margin: 0 auto;
+    border-radius: 8px;
   }
   
-  .ant-modal-content {
-    border-radius: 8px !important;
+  .modal-header {
+    padding: 12px 16px;
   }
   
-  .ant-modal-header {
-    padding: 12px 16px !important;
+  .modal-body {
+    padding: 16px;
   }
   
-  .ant-modal-body {
-    padding: 16px !important;
+  .modal-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 8px;
   }
   
-  .ant-modal-footer {
-    padding: 12px 16px !important;
+  .modal-footer .btn {
+    width: 100%;
   }
   
-  .ant-modal-close {
-    top: 12px !important;
-    right: 12px !important;
+  .modal-close {
+    top: 12px;
+    right: 12px;
   }
 }
 
 /* 特殊样式：设置模态框 */
-.settings-modal .ant-modal-close {
-  color: #6b7280 !important;
+.settings-modal .modal-close {
+  color: #6b7280;
 }
 
-.settings-modal .ant-modal-close:hover {
-  background: #e5e7eb !important;
-  color: #374151 !important;
+.settings-modal .modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
 }
 
 /* 特殊样式：数据导入导出模态框 */
-.data-modal .ant-modal-body {
-  padding: 16px 24px !important;
+.data-modal .modal-body {
+  padding: 16px 24px;
 }
 
-.data-modal .ant-modal-footer {
-  text-align: right !important;
+.data-modal .modal-footer {
+  justify-content: flex-end;
 }
 
 /* 全屏模态框样式 */
-.fullscreen-modal .ant-modal {
-  max-width: 100vw !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.fullscreen-modal .ant-modal-content {
-  height: 100vh !important;
-  border-radius: 0 !important;
+.fullscreen-modal .modal-content {
+  max-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
 }
 
 /* 确认对话框样式 */
-.ant-modal-confirm .ant-modal-content {
-  border-radius: 8px !important;
+.modal-confirm .modal-content {
+  border-radius: 8px;
 }
 
-.ant-modal-confirm .ant-modal-close {
-  top: 12px !important;
-  right: 12px !important;
+.modal-confirm .modal-close {
+  top: 12px;
+  right: 12px;
 }
 
 /* 加载状态下的模态框 */
-.ant-modal.loading .ant-modal-close {
-  opacity: 0.5 !important;
-  pointer-events: none !important;
+.modal-content.loading .modal-close {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* 深色主题适配 */
 @media (prefers-color-scheme: dark) {
-  .ant-modal-header {
-    background: #1f2937 !important;
-    border-color: #374151 !important;
+  .modal-header {
+    background: #1f2937;
+    border-color: #374151;
   }
   
-  .ant-modal-content {
-    background: #111827 !important;
-    border-color: #374151 !important;
+  .modal-content {
+    background: #111827;
+    border-color: #374151;
   }
   
-  .ant-modal-title {
-    color: #f9fafb !important;
+  .modal-title {
+    color: #f9fafb;
   }
   
-  .ant-modal-body {
-    background: #111827 !important;
-    color: #d1d5db !important;
+  .modal-body {
+    background: #111827;
+    color: #d1d5db;
   }
   
-  .ant-modal-footer {
-    background: #1f2937 !important;
-    border-color: #374151 !important;
+  .modal-footer {
+    background: #1f2937;
+    border-color: #374151;
   }
   
-  .ant-modal-close {
-    color: #9ca3af !important;
+  .modal-footer .btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
   }
   
-  .ant-modal-close:hover {
-    background: #374151 !important;
-    color: #f3f4f6 !important;
+  .modal-footer .btn:hover {
+    background: #4b5563;
+  }
+  
+  .modal-close {
+    color: #9ca3af;
+  }
+  
+  .modal-close:hover {
+    background: #374151;
+    color: #f3f4f6;
   }
 }
 
 /* 动画优化 */
-.ant-modal {
-  animation-duration: 0.2s !important;
+.modal-content {
+  animation-duration: 0.2s;
 }
 
-.ant-modal-zoom-enter .ant-modal,
-.ant-modal-zoom-appear .ant-modal {
-  transform: scale(0.9) !important;
-  opacity: 0 !important;
+.modal-enter .modal-content {
+  transform: scale(0.9);
+  opacity: 0;
 }
 
-.ant-modal-zoom-enter-active .ant-modal,
-.ant-modal-zoom-appear-active .ant-modal {
-  transform: scale(1) !important;
-  opacity: 1 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+.modal-enter-active .modal-content {
+  transform: scale(1);
+  opacity: 1;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-exit .modal-content {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal-exit-active .modal-content {
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 关闭图标增强效果 */
-.ant-modal-close::before {
+.modal-close::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -261,19 +306,19 @@
   z-index: -1;
 }
 
-.ant-modal-close:hover::before {
+.modal-close:hover::before {
   background: rgba(59, 130, 246, 0.1);
   transform: translate(-50%, -50%) scale(1);
 }
 
 /* 无障碍支持 */
-.ant-modal-close:focus-visible {
-  outline: 2px solid #3b82f6 !important;
-  outline-offset: 2px !important;
+.modal-close:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 /* 点击动画效果 */
-.ant-modal-close:active {
+.modal-close:active {
   animation: modal-close-click 0.1s ease-in-out;
 }
 

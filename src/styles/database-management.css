@@ -1,7 +1,7 @@
 /* 数据库管理页面样式优化 */
 
 /* 统一按钮大小 */
-.database-management .ant-btn {
+.database-management .btn {
   height: 32px;
   padding: 0 12px;
   font-size: 14px;
@@ -11,56 +11,81 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.database-management .ant-btn-sm,
-.database-management .ant-btn-small {
+.database-management .btn:hover {
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+.database-management .btn-sm,
+.database-management .btn-small {
   height: 28px;
   padding: 0 8px;
   font-size: 12px;
 }
 
-.database-management .ant-btn-lg,
-.database-management .ant-btn-large {
+.database-management .btn-lg,
+.database-management .btn-large {
   height: 32px;
   padding: 0 12px;
   font-size: 14px;
 }
 
 /* 统一输入框大小 */
-.database-management .ant-input {
+.database-management .input {
   height: 32px;
   padding: 6px 10px;
   font-size: 14px;
   border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  transition: all 0.2s;
 }
 
-.database-management .ant-input-lg,
-.database-management .ant-input-large {
+.database-management .input:focus {
+  border-color: #40a9ff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.database-management .input-lg,
+.database-management .input-large {
   height: 32px;
   padding: 6px 10px;
   font-size: 14px;
 }
 
 /* 统一选择器大小 */
-.database-management .ant-select {
+.database-management .select {
   font-size: 14px;
+  position: relative;
 }
 
-.database-management .ant-select-selector {
-  height: 32px !important;
-  padding: 6px 10px !important;
+.database-management .select-selector {
+  height: 32px;
+  padding: 6px 10px;
   border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.database-management .ant-select-lg .ant-select-selector,
-.database-management .ant-select-large .ant-select-selector {
-  height: 32px !important;
-  padding: 6px 10px !important;
+.database-management .select-lg .select-selector,
+.database-management .select-large .select-selector {
+  height: 32px;
+  padding: 6px 10px;
 }
 
-.database-management .ant-select-selection-item {
-  line-height: 18px !important;
+.database-management .select-selection-item {
+  line-height: 18px;
   display: flex;
   align-items: center;
 }
@@ -72,39 +97,48 @@
   background: #fafafa;
 }
 
-.database-browser-toolbar .ant-space {
+.database-browser-toolbar .toolbar-space {
   width: 100%;
-  gap: 12px !important;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.database-browser-toolbar .ant-input {
+.database-browser-toolbar .input {
   min-width: 200px;
   flex: 1;
 }
 
 /* 表格操作按钮优化 */
-.database-management .ant-table-tbody .ant-btn {
+.database-management .data-table tbody .btn {
   height: 28px;
   padding: 0 8px;
   font-size: 12px;
   border-radius: 4px;
 }
 
-.database-management .ant-table-tbody .ant-btn-text {
+.database-management .data-table tbody .btn-text {
   height: 28px;
   padding: 0 6px;
   font-size: 12px;
+  border: none;
+  background: transparent;
+  color: #1890ff;
+}
+
+.database-management .data-table tbody .btn-text:hover {
+  background: #e6f7ff;
 }
 
 /* 卡片标题按钮优化 */
-.database-management .ant-card-extra .ant-btn {
+.database-management .card-extra .btn {
   height: 32px;
   padding: 0 12px;
   font-size: 14px;
 }
 
 /* 模态框按钮优化 */
-.database-management .ant-modal-footer .ant-btn {
+.database-management .modal-footer .btn {
   height: 32px;
   padding: 0 16px;
   font-size: 14px;
@@ -131,97 +165,122 @@
 }
 
 /* 间距优化 */
-.database-management .ant-space-middle {
-  gap: 12px !important;
+.database-management .space-middle {
+  gap: 12px;
+  display: flex;
+  align-items: center;
 }
 
-.database-management .ant-card {
+.database-management .card {
   margin-bottom: 24px;
 }
 
-.database-management .ant-card-head {
+.database-management .card-header {
   padding: 16px 24px;
   min-height: 56px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.database-management .ant-card-body {
+.database-management .card-body {
   padding: 24px;
 }
 
 /* 表格样式优化 */
-.database-management .ant-table {
+.database-management .data-table {
   font-size: 14px;
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.database-management .ant-table-thead > tr > th {
+.database-management .data-table thead tr th {
   background-color: #fafafa;
   font-weight: 500;
   font-size: 14px;
   padding: 12px 16px;
   height: 48px;
+  border-bottom: 1px solid #e8e8e8;
+  text-align: left;
 }
 
-.database-management .ant-table-tbody > tr > td {
+.database-management .data-table tbody tr td {
   padding: 12px 16px;
   font-size: 14px;
   height: 48px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 /* 统计卡片优化 */
-.database-management .ant-statistic {
+.database-management .statistic {
   text-align: center;
 }
 
-.database-management .ant-statistic-title {
+.database-management .statistic-title {
   font-size: 14px;
   color: #666;
   margin-bottom: 8px;
 }
 
-.database-management .ant-statistic-content {
+.database-management .statistic-content {
   font-size: 24px;
   font-weight: 600;
   color: #1890ff;
 }
 
 /* 工具提示优化 */
-.database-management .ant-tooltip {
+.database-management .tooltip {
   font-size: 14px;
+  background: #000;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  position: absolute;
+  z-index: 1000;
 }
 
 /* 标签优化 */
-.database-management .ant-tag {
+.database-management .tag {
   border-radius: 4px;
   font-size: 12px;
   padding: 2px 8px;
   line-height: 1.4;
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #d9d9d9;
+  display: inline-block;
 }
 
 /* 响应式优化 */
 @media (max-width: 768px) {
-  .database-management .ant-btn {
+  .database-management .btn {
     height: 36px;
     padding: 0 12px;
     font-size: 14px;
   }
   
-  .database-management .ant-input {
+  .database-management .input {
     height: 36px;
     padding: 8px 10px;
     font-size: 14px;
   }
   
-  .database-management .ant-select-selector {
-    height: 36px !important;
-    padding: 8px 10px !important;
+  .database-management .select-selector {
+    height: 36px;
+    padding: 8px 10px;
   }
   
-  .database-management .ant-card-body {
+  .database-management .card-body {
     padding: 16px;
   }
   
-  .database-management .ant-table-thead > tr > th,
-  .database-management .ant-table-tbody > tr > td {
+  .database-management .data-table thead tr th,
+  .database-management .data-table tbody tr td {
     padding: 8px 12px;
     font-size: 13px;
   }
@@ -234,65 +293,134 @@
     border-bottom-color: #434343;
   }
   
-  .database-management .ant-table-thead > tr > th {
+  .database-management .data-table thead tr th {
     background-color: #1f1f1f;
     color: #fff;
+  }
+  
+  .database-management .card {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .database-management .card-header {
+    background: #1a202c;
+    border-bottom-color: #4a5568;
+    color: #e2e8f0;
   }
 }
 
 /* 数据库浏览器树形组件优化 */
-.database-management .ant-tree {
+.database-management .tree {
   font-size: 14px;
 }
 
-.database-management .ant-tree-treenode {
+.database-management .tree-node {
   padding: 2px 0;
 }
 
-.database-management .ant-tree-node-content-wrapper {
+.database-management .tree-node-content {
   padding: 4px 8px;
   border-radius: 4px;
   line-height: 24px;
   height: 32px;
   display: flex;
   align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.database-management .ant-tree-iconEle {
+.database-management .tree-node-content:hover {
+  background: #f5f5f5;
+}
+
+.database-management .tree-icon {
   margin-right: 8px;
   display: inline-flex;
   align-items: center;
 }
 
 /* 搜索框优化 */
-.database-management .ant-input-search .ant-input-group-addon {
-  background: transparent;
-  border: none;
+.database-management .input-search {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.database-management .ant-input-search .ant-btn {
-  height: 42px;
+.database-management .input-search .input {
+  padding-right: 40px;
+}
+
+.database-management .input-search .search-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
   border: none;
-  box-shadow: none;
+  cursor: pointer;
+  color: #666;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.database-management .input-search .search-btn:hover {
+  color: #1890ff;
 }
 
 /* 分页器优化 */
-.database-management .ant-pagination {
+.database-management .pagination {
   margin-top: 16px;
   text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
-.database-management .ant-pagination .ant-pagination-item {
+.database-management .pagination .pagination-item {
   border-radius: 4px;
   min-width: 32px;
   height: 32px;
   line-height: 30px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
-.database-management .ant-pagination .ant-pagination-prev,
-.database-management .ant-pagination .ant-pagination-next {
+.database-management .pagination .pagination-item:hover {
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+.database-management .pagination .pagination-item.active {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.database-management .pagination .pagination-prev,
+.database-management .pagination .pagination-next {
   border-radius: 4px;
   min-width: 32px;
   height: 32px;
   line-height: 30px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.database-management .pagination .pagination-prev:hover,
+.database-management .pagination .pagination-next:hover {
+  border-color: #40a9ff;
+  color: #40a9ff;
 }

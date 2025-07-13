@@ -126,7 +126,7 @@ class ErrorBoundary extends Component<Props, State> {
                 </div>
               }
               extra={
-                <div className="flex gap-2" size="middle" wrap>
+                <div className="flex gap-2 flex-wrap">
                   <Button 
                     type="primary" 
                     icon={<RefreshCw className="w-4 h-4"  />}

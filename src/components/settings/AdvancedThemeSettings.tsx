@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert } from '@/components/ui';
-, Tooltip, List, Badge
-import { Card, ColorPicker, Space, Preview, Popover, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert, Tooltip, List, Badge } from '@/components/ui';
+import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 
 import { SkinOutlined, ShareAltOutlined, MoonOutlined, SunOutlined, ExperimentOutlined, DiamondOutlined } from '@/components/ui';

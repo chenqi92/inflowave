@@ -25,6 +25,7 @@ import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
 // UI 组件导入
 import { Text, Spin } from '@/components/ui';
+import { ModalAdapter } from '@/utils/modalAdapter';
 
 // 主布局组件
 const MainLayout: React.FC = () => {
@@ -216,6 +217,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <MainLayout />
+      <ModalAdapter />
     </ErrorBoundary>
   );
 };

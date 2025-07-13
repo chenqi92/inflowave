@@ -7,6 +7,7 @@ import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { invoke } from '@tauri-apps/api/core';
+import { Modal } from '@/utils/modalAdapter';
 
 interface ConnectionContextMenuProps {
   connection: ConnectionConfig;

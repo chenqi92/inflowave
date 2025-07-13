@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Tag, Typography, Modal, Input, Select, DatePicker, Alert, Collapse, Panel } from '@/components/ui';
-// TODO: Replace these Ant Design components: Badge, Tooltip, message
-// TODO: Replace these icons: FilterOutlined
+import { Card, Table, Button, Space, Tag, Typography, Input, Select, DatePicker, Alert, Collapse, Panel, Badge, Tooltip, toast } from '@/components/ui';
 import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
+import { Modal } from '@/utils/modalAdapter';
 
 const { Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -136,7 +135,7 @@ const ErrorLogViewer: React.FC = () => {
     // 搜索过滤
     if (searchText) {
       filtered = filtered.filter(log =>
-        log.toast.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.message.toLowerCase().includes(searchText.toLowerCase()) ||
         log.stack?.toLowerCase().includes(searchText.toLowerCase()) ||
         log.url?.toLowerCase().includes(searchText.toLowerCase())
       );

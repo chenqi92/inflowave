@@ -1,12 +1,11 @@
 import React from 'react';
 import { Button, Dropdown } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-
-
 import type { MenuProps } from '@/components/ui';
 import { Table, Eye, Edit, Trash2, Copy, RefreshCw, Info, BarChart, FileDown, FileUp, FileText } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { Modal } from '@/utils/modalAdapter';
 
 interface TableContextMenuProps {
   children: React.ReactNode;

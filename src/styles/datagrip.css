@@ -1,22 +1,30 @@
 /* DataGrip风格的样式优化 */
 
 /* 数据库浏览器树形组件对齐修复 */
-.database-explorer-tree .ant-tree-treenode {
+.database-explorer-tree .tree-node {
   display: flex !important;
   align-items: center !important;
   height: 28px !important;
   line-height: 28px !important;
 }
 
-.database-explorer-tree .ant-tree-node-content-wrapper {
+.database-explorer-tree .tree-node-content {
   display: flex !important;
   align-items: center !important;
   line-height: 28px !important;
   min-height: 28px !important;
   height: 28px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0 4px;
+  border-radius: 4px;
 }
 
-.database-explorer-tree .ant-tree-iconEle {
+.database-explorer-tree .tree-node-content:hover {
+  background: #f1f8ff;
+}
+
+.database-explorer-tree .tree-icon {
   display: inline-flex !important;
   align-items: center !important;
   margin-right: 4px !important;
@@ -24,7 +32,7 @@
   line-height: 28px !important;
 }
 
-.database-explorer-tree .ant-tree-title {
+.database-explorer-tree .tree-title {
   display: flex !important;
   align-items: center !important;
   flex: 1 !important;
@@ -32,23 +40,26 @@
   line-height: 28px !important;
 }
 
-.database-explorer-tree .ant-tree-switcher {
+.database-explorer-tree .tree-switcher {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   height: 28px !important;
   line-height: 28px !important;
   width: 24px !important;
+  cursor: pointer;
 }
 
 /* 编辑器标签页样式 */
-.editor-tabs .ant-tabs-nav {
+.editor-tabs .tabs-nav {
   margin: 0;
   background: #f8f9fa;
   border-bottom: 1px solid #e1e4e8;
+  display: flex;
+  align-items: center;
 }
 
-.editor-tabs .ant-tabs-tab {
+.editor-tabs .tab-item {
   border: 1px solid #e1e4e8;
   border-bottom: none;
   border-radius: 4px 4px 0 0;
@@ -56,20 +67,25 @@
   background: #ffffff;
   padding: 6px 12px;
   transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
 }
 
-.editor-tabs .ant-tabs-tab:hover {
+.editor-tabs .tab-item:hover {
   background: #f6f8fa;
 }
 
-.editor-tabs .ant-tabs-tab-active {
+.editor-tabs .tab-item.active {
   background: #ffffff;
   border-color: #1890ff;
   position: relative;
   z-index: 1;
 }
 
-.editor-tabs .ant-tabs-tab-active::after {
+.editor-tabs .tab-item.active::after {
   content: '';
   position: absolute;
   bottom: -1px;
@@ -79,15 +95,38 @@
   background: #ffffff;
 }
 
-.editor-tabs .ant-tabs-add-icon {
+.editor-tabs .tab-close {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.editor-tabs .tab-close:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.editor-tabs .tab-add {
   border: 1px solid #e1e4e8;
   border-radius: 4px;
   padding: 4px 6px;
   background: #f8f9fa;
   transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
-.editor-tabs .ant-tabs-add-icon:hover {
+.editor-tabs .tab-add:hover {
   background: #e1e4e8;
   border-color: #d0d7de;
 }
@@ -97,26 +136,37 @@
   border-bottom: 1px solid #e1e4e8;
   background: linear-gradient(to bottom, #ffffff, #f8f9fa);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.datagrip-toolbar .ant-btn {
+.datagrip-toolbar .btn {
   border: 1px solid #d0d7de;
   border-radius: 4px;
   font-weight: 500;
   transition: all 0.2s ease;
+  background: #fff;
+  padding: 6px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.datagrip-toolbar .ant-btn:hover {
+.datagrip-toolbar .btn:hover {
   border-color: #1890ff;
   box-shadow: 0 1px 3px rgba(24, 144, 255, 0.2);
 }
 
-.datagrip-toolbar .ant-btn-primary {
+.datagrip-toolbar .btn-primary {
   background: linear-gradient(to bottom, #0366d6, #0366d6);
   border-color: #0366d6;
+  color: #fff;
 }
 
-.datagrip-toolbar .ant-btn-primary:hover {
+.datagrip-toolbar .btn-primary:hover {
   background: linear-gradient(to bottom, #0366d6, #044d8d);
   border-color: #044d8d;
 }
@@ -125,72 +175,81 @@
 .database-explorer {
   border-right: 1px solid #e1e4e8;
   background: #fafbfc;
+  padding: 8px;
 }
 
 /* 左侧面板与右侧内容区域间距优化 */
-.ant-layout-sider {
-  border-right: 1px solid #e1e4e8 !important;
+.layout-sider {
+  border-right: 1px solid #e1e4e8;
+  background: #fafbfc;
 }
 
 /* 右侧内容区域间距优化 */
-.ant-layout-content {
-  margin-left: 0 !important;
+.layout-content {
+  margin-left: 0;
+  flex: 1;
+  background: #fff;
 }
 
-.database-explorer .ant-tree .ant-tree-node-content-wrapper {
+.database-explorer .tree .tree-node-content {
   border-radius: 3px;
   transition: all 0.2s ease;
   height: 28px !important;
   line-height: 28px !important;
   display: flex !important;
   align-items: center !important;
+  padding: 0 4px;
+  cursor: pointer;
 }
 
-.database-explorer .ant-tree .ant-tree-node-content-wrapper:hover {
+.database-explorer .tree .tree-node-content:hover {
   background: #f1f8ff;
 }
 
-.database-explorer .ant-tree .ant-tree-node-selected .ant-tree-node-content-wrapper {
+.database-explorer .tree .tree-node-selected .tree-node-content {
   background: #0366d6;
   color: white;
 }
 
-.database-explorer .ant-tree .ant-tree-switcher {
+.database-explorer .tree .tree-switcher {
   width: 24px !important;
   height: 28px !important;
   line-height: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  cursor: pointer;
 }
 
 /* 确保树形组件整体对齐 */
-.database-explorer-tree .ant-tree-list-holder-inner {
-  align-items: stretch !important;
+.database-explorer-tree .tree-list {
+  align-items: stretch;
 }
 
-.database-explorer-tree .ant-tree-treenode-leaf-last .ant-tree-switcher {
-  background: transparent !important;
+.database-explorer-tree .tree-node-leaf .tree-switcher {
+  background: transparent;
 }
 
 /* 树形组件间距优化 */
-.database-explorer-tree .ant-tree-indent {
-  width: 24px !important;
+.database-explorer-tree .tree-indent {
+  width: 24px;
+  display: inline-block;
 }
 
-.database-explorer-tree .ant-tree-indent-unit {
-  width: 24px !important;
+.database-explorer-tree .tree-indent-unit {
+  width: 24px;
+  display: inline-block;
 }
 
 /* 修复图标与文本的垂直对齐 */
-.database-explorer-tree .ant-tree-iconEle svg,
-.database-explorer-tree .ant-tree-switcher svg {
-  vertical-align: middle !important;
+.database-explorer-tree .tree-icon svg,
+.database-explorer-tree .tree-switcher svg {
+  vertical-align: middle;
 }
 
 /* 优化树节点的整体布局 */
-.database-explorer-tree .ant-tree-treenode-switcher-open .ant-tree-switcher,
-.database-explorer-tree .ant-tree-treenode-switcher-close .ant-tree-switcher {
+.database-explorer-tree .tree-node-open .tree-switcher,
+.database-explorer-tree .tree-node-close .tree-switcher {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -200,32 +259,44 @@
 .result-panel {
   border-top: 1px solid #e1e4e8;
   background: #ffffff;
+  display: flex;
+  flex-direction: column;
 }
 
-.result-panel .ant-tabs-nav {
+.result-panel .tabs-nav {
   background: #f8f9fa;
   border-bottom: 1px solid #e1e4e8;
   margin: 0;
   padding: 0 8px;
+  display: flex;
+  align-items: center;
 }
 
-.result-panel .ant-tabs-tab {
+.result-panel .tab-item {
   border: none;
   border-radius: 0;
   margin: 0;
   padding: 8px 16px;
   border-bottom: 2px solid transparent;
   background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.result-panel .ant-tabs-tab:hover {
+.result-panel .tab-item:hover {
   background: rgba(24, 144, 255, 0.1);
 }
 
-.result-panel .ant-tabs-tab-active {
+.result-panel .tab-item.active {
   border-bottom-color: #1890ff;
   background: #ffffff;
   font-weight: 500;
+}
+
+.result-panel .tab-content {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
 }
 
 /* 状态栏样式 */
@@ -309,7 +380,15 @@
 }
 
 /* 表格优化 */
-.result-table .ant-table-thead > tr > th {
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.result-table thead tr th {
   background: #f8f9fa;
   border-bottom: 2px solid #e1e4e8;
   font-weight: 600;
@@ -317,30 +396,38 @@
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.5px;
+  padding: 12px;
+  text-align: left;
 }
 
-.result-table .ant-table-tbody > tr:hover > td {
+.result-table tbody tr:hover td {
   background: #f6f8fa;
 }
 
-.result-table .ant-table-tbody > tr:nth-child(even) {
+.result-table tbody tr:nth-child(even) {
   background: #fafbfc;
+}
+
+.result-table tbody tr td {
+  padding: 12px;
+  border-bottom: 1px solid #e1e4e8;
+  font-size: 13px;
 }
 
 /* 深色主题支持 */
 @media (prefers-color-scheme: dark) {
-  .editor-tabs .ant-tabs-nav {
+  .editor-tabs .tabs-nav {
     background: #2d3748;
     border-bottom-color: #4a5568;
   }
 
-  .editor-tabs .ant-tabs-tab {
+  .editor-tabs .tab-item {
     background: #1a202c;
     border-color: #4a5568;
     color: #e2e8f0;
   }
 
-  .editor-tabs .ant-tabs-tab-active {
+  .editor-tabs .tab-item.active {
     background: #2d3748;
     border-color: #63b3ed;
   }
@@ -348,6 +435,12 @@
   .datagrip-toolbar {
     background: linear-gradient(to bottom, #2d3748, #1a202c);
     border-bottom-color: #4a5568;
+  }
+
+  .datagrip-toolbar .btn {
+    background: #374151;
+    border-color: #4a5568;
+    color: #e2e8f0;
   }
 
   .database-explorer {
@@ -360,8 +453,31 @@
     border-top-color: #4a5568;
   }
 
-  .result-panel .ant-tabs-nav {
+  .result-panel .tabs-nav {
     background: #1a202c;
     border-bottom-color: #4a5568;
+  }
+
+  .result-table {
+    background: #374151;
+  }
+
+  .result-table thead tr th {
+    background: #1f2937;
+    color: #e2e8f0;
+    border-bottom-color: #4a5568;
+  }
+
+  .result-table tbody tr td {
+    color: #d1d5db;
+    border-bottom-color: #4a5568;
+  }
+
+  .result-table tbody tr:nth-child(even) {
+    background: #1f2937;
+  }
+
+  .result-table tbody tr:hover td {
+    background: #4b5563;
   }
 }

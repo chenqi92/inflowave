@@ -271,7 +271,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
           </Form.Item>
 
-          <div className="border-t border-gray-200 my-4">布局设置</Divider>
+          <div className="border-t border-gray-200 my-4">布局设置</div>
 
           <Row gutter={16}>
             <Col span={8}>
@@ -291,7 +291,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             </Col>
           </Row>
 
-          <div className="border-t border-gray-200 my-4">时间和刷新设置</Divider>
+          <div className="border-t border-gray-200 my-4">时间和刷新设置</div>
 
           <Row gutter={16}>
             <Col span={12}>
@@ -345,7 +345,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             <TextArea rows={3} placeholder="输入仪表板描述（可选）" />
           </Form.Item>
 
-          <div className="border-t border-gray-200 my-4">布局设置</Divider>
+          <div className="border-t border-gray-200 my-4">布局设置</div>
 
           <Row gutter={16}>
             <Col span={8}>
@@ -365,7 +365,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             </Col>
           </Row>
 
-          <div className="border-t border-gray-200 my-4">时间和刷新设置</Divider>
+          <div className="border-t border-gray-200 my-4">时间和刷新设置</div>
 
           <Row gutter={16}>
             <Col span={12}>

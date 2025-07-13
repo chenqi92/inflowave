@@ -12,6 +12,7 @@ import ErrorTestButton from '@/components/test/ErrorTestButton';
 import BrowserModeModal from '@/components/common/BrowserModeModal';
 import { useNoticeStore } from '@/store/notice';
 import { isBrowserEnvironment } from '@/utils/tauri';
+import { Modal } from '@/utils/modalAdapter';
 import type { AppConfig } from '@/types';
 import '@/styles/settings.css';
 

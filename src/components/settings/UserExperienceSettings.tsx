@@ -1,7 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal } from '@/components/ui';
-, Tooltip
+import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
 import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 
