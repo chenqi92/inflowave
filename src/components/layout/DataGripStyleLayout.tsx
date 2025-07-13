@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
+import AppMenuBar from './AppMenuBar';
 import TabEditor from './TabEditor';
 import ResultPanel from './ResultPanel';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
@@ -111,7 +112,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
-      {/* 顶部主工具栏 */}
+      {/* 顶部专业化菜单栏 */}
+      <header className="h-10 bg-white border-b border-gray-200">
+        <AppMenuBar />
+      </header>
+
+      {/* 主工具栏 */}
       <header className="h-12 px-4 bg-white border-b border-gray-200 flex items-center">
         <MainToolbar
           currentView={currentView}
