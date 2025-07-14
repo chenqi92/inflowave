@@ -14,7 +14,6 @@ import { useNoticeStore } from './store/notice';
 
 // 页面组件
 import DatabasePage from './pages/Database';
-import QueryPage from './pages/Query';
 import DataGripLayout from './components/layout/DataGripLayout';
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import TypographyTest from './components/test/TypographyTest';
@@ -114,7 +113,6 @@ const MainLayout: React.FC = () => {
         
         {/* 保留旧版本用于比较 */}
         <Route path="/datagrip-old" element={<DataGripLayout />} />
-        <Route path="/query-old" element={<QueryPage />} />
         <Route path="/database-old" element={<DatabasePage />} />
         
         {/* 重定向旧的连接页面到主页 */}
