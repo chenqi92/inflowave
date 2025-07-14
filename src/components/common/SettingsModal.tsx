@@ -585,9 +585,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   <TabsContent 
                     key={item.key} 
                     value={item.key} 
-                    className="absolute inset-0 m-0 p-6 data-[state=inactive]:hidden"
+                    className="absolute inset-0 m-0 p-6 data-[state=inactive]:hidden flex flex-col"
                   >
-                    <div className="h-full overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto">
                       <div className="max-w-2xl">
                         {item.children}
                       </div>
