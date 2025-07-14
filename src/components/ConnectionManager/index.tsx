@@ -1,6 +1,25 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Typography} from '@/components/ui';
-import {Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui';
+import {
+    Table,
+    Button,
+    Badge,
+    Tooltip,
+    Progress,
+    Typography,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle
+} from '@/components/ui';
+import type { Column } from '@/components/ui/Table';
 import {
     Settings,
     Trash2,
@@ -176,10 +195,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
         };
 
         const statusConfig = {
-            connected: {color: 'success', text: '已连接'},
-            disconnected: {color: 'default', text: '已断开'},
-            connecting: {color: 'processing', text: '连接中'},
-            error: {color: 'error', text: '错误'}
+            connected: {variant: 'default', text: '已连接', className: 'bg-green-100 text-green-800 border-green-200'},
+            disconnected: {variant: 'secondary', text: '已断开', className: 'bg-gray-100 text-gray-800 border-gray-200'},
+            connecting: {variant: 'default', text: '连接中', className: 'bg-yellow-100 text-yellow-800 border-yellow-200'},
+            error: {variant: 'destructive', text: '错误', className: 'bg-red-100 text-red-800 border-red-200'}
         };
 
         const config = statusConfig[actualStatus.status] || statusConfig.disconnected;
@@ -195,14 +214,16 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
         }
 
         return (
-            <Tooltip title={tooltipContent || config.text}>
-                <Tag color={config.color}>{config.text}</Tag>
+            <Tooltip>
+                <Badge variant={config.variant as any} className={config.className}>
+                    {config.text}
+                </Badge>
             </Tooltip>
         );
     };
 
     // 表格列定义
-    const columns: ColumnType<ConnectionWithStatus>[] = [
+    const columns: Column[] = [
         {
             title: '连接名称',
             dataIndex: 'name',
@@ -220,7 +241,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
                         <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
                     </div>
                     {activeConnectionId === record.id && (
-                        <Tag className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Tag>
+                        <Badge className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Badge>
                     )}
                 </div>
             )
@@ -289,30 +310,31 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
                     <div className="flex items-center space-x-2">
                         <Button
                             variant={isConnected ? 'outline' : 'default'}
-                            icon={isConnected ? <Unlink className="w-4 h-4"/> : <Wifi className="w-4 h-4"/>}
                             size="sm"
                             disabled={loading}
                             onClick={() => handleConnectionToggle(record.id!)}
                             className={isConnected ? 'text-red-600 hover:text-red-700 hover:border-red-300' : 'bg-green-600 hover:bg-green-700 text-white'}
                         >
+                            {isConnected ? <Unlink className="w-4 h-4 mr-1"/> : <Wifi className="w-4 h-4 mr-1"/>}
                             {isConnected ? '断开' : '连接'}
                         </Button>
 
                         <Button
                             variant="outline"
-                            icon={<Edit className="w-4 h-4"/>}
                             size="sm"
                             onClick={() => {
                                 console.log('编辑连接:', record);
                                 onEditConnection?.(record);
                             }}
                         >
+                            <Edit className="w-4 h-4 mr-1"/>
                             编辑
                         </Button>
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" icon={<MoreHorizontal className="w-4 h-4"/>} size="sm">
+                                <Button variant="outline" size="sm">
+                                    <MoreHorizontal className="w-4 h-4 mr-1"/>
                                     更多
                                 </Button>
                             </DropdownMenuTrigger>
@@ -360,13 +382,13 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
                         <div className="flex gap-2">
                             <Button
                                 variant="outline"
-                                icon={<RefreshCw className="w-4 h-4"/>}
                                 onClick={() => {
                                     console.log('🔄 手动刷新连接状态');
                                     refreshAllStatuses();
                                 }}
                                 size="sm"
                             >
+                                <RefreshCw className="w-4 h-4 mr-1"/>
                                 刷新状态
                             </Button>
                             <Button
@@ -464,56 +486,62 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
             </div>
 
             {/* 连接池统计模态框 */}
-            <Dialog
-                title="连接池统计信息"
-                open={poolStatsModalVisible}
-                onOpenChange={(open) => !open && (() => setPoolStatsModalVisible(false))()}
-                footer={null}
-                width={600}
-            >
-                {selectedConnectionId && poolStats[selectedConnectionId] && (
-                    <div>
-                        <Row gutter={16}>
-                            <Col span={12}>
-                                <Statistic
-                                    title="总连接数"
-                                    value={poolStats[selectedConnectionId].total_connections}
+            <Dialog open={poolStatsModalVisible} onOpenChange={setPoolStatsModalVisible}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>连接池统计信息</DialogTitle>
+                    </DialogHeader>
+                    {selectedConnectionId && poolStats[selectedConnectionId] && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground">总连接数</div>
+                                        <div className="text-2xl font-bold">
+                                            {poolStats[selectedConnectionId].total_connections}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground">活跃连接数</div>
+                                        <div className="text-2xl font-bold text-green-600">
+                                            {poolStats[selectedConnectionId].active_connections}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground">空闲连接数</div>
+                                        <div className="text-2xl font-bold">
+                                            {poolStats[selectedConnectionId].idle_connections}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardContent className="p-4">
+                                        <div className="text-sm text-muted-foreground">最大连接数</div>
+                                        <div className="text-2xl font-bold">
+                                            {poolStats[selectedConnectionId].max_connections}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div>
+                                <Typography.Title level={4}>连接池使用率</Typography.Title>
+                                <Progress
+                                    value={Math.round(
+                                        (poolStats[selectedConnectionId].active_connections /
+                                            poolStats[selectedConnectionId].max_connections) * 100
+                                    )}
+                                    className="mt-2"
                                 />
-                            </Col>
-                            <Col span={12}>
-                                <Statistic
-                                    title="活跃连接数"
-                                    value={poolStats[selectedConnectionId].active_connections}
-                                    valueStyle={{color: '#3f8600'}}
-                                />
-                            </Col>
-                        </Row>
-                        <Row gutter={16} style={{marginTop: 16}}>
-                            <Col span={12}>
-                                <Statistic
-                                    title="空闲连接数"
-                                    value={poolStats[selectedConnectionId].idle_connections}
-                                />
-                            </Col>
-                            <Col span={12}>
-                                <Statistic
-                                    title="最大连接数"
-                                    value={poolStats[selectedConnectionId].max_connections}
-                                />
-                            </Col>
-                        </Row>
-                        <div style={{marginTop: 16}}>
-                            <Typography variant="h4">连接池使用率</Typography>
-                            <Progress
-                                percent={Math.round(
-                                    (poolStats[selectedConnectionId].active_connections /
-                                        poolStats[selectedConnectionId].max_connections) * 100
-                                )}
-                                status="active"
-                            />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </DialogContent>
             </Dialog>
         </div>
     );

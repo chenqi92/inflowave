@@ -417,4 +417,4 @@ export const connectionUtils = {
     username: '',
     password: '',
     ssl: false,
-    timeout: 5000})};
+    timeout: 60})};

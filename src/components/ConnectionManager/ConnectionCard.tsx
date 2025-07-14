@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Badge, TooltipWrapper as Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card, Typography } from '@/components/ui';
+import { Button, Badge, Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card, Typography } from '@/components/ui';
 import { Settings, Trash2, Edit, Wifi, Unlink, Copy, Info, PlayCircle, PauseCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
@@ -241,30 +241,38 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
         {/* 操作按钮 */}
         <div className="flex items-center gap-1 ml-2">
           {/* 连接/断开按钮 */}
-          <Tooltip title={status?.status === 'connected' ? '断开连接' : '连接'}>
+          <Tooltip>
             <Button
-              type={status?.status === 'connected' ? 'default' : 'primary'}
-              size="small"
-              icon={status?.status === 'connected' ? <PauseCircle /> : <PlayCircle />}
+              variant={status?.status === 'connected' ? 'outline' : 'default'}
+              size="sm"
               disabled={isConnecting}
               onClick={handleConnect}
-              danger={status?.status === 'connected'}
-            />
+              className={status?.status === 'connected' ? 'text-red-600 hover:text-red-700' : ''}
+            >
+              {status?.status === 'connected' ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+            </Button>
           </Tooltip>
 
           {/* 更多操作菜单 */}
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={['click']}
-            placement="bottomRight"
-          >
-            <Button
-              type="text"
-              size="small"
-              icon={<Settings className="w-4 h-4"  />}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </Dropdown>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => onEdit?.(connection)}>
+                编辑
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDelete?.(connection.id!)}>
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Tag, Avatar, TooltipWrapper as Tooltip, Card, Space, Typography } from '@/components/ui';
+import { Button, Badge, Avatar, Tooltip, Card, Space, Typography } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Database, CheckCircle } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
@@ -61,10 +61,9 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
         return (
           <Card
             key={connection.id}
-            className={`transition-all duration-200 hover:shadow-lg cursor-pointer ${
+            className={`transition-all duration-200 hover:shadow-lg cursor-pointer p-4 ${
               isActive ? 'ring-2 ring-blue-500 shadow-lg' : ''
             }`}
-            bodyStyle={{ padding: '16px' }}
           >
             {/* 卡片头部 */}
             <div className="flex items-start justify-between mb-3">
@@ -85,9 +84,9 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
                 </div>
               </div>
               {isActive && (
-                <Tag color="blue" className="text-xs">
+                <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">
                   活跃
-                </Tag>
+                </Badge>
               )}
             </div>
 
