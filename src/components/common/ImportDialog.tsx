@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Typography } from '@/components/ui';
 import { Upload as UploadIcon, Database, CheckCircle } from 'lucide-react';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';

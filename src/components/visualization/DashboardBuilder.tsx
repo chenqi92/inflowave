@@ -373,16 +373,14 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
               {charts.map(chart => (
                 <Card
                   key={chart.id}
-                  size="small"
-                  hoverable
                   onClick={() => handleAddChart(chart.id)}
-                  className="cursor-pointer hover:border-blue-500">
-                  <div className="text-center">
+                  className="cursor-pointer hover:border-blue-500 hover:shadow-md transition-all">
+                  <CardContent className="p-4 text-center">
                     <div className="font-medium">{chart.title}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {chart.type} · {chart.xAxis?.field} / {chart.yAxis?.field}
                     </div>
-                  </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Badge, Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Card, Typography } from '@/components/ui';
+import { Button, Badge, Tooltip, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress, Typography } from '@/components/ui';
 import { Settings, Trash2, Edit, Wifi, Unlink, Copy, Info, PlayCircle, PauseCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { FormatUtils } from '@/utils/format';
@@ -171,9 +171,9 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
   ];
 
   return (
-    <Card
+    <div
       className={cn(
-        'transition-all duration-200 hover:shadow-md cursor-pointer',
+        'transition-all duration-200 hover:shadow-md cursor-pointer p-4 border rounded-lg bg-card',
         'border-2 hover:border-blue-300',
         isActive && 'border-blue-500 shadow-md',
         status?.status === 'error' && 'border-destructive bg-destructive/10',
@@ -287,6 +287,6 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
           />
         </div>
       )}
-    </Card>
+    </div>
   );
 };

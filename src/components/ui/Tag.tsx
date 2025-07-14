@@ -2,6 +2,7 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
+import { Button } from "./Button"
 
 const tagVariants = cva(
   "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
@@ -49,12 +50,14 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
       >
         {children}
         {closable && onClose && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="ml-1 rounded-full hover:bg-white/20 p-0.5"
+            className="ml-1 rounded-full hover:bg-white/20 p-0.5 h-auto w-auto"
           >
             <X className="h-3 w-3" />
-          </button>
+          </Button>
         )}
       </div>
     )

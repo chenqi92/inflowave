@@ -7,7 +7,7 @@ export type { InputProps } from './Input';
 
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Option } from './Select';
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
+// Card component removed - use Sheet, Dialog, Collapsible, or Accordion instead
 
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './Dialog';
 
@@ -119,7 +119,13 @@ export type { DatePickerProps } from './DatePicker';
 
 export { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-export { Separator } from './Separator';
+export { Separator } from './separator';
+
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
+
+export { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './sheet';
+
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 
 export { Layout, Header, Sider, Content, Footer } from './Layout';
 export type { LayoutProps, HeaderProps, SiderProps, ContentProps, FooterProps } from './Layout';

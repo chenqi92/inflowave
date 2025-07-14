@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tree, Input, Button, Tooltip, Badge, Dropdown, Empty, Spin } from '@/components/ui';
+import { Tree, Input, Button, Tooltip, Badge, Dropdown, Empty, Spin, Card, CardContent, Typography } from '@/components/ui';
 import { Space } from '@/components/ui';
 import { Database, Table, Tag, Search, RefreshCw, Plus, Trash2, Info, Eye, Copy, BarChart, Clock } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
@@ -170,22 +170,23 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
         node.children = tags.map(t => ({
           key: `tag:${database}:${measurement}:${t.name}`,
           title: (
-            <div className="flex items-center justify-between group">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-orange-500"   />
-                <span>{t.name}</span>
+            <Card className="flex items-center justify-between group border-0 shadow-none bg-transparent p-0">
+              <CardContent className="flex items-center gap-2 p-0">
+                <Tag className="w-4 h-4 text-orange-500" />
+                <Typography.Text>{t.name}</Typography.Text>
                 {t.valueCount !== undefined && (
-                  <Badge 
-                    count={t.valueCount} 
-                    size="small"
-                    style={{ backgroundColor: '#fff7e6', color: '#fa8c16' }}
-                  />
+                  <Badge
+                    variant="secondary"
+                    className="bg-orange-50 text-orange-600"
+                  >
+                    {t.valueCount}
+                  </Badge>
                 )}
-              </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              </CardContent>
+              <CardContent className="opacity-0 group-hover:opacity-100 transition-opacity p-0">
                 <FieldContextMenu database={database} measurement={measurement} field={t.name} fieldType="tag" />
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ),
           isLeaf: true,
           database,

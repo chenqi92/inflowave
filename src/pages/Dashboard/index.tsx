@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Row, Col, Statistic, Button, Empty, Alert, Tabs } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Row, Col, Statistic, Button, Empty, Alert, AlertTitle, AlertDescription, Tabs } from '@/components/ui';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, Separator, Space } from '@/components/ui';
 import { Database, BarChart, Plus, Search, Download, RefreshCw, LayoutDashboard, Webhook, Clock, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
@@ -60,21 +60,22 @@ const Dashboard: React.FC = () => {
 
   // 工具栏
   const toolbar = (
-    <div className="flex gap-2">
+    <Card className="flex gap-2 p-2 border-0 shadow-none bg-transparent">
       <Button
-        icon={<RefreshCw className="w-4 h-4"  />}
+        variant="outline"
         onClick={() => window.location.reload()}
       >
+        <RefreshCw className="w-4 h-4 mr-2" />
         刷新
       </Button>
       <Button
-        type="primary"
-        icon={<Plus className="w-4 h-4"  />}
+        variant="default"
         onClick={() => navigate('/connections')}
       >
+        <Plus className="w-4 h-4 mr-2" />
         新建连接
       </Button>
-    </div>
+    </Card>
   );
 
   return (
@@ -84,18 +85,13 @@ const Dashboard: React.FC = () => {
       toolbar={toolbar}
     >
       {/* 欢迎信息 */}
-      <Alert
-        message={
-          <div className="flex gap-2">
-            <Rocket className="w-4 h-4"  />
-            <span>欢迎使用 InfloWave</span>
-          </div>
-        }
-        description="现代化的时序数据库管理工具，提供连接管理、数据查询、可视化等功能。"
-        type="info"
-        showIcon={false}
-        style={{ marginBottom: 24 }}
-      />
+      <Alert className="mb-6">
+        <Rocket className="w-4 h-4" />
+        <AlertTitle>欢迎使用 InfloWave</AlertTitle>
+        <AlertDescription>
+          现代化的时序数据库管理工具，提供连接管理、数据查询、可视化等功能。
+        </AlertDescription>
+      </Alert>
 
       <Tabs
         value={activeTab}
@@ -107,54 +103,55 @@ const Dashboard: React.FC = () => {
             children: (
           <div className="space-y-6">
             {/* 统计卡片 */}
-            <div className="desktop-panel">
-              <div className="desktop-panel-header">
-                系统概览
+            <div className="border rounded-lg bg-background">
+              <div className="p-6 pb-0">
+                <h3 className="text-lg font-semibold">系统概览</h3>
               </div>
-              <div className="desktop-panel-content">
+              <Separator />
+              <div className="p-6">
                 <Row gutter={[24, 16]}>
                   <Col xs={24} sm={12} lg={6}>
-                    <Card size="small" className="text-center">
+                    <div className="text-center p-4 border rounded-lg bg-card">
                       <Statistic
                         title="总连接数"
                         value={stats.totalConnections}
                         prefix={<Database className="w-4 h-4"  />}
                         valueStyle={{ color: '#1890ff' }}
                       />
-                    </Card>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} lg={6}>
-                    <Card size="small" className="text-center">
+                    <div className="text-center p-4 border rounded-lg bg-card">
                       <Statistic
                         title="活跃连接"
                         value={stats.activeConnections}
                         prefix={<Webhook className="w-4 h-4"  />}
                         valueStyle={{ color: '#52c41a' }}
                       />
-                    </Card>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} lg={6}>
-                    <Card size="small" className="text-center">
+                    <div className="text-center p-4 border rounded-lg bg-card">
                       <Statistic
                         title="总查询数"
                         value={stats.totalQueries}
                         prefix={<BarChart className="w-4 h-4"  />}
                         valueStyle={{ color: '#722ed1' }}
                       />
-                    </Card>
+                    </div>
                   </Col>
 
                   <Col xs={24} sm={12} lg={6}>
-                    <Card size="small" className="text-center">
+                    <div className="text-center p-4 border rounded-lg bg-card">
                       <Statistic
                         title="最后查询"
                         value={stats.lastQueryTime}
                         prefix={<Clock className="w-4 h-4"  />}
                         valueStyle={{ color: '#fa8c16' }}
                       />
-                    </Card>
+                    </div>
                   </Col>
                 </Row>
               </div>
@@ -170,41 +167,37 @@ const Dashboard: React.FC = () => {
                   <Row gutter={[16, 16]}>
                     {quickActions.map((action, index) => (
                       <Col xs={24} sm={12} lg={8} key={index}>
-                        <Card
-                          hoverable
-                          size="small"
-                          className="h-full cursor-pointer"
+                        <div
+                          className="h-full cursor-pointer hover:shadow-md transition-all p-4 text-center space-y-3 border rounded-lg bg-card"
                           onClick={action.disabled ? undefined : action.action}
                           style={{
                             opacity: action.disabled ? 0.6 : 1,
                             cursor: action.disabled ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          <div className="text-center space-y-3">
-                            <div className="text-2xl text-primary-600">
-                              {action.icon}
-                            </div>
-                            <div className="font-medium">
-                              {action.title}
-                            </div>
-                            <div className="text-sm text-muted-foreground mb-4">
-                              {action.description}
-                            </div>
-                            <Button
-                              size="small"
-                              type={action.type || 'default'}
-                              disabled={action.disabled}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!action.disabled) {
-                                  action.action();
-                                }
-                              }}
-                            >
-                              {action.disabled ? '需要连接' : '开始使用'}
-                            </Button>
+                          <div className="text-2xl text-primary-600">
+                            {action.icon}
                           </div>
-                        </Card>
+                          <div className="font-medium">
+                            {action.title}
+                          </div>
+                          <div className="text-sm text-muted-foreground mb-4">
+                            {action.description}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={action.type === 'primary' ? 'default' : 'outline'}
+                            disabled={action.disabled}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!action.disabled) {
+                                action.action();
+                              }
+                            }}
+                          >
+                            {action.disabled ? '需要连接' : '开始使用'}
+                          </Button>
+                        </div>
                       </Col>
                     ))}
                   </Row>
@@ -297,31 +290,31 @@ const Dashboard: React.FC = () => {
               <div className="desktop-panel-content">
                 <Row gutter={[16, 16]}>
                   <Col xs={24} sm={12} lg={8}>
-                    <Card size="small" hoverable className="text-center">
+                    <div className="text-center hover:shadow-md transition-shadow cursor-pointer p-4 border rounded-lg bg-card">
                       <Webhook className="w-4 h-4" style={{ fontSize: 28, color: '#1890ff', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">连接管理</div>
                       <div className="text-sm text-muted-foreground">
                         管理多个 InfluxDB 连接，支持连接测试、状态监控等功能。
                       </div>
-                    </Card>
+                    </div>
                   </Col>
                   <Col xs={24} sm={12} lg={8}>
-                    <Card size="small" hoverable className="text-center">
+                    <div className="text-center hover:shadow-md transition-shadow cursor-pointer p-4 border rounded-lg bg-card">
                       <Search className="w-4 h-4" style={{ fontSize: 28, color: '#52c41a', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据查询</div>
                       <div className="text-sm text-muted-foreground">
                         强大的 InfluxQL 查询编辑器，支持语法高亮、自动补全等功能。
                       </div>
-                    </Card>
+                    </div>
                   </Col>
                   <Col xs={24} sm={12} lg={8}>
-                    <Card size="small" hoverable className="text-center">
+                    <div className="text-center hover:shadow-md transition-shadow cursor-pointer p-4 border rounded-lg bg-card">
                       <BarChart className="w-4 h-4" style={{ fontSize: 28, color: '#fa8c16', marginBottom: 12 }}  />
                       <div className="font-medium mb-2">数据可视化</div>
                       <div className="text-sm text-muted-foreground">
                         创建各种图表和仪表板，直观展示时序数据。
                       </div>
-                    </Card>
+                    </div>
                   </Col>
                 </Row>
               </div>

@@ -137,8 +137,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                   defaultSize={40}
                   minSize={25}
                   maxSize={70}
-                  className="bg-background border-t border-border overflow-hidden"
                 >
+                  <Card className="h-full border-t border-0 shadow-none bg-background overflow-hidden">
                   <ResultPanel
                     collapsed={bottomPanelCollapsed}
                     queryResult={queryResult}
@@ -152,6 +152,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                       setExecutionTime(0);
                     }}
                   />
+                  </Card>
                 </ResizablePanel>
               </>
             )}
