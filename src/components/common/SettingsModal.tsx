@@ -550,21 +550,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
     <>
       <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-5xl w-full h-[85vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 py-3 border-b space-y-0">
+          <DialogHeader className="px-6 py-4 border-b space-y-0 shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
               偏好设置
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 flex">
+          <div className="flex-1 min-h-0 flex overflow-hidden">
             <Tabs defaultValue="general" orientation="vertical" className="flex h-full w-full">
-              <TabsList className="flex flex-col h-fit w-48 bg-muted/50 p-1 items-start justify-start shrink-0">
+              <TabsList className="flex flex-col h-full w-48 bg-muted/50 p-1 items-start justify-start shrink-0 rounded-none border-r">
                 {tabItems.map((item) => (
                   <TabsTrigger
                     key={item.key}
                     value={item.key}
-                    className="w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    className="w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
                   >
                     <div className="flex items-center gap-2">
                       {item.icon}
@@ -574,10 +574,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 ))}
               </TabsList>
 
-              <div className="flex-1 min-w-0 px-6 pb-6">
+              <div className="flex-1 min-w-0 flex flex-col">
                 {tabItems.map((item) => (
-                  <TabsContent key={item.key} value={item.key} className="mt-0 h-full">
-                    <div className="h-full overflow-y-auto pr-2">
+                  <TabsContent key={item.key} value={item.key} className="flex-1 min-h-0 m-0 p-6">
+                    <div className="h-full overflow-y-auto">
                       <div className="max-w-2xl">
                         {item.children}
                       </div>

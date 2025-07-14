@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Row, Col, Alert, Tree, Card, Typography, Separator } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
@@ -11,7 +11,7 @@ import ExportDialog from '@/components/common/ExportDialog';
 import QueryResultContextMenu from '@/components/query/QueryResultContextMenu';
 import type { QueryResult, QueryRequest } from '@/types';
 
-const { Option } = Select;
+// 移除Ant Design的Option组件
 
 const Query: React.FC = () => {
   const { toast } = useToast();
@@ -335,18 +335,18 @@ const Query: React.FC = () => {
   if (connectedConnections.length === 0) {
     return (
       <div className="p-6">
-        <Alert
-          message="请先连接到 InfluxDB"
-          description="在数据源菜单中双击连接或在连接管理页面连接数据库后，才能执行查询。"
-          type="warning"
-          showIcon
-          icon={<AlertCircle />}
-          action={
-            <Button size="small" type="primary">
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <div className="ml-3">
+            <div className="font-medium text-amber-800 mb-1">请先连接到 InfluxDB</div>
+            <div className="text-sm text-amber-700 mb-3">
+              在数据源菜单中双击连接或在连接管理页面连接数据库后，才能执行查询。
+            </div>
+            <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
               去连接
             </Button>
-          }
-        />
+          </div>
+        </Alert>
       </div>
     );
   }
@@ -365,18 +365,18 @@ const Query: React.FC = () => {
         </div>
 
         <div className="flex gap-2">
-          <Select
-            placeholder="选择数据源"
-            value={selectedConnectionId}
-            onValueChange={setSelectedConnectionId}
-            style={{ width: 200 }}
-          >
-            {connectedConnections.map(conn => (
-              <Option key={conn.id} value={conn.id}>
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-2" />
-                {conn.name}
-              </Option>
-            ))}
+          <Select value={selectedConnectionId} onValueChange={setSelectedConnectionId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="选择数据源" />
+            </SelectTrigger>
+            <SelectContent>
+              {connectedConnections.map(conn => (
+                <SelectItem key={conn.id} value={conn.id}>
+                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-2" />
+                  {conn.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Button
             icon={<Database className="w-4 h-4"  />}
@@ -385,46 +385,50 @@ const Query: React.FC = () => {
           >
             刷新数据库
           </Button>
-          <Select
-            placeholder="选择数据库"
-            value={selectedDatabase}
-            onValueChange={setSelectedDatabase}
-            style={{ width: 200 }}
-            disabled={loadingDatabases || !selectedConnectionId}
-          >
-            {databases.map(db => (
-              <Option key={db} value={db}>
-                <Database className="w-4 h-4"  /> {db}
-              </Option>
-            ))}
+          <Select value={selectedDatabase} onValueChange={setSelectedDatabase} disabled={loadingDatabases || !selectedConnectionId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="选择数据库" />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.map(db => (
+                <SelectItem key={db} value={db}>
+                  <Database className="w-4 h-4 mr-2" />
+                  {db}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </div>
 
       {/* 主要内容区域 */}
-      <Row gutter={16} className="h-full">
+      <div className="grid grid-cols-12 gap-4 h-full">
         {/* 左侧数据库结构树 */}
-        <Col span={6}>
-          <Card
-            title="数据库结构"
-            className="h-full"
-            styles={{ body: { padding: '12px', height: 'calc(100% - 57px)', overflow: 'auto' } }}
-          >
-            <Tree
-              showIcon
-              defaultExpandAll
-              treeData={databaseStructure}
-              onSelect={handleTreeNodeClick}
-            />
+        <div className="col-span-3">
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">数据库结构</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 h-[calc(100%-4rem)] overflow-auto">
+              <Tree
+                showIcon
+                defaultExpandAll
+                treeData={databaseStructure}
+                onSelect={handleTreeNodeClick}
+              />
+            </CardContent>
           </Card>
-        </Col>
+        </div>
 
         {/* 右侧查询区域 */}
-        <Col span={18}>
+        <div className="col-span-9">
           <div className="space-y-4 h-full flex flex-col">
-
-      {/* 查询编辑器 */}
-      <Card title="查询编辑器" className="w-full">
+          {/* 查询编辑器 */}
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">查询编辑器</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
         <div className="space-y-4">
           {/* 工具栏 */}
           <div className="flex items-center justify-between">
@@ -511,13 +515,15 @@ const Query: React.FC = () => {
             />
           </div>
         </div>
+        </CardContent>
       </Card>
 
       {/* 查询结果区域 */}
-      <Card
-        title="查询结果"
-        className="w-full flex-1"
-      >
+      <Card className="w-full flex-1">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">查询结果</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[calc(100%-4rem)]">
         <Tabs 
           value={activeResultTab} 
           onValueChange={setActiveResultTab}
@@ -539,63 +545,140 @@ const Query: React.FC = () => {
           </TabsList>
           
           <TabsContent value="messages" className="h-full mt-4">
-            <div className="h-full border rounded-lg p-4 bg-muted/20">
+            <div className="h-full border rounded-lg p-4 bg-muted/20 overflow-auto">
               {loading ? (
-                <div className="flex items-center gap-2 text-blue-600">
-                  <Spin size="small" />
-                  <span>正在执行查询...</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Spin size="small" />
+                    <span className="font-medium">正在执行查询...</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
+                    <div className="font-medium mb-1">执行中的 SQL:</div>
+                    <pre className="text-xs">{query}</pre>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    数据源: {currentConnection?.name} | 数据库: {selectedDatabase}
+                  </div>
                 </div>
               ) : queryResult ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2 text-green-600">
                     <span className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span>查询执行成功</span>
+                    <span className="font-medium">查询执行成功</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    返回 {queryResult.rowCount} 行数据，耗时 {queryResult.executionTime}ms
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="bg-green-50 border border-green-200 p-3 rounded">
+                      <div className="font-medium text-green-800 mb-1">执行统计</div>
+                      <div className="text-green-700">
+                        <div>返回行数: {queryResult.rowCount}</div>
+                        <div>执行时间: {queryResult.executionTime}ms</div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 p-3 rounded">
+                      <div className="font-medium text-blue-800 mb-1">连接信息</div>
+                      <div className="text-blue-700">
+                        <div>数据源: {currentConnection?.name}</div>
+                        <div>数据库: {selectedDatabase}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-muted/50 p-3 rounded">
+                    <div className="font-medium text-sm mb-2">执行的 SQL 语句:</div>
+                    <pre className="text-xs overflow-auto">{query}</pre>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    执行时间: {new Date().toLocaleString()}
                   </div>
                 </div>
               ) : (
-                <div className="text-muted-foreground">
-                  暂无消息
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div>暂无消息</div>
+                  <div className="text-xs mt-1">执行查询后将显示执行信息</div>
                 </div>
               )}
             </div>
           </TabsContent>
           
           <TabsContent value="summary" className="h-full mt-4">
-            <div className="h-full border rounded-lg p-4 bg-muted/20">
+            <div className="h-full border rounded-lg p-4 bg-muted/20 overflow-auto">
               {queryResult ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">数据源：</span>
-                      <span className="ml-2">{currentConnection?.name}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">数据库：</span>
-                      <span className="ml-2">{selectedDatabase}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">执行时间：</span>
-                      <span className="ml-2">{queryResult.executionTime}ms</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">返回行数：</span>
-                      <span className="ml-2">{queryResult.rowCount} 行</span>
+                <div className="space-y-6">
+                  {/* 查询概述 */}
+                  <div className="bg-background border rounded-lg p-4">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      查询概述
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">数据源:</span>
+                          <span className="font-medium">{currentConnection?.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">主机:</span>
+                          <span className="font-medium">{currentConnection?.host}:{currentConnection?.port}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">数据库:</span>
+                          <span className="font-medium">{selectedDatabase}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">执行时间:</span>
+                          <span className="font-medium text-green-600">{queryResult.executionTime}ms</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">返回行数:</span>
+                          <span className="font-medium text-blue-600">{queryResult.rowCount} 行</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">查询类型:</span>
+                          <span className="font-medium">{query.trim().split(' ')[0].toUpperCase()}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <Separator />
-                  <div>
-                    <div className="font-medium text-sm mb-2">查询语句：</div>
-                    <pre className="bg-muted/50 p-3 rounded text-xs overflow-auto max-h-32">
+
+                  {/* 数据结构 */}
+                  {queryResult.series && queryResult.series.length > 0 && (
+                    <div className="bg-background border rounded-lg p-4">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Table className="w-4 h-4" />
+                        数据结构
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">列数:</span>
+                          <span className="font-medium">{queryResult.series[0].columns?.length || 0}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground mb-2 block">列名:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {queryResult.series[0].columns?.map((col: string, index: number) => (
+                              <span key={index} className="bg-muted px-2 py-1 rounded text-xs">{col}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SQL 语句 */}
+                  <div className="bg-background border rounded-lg p-4">
+                    <h4 className="font-semibold mb-3">查询语句</h4>
+                    <pre className="bg-muted/50 p-3 rounded text-xs overflow-auto max-h-32 border">
                       {query}
                     </pre>
                   </div>
                 </div>
               ) : (
-                <div className="text-muted-foreground">
-                  执行查询后将显示查询摘要
+                <div className="text-center py-12 text-muted-foreground">
+                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div>暂无摘要信息</div>
+                  <div className="text-xs mt-1">执行查询后将显示详细摘要</div>
                 </div>
               )}
             </div>
@@ -607,34 +690,67 @@ const Query: React.FC = () => {
                 <Spin size="large" tip="执行查询中..." />
               </div>
             ) : queryResult ? (
-              <Tabs
-                items={[
-                  {
-                    key: 'table',
-                    label: '表格视图',
-                    children: (
-                      <Table
-                        columns={columns}
-                        dataSource={dataSource}
-                        scroll={{ x: 'max-content' }}
-                        size="small"
-                        pagination={{
-                          pageSize: 50,
-                          showSizeChanger: true,
-                          showQuickJumper: true,
-                          showTotal: (total) => `共 ${total} 行`}}
-                      />
-                    )},
-                  {
-                    key: 'json',
-                    label: 'JSON 视图',
-                    children: (
-                      <pre className="bg-muted/50 p-4 rounded overflow-auto max-h-96">
-                        {JSON.stringify(queryResult, null, 2)}
-                      </pre>
-                    )},
-                ]}
-              />
+              <Tabs defaultValue="table" className="h-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="table">表格视图</TabsTrigger>
+                  <TabsTrigger value="json">JSON 视图</TabsTrigger>
+                </TabsList>
+                <TabsContent value="table" className="h-full mt-4">
+                  <div className="border rounded-lg overflow-auto h-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {columns.map((col: any) => (
+                            <TableHead key={col.key} className="whitespace-nowrap">
+                              {col.title}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dataSource.slice(0, 50).map((row: any, index: number) => (
+                          <TableRow key={row.key || index}>
+                            {columns.map((col: any) => (
+                              <TableCell key={col.key} className="whitespace-nowrap">
+                                <QueryResultContextMenu
+                                  selectedData={row[col.dataIndex]}
+                                  columnName={col.dataIndex}
+                                  rowData={row}
+                                  onAction={(action, data) => {
+                                    console.log('查询结果操作:', action, data);
+                                    if (action === 'filter_by_value') {
+                                      const newQuery = `${query} WHERE "${col.dataIndex}" = '${row[col.dataIndex]}'`;
+                                      setQuery(newQuery);
+                                    } else if (action === 'sort_asc') {
+                                      const newQuery = `${query} ORDER BY "${col.dataIndex}" ASC`;
+                                      setQuery(newQuery);
+                                    } else if (action === 'sort_desc') {
+                                      const newQuery = `${query} ORDER BY "${col.dataIndex}" DESC`;
+                                      setQuery(newQuery);
+                                    }
+                                  }}
+                                >
+                                  <span className="cursor-pointer">{row[col.dataIndex]}</span>
+                                </QueryResultContextMenu>
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {dataSource.length > 50 && (
+                      <div className="p-4 text-center text-muted-foreground border-t">
+                        显示前 50 行，共 {dataSource.length} 行数据
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="json" className="h-full mt-4">
+                  <pre className="bg-muted/50 p-4 rounded overflow-auto h-full text-xs">
+                    {JSON.stringify(queryResult, null, 2)}
+                  </pre>
+                </TabsContent>
+              </Tabs>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 请执行查询以查看结果
@@ -642,10 +758,11 @@ const Query: React.FC = () => {
             )}
           </TabsContent>
         </Tabs>
+        </CardContent>
       </Card>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
       {/* 导出对话框 */}
       <ExportDialog
