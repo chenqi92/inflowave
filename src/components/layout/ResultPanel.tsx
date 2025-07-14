@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Table, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toast } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Table, TableHeader, TableBody, TableRow, TableCell, TableHead, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toast, Card, CardHeader, CardContent, CardTitle } from '@/components/ui';
 import {
   TableIcon,
   Bug,
@@ -298,78 +298,78 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
         
         <TabsContent value="summary" className="flex-1 overflow-auto p-2">
           <div className="space-y-2">
-            <div className="bg-white rounded border">
-              <div className="border-b border-gray-200 p-2">
-                <h3 className="text-sm font-semibold text-gray-900">执行摘要</h3>
-              </div>
-              <div className="p-0">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left p-2 bg-gray-50">项目</th>
-                      <th className="text-left p-2 bg-gray-50">值</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-100">
-                      <td className="p-2 text-gray-600">执行语句数</td>
-                      <td className="p-2 font-mono">{executedQueries.length}</td>
-                    </tr>
-                    <tr className="border-b border-gray-100">
-                      <td className="p-2 text-gray-600">总数据量</td>
-                      <td className="p-2 font-mono">
-                        {queryResults.length > 0 
-                          ? queryResults.reduce((sum, result) => sum + (result.data?.length || 0), 0) 
+            <Card className="bg-white rounded border">
+              <CardHeader className="border-b border-gray-200 p-2">
+                <CardTitle className="text-sm font-semibold text-gray-900">执行摘要</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table className="w-full text-xs">
+                  <TableHeader>
+                    <TableRow className="border-b border-gray-200">
+                      <TableHead className="text-left p-2 bg-gray-50">项目</TableHead>
+                      <TableHead className="text-left p-2 bg-gray-50">值</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow className="border-b border-gray-100">
+                      <TableCell className="p-2 text-gray-600">执行语句数</TableCell>
+                      <TableCell className="p-2 font-mono">{executedQueries.length}</TableCell>
+                    </TableRow>
+                    <TableRow className="border-b border-gray-100">
+                      <TableCell className="p-2 text-gray-600">总数据量</TableCell>
+                      <TableCell className="p-2 font-mono">
+                        {queryResults.length > 0
+                          ? queryResults.reduce((sum, result) => sum + (result.data?.length || 0), 0)
                           : (queryResult?.data?.length || 0)} 行
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100">
-                      <td className="p-2 text-gray-600">总耗时</td>
-                      <td className="p-2 font-mono">{executionTime}ms</td>
-                    </tr>
-                    <tr className="border-b border-gray-100">
-                      <td className="p-2 text-gray-600">平均耗时</td>
-                      <td className="p-2 font-mono">
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="border-b border-gray-100">
+                      <TableCell className="p-2 text-gray-600">总耗时</TableCell>
+                      <TableCell className="p-2 font-mono">{executionTime}ms</TableCell>
+                    </TableRow>
+                    <TableRow className="border-b border-gray-100">
+                      <TableCell className="p-2 text-gray-600">平均耗时</TableCell>
+                      <TableCell className="p-2 font-mono">
                         {executedQueries.length > 0 ? Math.round(executionTime / executedQueries.length) : executionTime}ms
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-2 text-gray-600">执行时间</td>
-                      <td className="p-2 font-mono">{new Date().toLocaleTimeString()}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="p-2 text-gray-600">执行时间</TableCell>
+                      <TableCell className="p-2 font-mono">{new Date().toLocaleTimeString()}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
             
             {executedQueries.length > 0 && (
-              <div className="bg-white rounded border">
-                <div className="border-b border-gray-200 p-2">
-                  <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
-                </div>
-                <div className="p-0">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left p-2 bg-gray-50">序号</th>
-                        <th className="text-left p-2 bg-gray-50">SQL语句</th>
-                        <th className="text-left p-2 bg-gray-50">结果行数</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+              <Card className="bg-white rounded border">
+                <CardHeader className="border-b border-gray-200 p-2">
+                  <CardTitle className="text-sm font-semibold text-gray-900">执行的SQL语句</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table className="w-full text-xs">
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200">
+                        <TableHead className="text-left p-2 bg-gray-50">序号</TableHead>
+                        <TableHead className="text-left p-2 bg-gray-50">SQL语句</TableHead>
+                        <TableHead className="text-left p-2 bg-gray-50">结果行数</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {executedQueries.map((query, index) => (
-                        <tr key={index} className="border-b border-gray-100">
-                          <td className="p-2 text-gray-600">{index + 1}</td>
-                          <td className="p-2 font-mono text-xs max-w-md truncate">{query}</td>
-                          <td className="p-2 font-mono">
+                        <TableRow key={index} className="border-b border-gray-100">
+                          <TableCell className="p-2 text-gray-600">{index + 1}</TableCell>
+                          <TableCell className="p-2 font-mono text-xs max-w-md truncate">{query}</TableCell>
+                          <TableCell className="p-2 font-mono">
                             {queryResults[index]?.data?.length || queryResult?.data?.length || 0} 行
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
           </div>
         </TabsContent>

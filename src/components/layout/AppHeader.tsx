@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space } from '@/components/ui';
+import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space, Header } from '@/components/ui';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Database, Settings, Lightbulb, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '@store/app';
@@ -65,7 +65,7 @@ const AppHeader: React.FC = () => {
   };
 
   return (
-    <header className='app-header flex items-center justify-between px-4 py-2 border-b bg-background'>
+    <Header className='app-header flex items-center justify-between px-4 py-2 border-b bg-background'>
       {/* 左侧 */}
       <div className='flex items-center space-x-4'>
         {/* 菜单折叠按钮 */}
@@ -124,7 +124,7 @@ const AppHeader: React.FC = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </header>
+    </Header>
   );
 };
 

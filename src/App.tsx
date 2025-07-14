@@ -24,7 +24,7 @@ import TestFixes from './test-fixes';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 
 // UI 组件导入
-import { Text, Spin } from '@/components/ui';
+import { Text, Spin, Layout, Content } from '@/components/ui';
 import { ModalAdapter } from '@/utils/modalAdapter';
 
 // 主布局组件
@@ -65,18 +65,18 @@ const MainLayout: React.FC = () => {
 
   if (isSpecialPage) {
     return (
-      <div className="desktop-layout min-h-screen bg-background">
+      <Layout className="min-h-screen bg-background">
         {/* 应用工具栏 */}
 
         {/* 主内容区 */}
-        <main className="desktop-content flex-1 p-4">
+        <Content className="flex-1 p-4">
           <Routes>
             <Route path="/debug" element={<ConnectionDebug />} />
             <Route path="/typography-test" element={<TypographyTest />} />
             <Route path="/ui-test" element={<UITest />} />
             <Route path="/test-fixes" element={<TestFixes />} />
           </Routes>
-        </main>
+        </Content>
 
         {/* 全局搜索 */}
         <GlobalSearch
@@ -89,10 +89,10 @@ const MainLayout: React.FC = () => {
             navigate('/query', { state: { query } });
           }}
         />
-        
+
         {/* 测试按钮 - 仅在开发环境显示 */}
         {(import.meta as any).env?.DEV && <TestButton />}
-      </div>
+      </Layout>
     );
   }
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Database, Search, BarChart, Edit, Settings, Webhook, LayoutDashboard } from 'lucide-react';
-import { Button, Separator } from '@/components/ui';
+import { Button, Separator, Sider } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 
 interface AppSidebarProps {
@@ -62,10 +62,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
   const selectedKeys = [location.pathname];
 
   return (
-    <div
+    <Sider
       className={`app-sider bg-white border-r border h-full transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-60'
       }`}
+      width={collapsed ? 64 : 240}
+      collapsible={false}
     >
       <nav className="h-full py-2">
         {menuItems.map((item) => {
@@ -91,7 +93,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
           );
         })}
       </nav>
-    </div>
+    </Sider>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/utils/cn';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button, Card, CardContent } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
@@ -59,45 +59,49 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     switch (currentView) {
       case 'datasource':
         return (
-          <div className="h-full">
-            <ConnectionsPage />
-          </div>
+          <Card className="h-full">
+            <CardContent className="p-0 h-full">
+              <ConnectionsPage />
+            </CardContent>
+          </Card>
         );
       case 'database':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <DatabasePage />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       case 'visualization':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <VisualizationPage />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       case 'performance':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <PerformancePage />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         );
       case 'dev-tools':
         return (
-          <div className="h-full">
-            <DevTools />
-          </div>
+          <Card className="h-full">
+            <CardContent className="p-0 h-full">
+              <DevTools />
+            </CardContent>
+          </Card>
         );
       case 'query':
       default:
@@ -157,17 +161,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <Layout className="h-screen bg-background flex flex-col overflow-hidden">
       {/* 原生菜单处理器 */}
       <NativeMenuHandler />
 
       {/* 主工具栏 - 统一背景，移除边框分割线 */}
-      <header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
+      <Header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
         <MainToolbar
           currentView={currentView}
           onViewChange={setCurrentView}
         />
-      </header>
+      </Header>
 
       {/* 主要内容区域 - 使用可调整大小的面板 */}
       <div className="flex-1 min-h-0">
@@ -191,12 +195,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                 onTableDoubleClick={handleTableDoubleClick}
               />
               {/* 折叠按钮 */}
-              <button
-                className="absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10 h-8 w-8"
                 onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
               >
                 {leftPanelCollapsed ? '→' : '←'}
-              </button>
+              </Button>
             </div>
           </ResizablePanel>
 
@@ -211,7 +217,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-    </div>
+    </Layout>
   );
 };
 
