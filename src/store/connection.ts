@@ -291,13 +291,39 @@ export const useConnectionStore = create<ConnectionState>()(
         try {
           const statuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
           if (statuses) {
-            // 合并状态而不是完全替换，避免状态闪烁
-            set((state) => ({
-              connectionStatuses: {
-                ...state.connectionStatuses,
-                ...statuses
+            // 智能合并状态，保护已连接的连接不被错误地断开
+            set((state) => {
+              const newStatuses = { ...state.connectionStatuses };
+
+              for (const [connectionId, backendStatus] of Object.entries(statuses)) {
+                const currentStatus = state.connectionStatuses[connectionId];
+
+                // 如果当前状态是已连接，只有在后端明确报告错误或断开时才更新
+                if (currentStatus?.status === 'connected') {
+                  // 只有在后端状态是 error 或者有错误信息时才更新
+                  if (backendStatus.status === 'error' || backendStatus.error) {
+                    console.log(`🔄 连接 ${connectionId} 状态从已连接更新为错误:`, backendStatus.error);
+                    newStatuses[connectionId] = backendStatus;
+                  } else if (backendStatus.status === 'disconnected' && backendStatus.error) {
+                    // 只有在有明确错误信息的情况下才认为连接真的断开了
+                    console.log(`🔄 连接 ${connectionId} 状态从已连接更新为断开:`, backendStatus.error);
+                    newStatuses[connectionId] = backendStatus;
+                  } else {
+                    // 保持当前的已连接状态，但更新延迟等其他信息
+                    newStatuses[connectionId] = {
+                      ...currentStatus,
+                      latency: backendStatus.latency || currentStatus.latency,
+                      lastConnected: backendStatus.lastConnected || currentStatus.lastConnected
+                    };
+                  }
+                } else {
+                  // 对于非已连接状态，可以安全地更新
+                  newStatuses[connectionId] = backendStatus;
+                }
               }
-            }));
+
+              return { connectionStatuses: newStatuses };
+            });
           }
         } catch (error) {
           console.error('刷新连接状态失败:', error);

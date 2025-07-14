@@ -241,7 +241,55 @@ impl ConnectionService {
 
     /// 获取所有连接状态
     pub async fn get_all_connection_statuses(&self) -> HashMap<String, ConnectionStatus> {
-        self.manager.get_all_statuses().await
+        // 获取当前存储的状态
+        let current_statuses = self.manager.get_all_statuses().await;
+        let mut updated_statuses = HashMap::new();
+
+        // 获取所有连接配置
+        let configs = self.configs.read().await;
+
+        for (connection_id, _config) in configs.iter() {
+            let current_status = current_statuses.get(connection_id);
+
+            // 如果当前状态显示已连接，进行快速健康检查
+            if let Some(status) = current_status {
+                if matches!(status.status, crate::models::ConnectionState::Connected) {
+                    // 对已连接的连接进行快速测试
+                    match self.manager.test_connection(connection_id).await {
+                        Ok(test_result) => {
+                            if test_result.success {
+                                // 连接仍然有效，保持已连接状态
+                                updated_statuses.insert(connection_id.clone(), status.clone());
+                            } else {
+                                // 连接已断开，更新状态
+                                let mut disconnected_status = status.clone();
+                                disconnected_status.status = crate::models::ConnectionState::Error;
+                                disconnected_status.error = test_result.error;
+                                updated_statuses.insert(connection_id.clone(), disconnected_status);
+                            }
+                        }
+                        Err(_) => {
+                            // 测试失败，标记为错误状态
+                            let mut error_status = status.clone();
+                            error_status.status = crate::models::ConnectionState::Error;
+                            error_status.error = Some("连接测试失败".to_string());
+                            updated_statuses.insert(connection_id.clone(), error_status);
+                        }
+                    }
+                } else {
+                    // 对于非已连接状态，直接返回当前状态
+                    updated_statuses.insert(connection_id.clone(), status.clone());
+                }
+            } else {
+                // 如果没有状态记录，创建一个默认的断开状态
+                updated_statuses.insert(
+                    connection_id.clone(),
+                    crate::models::ConnectionStatus::new(connection_id.clone())
+                );
+            }
+        }
+
+        updated_statuses
     }
 
     /// 健康检查所有连接
