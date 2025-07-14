@@ -175,9 +175,25 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     const status = getConnectionStatus(connectionId);
     const isConnected = isConnectionConnected(connectionId);
     
+    console.log(`🎨 获取连接状态颜色: ${connectionId}`, {
+      statusObj: status,
+      statusValue: status?.status,
+      isConnected,
+      finalColor: status?.status === 'error' ? 'red' : 
+                  isConnected ? 'green' : 
+                  status?.status === 'connecting' ? 'yellow' : 'gray'
+    });
+    
+    // 优先检查错误状态
     if (status?.status === 'error') return 'bg-red-500';
-    if (isConnected && status?.status === 'connected') return 'bg-green-500';
+    
+    // 检查是否在已连接列表中（主要标准）
+    if (isConnected) return 'bg-green-500';
+    
+    // 检查是否正在连接
     if (status?.status === 'connecting') return 'bg-yellow-500';
+    
+    // 默认未连接状态
     return 'bg-gray-300';
   };
 

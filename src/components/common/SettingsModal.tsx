@@ -574,9 +574,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 ))}
               </TabsList>
 
-              <div className="flex-1 min-w-0 flex flex-col">
+              <div className="flex-1 min-w-0 relative">
                 {tabItems.map((item) => (
-                  <TabsContent key={item.key} value={item.key} className="flex-1 min-h-0 m-0 p-6">
+                  <TabsContent 
+                    key={item.key} 
+                    value={item.key} 
+                    className="absolute inset-0 m-0 p-6 data-[state=inactive]:hidden"
+                  >
                     <div className="h-full overflow-y-auto">
                       <div className="max-w-2xl">
                         {item.children}
