@@ -196,8 +196,8 @@ const Settings: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
-              type="text" 
-              icon={<ChevronLeft className="w-4 h-4"  />} 
+              variant="ghost" 
+              size="icon">\n              <ChevronLeft className="w-4 h-4" /> 
               onClick={() => navigate(-1)}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted cursor-pointer"
               title="返回"
@@ -227,7 +227,7 @@ const Settings: React.FC = () => {
 
         <div className="space-y-6">
           <Tabs
-            size="large"
+            size="lg"
             type="card"
             className="settings-tabs flex items-center space-x-2"
             items={[
@@ -357,11 +357,11 @@ const Settings: React.FC = () => {
                       <FormItem className="mb-0">
                         <div className="flex gap-2" size="middle">
                           <Button
-                            type="primary"
+                            variant="default"
                             htmlType="submit"
                             disabled={loading}
                             icon={<Save className="w-4 h-4"  />}
-                            size="large"
+                            size="lg"
                             className="cursor-pointer"
                           >
                             保存设置
@@ -369,7 +369,7 @@ const Settings: React.FC = () => {
                           <Button
                             icon={<RefreshCw className="w-4 h-4"  />}
                             onClick={handleResetSettings}
-                            size="large"
+                            size="lg"
                             className="cursor-pointer"
                           >
                             重置为默认
@@ -399,11 +399,11 @@ const Settings: React.FC = () => {
                       </Paragraph>
                     </div>
 
-                    <div className="flex gap-2" size="large">
+                    <div className="flex gap-2" size="lg">
                       <Button
                         icon={<FileDown className="w-4 h-4"  />}
                         onClick={exportSettings}
-                        size="large"
+                        size="lg"
                         type="dashed"
                         className="cursor-pointer"
                       >
@@ -412,7 +412,7 @@ const Settings: React.FC = () => {
                       <Button
                         icon={<FileUp className="w-4 h-4"  />}
                         onClick={importSettings}
-                        size="large"
+                        size="lg"
                         type="dashed"
                         className="cursor-pointer"
                       >
@@ -446,7 +446,7 @@ const Settings: React.FC = () => {
                           icon={<Trash2 className="w-4 h-4"  />}
                           onClick={clearConnectionsWithConfirm}
                           className="mt-2 cursor-pointer"
-                          size="large"
+                          size="lg"
                         >
                           清除连接配置
                         </Button>
@@ -466,7 +466,7 @@ const Settings: React.FC = () => {
                           icon={<Trash2 className="w-4 h-4"  />}
                           onClick={clearAllData}
                           className="mt-2 cursor-pointer"
-                          size="large"
+                          size="lg"
                         >
                           重置所有设置
                         </Button>
@@ -596,7 +596,7 @@ const Settings: React.FC = () => {
                         
                         <div className="flex gap-2">
                           <Button
-                            type="primary"
+                            variant="default"
                             icon={<Info className="w-4 h-4"  />}
                             onClick={() => setBrowserModalVisible(true)}
                             className="cursor-pointer"

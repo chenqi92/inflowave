@@ -1,9 +1,8 @@
 import React from 'react';
-import { Typography, Button, Breadcrumb } from '@/components/ui';
+import { Button, Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from '@/components/ui';
+import { Typography } from '@/components/ui';
 import { Home, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const { Title, Text } = Typography;
 
 interface DesktopPageWrapperProps {
   title: string;
@@ -27,42 +26,52 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
   const navigate = useNavigate();
 
   // 生成面包屑导航
-  const generateBreadcrumb = () => {
-    const items = [
-      {
-        title: (
-          <Button 
-            type="text" 
-            size="small" 
-            icon={<Home className="w-4 h-4"  />}
-            onClick={() => navigate('/dashboard')}
-            style={{ padding: '0 4px', height: '20px' }}
-          />
-        )},
-    ];
-
-    if (breadcrumb && breadcrumb.length > 0) {
-      breadcrumb.forEach((item, _index) => {
-        items.push({
-          title: item.path ? (
-            <Button
-              type="text"
-              size="small"
-              onClick={() => navigate(item.path!)}
-              style={{ padding: '0 4px', height: '20px' }}
+  const renderBreadcrumb = () => {
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink 
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-1 cursor-pointer hover:text-foreground"
             >
-              {item.title}
-            </Button>
+              <Home className="w-4 h-4" />
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          
+          {breadcrumb && breadcrumb.length > 0 ? (
+            breadcrumb.map((item, index) => (
+              <React.Fragment key={index}>
+                <BreadcrumbSeparator>
+                  <ChevronRight className="w-4 h-4" />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  {item.path ? (
+                    <BreadcrumbLink 
+                      onClick={() => navigate(item.path!)}
+                      className="cursor-pointer hover:text-foreground"
+                    >
+                      {item.title}
+                    </BreadcrumbLink>
+                  ) : (
+                    <span className="text-foreground">{item.title}</span>
+                  )}
+                </BreadcrumbItem>
+              </React.Fragment>
+            ))
           ) : (
-            item.title
-          )});
-      });
-    } else {
-      items.push({
-        title});
-    }
-
-    return items;
+            <>
+              <BreadcrumbSeparator>
+                <ChevronRight className="w-4 h-4" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <span className="text-foreground">{title}</span>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
   };
 
   return (
@@ -71,22 +80,19 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
       <div className="desktop-page-header">
         {/* 面包屑导航 */}
         <div className="mb-4">
-          <Breadcrumb
-            items={generateBreadcrumb()}
-            separator={<ChevronRight className="w-4 h-4" style={{ fontSize: '10px' }}  />}
-          />
+          {renderBreadcrumb()}
         </div>
 
         {/* 标题和描述 */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <Title level={2} style={{ margin: 0, marginBottom: 8 }}>
+            <Typography.Title level={2} className="m-0 mb-2">
               {title}
-            </Title>
+            </Typography.Title>
             {description && (
-              <Text type="secondary" style={{ fontSize: '14px' }}>
+              <Typography.Text variant="muted" className="text-sm">
                 {description}
-              </Text>
+              </Typography.Text>
             )}
           </div>
 
