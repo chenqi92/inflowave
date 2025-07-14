@@ -304,31 +304,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
           <Separator orientation="vertical" className="h-6 mx-2" />
 
-          {/* 区域3: 执行控制 */}
-          <div className="flex items-center gap-1 px-3 py-1 bg-green-50 rounded-lg">
-            <Button
-              variant="default"
-              size="sm"
-              className="h-12 px-3 flex flex-col items-center justify-center gap-1"
-              disabled={!activeConnection}
-            >
-              <PlayCircle className="w-4 h-4" />
-              <span className="text-xs">执行</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
-              disabled={!activeConnection}
-            >
-              <Square className="w-4 h-4" />
-              <span className="text-xs">停止</span>
-            </Button>
-          </div>
-
-          <Separator orientation="vertical" className="h-6 mx-2" />
-
           {/* 区域4: 核心视图切换 (突出显示) */}
           <div className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border-2 border-purple-200">
             <Button
