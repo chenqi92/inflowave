@@ -172,57 +172,58 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   };
 
   const renderConnectionForm = () => (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
+        <Label className="block text-sm font-medium text-foreground">
           连接名称 <span className="text-destructive">*</span>
-        </label>
+        </Label>
         <Input
           placeholder="例如: 生产环境 InfluxDB"
           value={formData.name}
           onChange={(e) => handleInputChange('name', e.target.value)}
           autoCapitalize="off"
           autoCorrect="off"
-          className={errors.name ? 'border-red-500' : ''}
+          className={errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
         />
-        {errors.name && <div className="text-xs text-red-600">{errors.name}</div>}
+        {errors.name && <div className="text-xs text-destructive mt-1">{errors.name}</div>}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2 space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
+          <Label className="block text-sm font-medium text-foreground">
             主机地址 <span className="text-destructive">*</span>
-          </label>
+          </Label>
           <Input
             placeholder="localhost 或 192.168.1.100"
             value={formData.host}
             onChange={(e) => handleInputChange('host', e.target.value)}
             autoCapitalize="off"
             autoCorrect="off"
-            className={errors.host ? 'border-red-500' : ''}
+            className={errors.host ? 'border-destructive focus-visible:ring-destructive' : ''}
           />
-          {errors.host && <div className="text-xs text-red-600">{errors.host}</div>}
+          {errors.host && <div className="text-xs text-destructive mt-1">{errors.host}</div>}
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
+          <Label className="block text-sm font-medium text-foreground">
             端口 <span className="text-destructive">*</span>
-          </label>
+          </Label>
           <InputNumber
             placeholder="8086"
             value={formData.port}
             onChange={(value) => handleInputChange('port', value || 8086)}
-            className={`w-full ${errors.port ? 'border-red-500' : ''}`}
+            className={`w-full ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             min={1}
             max={65535}
+            controls={false}
           />
-          {errors.port && <div className="text-xs text-red-600">{errors.port}</div>}
+          {errors.port && <div className="text-xs text-destructive mt-1">{errors.port}</div>}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <Label className="block text-sm font-medium text-gray-700">用户名</Label>
+          <Label className="block text-sm font-medium text-foreground">用户名</Label>
           <Input
             placeholder="可选"
             value={formData.username}
@@ -233,7 +234,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </div>
 
         <div className="space-y-1">
-          <Label className="block text-sm font-medium text-gray-700">密码</Label>
+          <Label className="block text-sm font-medium text-foreground">密码</Label>
           <Input
             type="password"
             placeholder="可选"
@@ -244,7 +245,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       </div>
 
       <div className="space-y-1">
-        <Label className="block text-sm font-medium text-gray-700">默认数据库</Label>
+        <Label className="block text-sm font-medium text-foreground">默认数据库</Label>
         <Input
           placeholder="可选，连接后默认选择的数据库"
           value={formData.database}
@@ -254,29 +255,33 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <Label className="block text-sm font-medium text-gray-700">启用SSL</Label>
-          <div className="flex items-center space-x-2">
+          <Label className="block text-sm font-medium text-foreground">启用SSL</Label>
+          <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/50">
             <Switch
+              id="ssl-switch"
               checked={formData.ssl}
               onCheckedChange={(checked) => handleInputChange('ssl', checked)}
             />
-            <span className="text-sm text-muted-foreground">使用SSL加密连接</span>
+            <Label htmlFor="ssl-switch" className="text-sm font-medium cursor-pointer">
+              {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+            </Label>
           </div>
         </div>
 
         <div className="space-y-1">
-          <Label className="block text-sm font-medium text-gray-700">超时时间(秒)</Label>
+          <Label className="block text-sm font-medium text-foreground">超时时间(秒)</Label>
           <InputNumber
             placeholder="30"
             value={formData.timeout}
-            onValueChange={(value) => handleInputChange('timeout', value || 30)}
-            className={`w-full ${errors.timeout ? 'border-red-500' : ''}`}
+            onChange={(value) => handleInputChange('timeout', value || 30)}
+            className={`w-full ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             min={5}
             max={300}
+            controls={false}
           />
-          {errors.timeout && <div className="text-xs text-red-600">{errors.timeout}</div>}
+          {errors.timeout && <div className="text-xs text-destructive mt-1">{errors.timeout}</div>}
         </div>
       </div>
     </div>
@@ -287,26 +292,35 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
     return (
       <div className="space-y-4">
-        <Alert
-          message={testResult.success ? '连接测试成功' : '连接测试失败'}
-          description={
-            testResult.success ? (
-              <div className="space-y-2">
-                <div>服务器版本: {testResult.serverVersion || '未知'}</div>
-                <div>延迟: {testResult.latency}ms</div>
-                {testResult.databases && testResult.databases.length > 0 && (
-                  <div>
-                    可用数据库: {testResult.databases.join(', ')}
+        <Alert className={testResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+          {testResult.success ? (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          ) : (
+            <XCircle className="h-4 w-4 text-red-600" />
+          )}
+          <AlertDescription>
+            <div className="space-y-2">
+              <div className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                {testResult.success ? '连接测试成功' : '连接测试失败'}
+              </div>
+              <div className={`text-sm ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                {testResult.success ? (
+                  <div className="space-y-1">
+                    <div>服务器版本: {testResult.serverVersion || '未知'}</div>
+                    <div>延迟: {testResult.latency}ms</div>
+                    {testResult.databases && testResult.databases.length > 0 && (
+                      <div>
+                        可用数据库: {testResult.databases.join(', ')}
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  testResult.error
                 )}
               </div>
-            ) : (
-              testResult.error
-            )
-          }
-          type={testResult.success ? 'success' : 'error'}
-          showIcon
-        />
+            </div>
+          </AlertDescription>
+        </Alert>
 
         {testResult.success && (
           <div className="bg-green-50 border border-green-200 rounded p-3">
@@ -337,11 +351,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-3xl connection-dialog">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? '编辑连接' : '新建连接'}</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-semibold">{isEditing ? '编辑连接' : '新建连接'}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-6">
         {/* 步骤指示器 */}
         <Steps current={currentStep} items={steps} />
 
@@ -349,51 +363,79 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {currentStep === 1 && renderTestResult()}
 
         {/* 操作按钮 */}
-        <div className="flex justify-between pt-3 border-t border">
+        <div className="flex justify-between pt-4 border-t">
           <div>
             {currentStep === 1 && (
               <Button
                 onClick={() => setCurrentStep(0)}
                 variant="outline"
+                size="default"
               >
                 返回修改
               </Button>
             )}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={onCancel}
               variant="outline"
+              size="default"
             >
               取消
             </Button>
 
             {currentStep === 0 ? (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {isEditing && (
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
+                    size="default"
                   >
-                    保存连接
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        保存中...
+                      </>
+                    ) : (
+                      '保存连接'
+                    )}
                   </Button>
                 )}
                 <Button
                   variant={isEditing ? 'outline' : 'default'}
                   onClick={handleTestConnection}
                   disabled={isTesting}
+                  size="default"
                 >
-                  <Info className="w-4 h-4 mr-2" />
-                  测试连接
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      测试中...
+                    </>
+                  ) : (
+                    <>
+                      <Info className="w-4 h-4 mr-2" />
+                      测试连接
+                    </>
+                  )}
                 </Button>
               </div>
             ) : (
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !testResult?.success}
+                size="default"
               >
-                保存连接
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    保存中...
+                  </>
+                ) : (
+                  '保存连接'
+                )}
               </Button>
             )}
           </div>
