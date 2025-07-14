@@ -294,10 +294,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
           <Separator className="my-6" />
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
             <Button
               variant="outline"
               onClick={handleResetSettings}
+              className="w-full sm:w-auto justify-center"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               重置为默认
@@ -305,6 +306,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             <Button
               onClick={() => saveSettings(form.getValues())}
               disabled={loading}
+              className="w-full sm:w-auto justify-center"
             >
               <Save className="w-4 h-4 mr-2" />
               保存设置
@@ -320,10 +322,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         <div className="space-y-6">
           <div>
             <h4 className="text-sm font-medium mb-3">数据备份与恢复</h4>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
                 onClick={exportSettings}
+                className="w-full justify-start"
               >
                 <FileDown className="w-4 h-4 mr-2" />
                 导出设置
@@ -331,6 +334,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               <Button
                 variant="outline"
                 onClick={importSettings}
+                className="w-full justify-start"
               >
                 <FileUp className="w-4 h-4 mr-2" />
                 导入设置
@@ -477,9 +481,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 </p>
               </Alert>
               
-              <div className="flex gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   onClick={() => setBrowserModalVisible(true)}
+                  className="w-full justify-start"
                 >
                   <Info className="w-4 h-4 mr-2" />
                   查看功能说明
@@ -490,6 +495,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                     resetNoticeSettings();
                     toast({ title: "成功", description: "提醒设置已重置，下次启动时会再次显示功能说明" });
                   }}
+                  className="w-full justify-start"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   重置提醒设置

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
-import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag } from '@/components/ui';
-// TODO: Replace these Ant Design components: message, Divider, List
+import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag, List } from '@/components/ui';
+// TODO: Replace these Ant Design components: message, Divider
 import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui';
 

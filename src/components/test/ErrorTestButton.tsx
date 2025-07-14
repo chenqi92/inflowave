@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button, Space, toast } from '@/components/ui';
-import { AlertTriangle, Bug, Zap, Info } from 'lucide-react';
+import { Button, toast } from '@/components/ui';
+import { AlertTriangle, Bug, Zap, Info, Globe, Component } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { errorLogger } from '@/utils/errorLogger';
 
@@ -80,7 +80,7 @@ const ErrorTestButton: React.FC = () => {
 
   return (
     <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-      <div className="mb-4">
+      <div className="mb-6">
         <h4 className="text-lg font-semibold text-red-700 mb-2">
           🧪 错误日志系统测试工具
         </h4>
@@ -88,63 +88,76 @@ const ErrorTestButton: React.FC = () => {
           使用以下按钮测试不同类型的错误记录功能。测试完成后请到"设置 → 开发者工具"查看错误日志。
         </p>
       </div>
-      
-      <Space wrap size="middle">
-        <Button 
-          icon={<Bug className="w-4 h-4" />}
-          onClick={testJSError}
-          type="primary"
-          danger
-        >
-          JS错误
-        </Button>
-        
-        <Button 
-          icon={<Zap className="w-4 h-4" />}
-          onClick={testPromiseRejection}
-          type="primary"
-          danger
-        >
-          Promise拒绝
-        </Button>
-        
-        <Button 
-          icon={<AlertTriangle />}
-          onClick={testConsoleError}
-          type="primary"
-          danger
-        >
-          控制台错误
-        </Button>
-        
-        <Button 
-          icon={<Info className="w-4 h-4" />}
-          onClick={testCustomError}
-          type="primary"
-        >
-          自定义错误
-        </Button>
-        
-        <Button 
-          icon={<Bug className="w-4 h-4" />}
-          onClick={testNetworkError}
-          type="primary"
-          danger
-        >
-          网络错误
-        </Button>
-        
-        <Button 
-          icon={<Bug className="w-4 h-4" />}
-          onClick={testReactError}
-          type="primary"
-          danger
-        >
-          React错误
-        </Button>
-      </Space>
-      
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+
+      <div className="space-y-4">
+        {/* JavaScript 运行时错误 */}
+        <div>
+          <h5 className="text-sm font-medium text-gray-700 mb-3">JavaScript 运行时错误</h5>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Button
+              icon={<Bug className="w-4 h-4" />}
+              onClick={testJSError}
+              variant="destructive"
+              className="w-full justify-start"
+            >
+              JS错误
+            </Button>
+
+            <Button
+              icon={<Zap className="w-4 h-4" />}
+              onClick={testPromiseRejection}
+              variant="destructive"
+              className="w-full justify-start"
+            >
+              Promise拒绝
+            </Button>
+
+            <Button
+              icon={<AlertTriangle className="w-4 h-4" />}
+              onClick={testConsoleError}
+              variant="destructive"
+              className="w-full justify-start"
+            >
+              控制台错误
+            </Button>
+          </div>
+        </div>
+
+        {/* 应用程序错误 */}
+        <div>
+          <h5 className="text-sm font-medium text-gray-700 mb-3">应用程序错误</h5>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Button
+              icon={<Component className="w-4 h-4" />}
+              onClick={testReactError}
+              variant="destructive"
+              className="w-full justify-start"
+            >
+              React错误
+            </Button>
+
+            <Button
+              icon={<Globe className="w-4 h-4" />}
+              onClick={testNetworkError}
+              variant="destructive"
+              className="w-full justify-start"
+            >
+              网络错误
+            </Button>
+
+            <Button
+              icon={<Info className="w-4 h-4" />}
+              onClick={testCustomError}
+              variant="default"
+              className="w-full justify-start"
+            >
+              自定义错误
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
         💡 <strong>提示：</strong>触发错误后，请前往"设置 → 开发者工具 → 错误日志查看器"查看详细的错误记录和分析。
       </div>
     </div>
