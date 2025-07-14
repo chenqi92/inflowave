@@ -45,6 +45,7 @@ const Query: React.FC = () => {
   const [measurements, setMeasurements] = useState<string[]>([]);
   const [fields, setFields] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [fieldTagMap, setFieldTagMap] = useState<Record<string, { fields: string[]; tags: string[] }>>({});
   const [loadingDatabases, setLoadingDatabases] = useState(false);
   const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [exportDialogVisible, setExportDialogVisible] = useState(false);
@@ -185,8 +186,81 @@ const Query: React.FC = () => {
 
       setFields(fieldList);
       setTags(tagList);
+      
+      // 更新字段标签映射
+      setFieldTagMap(prev => ({
+        ...prev,
+        [measurement]: {
+          fields: fieldList,
+          tags: tagList
+        }
+      }));
     } catch (error) {
       console.error('加载字段和标签失败:', error);
+    }
+  };
+
+  // 动态获取指定测量的字段信息
+  const getFieldsForMeasurement = async (measurement: string): Promise<string[]> => {
+    if (!selectedConnectionId || !selectedDatabase) return [];
+    
+    // 如果已经缓存了，直接返回
+    if (fieldTagMap[measurement]) {
+      return fieldTagMap[measurement].fields;
+    }
+    
+    try {
+      const fieldList = await safeTauriInvoke<string[]>('get_field_keys', {
+        connectionId: selectedConnectionId,
+        database: selectedDatabase,
+        measurement
+      });
+      
+      // 更新缓存
+      setFieldTagMap(prev => ({
+        ...prev,
+        [measurement]: {
+          ...prev[measurement],
+          fields: fieldList
+        }
+      }));
+      
+      return fieldList;
+    } catch (error) {
+      console.error(`获取测量 ${measurement} 的字段失败:`, error);
+      return [];
+    }
+  };
+
+  // 动态获取指定测量的标签信息
+  const getTagsForMeasurement = async (measurement: string): Promise<string[]> => {
+    if (!selectedConnectionId || !selectedDatabase) return [];
+    
+    // 如果已经缓存了，直接返回
+    if (fieldTagMap[measurement]) {
+      return fieldTagMap[measurement].tags;
+    }
+    
+    try {
+      const tagList = await safeTauriInvoke<string[]>('get_tag_keys', {
+        connectionId: selectedConnectionId,
+        database: selectedDatabase,
+        measurement
+      });
+      
+      // 更新缓存
+      setFieldTagMap(prev => ({
+        ...prev,
+        [measurement]: {
+          ...prev[measurement],
+          tags: tagList
+        }
+      }));
+      
+      return tagList;
+    } catch (error) {
+      console.error(`获取测量 ${measurement} 的标签失败:`, error);
+      return [];
     }
   };
 
@@ -197,12 +271,22 @@ const Query: React.FC = () => {
     // 注册 InfluxQL 语言
     registerInfluxQLLanguage();
 
-    // 注册自动补全提供器
+    // 获取当前连接的InfluxDB版本
+    const connectionId = selectedConnectionId || activeConnectionId;
+    const connection = connectionId ? getConnection(connectionId) : null;
+    const influxVersion = connection?.version || '1.8'; // 默认使用1.8版本
+    
+    // 注册增强的智能自动补全提供器，支持版本兼容和上下文感知
     const completionProvider = createInfluxQLCompletionProvider(
       databases,
       measurements,
       fields,
-      tags
+      tags,
+      influxVersion,
+      selectedDatabase, // 传递当前选中的数据库
+      fieldTagMap, // 传递字段标签映射
+      getFieldsForMeasurement, // 传递动态字段获取函数
+      getTagsForMeasurement // 传递动态标签获取函数
     );
 
     monaco.languages.registerCompletionItemProvider('influxql', completionProvider);
@@ -229,17 +313,27 @@ const Query: React.FC = () => {
   // 更新自动补全数据
   useEffect(() => {
     if (editorInstance) {
-      // 重新注册自动补全提供器
+      // 获取当前连接的InfluxDB版本
+      const connectionId = selectedConnectionId || activeConnectionId;
+      const connection = connectionId ? getConnection(connectionId) : null;
+      const influxVersion = connection?.version || '1.8'; // 默认使用1.8版本
+      
+      // 重新注册增强的智能自动补全提供器，支持版本兼容和上下文感知
       const completionProvider = createInfluxQLCompletionProvider(
         databases,
         measurements,
         fields,
-        tags
+        tags,
+        influxVersion,
+        selectedDatabase, // 传递当前选中的数据库
+        fieldTagMap, // 传递字段标签映射
+        getFieldsForMeasurement, // 传递动态字段获取函数
+        getTagsForMeasurement // 传递动态标签获取函数
       );
 
       monaco.languages.registerCompletionItemProvider('influxql', completionProvider);
     }
-  }, [databases, measurements, fields, tags, editorInstance]);
+  }, [databases, measurements, fields, tags, editorInstance, selectedConnectionId, activeConnectionId, getConnection, selectedDatabase, fieldTagMap]);
 
   // 初始化时选择活跃连接或第一个已连接的连接
   useEffect(() => {
