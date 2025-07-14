@@ -118,3 +118,4 @@ config/local.json
 logs/
 *.sqlite
 *.db
+pnpm-lock.yaml
