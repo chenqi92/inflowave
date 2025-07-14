@@ -5,7 +5,6 @@ import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils, type FavoriteItem } from '@/store/favorites';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-import { DatePicker } from '@/components/ui/DatePicker';
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -58,24 +57,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
   
-  // 时间筛选状态
-  const [timeFilterType, setTimeFilterType] = useState<'relative' | 'absolute'>('relative');
-  const [relativeTimeValue, setRelativeTimeValue] = useState('1h');
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
-  // 生成时间条件语句
+  // 生成时间条件语句（使用默认的1小时时间范围）
   const generateTimeCondition = (): string => {
-    if (timeFilterType === 'relative') {
-      return `time > now() - ${relativeTimeValue}`;
-    } else if (timeFilterType === 'absolute' && startTime && endTime) {
-      const start = startTime.toISOString();
-      const end = endTime.toISOString();
-      return `time >= '${start}' AND time <= '${end}'`;
-    }
-    return '';
+    // 默认使用最近1小时的数据
+    return `time > now() - 1h`;
   };
 
   // 生成带时间筛选的查询语句
@@ -842,81 +830,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           className="text-sm"
         />
 
-        {/* 时间筛选器 */}
-        <div className="mt-3 p-3 bg-muted/30 rounded-lg">
-          <div className="text-xs font-medium text-muted-foreground mb-2">查询时间筛选</div>
-          
-          {/* 时间筛选类型选择 */}
-          <Select value={timeFilterType} onValueChange={(value: 'relative' | 'absolute') => setTimeFilterType(value)}>
-            <SelectTrigger className="w-full h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relative">相对时间</SelectItem>
-              <SelectItem value="absolute">绝对时间</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* 相对时间选择 */}
-          {timeFilterType === 'relative' && (
-            <Select value={relativeTimeValue} onValueChange={setRelativeTimeValue}>
-              <SelectTrigger className="w-full h-7 text-xs mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5m">最近5分钟</SelectItem>
-                <SelectItem value="15m">最近15分钟</SelectItem>
-                <SelectItem value="30m">最近30分钟</SelectItem>
-                <SelectItem value="1h">最近1小时</SelectItem>
-                <SelectItem value="3h">最近3小时</SelectItem>
-                <SelectItem value="6h">最近6小时</SelectItem>
-                <SelectItem value="12h">最近12小时</SelectItem>
-                <SelectItem value="1d">最近1天</SelectItem>
-                <SelectItem value="7d">最近7天</SelectItem>
-                <SelectItem value="30d">最近30天</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* 绝对时间选择 */}
-          {timeFilterType === 'absolute' && (
-            <div className="mt-2 space-y-2">
-              <DatePicker
-                value={startTime}
-                placeholder="开始时间"
-                format="MM-DD HH:mm"
-                onChange={(date) => setStartTime(date)}
-                showTime={true}
-                size="small"
-                className="w-full"
-              />
-              <DatePicker
-                value={endTime}
-                placeholder="结束时间"
-                format="MM-DD HH:mm"
-                onChange={(date) => setEndTime(date)}
-                showTime={true}
-                size="small"
-                className="w-full"
-              />
-            </div>
-          )}
-
-          {/* 清除筛选 */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setTimeFilterType('relative');
-              setRelativeTimeValue('1h');
-              setStartTime(null);
-              setEndTime(null);
-            }}
-            className="w-full h-6 text-xs mt-2"
-          >
-            清除
-          </Button>
-        </div>
       </div>
 
       {/* 主要内容：标签页 */}
