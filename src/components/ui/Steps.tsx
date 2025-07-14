@@ -43,7 +43,12 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
 
     const getStepIcon = (step: StepItem, index: number, stepStatus: string) => {
       if (step.icon) return step.icon
-      
+
+      // 对于第一个步骤（配置连接），始终显示数字 "1"
+      if (index === 0) {
+        return <span className={cn("text-sm font-medium", isSmall && "text-xs")}>1</span>
+      }
+
       switch (stepStatus) {
         case "finish":
           return <Check className={cn("h-4 w-4", isSmall && "h-3 w-3")} />
@@ -65,7 +70,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
       const isLast = index === items.length - 1
 
       const stepClasses = cn(
-        "relative flex items-center",
+        "flex items-center",
         isHorizontal ? "flex-1" : "flex-col",
         !step.disabled && "cursor-pointer"
       )
@@ -102,41 +107,31 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
       )
 
       return (
-        <div
-          key={index}
-          className={stepClasses}
-          onClick={() => handleStepClick(index, step)}
-        >
-          <div className={cn("flex items-center", isHorizontal ? "flex-row" : "flex-col")}>
-            <div className={iconClasses}>
-              {getStepIcon(step, index, stepStatus)}
-            </div>
-            
-            <div className={contentClasses}>
-              <div className={titleClasses}>
-                {step.title}
+        <React.Fragment key={index}>
+          <div
+            className={stepClasses}
+            onClick={() => handleStepClick(index, step)}
+          >
+            <div className={cn("flex items-center", isHorizontal ? "flex-row" : "flex-col")}>
+              <div className={iconClasses}>
+                {getStepIcon(step, index, stepStatus)}
               </div>
-              {step.description && (
-                <div className={descriptionClasses}>
-                  {step.description}
+
+              <div className={contentClasses}>
+                <div className={titleClasses}>
+                  {step.title}
                 </div>
-              )}
+                {step.description && (
+                  <div className={descriptionClasses}>
+                    {step.description}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* 连接线 */}
-          {!isLast && (
-            <div
-              className={cn(
-                "bg-border",
-                isHorizontal 
-                  ? "absolute top-4 left-full w-full h-0.5 -translate-y-1/2" 
-                  : "absolute left-4 top-full h-full w-0.5 -translate-x-1/2",
-                isSmall && (isHorizontal ? "top-3" : "left-3")
-              )}
-            />
-          )}
-        </div>
+
+        </React.Fragment>
       )
     }
 
@@ -145,7 +140,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
         ref={ref}
         className={cn(
           "flex",
-          isHorizontal ? "flex-row items-start" : "flex-col space-y-4",
+          isHorizontal ? "flex-row items-center space-x-8" : "flex-col space-y-4",
           className
         )}
         {...props}

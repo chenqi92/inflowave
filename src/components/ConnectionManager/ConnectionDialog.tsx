@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui';
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import './ConnectionDialog.css';
 
@@ -78,19 +79,40 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
 
       // 创建临时连接配置用于测试
       const tempConfig: ConnectionConfig = {
-        id: 'temp-test',
+        id: `temp-test-${Date.now()}`,
         ...values,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         createdAt: new Date(),
-        updatedAt: new Date()};
+        updatedAt: new Date()
+      };
 
-      const result = await testConnection(tempConfig.id!);
-      setTestResult(result);
-      
-      if (result.success) {
-        setCurrentStep(1);
+      // 先创建临时连接到后端
+      const tempId = await createConnection(tempConfig);
+
+      try {
+        // 测试连接
+        const result = await testConnection(tempId);
+        setTestResult(result);
+
+        if (result.success) {
+          setCurrentStep(1);
+        }
+      } finally {
+        // 删除临时连接
+        try {
+          await safeTauriInvoke('delete_connection', { connectionId: tempId });
+        } catch (deleteError) {
+          console.warn('删除临时连接失败:', deleteError);
+        }
       }
     } catch (error) {
       console.error('测试连接失败:', error);
+      setTestResult({
+        success: false,
+        error: String(error),
+        latency: 0
+      });
     } finally {
       setIsTesting(false);
     }
@@ -102,7 +124,13 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
 
       const configData: ConnectionConfig = {
         ...values,
-        id: connection?.id};
+        id: connection?.id,
+        created_at: connection?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // 保持向后兼容性
+        createdAt: connection?.createdAt || new Date(),
+        updatedAt: new Date()
+      };
 
       if (isEditing) {
         await editConnection(configData);
@@ -315,8 +343,8 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     {
       title: '配置连接',
       description: '填写连接参数',
-      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> : 
-            currentStep > 0 ? <CheckCircle /> : undefined},
+      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> :
+            currentStep > 0 ? <CheckCircle /> : "1"},
     {
       title: '测试连接',
       description: '验证连接可用性',
@@ -332,7 +360,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         
         <div className="space-y-4">
           {/* 步骤指示器 */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-8">
             {steps.map((step, index) => (
               <div key={index} className="flex items-center">
                 <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
@@ -344,7 +372,6 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                   <div className="text-sm font-medium">{step.title}</div>
                   <div className="text-xs text-muted-foreground">{step.description}</div>
                 </div>
-                {index < steps.length - 1 && <div className="w-8 h-px bg-muted ml-4" />}
               </div>
             ))}
           </div>
@@ -362,39 +389,41 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                       type="button"
                       variant="outline"
                       onClick={() => setCurrentStep(0)}
+                      size="default"
                     >
                       返回修改
                     </Button>
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onCancel}
+                    size="default"
                   >
                     取消
                   </Button>
 
                   {currentStep === 0 ? (
-                    <div className="flex gap-2">
-                      {isEditing && (
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                          保存连接
-                        </Button>
-                      )}
+                    <div className="flex gap-3">
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        size="default"
+                      >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        保存连接
+                      </Button>
                       <Button
                         type="button"
-                        variant={isEditing ? "outline" : "default"}
+                        variant="outline"
                         onClick={handleTestConnection}
                         disabled={isTesting}
+                        size="default"
                       >
-                        {isTesting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Info className="w-4 h-4 mr-2" />}
+                        {isTesting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         测试连接
                       </Button>
                     </div>
@@ -402,6 +431,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                     <Button
                       type="submit"
                       disabled={isSubmitting || !testResult?.success}
+                      size="default"
                     >
                       {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       保存连接

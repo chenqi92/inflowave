@@ -30,7 +30,8 @@ import {
     PlayCircle,
     PauseCircle,
     MoreHorizontal,
-    RefreshCw
+    RefreshCw,
+    Plus
 } from 'lucide-react';
 import type {ConnectionConfig, ConnectionStatus} from '@/types';
 import {useConnectionStore} from '@/store/connection';
@@ -41,6 +42,7 @@ import './ConnectionManager.css';
 interface ConnectionManagerProps {
     onConnectionSelect?: (connectionId: string) => void;
     onEditConnection?: (connection: ConnectionConfig) => void;
+    onCreateConnection?: () => void;
 }
 
 interface ConnectionWithStatus extends ConnectionConfig {
@@ -57,7 +59,7 @@ interface ColumnType<T = any> {
     ellipsis?: boolean;
 }
 
-const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect, onEditConnection}) => {
+const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect, onEditConnection, onCreateConnection}) => {
     const {
         connections,
         connectionStatuses,
@@ -380,6 +382,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-medium">连接管理</h3>
                         <div className="flex gap-2">
+                            <Button
+                                variant="default"
+                                onClick={() => onCreateConnection?.()}
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                <Plus className="w-4 h-4 mr-1"/>
+                                新建连接
+                            </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => {

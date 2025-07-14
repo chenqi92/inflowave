@@ -178,8 +178,13 @@ const Connections: React.FC = () => {
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
       if (editingConnection?.id) {
-        // 更新现有连接 - 确保使用正确的连接ID
-        const updateConfig = { ...connection, id: editingConnection.id };
+        // 更新现有连接 - 确保使用正确的连接ID和时间戳字段
+        const updateConfig = {
+          ...connection,
+          id: editingConnection.id,
+          created_at: editingConnection.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
         await safeTauriInvoke('update_connection', { config: updateConfig });
         updateConnection(editingConnection.id, updateConfig);
         showMessage.success('连接配置已更新');
@@ -251,6 +256,7 @@ const Connections: React.FC = () => {
             <ConnectionManager
               onConnectionSelect={handleConnectionSelect}
               onEditConnection={handleOpenDialog}
+              onCreateConnection={() => handleOpenDialog()}
             />
           </TabsContent>
           <TabsContent value="debug" className="mt-0 flex-1 overflow-hidden">

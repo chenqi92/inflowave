@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Badge, Avatar, Tooltip, Card, Space, Typography } from '@/components/ui';
+import { Button, Badge, Avatar, Tooltip, TooltipContent, TooltipTrigger, Card, Space, Typography } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Database, CheckCircle } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
@@ -69,11 +69,12 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <Avatar
-                  icon={<Database className="w-4 h-4"  />}
                   className={`${
                     isConnected ? 'bg-green-500' : 'bg-gray-400'
                   } transition-colors duration-200`}
-                />
+                >
+                  <Database className="w-4 h-4" />
+                </Avatar>
                 <div>
                   <h4 className="font-medium text-gray-900 truncate max-w-[140px]">
                     {connection.name}
@@ -94,9 +95,9 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">状态：</span>
-                <Tag color={getStatusColor(status)} className="text-xs">
+                <Badge variant={getStatusColor(status) === 'success' ? 'default' : 'secondary'} className="text-xs">
                   {getStatusText(status)}
-                </Tag>
+                </Badge>
               </div>
               
               {connection.username && (
@@ -127,32 +128,46 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
             {/* 操作按钮 */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <Button
-                type={isConnected ? 'default' : 'primary'}
-                icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
-                size="small"
+                variant={isConnected ? 'outline' : 'default'}
+                size="sm"
                 disabled={loading}
                 onClick={() => onConnect(connection.id!)}
-                className={isConnected ? '' : 'bg-green-600 hover:bg-green-700 border-green-600'}
+                className={isConnected ? 'text-red-600 hover:text-red-700 hover:border-red-300' : 'bg-green-600 hover:bg-green-700 border-green-600 text-white'}
               >
+                {isConnected ? <Unlink className="w-4 h-4 mr-1" /> : <Wifi className="w-4 h-4 mr-1" />}
                 {isConnected ? '断开' : '连接'}
               </Button>
 
-              <div className="flex gap-2" size="small">
-                <Tooltip title="编辑连接">
-                  <Button
-                    icon={<Edit className="w-4 h-4"  />}
-                    size="small"
-                    onClick={() => onEdit(connection)}
-                  />
+              <div className="flex gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(connection)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    编辑连接
+                  </TooltipContent>
                 </Tooltip>
-                
-                <Tooltip title="删除连接">
-                  <Button
-                    icon={<Trash2 className="w-4 h-4"  />}
-                    size="small"
-                    danger
-                    onClick={() => onDelete(connection.id!)}
-                  />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      onClick={() => onDelete(connection.id!)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    删除连接
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </div>

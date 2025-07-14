@@ -3,6 +3,7 @@ import { Button, Alert, AlertDescription, Steps, Input, InputNumber, Switch, Spa
 import { Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
+import { safeTauriInvoke } from '@/utils/tauri';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import './ConnectionDialog.css';
 
@@ -122,23 +123,40 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
     try {
       const tempConfig: ConnectionConfig = {
-        id: 'temp-test',
+        id: `temp-test-${Date.now()}`,
         ...formData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         createdAt: new Date(),
-        updatedAt: new Date()};
+        updatedAt: new Date()
+      };
 
-      const result = await testConnection(tempConfig.id!);
-      setTestResult(result);
-      
-      if (result.success) {
-        setCurrentStep(1);
+      // 先创建临时连接到后端
+      const tempId = await createConnection(tempConfig);
+
+      try {
+        // 测试连接
+        const result = await testConnection(tempId);
+        setTestResult(result);
+
+        if (result.success) {
+          setCurrentStep(1);
+        }
+      } finally {
+        // 删除临时连接
+        try {
+          await safeTauriInvoke('delete_connection', { connectionId: tempId });
+        } catch (deleteError) {
+          console.warn('删除临时连接失败:', deleteError);
+        }
       }
     } catch (error) {
       console.error('测试连接失败:', error);
       setTestResult({
         success: false,
         error: String(error),
-        latency: 0});
+        latency: 0
+      });
     } finally {
       setIsTesting(false);
     }
@@ -153,8 +171,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       const configData: ConnectionConfig = {
         ...formData,
         id: connection?.id,
+        created_at: connection?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // 保持向后兼容性
         createdAt: connection?.createdAt || new Date(),
-        updatedAt: new Date()};
+        updatedAt: new Date()
+      };
 
       if (isEditing) {
         await editConnection(configData);
@@ -341,8 +363,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     {
       title: '配置连接',
       description: '填写连接参数',
-      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> : 
-            currentStep > 0 ? <CheckCircle /> : undefined},
+      icon: currentStep === 0 ? <Loader2 className="w-4 h-4"  /> :
+            currentStep > 0 ? <CheckCircle /> : "1"},
     {
       title: '测试连接',
       description: '验证连接可用性',
@@ -387,24 +409,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
             {currentStep === 0 ? (
               <div className="flex gap-3">
-                {isEditing && (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    size="default"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        保存中...
-                      </>
-                    ) : (
-                      '保存连接'
-                    )}
-                  </Button>
-                )}
                 <Button
-                  variant={isEditing ? 'outline' : 'default'}
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  size="default"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    '保存连接'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={handleTestConnection}
                   disabled={isTesting}
                   size="default"
@@ -415,10 +435,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       测试中...
                     </>
                   ) : (
-                    <>
-                      <Info className="w-4 h-4 mr-2" />
-                      测试连接
-                    </>
+                    '测试连接'
                   )}
                 </Button>
               </div>
