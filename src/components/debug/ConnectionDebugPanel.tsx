@@ -80,25 +80,34 @@ const ConnectionDebugPanel: React.FC = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 200,
-      render: (id: string) => <Text code>{id}</Text>
+      width: '25%',
+      ellipsis: true,
+      render: (id: string) => <Text code className="text-xs">{id}</Text>
     },
     {
       title: '名称',
       dataIndex: 'name',
-      key: 'name'},
+      key: 'name',
+      width: '20%',
+      ellipsis: true
+    },
     {
       title: '主机:端口',
       key: 'hostPort',
+      width: '20%',
       render: (record: any) => `${record.host}:${record.port}`
     },
     {
       title: '用户名',
       dataIndex: 'username',
-      key: 'username'},
+      key: 'username',
+      width: '15%',
+      ellipsis: true
+    },
     {
       title: '状态',
       key: 'status',
+      width: '20%',
       render: (record: any) => {
         const status = debugInfo?.connectionStatuses[record.id];
         return status ? (
@@ -206,23 +215,31 @@ const ConnectionDebugPanel: React.FC = () => {
           )}
 
           <Panel header="前端连接列表" key="frontend">
-            <Table
-              columns={columns}
-              dataSource={debugInfo.frontendConnections}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
+            <div className="overflow-auto">
+              <Table
+                columns={columns}
+                dataSource={debugInfo.frontendConnections}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                scroll={{ x: '100%' }}
+                className="w-full"
+              />
+            </div>
           </Panel>
 
           <Panel header="后端连接列表" key="backend">
-            <Table
-              columns={columns}
-              dataSource={debugInfo.backendConnections}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
+            <div className="overflow-auto">
+              <Table
+                columns={columns}
+                dataSource={debugInfo.backendConnections}
+                rowKey="id"
+                pagination={false}
+                size="small"
+                scroll={{ x: '100%' }}
+                className="w-full"
+              />
+            </div>
           </Panel>
 
           {debugInfo.backendDebugInfo && (

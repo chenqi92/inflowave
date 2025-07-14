@@ -103,10 +103,30 @@ export const useConnectionStore = create<ConnectionState>()(
       
       // 设置连接状态
       setConnectionStatus: (id, status) => {
-        set((state) => ({
-          connectionStatuses: {
-            ...state.connectionStatuses,
-            [id]: status}}));
+        set((state) => {
+          const currentStatus = state.connectionStatuses[id];
+
+          // 如果状态没有实际变化，不更新
+          if (currentStatus &&
+              currentStatus.status === status.status &&
+              currentStatus.error === status.error &&
+              currentStatus.latency === status.latency) {
+            return state;
+          }
+
+          return {
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...status,
+                // 保留上次连接时间，除非是新的连接成功
+                lastConnected: status.status === 'connected'
+                  ? status.lastConnected || new Date()
+                  : currentStatus?.lastConnected || status.lastConnected
+              }
+            }
+          };
+        });
       },
       
       // 设置活跃连接
@@ -251,7 +271,13 @@ export const useConnectionStore = create<ConnectionState>()(
         try {
           const statuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
           if (statuses) {
-            set({ connectionStatuses: statuses });
+            // 合并状态而不是完全替换，避免状态闪烁
+            set((state) => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                ...statuses
+              }
+            }));
           }
         } catch (error) {
           console.error('刷新连接状态失败:', error);

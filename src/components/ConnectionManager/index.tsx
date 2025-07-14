@@ -145,19 +145,36 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
 
   // 获取状态标签
   const getStatusTag = (status?: ConnectionStatus) => {
-    if (!status) {
-      return <Tag color="default">未知</Tag>;
-    }
+    // 如果没有状态信息，显示默认的断开状态而不是"未知"
+    const actualStatus = status || {
+      id: '',
+      status: 'disconnected' as const,
+      error: undefined,
+      lastConnected: undefined,
+      latency: undefined
+    };
 
     const statusConfig = {
       connected: { color: 'success', text: '已连接' },
       disconnected: { color: 'default', text: '已断开' },
       connecting: { color: 'processing', text: '连接中' },
-      error: { color: 'error', text: '错误' }};
+      error: { color: 'error', text: '错误' }
+    };
 
-    const config = statusConfig[status.status] || statusConfig.disconnected;
+    const config = statusConfig[actualStatus.status] || statusConfig.disconnected;
+
+    // 构建tooltip内容
+    let tooltipContent = '';
+    if (actualStatus.error) {
+      tooltipContent = `错误: ${actualStatus.error}`;
+    } else if (actualStatus.latency) {
+      tooltipContent = `延迟: ${actualStatus.latency}ms`;
+    } else if (actualStatus.status === 'disconnected') {
+      tooltipContent = '连接已断开';
+    }
+
     return (
-      <Tooltip title={status.error || `延迟: ${status.latency || 0}ms`}>
+      <Tooltip title={tooltipContent || config.text}>
         <Tag color={config.color}>{config.text}</Tag>
       </Tooltip>
     );
@@ -169,28 +186,31 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
+      width: '30%',
+      ellipsis: true,
       render: (name: string, record) => (
         <div className="flex items-center space-x-3">
           <Badge
             status={connectionStatuses[record.id!]?.status === 'connected' ? 'success' : 'default'}
           />
-          <div>
-            <div className="font-medium text-gray-900">{name}</div>
-            <div className="text-sm text-muted-foreground">{record.host}:{record.port}</div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-gray-900 truncate">{name}</div>
+            <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
           </div>
           {activeConnectionId === record.id && (
-            <Tag color="blue" className="ml-2">活跃</Tag>
+            <Tag color="blue" className="ml-2 flex-shrink-0">活跃</Tag>
           )}
         </div>
       )},
     {
       title: '连接信息',
       key: 'connectionInfo',
+      width: '25%',
       render: (_, record) => (
         <div className="space-y-1">
           <div className="text-sm">
             <span className="text-muted-foreground">用户：</span>
-            <span className="text-gray-900">{record.username || '无'}</span>
+            <span className="text-gray-900 truncate">{record.username || '无'}</span>
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">SSL：</span>
@@ -203,6 +223,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '状态',
       key: 'status',
+      width: '15%',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return (
@@ -219,6 +240,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '最后连接',
       key: 'lastConnected',
+      width: '20%',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -232,7 +254,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: '10%',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
@@ -346,27 +368,29 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
 
       {/* 连接表格 */}
       <div className="flex-1 overflow-hidden">
-        <Table
-          columns={columns}
-          dataSource={dataSource}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-            size: 'small'
-          }}
-          disabled={loading}
-          scroll={{ y: 'calc(100vh - 300px)' }}
-          size="small"
-          className="connection-table"
-          rowClassName={(record) =>
-            activeConnectionId === record.id
-              ? 'bg-blue-50'
-              : 'hover:bg-muted/50'
-          }
-        />
+        <div className="h-full w-full overflow-auto">
+          <Table
+            columns={columns}
+            dataSource={dataSource}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+              size: 'small'
+            }}
+            disabled={loading}
+            scroll={{ y: 'calc(100vh - 320px)', x: '100%' }}
+            size="small"
+            className="connection-table w-full"
+            rowClassName={(record) =>
+              activeConnectionId === record.id
+                ? 'bg-blue-50'
+                : 'hover:bg-muted/50'
+            }
+          />
+        </div>
       </div>
 
       {/* 连接池统计模态框 */}

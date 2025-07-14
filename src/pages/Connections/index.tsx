@@ -70,27 +70,63 @@ const Connections: React.FC = () => {
     try {
       // 首先同步连接配置
       await syncConnectionsFromBackend();
-      
+
       // 然后获取连接状态
       const connectionList = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (connectionList) {
-        // 获取每个连接的状态
-        for (const conn of connectionList) {
-          try {
-            const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', {
-              connectionId: conn.id
-            });
+        // 批量获取所有连接状态，避免单个请求导致的状态不一致
+        try {
+          const allStatuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
+
+          // 为每个连接设置状态
+          for (const conn of connectionList) {
+            const status = allStatuses[conn.id!];
             if (status) {
               setConnectionStatus(conn.id!, status);
+            } else {
+              // 如果后端没有状态，创建一个默认的断开状态
+              const defaultStatus: ConnectionStatus = {
+                id: conn.id!,
+                status: 'disconnected' as const,
+                error: undefined,
+                lastConnected: undefined,
+                latency: undefined
+              };
+              setConnectionStatus(conn.id!, defaultStatus);
             }
-          } catch (error) {
-            const errorStatus: ConnectionStatus = {
-              id: conn.id!,
-              status: 'disconnected' as const,
-              error: String(error)
-            };
-            setConnectionStatus(conn.id!, errorStatus);
+          }
+        } catch (statusError) {
+          console.warn('批量获取连接状态失败，使用单个请求:', statusError);
+
+          // 如果批量获取失败，回退到单个请求
+          for (const conn of connectionList) {
+            try {
+              const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', {
+                connectionId: conn.id
+              });
+              if (status) {
+                setConnectionStatus(conn.id!, status);
+              } else {
+                const defaultStatus: ConnectionStatus = {
+                  id: conn.id!,
+                  status: 'disconnected' as const,
+                  error: undefined,
+                  lastConnected: undefined,
+                  latency: undefined
+                };
+                setConnectionStatus(conn.id!, defaultStatus);
+              }
+            } catch (error) {
+              const errorStatus: ConnectionStatus = {
+                id: conn.id!,
+                status: 'disconnected' as const,
+                error: String(error),
+                lastConnected: undefined,
+                latency: undefined
+              };
+              setConnectionStatus(conn.id!, errorStatus);
+            }
           }
         }
       }
@@ -163,24 +199,30 @@ const Connections: React.FC = () => {
       <div className="flex-1 overflow-hidden">
         <Tabs
           defaultValue="manager"
-          className="h-full"
+          className="h-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-2">
-            <TabsTrigger value="manager" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 h-8 mb-1 bg-gray-50 p-0.5">
+            <TabsTrigger
+              value="manager"
+              className="flex items-center gap-2 h-7 text-xs px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
               连接列表
             </TabsTrigger>
-            <TabsTrigger value="debug" className="flex items-center gap-2">
-              <Bug className="w-4 h-4" />
+            <TabsTrigger
+              value="debug"
+              className="flex items-center gap-2 h-7 text-xs px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              <Bug className="w-3 h-3" />
               调试面板
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="manager" className="mt-0 h-full">
+          <TabsContent value="manager" className="mt-0 flex-1 overflow-hidden">
             <ConnectionManager
               onConnectionSelect={handleConnectionSelect}
               onEditConnection={handleOpenDialog}
             />
           </TabsContent>
-          <TabsContent value="debug" className="mt-0 h-full">
+          <TabsContent value="debug" className="mt-0 flex-1 overflow-hidden">
             <ConnectionDebugPanel />
           </TabsContent>
         </Tabs>

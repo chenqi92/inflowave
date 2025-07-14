@@ -213,7 +213,9 @@ const Table = React.forwardRef<HTMLDivElement, AntTableProps>(
           maxWidth: scroll?.x
         }}>
           <BaseTable className={cn(
-            "w-full table-fixed",
+            "w-full",
+            // 使用 table-auto 而不是 table-fixed 以便更好地适应内容
+            scroll?.x ? "table-fixed min-w-full" : "table-auto",
             size === 'small' && "text-xs",
             size === 'large' && "text-base",
             bordered && "border border-border"
@@ -223,10 +225,14 @@ const Table = React.forwardRef<HTMLDivElement, AntTableProps>(
                 {columns.map((column) => (
                   <TableHead
                     key={column.key}
-                    style={{ width: column.width }}
+                    style={{
+                      width: column.width,
+                      minWidth: column.width ? undefined : '120px'
+                    }}
                     className={cn(
                       column.ellipsis && "truncate",
-                      bordered && "border-r border-border last:border-r-0"
+                      bordered && "border-r border-border last:border-r-0",
+                      "whitespace-nowrap"
                     )}
                   >
                     {column.title}
