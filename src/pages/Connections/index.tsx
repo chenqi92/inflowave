@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
-import { Title, Button, Tabs, TabsContent, TabsList, TabsTrigger, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
-import { Plus, RefreshCw, FileUp, FileDown, Bug } from 'lucide-react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -11,9 +11,6 @@ import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleCon
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
-interface ConnectionListItem extends ConnectionConfig {
-  status?: ConnectionStatus;
-}
 
 const Connections: React.FC = () => {
   const navigate = useNavigate();
@@ -21,12 +18,10 @@ const Connections: React.FC = () => {
     connections,
     addConnection,
     updateConnection,
-    removeConnection,
     setConnectionStatus,
     clearConnections,
     syncConnectionsToBackend} = useConnectionStore();
 
-  const [loading, setLoading] = useState(false);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
 
@@ -71,8 +66,7 @@ const Connections: React.FC = () => {
   };
 
   // 加载连接列表
-  const loadConnections = async () => {
-    setLoading(true);
+  const loadConnections = useCallback(async () => {
     try {
       // 首先同步连接配置
       await syncConnectionsFromBackend();
@@ -102,15 +96,13 @@ const Connections: React.FC = () => {
       }
     } catch (error) {
       showMessage.error(`加载连接列表失败: ${error}`);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [setConnectionStatus, syncConnectionsFromBackend]);
 
   // 组件挂载时加载连接列表
   useEffect(() => {
     loadConnections();
-  }, []);
+  }, [loadConnections]);
 
   // 打开新建/编辑连接对话框
   const handleOpenDialog = (connection?: ConnectionConfig) => {
@@ -163,92 +155,6 @@ const Connections: React.FC = () => {
     navigate('/database', { state: { connectionId } });
   };
 
-  // 处理连接操作（用于卡片视图）
-  const handleConnectionToggle = async (connectionId: string) => {
-    setLoading(true);
-    try {
-      // 首先确保连接配置存在
-      const connection = connections.find(c => c.id === connectionId);
-      if (!connection) {
-        showMessage.error('连接配置不存在，请重新加载页面');
-        await loadConnections();
-        return;
-      }
-
-      const { connectToDatabase, disconnectFromDatabase } = useConnectionStore.getState();
-      const status = connectionStatuses[connectionId];
-      
-      if (status?.status === 'connected') {
-        await disconnectFromDatabase(connectionId);
-        showMessage.success('连接已断开');
-      } else {
-        try {
-          await connectToDatabase(connectionId);
-          showMessage.success('连接成功');
-          handleConnectionSelect(connectionId);
-        } catch (connectError) {
-          // 如果连接失败，尝试重新创建连接配置
-          console.warn('直接连接失败，尝试重新创建连接配置:', connectError);
-          try {
-            const connectionWithTimestamp = {
-              ...connection,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
-            if (newConnectionId) {
-              // 使用新的连接ID重新尝试连接
-              await connectToDatabase(newConnectionId);
-              showMessage.success('连接成功');
-              
-              // 更新前端连接ID（如果发生了变化）
-              if (newConnectionId !== connectionId) {
-                updateConnection(connectionId, { ...connection, id: newConnectionId });
-              }
-              
-              handleConnectionSelect(newConnectionId);
-            }
-          } catch (recreateError) {
-            console.error('重新创建连接失败:', recreateError);
-            showMessage.error(`连接失败: ${recreateError}`);
-
-            // 最后尝试同步所有连接
-            try {
-              console.log('尝试同步所有连接到后端...');
-              await syncConnectionsToBackend();
-              await connectToDatabase(connectionId);
-              showMessage.success('连接成功');
-              handleConnectionSelect(connectionId);
-            } catch (finalError) {
-              console.error('最终连接尝试失败:', finalError);
-              showMessage.error(`连接失败: ${finalError}`);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('连接操作失败:', error);
-      showMessage.error(`连接操作失败: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 处理删除连接（用于卡片视图）
-  const handleDeleteConnection = (connectionId: string) => {
-    const connection = connections.find(c => c.id === connectionId);
-    Modal.confirm({
-      title: '确认删除',
-      content: `确定要删除连接 "${connection?.name}" 吗？此操作无法撤销。`,
-      okText: '确认删除',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () => removeConnection(connectionId)});
-  };
-
-  // 获取连接状态
-  const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
-  const activeConnectionId = useConnectionStore(state => state.activeConnectionId);
 
   return (
     <div className="h-full bg-white flex flex-col">
@@ -259,22 +165,22 @@ const Connections: React.FC = () => {
           defaultValue="manager"
           className="h-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="manager">连接列表</TabsTrigger>
-            <TabsTrigger value="debug">
-              <div className="flex gap-2">
-                <Bug className="w-4 h-4" />
-                调试面板
-              </div>
+          <TabsList className="grid w-full grid-cols-2 mb-2">
+            <TabsTrigger value="manager" className="flex items-center gap-2">
+              连接列表
+            </TabsTrigger>
+            <TabsTrigger value="debug" className="flex items-center gap-2">
+              <Bug className="w-4 h-4" />
+              调试面板
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="manager" className="mt-4">
+          <TabsContent value="manager" className="mt-0 h-full">
             <ConnectionManager
               onConnectionSelect={handleConnectionSelect}
               onEditConnection={handleOpenDialog}
             />
           </TabsContent>
-          <TabsContent value="debug" className="mt-4">
+          <TabsContent value="debug" className="mt-0 h-full">
             <ConnectionDebugPanel />
           </TabsContent>
         </Tabs>

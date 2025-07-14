@@ -1,7 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, Input, Typography, Alert, Spin } from '@/components/ui';
-import { Card, Space, toast } from '@/components/ui';
+import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Textarea, Alert, Spin } from '@/components/ui';
+import { Card, toast } from '@/components/ui';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
@@ -33,7 +33,7 @@ const Visualization: React.FC = () => {
   const form = useForm();
 
   // 加载数据库列表
-  const loadDatabases = async () => {
+  const loadDatabases = useCallback(async () => {
     if (!activeConnectionId) return;
 
     try {
@@ -43,7 +43,7 @@ const Visualization: React.FC = () => {
     } catch (error) {
       toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
     }
-  };
+  }, [activeConnectionId]);
 
   // 执行查询并生成图表数据
   const executeQueryForChart = async (chartConfig: ChartConfig) => {
@@ -140,7 +140,7 @@ const Visualization: React.FC = () => {
             bottom: '10%',
             containLabel: true}};
 
-      case 'pie':
+      case 'pie': {
         const firstValueColumn = valueColumns[0];
         if (!firstValueColumn) return null;
 
@@ -171,6 +171,7 @@ const Visualization: React.FC = () => {
                   shadowOffsetX: 0,
                   shadowColor: 'rgba(0, 0, 0, 0.5)'}}},
           ]};
+      }
 
       default:
         return null;
@@ -179,13 +180,19 @@ const Visualization: React.FC = () => {
 
   // 创建新图表
   const createChart = async (values: any) => {
+    // 验证必填字段
+    if (!values.title || !values.type || !values.query || !values.database) {
+      toast({ title: "错误", description: "请填写所有必填字段", variant: "destructive" });
+      return;
+    }
+
     const chartConfig: ChartConfig = {
       id: `chart_${Date.now()}`,
       title: values.title,
       type: values.type,
       query: values.query,
       database: values.database,
-      refreshInterval: values.refreshInterval};
+      refreshInterval: values.refreshInterval || 0};
 
     // 测试查询
     setLoading(true);
@@ -238,7 +245,7 @@ const Visualization: React.FC = () => {
     if (activeConnectionId) {
       loadDatabases();
     }
-  }, [activeConnectionId]);
+  }, [activeConnectionId, loadDatabases]);
 
   // 工具栏
   const toolbar = (
@@ -365,125 +372,122 @@ const Visualization: React.FC = () => {
           <DialogHeader>
             <DialogTitle>创建图表</DialogTitle>
           </DialogHeader>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={createChart}
-        >
-          <FormItem
-            label="图表标题"
-            name="title"
-            rules={[{ required: true, message: '请输入图表标题' }]}
-          >
-            <Input placeholder="请输入图表标题" />
-          </FormItem>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">图表标题</label>
+              <Input 
+                placeholder="请输入图表标题" 
+                {...form.register('title', { required: '请输入图表标题' })}
+              />
+              {form.formState.errors.title && (
+                <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+              )}
+            </div>
 
-          <FormItem
-            label="图表类型"
-            name="type"
-            rules={[{ required: true, message: '请选择图表类型' }]}
-          >
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="选择图表类型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="line">
-                  <div className="flex gap-2">
-                    <TrendingUp className="w-4 h-4"  />
-                    折线图
-                  </div>
-                </SelectItem>
-                <SelectItem value="area">
-                  <div className="flex gap-2">
-                    <AreaChart className="w-4 h-4"  />
-                    面积图
-                  </div>
-                </SelectItem>
-                <SelectItem value="bar">
-                  <div className="flex gap-2">
-                    <BarChart className="w-4 h-4"  />
-                    柱状图
-                  </div>
-                </SelectItem>
-                <SelectItem value="pie">
-                  <div className="flex gap-2">
-                    <PieChart className="w-4 h-4"  />
-                    饼图
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
-
-          <FormItem
-            label="数据库"
-            name="database"
-            rules={[{ required: true, message: '请选择数据库' }]}
-          >
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="选择数据库" />
-              </SelectTrigger>
-              <SelectContent>
-                {databases.map(db => (
-                  <SelectItem key={db} value={db}>
-                    {db}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">图表类型</label>
+              <Select onValueChange={(value) => form.setValue('type', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择图表类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="line">
+                    <div className="flex gap-2">
+                      <TrendingUp className="w-4 h-4"  />
+                      折线图
+                    </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormItem>
+                  <SelectItem value="area">
+                    <div className="flex gap-2">
+                      <AreaChart className="w-4 h-4"  />
+                      面积图
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="bar">
+                    <div className="flex gap-2">
+                      <BarChart className="w-4 h-4"  />
+                      柱状图
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pie">
+                    <div className="flex gap-2">
+                      <PieChart className="w-4 h-4"  />
+                      饼图
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {form.formState.errors.type && (
+                <p className="text-sm text-red-500">{form.formState.errors.type.message}</p>
+              )}
+            </div>
 
-          <FormItem
-            label="查询语句"
-            name="query"
-            rules={[{ required: true, message: '请输入查询语句' }]}
-          >
-            <Textarea
-              rows={4}
-              placeholder="例如: SELECT mean(value) FROM temperature WHERE time >= now() - 1h GROUP BY time(5m)"
-            />
-          </FormItem>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">数据库</label>
+              <Select onValueChange={(value) => form.setValue('database', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择数据库" />
+                </SelectTrigger>
+                <SelectContent>
+                  {databases.map(db => (
+                    <SelectItem key={db} value={db}>
+                      {db}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.database && (
+                <p className="text-sm text-red-500">{form.formState.errors.database.message}</p>
+              )}
+            </div>
 
-          <FormItem
-            label="刷新间隔 (秒)"
-            name="refreshInterval"
-            tooltip="设置图表自动刷新间隔，0 表示不自动刷新"
-          >
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="选择刷新间隔" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">不自动刷新</SelectItem>
-                <SelectItem value="5">5 秒</SelectItem>
-                <SelectItem value="10">10 秒</SelectItem>
-                <SelectItem value="30">30 秒</SelectItem>
-                <SelectItem value="60">1 分钟</SelectItem>
-                <SelectItem value="300">5 分钟</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">查询语句</label>
+              <Textarea
+                rows={4}
+                placeholder="例如: SELECT mean(value) FROM temperature WHERE time >= now() - 1h GROUP BY time(5m)"
+                {...form.register('query', { required: '请输入查询语句' })}
+              />
+              {form.formState.errors.query && (
+                <p className="text-sm text-red-500">{form.formState.errors.query.message}</p>
+              )}
+            </div>
 
-          <div className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCreateModalVisible(false);
-                form.reset();
-              }}
-            >
-              取消
-            </Button>
-            <Button
-              onClick={() => form.handleSubmit(createChart)()}
-              disabled={loading}
-            >
-              {loading ? '创建中...' : '创建'}
-            </Button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">刷新间隔 (秒)</label>
+              <Select onValueChange={(value) => form.setValue('refreshInterval', parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择刷新间隔" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">不自动刷新</SelectItem>
+                  <SelectItem value="5">5 秒</SelectItem>
+                  <SelectItem value="10">10 秒</SelectItem>
+                  <SelectItem value="30">30 秒</SelectItem>
+                  <SelectItem value="60">1 分钟</SelectItem>
+                  <SelectItem value="300">5 分钟</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateModalVisible(false);
+                  form.reset();
+                }}
+              >
+                取消
+              </Button>
+              <Button
+                onClick={form.handleSubmit(createChart)}
+                disabled={loading}
+              >
+                {loading ? '创建中...' : '创建'}
+              </Button>
+            </div>
           </div>
-        </Form>
         </DialogContent>
       </Dialog>
     </DesktopPageWrapper>

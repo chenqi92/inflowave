@@ -11,7 +11,7 @@ const BaseTable = React.forwardRef<
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn("w-full min-w-full caption-bottom text-sm", className)}
       {...props}
     />
   </div>
@@ -155,18 +155,17 @@ const Table = React.forwardRef<HTMLDivElement, AntTableProps>(
     ...props
   }, ref) => {
     // Filter out Ant Design specific props that shouldn't be passed to DOM
-    const {
-      columns: _columns,
-      dataSource: _dataSource,
-      loading: _loading,
-      rowKey: _rowKey,
-      rowClassName: _rowClassName,
-      size: _size,
-      scroll: _scroll,
-      pagination: _pagination,
-      bordered: _bordered,
-      ...domProps
-    } = props as any;
+    const filteredProps = { ...props };
+    delete (filteredProps as any).columns;
+    delete (filteredProps as any).dataSource;
+    delete (filteredProps as any).loading;
+    delete (filteredProps as any).rowKey;
+    delete (filteredProps as any).rowClassName;
+    delete (filteredProps as any).size;
+    delete (filteredProps as any).scroll;
+    delete (filteredProps as any).pagination;
+    delete (filteredProps as any).bordered;
+    const domProps = filteredProps;
 
     if (loading) {
       return (
@@ -201,12 +200,12 @@ const Table = React.forwardRef<HTMLDivElement, AntTableProps>(
     return (
       <div
         ref={ref}
-        className={cn("relative w-full", className)}
+        className={cn("relative w-full h-full", className)}
         style={style}
         {...domProps}
       >
         <div className={cn(
-          "overflow-auto",
+          "w-full h-full",
           scroll?.x && "overflow-x-auto",
           scroll?.y && "overflow-y-auto"
         )} style={{
@@ -214,6 +213,7 @@ const Table = React.forwardRef<HTMLDivElement, AntTableProps>(
           maxWidth: scroll?.x
         }}>
           <BaseTable className={cn(
+            "w-full table-fixed",
             size === 'small' && "text-xs",
             size === 'large' && "text-base",
             bordered && "border border-border"

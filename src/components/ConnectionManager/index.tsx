@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Card, Space, Typography } from '@/components/ui';
-import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Popconfirm } from '@/components/ui';
+import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Typography } from '@/components/ui';
+import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Popconfirm } from '@/components/ui';
 import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
@@ -16,6 +16,14 @@ interface ConnectionManagerProps {
 interface ConnectionWithStatus extends ConnectionConfig {
   status?: ConnectionStatus;
   poolStats?: any;
+}
+
+interface ColumnType<T = any> {
+  title: string;
+  dataIndex?: string;
+  key: string;
+  width?: number | string;
+  render?: (value: any, record: T, index: number) => React.ReactNode;
 }
 
 const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelect, onEditConnection }) => {
@@ -249,12 +257,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                 console.log('编辑连接:', record);
                 onEditConnection?.(record);
               }}
-              title="编辑连接"
-            />
+            >
+              编辑
+            </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button icon={<MoreHorizontal className="w-4 h-4" />} size="small" />
+                <Button icon={<MoreHorizontal className="w-4 h-4" />} size="small">
+                  更多
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
@@ -347,7 +358,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             size: 'small'
           }}
           disabled={loading}
-          scroll={{ x: 'max-content', y: 'calc(100vh - 300px)' }}
+          scroll={{ y: 'calc(100vh - 300px)' }}
           size="small"
           className="connection-table"
           rowClassName={(record) =>
