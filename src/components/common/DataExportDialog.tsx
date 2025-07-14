@@ -1,8 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Option, Button, Alert, Switch, Separator, Textarea, Row, Col, InputNumber } from '@/components/ui';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch, Separator, Textarea, Row, Col, InputNumber } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-import { Download, Table, Info, FileText, Code, FileSpreadsheet } from 'lucide-react';
+import { Download, Table, Info, FileText, Code, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
 import type { DataExportConfig, DataExportResult, Connection } from '@/types';
@@ -17,6 +19,30 @@ interface DataExportDialogProps {
   onSuccess?: (result: DataExportResult) => void;
 }
 
+// Form validation schema
+const formSchema = z.object({
+  connectionId: z.string().min(1, '请选择连接'),
+  database: z.string().min(1, '请输入数据库名'),
+  query: z.string().min(1, '请输入查询语句'),
+  format: z.string().min(1, '请选择导出格式'),
+  filePath: z.string().optional(),
+  options: z.object({
+    includeHeaders: z.boolean().default(true),
+    delimiter: z.string().default(','),
+    encoding: z.string().default('utf-8'),
+    compression: z.boolean().default(false),
+    chunkSize: z.number().min(1000).max(100000).default(10000),
+  }).default({
+    includeHeaders: true,
+    delimiter: ',',
+    encoding: 'utf-8',
+    compression: false,
+    chunkSize: 10000,
+  }),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
 const DataExportDialog: React.FC<DataExportDialogProps> = ({
   open,
   onClose,
@@ -25,7 +51,23 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   currentDatabase,
   query,
   onSuccess}) => {
-  const form = useForm();
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      connectionId: '',
+      database: '',
+      query: '',
+      format: 'csv',
+      filePath: '',
+      options: {
+        includeHeaders: true,
+        delimiter: ',',
+        encoding: 'utf-8',
+        compression: false,
+        chunkSize: 10000,
+      },
+    },
+  });
   const [loading, setLoading] = useState(false);
   const [estimating, setEstimating] = useState(false);
   const [exportFormats, setExportFormats] = useState<any[]>([]);
@@ -42,17 +84,20 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 初始化表单
   useEffect(() => {
     if (open) {
-      form.setFieldsValue({
+      form.reset({
         connectionId: currentConnection || '',
         database: currentDatabase || '',
         query: query || '',
         format: 'csv',
+        filePath: '',
         options: {
           includeHeaders: true,
           delimiter: ',',
           encoding: 'utf-8',
           compression: false,
-          chunkSize: 10000}});
+          chunkSize: 10000,
+        },
+      });
       setExportResult(null);
       setEstimateInfo(null);
       loadExportFormats();
@@ -72,7 +117,13 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 预估导出大小
   const estimateExportSize = async () => {
     try {
-      const values = await form.validateFields(['connectionId', 'database', 'query', 'format']);
+      const isValid = await form.trigger(['connectionId', 'database', 'query', 'format']);
+      if (!isValid) {
+        toast({ title: "错误", description: "请填写必要字段", variant: "destructive" });
+        return;
+      }
+
+      const values = form.getValues();
       setEstimating(true);
 
       const estimate = await safeTauriInvoke('estimate_export_size', {
@@ -94,7 +145,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 选择保存路径
   const selectSavePath = async () => {
     try {
-      const format = form.getFieldValue('format');
+      const format = form.watch('format');
       const formatInfo = exportFormats.find(f => f.id === format);
       const extension = formatInfo?.extension || '.txt';
 
@@ -102,7 +153,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const filePath = `export_${Date.now()}${extension}`; // Temporary placeholder
 
       if (filePath) {
-        form.setFieldValue('filePath', filePath);
+        form.setValue('filePath', filePath);
       }
     } catch (error) {
       console.error('选择文件路径失败:', error);
@@ -113,8 +164,14 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 执行导出
   const executeExport = async () => {
     try {
-      const values = await form.validateFields();
-      
+      const isValid = await form.trigger();
+      if (!isValid) {
+        toast({ title: "错误", description: "请检查表单输入", variant: "destructive" });
+        return;
+      }
+
+      const values = form.getValues();
+
       if (!values.filePath) {
         toast({ title: "警告", description: "请选择保存路径" });
         return;
@@ -145,7 +202,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       }
     } catch (error) {
       console.error('导出失败:', error);
-      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
       setExportResult({
         success: false,
         message: `导出失败: ${error}`,
@@ -159,7 +216,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   };
 
   const canExport = () => {
-    const values = form.getFieldsValue();
+    const values = form.getValues();
     return values.connectionId &&
            values.database &&
            values.query?.trim() &&
@@ -193,179 +250,6 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           开始导出
         </Button>,
       ]}>
-      <Form form={form} layout="vertical">
-        {/* 基本配置 */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <FormItem name="connectionId"
-              label="连接"
-              rules={[{ required: true, message: '请选择连接' }]}>
-              <Select placeholder="选择连接">
-                {connections.map(conn => (
-                  <Option key={conn.id} value={conn.id}>{conn.name}</Option>
-                ))}
-              </Select>
-            </FormItem>
-          </Col>
-          <Col span={12}>
-            <FormItem name="database"
-              label="数据库"
-              rules={[{ required: true, message: '请输入数据库名' }]}>
-              <Input placeholder="数据库名" />
-            </FormItem>
-          </Col>
-        </Row>
-
-        {/* 查询语句 */}
-        <FormItem name="query"
-          label="查询语句"
-          rules={[{ required: true, message: '请输入查询语句' }]}>
-          <Textarea
-            rows={4}
-            placeholder="输入 SQL 查询语句"
-            style={{ fontFamily: 'monospace', fontSize: 13 }}
-          />
-        </FormItem>
-
-        {/* 导出格式和文件路径 */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <FormItem name="format"
-              label="导出格式"
-              rules={[{ required: true, message: '请选择导出格式' }]}>
-              <Select>
-                {exportFormats.map(format => (
-                  <Option key={format.id} value={format.id}>
-                    <div className="flex gap-2">
-                      {formatIcons[format.id]}
-                      {format.name}
-                    </div>
-                  </Option>
-                ))}
-              </Select>
-            </FormItem>
-          </Col>
-          <Col span={12}>
-            <FormItem name="filePath"
-              label="保存路径"
-              rules={[{ required: true, message: '请选择保存路径' }]}>
-              <Input
-                placeholder="选择保存路径"
-                readOnly
-                addonAfter={
-                  <Button size="small" onClick={selectSavePath}>
-                    浏览
-                  </Button>
-                }
-              />
-            </FormItem>
-          </Col>
-        </Row>
-
-        {/* 高级选项 */}
-        <Separator />
-        
-        <Row gutter={16}>
-          <Col span={8}>
-            <FormItem name={['options', 'includeHeaders']} label="包含表头" valuePropName="checked">
-              <Switch />
-            </FormItem>
-          </Col>
-          <Col span={8}>
-            <FormItem name={['options', 'compression']} label="压缩文件" valuePropName="checked">
-              <Switch />
-            </FormItem>
-          </Col>
-          <Col span={8}>
-            <FormItem name={['options', 'chunkSize']} label="批次大小">
-              <InputNumber min={1000} max={100000} step={1000} style={{ width: '100%' }} />
-            </FormItem>
-          </Col>
-        </Row>
-
-        <FormItem
-          noStyle
-          shouldUpdate={(prevValues, currentValues) =>
-            prevValues.format !== currentValues.format
-          }>
-          {({ getFieldValue }) => {
-            const format = getFieldValue('format');
-            if (format === 'csv') {
-              return (
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <FormItem name={['options', 'delimiter']} label="分隔符">
-                      <Select>
-                        <Option value=",">逗号 (,)</Option>
-                        <Option value=";">分号 (;)</Option>
-                        <Option value="\t">制表符 (\t)</Option>
-                        <Option value="|">竖线 (|)</Option>
-                      </Select>
-                    </FormItem>
-                  </Col>
-                  <Col span={12}>
-                    <FormItem name={['options', 'encoding']} label="编码">
-                      <Select>
-                        <Option value="utf-8">UTF-8</Option>
-                        <Option value="gbk">GBK</Option>
-                        <Option value="gb2312">GB2312</Option>
-                      </Select>
-                    </FormItem>
-                  </Col>
-                </Row>
-              );
-            }
-            return null;
-          }}
-        </FormItem>
-
-        {/* 预估信息 */}
-        {estimateInfo && (
-          <Alert
-            type="info"
-            message="导出预估"
-            description={
-              <div>
-                <p>预计行数: {estimateInfo.rowCount?.toLocaleString()}</p>
-                <p>预计文件大小: {estimateInfo.estimatedSizeFormatted}</p>
-                <p>预计耗时: {estimateInfo.estimatedDuration} 秒</p>
-              </div>
-            }
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
-
-        {/* 导出结果 */}
-        {exportResult && (
-          <Alert
-            type={exportResult.success ? 'success' : 'error'}
-            message={exportResult.message}
-            description={
-              <div>
-                <p>导出行数: {exportResult.rowCount.toLocaleString()}</p>
-                <p>文件大小: {(exportResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                <p>耗时: {exportResult.duration}ms</p>
-                {exportResult.filePath && (
-                  <p>文件路径: {exportResult.filePath}</p>
-                )}
-                {exportResult.errors && exportResult.errors.length> 0 && (
-                  <div>
-                    <p>错误信息:</p>
-                    <ul>
-                      {exportResult.errors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            }
-            showIcon
-            style={{ marginTop: 16 }}
-          />
-        )}
-      </Form>
     </Dialog>
   );
 };

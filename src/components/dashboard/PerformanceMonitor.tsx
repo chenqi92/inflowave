@@ -144,7 +144,7 @@ const PerformanceMonitor: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
       {/* 系统性能概览 */}
       <Card
         title={

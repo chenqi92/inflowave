@@ -44,6 +44,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       setTheme(values.theme);
 
       // 应用语言设置
+      // @ts-ignore
       setLanguage(values.language);
 
       // 保存到后端（如果需要）

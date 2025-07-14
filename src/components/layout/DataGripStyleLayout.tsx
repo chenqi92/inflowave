@@ -62,20 +62,32 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         );
       case 'database':
         return (
-          <div className="h-full p-4 overflow-auto">
-            <DatabasePage />
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4">
+                <DatabasePage />
+              </div>
+            </div>
           </div>
         );
       case 'visualization':
         return (
-          <div className="h-full p-4 overflow-auto">
-            <VisualizationPage />
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4">
+                <VisualizationPage />
+              </div>
+            </div>
           </div>
         );
       case 'performance':
         return (
-          <div className="h-full p-4 overflow-auto">
-            <PerformancePage />
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto p-4">
+                <PerformancePage />
+              </div>
+            </div>
           </div>
         );
       case 'dev-tools':
@@ -125,12 +137,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* 原生菜单处理器 */}
       <NativeMenuHandler />
 
       {/* 主工具栏 - 统一背景，移除边框分割线 */}
-      <header className="h-12 px-4 bg-white flex items-center">
+      <header className="h-12 px-4 bg-white flex items-center flex-shrink-0">
         <MainToolbar
           currentView={currentView}
           onViewChange={setCurrentView}
@@ -138,7 +150,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       </header>
 
       {/* 主要内容区域 - 使用可调整大小的面板 */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         <ResizablePanelGroup direction="horizontal">
           {/* 左侧数据库面板 */}
           <ResizablePanel

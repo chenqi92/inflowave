@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { Bug } from 'lucide-react';
+import { Bug, Unplug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -241,6 +241,7 @@ const Connections: React.FC = () => {
                 value="manager"
                 className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
               >
+                <Unplug className="w-4 h-4 mr-2" />
                 连接列表
               </TabsTrigger>
               <TabsTrigger

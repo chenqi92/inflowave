@@ -546,6 +546,24 @@ pre,
     padding: 8px;
   }
 
+  /* 移动端性能监控优化 */
+  .performance-monitor .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .performance-monitor .grid.grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .performance-monitor .grid.grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-monitor .grid.grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+
   .desktop-page-header .responsive-row {
     flex-direction: column;
     gap: 16px;
@@ -607,7 +625,59 @@ pre,
 .desktop-page-content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.desktop-page-scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  margin-right: -4px;
+}
+
+/* 自定义滚动条样式 */
+.desktop-page-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.desktop-page-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.desktop-page-scroll-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.desktop-page-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 性能监控页面特定样式 */
+.performance-monitor {
+  padding-bottom: 20px;
+}
+
+.performance-monitor .grid {
+  margin-bottom: 0;
+}
+
+/* 确保卡片内容不会被截断 */
+.performance-monitor .card {
+  margin-bottom: 0;
+}
+
+/* 表格容器滚动优化 */
+.performance-monitor table {
+  min-width: 100%;
+}
+
+.performance-monitor .table-container {
+  overflow-x: auto;
+  margin: -1px;
 }
 
 /* 减少卡片阴影，更适合桌面应用 */

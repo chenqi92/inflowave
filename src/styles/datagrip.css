@@ -134,7 +134,6 @@
 /* 工具栏样式 */
 .datagrip-toolbar {
   border-bottom: 1px solid #e1e4e8;
-  background: linear-gradient(to bottom, #ffffff, #f8f9fa);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 8px 16px;
   display: flex;
@@ -253,6 +252,30 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+}
+
+/* 页面内容滚动优化 */
+.h-full.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.h-full.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.h-full.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.h-full.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.h-full.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 /* 结果面板样式 */

@@ -189,9 +189,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   }
 
   return (
-    <div className="performance-monitor">
+    <div className="performance-monitor space-y-4 pb-8">
       {/* 控制栏 */}
-      <Card className="p-4 mb-4">
+      <Card className="p-4">
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
             <Select value={timeRange} onValueChange={setTimeRange}>
@@ -226,7 +226,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       </Card>
 
       {/* 概览指标 */}
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center space-x-2">
             <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
@@ -333,21 +333,22 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       </div>
 
       {/* 慢查询分析 */}
-      <Card className="p-4 mt-4">
+      <Card className="p-4">
         <Title level={3} className="text-lg font-medium mb-4">慢查询分析</Title>
         {slowQueries.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>查询</TableHead>
-                <TableHead>数据库</TableHead>
-                <TableHead>执行时间</TableHead>
-                <TableHead>返回行数</TableHead>
-                <TableHead>时间</TableHead>
-                <TableHead>优化</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <div className="table-container">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">查询</TableHead>
+                  <TableHead className="min-w-[100px]">数据库</TableHead>
+                  <TableHead className="min-w-[100px]">执行时间</TableHead>
+                  <TableHead className="min-w-[100px]">返回行数</TableHead>
+                  <TableHead className="min-w-[150px]">时间</TableHead>
+                  <TableHead className="min-w-[80px]">优化</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
               {slowQueries.slice(0, 10).map((query, index) => (
                 <TableRow key={query.id || index}>
                   <TableCell>
@@ -392,6 +393,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               ))}
             </TableBody>
           </Table>
+          </div>
         ) : (
           <Alert>
             <CheckCircle className="h-4 w-4" />
@@ -404,7 +406,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       </Card>
 
       {/* 存储分析 */}
-      <Card className="p-4 mt-4">
+      <Card className="p-4">
         <Title level={3} className="text-lg font-medium mb-4">存储分析</Title>
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="flex items-center space-x-2">
