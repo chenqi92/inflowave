@@ -143,7 +143,8 @@ const PerformanceMonitor: React.FC = () => {
   const queryTimeLevel = getPerformanceLevel(metrics.averageQueryTime, [100, 300, 1000]);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
       {/* 系统性能概览 */}
       <Card
         title={
@@ -306,6 +307,7 @@ const PerformanceMonitor: React.FC = () => {
         <Text type="secondary" className="text-xs">
           最后更新: {metrics.lastUpdate.toLocaleString()}
         </Text>
+      </div>
       </div>
     </div>
   );

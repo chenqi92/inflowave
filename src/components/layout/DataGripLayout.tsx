@@ -505,14 +505,18 @@ const DataGripLayout: React.FC = () => {
             {mainContentTab === 'dashboard' && <DashboardDesigner />}
 
             {mainContentTab === 'monitor' && (
-              <RealTimeMonitor
-                connectionId={activeConnectionId}
-                database={selectedDatabase}
-              />
+              <div style={{ height: '100%', padding: '16px' }}>
+                <RealTimeMonitor
+                  connectionId={activeConnectionId}
+                  database={selectedDatabase}
+                />
+              </div>
             )}
 
             {mainContentTab === 'performance' && (
-              <PerformanceMonitor connectionId={activeConnectionId} />
+              <div style={{ height: '100%', padding: '16px' }}>
+                <PerformanceMonitor connectionId={activeConnectionId} />
+              </div>
             )}
 
             {mainContentTab === 'database' && (

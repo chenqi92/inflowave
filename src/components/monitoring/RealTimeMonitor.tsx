@@ -277,7 +277,8 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   const alertStats = getAlertStats();
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
       {/* 控制面板 */}
       <Card style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
@@ -539,6 +540,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           </FormItem>
         </Form>
       </Modal>
+      </div>
     </div>
   );
 };

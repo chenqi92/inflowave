@@ -420,14 +420,15 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 控制面板 */}
-      <Card>
-        <div className="flex justify-between items-center">
-          <div>
-            <Title level={4}>性能监控</Title>
-            <Text type="secondary">实时监控系统和数据库性能指标</Text>
-          </div>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+        {/* 控制面板 */}
+        <Card>
+          <div className="flex justify-between items-center">
+            <div>
+              <Title level={4}>性能监控</Title>
+              <Text type="secondary">实时监控系统和数据库性能指标</Text>
+            </div>
           <div className="flex gap-2">
             <RangePicker
               value={timeRange}
@@ -697,6 +698,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           pagination={{ pageSize: 10 }}
         />
       </Modal>
+      </div>
     </div>
   );
 };

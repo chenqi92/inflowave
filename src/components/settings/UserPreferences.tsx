@@ -100,14 +100,19 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
       if (result) {
         setPreferences(result);
         form.reset(result);
+      } else {
+        // 如果没有用户偏好，加载默认快捷键
+        await loadDefaultShortcuts();
       }
     } catch (error) {
       console.error('加载用户偏好失败:', error);
-      toast({ 
-        title: "错误", 
-        description: "加载用户偏好失败", 
-        variant: "destructive" 
+      toast({
+        title: "错误",
+        description: "加载用户偏好失败",
+        variant: "destructive"
       });
+      // 即使加载失败，也尝试加载默认快捷键
+      await loadDefaultShortcuts();
     } finally {
       setLoading(false);
     }
@@ -162,26 +167,17 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
     setShortcutModalOpen(true);
   };
 
-  // 删除快捷键
-  const deleteShortcut = (shortcutId: string) => {
-    const currentShortcuts = form.getValues('shortcuts');
-    const updatedShortcuts = currentShortcuts.filter(s => s.id !== shortcutId);
-    form.setValue('shortcuts', updatedShortcuts);
-  };
+
 
   // 保存快捷键
   const saveShortcut = (shortcutData: KeyboardShortcut) => {
+    if (!editingShortcut) return;
+
     const currentShortcuts = form.getValues('shortcuts');
-    let updatedShortcuts;
-    
-    if (editingShortcut) {
-      updatedShortcuts = currentShortcuts.map(s => 
-        s.id === editingShortcut.id ? shortcutData : s
-      );
-    } else {
-      updatedShortcuts = [...currentShortcuts, { ...shortcutData, id: Date.now().toString() }];
-    }
-    
+    const updatedShortcuts = currentShortcuts.map(s =>
+      s.id === editingShortcut.id ? { ...shortcutData, id: editingShortcut.id } : s
+    );
+
     form.setValue('shortcuts', updatedShortcuts);
     setShortcutModalOpen(false);
     setEditingShortcut(null);
@@ -262,9 +258,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(savePreferences)} className="h-full flex flex-col">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
           {/* 通知设置 */}
           <Card>
             <CardHeader>
@@ -614,30 +611,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingShortcut(null);
-                      shortcutForm.reset({
-                        id: '',
-                        name: '',
-                        description: '',
-                        keys: [],
-                        category: '连接',
-                        enabled: true
-                      });
-                      setShortcutModalOpen(true);
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    添加快捷键
-                  </Button>
-                </div>
-
-                <Table>
+                <div className="max-h-64 overflow-y-auto border rounded-md">
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>名称</TableHead>
@@ -669,35 +644,29 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => editShortcut(shortcut)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => deleteShortcut(shortcut.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => editShortcut(shortcut)}
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            编辑
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>
 
+          </div>
+
           {/* 保存按钮 */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-4 border-t bg-background">
             <Button
               type="button"
               variant="outline"
@@ -718,7 +687,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingShortcut ? '编辑快捷键' : '添加快捷键'}
+              编辑快捷键
             </DialogTitle>
           </DialogHeader>
 
@@ -808,7 +777,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                   取消
                 </Button>
                 <Button type="submit">
-                  {editingShortcut ? '更新' : '添加'}
+                  更新
                 </Button>
               </div>
             </form>
