@@ -299,42 +299,42 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
         <TabsContent value="summary" className="flex-1 overflow-auto p-2">
           <div className="space-y-2">
             <div className="bg-background rounded border">
-              <div className="border-b border-gray-200 p-2">
+              <div className="border-b border-border p-2">
                 <h3 className="text-sm font-semibold text-gray-900">执行摘要</h3>
               </div>
               <div className="p-0">
                 <Table className="w-full text-xs">
                   <TableHeader>
-                    <TableRow className="border-b border-gray-200">
-                      <TableHead className="text-left p-2 bg-gray-50">项目</TableHead>
-                      <TableHead className="text-left p-2 bg-gray-50">值</TableHead>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="text-left p-2 bg-muted">项目</TableHead>
+                      <TableHead className="text-left p-2 bg-muted">值</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow className="border-b border-gray-100">
-                      <TableCell className="p-2 text-gray-600">执行语句数</TableCell>
+                    <TableRow className="border-b border-border/50">
+                      <TableCell className="p-2 text-muted-foreground">执行语句数</TableCell>
                       <TableCell className="p-2 font-mono">{executedQueries.length}</TableCell>
                     </TableRow>
-                    <TableRow className="border-b border-gray-100">
-                      <TableCell className="p-2 text-gray-600">总数据量</TableCell>
+                    <TableRow className="border-b border-border/50">
+                      <TableCell className="p-2 text-muted-foreground">总数据量</TableCell>
                       <TableCell className="p-2 font-mono">
                         {queryResults.length > 0
                           ? queryResults.reduce((sum, result) => sum + (result.data?.length || 0), 0)
                           : (queryResult?.data?.length || 0)} 行
                       </TableCell>
                     </TableRow>
-                    <TableRow className="border-b border-gray-100">
-                      <TableCell className="p-2 text-gray-600">总耗时</TableCell>
+                    <TableRow className="border-b border-border/50">
+                      <TableCell className="p-2 text-muted-foreground">总耗时</TableCell>
                       <TableCell className="p-2 font-mono">{executionTime}ms</TableCell>
                     </TableRow>
-                    <TableRow className="border-b border-gray-100">
-                      <TableCell className="p-2 text-gray-600">平均耗时</TableCell>
+                    <TableRow className="border-b border-border/50">
+                      <TableCell className="p-2 text-muted-foreground">平均耗时</TableCell>
                       <TableCell className="p-2 font-mono">
                         {executedQueries.length > 0 ? Math.round(executionTime / executedQueries.length) : executionTime}ms
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="p-2 text-gray-600">执行时间</TableCell>
+                      <TableCell className="p-2 text-muted-foreground">执行时间</TableCell>
                       <TableCell className="p-2 font-mono">{new Date().toLocaleTimeString()}</TableCell>
                     </TableRow>
                   </TableBody>
@@ -344,22 +344,22 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
             
             {executedQueries.length > 0 && (
               <div className="bg-background rounded border">
-                <div className="border-b border-gray-200 p-2">
+                <div className="border-b border-border p-2">
                   <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
                 </div>
                 <div className="p-0">
                   <Table className="w-full text-xs">
                     <TableHeader>
-                      <TableRow className="border-b border-gray-200">
-                        <TableHead className="text-left p-2 bg-gray-50">序号</TableHead>
-                        <TableHead className="text-left p-2 bg-gray-50">SQL语句</TableHead>
-                        <TableHead className="text-left p-2 bg-gray-50">结果行数</TableHead>
+                      <TableRow className="border-b border-border">
+                        <TableHead className="text-left p-2 bg-muted">序号</TableHead>
+                        <TableHead className="text-left p-2 bg-muted">SQL语句</TableHead>
+                        <TableHead className="text-left p-2 bg-muted">结果行数</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {executedQueries.map((query, index) => (
-                        <TableRow key={index} className="border-b border-gray-100">
-                          <TableCell className="p-2 text-gray-600">{index + 1}</TableCell>
+                        <TableRow key={index} className="border-b border-border/50">
+                          <TableCell className="p-2 text-muted-foreground">{index + 1}</TableCell>
                           <TableCell className="p-2 font-mono text-xs max-w-md truncate">{query}</TableCell>
                           <TableCell className="p-2 font-mono">
                             {queryResults[index]?.data?.length || queryResult?.data?.length || 0} 行
