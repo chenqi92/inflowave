@@ -41,7 +41,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
 
   // 初始化表单
   useEffect(() => {
-    if (visible) {
+    if (open) {
       form.setFieldsValue({
         connectionId: currentConnection || '',
         database: currentDatabase || '',
@@ -57,7 +57,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setEstimateInfo(null);
       loadExportFormats();
     }
-  }, [visible, currentConnection, currentDatabase, query, form]);
+  }, [open, currentConnection, currentDatabase, query, form]);
 
   // 加载导出格式
   const loadExportFormats = async () => {
@@ -170,7 +170,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   return (
     <Dialog
       title="数据导出"
-      open={visible}
+      open={open}
       onOpenChange={(open) => !open && (onClose)()}
       width={900}
       footer={[
@@ -188,8 +188,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           key="export"
           type="primary"
           icon={<Download className="w-4 h-4"  />}
-          disabled={loading}
-          disabled={!canExport()}
+          disabled={loading || !canExport()}
           onClick={executeExport}>
           开始导出
         </Button>,
