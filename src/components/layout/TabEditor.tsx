@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
-  Tabs, TabsContent, TabsList, TabsTrigger, Button, Space, Dropdown,
+  Tabs, TabsContent, TabsList, TabsTrigger, Button, Space, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,
   Dialog, Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   Popconfirm
 } from '@/components/ui';
-import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText } from 'lucide-react';
+import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText, Download, Upload } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import DataExportDialog from '@/components/common/DataExportDialog';
 import type { QueryResult, QueryRequest } from '@/types';
 
 interface MenuProps {
@@ -41,7 +42,7 @@ interface TabEditorRef {
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, ref) => {
-  const { activeConnectionId } = useConnectionStore();
+  const { activeConnectionId, connections } = useConnectionStore();
   const [activeKey, setActiveKey] = useState<string>('');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [databases, setDatabases] = useState<string[]>([]);
@@ -55,6 +56,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
       modified: false}
   ]);
   const [closingTab, setClosingTab] = useState<EditorTab | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   // 加载数据库列表
@@ -177,6 +180,119 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
     }
   };
 
+  // 打开文件
+  const openFile = async () => {
+    try {
+      // 使用 Tauri 的文件对话框
+      const result = await safeTauriInvoke('open_file_dialog', {
+        filters: [
+          { name: 'SQL Files', extensions: ['sql'] },
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+      
+      if (result?.path) {
+        // 读取文件内容
+        const content = await safeTauriInvoke('read_file', { path: result.path });
+        
+        if (content) {
+          // 创建新标签
+          const filename = result.path.split('/').pop() || result.path.split('\\').pop() || '未命名';
+          const newTab: EditorTab = {
+            id: Date.now().toString(),
+            title: filename,
+            content: content,
+            type: 'query',
+            modified: false,
+            filePath: result.path
+          };
+          
+          setTabs([...tabs, newTab]);
+          setActiveKey(newTab.id);
+          showMessage.success(`文件 "${filename}" 已打开`);
+        }
+      }
+    } catch (error) {
+      console.error('打开文件失败:', error);
+      showMessage.error(`打开文件失败: ${error}`);
+    }
+  };
+
+  // 保存文件到指定路径
+  const saveFileAs = async () => {
+    const currentTab = tabs.find(tab => tab.id === activeKey);
+    if (!currentTab || !editorRef.current) {
+      showMessage.warning('没有要保存的内容');
+      return;
+    }
+
+    try {
+      const content = editorRef.current.getValue();
+      const result = await safeTauriInvoke('save_file_dialog', {
+        defaultPath: currentTab.filePath || `${currentTab.title}.sql`,
+        filters: [
+          { name: 'SQL Files', extensions: ['sql'] },
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+
+      if (result?.path) {
+        await safeTauriInvoke('write_file', { 
+          path: result.path, 
+          content: content 
+        });
+        
+        const filename = result.path.split('/').pop() || result.path.split('\\').pop() || '未命名';
+        updateTabContent(activeKey, content, false);
+        
+        // 更新标签标题和文件路径
+        setTabs(tabs.map(tab => 
+          tab.id === activeKey 
+            ? { ...tab, title: filename, filePath: result.path, modified: false }
+            : tab
+        ));
+        
+        showMessage.success(`文件已保存到 "${result.path}"`);
+      }
+    } catch (error) {
+      console.error('保存文件失败:', error);
+      showMessage.error(`保存文件失败: ${error}`);
+    }
+  };
+
+  // 导入数据
+  const importData = async () => {
+    try {
+      const result = await safeTauriInvoke('open_file_dialog', {
+        filters: [
+          { name: 'CSV Files', extensions: ['csv'] },
+          { name: 'JSON Files', extensions: ['json'] },
+          { name: 'SQL Files', extensions: ['sql'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+      
+      if (result?.path) {
+        setShowImportDialog(true);
+        showMessage.info('导入数据功能正在开发中...');
+      }
+    } catch (error) {
+      console.error('选择导入文件失败:', error);
+      showMessage.error(`选择导入文件失败: ${error}`);
+    }
+  };
+
+  // 导出数据
+  const exportData = () => {
+    if (!activeConnectionId || !selectedDatabase) {
+      showMessage.warning('请先选择数据库连接');
+      return;
+    }
+    setShowExportDialog(true);
+  };
+
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     executeQueryWithContent
@@ -244,11 +360,31 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
   };
 
   // 保存当前标签
-  const saveCurrentTab = () => {
+  const saveCurrentTab = async () => {
     const currentTab = tabs.find(tab => tab.id === activeKey);
-    if (currentTab && editorRef.current) {
-      const content = editorRef.current.getValue();
-      updateTabContent(activeKey, content, false);
+    if (!currentTab || !editorRef.current) {
+      showMessage.warning('没有要保存的内容');
+      return;
+    }
+
+    const content = editorRef.current.getValue();
+    
+    // 如果已有文件路径，直接保存
+    if (currentTab.filePath) {
+      try {
+        await safeTauriInvoke('write_file', { 
+          path: currentTab.filePath, 
+          content: content 
+        });
+        updateTabContent(activeKey, content, false);
+        showMessage.success(`文件已保存`);
+      } catch (error) {
+        console.error('保存文件失败:', error);
+        showMessage.error(`保存文件失败: ${error}`);
+      }
+    } else {
+      // 没有文件路径，调用另存为
+      saveFileAs();
     }
   };
 
@@ -370,15 +506,32 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
                 </Button>
               </div>
             ))}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={createNewTab}
-              className="ml-2 flex-shrink-0"
-              title="新建查询标签"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 flex-shrink-0"
+                  title="新建"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => createNewTab('query')}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  SQL 查询
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => createNewTab('table')}>
+                  <Table className="w-4 h-4 mr-2" />
+                  表设计器
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => createNewTab('database')}>
+                  <Database className="w-4 h-4 mr-2" />
+                  数据库设计器
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -426,6 +579,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
           <Button
             variant="outline"
             size="sm"
+            onClick={openFile}
             className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
             title="打开文件"
           >
@@ -433,15 +587,33 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
             <span className="text-xs">打开</span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            title="更多操作"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-            <span className="text-xs">更多</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+                title="更多操作"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+                <span className="text-xs">更多</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={saveFileAs}>
+                <Save className="w-4 h-4 mr-2" />
+                另存为
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={importData}>
+                <Upload className="w-4 h-4 mr-2" />
+                导入数据
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportData}>
+                <Download className="w-4 h-4 mr-2" />
+                导出数据
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -504,6 +676,20 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
           <div />
         </Popconfirm>
       )}
+
+      {/* 数据导出对话框 */}
+      <DataExportDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        connections={connections}
+        currentConnection={activeConnectionId}
+        currentDatabase={selectedDatabase}
+        query={currentTab?.content}
+        onSuccess={(result) => {
+          showMessage.success('数据导出成功');
+          setShowExportDialog(false);
+        }}
+      />
       </div>
     </TooltipProvider>
   );
