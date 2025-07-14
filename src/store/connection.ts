@@ -10,7 +10,10 @@ interface ConnectionState {
   // 连接状态映射
   connectionStatuses: Record<string, ConnectionStatus>;
 
-  // 当前活跃的连接
+  // 已连接的连接ID列表
+  connectedConnectionIds: string[];
+  
+  // 当前活跃的连接（用于兼容现有逻辑）
   activeConnectionId: string | null;
 
   // 监控状态
@@ -26,6 +29,9 @@ interface ConnectionState {
   removeConnection: (id: string) => void;
   setConnectionStatus: (id: string, status: ConnectionStatus) => void;
   setActiveConnection: (id: string | null) => void;
+  addConnectedConnection: (id: string) => void;
+  removeConnectedConnection: (id: string) => void;
+  isConnectionConnected: (id: string) => boolean;
   getConnection: (id: string) => ConnectionConfig | undefined;
   getConnectionStatus: (id: string) => ConnectionStatus | undefined;
   clearConnections: () => void;
@@ -50,6 +56,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 初始状态
       connections: [],
       connectionStatuses: {},
+      connectedConnectionIds: [],
       activeConnectionId: null,
       monitoringActive: false,
       monitoringInterval: 30,
@@ -89,6 +96,7 @@ export const useConnectionStore = create<ConnectionState>()(
           return {
             connections: state.connections.filter((conn) => conn.id !== id),
             connectionStatuses: newStatuses,
+            connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
             activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId};
         });
       },
@@ -106,6 +114,30 @@ export const useConnectionStore = create<ConnectionState>()(
         set({ activeConnectionId: id });
       },
       
+      // 添加已连接的连接
+      addConnectedConnection: (id) => {
+        set((state) => {
+          if (!state.connectedConnectionIds.includes(id)) {
+            return {
+              connectedConnectionIds: [...state.connectedConnectionIds, id]
+            };
+          }
+          return state;
+        });
+      },
+      
+      // 移除已连接的连接
+      removeConnectedConnection: (id) => {
+        set((state) => ({
+          connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id)
+        }));
+      },
+      
+      // 检查连接是否已连接
+      isConnectionConnected: (id) => {
+        return get().connectedConnectionIds.includes(id);
+      },
+      
       // 获取连接配置
       getConnection: (id) => {
         return get().connections.find((conn) => conn.id === id);
@@ -121,6 +153,7 @@ export const useConnectionStore = create<ConnectionState>()(
         set({
           connections: [],
           connectionStatuses: {},
+          connectedConnectionIds: [],
           activeConnectionId: null,
           poolStats: {}});
       },
@@ -147,6 +180,9 @@ export const useConnectionStore = create<ConnectionState>()(
                 status: 'connected',
                 lastConnected: new Date(),
                 error: undefined}},
+            connectedConnectionIds: state.connectedConnectionIds.includes(id) 
+              ? state.connectedConnectionIds 
+              : [...state.connectedConnectionIds, id],
             activeConnectionId: id}));
         } catch (error) {
           // 更新状态为错误
@@ -174,6 +210,7 @@ export const useConnectionStore = create<ConnectionState>()(
                 ...state.connectionStatuses[id],
                 status: 'disconnected',
                 error: undefined}},
+            connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
             activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId}));
         } catch (error) {
           set((state) => ({
@@ -266,7 +303,8 @@ export const useConnectionStore = create<ConnectionState>()(
       name: 'influx-gui-connection-store',
       partialize: (state) => ({
         connections: state.connections,
-        activeConnectionId: state.activeConnectionId})}
+        connectedConnectionIds: state.connectedConnectionIds,
+        activeConnectionId: state.activeConnectionId})},
   )
 );
 

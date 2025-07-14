@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { safeTauriListen } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
-import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
+// import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
 
 interface NativeMenuHandlerProps {

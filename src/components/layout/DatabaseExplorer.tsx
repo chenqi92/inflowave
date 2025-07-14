@@ -46,7 +46,7 @@ interface DatabaseInfo {
 }
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger }) => {
-  const { connections, activeConnectionId, getConnection } = useConnectionStore();
+  const { connections, activeConnectionId, connectedConnectionIds, getConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [searchValue, setSearchValue] = useState('');
@@ -170,19 +170,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     }
   };
 
+  // 获取连接状态指示器颜色
+  const getConnectionStatusColor = (connectionId: string) => {
+    const status = getConnectionStatus(connectionId);
+    const isConnected = isConnectionConnected(connectionId);
+    
+    if (status?.status === 'error') return 'bg-red-500';
+    if (isConnected && status?.status === 'connected') return 'bg-green-500';
+    if (status?.status === 'connecting') return 'bg-yellow-500';
+    return 'bg-gray-300';
+  };
+
   // 构建完整的树形数据
   const buildCompleteTreeData = useCallback(async () => {
-    console.log(`🏗️ 开始构建树形数据，活跃连接: ${activeConnectionId}`);
+    console.log(`🏗️ 开始构建树形数据，已连接: [${connectedConnectionIds.join(', ')}]`);
     setLoading(true);
     const treeNodes: DataNode[] = [];
 
     for (const connection of connections) {
+      const isConnected = isConnectionConnected(connection.id);
       const connectionNode: DataNode = {
         title: (
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              connection.id === activeConnectionId ? 'bg-green-500' : 'bg-gray-300'
-            }`} />
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection.id)}`} />
             <span className="flex-1">{connection.name}</span>
           </div>
         ),
@@ -190,9 +200,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         icon: <Link className="w-4 h-4 text-primary"   />,
         children: []};
 
-      // 为活跃连接加载数据库
-      if (connection.id === activeConnectionId && connection.id) {
-        console.log(`🔗 处理活跃连接: ${connection.name} (${connection.id})`);
+      // 为已连接的连接加载数据库
+      if (isConnected && connection.id) {
+        console.log(`🔗 处理已连接: ${connection.name} (${connection.id})`);
         try {
           const databases = await loadDatabases(connection.id);
           console.log(`📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`);
@@ -212,7 +222,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           console.error('❌ 加载数据库失败:', error);
         }
       } else {
-        console.log(`⏭️ 跳过非活跃连接: ${connection.name}`);
+        console.log(`⏭️ 跳过未连接: ${connection.name}`);
       }
 
       treeNodes.push(connectionNode);
@@ -221,7 +231,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
     setTreeData(treeNodes);
     setLoading(false);
-  }, [connections, activeConnectionId]);
+  }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus]);
 
   // 动态加载节点数据
   const loadData = useCallback(async (node: any): Promise<void> => {
@@ -433,6 +443,45 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     setExpandedKeys(expandedKeysValue);
   };
 
+  // 处理连接操作
+  const handleConnectionToggle = async (connectionId: string) => {
+    const isCurrentlyConnected = isConnectionConnected(connectionId);
+    const connection = getConnection(connectionId);
+    
+    if (!connection) {
+      showMessage.error('连接配置不存在');
+      return;
+    }
+    
+    try {
+      if (isCurrentlyConnected) {
+        // 断开连接
+        await disconnectFromDatabase(connectionId);
+        showMessage.success(`已断开连接: ${connection.name}`);
+      } else {
+        // 建立连接
+        await connectToDatabase(connectionId);
+        showMessage.success(`已连接: ${connection.name}`);
+      }
+      // 重新构建树数据以反映状态变化
+      buildCompleteTreeData();
+    } catch (error) {
+      showMessage.error(`连接操作失败: ${error}`);
+    }
+  };
+
+  // 处理节点双击
+  const handleDoubleClick = (info: any) => {
+    const { node } = info;
+    const key = node.key as string;
+    
+    if (key.startsWith('connection-')) {
+      // 连接节点被双击，切换连接状态
+      const connectionId = key.replace('connection-', '');
+      handleConnectionToggle(connectionId);
+    }
+  };
+
   // 处理节点选择
   const handleSelect = (selectedKeys: React.Key[], info: any) => {
     const { node } = info;
@@ -510,19 +559,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
 
   // 监听连接和连接变化
   useEffect(() => {
-    console.log(`🔄 DatabaseExplorer: 连接或活跃连接发生变化`);
+    console.log(`🔄 DatabaseExplorer: 连接或连接状态发生变化`);
     console.log(`🔗 所有连接 (${connections.length}):`, connections.map(c => `${c.name} (${c.id})`));
-    console.log(`✨ 活跃连接ID: ${activeConnectionId}`);
-    if (activeConnection) {
-      console.log(`🎯 活跃连接详情:`, {
-        name: activeConnection.name,
-        host: activeConnection.host,
-        port: activeConnection.port,
-        database: activeConnection.database
-      });
-    }
+    console.log(`✨ 已连接ID: [${connectedConnectionIds.join(', ')}]`);
+    console.log(`🎯 活跃连接ID: ${activeConnectionId}`);
     buildCompleteTreeData();
-  }, [connections, activeConnectionId, buildCompleteTreeData]);
+  }, [connections, connectedConnectionIds, activeConnectionId, buildCompleteTreeData]);
 
   // 监听刷新触发器
   useEffect(() => {
@@ -616,6 +658,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 expandedKeys={expandedKeys}
                 onExpand={handleExpand}
                 onSelect={handleSelect}
+                onDoubleClick={handleDoubleClick}
                 className="bg-transparent database-explorer-tree"
               />
             ) : (
