@@ -14,7 +14,7 @@ import { useNoticeStore } from '@/store/notice';
 import { isBrowserEnvironment } from '@/utils/tauri';
 import { Modal } from '@/utils/modalAdapter';
 import type { AppConfig } from '@/types';
-import '@/styles/settings.css';
+
 
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);

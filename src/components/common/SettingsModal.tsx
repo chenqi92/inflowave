@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toast } from '@/components/ui';
-import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toast, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp, Monitor, User } from 'lucide-react';
 import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
+import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ErrorTestButton from '@/components/test/ErrorTestButton';
 import BrowserModeModal from '@/components/common/BrowserModeModal';
 import { useNoticeStore } from '@/store/notice';
@@ -193,23 +194,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       label: '常规设置',
       children: (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="theme">主题</Label>
-              <Select 
-                value={form.watch('theme') || config.theme}
-                onValueChange={(value) => form.setValue('theme', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择主题" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">浅色主题</SelectItem>
-                  <SelectItem value="dark">深色主题</SelectItem>
-                  <SelectItem value="auto">跟随系统</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="w-4 h-4" />
+                界面设置
+              </CardTitle>
+              <CardDescription>自定义应用程序的外观和行为</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="theme">主题</Label>
+                  <Select
+                    value={form.watch('theme') || config.theme}
+                    onValueChange={(value) => form.setValue('theme', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择主题" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">浅色主题</SelectItem>
+                      <SelectItem value="dark">深色主题</SelectItem>
+                      <SelectItem value="auto">跟随系统</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
             
             <div className="space-y-2">
               <Label htmlFor="language">语言</Label>
@@ -291,8 +301,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </Select>
             </div>
           </div>
-
-          <Separator className="my-6" />
+            </CardContent>
+          </Card>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3">
             <Button
@@ -550,27 +560,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           </div>
         </div>
       )},
+    {
+      key: 'preferences',
+      icon: <User className="w-4 h-4" />,
+      label: '用户偏好',
+      children: (
+        <UserPreferencesComponent />
+      )
+    },
   ];
 
   return (
     <>
       <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="max-w-5xl w-full h-[85vh] overflow-hidden p-0">
-          <DialogHeader className="px-6 py-4 border-b space-y-0 shrink-0">
+        <DialogContent className="max-w-5xl w-full h-[85vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
               偏好设置
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 flex overflow-hidden">
+          <div className="flex-1 min-h-0 flex">
             <Tabs defaultValue="general" orientation="vertical" className="flex h-full w-full">
-              <TabsList className="flex flex-col h-full w-48 bg-muted/50 p-1 items-start justify-start shrink-0 rounded-none border-r">
+              <TabsList className="flex flex-col h-auto w-48 bg-muted/50 p-2 items-start justify-start shrink-0 rounded-none border-r space-y-1">
                 {tabItems.map((item) => (
                   <TabsTrigger
                     key={item.key}
                     value={item.key}
-                    className="w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
+                    className="w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm h-auto"
                   >
                     <div className="flex items-center gap-2">
                       {item.icon}
@@ -580,14 +598,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 ))}
               </TabsList>
 
-              <div className="flex-1 min-w-0 relative">
+              <div className="flex-1 min-w-0">
                 {tabItems.map((item) => (
-                  <TabsContent 
-                    key={item.key} 
-                    value={item.key} 
-                    className="absolute inset-0 m-0 p-6 data-[state=inactive]:hidden flex flex-col"
+                  <TabsContent
+                    key={item.key}
+                    value={item.key}
+                    className="h-full mt-0 p-6 data-[state=inactive]:hidden"
                   >
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="h-full overflow-y-auto">
                       <div className="max-w-2xl">
                         {item.children}
                       </div>
