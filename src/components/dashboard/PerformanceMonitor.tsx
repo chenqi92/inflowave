@@ -3,9 +3,7 @@ import { Row, Col, Statistic, Typography, Tag, Button, Alert } from '@/component
 import { Card, Space } from '@/components/ui';
 
 // TODO: Replace these Ant Design components: Progress, Tooltip, 
-import { Database, RefreshCw } from 'lucide-react';
-// TODO: Replace these icons: ThunderboltOutlined, ClockCircleOutlined, ApiOutlined, AlertTriangle
-// You may need to find alternatives or create custom icons
+import { Database, RefreshCw, Zap, Clock, Webhook, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 

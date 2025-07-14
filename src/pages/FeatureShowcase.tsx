@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge, Typography } from '@/components/ui';
+import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge, Typography, Title } from '@/components/ui';
 import { Card, Space } from '@/components/ui';
 import { Database, TrendingUp, Settings, CheckCircle, Rocket, Star, Zap, FileUp, Monitor, Grid3X3 } from 'lucide-react';
 import { featureTester } from '../utils/featureTest';
@@ -384,7 +384,7 @@ const FeatureShowcase: React.FC = () => {
 
       {/* 技术栈 */}
       <Card style={{ marginTop: '32px' }}>
-        <Typography variant="h3" className="text-xl font-bold mb-4">技术栈</Typography>
+        <Title level={3} className="text-xl font-bold mb-4">技术栈</Title>
         <Row gutter={[16, 16]}>
           <Col span={8}>
             <Card size="small" title="前端技术">

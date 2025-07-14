@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Alert, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Progress, Separator, Typography } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Alert, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Progress, Separator, Typography, Title, Text } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Card } from '@/components/ui';
 import { RefreshCw, Settings, Database, Zap, Clock, LayoutDashboard, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';
-
-// Removed Typography and Select Option destructuring - using direct components
 
 interface PerformanceMonitorProps {
   connectionId?: string;
@@ -233,8 +231,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <div className="flex items-center space-x-2">
             <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
             <div>
-              <Typography.Text className="text-sm text-muted-foreground">查询执行次数</Typography.Text>
-              <Typography.Text className="text-2xl font-bold">{metrics?.queryExecutionTime?.length || 0}</Typography.Text>
+              <Text className="text-sm text-muted-foreground">查询执行次数</Text>
+              <Text className="text-2xl font-bold">{metrics?.queryExecutionTime?.length || 0}</Text>
             </div>
           </div>
         </Card>
@@ -242,9 +240,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
             <div>
-              <Typography.Text className="text-sm text-muted-foreground">平均执行时间</Typography.Text>
+              <Text className="text-sm text-muted-foreground">平均执行时间</Text>
               <p className="text-2xl font-bold">
-                {metrics?.queryExecutionTime?.length > 0 
+                {metrics?.queryExecutionTime?.length > 0
                   ? Math.round(metrics.queryExecutionTime.reduce((a, b) => a + b, 0) / metrics.queryExecutionTime.length)
                   : 0
                 }ms
@@ -256,9 +254,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <div className="flex items-center space-x-2">
             <Zap className="w-4 h-4 text-muted-foreground" />
             <div>
-              <Typography.Text className="text-sm text-muted-foreground">写入延迟</Typography.Text>
+              <Text className="text-sm text-muted-foreground">写入延迟</Text>
               <p className="text-2xl font-bold">
-                {metrics?.writeLatency?.length > 0 
+                {metrics?.writeLatency?.length > 0
                   ? Math.round(metrics.writeLatency.reduce((a, b) => a + b, 0) / metrics.writeLatency.length)
                   : 0
                 }ms
@@ -270,8 +268,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-muted-foreground" />
             <div>
-              <Typography.Text className="text-sm text-muted-foreground">网络 I/O</Typography.Text>
-              <Typography.Text className="text-2xl font-bold">{formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}</Typography.Text>
+              <Text className="text-sm text-muted-foreground">网络 I/O</Text>
+              <Text className="text-2xl font-bold">{formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}</Text>
             </div>
           </div>
         </Card>
@@ -280,12 +278,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       <div className="grid grid-cols-2 gap-4">
         {/* 系统资源 */}
         <Card className="p-4">
-          <Typography variant="h3" className="text-lg font-medium mb-4">系统资源</Typography>
+          <Title level={3} className="text-lg font-medium mb-4">系统资源</Title>
           <div className="space-y-4">
             <div>
-              <Typography.Text className="text-sm mb-2">内存使用情况</Typography.Text>
+              <Text className="text-sm mb-2">内存使用情况</Text>
               <Progress
-                value={metrics?.memoryUsage?.length > 0 
+                value={metrics?.memoryUsage?.length > 0
                   ? Math.round(metrics.memoryUsage[metrics.memoryUsage.length - 1])
                   : 0
                 }
@@ -293,9 +291,9 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               />
             </div>
             <div>
-              <Typography.Text className="text-sm mb-2">CPU 使用率</Typography.Text>
+              <Text className="text-sm mb-2">CPU 使用率</Text>
               <Progress
-                value={metrics?.cpuUsage?.length > 0 
+                value={metrics?.cpuUsage?.length > 0
                   ? Math.round(metrics.cpuUsage[metrics.cpuUsage.length - 1])
                   : 0
                 }
@@ -303,7 +301,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               />
             </div>
             <div>
-              <Typography.Text className="text-sm mb-2">磁盘 I/O</Typography.Text>
+              <Text className="text-sm mb-2">磁盘 I/O</Text>
               <p className="text-xs text-muted-foreground">
                 读取: {formatBytes(metrics?.diskIO?.readBytes || 0)} | 写入: {formatBytes(metrics?.diskIO?.writeBytes || 0)}
               </p>
@@ -313,22 +311,22 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
         {/* 网络状态 */}
         <Card className="p-4">
-          <Typography variant="h3" className="text-lg font-medium mb-4">网络 I/O 状态</Typography>
+          <Title level={3} className="text-lg font-medium mb-4">网络 I/O 状态</Title>
           <div className="space-y-4">
             <div>
-              <Typography.Text className="text-sm mb-1">输入流量</Typography.Text>
+              <Text className="text-sm mb-1">输入流量</Text>
               <p className="text-lg font-bold">
                 {formatBytes(metrics?.networkIO?.bytesIn || 0)}
               </p>
-              <Typography.Text className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</Typography.Text>
+              <Text className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsIn || 0).toLocaleString()} 包</Text>
             </div>
             <Separator />
             <div>
-              <Typography.Text className="text-sm mb-1">输出流量</Typography.Text>
+              <Text className="text-sm mb-1">输出流量</Text>
               <p className="text-lg font-bold">
                 {formatBytes(metrics?.networkIO?.bytesOut || 0)}
               </p>
-              <Typography.Text className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Typography.Text>
+              <Text className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Text>
             </div>
           </div>
         </Card>
@@ -336,7 +334,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
       {/* 慢查询分析 */}
       <Card className="p-4 mt-4">
-        <Typography variant="h3" className="text-lg font-medium mb-4">慢查询分析</Typography>
+        <Title level={3} className="text-lg font-medium mb-4">慢查询分析</Title>
         {slowQueries.length > 0 ? (
           <Table>
             <TableHeader>
@@ -398,7 +396,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <div>
-              <Typography variant="h4">暂无慢查询</Typography>
+              <Title level={4}>暂无慢查询</Title>
               <p>当前时间范围内没有检测到慢查询</p>
             </div>
           </Alert>
@@ -407,29 +405,29 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
 
       {/* 存储分析 */}
       <Card className="p-4 mt-4">
-        <Typography variant="h3" className="text-lg font-medium mb-4">存储分析</Typography>
+        <Title level={3} className="text-lg font-medium mb-4">存储分析</Title>
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="flex items-center space-x-2">
             <Database className="w-4 h-4 text-muted-foreground" />
             <div>
-              <Typography.Text className="text-sm text-muted-foreground">总存储大小</Typography.Text>
-              <Typography.Text className="text-2xl font-bold">{formatBytes(metrics?.storageAnalysis?.totalSize || 0)}</Typography.Text>
+              <Text className="text-sm text-muted-foreground">总存储大小</Text>
+              <Text className="text-2xl font-bold">{formatBytes(metrics?.storageAnalysis?.totalSize || 0)}</Text>
             </div>
           </div>
           <div>
-            <Typography.Text className="text-sm text-muted-foreground">压缩比</Typography.Text>
-            <Typography.Text className="text-2xl font-bold">{(metrics?.storageAnalysis?.compressionRatio || 0).toFixed(2)}x</Typography.Text>
+            <Text className="text-sm text-muted-foreground">压缩比</Text>
+            <Text className="text-2xl font-bold">{(metrics?.storageAnalysis?.compressionRatio || 0).toFixed(2)}x</Text>
           </div>
           <div>
-            <Typography.Text className="text-sm text-muted-foreground">保留策略效果</Typography.Text>
-            <Typography.Text className="text-2xl font-bold">{((metrics?.storageAnalysis?.retentionPolicyEffectiveness || 0) * 100).toFixed(1)}%</Typography.Text>
+            <Text className="text-sm text-muted-foreground">保留策略效果</Text>
+            <Text className="text-2xl font-bold">{((metrics?.storageAnalysis?.retentionPolicyEffectiveness || 0) * 100).toFixed(1)}%</Text>
           </div>
         </div>
 
         {(metrics?.storageAnalysis?.recommendations?.length || 0) > 0 && (
           <>
             <Separator className="my-4" />
-            <Typography variant="h4" className="text-md font-medium mb-4">优化建议</Typography>
+            <Title level={4} className="text-md font-medium mb-4">优化建议</Title>
             <div className="space-y-3">
               {(metrics?.storageAnalysis?.recommendations || []).map((item, index) => (
                 <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg">
@@ -437,8 +435,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                     {item.priority}
                   </Badge>
                   <div>
-                    <Typography.Text className="font-medium">{item.description}</Typography.Text>
-                    <Typography.Text className="text-sm text-muted-foreground">预计节省: {formatBytes(item.estimatedSavings)}</Typography.Text>
+                    <Text className="font-medium">{item.description}</Text>
+                    <Text className="text-sm text-muted-foreground">预计节省: {formatBytes(item.estimatedSavings)}</Text>
                   </div>
                 </div>
               ))}

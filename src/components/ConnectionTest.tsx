@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { safeTauriInvoke } from '@/utils/tauri';
+import { useConnection } from '@/hooks/useConnection';
 import { Button, Form, Input, InputNumber, Switch, Typography } from '@/components/ui';
 import { Card, toast } from '@/components/ui';
 
@@ -27,6 +27,7 @@ interface ConnectionTestResult {
 
 const ConnectionTest: React.FC = () => {
   const form = useForm();
+  const { createTempConnectionForTest, testConnection, deleteTempConnection } = useConnection();
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
 
@@ -49,24 +50,24 @@ const ConnectionTest: React.FC = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()};
 
-      // 调用后端创建连接
-      const connectionId = await safeTauriInvoke<string>('create_connection', { config });
+      // 使用专门的临时连接创建函数（不添加到前端状态）
+      const connectionId = await createTempConnectionForTest(config);
 
-      // 测试连接
-      const result = await safeTauriInvoke<ConnectionTestResult>('test_connection', {
-        connectionId
-      });
-      
-      setTestResult(result);
-      
-      if (result.success) {
-        toast({ title: "成功", description: "连接成功！延迟: ${result.latency}ms" });
-      } else {
-        toast({ title: "错误", description: "连接失败: ${result.error}", variant: "destructive" });
+      try {
+        // 测试连接
+        const result = await testConnection(connectionId);
+
+        setTestResult(result);
+
+        if (result.success) {
+          toast({ title: "成功", description: `连接成功！延迟: ${result.latency}ms` });
+        } else {
+          toast({ title: "错误", description: `连接失败: ${result.error}`, variant: "destructive" });
+        }
+      } finally {
+        // 清理测试连接
+        await deleteTempConnection(connectionId);
       }
-
-      // 清理测试连接
-      await safeTauriInvoke('delete_connection', { connectionId: connectionId });
       
     } catch (error) {
       console.error('连接测试失败:', error);

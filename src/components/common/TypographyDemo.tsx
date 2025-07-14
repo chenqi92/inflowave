@@ -1,14 +1,11 @@
 import React from 'react';
-import { Typography } from '@/components/ui';
+import { Typography, Title, Text } from '@/components/ui';
 import { Space } from '@/components/ui';
-
-
-const { Text } = Typography;
 
 const TypographyDemo: React.FC = () => {
   return (
     <div className="p-4 bg-white rounded-lg border">
-      <Typography variant="h3" className="mb-4 text-lg font-semibold">Typography 样式测试</Typography>
+      <Title level={3} className="mb-4 text-lg font-semibold">Typography 样式测试</Title>
       
       <div className="flex gap-2" direction="vertical" size="md" style={{ width: '100%' }}>
         <div>

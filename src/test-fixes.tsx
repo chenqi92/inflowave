@@ -1,7 +1,5 @@
 import React from 'react';
-import { Table, Typography, Result, Tooltip, TooltipTrigger, TooltipContent, AntParagraph, Button } from '@/components/ui';
-
-const { Text } = Typography;
+import { Table, Typography, Title, Text, Result, Tooltip, TooltipTrigger, TooltipContent, AntParagraph, Button } from '@/components/ui';
 
 // Test component to verify fixes
 const TestFixes: React.FC = () => {
@@ -52,7 +50,7 @@ const TestFixes: React.FC = () => {
 
       {/* Test 3: Typography with Ant Design props */}
       <div>
-        <Typography variant="h2">3. Typography Test</Typography>
+        <Title level={2}>3. Typography Test</Title>
         <AntParagraph wrap={true} code={false} copyable={false}>
           This paragraph should not pass invalid props to DOM
         </AntParagraph>
@@ -63,7 +61,7 @@ const TestFixes: React.FC = () => {
 
       {/* Test 4: Result with wrap prop */}
       <div>
-        <Typography variant="h2">4. Result Test</Typography>
+        <Title level={2}>4. Result Test</Title>
         <Result
           status="success"
           title="Success"

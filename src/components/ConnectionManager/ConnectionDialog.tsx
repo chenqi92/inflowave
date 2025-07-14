@@ -32,7 +32,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   connection,
   onCancel,
   onSuccess}) => {
-  const { createConnection, editConnection, testConnection } = useConnection();
+  const { createConnection, editConnection, testConnection, createTempConnectionForTest, deleteTempConnection } = useConnection();
   const form = useForm<FormData>({
     defaultValues: {
       name: '',
@@ -87,8 +87,8 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         updatedAt: new Date()
       };
 
-      // 先创建临时连接到后端
-      const tempId = await createConnection(tempConfig);
+      // 使用专门的临时连接创建函数（不添加到前端状态）
+      const tempId = await createTempConnectionForTest(tempConfig);
 
       try {
         // 测试连接
@@ -100,11 +100,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         }
       } finally {
         // 删除临时连接
-        try {
-          await safeTauriInvoke('delete_connection', { connectionId: tempId });
-        } catch (deleteError) {
-          console.warn('删除临时连接失败:', deleteError);
-        }
+        await deleteTempConnection(tempId);
       }
     } catch (error) {
       console.error('测试连接失败:', error);

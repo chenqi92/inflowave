@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Label } from '@/components/ui';
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Title, Label } from '@/components/ui';
 
 const ShadcnTest: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
@@ -25,7 +25,7 @@ const ShadcnTest: React.FC = () => {
       <Toaster />
       
       <div className="max-w-6xl mx-auto">
-        <Typography variant="h1" className="text-3xl font-bold mb-8">Shadcn/ui 组件测试</Typography>
+        <Title level={1} className="text-3xl font-bold mb-8">Shadcn/ui 组件测试</Title>
 
         {/* 按钮测试 */}
         <Card className="mb-6">

@@ -65,6 +65,38 @@ export const useConnection = () => {
   }, []);
 
   /**
+   * 创建临时连接用于测试（不添加到前端状态）
+   */
+  const createTempConnectionForTest = useCallback(async (config: Omit<ConnectionConfig, 'id'>): Promise<string> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 只调用后端API，不添加到前端状态
+      const id = await ConnectionAPI.createConnection(config as ConnectionConfig);
+      return id;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * 删除临时连接
+   */
+  const deleteTempConnection = useCallback(async (connectionId: string): Promise<void> => {
+    try {
+      await ConnectionAPI.deleteConnection(connectionId);
+    } catch (err) {
+      console.warn('删除临时连接失败:', err);
+      // 不抛出错误，因为这是清理操作
+    }
+  }, []);
+
+  /**
    * 更新连接配置
    */
   const editConnection = useCallback(async (config: ConnectionConfig) => {
@@ -192,6 +224,8 @@ export const useConnection = () => {
     // 方法
     createConnection,
     testConnection,
+    createTempConnectionForTest,
+    deleteTempConnection,
     editConnection,
     deleteConnection,
     connect,
