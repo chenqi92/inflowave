@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Save, Database, Download, History, Tags, PlayCircle, AlertCircle, Clock, FileText, Plus, X, MoreHorizontal, FolderOpen, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
@@ -50,6 +51,12 @@ const Query: React.FC = () => {
   const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [exportDialogVisible, setExportDialogVisible] = useState(false);
   const [activeResultTab, setActiveResultTab] = useState('results');
+  
+  // 时间筛选状态
+  const [timeFilterType, setTimeFilterType] = useState<'relative' | 'absolute'>('relative');
+  const [relativeTimeValue, setRelativeTimeValue] = useState('1h');
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
   
   // 获取当前活跃标签
   const activeTab = queryTabs.find(tab => tab.id === activeTabId) || queryTabs[0];
@@ -388,7 +395,31 @@ const Query: React.FC = () => {
         ]})) : []}));
   }, [databases, measurements]);
 
-  // 处理树节点点击
+  // 生成时间条件语句
+  const generateTimeCondition = (): string => {
+    if (timeFilterType === 'relative') {
+      return `time > now() - ${relativeTimeValue}`;
+    } else if (timeFilterType === 'absolute' && startTime && endTime) {
+      const start = startTime.toISOString();
+      const end = endTime.toISOString();
+      return `time >= '${start}' AND time <= '${end}'`;
+    }
+    return '';
+  };
+
+  // 生成带时间筛选的查询语句
+  const generateQueryWithTimeFilter = (measurement: string): string => {
+    const timeCondition = generateTimeCondition();
+    const limit = 'LIMIT 500'; // 默认分页500条
+    
+    if (timeCondition) {
+      return `SELECT * FROM "${measurement}" WHERE ${timeCondition} ${limit}`;
+    } else {
+      return `SELECT * FROM "${measurement}" ${limit}`;
+    }
+  };
+
+  // 处理树节点点击（单击）
   const handleTreeNodeClick = (selectedKeys: React.Key[], _: any) => {
     const key = selectedKeys[0] as string;
     
@@ -407,6 +438,32 @@ const Query: React.FC = () => {
         const measurement = parts.slice(1, -1).join('-'); // 排除最后的索引，处理测量名包含连字符的情况
         setSelectedDatabase(database);
         setQuery(`SELECT * FROM "${measurement}" LIMIT 10`);
+      }
+    }
+  };
+
+  // 处理树节点双击（自动查询）
+  const handleTreeNodeDoubleClick = (key: React.Key, info: any) => {
+    const keyStr = key as string;
+    
+    // 只对测量节点进行双击查询
+    if (keyStr && !keyStr.includes('-fields') && !keyStr.includes('-tags')) {
+      const parts = keyStr.split('-');
+      
+      // 如果是测量节点: {dbName}-{measurementName}-{measurementIndex}
+      if (parts.length >= 3 && parts[0] !== 'db') {
+        const database = parts[0];
+        const measurement = parts.slice(1, -1).join('-');
+        
+        // 设置数据库和查询语句
+        setSelectedDatabase(database);
+        const queryWithTimeFilter = generateQueryWithTimeFilter(measurement);
+        setQuery(queryWithTimeFilter);
+        
+        // 延迟一点时间以确保状态更新，然后自动执行查询
+        setTimeout(() => {
+          handleExecuteQuery();
+        }, 100);
       }
     }
   };
@@ -681,6 +738,83 @@ const Query: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* 时间筛选器 */}
+        <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+          <div className="text-sm font-medium text-muted-foreground">时间筛选:</div>
+          
+          {/* 时间筛选类型选择 */}
+          <Select value={timeFilterType} onValueChange={(value: 'relative' | 'absolute') => setTimeFilterType(value)}>
+            <SelectTrigger className="w-[100px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relative">相对时间</SelectItem>
+              <SelectItem value="absolute">绝对时间</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 相对时间选择 */}
+          {timeFilterType === 'relative' && (
+            <Select value={relativeTimeValue} onValueChange={setRelativeTimeValue}>
+              <SelectTrigger className="w-[120px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5m">最近5分钟</SelectItem>
+                <SelectItem value="15m">最近15分钟</SelectItem>
+                <SelectItem value="30m">最近30分钟</SelectItem>
+                <SelectItem value="1h">最近1小时</SelectItem>
+                <SelectItem value="3h">最近3小时</SelectItem>
+                <SelectItem value="6h">最近6小时</SelectItem>
+                <SelectItem value="12h">最近12小时</SelectItem>
+                <SelectItem value="1d">最近1天</SelectItem>
+                <SelectItem value="7d">最近7天</SelectItem>
+                <SelectItem value="30d">最近30天</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* 绝对时间选择 */}
+          {timeFilterType === 'absolute' && (
+            <div className="flex items-center gap-2">
+              <DatePicker
+                value={startTime}
+                placeholder="开始时间"
+                format="YYYY-MM-DD HH:mm:ss"
+                onChange={(date) => setStartTime(date)}
+                showTime={true}
+                size="small"
+                className="w-[180px]"
+              />
+              <span className="text-muted-foreground text-sm">至</span>
+              <DatePicker
+                value={endTime}
+                placeholder="结束时间"
+                format="YYYY-MM-DD HH:mm:ss"
+                onChange={(date) => setEndTime(date)}
+                showTime={true}
+                size="small"
+                className="w-[180px]"
+              />
+            </div>
+          )}
+
+          {/* 清除筛选 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setTimeFilterType('relative');
+              setRelativeTimeValue('1h');
+              setStartTime(null);
+              setEndTime(null);
+            }}
+            className="h-8 px-3"
+          >
+            清除
+          </Button>
+        </div>
       </div>
 
       {/* 主要内容区域 */}
@@ -697,6 +831,7 @@ const Query: React.FC = () => {
                 defaultExpandAll
                 treeData={databaseStructure}
                 onSelect={handleTreeNodeClick}
+                onDoubleClick={({ node }) => handleTreeNodeDoubleClick(node.key, { node })}
               />
             </CardContent>
           </Card>

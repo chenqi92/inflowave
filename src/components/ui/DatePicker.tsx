@@ -58,18 +58,57 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
       
-      // 简单的格式化，实际项目中可能需要更复杂的日期格式化库
-      return format
+      let result = format
         .replace('YYYY', year.toString())
         .replace('MM', month)
         .replace('DD', day)
+      
+      // 如果启用了时间选择，添加时间格式
+      if (showTime) {
+        if (format.includes('HH:mm:ss')) {
+          result = result.replace('HH:mm:ss', `${hours}:${minutes}:${seconds}`)
+        } else if (format.includes('HH:mm')) {
+          result = result.replace('HH:mm', `${hours}:${minutes}`)
+        } else {
+          // 默认添加时间格式
+          result += ` ${hours}:${minutes}:${seconds}`
+        }
+      }
+      
+      return result
     }
 
     const handleDateSelect = (date: Date) => {
+      // 如果启用了时间选择，保留当前选中日期的时间部分
+      if (showTime && selectedDate) {
+        date.setHours(selectedDate.getHours())
+        date.setMinutes(selectedDate.getMinutes())
+        date.setSeconds(selectedDate.getSeconds())
+      }
+      
       setSelectedDate(date)
       onChange?.(date, formatDate(date))
-      setControlledOpen?.(false)
+      
+      // 如果没有启用时间选择，直接关闭弹窗
+      if (!showTime) {
+        setControlledOpen?.(false)
+      }
+    }
+    
+    const handleTimeChange = (hours: number, minutes: number, seconds: number) => {
+      if (!selectedDate) return
+      
+      const newDate = new Date(selectedDate)
+      newDate.setHours(hours)
+      newDate.setMinutes(minutes)
+      newDate.setSeconds(seconds)
+      
+      setSelectedDate(newDate)
+      onChange?.(newDate, formatDate(newDate))
     }
 
     const handleClear = (e: React.MouseEvent) => {
@@ -209,14 +248,88 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
               ))}
             </div>
 
+            {/* 时间选择器 */}
+            {showTime && (
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 justify-center">
+                  <div className="flex flex-col items-center">
+                    <label className="text-xs text-muted-foreground mb-1">时</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={selectedDate?.getHours() || 0}
+                      onChange={(e) => {
+                        const hours = parseInt(e.target.value) || 0;
+                        handleTimeChange(
+                          hours,
+                          selectedDate?.getMinutes() || 0,
+                          selectedDate?.getSeconds() || 0
+                        );
+                      }}
+                      className="w-12 h-8 text-center text-sm border border-border rounded px-1"
+                    />
+                  </div>
+                  <span className="text-muted-foreground">:</span>
+                  <div className="flex flex-col items-center">
+                    <label className="text-xs text-muted-foreground mb-1">分</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={selectedDate?.getMinutes() || 0}
+                      onChange={(e) => {
+                        const minutes = parseInt(e.target.value) || 0;
+                        handleTimeChange(
+                          selectedDate?.getHours() || 0,
+                          minutes,
+                          selectedDate?.getSeconds() || 0
+                        );
+                      }}
+                      className="w-12 h-8 text-center text-sm border border-border rounded px-1"
+                    />
+                  </div>
+                  <span className="text-muted-foreground">:</span>
+                  <div className="flex flex-col items-center">
+                    <label className="text-xs text-muted-foreground mb-1">秒</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={selectedDate?.getSeconds() || 0}
+                      onChange={(e) => {
+                        const seconds = parseInt(e.target.value) || 0;
+                        handleTimeChange(
+                          selectedDate?.getHours() || 0,
+                          selectedDate?.getMinutes() || 0,
+                          seconds
+                        );
+                      }}
+                      className="w-12 h-8 text-center text-sm border border-border rounded px-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 底部按钮 */}
-            {showToday && (
-              <div className="flex justify-between">
+            <div className="flex justify-between mt-4">
+              {showToday && (
                 <Button variant="outline" size="sm" onClick={handleToday}>
                   今天
                 </Button>
-              </div>
-            )}
+              )}
+              {showTime && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => setControlledOpen?.(false)}
+                  className="ml-auto"
+                >
+                  确定
+                </Button>
+              )}
+            </div>
           </PopoverContent>
         </Popover>
       </div>
