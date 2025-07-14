@@ -51,56 +51,12 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const { activeConnectionId, connections } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [connecting, setConnecting] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(null);
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
   
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();
 
-  const handleConnectionMenuClick = async ({ key }: { key: string }) => {
-    // 选择并连接到数据库
-    const { setActiveConnection, connectToDatabase, connections } = useConnectionStore.getState();
-    const connection = connections.find(c => c.id === key);
-    
-    if (!connection) {
-      showMessage.error('连接配置不存在');
-      return;
-    }
-    
-    setConnecting(true);
-    try {
-      setActiveConnection(key);
-      await connectToDatabase(key);
-      showMessage.success(`已连接到 ${connection.name}`);
-      console.log(`成功连接到: ${key}`);
-    } catch (error) {
-      console.error('连接失败:', error);
-      showMessage.error(`连接 ${connection.name} 失败: ${error}`);
-      // 如果连接失败，清除活跃连接
-      setActiveConnection(null);
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const connectionMenuItems = [
-    ...connections.map(conn => ({
-      key: conn.id,
-      label: (
-        <div className="flex items-center justify-between min-w-48">
-          <span className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
-              conn.id === activeConnectionId ? 'bg-green-500' : 'bg-gray-300'
-            }`} />
-            <span>{conn.name}</span>
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {conn.host}:{conn.port}
-          </span>
-        </div>
-      )})),
-  ];
 
   const handleFileMenuClick = ({ key }: { key: string }) => {
     switch (key) {
@@ -225,48 +181,41 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2">
         {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* 区域1: 连接管理 - 固定宽度防止挤压 */}
-          <div className="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded-lg flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={activeConnection ? 'default' : 'outline'}
-                  className="h-10 min-w-[140px] max-w-[200px]"
-                  disabled={connecting}
-                >
-                  {activeConnection ? <Link className="w-4 h-4 mr-2" /> : <Unlink className="w-4 h-4 mr-2" />}
-                  <span className="truncate">
-                    {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
-                  </span>
-                  {activeConnection && !connecting && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 bg-green-500 text-white flex-shrink-0"
-                    >
+          {/* 区域1: 连接状态显示 - 固定宽度防止挤压 */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg flex-shrink-0">
+            {activeConnection ? (
+              <>
+                {/* 连接状态指示器 */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <Link className="w-4 h-4 text-green-600" />
+                    <Badge variant="secondary" className="bg-green-500 text-white px-1.5 py-0.5">
                       ●
                     </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {connectionMenuItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={() => handleConnectionMenuClick({ key: item.key })}
-                  >
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate max-w-[140px]">
+                      {activeConnection.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate max-w-[140px]">
+                      {activeConnection.host}:{activeConnection.port}
+                    </div>
+                  </div>
+                </div>
 
-            {/* InfluxDB特色: 时间范围选择器 */}
-            {activeConnection && (
-              <TimeRangeSelector
-                value={selectedTimeRange || undefined}
-                onChange={handleTimeRangeChange}
-                className="ml-1"
-              />
+                {/* InfluxDB特色: 时间范围选择器 */}
+                <TimeRangeSelector
+                  value={selectedTimeRange || undefined}
+                  onChange={handleTimeRangeChange}
+                  className="ml-1"
+                />
+              </>
+            ) : (
+              /* 未连接状态 */
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Unlink className="w-4 h-4" />
+                <span className="text-sm">未连接数据源</span>
+              </div>
             )}
           </div>
 
