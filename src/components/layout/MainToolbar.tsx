@@ -13,10 +13,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  Database, 
-  PlayCircle, 
-  Square, 
-  Save, 
+  Database,
+  PlayCircle,
+  Square,
+  Save,
   History,
   Settings,
   RefreshCw,
@@ -32,7 +32,8 @@ import {
   Wrench,
   FolderOpen,
   Plus,
-  Clock
+  Clock,
+  MoreHorizontal
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -221,24 +222,26 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
   return (
     <TooltipProvider>
-      <div className="datagrip-toolbar flex items-center justify-between w-full">
-        {/* 五大功能区域布局 */}
-        <div className="flex items-center gap-1">
-          {/* 区域1: 连接管理 */}
-          <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg">
+      <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2">
+        {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* 区域1: 连接管理 - 固定宽度防止挤压 */}
+          <div className="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded-lg flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={activeConnection ? 'default' : 'outline'}
-                  className="h-8 min-w-32"
+                  className="h-10 min-w-[140px] max-w-[200px]"
                   disabled={connecting}
                 >
                   {activeConnection ? <Link className="w-4 h-4 mr-2" /> : <Unlink className="w-4 h-4 mr-2" />}
-                  {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
+                  <span className="truncate">
+                    {connecting ? '连接中...' : activeConnection ? activeConnection.name : '选择连接'}
+                  </span>
                   {activeConnection && !connecting && (
                     <Badge
                       variant="secondary"
-                      className="ml-2 bg-green-500 text-white"
+                      className="ml-2 bg-green-500 text-white flex-shrink-0"
                     >
                       ●
                     </Badge>
@@ -256,26 +259,27 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {/* InfluxDB特色: 时间范围选择器 */}
             {activeConnection && (
               <TimeRangeSelector
                 value={selectedTimeRange || undefined}
                 onChange={handleTimeRangeChange}
-                className="ml-2"
+                className="ml-1"
               />
             )}
           </div>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
+          <Separator orientation="vertical" className="h-8 mx-2" />
 
-          {/* 区域2: 文件操作 */}
-          <div className="flex items-center gap-1 px-3 py-1 bg-blue-50 rounded-lg">
+          {/* 区域2: 文件操作 - 统一按钮尺寸 */}
+          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-lg flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
-              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
               onClick={() => handleFileMenuClick({ key: 'new-query' })}
+              title="新建查询 (Ctrl+N)"
             >
               <Plus className="w-4 h-4" />
               <span className="text-xs">新建</span>
@@ -284,8 +288,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant="ghost"
               size="sm"
-              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
               onClick={() => handleFileMenuClick({ key: 'open' })}
+              title="打开文件 (Ctrl+O)"
             >
               <FolderOpen className="w-4 h-4" />
               <span className="text-xs">打开</span>
@@ -294,27 +299,58 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant="ghost"
               size="sm"
-              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
               onClick={() => handleFileMenuClick({ key: 'save' })}
+              title="保存 (Ctrl+S)"
             >
               <Save className="w-4 h-4" />
               <span className="text-xs">保存</span>
             </Button>
+
+            {/* 更多文件操作 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 w-8 p-1 flex items-center justify-center"
+                  title="更多文件操作"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {fileMenuItems.slice(3).map((item) => (
+                  item.type === 'divider' ? (
+                    <div key={item.key} className="border-t my-1" />
+                  ) : (
+                    <DropdownMenuItem
+                      key={item.key}
+                      onClick={() => handleFileMenuClick({ key: item.key })}
+                    >
+                      {item.icon}
+                      <span className="ml-2">{item.label}</span>
+                    </DropdownMenuItem>
+                  )
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
+          <Separator orientation="vertical" className="h-8 mx-2" />
 
-          {/* 区域4: 核心视图切换 (突出显示) */}
-          <div className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border-2 border-purple-200">
+          {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
+          <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border border-purple-200 flex-shrink-0">
             <Button
               variant={currentView === 'datasource' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'datasource'
                   ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
                   : 'hover:bg-purple-200'
               }`}
               onClick={() => onViewChange?.('datasource')}
+              title="数据源管理"
             >
               <Database className="w-4 h-4" />
               <span className="text-xs">数据源</span>
@@ -323,13 +359,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant={currentView === 'query' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'query'
                   ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
                   : 'hover:bg-purple-200'
               }`}
               onClick={() => onViewChange?.('query')}
               disabled={!activeConnection}
+              title="查询编辑器"
             >
               <Edit className="w-4 h-4" />
               <span className="text-xs">查询</span>
@@ -338,13 +375,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant={currentView === 'visualization' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'visualization'
                   ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
                   : 'hover:bg-purple-200'
               }`}
               onClick={() => onViewChange?.('visualization')}
               disabled={!activeConnection}
+              title="数据可视化"
             >
               <BarChart className="w-4 h-4" />
               <span className="text-xs">可视化</span>
@@ -353,53 +391,58 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <Button
               variant={currentView === 'performance' ? 'default' : 'ghost'}
               size="sm"
-              className={`h-14 w-20 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'performance'
                   ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
                   : 'hover:bg-purple-200'
               }`}
               onClick={() => onViewChange?.('performance')}
               disabled={!activeConnection}
+              title="性能监控"
             >
               <Zap className="w-4 h-4" />
               <span className="text-xs">监控</span>
             </Button>
           </div>
 
-          <Separator orientation="vertical" className="h-6 mx-2" />
-
-          {/* 区域5: 工具功能 */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
-              disabled={!activeConnection}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span className="text-xs">刷新</span>
-            </Button>
-          </div>
         </div>
 
-        {/* 右侧：设置和帮助 */}
-        <div className="flex items-center gap-1">
+        {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Separator orientation="vertical" className="h-8 mx-2" />
+
+          {/* 刷新按钮 */}
           <Button
             variant="ghost"
             size="sm"
-            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            disabled={!activeConnection}
+            title="刷新数据"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="text-xs">刷新</span>
+          </Button>
+
+          {/* 设置按钮 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
             onClick={() => setSettingsVisible(true)}
+            title="应用设置"
           >
             <Settings className="w-4 h-4" />
             <span className="text-xs">设置</span>
           </Button>
 
+          {/* 工具菜单 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+                className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+                title="更多工具"
               >
                 <Wrench className="w-4 h-4" />
                 <span className="text-xs">工具</span>

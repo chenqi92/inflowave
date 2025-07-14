@@ -285,23 +285,24 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col bg-white">
-      {/* 标签页头部 */}
-      <div className="flex items-center justify-between border-b border">
-        <div className="flex-1 flex items-center">
-          <div className="flex items-center border-b border flex-1">
+      {/* 优化后的标签页头部 - 防止被挤压 */}
+      <div className="flex items-center justify-between border-b border min-h-[48px]">
+        {/* 左侧标签区域 - 支持滚动 */}
+        <div className="flex-1 flex items-center min-w-0">
+          <div className="flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {tabs.map(tab => (
               <div
                 key={tab.id}
-                className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 ${
+                className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 flex-shrink-0 min-w-[120px] max-w-[180px] ${
                   activeKey === tab.id ? 'bg-white border-b-2 border-blue-500' : 'bg-muted/50'
                 }`}
                 onClick={() => setActiveKey(tab.id)}
               >
-                {tab.type === 'query' && <FileText className="w-4 h-4" />}
-                {tab.type === 'table' && <Table className="w-4 h-4" />}
-                {tab.type === 'database' && <Database className="w-4 h-4" />}
-                <span className="text-sm">{tab.title}</span>
-                {tab.modified && <span className="text-orange-500 text-xs">*</span>}
+                {tab.type === 'query' && <FileText className="w-4 h-4 flex-shrink-0" />}
+                {tab.type === 'table' && <Table className="w-4 h-4 flex-shrink-0" />}
+                {tab.type === 'database' && <Database className="w-4 h-4 flex-shrink-0" />}
+                <span className="text-sm truncate flex-1">{tab.title}</span>
+                {tab.modified && <span className="text-orange-500 text-xs flex-shrink-0">*</span>}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -309,7 +310,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
                     e.stopPropagation();
                     closeTab(tab.id);
                   }}
-                  className="ml-1 p-0 h-4 w-4"
+                  className="ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100"
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -319,21 +320,22 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               variant="ghost"
               size="sm"
               onClick={createNewTab}
-              className="ml-2"
+              className="ml-2 flex-shrink-0"
+              title="新建查询标签"
             >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* 工具栏 */}
-        <div className="flex gap-2 px-3" size="small" >
+        {/* 右侧工具栏 - 统一尺寸，防止被挤压 */}
+        <div className="flex items-center gap-2 px-3 flex-shrink-0">
           <Select
             value={selectedDatabase}
             onValueChange={setSelectedDatabase}
             disabled={!activeConnectionId || databases.length === 0}
           >
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-[140px] h-10">
               <SelectValue placeholder="选择数据库" />
             </SelectTrigger>
             <SelectContent>
@@ -344,36 +346,44 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
               ))}
             </SelectContent>
           </Select>
+
           <Button
             size="sm"
             onClick={executeQuery}
             disabled={loading || !activeConnectionId || !selectedDatabase}
-            className="h-12 px-3 flex flex-col items-center justify-center gap-1"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            title="执行查询 (Ctrl+Enter)"
           >
             <PlayCircle className="w-4 h-4" />
-            <span className="text-xs">{loading ? '执行中...' : '执行'}</span>
+            <span className="text-xs">{loading ? '执行中' : '执行'}</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
             onClick={saveCurrentTab}
-            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            title="保存查询 (Ctrl+S)"
           >
             <Save className="w-4 h-4" />
             <span className="text-xs">保存</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
-            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            title="打开文件"
           >
             <FolderOpen className="w-4 h-4" />
             <span className="text-xs">打开</span>
           </Button>
+
           <Button
             variant="outline"
             size="sm"
-            className="h-12 w-16 p-1 flex flex-col items-center justify-center gap-1"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            title="更多操作"
           >
             <MoreHorizontal className="w-4 h-4" />
             <span className="text-xs">更多</span>

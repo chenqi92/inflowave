@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
-import { Save, Database, Download, History, Tags, PlayCircle, AlertCircle, Clock, FileText, Plus, X } from 'lucide-react';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
+import { Save, Database, Download, History, Tags, PlayCircle, AlertCircle, Clock, FileText, Plus, X, MoreHorizontal, FolderOpen, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -446,25 +446,25 @@ const Query: React.FC = () => {
 
   return (
     <div className="p-6 h-full flex flex-col">
-      {/* 标签栏和工具栏 */}
-      <div className="flex flex-col gap-4 mb-4">
-        {/* 标签栏 */}
-        <div className="flex items-center gap-2 border-b">
-          <div className="flex-1 min-w-0">
+      {/* 优化后的标签栏和工具栏 */}
+      <div className="flex flex-col gap-3 mb-4">
+        {/* 标签栏 - 固定高度，防止被挤压 */}
+        <div className="flex items-center gap-2 border-b h-12 flex-shrink-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             <Tabs value={activeTabId} onValueChange={setActiveTabId} className="w-full">
-              <TabsList className="h-auto p-0 bg-transparent justify-start overflow-x-auto">
+              <TabsList className="h-10 p-0 bg-transparent justify-start overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                 {queryTabs.map((tab) => (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className="relative px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent hover:border-muted-foreground/50 min-w-[120px] max-w-[200px]"
+                    className="relative px-3 py-2 h-10 data-[state=active]:bg-background data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent hover:border-muted-foreground/50 min-w-[100px] max-w-[180px] flex-shrink-0 group"
                   >
-                    <span className="truncate flex-1">{tab.title}</span>
+                    <span className="truncate flex-1 text-sm">{tab.title}</span>
                     {queryTabs.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-4 w-4 p-0 ml-2 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
+                        className="h-4 w-4 p-0 ml-1 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
                         onClick={(e) => {
                           e.stopPropagation();
                           closeTab(tab.id);
@@ -478,30 +478,83 @@ const Query: React.FC = () => {
               </TabsList>
             </Tabs>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={addNewTab}
-            className="flex-shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+
+          {/* 标签栏右侧操作区 */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={addNewTab}
+              className="h-8 w-8 p-0"
+              title="新建查询标签 (Ctrl+T)"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+
+            {/* 标签管理下拉菜单 */}
+            {queryTabs.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    title="标签管理"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {
+                    queryTabs.forEach(tab => {
+                      if (tab.id !== activeTabId) {
+                        closeTab(tab.id);
+                      }
+                    });
+                  }}>
+                    关闭其他标签
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const currentIndex = queryTabs.findIndex(tab => tab.id === activeTabId);
+                    queryTabs.forEach((tab, index) => {
+                      if (index > currentIndex) {
+                        closeTab(tab.id);
+                      }
+                    });
+                  }}>
+                    关闭右侧标签
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    queryTabs.forEach(tab => {
+                      if (tab.id !== activeTabId) {
+                        closeTab(tab.id);
+                      }
+                    });
+                  }}>
+                    关闭所有标签
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
-        
-        {/* 工具栏 */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex-shrink-0">
-            <Typography variant="h3" className="text-lg font-semibold">数据查询</Typography>
+
+        {/* 工具栏 - 优化布局和响应式 */}
+        <div className="flex items-center justify-between gap-4 min-h-[40px]">
+          <div className="flex-shrink-0 min-w-0">
+            <Typography variant="h3" className="text-lg font-semibold truncate">数据查询</Typography>
             {currentConnection && (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-sm truncate">
                 当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
               </p>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2 flex-shrink-0 min-w-0">
+          {/* 右侧控制区域 - 使用flex-shrink-0确保不被挤压 */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* 数据源选择 */}
             <Select value={selectedConnectionId} onValueChange={setSelectedConnectionId}>
-              <SelectTrigger className="w-[160px] min-w-[120px]">
+              <SelectTrigger className="w-[140px] h-9">
                 <SelectValue placeholder="选择数据源" />
               </SelectTrigger>
               <SelectContent>
@@ -515,20 +568,10 @@ const Query: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadDatabases}
-              disabled={loadingDatabases || !selectedConnectionId}
-              className="flex-shrink-0"
-            >
-              <Database className="w-4 h-4 mr-1" />
-              刷新
-            </Button>
-            
+
+            {/* 数据库选择 */}
             <Select value={selectedDatabase} onValueChange={setSelectedDatabase} disabled={loadingDatabases || !selectedConnectionId}>
-              <SelectTrigger className="w-[160px] min-w-[120px]">
+              <SelectTrigger className="w-[140px] h-9">
                 <SelectValue placeholder="选择数据库" />
               </SelectTrigger>
               <SelectContent>
@@ -542,6 +585,18 @@ const Query: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* 刷新按钮 */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadDatabases}
+              disabled={loadingDatabases || !selectedConnectionId}
+              className="h-9 px-3 flex-shrink-0"
+              title="刷新数据库列表"
+            >
+              <Database className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -575,58 +630,78 @@ const Query: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
         <div className="space-y-4">
-          {/* 工具栏 */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-2">
+          {/* 优化后的工具栏 - 统一使用shadcn组件 */}
+          <div className="flex items-center justify-between flex-wrap gap-3 min-h-[40px]">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* 主要操作按钮组 */}
+              <div className="flex items-center gap-2">
                 <Button
-                  type="primary"
-                  icon={<PlayCircle className="w-4 h-4" />}
                   onClick={handleExecuteQuery}
                   disabled={loading || !selectedDatabase || !selectedConnectionId}
                   size="sm"
+                  className="h-9 px-4"
                 >
+                  <PlayCircle className="w-4 h-4 mr-2" />
                   执行
                 </Button>
-                
+
                 <Button
                   variant="outline"
-                  icon={<Save className="w-4 h-4" />}
                   onClick={handleSaveQuery}
                   disabled={!query.trim()}
                   size="sm"
+                  className="h-9 px-4"
                 >
+                  <Save className="w-4 h-4 mr-2" />
                   保存
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  icon={<History className="w-4 h-4" />}
-                  size="sm"
-                >
-                  历史
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  icon={<Download className="w-4 h-4" />}
-                  onClick={() => setExportDialogVisible(true)}
-                  disabled={!queryResult}
-                  size="sm"
-                >
-                  导出
-                </Button>
+
+                {/* 更多操作下拉菜单 */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem>
+                      <FolderOpen className="w-4 h-4 mr-2" />
+                      打开查询
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <History className="w-4 h-4 mr-2" />
+                      查询历史
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setExportDialogVisible(true)}
+                      disabled={!queryResult}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      导出结果
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="w-4 h-4 mr-2" />
+                      编辑器设置
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              
-              <div className="h-6 w-px bg-border" />
-              
-              <div className="text-sm text-muted-foreground">
+
+              <Separator orientation="vertical" className="h-6" />
+
+              {/* 快捷键提示 */}
+              <div className="text-sm text-muted-foreground hidden sm:block">
                 Ctrl+Enter 执行 | Ctrl+S 保存
               </div>
             </div>
-            
+
+            {/* 查询结果信息 */}
             {queryResult && (
-              <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded">
+              <div className="text-sm text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md flex-shrink-0">
                 执行时间: {queryResult.executionTime}ms | 返回: {queryResult.rowCount} 行
               </div>
             )}
