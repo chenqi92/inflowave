@@ -11,6 +11,7 @@ export interface ConnectionConfig {
   database?: string;
   ssl: boolean;
   timeout: number;
+  version?: string; // InfluxDB版本，支持自动补全的版本兼容
   created_at?: string;
   updated_at?: string;
   // 保持向后兼容性
