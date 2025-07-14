@@ -163,20 +163,30 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   const handleToolsMenuClick = ({ key }: { key: string }) => {
     switch (key) {
       case 'query-history':
-        // 查询历史
-        console.log('打开查询历史');
+        // 查询历史 - 导航到查询页面并打开历史面板
+        navigate('/query?showHistory=true');
+        showMessage.info('正在打开查询历史...');
         break;
       case 'console':
-        // 控制台
-        console.log('打开控制台');
+        // 控制台 - 打开浏览器控制台
+        if (typeof window !== 'undefined' && window.console) {
+          showMessage.info('请查看浏览器控制台（F12）');
+          // 可以执行一些日志输出来引导用户
+          console.log('%c=== InfloWave Debug Console ===%c', 'color: #2196F3; font-size: 16px; font-weight: bold;', 'color: normal;');
+          console.log('当前时间:', new Date().toLocaleString());
+          console.log('应用版本: v0.1.0');
+          console.log('活跃连接:', activeConnectionId || '无');
+        } else {
+          showMessage.warning('控制台不可用');
+        }
         break;
       case 'dev-tools':
         // 开发者工具
-        onViewChange?.('dev-tools');
+        navigate('/dev-tools');
         break;
       case 'preferences':
-        // 首选项
-        setSettingsVisible(true);
+        // 首选项 - 与设置不同，可以打开不同的对话框或页面
+        navigate('/settings?tab=preferences');
         break;
       default:
         console.log('未处理的工具菜单项:', key);
