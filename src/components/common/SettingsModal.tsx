@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Switch, Separator, Label, toast } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toast } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp } from 'lucide-react';
 import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
@@ -231,25 +231,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="queryTimeout">查询超时时间 (毫秒)</Label>
-              <Input
-                type="number"
+              <InputNumber
                 min={1000}
                 max={300000}
                 step={1000}
                 value={form.watch('queryTimeout') || config.queryTimeout}
-                onChange={(e) => form.setValue('queryTimeout', parseInt(e.target.value))}
+                onChange={(value) => form.setValue('queryTimeout', value || 30000)}
+                placeholder="输入超时时间"
               />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="maxQueryResults">最大查询结果数</Label>
-              <Input
-                type="number"
+              <InputNumber
                 min={100}
                 max={100000}
                 step={100}
                 value={form.watch('maxQueryResults') || config.maxQueryResults}
-                onChange={(e) => form.setValue('maxQueryResults', parseInt(e.target.value))}
+                onChange={(value) => form.setValue('maxQueryResults', value || 10000)}
+                placeholder="输入结果数量"
               />
             </div>
           </div>

@@ -56,7 +56,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
   // 加载指定连接的数据库列表
-  const loadDatabases = async (connectionId: string): Promise<string[]> => {
+  const loadDatabases = useCallback(async (connectionId: string): Promise<string[]> => {
     console.log(`🔍 开始加载连接 ${connectionId} 的数据库列表...`);
     try {
       // 首先验证连接是否在后端存在
@@ -112,10 +112,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
       return [];
     }
-  };
+  }, [getConnection]);
 
   // 加载指定数据库的表列表
-  const loadTables = async (connectionId: string, database: string): Promise<string[]> => {
+  const loadTables = useCallback(async (connectionId: string, database: string): Promise<string[]> => {
     console.log(`🔍 开始加载数据库 "${database}" 的表列表...`);
     try {
       // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
@@ -134,10 +134,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
       return [];
     }
-  };
+  }, []);
 
   // 加载指定表的字段和标签信息
-  const loadTableSchema = async (connectionId: string, database: string, table: string): Promise<{ tags: string[]; fields: Array<{ name: string; type: string }> }> => {
+  const loadTableSchema = useCallback(async (connectionId: string, database: string, table: string): Promise<{ tags: string[]; fields: Array<{ name: string; type: string }> }> => {
     try {
       // 尝试分别获取字段和标签信息
       const [tags, fields] = await Promise.all([
@@ -168,7 +168,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       }
       return { tags: [], fields: [] };
     }
-  };
+  }, []);
 
   // 获取连接状态指示器颜色
   const getConnectionStatusColor = (connectionId: string) => {
@@ -231,7 +231,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
     setTreeData(treeNodes);
     setLoading(false);
-  }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus]);
+  }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus, loadDatabases]);
 
   // 动态加载节点数据
   const loadData = useCallback(async (node: any): Promise<void> => {
@@ -564,7 +564,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     console.log(`✨ 已连接ID: [${connectedConnectionIds.join(', ')}]`);
     console.log(`🎯 活跃连接ID: ${activeConnectionId}`);
     buildCompleteTreeData();
-  }, [connections, connectedConnectionIds, activeConnectionId, buildCompleteTreeData]);
+  }, [connections, connectedConnectionIds, activeConnectionId]); // 移除buildCompleteTreeData从依赖数组
 
   // 监听刷新触发器
   useEffect(() => {
@@ -572,7 +572,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       console.log(`🔄 收到刷新触发器，重新加载数据...`);
       buildCompleteTreeData();
     }
-  }, [refreshTrigger, buildCompleteTreeData]);
+  }, [refreshTrigger]); // 移除buildCompleteTreeData从依赖数组
 
   if (collapsed) {
     return (

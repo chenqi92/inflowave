@@ -193,29 +193,38 @@ const Connections: React.FC = () => {
 
 
   return (
-    <div className="h-full bg-white flex flex-col">
+    <div className="h-full bg-background flex flex-col">
+      {/* 页面标题 */}
+      <div className="border-b bg-white">
+        <div className="p-6">
+          <h1 className="text-2xl font-semibold text-foreground">数据源管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">管理和监控 InfluxDB 数据库连接</p>
+        </div>
+      </div>
 
       {/* 连接管理器 */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-white">
         <Tabs
           defaultValue="manager"
           className="h-full flex flex-col"
         >
-          <TabsList className="grid w-full grid-cols-2 h-8 mb-1 bg-gray-50 p-0.5">
-            <TabsTrigger
-              value="manager"
-              className="flex items-center gap-2 h-7 text-xs px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
-              连接列表
-            </TabsTrigger>
-            <TabsTrigger
-              value="debug"
-              className="flex items-center gap-2 h-7 text-xs px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
-              <Bug className="w-3 h-3" />
-              调试面板
-            </TabsTrigger>
-          </TabsList>
+          <div className="border-b">
+            <TabsList className="h-12 w-full justify-start bg-transparent p-0 space-x-8">
+              <TabsTrigger
+                value="manager"
+                className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                连接列表
+              </TabsTrigger>
+              <TabsTrigger
+                value="debug"
+                className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                调试面板
+              </TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="manager" className="mt-0 flex-1 overflow-hidden">
             <ConnectionManager
               onConnectionSelect={handleConnectionSelect}

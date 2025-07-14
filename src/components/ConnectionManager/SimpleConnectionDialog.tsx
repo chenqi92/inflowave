@@ -211,7 +211,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <InputNumber
             placeholder="8086"
             value={formData.port}
-            onValueChange={(value) => handleInputChange('port', value || 8086)}
+            onChange={(value) => handleInputChange('port', value || 8086)}
             className={`w-full ${errors.port ? 'border-red-500' : ''}`}
             min={1}
             max={65535}

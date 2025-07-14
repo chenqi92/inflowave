@@ -125,7 +125,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
           className
         )}
         value={formatValue(actualValue)}
-        onValueChange={handleInputChange}
+        onChange={handleInputChange}
         onBlur={onBlur}
         onFocus={onFocus}
         disabled={disabled}

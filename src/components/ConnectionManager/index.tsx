@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Typography } from '@/components/ui';
-import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Popconfirm } from '@/components/ui';
+import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Tag } from '@/components/ui';
 import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
@@ -24,6 +24,7 @@ interface ColumnType<T = any> {
   key: string;
   width?: number | string;
   render?: (value: any, record: T, index: number) => React.ReactNode;
+  ellipsis?: boolean;
 }
 
 const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelect, onEditConnection }) => {
@@ -186,35 +187,36 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
-      width: '30%',
-      ellipsis: true,
+      width: 280,
       render: (name: string, record) => (
         <div className="flex items-center space-x-3">
-          <Badge
-            status={connectionStatuses[record.id!]?.status === 'connected' ? 'success' : 'default'}
-          />
+          <div className={`w-2 h-2 rounded-full ${
+            connectionStatuses[record.id!]?.status === 'connected' ? 'bg-green-500' : 
+            connectionStatuses[record.id!]?.status === 'error' ? 'bg-red-500' :
+            connectionStatuses[record.id!]?.status === 'connecting' ? 'bg-yellow-500' : 'bg-gray-300'
+          }`} />
           <div className="min-w-0 flex-1">
-            <div className="font-medium text-gray-900 truncate">{name}</div>
+            <div className="font-medium text-foreground truncate">{name}</div>
             <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
           </div>
           {activeConnectionId === record.id && (
-            <Tag color="blue" className="ml-2 flex-shrink-0">活跃</Tag>
+            <Tag className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Tag>
           )}
         </div>
       )},
     {
       title: '连接信息',
       key: 'connectionInfo',
-      width: '25%',
+      width: 200,
       render: (_, record) => (
         <div className="space-y-1">
           <div className="text-sm">
             <span className="text-muted-foreground">用户：</span>
-            <span className="text-gray-900 truncate">{record.username || '无'}</span>
+            <span className="text-foreground font-medium">{record.username || '无'}</span>
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">SSL：</span>
-            <span className={record.ssl ? 'text-success' : 'text-gray-400'}>
+            <span className={record.ssl ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
               {record.ssl ? '已启用' : '未启用'}
             </span>
           </div>
@@ -223,7 +225,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '状态',
       key: 'status',
-      width: '15%',
+      width: 120,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return (
@@ -240,7 +242,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     {
       title: '最后连接',
       key: 'lastConnected',
-      width: '20%',
+      width: 160,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -248,33 +250,34 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
             {new Date(status.lastConnected).toLocaleString()}
           </div>
         ) : (
-          <span className="text-gray-400">从未连接</span>
+          <span className="text-muted-foreground">从未连接</span>
         );
       }},
     {
       title: '操作',
       key: 'actions',
-      width: '10%',
+      width: 300,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
 
         return (
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-2">
             <Button
-              type={isConnected ? 'default' : 'primary'}
-              icon={isConnected ? <Unlink className="w-4 h-4"  /> : <Wifi className="w-4 h-4"  />}
-              size="small"
+              variant={isConnected ? 'outline' : 'default'}
+              icon={isConnected ? <Unlink className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+              size="sm"
               disabled={loading}
               onClick={() => handleConnectionToggle(record.id!)}
-              className={isConnected ? '' : 'bg-green-600 hover:bg-green-700 border-green-600'}
+              className={isConnected ? 'text-red-600 hover:text-red-700 hover:border-red-300' : 'bg-green-600 hover:bg-green-700 text-white'}
             >
               {isConnected ? '断开' : '连接'}
             </Button>
 
             <Button
-              icon={<Edit className="w-4 h-4"  />}
-              size="small"
+              variant="outline"
+              icon={<Edit className="w-4 h-4" />}
+              size="sm"
               onClick={() => {
                 console.log('编辑连接:', record);
                 onEditConnection?.(record);
@@ -285,7 +288,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button icon={<MoreHorizontal className="w-4 h-4" />} size="small">
+                <Button variant="outline" icon={<MoreHorizontal className="w-4 h-4" />} size="sm">
                   更多
                 </Button>
               </DropdownMenuTrigger>
@@ -297,18 +300,17 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                   <Eye className="w-4 h-4 mr-2" />
                   连接池统计
                 </DropdownMenuItem>
-                <Popconfirm
-                  title="确认删除"
-                  description={`确定要删除连接 "${record.name}" 吗？此操作无法撤销。`}
-                  onConfirm={() => removeConnection(record.id!)}
-                  okText="确认删除"
-                  cancelText="取消"
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-600"
+                  onClick={() => {
+                    if (window.confirm(`确定要删除连接 "${record.name}" 吗？此操作无法撤销。`)) {
+                      removeConnection(record.id!);
+                    }
+                  }}
                 >
-                  <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    删除连接
-                  </DropdownMenuItem>
-                </Popconfirm>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  删除连接
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -324,51 +326,63 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
 
   return (
     <div className="h-full flex flex-col">
-      {/* 工具栏 */}
-      <div className="flex justify-between items-center p-3 border-b border">
-        <div className="text-sm text-muted-foreground">
-          连接状态监控
-        </div>
-        <Button
-          type={monitoringActive ? 'default' : 'primary'}
-          icon={monitoringActive ? <PauseCircle /> : <PlayCircle />}
-          onClick={handleMonitoringToggle}
-          size="small"
-        >
-          {monitoringActive ? '停止监控' : '启动监控'}
-        </Button>
-      </div>
-      {/* 统计信息 */}
-      <div className="flex items-center justify-between p-3 bg-muted/50 border-b border">
-        <div className="flex items-center space-x-6 text-sm">
-          <div className="flex items-center space-x-2">
-            <Settings className="w-4 h-4 text-muted-foreground"   />
-            <span className="text-muted-foreground">总连接:</span>
-            <Typography.Text className="font-medium">{connections.length}</Typography.Text>
+      {/* 统计信息和工具栏 */}
+      <div className="border-b">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">连接管理</h3>
+            <Button
+              variant={monitoringActive ? 'outline' : 'default'}
+              icon={monitoringActive ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+              onClick={handleMonitoringToggle}
+              size="sm"
+            >
+              {monitoringActive ? '停止监控' : '启动监控'}
+            </Button>
           </div>
-          <div className="flex items-center space-x-2">
-            <Wifi className="w-4 h-4 text-success"   />
-            <span className="text-muted-foreground">已连接:</span>
-            <span className="font-medium text-success">
-              {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-muted-foreground">监控:</span>
-            <span className={`font-medium ${monitoringActive ? 'text-success' : 'text-red-600'}`}>
-              {monitoringActive ? '运行中' : '已停止'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-muted-foreground">间隔:</span>
-            <Typography.Text className="font-medium">{monitoringInterval}秒</Typography.Text>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Settings className="w-4 h-4 text-muted-foreground" />
+              <div className="text-sm">
+                <p className="text-muted-foreground">总连接</p>
+                <p className="font-semibold">{connections.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Wifi className="w-4 h-4 text-green-600" />
+              <div className="text-sm">
+                <p className="text-muted-foreground">已连接</p>
+                <p className="font-semibold text-green-600">
+                  {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <div className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className="text-sm">
+                <p className="text-muted-foreground">监控状态</p>
+                <p className={`font-semibold ${monitoringActive ? 'text-green-600' : 'text-gray-600'}`}>
+                  {monitoringActive ? '运行中' : '已停止'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center">
+                <span className="text-xs text-blue-600 font-medium">{monitoringInterval}</span>
+              </div>
+              <div className="text-sm">
+                <p className="text-muted-foreground">监控间隔</p>
+                <p className="font-semibold">{monitoringInterval}秒</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* 连接表格 */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full w-full overflow-auto">
+      <div className="flex-1 overflow-hidden p-4">
+        <div className="h-full rounded-lg border">
           <Table
             columns={columns}
             dataSource={dataSource}
@@ -378,12 +392,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-              size: 'small'
+              size: 'default'
             }}
-            disabled={loading}
-            scroll={{ y: 'calc(100vh - 320px)', x: '100%' }}
-            size="small"
-            className="connection-table w-full"
+            loading={loading}
+            scroll={{ 
+              x: 'max-content',
+              y: 'calc(100vh - 400px)'
+            }}
+            size="default"
+            className="w-full h-full"
             rowClassName={(record) =>
               activeConnectionId === record.id
                 ? 'bg-blue-50'

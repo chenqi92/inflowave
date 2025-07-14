@@ -28,6 +28,7 @@ interface TreeProps {
   onExpand?: (expandedKeys: string[], info: { expanded: boolean; node: TreeNode }) => void
   onSelect?: (selectedKeys: string[], info: { selected: boolean; node: TreeNode }) => void
   onCheck?: (checkedKeys: string[], info: { checked: boolean; node: TreeNode }) => void
+  onDoubleClick?: (info: { node: TreeNode }) => void
   showIcon?: boolean
   showLine?: boolean | { showLeafIcon?: boolean }
   blockNode?: boolean
@@ -50,6 +51,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
     onExpand,
     onSelect,
     onCheck,
+    onDoubleClick,
     showIcon = false,
     showLine = false,
     blockNode = false,
@@ -187,7 +189,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
                 type="checkbox"
                 checked={isChecked}
                 disabled={node.disabled || node.disableCheckbox}
-                onValueChange={() => handleCheck(node.key, node)}
+                onChange={() => handleCheck(node.key, node)}
                 onClick={(e) => e.stopPropagation()}
                 className="mr-2"
               />
@@ -204,6 +206,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
             <span
               className="flex-1 text-sm"
               onClick={() => handleSelect(node.key, node)}
+              onDoubleClick={() => onDoubleClick?.({ node })}
             >
               {node.title}
             </span>
