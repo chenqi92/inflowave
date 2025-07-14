@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Typography } from '@/components/ui';
-import { Card, Space, toast } from '@/components/ui';
+import { Button, Title, Text } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Space, toast } from '@/components/ui';
 
 import { safeTauriInvoke } from '@/utils/tauri';
-
-const { Title, Text } = Typography;
 
 interface DebugInfo {
   connection_count: number;
@@ -20,11 +18,11 @@ const ConnectionDebug: React.FC = () => {
   const handleDebug = async () => {
     setLoading(true);
     try {
-      const info = await invoke<DebugInfo>('debug_connection_manager');
+      const info = await safeTauriInvoke<DebugInfo>('debug_connection_manager');
       setDebugInfo(info);
       toast({ title: "成功", description: "调试信息获取成功" });
     } catch (error) {
-      toast({ title: "错误", description: "获取调试信息失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取调试信息失败: ${error}`, variant: "destructive" });
       console.error('Debug error:', error);
     } finally {
       setLoading(false);
@@ -34,10 +32,10 @@ const ConnectionDebug: React.FC = () => {
   return (
     <div className="p-4">
       <Title level={3}>连接管理器调试</Title>
-      
-      <div className="flex gap-2" direction="vertical" size="large" style={{ width: '100%' }}>
-        <Button 
-          type="primary" 
+
+      <div className="flex flex-col gap-4 w-full">
+        <Button
+          variant="default"
           onClick={handleDebug}
           disabled={loading}
         >
@@ -45,32 +43,37 @@ const ConnectionDebug: React.FC = () => {
         </Button>
 
         {debugInfo && (
-          <Card title="调试信息" size="small">
-            <div className="flex gap-2" direction="vertical" size="middle" style={{ width: '100%' }}>
-              <div>
-                <Text strong>连接数量: </Text>
-                <Text>{debugInfo.connection_count}</Text>
-              </div>
-              
-              <div>
-                <Text strong>时间戳: </Text>
-                <Text>{new Date(debugInfo.timestamp).toLocaleString()}</Text>
-              </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>调试信息</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 w-full">
+                <div>
+                  <Text strong>连接数量: </Text>
+                  <Text>{debugInfo.connection_count}</Text>
+                </div>
 
-              <div>
-                <Text strong>连接配置:</Text>
-                <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
-                  {JSON.stringify(debugInfo.connections, null, 2)}
-                </pre>
-              </div>
+                <div>
+                  <Text strong>时间戳: </Text>
+                  <Text>{new Date(debugInfo.timestamp).toLocaleString()}</Text>
+                </div>
 
-              <div>
-                <Text strong>连接状态:</Text>
-                <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
-                  {JSON.stringify(debugInfo.statuses, null, 2)}
-                </pre>
+                <div>
+                  <Text strong>连接配置:</Text>
+                  <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+                    {JSON.stringify(debugInfo.connections, null, 2)}
+                  </pre>
+                </div>
+
+                <div>
+                  <Text strong>连接状态:</Text>
+                  <pre className="bg-muted p-2 rounded mt-2 text-xs overflow-auto max-h-40">
+                    {JSON.stringify(debugInfo.statuses, null, 2)}
+                  </pre>
+                </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         )}
       </div>
