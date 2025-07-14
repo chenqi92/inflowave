@@ -191,10 +191,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
         };
 
         const statusConfig = {
-            connected: {variant: 'default', text: '已连接', className: 'bg-green-100 text-green-800 border-green-200'},
-            disconnected: {variant: 'secondary', text: '已断开', className: 'bg-gray-100 text-gray-800 border-gray-200'},
-            connecting: {variant: 'default', text: '连接中', className: 'bg-yellow-100 text-yellow-800 border-yellow-200'},
-            error: {variant: 'destructive', text: '错误', className: 'bg-red-100 text-red-800 border-red-200'}
+            connected: {variant: 'default', text: '已连接', className: 'bg-success/10 text-success border-success/20'},
+            disconnected: {variant: 'secondary', text: '已断开', className: 'bg-muted text-muted-foreground border-border'},
+            connecting: {variant: 'default', text: '连接中', className: 'bg-warning/10 text-warning border-warning/20'},
+            error: {variant: 'destructive', text: '错误', className: 'bg-destructive/10 text-destructive border-destructive/20'}
         };
 
         const config = statusConfig[actualStatus.status] || statusConfig.disconnected;

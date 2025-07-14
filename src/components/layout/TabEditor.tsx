@@ -11,6 +11,7 @@ import * as monaco from 'monaco-editor';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import type { QueryResult, QueryRequest } from '@/types';
 
@@ -44,6 +45,7 @@ interface TabEditorRef {
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onBatchQueryResults }, ref) => {
   const { activeConnectionId, connections } = useConnectionStore();
+  const { resolvedTheme } = useTheme();
   const [activeKey, setActiveKey] = useState<string>('1');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [databases, setDatabases] = useState<string[]>([]);
@@ -590,17 +592,17 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
   return (
     <TooltipProvider>
-      <div className="h-full flex flex-col bg-white border-0 shadow-none">
+      <div className="h-full flex flex-col bg-background border-0 shadow-none">
       {/* 优化后的标签页头部 - 防止被挤压 */}
       <div className="flex items-center justify-between border-b border min-h-[48px] p-0">
         {/* 左侧标签区域 - 支持滚动 */}
         <div className="flex-1 flex items-center min-w-0">
-          <div className="flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          <div className="flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent">
             {tabs.map(tab => (
               <div
                 key={tab.id}
                 className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 flex-shrink-0 min-w-[120px] max-w-[180px] ${
-                  activeKey === tab.id ? 'bg-white border-b-2 border-blue-500' : 'bg-muted/50'
+                  activeKey === tab.id ? 'bg-background border-b-2 border-primary' : 'bg-muted/50'
                 }`}
                 onClick={() => setActiveKey(tab.id)}
               >
@@ -739,7 +741,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           <Editor
             height="100%"
             language="sql"
-            theme="vs-light"
+            theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
             value={currentTab.content}
             onValueChange={handleEditorChange}
             onMount={handleEditorDidMount}

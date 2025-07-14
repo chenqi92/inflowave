@@ -11,6 +11,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { useQuery } from '@/hooks/useQuery';
 import { useSettingsStore } from '@/store/settings';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { FormatUtils } from '@/utils/format';
 import { intelligentQueryEngine } from '@/services/intelligentQuery';
 import type { QueryResult, QueryRequest } from '@/types';
@@ -45,6 +46,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   onQueryResult,
   onLoadingChange}) => {
   const { activeConnectionId } = useConnectionStore();
+  const { resolvedTheme } = useTheme();
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
     {
       id: 'default',
@@ -77,7 +79,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       scrollBeyondLastLine: false,
       wordWrap: 'on',
       automaticLayout: true,
-      theme: 'vs-light',
+      theme: resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light',
       suggestOnTriggerCharacters: true,
       quickSuggestions: true,
       parameterHints: { enabled: true }});
@@ -630,7 +632,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Editor
               height="100%"
               language="influxql"
-              theme="vs-light"
+              theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={currentTab?.query || ''}
               onValueChange={(value) => updateCurrentTabQuery(value || '')}
               onMount={handleEditorDidMount}
@@ -765,10 +767,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           
           <div>
             <Label className="block text-sm font-medium mb-2">主题</Label>
-            <Select defaultValue="vs-light" style={{ width: '100%' }}>
-              <Option value="vs-light">浅色</Option>
-              <Option value="vs-dark">深色</Option>
-              <Option value="hc-black">高对比度</Option>
+            <Select value={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'} disabled style={{ width: '100%' }}>
+              <Option value="vs-light">浅色 (跟随系统)</Option>
+              <Option value="vs-dark">深色 (跟随系统)</Option>
             </Select>
           </div>
           

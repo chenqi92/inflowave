@@ -205,11 +205,11 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
       case 'float':
         return 'bg-primary';
       case 'string':
-        return 'bg-green-500';
+        return 'bg-success';
       case 'boolean':
         return 'bg-purple-500';
       default:
-        return 'bg-gray-500';
+        return 'bg-muted-foreground';
     }
   };
 
