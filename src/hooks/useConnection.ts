@@ -3,6 +3,15 @@ import { useConnectionStore } from '@/store/connection';
 import { ConnectionAPI } from '@/services/api';
 import type { ConnectionConfig, ConnectionStatus, ConnectionTestResult } from '@/types';
 
+// 生成UUID的简单函数
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 /**
  * 连接管理 Hook
  */
@@ -33,9 +42,20 @@ export const useConnection = () => {
     setError(null);
 
     try {
-      const id = await ConnectionAPI.createConnection(config as ConnectionConfig);
-      addConnection({ ...config, id } as ConnectionConfig);
-      return id;
+      // 为新连接生成 UUID
+      const id = generateUUID();
+      const fullConfig: ConnectionConfig = {
+        ...config,
+        id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const returnedId = await ConnectionAPI.createConnection(fullConfig);
+      addConnection({ ...fullConfig, id: returnedId });
+      return returnedId;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
@@ -72,9 +92,20 @@ export const useConnection = () => {
     setError(null);
 
     try {
+      // 为临时连接生成 UUID
+      const id = generateUUID();
+      const fullConfig: ConnectionConfig = {
+        ...config,
+        id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
       // 只调用后端API，不添加到前端状态
-      const id = await ConnectionAPI.createConnection(config as ConnectionConfig);
-      return id;
+      const returnedId = await ConnectionAPI.createConnection(fullConfig);
+      return returnedId;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);

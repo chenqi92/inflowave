@@ -164,24 +164,35 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      const configData: ConnectionConfig = {
-        ...formData,
-        id: connection?.id,
-        created_at: connection?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        // 保持向后兼容性
-        createdAt: connection?.createdAt || new Date(),
-        updatedAt: new Date()
-      };
-
       if (isEditing) {
-        await editConnection(configData);
-      } else {
-        const id = await createConnection(configData);
-        configData.id = id;
-      }
+        // 编辑现有连接
+        const configData: ConnectionConfig = {
+          ...formData,
+          id: connection!.id, // 编辑时必须有 id
+          created_at: connection!.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // 保持向后兼容性
+          createdAt: connection!.createdAt || new Date(),
+          updatedAt: new Date()
+        };
 
-      onSuccess(configData);
+        await editConnection(configData);
+        onSuccess(configData);
+      } else {
+        // 创建新连接
+        const id = await createConnection(formData);
+        const configData: ConnectionConfig = {
+          ...formData,
+          id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // 保持向后兼容性
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        onSuccess(configData);
+      }
     } catch (error) {
       console.error('保存连接失败:', error);
     } finally {
