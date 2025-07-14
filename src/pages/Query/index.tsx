@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { Save, Database, Download, History, Tags, PlayCircle, AlertCircle, Clock, FileText, Plus, X, MoreHorizontal, FolderOpen, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
@@ -241,12 +241,14 @@ const Query: React.FC = () => {
     }
   }, [databases, measurements, fields, tags, editorInstance]);
 
-  // 初始化时选择第一个已连接的连接
+  // 初始化时选择活跃连接或第一个已连接的连接
   useEffect(() => {
-    if (connectedConnections.length > 0 && !selectedConnectionId) {
-      setSelectedConnectionId(connectedConnections[0].id);
+    const targetConnectionId = activeConnectionId || (connectedConnections.length > 0 ? connectedConnections[0].id : null);
+    
+    if (targetConnectionId && !selectedConnectionId) {
+      setSelectedConnectionId(targetConnectionId);
     }
-  }, [connectedConnections, selectedConnectionId]);
+  }, [activeConnectionId, connectedConnections, selectedConnectionId]);
 
   // 组件挂载时加载数据
   useEffect(() => {
@@ -322,13 +324,15 @@ const Query: React.FC = () => {
       return;
     }
 
-    if (!selectedDatabase) {
-      toast({ title: "警告", description: "请选择数据库" });
+    // 使用当前活跃连接如果没有选择特定连接
+    const connectionId = selectedConnectionId || activeConnectionId;
+    if (!connectionId) {
+      toast({ title: "警告", description: "请先连接到数据源" });
       return;
     }
 
-    if (!selectedConnectionId) {
-      toast({ title: "警告", description: "请先选择一个连接" });
+    if (!selectedDatabase) {
+      toast({ title: "警告", description: "请选择数据库" });
       return;
     }
 
@@ -336,12 +340,13 @@ const Query: React.FC = () => {
 
     try {
       const request: QueryRequest = {
-        connectionId: selectedConnectionId,
+        connectionId: connectionId,
         database: selectedDatabase,
         query: query.trim()};
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       setQueryResult(result);
+      setActiveResultTab('results'); // 自动切换到结果标签页
       toast({ title: "成功", description: `查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms` });
     } catch (error) {
       toast({ title: "错误", description: `查询执行失败: ${error}`, variant: "destructive" });
@@ -425,24 +430,7 @@ const Query: React.FC = () => {
 
   const { columns, dataSource } = queryResult ? formatResultForTable(queryResult) : { columns: [], dataSource: [] };
 
-  if (connectedConnections.length === 0) {
-    return (
-      <div className="p-6">
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <div className="ml-3">
-            <div className="font-medium text-amber-800 mb-1">请先连接到 InfluxDB</div>
-            <div className="text-sm text-amber-700 mb-3">
-              在数据源菜单中双击连接或在连接管理页面连接数据库后，才能执行查询。
-            </div>
-            <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
-              去连接
-            </Button>
-          </div>
-        </Alert>
-      </div>
-    );
-  }
+  // 移除不必要的连接检查 - 查询面板应该始终可用，只在执行时检查连接
 
   return (
     <div className="p-6 h-full flex flex-col">
@@ -769,7 +757,7 @@ const Query: React.FC = () => {
               {loading ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-blue-600">
-                    <Spin size="small" />
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                     <span className="font-medium">正在执行查询...</span>
                   </div>
                   <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">
@@ -809,6 +797,12 @@ const Query: React.FC = () => {
                   <div className="text-xs text-muted-foreground">
                     执行时间: {new Date().toLocaleString()}
                   </div>
+                </div>
+              ) : !activeConnectionId && !selectedConnectionId ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div>请先连接到数据源</div>
+                  <div className="text-xs mt-1">在左侧数据源树中连接数据库后即可执行查询</div>
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -894,6 +888,12 @@ const Query: React.FC = () => {
                     </pre>
                   </div>
                 </div>
+              ) : !activeConnectionId && !selectedConnectionId ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <div>请先连接到数据源</div>
+                  <div className="text-xs mt-1">在左侧数据源树中连接数据库后即可执行查询</div>
+                </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -906,8 +906,9 @@ const Query: React.FC = () => {
           
           <TabsContent value="results" className="h-full mt-4">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spin size="large" tip="执行查询中..." />
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="text-muted-foreground">执行查询中...</span>
               </div>
             ) : queryResult ? (
               <Tabs defaultValue="table" className="h-full">
@@ -971,9 +972,17 @@ const Query: React.FC = () => {
                   </pre>
                 </TabsContent>
               </Tabs>
+            ) : !activeConnectionId && !selectedConnectionId ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <div>请先连接到数据源</div>
+                <div className="text-xs mt-1">在左侧数据源树中连接数据库后即可执行查询</div>
+              </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                请执行查询以查看结果
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <div>请执行查询以查看结果</div>
+                <div className="text-xs mt-1">输入 SQL 查询语句并点击执行按钮</div>
               </div>
             )}
           </TabsContent>
