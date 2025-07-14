@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/utils/cn';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
@@ -28,7 +28,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [currentView, setCurrentView] = useState('datasource');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
-  const [tabEditorRef, setTabEditorRef] = useState<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
+  const tabEditorRef = useRef<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
 
   // 刷新数据源面板的方法
   const refreshDataExplorer = () => {
@@ -46,8 +46,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     // 切换到查询视图
     setCurrentView('query');
     // 使用TabEditor的引用来执行查询
-    if (tabEditorRef?.executeQueryWithContent) {
-      tabEditorRef.executeQueryWithContent(query, database);
+    if (tabEditorRef.current?.executeQueryWithContent) {
+      tabEditorRef.current.executeQueryWithContent(query, database);
     }
   };
 
@@ -96,7 +96,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             >
               <TabEditor 
                 onQueryResult={setQueryResult} 
-                ref={setTabEditorRef}
+                ref={tabEditorRef}
               />
             </ResizablePanel>
 
