@@ -25,9 +25,12 @@ export interface DataGripStyleLayoutProps {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(false);
-  const [currentView, setCurrentView] = useState('datasource');
+  const [currentView, setCurrentView] = useState('query');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
+  const [executedQueries, setExecutedQueries] = useState<string[]>([]);
+  const [executionTime, setExecutionTime] = useState<number>(0);
   const tabEditorRef = useRef<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
 
   // 刷新数据源面板的方法
@@ -108,6 +111,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             >
               <TabEditor 
                 onQueryResult={setQueryResult} 
+                onBatchQueryResults={(results, queries, executionTime) => {
+                  setQueryResults(results);
+                  setExecutedQueries(queries);
+                  setExecutionTime(executionTime);
+                  // 如果只有一个结果，也设置 queryResult 以保持兼容性
+                  if (results.length === 1) {
+                    setQueryResult(results[0]);
+                  }
+                }}
                 ref={tabEditorRef}
               />
             </ResizablePanel>
@@ -119,14 +131,22 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
 
                 <ResizablePanel
                   defaultSize={40}
-                  minSize={20}
+                  minSize={25}
                   maxSize={70}
-                  className="bg-muted border-t border-border overflow-hidden"
+                  className="bg-background border-t border-border overflow-hidden"
                 >
                   <ResultPanel
                     collapsed={bottomPanelCollapsed}
                     queryResult={queryResult}
-                    onClearResult={() => setQueryResult(null)}
+                    queryResults={queryResults}
+                    executedQueries={executedQueries}
+                    executionTime={executionTime}
+                    onClearResult={() => {
+                      setQueryResult(null);
+                      setQueryResults([]);
+                      setExecutedQueries([]);
+                      setExecutionTime(0);
+                    }}
                   />
                 </ResizablePanel>
               </>

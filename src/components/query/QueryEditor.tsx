@@ -318,12 +318,11 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     const startTime = Date.now();
 
     try {
-      const request: QueryRequest = {
-        connectionId: activeConnectionId,
+      const result = await invoke<QueryResult>('execute_query', {
+        connection_id: activeConnectionId,
         database: selectedDatabase,
-        query: currentTab.query.trim()};
-
-      const result = await invoke<QueryResult>('execute_query', { request });
+        query: currentTab.query.trim()
+      });
       const executionTime = Date.now() - startTime;
       
       setLastExecutionTime(executionTime);

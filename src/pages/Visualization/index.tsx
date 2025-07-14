@@ -50,12 +50,11 @@ const Visualization: React.FC = () => {
     if (!activeConnectionId) return null;
 
     try {
-      const request: QueryRequest = {
-        connectionId: activeConnectionId,
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        connection_id: activeConnectionId,
         database: chartConfig.database,
-        query: chartConfig.query};
-
-      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
+        query: chartConfig.query
+      });
       return result;
     } catch (error) {
       console.error('查询执行失败:', error);

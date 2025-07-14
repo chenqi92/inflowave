@@ -35,15 +35,16 @@ interface EditorTab {
 
 interface TabEditorProps {
   onQueryResult?: (result: QueryResult) => void;
+  onBatchQueryResults?: (results: QueryResult[], queries: string[], executionTime: number) => void;
 }
 
 interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
 }
 
-const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, ref) => {
+const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onBatchQueryResults }, ref) => {
   const { activeConnectionId, connections } = useConnectionStore();
-  const [activeKey, setActiveKey] = useState<string>('');
+  const [activeKey, setActiveKey] = useState<string>('1');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
   const [databases, setDatabases] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
     {
       id: '1',
       title: '查询-1',
-      content: 'SELECT * FROM measurement_name LIMIT 10',
+      content: '-- 在此输入 InfluxQL 查询语句\nSELECT * FROM "measurement_name" LIMIT 10',
       type: 'query',
       modified: false}
   ]);
@@ -77,9 +78,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
 
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId});
+      console.log('✅ 成功加载数据库列表:', dbList);
       setDatabases(dbList || []);
       if (dbList && dbList.length > 0 && !selectedDatabase) {
+        console.log('🔄 自动选择第一个数据库:', dbList[0]);
         setSelectedDatabase(dbList[0]);
+      } else {
+        console.log('⚠️ 数据库列表为空或已选择数据库:', { dbList, selectedDatabase });
       }
     } catch (error) {
       console.error('加载数据库列表失败:', error);
@@ -117,23 +122,37 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
     // 执行查询
     setLoading(true);
     try {
-      const request: QueryRequest = {
-        connectionId: activeConnectionId,
+      console.log('🚀 执行表双击查询:', {
+        connection_id: activeConnectionId,
         database: database,
         query: query.trim()
-      };
-
-      console.log('🚀 执行表双击查询:', request);
-      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
+      });
+      
+      // 确保数据库名称不为空
+      if (!database || database.trim() === '') {
+        console.log('❌ 数据库名称为空:', { database });
+        showMessage.error('数据库名称为空，无法执行查询');
+        return;
+      }
+      
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        request: {
+          connection_id: activeConnectionId,
+          database: database,
+          query: query.trim()
+        }
+      });
+      
       console.log('✅ 查询结果:', result);
       
       if (result) {
         onQueryResult?.(result);
-        showMessage.success('查询执行成功');
+        showMessage.success(`表查询执行成功，返回 ${result.data?.length || 0} 行数据`);
       }
     } catch (error) {
       console.error('查询执行失败:', error);
-      showMessage.error(`查询执行失败: ${error}`);
+      const errorMessage = String(error).replace('Error: ', '');
+      showMessage.error(`查询执行失败: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -141,40 +160,137 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, r
 
   // 执行查询
   const executeQuery = async () => {
+    console.log('🎯 执行查询 - 开始检查条件');
+    console.log('activeConnectionId:', activeConnectionId);
+    console.log('selectedDatabase:', selectedDatabase);
+    console.log('activeKey:', activeKey);
+    console.log('tabs:', tabs);
+
     if (!activeConnectionId) {
-      showMessage.warning('请先选择数据库连接');
+      console.log('❌ 没有活跃连接');
+      showMessage.warning('请先选择数据库连接。请在左侧连接列表中选择一个连接。');
       return;
     }
 
     if (!selectedDatabase) {
-      showMessage.warning('请选择数据库');
+      console.log('❌ 没有选择数据库');
+      showMessage.warning('请选择数据库。如果下拉列表为空，请检查连接状态。');
       return;
     }
 
     const currentTab = tabs.find(tab => tab.id === activeKey);
-    if (!currentTab || !currentTab.content.trim()) {
+    console.log('当前标签:', currentTab);
+    
+    if (!currentTab) {
+      console.log('❌ 找不到当前标签');
+      showMessage.warning('找不到当前查询标签，请重新创建查询');
+      return;
+    }
+
+    if (!currentTab.content.trim()) {
+      console.log('❌ 查询内容为空');
       showMessage.warning('请输入查询语句');
       return;
     }
 
+    console.log('✅ 所有条件满足，开始执行查询');
     setLoading(true);
+    const startTime = Date.now();
+    
     try {
-      const request: QueryRequest = {
-        connectionId: activeConnectionId,
-        database: selectedDatabase,
-        query: currentTab.content.trim()};
-
-      console.log('🚀 执行查询:', request);
-      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
-      console.log('✅ 查询结果:', result);
+      const queryText = currentTab.content.trim();
       
-      if (result) {
-        onQueryResult?.(result);
-        showMessage.success('查询执行成功');
+      // 检查是否包含多条 SQL 语句（以分号分隔）
+      const statements = queryText.split(';')
+        .map(stmt => stmt.trim())
+        .filter(stmt => stmt.length > 0);
+      
+      console.log('🔍 检测到查询语句数量:', statements.length);
+      
+      if (statements.length > 1) {
+        // 执行多条查询
+        console.log('🚀 执行批量查询:', {
+          connection_id: activeConnectionId,
+          database: selectedDatabase,
+          queries: statements
+        });
+        
+        // 确保数据库名称不为空
+        if (!selectedDatabase || selectedDatabase.trim() === '') {
+          console.log('❌ 数据库名称为空:', { selectedDatabase, databases });
+          showMessage.error('数据库名称为空，请选择一个数据库');
+          return;
+        }
+        
+        const results = await safeTauriInvoke<QueryResult[]>('execute_batch_queries', {
+          request: {
+            connection_id: activeConnectionId,
+            database: selectedDatabase,
+            queries: statements
+          }
+        });
+        
+        const executionTime = Date.now() - startTime;
+        console.log('✅ 批量查询结果:', results);
+        
+        if (results && results.length > 0) {
+          // 调用批量查询回调
+          onBatchQueryResults?.(results, statements, executionTime);
+          
+          const totalRows = results.reduce((sum, result) => sum + (result.data?.length || 0), 0);
+          showMessage.success(`批量查询执行成功，共执行 ${results.length} 条语句，返回 ${totalRows} 行数据`);
+        } else {
+          console.log('⚠️ 批量查询结果为空');
+          showMessage.warning('批量查询执行完成，但没有返回数据');
+        }
+      } else {
+        // 执行单条查询
+        console.log('🚀 执行单条查询:', {
+          connection_id: activeConnectionId,
+          database: selectedDatabase,
+          query: statements[0]
+        });
+        
+        // 确保数据库名称不为空
+        if (!selectedDatabase || selectedDatabase.trim() === '') {
+          console.log('❌ 数据库名称为空:', { selectedDatabase, databases });
+          showMessage.error('数据库名称为空，请选择一个数据库');
+          return;
+        }
+        
+        console.log('🔍 准备执行查询，参数检查:', {
+          connection_id: activeConnectionId,
+          database: selectedDatabase,
+          query: statements[0],
+          selectedDatabase_type: typeof selectedDatabase,
+          selectedDatabase_length: selectedDatabase?.length
+        });
+        
+        const result = await safeTauriInvoke<QueryResult>('execute_query', {
+          request: {
+            connection_id: activeConnectionId,
+            database: selectedDatabase,
+            query: statements[0]
+          }
+        });
+        
+        const executionTime = Date.now() - startTime;
+        console.log('✅ 单条查询结果:', result);
+        
+        if (result) {
+          onQueryResult?.(result);
+          // 也调用批量查询回调，但只有一个结果
+          onBatchQueryResults?.([result], statements, executionTime);
+          showMessage.success(`查询执行成功，返回 ${result.data?.length || 0} 行数据`);
+        } else {
+          console.log('⚠️ 查询结果为空');
+          showMessage.warning('查询执行完成，但没有返回数据');
+        }
       }
     } catch (error) {
       console.error('查询执行失败:', error);
-      showMessage.error(`查询执行失败: ${error}`);
+      const errorMessage = String(error).replace('Error: ', '');
+      showMessage.error(`查询执行失败: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
