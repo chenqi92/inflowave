@@ -39,6 +39,9 @@ const Connections: React.FC = () => {
         });
         
         if (needsUpdate || currentConnections.length !== backendConnections.length) {
+          // 保存当前活跃连接ID和连接状态
+          const { activeConnectionId, connectedConnectionIds, connectionStatuses } = useConnectionStore.getState();
+          
           // 清空前端存储的连接
           clearConnections();
           
@@ -47,7 +50,26 @@ const Connections: React.FC = () => {
             addConnection(conn);
           }
           
-          console.log(`已同步 ${backendConnections.length} 个连接配置`);
+          // 恢复活跃连接和连接状态
+          if (activeConnectionId && backendConnections.some(conn => conn.id === activeConnectionId)) {
+            useConnectionStore.getState().setActiveConnection(activeConnectionId);
+            
+            // 恢复连接状态
+            Object.entries(connectionStatuses).forEach(([id, status]) => {
+              if (backendConnections.some(conn => conn.id === id)) {
+                setConnectionStatus(id, status);
+              }
+            });
+            
+            // 恢复已连接列表
+            connectedConnectionIds.forEach(id => {
+              if (backendConnections.some(conn => conn.id === id)) {
+                useConnectionStore.getState().addConnectedConnection(id);
+              }
+            });
+          }
+          
+          console.log(`已同步 ${backendConnections.length} 个连接配置，保持活跃连接: ${activeConnectionId}`);
         }
       } else if (connections.length > 0) {
         // 如果后端没有连接但前端有，将前端连接推送到后端
