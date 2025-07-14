@@ -453,6 +453,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       return;
     }
     
+    console.log(`🔄 开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`);
+    
     try {
       if (isCurrentlyConnected) {
         // 断开连接
@@ -463,9 +465,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         await connectToDatabase(connectionId);
         showMessage.success(`已连接: ${connection.name}`);
       }
-      // 重新构建树数据以反映状态变化
-      buildCompleteTreeData();
+      // 不需要手动重新构建树，依赖更新会自动触发
+      console.log(`✅ 连接操作完成: ${connection.name}`);
     } catch (error) {
+      console.error(`❌ 连接操作失败:`, error);
       showMessage.error(`连接操作失败: ${error}`);
     }
   };

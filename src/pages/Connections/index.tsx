@@ -133,12 +133,12 @@ const Connections: React.FC = () => {
     } catch (error) {
       showMessage.error(`加载连接列表失败: ${error}`);
     }
-  }, [setConnectionStatus, syncConnectionsFromBackend]);
+  }, [setConnectionStatus]); // 移除syncConnectionsFromBackend依赖
 
   // 组件挂载时加载连接列表
   useEffect(() => {
     loadConnections();
-  }, [loadConnections]);
+  }, []); // 只在组件挂载时执行一次
 
   // 打开新建/编辑连接对话框
   const handleOpenDialog = (connection?: ConnectionConfig) => {

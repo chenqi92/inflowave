@@ -180,66 +180,86 @@ export const useConnectionStore = create<ConnectionState>()(
 
       // 连接到数据库
       connectToDatabase: async (id: string) => {
+        console.log(`🔗 开始连接数据库: ${id}`);
         try {
           // 更新状态为连接中
+          console.log(`⏳ 设置连接状态为连接中: ${id}`);
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
                 ...state.connectionStatuses[id],
-                status: 'connecting'}}}));
+                status: 'connecting',
+                error: undefined}}}));
 
+          console.log(`🚀 调用后端连接API: ${id}`);
           await safeTauriInvoke('connect_to_database', { connectionId: id });
+          console.log(`✅ 后端连接成功: ${id}`);
 
           // 更新状态为已连接
+          console.log(`✨ 设置连接状态为已连接: ${id}`);
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
-                status: 'connected',
+                id,
+                status: 'connected' as const,
                 lastConnected: new Date(),
-                error: undefined}},
+                error: undefined,
+                latency: undefined}},
             connectedConnectionIds: state.connectedConnectionIds.includes(id) 
               ? state.connectedConnectionIds 
               : [...state.connectedConnectionIds, id],
             activeConnectionId: id}));
+          console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
+          console.error(`❌ 连接失败 (${id}):`, error);
           // 更新状态为错误
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
-                status: 'error',
-                error: String(error)}}}));
+                id,
+                status: 'error' as const,
+                error: String(error),
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined}},
+            // 确保从已连接列表中移除
+            connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id)}));
           throw error;
         }
       },
 
       // 断开数据库连接
       disconnectFromDatabase: async (id: string) => {
+        console.log(`🔌 开始断开连接: ${id}`);
         try {
           await safeTauriInvoke('disconnect_from_database', { connectionId: id });
+          console.log(`✅ 后端断开成功: ${id}`);
 
           // 更新状态为已断开
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
-                status: 'disconnected',
-                error: undefined}},
+                id,
+                status: 'disconnected' as const,
+                error: undefined,
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined}},
             connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
             activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId}));
         } catch (error) {
+          console.error(`❌ 断开连接失败 (${id}):`, error);
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
-                status: 'error',
-                error: String(error)}}}));
+                id,
+                status: 'error' as const,
+                error: String(error),
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined}}}));
           throw error;
         }
       },

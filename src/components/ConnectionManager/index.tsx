@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Typography } from '@/components/ui';
 import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
-import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
+import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal, RefreshCw } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -47,21 +47,25 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
   const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
-  // 自动刷新状态
+  // 自动刷新状态 - 仅在用户手动启动监控时执行
   useEffect(() => {
+    if (!monitoringActive) return;
+    
     const interval = setInterval(() => {
-      if (monitoringActive) {
-        refreshAllStatuses();
-      }
+      console.log('🔄 执行定时状态刷新...');
+      refreshAllStatuses();
     }, monitoringInterval * 1000);
 
-    return () => clearInterval(interval);
-  }, [monitoringActive, monitoringInterval, refreshAllStatuses]);
+    return () => {
+      console.log('🚫 清理定时刷新间隔');
+      clearInterval(interval);
+    };
+  }, [monitoringActive, monitoringInterval]); // 移除refreshAllStatuses依赖
 
-  // 初始加载
-  useEffect(() => {
-    refreshAllStatuses();
-  }, [refreshAllStatuses]);
+  // 初始加载 - 移除自动刷新，由用户手动触发
+  // useEffect(() => {
+  //   refreshAllStatuses();
+  // }, []); // 禁用自动刷新以减少网络请求
 
   // 处理连接操作
   const handleConnectionToggle = useCallback(async (connectionId: string) => {
@@ -71,7 +75,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
       const connection = connections.find(c => c.id === connectionId);
       if (!connection) {
         showMessage.error('连接配置不存在，请重新加载页面');
-        refreshAllStatuses();
+        // 只在需要时才刷新状态
         return;
       }
 
@@ -125,7 +129,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         await stopMonitoring();
         showMessage.success('监控已停止');
       } else {
-        await startMonitoring(30);
+        await startMonitoring(60); // 增加间隔到60秒减少请求频率
         showMessage.success('监控已启动');
       }
     } catch (error) {
@@ -331,14 +335,27 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium">连接管理</h3>
-            <Button
-              variant={monitoringActive ? 'outline' : 'default'}
-              icon={monitoringActive ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-              onClick={handleMonitoringToggle}
-              size="sm"
-            >
-              {monitoringActive ? '停止监控' : '启动监控'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                icon={<RefreshCw className="w-4 h-4" />}
+                onClick={() => {
+                  console.log('🔄 手动刷新连接状态');
+                  refreshAllStatuses();
+                }}
+                size="sm"
+              >
+                刷新状态
+              </Button>
+              <Button
+                variant={monitoringActive ? 'outline' : 'default'}
+                icon={monitoringActive ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                onClick={handleMonitoringToggle}
+                size="sm"
+              >
+                {monitoringActive ? '停止监控' : '启动监控'}
+              </Button>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
