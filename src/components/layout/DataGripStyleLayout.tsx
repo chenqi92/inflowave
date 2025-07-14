@@ -125,12 +125,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-white flex flex-col">
       {/* 原生菜单处理器 */}
       <NativeMenuHandler />
 
-      {/* 主工具栏 */}
-      <header className="h-12 px-4 bg-white border-b border-gray-200 flex items-center">
+      {/* 主工具栏 - 统一背景，移除边框分割线 */}
+      <header className="h-12 px-4 bg-white flex items-center">
         <MainToolbar
           currentView={currentView}
           onViewChange={setCurrentView}

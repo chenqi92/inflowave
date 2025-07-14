@@ -182,7 +182,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* 区域1: 连接状态显示 - 固定宽度防止挤压 */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg flex-shrink-0">
             {activeConnection ? (
               <>
                 {/* 连接状态指示器 */}
@@ -219,10 +219,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             )}
           </div>
 
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <div className="w-px h-6 bg-gray-200 mx-3" />
 
           {/* 区域2: 文件操作 - 统一按钮尺寸 */}
-          <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-lg flex-shrink-0">
+          <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
@@ -286,17 +286,17 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             </DropdownMenu>
           </div>
 
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <div className="w-px h-6 bg-gray-200 mx-3" />
 
           {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
-          <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg border border-purple-200 flex-shrink-0">
+          <div className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-lg flex-shrink-0">
             <Button
               variant={currentView === 'datasource' ? 'default' : 'ghost'}
               size="sm"
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'datasource'
-                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
-                  : 'hover:bg-purple-200'
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
+                  : 'hover:bg-gray-200'
               }`}
               onClick={() => onViewChange?.('datasource')}
               title="数据源管理"
@@ -310,8 +310,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               size="sm"
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'query'
-                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
-                  : 'hover:bg-purple-200'
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
+                  : 'hover:bg-gray-200'
               }`}
               onClick={() => onViewChange?.('query')}
               disabled={!activeConnection}
@@ -326,8 +326,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               size="sm"
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'visualization'
-                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
-                  : 'hover:bg-purple-200'
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
+                  : 'hover:bg-gray-200'
               }`}
               onClick={() => onViewChange?.('visualization')}
               disabled={!activeConnection}
@@ -342,8 +342,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               size="sm"
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'performance'
-                  ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-md'
-                  : 'hover:bg-purple-200'
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-md'
+                  : 'hover:bg-gray-200'
               }`}
               onClick={() => onViewChange?.('performance')}
               disabled={!activeConnection}
@@ -358,7 +358,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
         {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <div className="w-px h-6 bg-gray-200 mx-3" />
 
           {/* 刷新按钮 */}
           <Button
