@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import {
   Tabs, TabsContent, TabsList, TabsTrigger, Button, Space, Dropdown,
   Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,
@@ -36,7 +36,11 @@ interface TabEditorProps {
   onQueryResult?: (result: QueryResult) => void;
 }
 
-const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
+interface TabEditorRef {
+  executeQueryWithContent: (query: string, database: string) => void;
+}
+
+const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult }, ref) => {
   const { activeConnectionId } = useConnectionStore();
   const [activeKey, setActiveKey] = useState<string>('');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -87,6 +91,51 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
     }
   };
 
+  // 执行指定内容和数据库的查询
+  const executeQueryWithContent = async (query: string, database: string) => {
+    if (!activeConnectionId) {
+      showMessage.warning('请先选择数据库连接');
+      return;
+    }
+
+    // 创建新标签或更新当前标签
+    const newTab: EditorTab = {
+      id: Date.now().toString(),
+      title: `表查询-${tabs.length + 1}`,
+      content: query,
+      type: 'query',
+      modified: false
+    };
+    
+    setTabs(prevTabs => [...prevTabs, newTab]);
+    setActiveKey(newTab.id);
+    setSelectedDatabase(database);
+
+    // 执行查询
+    setLoading(true);
+    try {
+      const request: QueryRequest = {
+        connectionId: activeConnectionId,
+        database: database,
+        query: query.trim()
+      };
+
+      console.log('🚀 执行表双击查询:', request);
+      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
+      console.log('✅ 查询结果:', result);
+      
+      if (result) {
+        onQueryResult?.(result);
+        showMessage.success('查询执行成功');
+      }
+    } catch (error) {
+      console.error('查询执行失败:', error);
+      showMessage.error(`查询执行失败: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 执行查询
   const executeQuery = async () => {
     if (!activeConnectionId) {
@@ -127,6 +176,11 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       setLoading(false);
     }
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    executeQueryWithContent
+  }), [executeQueryWithContent]);
 
   // 组件加载时加载数据库列表
   useEffect(() => {
@@ -453,6 +507,8 @@ const TabEditor: React.FC<TabEditorProps> = ({ onQueryResult }) => {
       </div>
     </TooltipProvider>
   );
-};
+});
+
+TabEditor.displayName = 'TabEditor';
 
 export default TabEditor;

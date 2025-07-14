@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography } from '@/components/ui';
+import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch, Star, StarOff, Trash2, Calendar, MousePointer } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils, type FavoriteItem } from '@/store/favorites';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { DatePicker } from '@/components/ui/DatePicker';
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -33,6 +34,7 @@ interface MenuProps {
 interface DatabaseExplorerProps {
   collapsed?: boolean;
   refreshTrigger?: number; // 用于触发刷新
+  onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调
 }
 
 interface TableInfo {
@@ -46,7 +48,7 @@ interface DatabaseInfo {
   tables: TableInfo[];
 }
 
-const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger }) => {
+const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger, onTableDoubleClick }) => {
   const { connections, activeConnectionId, connectedConnectionIds, getConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
   const { favorites, addFavorite, removeFavorite, isFavorite, getFavoritesByType, markAsAccessed } = useFavoritesStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
@@ -55,8 +57,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
+  
+  // 时间筛选状态
+  const [timeFilterType, setTimeFilterType] = useState<'relative' | 'absolute'>('relative');
+  const [relativeTimeValue, setRelativeTimeValue] = useState('1h');
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+
+  // 生成时间条件语句
+  const generateTimeCondition = (): string => {
+    if (timeFilterType === 'relative') {
+      return `time > now() - ${relativeTimeValue}`;
+    } else if (timeFilterType === 'absolute' && startTime && endTime) {
+      const start = startTime.toISOString();
+      const end = endTime.toISOString();
+      return `time >= '${start}' AND time <= '${end}'`;
+    }
+    return '';
+  };
+
+  // 生成带时间筛选的查询语句
+  const generateQueryWithTimeFilter = (table: string): string => {
+    const timeCondition = generateTimeCondition();
+    const limit = 'LIMIT 500'; // 默认分页500条
+    
+    if (timeCondition) {
+      return `SELECT * FROM "${table}" WHERE ${timeCondition} ${limit}`;
+    } else {
+      return `SELECT * FROM "${table}" ${limit}`;
+    }
+  };
 
   // 加载指定连接的数据库列表
   const loadDatabases = useCallback(async (connectionId: string): Promise<string[]> => {
@@ -636,6 +668,30 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
       // 连接节点被双击，切换连接状态
       const connectionId = key.replace('connection-', '');
       handleConnectionToggle(connectionId);
+    } else if (key.startsWith('table-')) {
+      // 表节点被双击，自动生成查询
+      const parts = key.split('-');
+      if (parts.length >= 4) {
+        const connectionId = parts[1];
+        const database = parts[2]; 
+        const table = parts.slice(3).join('-'); // 处理表名包含连字符的情况
+        
+        // 生成带时间筛选的查询
+        const query = generateQueryWithTimeFilter(table);
+        
+        // 调用回调函数执行查询
+        if (onTableDoubleClick) {
+          onTableDoubleClick(database, table, query);
+          showMessage.info(`正在查询表 "${table}" 的数据...`);
+        } else {
+          // 如果没有回调，复制查询到剪贴板
+          navigator.clipboard.writeText(query).then(() => {
+            showMessage.success(`查询语句已复制到剪贴板: ${query}`);
+          }).catch(() => {
+            showMessage.info(`查询语句: ${query}`);
+          });
+        }
+      }
     }
   };
 
@@ -785,6 +841,82 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           onChange={(e) => setSearchValue(e.target.value)}
           className="text-sm"
         />
+
+        {/* 时间筛选器 */}
+        <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+          <div className="text-xs font-medium text-muted-foreground mb-2">查询时间筛选</div>
+          
+          {/* 时间筛选类型选择 */}
+          <Select value={timeFilterType} onValueChange={(value: 'relative' | 'absolute') => setTimeFilterType(value)}>
+            <SelectTrigger className="w-full h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relative">相对时间</SelectItem>
+              <SelectItem value="absolute">绝对时间</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 相对时间选择 */}
+          {timeFilterType === 'relative' && (
+            <Select value={relativeTimeValue} onValueChange={setRelativeTimeValue}>
+              <SelectTrigger className="w-full h-7 text-xs mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5m">最近5分钟</SelectItem>
+                <SelectItem value="15m">最近15分钟</SelectItem>
+                <SelectItem value="30m">最近30分钟</SelectItem>
+                <SelectItem value="1h">最近1小时</SelectItem>
+                <SelectItem value="3h">最近3小时</SelectItem>
+                <SelectItem value="6h">最近6小时</SelectItem>
+                <SelectItem value="12h">最近12小时</SelectItem>
+                <SelectItem value="1d">最近1天</SelectItem>
+                <SelectItem value="7d">最近7天</SelectItem>
+                <SelectItem value="30d">最近30天</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+
+          {/* 绝对时间选择 */}
+          {timeFilterType === 'absolute' && (
+            <div className="mt-2 space-y-2">
+              <DatePicker
+                value={startTime}
+                placeholder="开始时间"
+                format="MM-DD HH:mm"
+                onChange={(date) => setStartTime(date)}
+                showTime={true}
+                size="small"
+                className="w-full"
+              />
+              <DatePicker
+                value={endTime}
+                placeholder="结束时间"
+                format="MM-DD HH:mm"
+                onChange={(date) => setEndTime(date)}
+                showTime={true}
+                size="small"
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* 清除筛选 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setTimeFilterType('relative');
+              setRelativeTimeValue('1h');
+              setStartTime(null);
+              setEndTime(null);
+            }}
+            className="w-full h-6 text-xs mt-2"
+          >
+            清除
+          </Button>
+        </div>
       </div>
 
       {/* 主要内容：标签页 */}

@@ -28,6 +28,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [currentView, setCurrentView] = useState('datasource');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [tabEditorRef, setTabEditorRef] = useState<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
 
   // 刷新数据源面板的方法
   const refreshDataExplorer = () => {
@@ -39,6 +40,16 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     const removeListener = dataExplorerRefresh.addListener(refreshDataExplorer);
     return removeListener;
   }, []);
+
+  // 处理表格双击事件
+  const handleTableDoubleClick = (database: string, table: string, query: string) => {
+    // 切换到查询视图
+    setCurrentView('query');
+    // 使用TabEditor的引用来执行查询
+    if (tabEditorRef?.executeQueryWithContent) {
+      tabEditorRef.executeQueryWithContent(query, database);
+    }
+  };
 
   // 根据当前视图渲染主要内容
   const renderMainContent = () => {
@@ -83,7 +94,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
               minSize={30}
               className="bg-white overflow-hidden"
             >
-              <TabEditor onQueryResult={setQueryResult} />
+              <TabEditor 
+                onQueryResult={setQueryResult} 
+                ref={setTabEditorRef}
+              />
             </ResizablePanel>
 
             {/* 分割线和下半部分：结果面板 */}
@@ -142,6 +156,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
               <DatabaseExplorer
                 collapsed={leftPanelCollapsed}
                 refreshTrigger={refreshTrigger}
+                onTableDoubleClick={handleTableDoubleClick}
               />
               {/* 折叠按钮 */}
               <button
