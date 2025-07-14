@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Button, Tooltip, Dropdown, Select, Switch } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 import { Maximize, Minimize, Download, ZoomIn, ZoomOut, RefreshCw, Settings, PlayCircle, PauseCircle } from 'lucide-react';
 import * as echarts from 'echarts';
 import { useVisualizationStore } from '@/store/visualization';
@@ -227,7 +227,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   ];
 
   return (
-    <Card
+    <div
       title={
         <div className="flex gap-2">
           <span>{config.title}</span>
@@ -325,7 +325,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           {zoomLevel}%
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

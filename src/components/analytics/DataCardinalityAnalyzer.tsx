@@ -294,7 +294,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
     return (
       <div>
         <div className="grid grid-cols-4 gap-4 mb-4">
-          <Card className="p-4">
+          <div className="p-4 border rounded-lg bg-card">
             <Statistic
               title="平均质量分数"
               value={avgQuality}
@@ -302,8 +302,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               suffix="/ 1.0"
               valueStyle={{ color: getQualityScoreColor(avgQuality) }}
             />
-          </Card>
-          <Card className="p-4">
+          </div>
+          <div className="p-4 border rounded-lg bg-card">
             <Statistic
               title="高质量列数"
               value={highQualityCount}
@@ -311,8 +311,8 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               valueStyle={{ color: '#52c41a' }}
               prefix={<CheckCircle />}
             />
-          </Card>
-          <Card className="p-4">
+          </div>
+          <div className="p-4 border rounded-lg bg-card">
             <Statistic
               title="唯一列数"
               value={uniqueColumns}
@@ -320,19 +320,19 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               valueStyle={{ color: '#1890ff' }}
               prefix={<Key className="w-4 h-4"  />}
             />
-          </Card>
-          <Card className="p-4">
+          </div>
+          <div className="p-4 border rounded-lg bg-card">
               <Statistic
                 title="异常总数"
                 value={totalAnomalies}
                 valueStyle={{ color: totalAnomalies > 0 ? '#ff4d4f' : '#52c41a' }}
                 prefix={<Bug className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
         </div>
 
         {/* 过滤器 */}
-        <Card className="mb-4 p-4">
+        <div className="mb-4 p-4 border rounded-lg bg-card">
           <div className="grid grid-cols-12 gap-4 items-center">
             <div className="col-span-4">
               <Input
@@ -386,7 +386,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
               </Button>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* 统计表格 */}
         <Table
@@ -400,7 +400,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
 
         {/* 异常列表 */}
         {showAnomalies && (
-          <Card title="数据异常" style={{ marginTop: '16px' }}>
+          <div title="数据异常" style={{ marginTop: '16px' }}>
             <List
               dataSource={filteredStats.filter(stat => stat.anomalies.length > 0)}
               renderItem={(stat) => (
@@ -423,7 +423,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -441,7 +441,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       <div>
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="最频繁值">
+            <div title="最频繁值">
               <Table
                 columns={[
                   {
@@ -473,10 +473,10 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 size="sm"
                 rowKey={(record) => `${record.value}`}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={12}>
-            <Card title="数据分布直方图">
+            <div title="数据分布直方图">
               <Table
                 columns={[
                   {
@@ -506,7 +506,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 size="sm"
                 rowKey={(record) => `${record.bucket}`}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       </div>
@@ -525,7 +525,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="整体质量分数"
                 value={overallScore}
@@ -534,10 +534,10 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 valueStyle={{ color: getQualityScoreColor(overallScore) }}
                 prefix={<CheckCircle />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="表质量分数"
                 value={tableScores.length > 0 ? tableScores[0].score : 0}
@@ -546,23 +546,23 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 valueStyle={{ color: getQualityScoreColor(tableScores.length > 0 ? tableScores[0].score : 0) }}
                 prefix={<Database className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="异常总数"
                 value={anomalies.length}
                 valueStyle={{ color: anomalies.length > 0 ? '#ff4d4f' : '#52c41a' }}
                 prefix={<Bug className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="列质量分数" size="small">
+            <div title="列质量分数" size="small">
               <Table
                 columns={[
                   {
@@ -598,10 +598,10 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                 size="sm"
                 rowKey={(record) => record.column}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={12}>
-            <Card title="改进建议" size="small">
+            <div title="改进建议" size="small">
               <List
                 dataSource={recommendations}
                 renderItem={(recommendation) => (
@@ -613,7 +613,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
                   </List.Item>
                 )}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       </div>
@@ -622,7 +622,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
 
   return (
     <div className={className}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <BarChart className="w-4 h-4"  />
@@ -692,7 +692,7 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
             </TabsContent>
           </Tabs>
         </Spin>
-      </Card>
+      </div>
     </div>
   );
 };

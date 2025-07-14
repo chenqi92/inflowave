@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Switch, Separator, Textarea } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
@@ -218,7 +218,7 @@ const ExtensionManager: React.FC = () => {
         </TabsList>
 
         <TabsContent value="plugins">
-          <Card
+          <div
             title="已安装的插件"
             extra={
               <Button type="primary" icon={<Plus className="w-4 h-4"  />}>
@@ -266,11 +266,11 @@ const ExtensionManager: React.FC = () => {
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="api">
-          <Card
+          <div
             title="API 集成"
             extra={
               <Button
@@ -307,11 +307,11 @@ const ExtensionManager: React.FC = () => {
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="webhooks">
-          <Card
+          <div
             title="Webhook 配置"
             extra={
               <Button
@@ -346,11 +346,11 @@ const ExtensionManager: React.FC = () => {
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="automation">
-          <Card
+          <div
             title="自动化规则"
             extra={
               <Button
@@ -394,7 +394,7 @@ const ExtensionManager: React.FC = () => {
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

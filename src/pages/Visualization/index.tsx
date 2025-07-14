@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Textarea, Alert, Spin } from '@/components/ui';
-import { Card, toast } from '@/components/ui';
+import { toast } from '@/components/ui';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
@@ -312,7 +312,7 @@ const Visualization: React.FC = () => {
             <Row gutter={[16, 16]}>
               {charts.map(chart => (
                 <Col xs={24} lg={12} xl={8} key={chart.id}>
-                  <Card
+                  <div
                     size="small"
                     title={chart.title}
                     extra={
@@ -347,7 +347,7 @@ const Visualization: React.FC = () => {
                         <Spin tip="加载图表数据..." />
                       </div>
                     )}
-                  </Card>
+                  </div>
                 </Col>
               ))}
             </Row>

@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button, Card, Alert, Text, Collapse, Panel, Result, AntParagraph } from '@/components/ui';
+import { Button, Alert, Text, Collapse, Panel, Result, AntParagraph } from '@/components/ui';
 import { Bug, RefreshCw, FileText } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert, Tooltip, List, Badge } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { SkinOutlined, ShareAltOutlined, MoonOutlined, SunOutlined, ExperimentOutlined, DiamondOutlined } from '@/components/ui';
 import { Settings, Eye, Upload, Download, RefreshCw, Copy, Lightbulb, Shrink, Expand, Image, Gift, Flame, Star, Heart, Zap, Crown, Palette, Type, Monitor, Square } from 'lucide-react';
@@ -194,7 +194,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
       <Row gutter={[16, 16]}>
         {/* 主题模式设置 */}
         <Col span={24}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <Lightbulb className="w-4 h-4"  />
@@ -272,12 +272,12 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 </Row>
               </Col>
             </Row>
-          </Card>
+          </div>
         </Col>
 
         {/* 预定义主题 */}
         <Col span={24}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <SkinOutlined />
@@ -288,7 +288,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
             <Row gutter={[12, 12]}>
               {predefinedThemes.map((theme) => (
                 <Col key={theme.key} span={6}>
-                  <Card
+                  <div
                     size="small"
                     hoverable
                     style={{ 
@@ -309,16 +309,16 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                         {theme.compact && ' • 紧凑'}
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 </Col>
               ))}
             </Row>
-          </Card>
+          </div>
         </Col>
 
         {/* 主题色彩设置 */}
         <Col span={12}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <Palette />
@@ -369,12 +369,12 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         </Col>
 
         {/* 界面设置 */}
         <Col span={12}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <Settings className="w-4 h-4"  />
@@ -414,12 +414,12 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         </Col>
 
         {/* 高级设置 */}
         <Col span={24}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <ExperimentOutlined />
@@ -515,12 +515,12 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 </div>
               </Col>
             </Row>
-          </Card>
+          </div>
         </Col>
 
         {/* 主题效果预览 */}
         <Col span={24}>
-          <Card
+          <div
             title={
               <div className="flex gap-2">
                 <Eye className="w-4 h-4"  />
@@ -578,7 +578,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                 </Col>
               </Row>
             </div>
-          </Card>
+          </div>
         </Col>
       </Row>
     </div>

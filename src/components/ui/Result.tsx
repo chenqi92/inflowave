@@ -15,8 +15,8 @@ export interface ResultProps {
 const statusConfig = {
   success: {
     color: 'text-success',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200'
+    bgColor: 'bg-success/10',
+    borderColor: 'border-success'
   },
   error: {
     color: 'text-destructive',
@@ -25,13 +25,13 @@ const statusConfig = {
   },
   info: {
     color: 'text-primary',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200'
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary'
   },
   warning: {
-    color: 'text-yellow-500',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200'
+    color: 'text-yellow-500 dark:text-yellow-400',
+    bgColor: 'bg-yellow-100/50 dark:bg-yellow-900/20',
+    borderColor: 'border-yellow-300 dark:border-yellow-700'
   },
   '404': {
     color: 'text-muted-foreground',

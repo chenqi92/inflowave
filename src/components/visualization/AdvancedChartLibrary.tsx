@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Select, Button, Row, Col, Typography, Alert } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 import { Maximize, Download, Settings, RefreshCw } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
@@ -633,7 +633,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
 
   return (
     <div className={fullscreen ? 'fixed inset-0 z-50 bg-white' : ''}>
-      <Card
+      <div
         title={
           <div className="flex justify-between items-center">
             <Text strong>{config.title}</Text>
@@ -703,7 +703,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
             }}
           />
         )}
-      </Card>
+      </div>
     </div>
   );
 };

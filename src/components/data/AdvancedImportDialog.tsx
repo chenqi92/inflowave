@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Progress, Tabs, TabsContent, TabsList, TabsTrigger, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Separator, Typography } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Upload as UploadIcon, Database, CheckCircle, Info, AlertCircle } from 'lucide-react';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -701,7 +701,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         {/* 步骤 1: 文件上传 */}
         {currentStep === 0 && (
           <div className="space-y-4">
-            <Card title="选择要导入的文件">
+            <div title="选择要导入的文件">
               <div className="space-y-4">
                 <Upload.Dragger {...uploadProps}>
                   <div className="flex flex-col items-center space-y-2">
@@ -714,7 +714,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 </Upload.Dragger>
 
                 {/* CSV 解析选项 */}
-                <Card title="CSV 解析选项" size="small">
+                <div title="CSV 解析选项" size="small">
                   <Row gutter={16}>
                     <Col span={8}>
                       <FormItem label="分隔符">
@@ -752,11 +752,11 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                       </FormItem>
                     </Col>
                   </Row>
-                </Card>
+                </div>
 
                 {/* 解析进度 */}
                 {importProgress && (
-                  <Card size="small">
+                  <div size="small">
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <Text>{importProgress.message}</Text>
@@ -767,10 +767,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                         status={importProgress.stage === 'error' ? 'exception' : 'normal'}
                       />
                     </div>
-                  </Card>
+                  </div>
                 )}
               </div>
-            </Card>
+            </div>
           </div>
         )}
 
@@ -778,7 +778,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
         {currentStep === 1 && importData && (
           <div className="space-y-4">
             {/* 文件信息 */}
-            <Card title="文件信息" size="small">
+            <div title="文件信息" size="small">
               <Row gutter={16}>
                 <Col span={6}>
                   <Text strong>文件名: </Text>
@@ -797,10 +797,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                   <Text>{importData.headers.length}</Text>
                 </Col>
               </Row>
-            </Card>
+            </div>
 
             {/* 基本配置 */}
-            <Card title="导入配置">
+            <div title="导入配置">
               <Form form={form} layout="vertical">
                 <Row gutter={16}>
                   <Col span={8}>
@@ -865,10 +865,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                   </Col>
                 </Row>
               </Form>
-            </Card>
+            </div>
 
             {/* 配置选项卡 */}
-            <Card>
+            <div>
               <Tabs activeKey={activeTab} onValueChange={setActiveTab}>
                 <TabPane tab="字段映射" key="mapping">
                   <div className="space-y-4">
@@ -925,7 +925,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                       />
 
                       {/* 统计信息 */}
-                      <Card title="数据统计" size="small">
+                      <div title="数据统计" size="small">
                         <Row gutter={16}>
                           <Col span={6}>
                             <Text strong>总行数: </Text>
@@ -944,11 +944,11 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                             <Text type="warning">{validationResult.stats.nullValues}</Text>
                           </Col>
                         </Row>
-                      </Card>
+                      </div>
 
                       {/* 错误信息 */}
                       {validationResult.errors.length > 0 && (
-                        <Card title="错误信息" size="small">
+                        <div title="错误信息" size="small">
                           {validationResult.errors.map((error, index) => (
                             <Alert
                               key={index}
@@ -958,12 +958,12 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                               style={{ marginBottom: 8 }}
                             />
                           ))}
-                        </Card>
+                        </div>
                       )}
 
                       {/* 警告信息 */}
                       {validationResult.warnings.length > 0 && (
-                        <Card title="警告信息" size="small">
+                        <div title="警告信息" size="small">
                           {validationResult.warnings.map((warning, index) => (
                             <Alert
                               key={index}
@@ -973,7 +973,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                               style={{ marginBottom: 8 }}
                             />
                           ))}
-                        </Card>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -983,7 +983,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                   )}
                 </TabPane>
               </Tabs>
-            </Card>
+            </div>
 
             {/* 操作按钮 */}
             <div className="flex justify-between">
@@ -1008,7 +1008,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
 
         {/* 步骤 3: 执行导入 */}
         {currentStep === 2 && (
-          <Card>
+          <div>
             <div className="text-center space-y-4">
               {importProgress?.stage === 'completed' ? (
                 <>
@@ -1064,7 +1064,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 )}
               </div>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </Dialog>

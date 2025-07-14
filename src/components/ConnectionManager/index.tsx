@@ -515,40 +515,40 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
                     {selectedConnectionId && poolStats[selectedConnectionId] && (
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
-                                <Card>
-                                    <CardContent className="p-4">
+                                <div>
+                                    <div className="p-4">
                                         <div className="text-sm text-muted-foreground">总连接数</div>
                                         <div className="text-2xl font-bold">
                                             {poolStats[selectedConnectionId].total_connections}
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="p-4">
                                         <div className="text-sm text-muted-foreground">活跃连接数</div>
                                         <div className="text-2xl font-bold text-green-600">
                                             {poolStats[selectedConnectionId].active_connections}
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <Card>
-                                    <CardContent className="p-4">
+                                <div>
+                                    <div className="p-4">
                                         <div className="text-sm text-muted-foreground">空闲连接数</div>
                                         <div className="text-2xl font-bold">
                                             {poolStats[selectedConnectionId].idle_connections}
                                         </div>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardContent className="p-4">
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="p-4">
                                         <div className="text-sm text-muted-foreground">最大连接数</div>
                                         <div className="text-2xl font-bold">
                                             {poolStats[selectedConnectionId].max_connections}
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <Typography.Title level={4}>连接池使用率</Typography.Title>

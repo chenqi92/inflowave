@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Badge, Avatar, Tooltip, TooltipContent, TooltipTrigger, Card, Space, Typography } from '@/components/ui';
+import { Button, Badge, Avatar, Tooltip, TooltipContent, TooltipTrigger, Space, Typography } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Database, CheckCircle } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
@@ -59,7 +59,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
         const isActive = activeConnectionId === connection.id;
 
         return (
-          <Card
+          <div
             key={connection.id}
             className={`transition-all duration-200 hover:shadow-lg cursor-pointer p-4 ${
               isActive ? 'ring-2 ring-blue-500 shadow-lg' : ''
@@ -178,7 +178,7 @@ const ConnectionListView: React.FC<ConnectionListViewProps> = ({
                 {status.error}
               </div>
             )}
-          </Card>
+          </div>
         );
       })}
     </div>

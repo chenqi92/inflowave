@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Button, Col, Layout, Row, Tabs, Tag, Tooltip, Tree } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 import { Database, TrendingUp, RefreshCw, Settings, Table, Webhook, Book, History, FileUp, Tags, Zap, LayoutDashboard, PlayCircle, Square, Clock } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -322,7 +322,7 @@ const DataGripLayout: React.FC = () => {
       <Row style={{ height: '100%' }} gutter={8}>
         {/* 左侧：连接和数据库结构 */}
         <Col span={6} style={{ height: '100%' }}>
-          <Card
+          <div
             title={
               <Tabs
                 value={leftPanelTab}
@@ -404,12 +404,12 @@ const DataGripLayout: React.FC = () => {
                 />
               </div>
             )}
-          </Card>
+          </div>
         </Col>
 
         {/* 右侧：主内容区域 */}
         <Col span={18} style={{ height: '100%' }}>
-          <Card
+          <div
             style={{ height: '100%' }}
             styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
             tabList={[
@@ -525,7 +525,7 @@ const DataGripLayout: React.FC = () => {
                 database={selectedDatabase}
               />
             )}
-          </Card>
+          </div>
         </Col>
       </Row>
 

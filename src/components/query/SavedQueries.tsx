@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Textarea, List, Empty } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle, BookOpen, Tag } from 'lucide-react';
@@ -380,7 +380,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           {content}
         </Modal>
       ) : (
-        <Card
+        <div
           title={
             <div className="flex gap-2">
               <Book className="w-4 h-4"  />
@@ -390,7 +390,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
           style={{ height: '100%' }}
           styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}>
           {content}
-        </Card>
+        </div>
       )}
 
       {/* 创建/编辑查询模态框 */}

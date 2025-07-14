@@ -127,7 +127,7 @@ const Upload: React.FC<UploadProps> & {
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">{file.name}</span>
                 {file.size && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                 )}
@@ -205,8 +205,8 @@ const Dragger: React.FC<DraggerProps> = ({
   return (
     <div
       className={cn(
-        'border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer transition-colors',
-        isDragOver && 'border-blue-500 bg-blue-50',
+        'border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer transition-colors',
+        isDragOver && 'border-primary bg-primary/5',
         disabled && 'cursor-not-allowed opacity-50',
         className
       )}
@@ -218,7 +218,7 @@ const Dragger: React.FC<DraggerProps> = ({
         <div className="space-y-2">
           {children || (
             <>
-              <UploadIcon className="w-8 h-8 mx-auto text-gray-400" />
+              <UploadIcon className="w-8 h-8 mx-auto text-muted-foreground" />
               <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
             </>
           )}
@@ -235,7 +235,7 @@ const Dragger: React.FC<DraggerProps> = ({
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">{file.name}</span>
                 {file.size && (
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                 )}

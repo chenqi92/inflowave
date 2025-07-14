@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Tag, Space, Card, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
+import { Text, Tag, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
 import { Link } from 'react-router-dom';
 
 import { Database, Info, Bug, Heart, Rocket, Users, Wrench, Github } from 'lucide-react';
@@ -50,7 +50,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
       <div style={{ padding: '16px 0' }}>
         {/* 应用信息 */}
         <div className="grid grid-cols-1 gap-4">
-          <Card>
+          <div>
             <div className="text-center mb-6">
               <Database className="w-16 h-16 text-primary mx-auto mb-4" />
               <Text className="text-2xl font-bold block">
@@ -64,14 +64,14 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             <Text className="block text-center text-base">
               {appInfo.description}
             </Text>
-          </Card>
+          </div>
         </div>
 
         <Separator />
 
         {/* 主要功能 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 mb-3">
               <Rocket className="w-4 h-4" />
               <Text className="font-semibold">主要功能</Text>
@@ -83,9 +83,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
                 </li>
               ))}
             </ul>
-          </Card>
+          </div>
           
-          <Card className="space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center gap-2 mb-3">
               <Wrench className="w-4 h-4" />
               <Text className="font-semibold">技术栈</Text>
@@ -97,13 +97,13 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
                 </Tag>
               ))}
             </div>
-          </Card>
+          </div>
         </div>
 
         <Separator />
 
         {/* 项目信息 */}
-        <Card className="space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 mb-4">
             <Info className="w-4 h-4" />
             <Text className="font-semibold">项目信息</Text>
@@ -138,12 +138,12 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
               </Link>
             </div>
           </div>
-        </Card>
+        </div>
 
         <Separator />
 
         {/* 支持信息 */}
-        <Card>
+        <div>
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
               <Heart className="w-4 h-4 text-destructive" />
@@ -168,7 +168,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
               </Link>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* 版权信息 */}
         <div className="text-center mt-6">

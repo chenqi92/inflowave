@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { useConnection } from '@/hooks/useConnection';
 import { Button, Form, Input, InputNumber, Switch, Typography } from '@/components/ui';
-import { Card, toast } from '@/components/ui';
+import { toast } from '@/components/ui';
 
 interface ConnectionConfig {
   id: string;
@@ -83,7 +83,7 @@ const ConnectionTest: React.FC = () => {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <Card title="InfluxDB 连接测试" className="mb-6">
+      <div title="InfluxDB 连接测试" className="mb-6">
         <Form
           form={form}
           layout="vertical"
@@ -148,11 +148,11 @@ const ConnectionTest: React.FC = () => {
             </Button>
           </FormItem>
         </Form>
-      </Card>
+      </div>
 
       {/* 测试结果 */}
       {testResult && (
-        <Card 
+        <div 
           title="测试结果" 
           className={`mb-6 ${testResult.success ? 'border-green-500' : 'border-red-500'}`}>
           <div className="space-y-2">
@@ -184,18 +184,18 @@ const ConnectionTest: React.FC = () => {
               </div>
             )}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* 使用说明 */}
-      <Card title="使用说明" size="small">
+      <div title="使用说明" size="small">
         <div className="text-sm text-muted-foreground space-y-2">
           <p>• 确保 InfluxDB 服务正在运行</p>
           <p>• 默认端口通常是 8086</p>
           <p>• 如果启用了认证，请提供用户名和密码</p>
           <p>• SSL 连接需要服务器支持 HTTPS</p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

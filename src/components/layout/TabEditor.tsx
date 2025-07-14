@@ -590,9 +590,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
   return (
     <TooltipProvider>
-      <Card className="h-full flex flex-col bg-white border-0 shadow-none">
+      <div className="h-full flex flex-col bg-white border-0 shadow-none">
       {/* 优化后的标签页头部 - 防止被挤压 */}
-      <CardHeader className="flex items-center justify-between border-b border min-h-[48px] p-0">
+      <div className="flex items-center justify-between border-b border min-h-[48px] p-0">
         {/* 左侧标签区域 - 支持滚动 */}
         <div className="flex-1 flex items-center min-w-0">
           <div className="flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -731,10 +731,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </CardHeader>
+      </div>
 
       {/* 编辑器内容 */}
-      <CardContent className="flex-1 p-0">
+      <div className="flex-1 p-0">
         {currentTab ? (
           <Editor
             height="100%"
@@ -761,8 +761,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               formatOnType: true}}
           />
         ) : (
-          <Card className="h-full flex items-center justify-center text-muted-foreground border-0 shadow-none">
-            <CardContent className="text-center">
+          <div className="h-full flex items-center justify-center text-muted-foreground border-0 shadow-none">
+            <div className="text-center">
               <FileText className="w-12 h-12 mx-auto mb-4" />
               <p>暂无打开的文件</p>
               <Button
@@ -773,10 +773,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
                 <Plus className="w-4 h-4 mr-2" />
                 新建查询
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
-      </CardContent>
+      </div>
 
       {/* 关闭标签确认对话框 */}
       {closingTab && (
@@ -806,7 +806,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           setShowExportDialog(false);
         }}
       />
-      </Card>
+      </div>
     </TooltipProvider>
   );
 });

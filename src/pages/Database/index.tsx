@@ -319,7 +319,7 @@ const Database: React.FC = () => {
       </div>
 
       {/* 数据库选择器 */}
-      <Card className="mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-4">
           <Typography.Text className="font-semibold text-base">选择数据库:</Typography.Text>
           <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
@@ -365,17 +365,17 @@ const Database: React.FC = () => {
             </Popconfirm>
           )}
         </div>
-      </Card>
+      </div>
 
       {selectedDatabase && (
         <>
           {/* 数据库统计信息 */}
           {databaseStats && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>数据库统计</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="mb-6">
+              <div>
+                <h3>数据库统计</h3>
+              </div>
+              <div>
                 <Row gutter={16}>
                   <Col span={6}>
                     <Statistic
@@ -404,16 +404,16 @@ const Database: React.FC = () => {
                     />
                   </Col>
                 </Row>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* 测量列表 */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>测量列表</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="mb-6">
+            <div>
+              <h3>测量列表</h3>
+            </div>
+            <div>
               <Spin spinning={loading}>
               <Table
                 dataSource={measurements?.map(m => ({ name: m })) || []}
@@ -499,14 +499,14 @@ const Database: React.FC = () => {
                   }})}
               />
               </Spin>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 保留策略 */}
-          <Card>
-            <CardHeader>
+          <div>
+            <div>
               <div className="flex items-center justify-between">
-                <CardTitle>保留策略</CardTitle>
+                <h3>保留策略</h3>
                 <Button
                   type="primary"
                   icon={<Plus className="w-4 h-4"  />}
@@ -518,8 +518,8 @@ const Database: React.FC = () => {
                   创建策略
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
               <Spin spinning={loading}>
               <Table
                 dataSource={Array.isArray(retentionPolicies) ? retentionPolicies : []}
@@ -600,8 +600,8 @@ const Database: React.FC = () => {
                   emptyText: '暂无保留策略'}}
               />
               </Spin>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </>
       )}
 

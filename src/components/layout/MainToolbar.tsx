@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Separator, Badge, Card, CardContent } from '@/components/ui';
+import { Button, Separator, Badge } from '@/components/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -179,19 +179,19 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
   return (
     <TooltipProvider>
-      <Card className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
+      <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
         {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* 区域1: 连接状态显示 - 固定宽度防止挤压 */}
-          <Card className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
-            <CardContent className="p-0 flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
+            <div className="p-0 flex items-center gap-2">
             {activeConnection ? (
               <>
                 {/* 连接状态指示器 */}
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="flex items-center gap-1">
-                    <Link className="w-4 h-4 text-green-600" />
-                    <Badge variant="secondary" className="bg-green-500 text-white px-1.5 py-0.5">
+                    <Link className="w-4 h-4 text-success" />
+                    <Badge variant="success" className="px-1.5 py-0.5">
                       ●
                     </Badge>
                   </div>
@@ -219,14 +219,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                 <span className="text-sm">未连接数据源</span>
               </div>
             )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <div className="w-px h-6 bg-border mx-3" />
 
           {/* 区域2: 文件操作 - 统一按钮尺寸 */}
-          <Card className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
-            <CardContent className="p-0 flex items-center gap-1">
+          <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
+            <div className="p-0 flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -288,14 +288,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <div className="w-px h-6 bg-border mx-3" />
 
           {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
-          <Card className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
-            <CardContent className="p-0 flex items-center gap-1">
+          <div className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-lg flex-shrink-0 border-0 shadow-sm">
+            <div className="p-0 flex items-center gap-1">
             <Button
               variant={currentView === 'datasource' ? 'default' : 'ghost'}
               size="sm"
@@ -358,8 +358,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               <Zap className="w-4 h-4" />
               <span className="text-xs">监控</span>
             </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
         </div>
 
@@ -435,7 +435,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
           visible={settingsVisible}
           onClose={() => setSettingsVisible(false)}
         />
-      </Card>
+      </div>
     </TooltipProvider>
   );
 };

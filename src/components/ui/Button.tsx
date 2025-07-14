@@ -34,44 +34,20 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
   loading?: boolean
-  icon?: React.ReactNode
-  type?: "button" | "submit" | "reset" | "primary" | "default" | "dashed" | "text" | "link"
-  danger?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, children, disabled, icon, type, danger, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, children, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
-
-    // 处理Ant Design兼容性
-    let finalVariant = variant
-    let finalSize = size
-
-    // 转换type到variant
-    if (type === "primary") finalVariant = "default"
-    if (type === "default") finalVariant = "outline"
-    if (type === "dashed") finalVariant = "outline"
-    if (type === "text") finalVariant = "ghost"
-    if (type === "link") finalVariant = "link"
-
-    // 处理danger属性
-    if (danger) finalVariant = "destructive"
-
-    // 转换size
-    if (size === "small") finalSize = "sm"
-    if (size === "middle") finalSize = "default"
-    if (size === "large") finalSize = "lg"
 
     return (
       <Comp
-        className={cn(buttonVariants({ variant: finalVariant, size: finalSize, className }))}
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         disabled={disabled || loading}
-        type={type === "primary" || type === "default" || type === "dashed" || type === "text" || type === "link" ? "button" : type}
         {...props}
       >
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {icon && !loading && <span className="mr-2">{icon}</span>}
         {children}
       </Comp>
     )

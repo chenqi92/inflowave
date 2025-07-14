@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Title, Label } from '@/components/ui';
+import { Button, InputHeaderTitleContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Title, Label } from '@/components/ui';
 
 const ShadcnTest: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
@@ -28,11 +28,11 @@ const ShadcnTest: React.FC = () => {
         <Title level={1} className="text-3xl font-bold mb-8">Shadcn/ui 组件测试</Title>
 
         {/* 按钮测试 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>按钮组件</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="mb-6">
+          <div>
+            <h3>按钮组件</h3>
+          </div>
+          <div>
             <div className="flex flex-wrap gap-4">
               <Button variant="default">默认按钮</Button>
               <Button variant="secondary">次要按钮</Button>
@@ -44,15 +44,15 @@ const ShadcnTest: React.FC = () => {
               <Button size="lg">大按钮</Button>
               <Button disabled>禁用按钮</Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* 输入组件测试 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>输入组件</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="mb-6">
+          <div>
+            <h3>输入组件</h3>
+          </div>
+          <div>
             <div className="space-y-4">
               <div>
                 <Label className="block text-sm font-medium mb-2">普通输入框</Label>
@@ -80,15 +80,15 @@ const ShadcnTest: React.FC = () => {
                 </Select>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* 表格测试 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>表格组件</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="mb-6">
+          <div>
+            <h3>表格组件</h3>
+          </div>
+          <div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -111,15 +111,15 @@ const ShadcnTest: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* 其他组件测试 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>其他组件</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="mb-6">
+          <div>
+            <h3>其他组件</h3>
+          </div>
+          <div>
             <div className="space-y-6">
               {/* 头像 */}
               <div>
@@ -197,8 +197,8 @@ const ShadcnTest: React.FC = () => {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

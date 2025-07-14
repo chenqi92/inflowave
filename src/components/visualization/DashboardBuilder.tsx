@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography } from '@/components/ui';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { Plus, Trash2, Edit, Save, Eye, Copy, Settings, GripVertical } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core';
@@ -217,12 +217,12 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
             refreshInterval={(currentDashboard.settings?.refreshInterval || 30) * 1000}
           />
         ) : (
-          <Card className="w-full h-full flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col items-center justify-center text-muted-foreground">
               <div className="text-2xl mb-2">📊</div>
               <Typography.Text className="text-sm">暂无数据</Typography.Text>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -291,7 +291,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <LayoutOutlined />
@@ -351,7 +351,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
             {draggedItem ? renderGridItem(draggedItem) : null}
           </DragOverlay>
         </DndContext>
-      </Card>
+      </div>
 
       {/* 添加图表模态框 */}
       <Dialog
@@ -371,17 +371,17 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {charts.map(chart => (
-                <Card
+                <div
                   key={chart.id}
                   onClick={() => handleAddChart(chart.id)}
                   className="cursor-pointer hover:border-blue-500 hover:shadow-md transition-all">
-                  <CardContent className="p-4 text-center">
+                  <div className="p-4 text-center">
                     <div className="font-medium">{chart.title}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {chart.type} · {chart.xAxis?.field} / {chart.yAxis?.field}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}

@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Card, Space, Typography } from '@/components/ui';
+import { Form, Input, Button, Select, Tabs, Alert, Row, Col, Tag, toast, Space, Typography } from '@/components/ui';
 import { Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker, InputNumber, Separator } from '@/components/ui';
@@ -309,7 +309,7 @@ const DataWrite: React.FC = () => {
       {/* 页面标题和数据库选择 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Typography variant="h2" className="text-2xl font-bold mb-1">数据写入</Typography>
+          <Typography.Text variant="h2" className="text-2xl font-bold mb-1">数据写入</Typography.Text>
           <p className="text-muted-foreground">
             向 InfluxDB 写入时序数据
           </p>
@@ -333,7 +333,7 @@ const DataWrite: React.FC = () => {
             key: 'single',
             label: '单点写入',
             children: (
-              <Card title="单个数据点写入">
+              <div title="单个数据点写入">
                 <Form
                   form={form}
                   layout="vertical"
@@ -451,14 +451,14 @@ const DataWrite: React.FC = () => {
                     </div>
                   </FormItem>
                 </Form>
-              </Card>
+              </div>
             )},
           {
             key: 'batch',
             label: '批量写入',
             children: (
               <div className="space-y-6">
-                <Card title="Line Protocol 格式">
+                <div title="Line Protocol 格式">
                   <Alert
                     message="Line Protocol 格式说明"
                     description={
@@ -500,9 +500,9 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                       </Button>
                     </FormItem>
                   </Form>
-                </Card>
+                </div>
 
-                <Card
+                <div
                   title={`批次数据点 (${dataPoints.length})`}
                   extra={
                     <div className="flex gap-2">
@@ -533,14 +533,14 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                     locale={{
                       emptyText: '暂无数据点，请添加数据点到批次'}}
                   />
-                </Card>
+                </div>
               </div>
             )},
           {
             key: 'import',
             label: '文件导入',
             children: (
-              <Card
+              <div
                 title="文件导入"
                 extra={
                   <Button
@@ -561,34 +561,34 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
 
                   <Row gutter={16}>
                     <Col span={8}>
-                      <Card size="small" title="CSV 格式">
+                      <div size="small" title="CSV 格式">
                         <div className="text-sm">
                           • 第一行为表头<br/>
                           • 数据用逗号分隔<br/>
                           • 支持时间戳字段<br/>
                           • 自动推断数据类型
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                     <Col span={8}>
-                      <Card size="small" title="JSON 格式">
+                      <div size="small" title="JSON 格式">
                         <div className="text-sm">
                           • 对象数组格式<br/>
                           • 每个对象一行数据<br/>
                           • 支持嵌套字段<br/>
                           • 灵活的数据结构
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                     <Col span={8}>
-                      <Card size="small" title="字段映射">
+                      <div size="small" title="字段映射">
                         <div className="text-sm">
                           • 自动字段映射<br/>
                           • 支持标签和字段<br/>
                           • 时间字段识别<br/>
                           • 数据类型转换
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                   </Row>
 
@@ -601,7 +601,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                     />
                   )}
                 </div>
-              </Card>
+              </div>
             )},
         ]}
       />

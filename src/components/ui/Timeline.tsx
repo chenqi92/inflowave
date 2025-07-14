@@ -72,11 +72,11 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
         case 'red':
           return <XCircle className="h-3 w-3 text-destructive" />
         case 'yellow':
-          return <AlertCircle className="h-3 w-3 text-yellow-500" />
+          return <AlertCircle className="h-3 w-3 text-yellow-500 dark:text-yellow-400" />
         case 'blue':
           return <Circle className="h-3 w-3 text-primary fill-current" />
         default:
-          return <Circle className="h-3 w-3 text-gray-400 fill-current" />
+          return <Circle className="h-3 w-3 text-muted-foreground fill-current" />
       }
     }
 

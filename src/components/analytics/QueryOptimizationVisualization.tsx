@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Space, Progress, Tag, Badge, Button, Tooltip, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List, Typography, Separator } from '@/components/ui';
+import { Space, Progress, Tag, Badge, Button, Tooltip, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, Switch, List, Typography, Separator } from '@/components/ui';
 
 import { BranchesOutlined, TargetOutlined } from '@/components/ui';
 import { Zap, Clock, Database, BarChart, TrendingUp, PieChart, Info, Lightbulb, Flame, Rocket, Trophy, Eye, Settings, RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
@@ -283,9 +283,9 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
       <Row gutter={[16, 16]}>
         {metrics.map((metric, index) => (
           <Col span={6} key={index}>
-            <Card size="small">
+            <div size="small">
               <Statistic {...metric} />
-            </Card>
+            </div>
           </Col>
         ))}
       </Row>
@@ -314,7 +314,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
         )}
         
         {optimizationResult.recommendations.length > 0 && (
-          <Card title="优化建议" size="small">
+          <div title="优化建议" size="small">
             <List
               size="small"
               dataSource={optimizationResult.recommendations}
@@ -360,7 +360,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -368,7 +368,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
 
   return (
     <div className={className}>
-      <Card
+      <div
         title={
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
@@ -420,7 +420,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               <Separator />
               <Row gutter={[16, 16]}>
                 <Col span={12}>
-                  <Card title="查询对比" size="small">
+                  <div title="查询对比" size="small">
                     <Descriptions column={1} size="small">
                       <Descriptions.Item label="原始查询">
                         <Text code className="text-xs">
@@ -433,10 +433,10 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                         </Text>
                       </Descriptions.Item>
                     </Descriptions>
-                  </Card>
+                  </div>
                 </Col>
                 <Col span={12}>
-                  <Card title="路由策略" size="small">
+                  <div title="路由策略" size="small">
                     <Descriptions column={1} size="small">
                       <Descriptions.Item label="目标连接">
                         {optimizationResult.routingStrategy.targetConnection}
@@ -448,7 +448,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
                         {optimizationResult.routingStrategy.priority}
                       </Descriptions.Item>
                     </Descriptions>
-                  </Card>
+                  </div>
                 </Col>
               </Row>
             </div>
@@ -495,7 +495,7 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
             {renderWarningsAndRecommendations()}
           </TabPane>
         </Tabs>
-      </Card>
+      </div>
     </div>
   );
 };

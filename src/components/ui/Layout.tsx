@@ -75,7 +75,7 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
       <aside
         ref={ref}
         className={cn(
-          'bg-white border-r border h-full transition-all duration-200 flex flex-col',
+          'bg-background border-r border-border h-full transition-all duration-200 flex flex-col',
           className
         )}
         style={{ width: widthStyle }}

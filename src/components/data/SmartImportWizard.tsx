@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Alert, Progress } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -489,7 +489,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
         </DialogHeader>
       <div className="space-y-6">
         {/* 步骤指示器 */}
-        <Card>
+        <div>
           <Steps 
             current={currentStep} 
             size="small"
@@ -510,7 +510,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
               />
             ))}
           </Steps>
-        </Card>
+        </div>
 
         {/* 当前步骤内容 */}
         <div className="min-h-[500px]">
@@ -519,7 +519,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
 
         {/* 导航按钮 */}
         {currentStep < steps.length - 1 && (
-          <Card>
+          <div>
             <div className="flex justify-between items-center">
               <div>
                 <Text type="secondary">
@@ -544,12 +544,12 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
                 </Button>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* 进度提示 */}
         {importProgress && (
-          <Card>
+          <div>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Text strong>{importProgress.message}</Text>
@@ -581,7 +581,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
                 />
               )}
             </div>
-          </Card>
+          </div>
         )}
       </div>
       </DialogContent>

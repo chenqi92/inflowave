@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea, Typography } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -206,7 +206,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   const stepContents = [
     // 步骤1: 文件选择
     <div key="file-selection">
-      <Card title="选择数据文件" style={{ marginBottom: 16 }}>
+      <div title="选择数据文件" style={{ marginBottom: 16 }}>
         <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
           <Upload.Dragger {...uploadProps}>
             <div className="flex flex-col items-center space-y-2">
@@ -274,12 +274,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             </Row>
           </Form>
         </div>
-      </Card>
+      </div>
     </div>,
 
     // 步骤2: 数据预览
     <div key="data-preview">
-      <Card title="数据预览" style={{ marginBottom: 16 }}>
+      <div title="数据预览" style={{ marginBottom: 16 }}>
         {previewData && (
           <div>
             <Alert
@@ -307,12 +307,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             />
           </div>
         )}
-      </Card>
+      </div>
     </div>,
 
     // 步骤3: 字段映射
     <div key="field-mapping">
-      <Card title="字段映射配置" style={{ marginBottom: 16 }}>
+      <div title="字段映射配置" style={{ marginBottom: 16 }}>
         <Form layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
@@ -381,12 +381,12 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             />
           </FormItem>
         </Form>
-      </Card>
+      </div>
     </div>,
 
     // 步骤4: 导入结果
     <div key="import-result">
-      <Card title="导入结果" style={{ marginBottom: 16 }}>
+      <div title="导入结果" style={{ marginBottom: 16 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <Progress
@@ -419,7 +419,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
             )}
           </div>
         ) : null}
-      </Card>
+      </div>
     </div>,
   ];
 

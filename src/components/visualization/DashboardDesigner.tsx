@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Plus, Edit, Trash2, Settings, Save, Eye, Maximize, GripVertical } from 'lucide-react';
@@ -436,9 +436,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
           containerPadding={[0, 0]}>
           {dashboard.items.map((item) => (
             <div key={item.id} className="dashboard-item">
-              <Card className="h-full" bodyStyle={{ padding: 12 }}>
+              <div className="h-full" bodyStyle={{ padding: 12 }}>
                 {renderDashboardItem(item)}
-              </Card>
+              </div>
             </div>
           ))}
         </ResponsiveGridLayout>

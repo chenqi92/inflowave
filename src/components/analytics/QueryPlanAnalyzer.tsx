@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator, List, Tag, Text, Typography } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Tabs, TabsContent, TabsList, TabsTrigger, Separator, List, Tag, Text, Typography } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, Clock, Database, FileText, Info, Zap, Eye, Download, Lightbulb, RefreshCw, Code, Table, TrendingUp, PieChart, Book, Rocket, Settings, Trophy, PlayCircle, AlertTriangle, AlertCircle, CheckCircle, MinusCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -312,7 +312,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
 
     return (
       <div>
-        <Card className="p-4 mb-4">
+        <div className="p-4 mb-4">
           <div className="flex gap-2 mb-4">
             <Badge variant="secondary">
               {selectedNode.nodeType}
@@ -332,11 +332,11 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
               <div><Typography.Text className="font-medium">执行时间:</Typography.Text> {hasActualStats && selectedNode.executionTime !== undefined ? formatTime(selectedNode.executionTime) : '-'}</div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* 性能统计 */}
         {hasActualStats && (
-          <Card title="性能统计" size="small" style={{ marginBottom: '16px' }}>
+          <div title="性能统计" size="small" style={{ marginBottom: '16px' }}>
             <Row gutter={[16, 16]}>
               <Col span={6}>
                 <Statistic
@@ -371,12 +371,12 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 />
               </Col>
             </Row>
-          </Card>
+          </div>
         )}
 
         {/* 条件和输出 */}
         {(selectedNode.conditions?.length || selectedNode.output?.length) && (
-          <Card title="条件和输出" size="small" style={{ marginBottom: '16px' }}>
+          <div title="条件和输出" size="small" style={{ marginBottom: '16px' }}>
             {selectedNode.conditions && selectedNode.conditions.length > 0 && (
               <div style={{ marginBottom: '12px' }}>
                 <Text strong>筛选条件:</Text>
@@ -402,12 +402,12 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         )}
 
         {/* 警告信息 */}
         {selectedNode.warnings.length > 0 && (
-          <Card className="p-4">
+          <div className="p-4">
             <Typography variant="h4" className="font-medium mb-4">警告信息</Typography>
             <div className="space-y-2">
               {selectedNode.warnings.map((warning, index) => (
@@ -417,7 +417,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -434,7 +434,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
         dataSource={recommendations}
         renderItem={(recommendation) => (
           <List.Item>
-            <Card
+            <div
               size="small"
               style={{ width: '100%' }}
               title={
@@ -483,7 +483,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                   </pre>
                 </div>
               )}
-            </Card>
+            </div>
           </List.Item>
         )}
       />
@@ -500,37 +500,37 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="总执行时间"
                 value={formatTime(stats.totalExecutionTime)}
                 prefix={<Clock className="w-4 h-4"  />}
                 valueStyle={{ color: '#1890ff' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="规划时间"
                 value={formatTime(stats.planningTime)}
                 prefix={<Zap className="w-4 h-4"  />}
                 valueStyle={{ color: '#52c41a' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="处理行数"
                 value={formatNumber(stats.totalRows)}
                 prefix={<Table className="w-4 h-4"  />}
                 valueStyle={{ color: '#722ed1' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="峰值内存"
                 value={formatNumber(stats.peakMemoryUsage)}
@@ -538,13 +538,13 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                 prefix={<MemoryOutlined />}
                 valueStyle={{ color: '#fa8c16' }}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="I/O统计" size="small">
+            <div title="I/O统计" size="small">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="缓存命中">
                   {formatNumber(stats.bufferHits)}
@@ -562,10 +562,10 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                   {formatNumber(stats.networkTraffic)} MB
                 </Descriptions.Item>
               </Descriptions>
-            </Card>
+            </div>
           </Col>
           <Col span={12}>
-            <Card title="资源使用" size="small">
+            <div title="资源使用" size="small">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="并行工作进程">
                   {stats.parallelWorkers}
@@ -583,7 +583,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
                   }
                 </Descriptions.Item>
               </Descriptions>
-            </Card>
+            </div>
           </Col>
         </Row>
       </div>
@@ -592,7 +592,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
 
   return (
     <div className={className}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <BarChart className="w-4 h-4"  />
@@ -699,7 +699,7 @@ export const QueryPlanAnalyzer: React.FC<QueryPlanAnalyzerProps> = ({
             </TabPane>
           </Tabs>
         </Spin>
-      </Card>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table, Collapse, Panel, List, Tooltip, Badge } from '@/components/ui';
 // TODO: Replace these Ant Design components: Descriptions, Drawer, Timeline
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { MemoryOutlined, CpuOutlined, HddOutlined, NetworkOutlined, ShareAltOutlined, ExperimentOutlined, SafetyCertificateOutlined } from '@/components/ui';
 import { Zap, Rocket, BarChart, Settings, Info, Eye, Download, RefreshCw, Lightbulb, Clock, Database, TrendingUp, Trophy, Flame, History, Webhook, Star, PlayCircle, PauseCircle, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -138,7 +138,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card>
+          <div>
             <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Title level={4}>
@@ -222,17 +222,17 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 />
               </div>
             </div>
-          </Card>
+          </div>
         </Col>
       </Row>
 
       {optimizationResult && (
         <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
           <Col span={24}>
-            <Card title="优化结果">
+            <div title="优化结果">
               <Row gutter={[16, 16]}>
                 <Col span={12}>
-                  <Card size="small" title="优化后查询">
+                  <div size="small" title="优化后查询">
                     <pre style={{ 
                       backgroundColor: '#f5f5f5', 
                       padding: '12px', 
@@ -243,10 +243,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     }}>
                       {optimizationResult.optimizedQuery}
                     </pre>
-                  </Card>
+                  </div>
                 </Col>
                 <Col span={12}>
-                  <Card size="small" title="性能指标">
+                  <div size="small" title="性能指标">
                     <Row gutter={[8, 8]}>
                       <Col span={12}>
                         <Statistic
@@ -265,13 +265,13 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                         />
                       </Col>
                     </Row>
-                  </Card>
+                  </div>
                 </Col>
               </Row>
               
               <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
                 <Col span={8}>
-                  <Card size="small" title="优化技术">
+                  <div size="small" title="优化技术">
                     <List
                       size="small"
                       dataSource={optimizationResult.optimizationTechniques}
@@ -293,10 +293,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                         </List.Item>
                       )}
                     />
-                  </Card>
+                  </div>
                 </Col>
                 <Col span={8}>
-                  <Card size="small" title="路由策略">
+                  <div size="small" title="路由策略">
                     <Descriptions column={1} size="small">
                       <Descriptions.Item label="目标连接">
                         {optimizationResult.routingStrategy.targetConnection}
@@ -311,10 +311,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                         {optimizationResult.routingStrategy.reason}
                       </Descriptions.Item>
                     </Descriptions>
-                  </Card>
+                  </div>
                 </Col>
                 <Col span={8}>
-                  <Card size="small" title="执行计划">
+                  <div size="small" title="执行计划">
                     <div style={{ maxHeight: '200px', overflow: 'auto' }}>
                       <Timeline size="small">
                         {optimizationResult.executionPlan.steps.map((step, index) => (
@@ -336,7 +336,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                         ))}
                       </Timeline>
                     </div>
-                  </Card>
+                  </div>
                 </Col>
               </Row>
               
@@ -357,7 +357,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               )}
               
               {optimizationResult.recommendations.length > 0 && (
-                <Card size="small" title="优化建议" style={{ marginTop: '16px' }}>
+                <div size="small" title="优化建议" style={{ marginTop: '16px' }}>
                   <List
                     size="small"
                     dataSource={optimizationResult.recommendations}
@@ -387,9 +387,9 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       </List.Item>
                     )}
                   />
-                </Card>
+                </div>
               )}
-            </Card>
+            </div>
           </Col>
         </Row>
       )}
@@ -401,26 +401,26 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     <div>
       <Row gutter={[16, 16]}>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="总查询数"
               value={queryStats?.totalQueries || 0}
               prefix={<Database className="w-4 h-4"  />}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="平均执行时间"
               value={queryStats?.avgExecutionTime || 0}
               suffix="ms"
               prefix={<Clock className="w-4 h-4"  />}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="缓存命中率"
               value={queryStats?.cacheHitRate || 0}
@@ -428,10 +428,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               prefix={<MemoryOutlined />}
               valueStyle={{ color: '#3f8600' }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="优化成功率"
               value={queryStats?.optimizationSuccessRate || 0}
@@ -439,13 +439,13 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               prefix={<Trophy className="w-4 h-4"  />}
               valueStyle={{ color: '#1890ff' }}
             />
-          </Card>
+          </div>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
         <Col span={12}>
-          <Card title="慢查询统计">
+          <div title="慢查询统计">
             <Table
               size="small"
               dataSource={queryStats?.slowQueries || []}
@@ -470,10 +470,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               ]}
               pagination={{ pageSize: 5 }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={12}>
-          <Card title="热门查询">
+          <div title="热门查询">
             <Table
               size="small"
               dataSource={queryStats?.frequentQueries || []}
@@ -498,13 +498,13 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               ]}
               pagination={{ pageSize: 5 }}
             />
-          </Card>
+          </div>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
         <Col span={24}>
-          <Card title="资源使用情况">
+          <div title="资源使用情况">
             <Row gutter={[16, 16]}>
               <Col span={6}>
                 <div style={{ textAlign: 'center' }}>
@@ -559,7 +559,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 </div>
               </Col>
             </Row>
-          </Card>
+          </div>
         </Col>
       </Row>
     </div>
@@ -625,7 +625,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
   return (
     <div className={className}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <ExperimentOutlined />
@@ -702,7 +702,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             {renderOptimizationHistory()}
           </TabsContent>
         </Tabs>
-      </Card>
+      </div>
 
       {/* 设置抽屉 */}
       <Drawer

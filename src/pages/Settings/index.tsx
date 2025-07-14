@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
+import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Info, FileDown, FileUp, Settings, Database, User, Bug, ChevronLeft, Home, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -241,7 +241,7 @@ const Settings: React.FC = () => {
                 ),
                 children: (
                   <div className="bg-muted/50 p-6 rounded-lg">
-                    <Card className="shadow-sm border-0">
+                    <div className="shadow-sm border-0">
                       <div className="mb-6">
                         <Title level={4} className="mb-2 text-gray-800">基础配置</Title>
                         <Text type="secondary" className="text-base">设置应用程序的基本行为和外观</Text>
@@ -378,7 +378,7 @@ const Settings: React.FC = () => {
                       </FormItem>
                     </div>
                     </Form>
-                  </Card>
+                  </div>
                 </div>
               )},
             {
@@ -391,7 +391,7 @@ const Settings: React.FC = () => {
               ),
               children: (
                 <div className="bg-muted/50 p-6 rounded-lg space-y-6">
-                  <Card title="导入/导出" className="shadow-sm border-0">
+                  <div title="导入/导出" className="shadow-sm border-0">
                     <div className="mb-4">
                       <Title level={5} className="mb-2 text-gray-800">数据备份与恢复</Title>
                       <Paragraph className="text-muted-foreground">
@@ -419,9 +419,9 @@ const Settings: React.FC = () => {
                         导入设置
                       </Button>
                     </div>
-                  </Card>
+                  </div>
 
-                  <Card title="数据清理" className="border-destructive shadow-sm border-0 bg-destructive/10">
+                  <div title="数据清理" className="border-destructive shadow-sm border-0 bg-destructive/10">
                     <div className="mb-4">
                       <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
                       <Alert
@@ -472,7 +472,7 @@ const Settings: React.FC = () => {
                         </Button>
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 </div>
               )},
             {
@@ -485,7 +485,7 @@ const Settings: React.FC = () => {
               ),
               children: (
                 <div className="bg-muted/50 p-6 rounded-lg">
-                  <Card title="关于 InfloWave" className="shadow-sm border-0">
+                  <div title="关于 InfloWave" className="shadow-sm border-0">
                     <Row gutter={24}>
                       <Col span={12}>
                         <div className="space-y-4">
@@ -550,7 +550,7 @@ const Settings: React.FC = () => {
                     showIcon
                     icon={<Info className="w-4 h-4"  />}
                   />
-                  </Card>
+                  </div>
                 </div>
               )},
             {
@@ -576,7 +576,7 @@ const Settings: React.FC = () => {
               ),
               children: (
                 <div className="bg-muted/50 p-6 rounded-lg space-y-6">
-                  <Card title="浏览器模式提醒" className="shadow-sm border-0">
+                  <div title="浏览器模式提醒" className="shadow-sm border-0">
                     <div className="mb-4">
                       <Title level={4} className="mb-2 text-gray-800">预览模式说明</Title>
                       <Text type="secondary">
@@ -625,7 +625,7 @@ const Settings: React.FC = () => {
                         showIcon
                       />
                     )}
-                  </Card>
+                  </div>
                 </div>
               )},
             {
@@ -640,12 +640,12 @@ const Settings: React.FC = () => {
                 <div className="bg-muted/50 p-6 rounded-lg space-y-6">
                   {/* 错误测试工具 - 仅开发环境显示 */}
                   {(import.meta as any).env?.DEV && (
-                    <Card title="错误测试工具" className="shadow-sm border-yellow-200 border-0 bg-yellow-50">
+                    <div title="错误测试工具" className="shadow-sm border-yellow-200 border-0 bg-yellow-50">
                       <ErrorTestButton />
-                    </Card>
+                    </div>
                   )}
                   
-                  <Card title="错误日志查看器" className="shadow-sm border-0">
+                  <div title="错误日志查看器" className="shadow-sm border-0">
                     <div className="mb-4">
                       <Title level={4} className="mb-2 text-gray-800">应用错误日志</Title>
                       <Text type="secondary">
@@ -653,7 +653,7 @@ const Settings: React.FC = () => {
                       </Text>
                     </div>
                     <ErrorLogViewer />
-                  </Card>
+                  </div>
                 </div>
               )},
           ]}

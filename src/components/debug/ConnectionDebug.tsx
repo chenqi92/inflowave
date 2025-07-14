@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Title, Text } from '@/components/ui';
-import { Card, CardHeader, CardTitle, CardContent, Space, toast } from '@/components/ui';
+import { CardHeaderTitleContent, Space, toast } from '@/components/ui';
 
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -43,11 +43,11 @@ const ConnectionDebug: React.FC = () => {
         </Button>
 
         {debugInfo && (
-          <Card>
-            <CardHeader>
-              <CardTitle>调试信息</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div>
+            <div>
+              <h3>调试信息</h3>
+            </div>
+            <div>
               <div className="flex flex-col gap-4 w-full">
                 <div>
                   <Text strong>连接数量: </Text>
@@ -73,8 +73,8 @@ const ConnectionDebug: React.FC = () => {
                   </pre>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>

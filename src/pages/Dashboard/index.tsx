@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
 
   // 工具栏
   const toolbar = (
-    <Card className="flex gap-2 p-2 border-0 shadow-none bg-transparent">
+    <div className="flex gap-2 p-2 border-0 shadow-none bg-transparent">
       <Button
         variant="outline"
         onClick={() => window.location.reload()}
@@ -75,7 +75,7 @@ const Dashboard: React.FC = () => {
         <Plus className="w-4 h-4 mr-2" />
         新建连接
       </Button>
-    </Card>
+    </div>
   );
 
   return (

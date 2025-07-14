@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/utils/cn';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button, Card, CardContent } from '@/components/ui';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
@@ -59,49 +59,49 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     switch (currentView) {
       case 'datasource':
         return (
-          <Card className="h-full">
-            <CardContent className="p-0 h-full">
+          <div className="h-full">
+            <div className="p-0 h-full">
               <ConnectionsPage />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       case 'database':
         return (
-          <Card className="h-full flex flex-col">
-            <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <DatabasePage />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       case 'visualization':
         return (
-          <Card className="h-full flex flex-col">
-            <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <VisualizationPage />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       case 'performance':
         return (
-          <Card className="h-full flex flex-col">
-            <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-hidden p-0">
               <div className="h-full overflow-y-auto p-4">
                 <PerformancePage />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       case 'dev-tools':
         return (
-          <Card className="h-full">
-            <CardContent className="p-0 h-full">
+          <div className="h-full">
+            <div className="p-0 h-full">
               <DevTools />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         );
       case 'query':
       default:
@@ -138,7 +138,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                   minSize={25}
                   maxSize={70}
                 >
-                  <Card className="h-full border-t border-0 shadow-none bg-background overflow-hidden">
+                  <div className="h-full border-t border-0 shadow-none bg-background overflow-hidden">
                   <ResultPanel
                     collapsed={bottomPanelCollapsed}
                     queryResult={queryResult}
@@ -152,7 +152,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                       setExecutionTime(0);
                     }}
                   />
-                  </Card>
+                  </div>
                 </ResizablePanel>
               </>
             )}

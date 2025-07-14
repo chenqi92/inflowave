@@ -8,11 +8,7 @@ import {
     Text,
     Paragraph,
     Collapse,
-    Panel,
-    Card,
-    CardHeader,
-    CardTitle,
-    CardContent
+    Panel
 } from '@/components/ui';
 import {Bug, RefreshCw, Info, Activity, Database, Wifi, AlertTriangle, XCircle} from 'lucide-react';
 import {useConnectionStore} from '@/store/connection';
@@ -151,14 +147,14 @@ const ConnectionDebugPanel: React.FC = () => {
             key: 'status',
             width: '20%',
             render: (value: any, record: any) => {
-                if (!record) return <span className="text-gray-400">未知</span>;
+                if (!record) return <span className="text-muted-foreground">未知</span>;
                 const status = debugInfo?.connectionStatuses[record.id];
                 return status ? (
                     <span className={status.status === 'connected' ? 'text-success' : 'text-muted-foreground'}>
             {status.status}
           </span>
                 ) : (
-                    <span className="text-gray-400">未知</span>
+                    <span className="text-muted-foreground">未知</span>
                 );
             }
         }
@@ -169,14 +165,14 @@ const ConnectionDebugPanel: React.FC = () => {
     return (
         <div className="space-y-4">
             {/* 监控状态概览 */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2">
+            <div>
+                <div className="pb-3">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold">
                         <Activity className="w-4 h-4"/>
                         实时监控状态
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
+                    </h3>
+                </div>
+                <div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
                             <Database className="w-5 h-5 text-blue-600"/>
@@ -205,7 +201,7 @@ const ConnectionDebugPanel: React.FC = () => {
                         </div>
                         <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
                             <div
-                                className={`w-3 h-3 rounded-full ${monitoringActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}/>
+                                className={`w-3 h-3 rounded-full ${monitoringActive ? 'bg-success animate-pulse' : 'bg-muted'}`}/>
                             <div>
                                 <p className="text-sm text-purple-800 font-medium">监控状态</p>
                                 <p className="text-sm font-bold text-purple-600">
@@ -214,16 +210,17 @@ const ConnectionDebugPanel: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             {/* 调试信息面板 */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2">
-                        <Bug className="w-4 h-4"/>
-                        连接调试面板
-                    </CardTitle>
+            <div>
+                <div className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold">
+                            <Bug className="w-4 h-4"/>
+                            连接调试面板
+                        </h3>
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
@@ -242,11 +239,12 @@ const ConnectionDebugPanel: React.FC = () => {
                             收集调试信息
                         </Button>
                     </div>
-                </CardHeader>
-                <CardContent>
+                    </div>
+                </div>
+                <div>
                     {!debugInfo ? (
                         <div className="text-center py-8">
-                            <Info className="w-8 h-8 text-gray-400 mb-4 mx-auto"/>
+                            <Info className="w-8 h-8 text-muted-foreground mb-4 mx-auto"/>
                             <Text className="text-muted-foreground mb-4">
                                 正在加载调试信息...
                             </Text>
@@ -358,8 +356,8 @@ const ConnectionDebugPanel: React.FC = () => {
                             )}
                         </Collapse>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 };

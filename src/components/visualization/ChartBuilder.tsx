@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Switch, Slider, Input, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, Label } from '@/components/ui';
-import { Card } from '@/components/ui';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { BarChart, TrendingUp, PieChart, AreaChart, Settings, Save, Eye, Copy, PlayCircle } from 'lucide-react';
 import { useQuery } from '@/hooks/useQuery';
@@ -321,7 +321,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
   return (
     <div className={`h-full ${className}`}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <BarChart className="w-4 h-4"  />
@@ -399,7 +399,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             </div>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* 高级设置抽屉 */}
       <Sheet

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Space, Alert, Button, Text, Separator } from '@/components/ui';
+import { Space, Alert, Button, Text, Separator } from '@/components/ui';
 import { Info, Code, Globe, Monitor } from 'lucide-react';
 import { isBrowserEnvironment } from '@/utils/tauri';
 
@@ -10,7 +10,7 @@ const BrowserModeNotice: React.FC = () => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <Card>
+      <div>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <Globe className="w-4 h-4" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }}  />
           <Text className="text-2xl font-bold block">🌐 InfloWave 功能预览</Text>
@@ -43,9 +43,9 @@ const BrowserModeNotice: React.FC = () => {
             marginBottom: '16px'
           }}>
             <Text className="font-semibold block mb-2">开发者模式：</Text>
-            <Card className="mb-2" style={{ backgroundColor: '#ffffff' }}>
+            <div className="mb-2" style={{ backgroundColor: '#ffffff' }}>
               <code className="text-sm">npm run tauri:dev</code>
-            </Card>
+            </div>
             <Text className="text-muted-foreground text-sm">
               适用于开发和测试，支持热更新
             </Text>
@@ -58,9 +58,9 @@ const BrowserModeNotice: React.FC = () => {
             padding: '16px'
           }}>
             <Text className="font-semibold block mb-2">生产版本：</Text>
-            <Card className="mb-2" style={{ backgroundColor: '#ffffff' }}>
+            <div className="mb-2" style={{ backgroundColor: '#ffffff' }}>
               <code className="text-sm">npm run tauri:build</code>
-            </Card>
+            </div>
             <Text className="text-muted-foreground text-sm">
               构建优化的安装包，适用于日常使用
             </Text>
@@ -326,7 +326,7 @@ const BrowserModeNotice: React.FC = () => {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Typography } from '@/components/ui';
-import { Card, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
+import { toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Search, Trash2, Database, PlayCircle, Star, Clock, FileText, X } from 'lucide-react';
@@ -194,7 +194,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
   }, [activeTab, filterConnection]);
 
   return (
-    <Card
+    <div
       title={
         <div className="flex gap-2">
           <Button
@@ -262,7 +262,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
             </div>
           ) : (
             filteredHistory.map((item) => (
-              <Card key={item.id} className="p-4">
+              <div key={item.id} className="p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex gap-2 mb-2">
@@ -345,7 +345,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     </AlertDialog>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>
@@ -361,7 +361,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
             </div>
           ) : (
             filteredSavedQueries.map((item) => (
-              <Card key={item.id} className="p-4">
+              <div key={item.id} className="p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex gap-2 mb-2 items-center">
@@ -436,7 +436,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
                     </AlertDialog>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>
@@ -476,7 +476,7 @@ const QueryHistoryPanel: React.FC<QueryHistoryPanelProps> = ({
           </FormItem>
         </Form>
       </Modal>
-    </Card>
+    </div>
   );
 };
 

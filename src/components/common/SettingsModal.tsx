@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toast, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toastContentDescriptionHeaderTitle } from '@/components/ui';
 import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp, Monitor, User } from 'lucide-react';
 import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
@@ -199,15 +199,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       label: '常规设置',
       children: (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div>
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Monitor className="w-4 h-4" />
                 界面设置
-              </CardTitle>
-              <CardDescription>自定义应用程序的外观和行为</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+              <p className="text-sm text-muted-foreground">自定义应用程序的外观和行为</p>
+            </div>
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="theme">主题</Label>
@@ -306,8 +306,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </Select>
             </div>
           </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-3">
             <Button

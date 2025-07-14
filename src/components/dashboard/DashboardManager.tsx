@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Modal, List } from '@/components/ui';
 // TODO: Replace these Ant Design components: Popconfirm, Divider
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
@@ -159,7 +159,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
 
   return (
     <div className="dashboard-manager">
-      <Card
+      <div
         title="仪表板管理"
         extra={
           <Button
@@ -235,7 +235,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             </List.Item>
           )}
         />
-      </Card>
+      </div>
 
       {/* 创建仪表板对话框 */}
       <Modal

@@ -5,7 +5,7 @@ export type { ButtonProps } from './Button';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Option } from './Select';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 
 // Card component removed - use Sheet, Dialog, Collapsible, or Accordion instead
 
@@ -119,7 +119,7 @@ export type { DatePickerProps } from './DatePicker';
 
 export { Popover, PopoverContent, PopoverTrigger } from './popover';
 
-export { Separator } from './separator';
+export { Separator } from './Separator';
 
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
 

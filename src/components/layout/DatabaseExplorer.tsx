@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Card, CardHeader, CardContent } from '@/components/ui';
+import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography, Select, SelectContent, SelectItem, SelectTrigger, SelectValueHeaderContent } from '@/components/ui';
 import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch, Star, StarOff, Trash2, Calendar, MousePointer } from 'lucide-react';
 import { TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useConnectionStore } from '@/store/connection';
@@ -211,16 +211,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     });
     
     // 优先检查错误状态
-    if (status?.status === 'error') return 'bg-red-500';
+    if (status?.status === 'error') return 'bg-destructive';
     
     // 检查是否在已连接列表中（主要标准）
-    if (isConnected) return 'bg-green-500';
+    if (isConnected) return 'bg-success';
     
     // 检查是否正在连接
-    if (status?.status === 'connecting') return 'bg-yellow-500';
+    if (status?.status === 'connecting') return 'bg-warning';
     
     // 默认未连接状态
-    return 'bg-gray-300';
+    return 'bg-muted';
   };
 
   // 构建完整的树形数据
@@ -238,7 +238,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection.id)}`} />
             <span className="flex-1">{connection.name}</span>
-            {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+            {isFav && <Star className="w-3 h-3 text-warning fill-current" />}
           </div>
         ),
         key: `connection-${connection.id}`,
@@ -259,7 +259,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               title: (
                 <span className="flex items-center gap-1">
                   {db}
-                  {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+                  {isFav && <Star className="w-3 h-3 text-warning fill-current" />}
                 </span>
               ),
               key: `database-${connection.id}-${db}`,
@@ -310,8 +310,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{table}</span>
-                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
-                <span className="text-xs text-gray-400 flex-shrink-0">表</span>
+                {isFav && <Star className="w-3 h-3 text-warning fill-current" />}
+                <span className="text-xs text-muted-foreground flex-shrink-0">表</span>
               </div>
             ),
             key: `table-${connectionId}-${database}-${table}`,
@@ -351,7 +351,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{tag}</span>
-                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+                {isFav && <Star className="w-3 h-3 text-warning fill-current" />}
                 <span className="px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded flex-shrink-0">
                   Tag
                 </span>
@@ -385,7 +385,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               case 'bool':
                 return <GitBranch className="w-4 h-4 text-success" />;
               default:
-                return <File className="w-4 h-4 text-gray-400" />;
+                return <File className="w-4 h-4 text-muted-foreground" />;
             }
           };
 
@@ -393,8 +393,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{field.name}</span>
-                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
-                <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-primary rounded flex-shrink-0">
+                {isFav && <Star className="w-3 h-3 text-warning fill-current" />}
+                <span className="px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded flex-shrink-0">
                   Field
                 </span>
                 <span className="text-xs text-muted-foreground flex-shrink-0">{field.type}</span>
@@ -415,7 +415,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 const updatedTitle = (
                   <div className="flex items-center gap-2">
                     <span className="flex-1">{table}</span>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
                       {totalColumns} 列
                     </span>
                   </div>
@@ -802,13 +802,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
   }
 
   return (
-    <Card className="database-explorer h-full flex flex-col bg-white border-0 shadow-none">
+    <div className="database-explorer h-full flex flex-col bg-background border-0 shadow-none">
       {/* 头部：连接状态和操作 */}
-      <CardHeader className="p-3 border-b border">
+      <div className="p-3 border-b border">
         <div className="flex items-center justify-between mb-3">
           <Badge
             variant={activeConnection ? "default" : "secondary"}
-            className={activeConnection ? "bg-green-500 text-white" : ""}
+            className={activeConnection ? "bg-success text-success-foreground" : ""}
           >
             <span className="text-sm font-medium">
               {activeConnection ? activeConnection.name : '未连接'}
@@ -837,10 +837,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
           className="text-sm"
         />
 
-      </CardHeader>
+      </div>
 
       {/* 主要内容：标签页 */}
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <div className="flex-1 overflow-hidden p-0">
         <Tabs defaultValue="explorer" className="h-full">
           <TabsList className="ml-3">
             <TabsTrigger value="explorer" className="flex items-center gap-1">
@@ -871,20 +871,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                 className="bg-transparent database-explorer-tree"
               />
             ) : (
-              <Card className="text-center text-muted-foreground mt-8 border-0 shadow-none">
-                <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground mt-8 border-0 shadow-none">
+                <div className="pt-6">
                   <Database className="w-8 h-8 mx-auto mb-2" />
                   <p>暂无连接</p>
                   <Typography.Text className="text-sm mt-1">请在连接管理中添加数据库连接</Typography.Text>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="favorites" className="px-2 h-full overflow-auto">
             {/* 收藏过滤器 */}
-            <Card className="p-2 border-b border-0 shadow-none">
-              <CardContent className="flex flex-wrap gap-1 p-0">
+            <div className="p-2 border-b border-0 shadow-none">
+              <div className="flex flex-wrap gap-1 p-0">
                 {[
                   { key: 'all', label: '全部', icon: Star },
                   { key: 'connection', label: '连接', icon: Link },
@@ -908,12 +908,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                     </Button>
                   );
                 })}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* 收藏列表 */}
-            <Card className="p-2 border-0 shadow-none">
-              <CardContent className="p-0">
+            <div className="p-2 border-0 shadow-none">
+              <div className="p-0">
               {(() => {
                 const filteredFavorites = favoritesFilter === 'all' 
                   ? favorites.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -1001,12 +1001,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
                   </div>
                 );
               })()}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

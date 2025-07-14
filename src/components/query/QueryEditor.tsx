@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Button, Select, Typography, Dropdown, Switch, Tabs, Card, Space, Tooltip, Label } from '@/components/ui';
+import { Button, Select, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Label } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { useToast } from '@/hooks/use-toast';
 
@@ -418,7 +418,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           {tab.isModified && <div className="w-1 h-1 bg-primary rounded-full" />}
           {tab.lastExecuted && (
             <Tooltip title={`最后执行: ${tab.lastExecuted.toLocaleString()}`}>
-              <Clock className="w-4 h-4 text-xs text-gray-400"   />
+              <Clock className="w-4 h-4 text-xs text-muted-foreground"   />
             </Tooltip>
           )}
           {queryTabs.length > 1 && (
@@ -487,8 +487,8 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   };
 
   return (
-    <div className={`h-full flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
-      <Card
+    <div className={`h-full flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}>
+      <div
         title={
           <div className="flex gap-2">
             <Database className="w-4 h-4"  />
@@ -700,7 +700,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             </div>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* 查询历史抽屉 */}
       <Sheet
@@ -714,7 +714,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             .filter(tab => tab.lastExecuted)
             .sort((a, b) => (b.lastExecuted?.getTime() || 0) - (a.lastExecuted?.getTime() || 0))
             .map(tab => (
-              <Card
+              <div
                 key={tab.id}
                 size="small"
                 hoverable
@@ -733,7 +733,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                     {tab.query}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           
           {queryTabs.filter(tab => tab.lastExecuted).length === 0 && (

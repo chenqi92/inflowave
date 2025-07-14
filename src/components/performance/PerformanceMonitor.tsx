@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Alert, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Progress, Separator, Typography, Title, Text } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-import { Card } from '@/components/ui';
+
 import { RefreshCw, Settings, Database, Zap, Clock, LayoutDashboard, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { PerformanceMetrics, SlowQueryInfo, ConnectionHealthMetrics } from '@/types';
@@ -191,7 +191,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   return (
     <div className="performance-monitor space-y-4 pb-8">
       {/* 控制栏 */}
-      <Card className="p-4">
+      <div className="p-4">
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
             <Select value={timeRange} onValueChange={setTimeRange}>
@@ -223,11 +223,11 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* 概览指标 */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4">
+        <div className="p-4">
           <div className="flex items-center space-x-2">
             <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
             <div>
@@ -235,8 +235,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <Text className="text-2xl font-bold">{metrics?.queryExecutionTime?.length || 0}</Text>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="p-4">
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
             <div>
@@ -249,8 +249,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               </p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="p-4">
           <div className="flex items-center space-x-2">
             <Zap className="w-4 h-4 text-muted-foreground" />
             <div>
@@ -263,8 +263,8 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               </p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="p-4">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-muted-foreground" />
             <div>
@@ -272,12 +272,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <Text className="text-2xl font-bold">{formatBytes((metrics?.networkIO?.bytesIn || 0) + (metrics?.networkIO?.bytesOut || 0))}</Text>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         {/* 系统资源 */}
-        <Card className="p-4">
+        <div className="p-4">
           <Title level={3} className="text-lg font-medium mb-4">系统资源</Title>
           <div className="space-y-4">
             <div>
@@ -307,10 +307,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               </p>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* 网络状态 */}
-        <Card className="p-4">
+        <div className="p-4">
           <Title level={3} className="text-lg font-medium mb-4">网络 I/O 状态</Title>
           <div className="space-y-4">
             <div>
@@ -329,11 +329,11 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
               <Text className="text-sm text-muted-foreground">{(metrics?.networkIO?.packetsOut || 0).toLocaleString()} 包</Text>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* 慢查询分析 */}
-      <Card className="p-4">
+      <div className="p-4">
         <Title level={3} className="text-lg font-medium mb-4">慢查询分析</Title>
         {slowQueries.length > 0 ? (
           <div className="table-container">
@@ -403,10 +403,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             </div>
           </Alert>
         )}
-      </Card>
+      </div>
 
       {/* 存储分析 */}
-      <Card className="p-4">
+      <div className="p-4">
         <Title level={3} className="text-lg font-medium mb-4">存储分析</Title>
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="flex items-center space-x-2">
@@ -445,7 +445,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             </div>
           </>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

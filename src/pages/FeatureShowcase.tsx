@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Row, Col, Button, Tag, Alert, Statistic, Timeline, Collapse, Panel, Progress, List, Avatar, Badge, Typography, Title } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 import { Database, TrendingUp, Settings, CheckCircle, Rocket, Star, Zap, FileUp, Monitor, Grid3X3 } from 'lucide-react';
 import { featureTester } from '../utils/featureTest';
 
@@ -219,36 +219,36 @@ const FeatureShowcase: React.FC = () => {
       {/* 统计概览 */}
       <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="总功能数"
               value={totalFeatures}
               prefix={<Database className="w-4 h-4"  />}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="已完成"
               value={completedFeatures}
               prefix={<CheckCircle />}
               valueStyle={{ color: '#3f8600' }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="完成度"
               value={completionRate}
               suffix="%"
               prefix={<Zap className="w-4 h-4"  />}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <div style={{ textAlign: 'center' }}>
               <Progress
                 type="circle"
@@ -260,12 +260,12 @@ const FeatureShowcase: React.FC = () => {
                 <Typography.Text weight="semibold">项目进度</Typography.Text>
               </div>
             </div>
-          </Card>
+          </div>
         </Col>
       </Row>
 
       {/* 功能测试 */}
-      <Card style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '32px' }}>
         <div style={{ textAlign: 'center' }}>
           <Typography variant="h3" className="text-xl font-bold mb-4">功能完整性测试</Typography>
           <Typography.Text className="text-muted-foreground mb-4">
@@ -290,7 +290,7 @@ const FeatureShowcase: React.FC = () => {
             />
           )}
         </div>
-      </Card>
+      </div>
 
       {/* 功能分类展示 */}
       <Collapse defaultActiveKey={['0']} size="large">
@@ -334,7 +334,7 @@ const FeatureShowcase: React.FC = () => {
       </Collapse>
 
       {/* 版本路线图 */}
-      <Card style={{ marginTop: '32px' }}>
+      <div style={{ marginTop: '32px' }}>
         <Typography variant="h3" className="text-xl font-bold mb-4">版本路线图</Typography>
         <Timeline mode="left">
           <Timeline.Item
@@ -380,14 +380,14 @@ const FeatureShowcase: React.FC = () => {
             </div>
           </Timeline.Item>
         </Timeline>
-      </Card>
+      </div>
 
       {/* 技术栈 */}
-      <Card style={{ marginTop: '32px' }}>
+      <div style={{ marginTop: '32px' }}>
         <Title level={3} className="text-xl font-bold mb-4">技术栈</Title>
         <Row gutter={[16, 16]}>
           <Col span={8}>
-            <Card size="small" title="前端技术">
+            <div size="small" title="前端技术">
               <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                 <Tag color="blue">React 18</Tag>
                 <Tag color="blue">TypeScript</Tag>
@@ -395,10 +395,10 @@ const FeatureShowcase: React.FC = () => {
                 <Tag color="blue">ECharts</Tag>
                 <Tag color="blue">React Grid Layout</Tag>
               </div>
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card size="small" title="后端技术">
+            <div size="small" title="后端技术">
               <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                 <Tag color="green">Tauri</Tag>
                 <Tag color="green">Rust</Tag>
@@ -406,10 +406,10 @@ const FeatureShowcase: React.FC = () => {
                 <Tag color="green">Tokio</Tag>
                 <Tag color="green">Serde</Tag>
               </div>
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card size="small" title="工具链">
+            <div size="small" title="工具链">
               <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
                 <Tag color="orange">Vite</Tag>
                 <Tag color="orange">ESLint</Tag>
@@ -417,10 +417,10 @@ const FeatureShowcase: React.FC = () => {
                 <Tag color="orange">Cargo</Tag>
                 <Tag color="orange">GitHub Actions</Tag>
               </div>
-            </Card>
+            </div>
           </Col>
         </Row>
-      </Card>
+      </div>
     </div>
   );
 };

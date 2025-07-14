@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Empty, Row, Col, DatePicker, Card, Space, List } from '@/components/ui';
+import { Button, Typography, Input, Select, Tag, Empty, Row, Col, DatePicker, Space, List } from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip, Popconfirm
 
 const { RangePicker } = DatePicker;
@@ -403,7 +403,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   }
 
   return (
-    <Card
+    <div
       title={
         <div className="flex gap-2">
           <History className="w-4 h-4"  />
@@ -414,7 +414,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
     >
       {content}
-    </Card>
+    </div>
   );
 };
 

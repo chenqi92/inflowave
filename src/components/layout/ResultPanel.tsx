@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Table, TableHeader, TableBody, TableRow, TableCell, TableHead, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toast, Card, CardHeader, CardContent, CardTitle } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Table, TableHeader, TableBody, TableRow, TableCell, TableHead, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toastHeaderContentTitle } from '@/components/ui';
 import {
   TableIcon,
   Bug,
@@ -237,7 +237,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
   const logMessages = getLogMessages();
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-background">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <TabsList className="inline-flex h-8 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-auto">
           <TabsTrigger value="messages" className="flex items-center gap-1 px-2 py-1 text-xs">
@@ -282,7 +282,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                     <span className="text-xs">{executionTime}ms</span>
                   </div>
                 </div>
-                <div className="bg-white p-1 rounded border font-mono text-xs">
+                <div className="bg-background p-1 rounded border font-mono text-xs">
                   {query}
                 </div>
               </div>
@@ -298,11 +298,11 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
         
         <TabsContent value="summary" className="flex-1 overflow-auto p-2">
           <div className="space-y-2">
-            <Card className="bg-white rounded border">
-              <CardHeader className="border-b border-gray-200 p-2">
-                <CardTitle className="text-sm font-semibold text-gray-900">执行摘要</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+            <div className="bg-background rounded border">
+              <div className="border-b border-gray-200 p-2">
+                <h3 className="text-sm font-semibold text-gray-900">执行摘要</h3>
+              </div>
+              <div className="p-0">
                 <Table className="w-full text-xs">
                   <TableHeader>
                     <TableRow className="border-b border-gray-200">
@@ -339,15 +339,15 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                     </TableRow>
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
             
             {executedQueries.length > 0 && (
-              <Card className="bg-white rounded border">
-                <CardHeader className="border-b border-gray-200 p-2">
-                  <CardTitle className="text-sm font-semibold text-gray-900">执行的SQL语句</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
+              <div className="bg-background rounded border">
+                <div className="border-b border-gray-200 p-2">
+                  <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
+                </div>
+                <div className="p-0">
                   <Table className="w-full text-xs">
                     <TableHeader>
                       <TableRow className="border-b border-gray-200">
@@ -368,8 +368,8 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </div>
         </TabsContent>

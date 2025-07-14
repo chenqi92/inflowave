@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Input, Select, Table, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertTitle, AlertDescription, Tag, Empty, Spin, Form, Title, Text, Paragraph, Statistic, Row, Col } from '@/components/ui';
-import { Card, CardHeader, CardTitle, CardContent, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { CardHeaderTitleContent, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 const UITest: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,11 +43,11 @@ const UITest: React.FC = () => {
       <Title level={1}>UI Components Test</Title>
       
       {/* Buttons */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Buttons</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Buttons</h3>
+        </div>
+        <div>
           <div className="flex flex-wrap gap-2">
             <Button variant="default">Default</Button>
             <Button variant="default">Primary</Button>
@@ -58,15 +58,15 @@ const UITest: React.FC = () => {
             <Button disabled>Loading</Button>
             <Button disabled>Disabled</Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Form</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Form</h3>
+        </div>
+        <div>
           <Form onFinish={handleFormSubmit} className="max-w-md">
             <FormItem label="Name" name="name" required>
               <Input placeholder="Enter your name" />
@@ -84,31 +84,31 @@ const UITest: React.FC = () => {
               <Button type="submit" variant="primary">Submit</Button>
             </FormItem>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Statistics */}
       <Row gutter={[16, 16]}>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="Total Users"
               value={1234}
               valueStyle={{ color: '#3f8600' }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="Active Sessions"
               value={567}
               valueStyle={{ color: '#1890ff' }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="Revenue"
               value={89.3}
@@ -116,38 +116,38 @@ const UITest: React.FC = () => {
               suffix="%"
               valueStyle={{ color: '#cf1322' }}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={6}>
-          <Card>
+          <div>
             <Statistic
               title="Loading"
               loading
             />
-          </Card>
+          </div>
         </Col>
       </Row>
 
       {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Table</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Table</h3>
+        </div>
+        <div>
           <Table
             columns={tableColumns}
             dataSource={tableData}
             bordered
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Tabs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tabs</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Tabs</h3>
+        </div>
+        <div>
           <Tabs defaultValue="tab1">
             <TabsList>
               <TabsTrigger value="tab1">Tab 1</TabsTrigger>
@@ -158,8 +158,8 @@ const UITest: React.FC = () => {
             <TabsContent value="tab2" className="p-4">Content of Tab 2</TabsContent>
             <TabsContent value="tab3" className="p-4">Content of Tab 3</TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Alerts */}
       <div className="space-y-4">
@@ -182,11 +182,11 @@ const UITest: React.FC = () => {
       </div>
 
       {/* Tags */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tags</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Tags</h3>
+        </div>
+        <div>
           <div className="flex flex-wrap gap-2">
             <Tag>Default</Tag>
             <Tag variant="secondary">Primary</Tag>
@@ -196,15 +196,15 @@ const UITest: React.FC = () => {
             <Tag variant="processing">Processing</Tag>
             <Tag closable>Closable</Tag>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Modal */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Modal</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Modal</h3>
+        </div>
+        <div>
           <Button onClick={() => setModalOpen(true)}>Open Modal</Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogContent>
@@ -218,15 +218,15 @@ const UITest: React.FC = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Messages */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Messages</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Messages</h3>
+        </div>
+        <div>
           <div className="flex gap-2">
             <Button onClick={() => toast({ title: "信息", description: "This is an info message" })}>Info</Button>
             <Button onClick={() => toast({ title: "成功", description: "This is a success message" })}>Success</Button>
@@ -234,25 +234,25 @@ const UITest: React.FC = () => {
             <Button onClick={() => toast({ title: "错误", description: "This is an error message", variant: "destructive" })}>Error</Button>
             <Button onClick={() => toast({ title: "加载中", description: "Loading..." })}>Loading</Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Empty */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Empty State</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Empty State</h3>
+        </div>
+        <div>
           <Empty description="No data available" />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Spin */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Loading Spinner</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
+          <h3>Loading Spinner</h3>
+        </div>
+        <div>
           <div className="flex gap-4 items-center">
             <Spin size="small" />
             <Spin size="default" />
@@ -265,8 +265,8 @@ const UITest: React.FC = () => {
               </div>
             </Spin>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

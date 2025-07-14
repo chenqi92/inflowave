@@ -300,15 +300,15 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
         <form onSubmit={form.handleSubmit(savePreferences)} className="h-full flex flex-col">
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
           {/* 通知设置 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div>
+              <h3 className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 通知设置
-              </CardTitle>
-              <CardDescription>管理各类提醒和通知</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+              <p className="text-sm text-muted-foreground">管理各类提醒和通知</p>
+            </div>
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -432,19 +432,19 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 无障碍设置 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div>
+              <h3 className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
                 无障碍设置
-              </CardTitle>
-              <CardDescription>优化界面可访问性</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+              <p>优化界面可访问性</p>
+            </div>
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -528,19 +528,19 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 工作区设置 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div>
+              <h3 className="flex items-center gap-2">
                 <Layout className="w-4 h-4" />
                 工作区设置
-              </CardTitle>
-              <CardDescription>自定义工作区布局</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+              <p>自定义工作区布局</p>
+            </div>
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -623,17 +623,17 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                   )}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* 键盘快捷键 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div>
+            <div>
+              <h3 className="flex items-center gap-2">
                 <Keyboard className="w-4 h-4" />
                 键盘快捷键
-              </CardTitle>
-              <CardDescription>
+              </h3>
+              <p>
                 自定义快捷键设置
                 <Button
                   type="button"
@@ -644,9 +644,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                 >
                   重置为默认
                 </Button>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               <div className="space-y-6">
                 {/* 按分类分组显示快捷键 */}
                 {Object.entries(
@@ -739,8 +739,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           </div>
 

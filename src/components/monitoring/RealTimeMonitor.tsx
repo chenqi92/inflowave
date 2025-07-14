@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { RefreshCw, Settings, TrendingUp, Bell, PlayCircle, PauseCircle, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -280,7 +280,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
       {/* 控制面板 */}
-      <Card style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
             <div className="flex gap-2">
@@ -341,7 +341,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
             </div>
           </Col>
         </Row>
-      </Card>
+      </div>
 
       {/* 告警统计 */}
       {alertStats.total> 0 && (
@@ -371,7 +371,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           
           return (
             <Col span={8} key={query}>
-              <Card>
+              <div>
                 <Statistic
                   title={queryName}
                   value={value || 0}
@@ -386,7 +386,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                            value && value> 60 ? '#fa8c16' : '#3f8600'
                   }}
                 />
-              </Card>
+              </div>
             </Col>
           );
         })}
@@ -412,7 +412,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       </Row>
 
       {/* 告警事件列表 */}
-      <Card title={
+      <div title={
         <div className="flex gap-2">
           <Bell className="w-4 h-4"  />
           <span>告警事件</span>
@@ -462,7 +462,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
           )}
           locale={{ emptyText: '暂无告警事件' }}
         />
-      </Card>
+      </div>
 
       {/* 告警规则设置模态框 */}
       <Modal

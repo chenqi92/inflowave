@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Table, Alert, Row, Col, Typography, Progress, Button, Tag, Statistic, Tabs, TabsList, TabsTrigger, TabsContent, Modal, Tooltip, List } from '@/components/ui';
 // List component has been added to imports
-import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Info, RefreshCw, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { ImportWizardData } from '../SmartImportWizard';
 import { DataValidator, DataQualityAnalyzer, DataQualityReport, QualityIssue } from '../DataValidationUtils';
@@ -130,7 +130,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
     const report = wizardData.qualityReport;
     
     return (
-      <Card title="数据质量评估">
+      <div title="数据质量评估">
         <Row gutter={16}>
           <Col span={6}>
             <Statistic
@@ -200,7 +200,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             />
           </Col>
         </Row>
-      </Card>
+      </div>
     );
   };
 
@@ -208,21 +208,21 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
   const renderIssuesList = () => {
     if (!wizardData.qualityReport || wizardData.qualityReport.issues.length === 0) {
       return (
-        <Card title="数据质量问题">
+        <div title="数据质量问题">
           <Alert
             message="恭喜！"
             description="未发现数据质量问题"
             type="success"
             showIcon
           />
-        </Card>
+        </div>
       );
     }
 
     const issues = wizardData.qualityReport.issues;
 
     return (
-      <Card 
+      <div 
         title="数据质量问题" 
         extra={
           <Button 
@@ -280,7 +280,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             </List.Item>
           )}
         />
-      </Card>
+      </div>
     );
   };
 
@@ -349,14 +349,14 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
       key: index}));
 
     return (
-      <Card title="字段验证结果">
+      <div title="字段验证结果">
         <Table
           columns={columns}
           dataSource={dataSource}
           pagination={false}
           size="small"
         />
-      </Card>
+      </div>
     );
   };
 
@@ -386,7 +386,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
     });
 
     return (
-      <Card title="质量改进建议">
+      <div title="质量改进建议">
         <List
           size="small"
           dataSource={suggestions}
@@ -396,7 +396,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             </List.Item>
           )}
         />
-      </Card>
+      </div>
     );
   };
 
@@ -460,7 +460,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             />
           )}
 
-          <Card title="影响的行号" size="small">
+          <div title="影响的行号" size="small">
             <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
               {selectedIssue.rows.slice(0, 100).map((row, index) => (
                 <Tag key={index} style={{ margin: '2px' }}>
@@ -473,7 +473,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
                 </Text>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </Modal>
     );
@@ -482,7 +482,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
   return (
     <div className="space-y-6">
       {/* 验证控制 */}
-      <Card>
+      <div>
         <div className="flex justify-between items-center">
           <div>
             <Title level={4}>数据质量验证</Title>
@@ -499,7 +499,7 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
             开始验证
           </Button>
         </div>
-      </Card>
+      </div>
 
       {/* 验证结果 */}
       {wizardData.qualityReport && (
@@ -529,12 +529,12 @@ const DataValidationStep: React.FC<DataValidationStepProps> = ({
 
       {/* 验证进度 */}
       {loading && (
-        <Card>
+        <div>
           <div className="text-center">
             <Progress percent={50} status="active" />
             <Text>正在分析数据质量...</Text>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* 详情模态框 */}

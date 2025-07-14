@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag, List } from '@/components/ui';
 // TODO: Replace these Ant Design components: message, Divider
 import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
-import { Card } from '@/components/ui';
+
 
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -370,7 +370,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   };
 
   return (
-    <Card 
+    <div 
       title={
         <div className="flex gap-2">
           <Database className="w-4 h-4"  />
@@ -505,7 +505,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         }
         type="info"
       />
-    </Card>
+    </div>
   );
 };
 

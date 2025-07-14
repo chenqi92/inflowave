@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Progress, Typography } from '@/components/ui';
-import { Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 // AlertDialog components not available in current UI library
 // Using Dialog and Modal components instead
@@ -306,7 +306,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   return (
     <div style={{ padding: '16px' }}>
       {/* 工具栏 */}
-      <Card style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <Row justify="space-between" align="middle">
           <Col>
             <div className="flex gap-2">
@@ -352,40 +352,40 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             </Button>
           </Col>
         </Row>
-      </Card>
+      </div>
 
       {/* 存储概览 */}
       {storageInfo && (
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="数据库大小"
                 value={formatBytes(storageInfo.size)}
                 prefix={<Database className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="测量数量"
                 value={storageInfo.measurementCount}
                 prefix={<Settings className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="序列数量"
                 value={storageInfo.seriesCount.toLocaleString()}
                 prefix={<Info className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="压缩比"
                 value={storageInfo.compressionRatio}
@@ -393,7 +393,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 precision={2}
                 prefix={<CheckCircle />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       )}
@@ -410,7 +410,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               </div>
             ),
             children: (
-              <Card
+              <div
                 title="保留策略管理"
                 extra={
                   <Button
@@ -428,7 +428,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 }
               >
 {renderPolicyTable()}
-              </Card>
+              </div>
             )},
           {
             key: 'storage',
@@ -439,7 +439,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               </div>
             ),
             children: (
-              <Card title="存储分析报告">
+              <div title="存储分析报告">
                 {storageInfo ? (
                   <div>
                     <Alert
@@ -451,13 +451,13 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                     
                     <Row gutter={16}>
                       <Col span={12}>
-                        <Card size="small" title="数据时间范围">
+                        <div size="small" title="数据时间范围">
                           <p><strong>最早数据:</strong> {new Date(storageInfo.oldestPoint).toLocaleString()}</p>
                           <p><strong>最新数据:</strong> {new Date(storageInfo.newestPoint).toLocaleString()}</p>
-                        </Card>
+                        </div>
                       </Col>
                       <Col span={12}>
-                        <Card size="small" title="压缩效果">
+                        <div size="small" title="压缩效果">
                           <Progress
                             percent={Math.round((1 - 1/storageInfo.compressionRatio) * 100)}
                             format={percent => `节省 ${percent}%`}
@@ -466,7 +466,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                           <p style={{ marginTop: 8 }}>
                             <Text type="secondary">压缩比: {storageInfo.compressionRatio.toFixed(2)}:1</Text>
                           </p>
-                        </Card>
+                        </div>
                       </Col>
                     </Row>
                   </div>
@@ -477,7 +477,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                     type="warning"
                   />
                 )}
-              </Card>
+              </div>
             )},
         ]}
       />

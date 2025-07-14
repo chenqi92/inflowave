@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Row, Col, Statistic, Typography, Tag, Button, Alert } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 
 // TODO: Replace these Ant Design components: Progress, Tooltip, 
 import { Database, RefreshCw, Zap, Clock, Webhook, AlertTriangle } from 'lucide-react';
@@ -130,11 +130,11 @@ const PerformanceMonitor: React.FC = () => {
 
   if (!metrics) {
     return (
-      <Card title="性能监控" disabled={loading}>
+      <div title="性能监控" disabled={loading}>
         <div className="text-center py-8">
           <Text type="secondary">正在加载性能数据...</Text>
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -146,7 +146,7 @@ const PerformanceMonitor: React.FC = () => {
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 pb-4">
       {/* 系统性能概览 */}
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <Zap className="w-4 h-4"  />
@@ -209,12 +209,12 @@ const PerformanceMonitor: React.FC = () => {
             />
           </Col>
         </Row>
-      </Card>
+      </div>
 
       {/* 连接和查询统计 */}
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="连接统计" size="small">
+          <div title="连接统计" size="small">
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic
@@ -231,10 +231,10 @@ const PerformanceMonitor: React.FC = () => {
                 />
               </Col>
             </Row>
-          </Card>
+          </div>
         </Col>
         <Col span={12}>
-          <Card title="错误率" size="small">
+          <div title="错误率" size="small">
             <Statistic
               title="错误率"
               value={metrics.errorRate}
@@ -259,12 +259,12 @@ const PerformanceMonitor: React.FC = () => {
                 className="mt-2"
               />
             )}
-          </Card>
+          </div>
         </Col>
       </Row>
 
       {/* 连接健康状态 */}
-      <Card title="连接健康状态" size="small">
+      <div title="连接健康状态" size="small">
         {connectionHealth.length > 0 ? (
           <div className="space-y-2">
             {connectionHealth.map(conn => (
@@ -300,7 +300,7 @@ const PerformanceMonitor: React.FC = () => {
             <Text type="secondary">暂无连接</Text>
           </div>
         )}
-      </Card>
+      </div>
 
       {/* 最后更新时间 */}
       <div className="text-center">

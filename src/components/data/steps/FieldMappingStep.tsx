@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useMemo } from 'react';
 import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal, Tooltip } from '@/components/ui';
-import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { BulkOutlined } from '@/components/ui';
 import { Info, Edit, Trash2, Plus, CheckCircle } from 'lucide-react';
@@ -421,7 +421,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
   return (
     <div className="space-y-6">
       {/* 配置工具栏 */}
-      <Card>
+      <div>
         <Row gutter={16} align="middle">
           <Col span={12}>
             <div className="flex gap-2">
@@ -452,7 +452,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
             </div>
           </Col>
         </Row>
-      </Card>
+      </div>
 
       {/* 验证提示 */}
       {validateMappings.errors.length > 0 && (
@@ -486,7 +486,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
       )}
 
       {/* 字段映射表格 */}
-      <Card title="字段映射配置">
+      <div title="字段映射配置">
         <div className="space-y-4">
           <Alert
             message="字段映射说明"
@@ -512,10 +512,10 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
             scroll={{ x: 'max-content' }}
           />
         </div>
-      </Card>
+      </div>
 
       {/* 批量操作 */}
-      <Card title="批量操作" size="small">
+      <div title="批量操作" size="small">
         <Row gutter={16}>
           <Col span={6}>
             <Button
@@ -550,7 +550,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
             </Button>
           </Col>
         </Row>
-      </Card>
+      </div>
 
       {/* 模板选择弹窗 */}
       <Modal
@@ -597,7 +597,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
           </Select>
 
           {selectedTemplate && (
-            <Card size="small" title="模板预览">
+            <div size="small" title="模板预览">
               {mappingTemplates
                 .find(t => t.name === selectedTemplate)
                 ?.mappings.map((mapping, index) => (
@@ -612,7 +612,7 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
                     </Tag>
                   </div>
                 ))}
-            </Card>
+            </div>
           )}
         </div>
       </Modal>

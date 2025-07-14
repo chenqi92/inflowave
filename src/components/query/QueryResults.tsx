@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Card, Modal } from '@/components/ui';
+import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Modal } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -273,7 +273,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
   ];
 
   return (
-    <Card
+    <div
       title={
         <div className="flex gap-2">
           <Table className="w-4 h-4"  />
@@ -384,7 +384,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
           )}
         </div>
       </Modal>
-    </Card>
+    </div>
   );
 };
 

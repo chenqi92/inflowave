@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
-import { Card, Space, toast } from '@/components/ui';
+import { Space, toast } from '@/components/ui';
 import { Upload as UploadIcon, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';
@@ -395,7 +395,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
     if (!wizardData.file) return null;
 
     return (
-      <Card title="解析选项" size="small">
+      <div title="解析选项" size="small">
         <Form layout="vertical">
           <Row gutter={16}>
             {/* CSV 选项 */}
@@ -533,7 +533,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             </Col>
           </Row>
         </Form>
-      </Card>
+      </div>
     );
   };
 
@@ -542,7 +542,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
     if (!wizardData.file) return null;
 
     return (
-      <Card title="文件信息" size="small">
+      <div title="文件信息" size="small">
         <Row gutter={16}>
           <Col span={6}>
             <Text strong>文件名: </Text>
@@ -561,7 +561,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             <Text>{wizardData.totalRows}</Text>
           </Col>
         </Row>
-      </Card>
+      </div>
     );
   };
 
@@ -589,7 +589,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       }, {} as Record<number, any>)}));
 
     return (
-      <Card title={`数据预览 (前 ${wizardData.preview.length} 行)`} size="small">
+      <div title={`数据预览 (前 ${wizardData.preview.length} 行)`} size="small">
         <Table
           columns={columns}
           dataSource={dataSource}
@@ -597,14 +597,14 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
           scroll={{ x: 'max-content', y: 400 }}
           size="small"
         />
-      </Card>
+      </div>
     );
   };
 
   return (
     <div className="space-y-6">
       {/* 文件上传 */}
-      <Card title="选择文件">
+      <div title="选择文件">
         <div className="space-y-4">
           <Upload.Dragger {...uploadProps}>
             <div className="flex flex-col items-center space-y-2">
@@ -630,7 +630,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
             showIcon
           />
         </div>
-      </Card>
+      </div>
 
       {/* 解析选项 */}
       {renderParseOptions()}

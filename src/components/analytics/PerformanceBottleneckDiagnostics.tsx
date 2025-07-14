@@ -331,7 +331,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="活跃瓶颈"
                 value={activeBottlenecks.length}
@@ -339,30 +339,30 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: activeBottlenecks.length > 0 ? '#ff4d4f' : '#52c41a' }}
                 prefix={<Flame className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="严重瓶颈"
                 value={criticalBottlenecks.length}
                 valueStyle={{ color: criticalBottlenecks.length > 0 ? '#ff4d4f' : '#52c41a' }}
                 prefix={<AlertCircle className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="高危瓶颈"
                 value={highBottlenecks.length}
                 valueStyle={{ color: highBottlenecks.length > 0 ? '#faad14' : '#52c41a' }}
                 prefix={<AlertTriangle className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="总体影响"
                 value={totalImpact.toFixed(1)}
@@ -370,12 +370,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: totalImpact > 20 ? '#ff4d4f' : totalImpact > 10 ? '#faad14' : '#52c41a' }}
                 prefix={<RiseOutlined />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
         {/* 过滤器 */}
-        <Card size="small" style={{ marginBottom: '16px' }}>
+        <div size="small" style={{ marginBottom: '16px' }}>
           <Row gutter={[16, 16]} align="middle">
             <Col span={6}>
               <Input
@@ -461,7 +461,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
               </Button>
             </Col>
           </Row>
-        </Card>
+        </div>
 
         {/* 瓶颈表格 */}
         <Table
@@ -496,7 +496,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="CPU使用率"
                 value={systemMetrics.cpu[systemMetrics.cpu.length - 1]?.usage || 0}
@@ -507,10 +507,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 }}
                 prefix={<Bug className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="内存使用率"
                 value={systemMetrics.memory[systemMetrics.memory.length - 1]?.usage || 0}
@@ -521,10 +521,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 }}
                 prefix={<Database className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="磁盘I/O"
                 value={systemMetrics.disk[systemMetrics.disk.length - 1]?.readIops || 0}
@@ -533,10 +533,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: '#1890ff' }}
                 prefix={<Database className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="网络I/O"
                 value={systemMetrics.network[systemMetrics.network.length - 1]?.bytesIn || 0}
@@ -545,26 +545,26 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: '#722ed1' }}
                 prefix={<Webhook className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="CPU和内存使用率趋势" size="small">
+            <div title="CPU和内存使用率趋势" size="small">
               {/* 这里应该是图表组件，显示CPU和内存的时间序列数据 */}
               <div style={{ height: '200px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Text type="secondary">CPU和内存使用率趋势图</Text>
               </div>
-            </Card>
+            </div>
           </Col>
           <Col span={12}>
-            <Card title="磁盘和网络I/O趋势" size="small">
+            <div title="磁盘和网络I/O趋势" size="small">
               {/* 这里应该是图表组件，显示磁盘和网络I/O的时间序列数据 */}
               <div style={{ height: '200px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Text type="secondary">磁盘和网络I/O趋势图</Text>
               </div>
-            </Card>
+            </div>
           </Col>
         </Row>
       </div>
@@ -698,16 +698,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="总锁等待数"
                 value={lockWaits.summary.totalLocks}
                 prefix={<Lock className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="平均等待时间"
                 value={lockWaits.summary.avgWaitTime}
@@ -715,10 +715,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 precision={2}
                 prefix={<Clock className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={8}>
-            <Card>
+            <div>
               <Statistic
                 title="最大等待时间"
                 value={lockWaits.summary.maxWaitTime}
@@ -726,7 +726,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 precision={2}
                 prefix={<AlertCircle className="w-4 h-4" />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
@@ -743,7 +743,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
         />
 
         {lockWaits.summary.recommendations.length > 0 && (
-          <Card title="优化建议" style={{ marginTop: '16px' }}>
+          <div title="优化建议" style={{ marginTop: '16px' }}>
             <List
               dataSource={lockWaits.summary.recommendations}
               renderItem={(recommendation: string) => (
@@ -755,7 +755,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -773,7 +773,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="整体性能分数"
                 value={summary.overallScore}
@@ -782,10 +782,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: summary.overallScore >= 80 ? '#52c41a' : summary.overallScore >= 60 ? '#faad14' : '#ff4d4f' }}
                 prefix={<Trophy className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="平均查询时间"
                 value={summary.avgQueryTime}
@@ -793,10 +793,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 precision={2}
                 prefix={<Clock className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="错误率"
                 value={summary.errorRate}
@@ -805,10 +805,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 valueStyle={{ color: summary.errorRate > 5 ? '#ff4d4f' : '#52c41a' }}
                 prefix={<Bug className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="吞吐量"
                 value={summary.throughput}
@@ -816,13 +816,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                 precision={1}
                 prefix={<Rocket className="w-4 h-4"  />}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
 
         <Row gutter={[16, 16]}>
           <Col span={12}>
-            <Card title="系统性能指标" size="small">
+            <div title="系统性能指标" size="small">
               <Row gutter={[8, 8]}>
                 <Col span={12}>
                   <Text strong>CPU使用率</Text>
@@ -857,10 +857,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                   />
                 </Col>
               </Row>
-            </Card>
+            </div>
           </Col>
           <Col span={12}>
-            <Card title="性能优化建议" size="small">
+            <div title="性能优化建议" size="small">
               <List
                 dataSource={recommendations.slice(0, 5)}
                 renderItem={(recommendation: any) => (
@@ -879,7 +879,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                   </List.Item>
                 )}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       </div>
@@ -888,7 +888,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
 
   return (
     <div className={className}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <MonitorOutlined />
@@ -953,7 +953,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             </TabPane>
           </Tabs>
         </Spin>
-      </Card>
+      </div>
 
       {/* 瓶颈详情抽屉 */}
       <Drawer
@@ -1010,7 +1010,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
             </Descriptions>
 
             {selectedBottleneck.recommendations.length > 0 && (
-              <Card title="解决建议" style={{ marginTop: '16px' }}>
+              <div title="解决建议" style={{ marginTop: '16px' }}>
                 <List
                   dataSource={selectedBottleneck.recommendations}
                   renderItem={(recommendation: string) => (
@@ -1022,7 +1022,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
                     </List.Item>
                   )}
                 />
-              </Card>
+              </div>
             )}
 
             <div style={{ marginTop: '16px' }}>

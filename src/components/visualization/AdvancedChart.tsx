@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Select, Button, Typography, Row, Col } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
+import { Space } from '@/components/ui';
 
 // TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
 import { TrendingUp, BarChart, PieChart, Settings, Download, RefreshCw } from 'lucide-react';
@@ -276,7 +276,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   };
 
   return (
-    <Card
+    <div
       title={
         <div className="flex gap-2">
           <TrendingUp className="w-4 h-4"  />
@@ -312,7 +312,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
       style={{ height: showSettings ? height + 200 : height + 100 }}
     >
       {showSettings && (
-        <Card size="small" style={{ marginBottom: 16 }}>
+        <div size="small" style={{ marginBottom: 16 }}>
           <Row gutter={[16, 16]}>
             <Col span={6}>
               <div>
@@ -399,7 +399,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
               </div>
             </Col>
           </Row>
-        </Card>
+        </div>
       )}
 
       <div
@@ -409,7 +409,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
           height: showSettings ? height - 100 : height - 50,
           minHeight: 300}}
       />
-    </Card>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Tag, Typography, Input, Select, DatePicker, Alert, Collapse, Panel, Badge, Tooltip, toast } from '@/components/ui';
+import { Button, Space, Tag, Typography, Input, Select, DatePicker, Alert, Collapse, Panel, Badge, Tooltip, toast } from '@/components/ui';
 import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye, Table } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
@@ -327,7 +327,7 @@ const ErrorLogViewer: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* 头部统计和操作 */}
-      <Card>
+      <div>
         <div className="flex items-center justify-between">
           <div className="flex gap-2" size="large">
             <div>
@@ -374,10 +374,10 @@ const ErrorLogViewer: React.FC = () => {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* 过滤器 */}
-      <Card>
+      <div>
         <div className="flex gap-2" wrap>
           <Search
             placeholder="搜索错误消息..."
@@ -418,10 +418,10 @@ const ErrorLogViewer: React.FC = () => {
             placeholder={['开始时间', '结束时间']}
           />
         </div>
-      </Card>
+      </div>
 
       {/* 错误日志表格 */}
-      <Card>
+      <div>
         <Table
           columns={columns}
           dataSource={filteredLogs}
@@ -435,7 +435,7 @@ const ErrorLogViewer: React.FC = () => {
             showTotal: (total) => `共 ${total} 条`}}
           scroll={{ x: 'max-content' }}
         />
-      </Card>
+      </div>
 
       {/* 错误详情弹窗 */}
       <Dialog

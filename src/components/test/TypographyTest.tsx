@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography, Card, Space, Separator } from '@/components/ui';
+import { Typography, Space, Separator } from '@/components/ui';
 
 
 const { Title, Paragraph, Text } = Typography;
@@ -7,7 +7,7 @@ const { Title, Paragraph, Text } = Typography;
 const TypographyTest: React.FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <Card title="Typography 组件样式测试" className="mb-6">
+      <div title="Typography 组件样式测试" className="mb-6">
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           
           {/* 标题测试 */}
@@ -164,7 +164,7 @@ greet('World');`}
           </div>
 
         </Space>
-      </Card>
+      </div>
     </div>
   );
 };

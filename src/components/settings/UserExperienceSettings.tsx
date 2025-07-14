@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
-import { Card, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { LayoutOutlined } from '@/components/ui';
 import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
@@ -175,7 +175,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
 
   return (
     <div style={{ padding: '16px' }}>
-      <Card
+      <div
         title={
           <div className="flex gap-2">
             <Settings className="w-4 h-4"  />
@@ -398,7 +398,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
             ]}
           />
         </Form>
-      </Card>
+      </div>
 
       {/* 快捷键编辑模态框 */}
       <Modal

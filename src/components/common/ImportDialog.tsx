@@ -316,7 +316,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
         {/* 步骤 1: 文件上传 */}
         {currentStep === 0 && (
-          <Card title="选择要导入的文件">
+          <div title="选择要导入的文件">
             <div className="space-y-4">
               <Upload.Dragger {...uploadProps}>
                 <div className="flex flex-col items-center space-y-2">
@@ -344,14 +344,14 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 showIcon
               />
             </div>
-          </Card>
+          </div>
         )}
 
         {/* 步骤 2: 配置映射 */}
         {currentStep === 1 && importData && (
           <div className="space-y-6">
             {/* 基本配置 */}
-            <Card title="导入配置">
+            <div title="导入配置">
               <Form form={form} layout="vertical">
                 <Row gutter={16}>
                   <Col span={12}>
@@ -395,10 +395,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   </Col>
                 </Row>
               </Form>
-            </Card>
+            </div>
 
             {/* 字段映射 */}
-            <Card title="字段映射配置">
+            <div title="字段映射配置">
               <div className="space-y-4">
                 <Alert
                   message="字段映射说明"
@@ -416,10 +416,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   size="small"
                 />
               </div>
-            </Card>
+            </div>
 
             {/* 数据预览 */}
-            <Card title="数据预览 (前10行)">
+            <div title="数据预览 (前10行)">
               <Table
                 columns={previewColumns}
                 dataSource={previewDataSource}
@@ -427,7 +427,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 scroll={{ x: 'max-content' }}
                 size="small"
               />
-            </Card>
+            </div>
 
             {/* 操作按钮 */}
             <div className="flex justify-between">
@@ -453,7 +453,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
         {/* 步骤 3: 导入完成 */}
         {currentStep === 2 && (
-          <Card>
+          <div>
             <div className="text-center space-y-4">
               <CheckCircle className="text-6xl text-success" />
               <Title level={3}>导入完成</Title>
@@ -474,7 +474,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 </Button>
               </div>
             </div>
-          </Card>
+          </div>
         )}
       </div>
       </DialogContent>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Row, Col, Statistic, Progress, Alert, Table, Tag, Button, Select, DatePicker, Typography, Modal, Tooltip } from '@/components/ui';
 // TODO: Replace these Ant Design components: List
-import { Card, Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { RefreshCw, Info, BarChart, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -423,7 +423,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {/* 控制面板 */}
-        <Card>
+        <div>
           <div className="flex justify-between items-center">
             <div>
               <Title level={4}>性能监控</Title>
@@ -449,13 +449,13 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* 系统指标概览 */}
       {metrics && (
         <Row gutter={16}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="CPU 使用率"
                 value={metrics.systemMetrics.cpuUsage}
@@ -468,10 +468,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 strokeColor={getStatusColor(metrics.systemMetrics.cpuUsage, 100)}
                 showInfo={false}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="内存使用率"
                 value={metrics.systemMetrics.memoryUsage}
@@ -484,10 +484,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 strokeColor={getStatusColor(metrics.systemMetrics.memoryUsage, 100)}
                 showInfo={false}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="磁盘使用率"
                 value={metrics.systemMetrics.diskUsage}
@@ -500,10 +500,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 strokeColor={getStatusColor(metrics.systemMetrics.diskUsage, 100)}
                 showInfo={false}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="连接数"
                 value={metrics.databaseMetrics.connectionCount}
@@ -523,7 +523,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 )}
                 showInfo={false}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       )}
@@ -532,50 +532,50 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
       {metrics && (
         <Row gutter={16}>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="查询延迟"
                 value={metrics.databaseMetrics.queryLatency}
                 suffix="ms"
                 valueStyle={{ color: metrics.databaseMetrics.queryLatency > 1000 ? '#f5222d' : '#52c41a' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="写入延迟"
                 value={metrics.databaseMetrics.writeLatency}
                 suffix="ms"
                 valueStyle={{ color: metrics.databaseMetrics.writeLatency > 500 ? '#f5222d' : '#52c41a' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="查询速率"
                 value={metrics.databaseMetrics.queryRate}
                 suffix="次/秒"
                 valueStyle={{ color: '#1890ff' }}
               />
-            </Card>
+            </div>
           </Col>
           <Col span={6}>
-            <Card>
+            <div>
               <Statistic
                 title="写入速率"
                 value={metrics.databaseMetrics.writeRate}
                 suffix="次/秒"
                 valueStyle={{ color: '#1890ff' }}
               />
-            </Card>
+            </div>
           </Col>
         </Row>
       )}
 
       {/* 性能趋势图 */}
-      <Card
+      <div
         title="性能趋势"
         extra={
           <Select
@@ -597,12 +597,12 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
           style={{ height: '300px' }}
           showLoading={loading}
         />
-      </Card>
+      </div>
 
       {/* 告警和慢查询概览 */}
       <Row gutter={16}>
         <Col span={12}>
-          <Card
+          <div
             title="活跃告警"
             extra={
               <Button
@@ -631,10 +631,10 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </Col>
         <Col span={12}>
-          <Card
+          <div
             title="慢查询"
             extra={
               <Button
@@ -663,7 +663,7 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
                 </List.Item>
               )}
             />
-          </Card>
+          </div>
         </Col>
       </Row>
 
