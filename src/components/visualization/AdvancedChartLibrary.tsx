@@ -632,7 +632,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
   ];
 
   return (
-    <div className={fullscreen ? 'fixed inset-0 z-50 bg-white' : ''}>
+    <div className={fullscreen ? 'fixed inset-0 z-50 bg-background' : ''}>
       <div
         title={
           <div className="flex justify-between items-center">

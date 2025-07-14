@@ -329,18 +329,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
     return (
       <div className="space-y-4">
-        <Alert className={testResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+        <Alert className={testResult.success ? 'border-success/20 bg-success/10' : 'border-destructive/20 bg-destructive/10'}>
           {testResult.success ? (
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <CheckCircle className="h-4 w-4 text-success" />
           ) : (
-            <XCircle className="h-4 w-4 text-red-600" />
+            <XCircle className="h-4 w-4 text-destructive" />
           )}
           <AlertDescription>
             <div className="space-y-2">
-              <div className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <div className={`font-medium ${testResult.success ? 'text-success' : 'text-destructive'}`}>
                 {testResult.success ? '连接测试成功' : '连接测试失败'}
               </div>
-              <div className={`text-sm ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
+              <div className={`text-sm ${testResult.success ? 'text-success' : 'text-destructive'}`}>
                 {testResult.success ? (
                   <div className="space-y-1">
                     <div>服务器版本: {testResult.serverVersion || '未知'}</div>
@@ -360,8 +360,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </Alert>
 
         {testResult.success && (
-          <div className="bg-green-50 border border-green-200 rounded p-3">
-            <div className="flex items-center gap-2 text-green-700">
+          <div className="bg-success/10 border border-success/20 rounded p-3">
+            <div className="flex items-center gap-2 text-success">
               <CheckCircle />
               <Typography.Text className="font-medium">连接配置正确</Typography.Text>
             </div>

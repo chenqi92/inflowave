@@ -222,7 +222,7 @@ const Connections: React.FC = () => {
   return (
     <div className="h-full bg-background flex flex-col">
       {/* 页面标题 */}
-      <div className="border-b bg-white">
+      <div className="border-b bg-background">
         <div className="p-6">
           <h1 className="text-2xl font-semibold text-foreground">数据源管理</h1>
           <p className="text-sm text-muted-foreground mt-1">管理和监控 InfluxDB 数据库连接</p>
@@ -230,7 +230,7 @@ const Connections: React.FC = () => {
       </div>
 
       {/* 连接管理器 */}
-      <div className="flex-1 overflow-hidden bg-white">
+      <div className="flex-1 overflow-hidden bg-background">
         <Tabs
           defaultValue="manager"
           className="h-full flex flex-col"

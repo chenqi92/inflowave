@@ -158,7 +158,7 @@ const ConnectionTest: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center">
               <Typography.Text className="font-medium mr-2">状态:</Typography.Text>
-              <span className={testResult.success ? 'text-success' : 'text-red-600'}>
+              <span className={testResult.success ? 'text-success' : 'text-destructive'}>
                 {testResult.success ? '✅ 连接成功' : '❌ 连接失败'}
               </span>
             </div>
@@ -180,7 +180,7 @@ const ConnectionTest: React.FC = () => {
             {testResult.error && (
               <div className="flex items-start">
                 <Typography.Text className="font-medium mr-2">错误:</Typography.Text>
-                <span className="text-red-600 break-all">{testResult.error}</span>
+                <span className="text-destructive break-all">{testResult.error}</span>
               </div>
             )}
           </div>

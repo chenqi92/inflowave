@@ -418,7 +418,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
   );
 
   return (
-    <div className={fullscreen ? 'fixed inset-0 z-50 bg-white p-4' : ''}>
+    <div className={fullscreen ? 'fixed inset-0 z-50 bg-background p-4' : ''}>
       {renderToolbar()}
       
       <div className="dashboard-grid">

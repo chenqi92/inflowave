@@ -48,7 +48,7 @@ const getIcon = (type?: string, customIcon?: React.ReactNode) => {
       return <XCircle className="w-5 h-5 text-destructive" />;
     case 'warning':
     case 'confirm':
-      return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+      return <AlertTriangle className="w-5 h-5 text-warning" />;
     default:
       return <Info className="w-5 h-5 text-primary" />;
   }

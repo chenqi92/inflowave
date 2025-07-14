@@ -379,7 +379,7 @@ const Visualization: React.FC = () => {
                 {...form.register('title', { required: '请输入图表标题' })}
               />
               {form.formState.errors.title && (
-                <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
               )}
             </div>
 
@@ -417,7 +417,7 @@ const Visualization: React.FC = () => {
                 </SelectContent>
               </Select>
               {form.formState.errors.type && (
-                <p className="text-sm text-red-500">{form.formState.errors.type.message}</p>
+                <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
               )}
             </div>
 
@@ -436,7 +436,7 @@ const Visualization: React.FC = () => {
                 </SelectContent>
               </Select>
               {form.formState.errors.database && (
-                <p className="text-sm text-red-500">{form.formState.errors.database.message}</p>
+                <p className="text-sm text-destructive">{form.formState.errors.database.message}</p>
               )}
             </div>
 
@@ -448,7 +448,7 @@ const Visualization: React.FC = () => {
                 {...form.register('query', { required: '请输入查询语句' })}
               />
               {form.formState.errors.query && (
-                <p className="text-sm text-red-500">{form.formState.errors.query.message}</p>
+                <p className="text-sm text-destructive">{form.formState.errors.query.message}</p>
               )}
             </div>
 

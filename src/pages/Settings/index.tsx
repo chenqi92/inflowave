@@ -192,7 +192,7 @@ const Settings: React.FC = () => {
   return (
     <div className="settings-page">
       {/* 页面头部 */}
-      <div className="settings-header bg-white border-b border px-6 py-4">
+      <div className="settings-header bg-background border-b border px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button 
@@ -423,7 +423,7 @@ const Settings: React.FC = () => {
 
                   <div title="数据清理" className="border-destructive shadow-sm border-0 bg-destructive/10">
                     <div className="mb-4">
-                      <Title level={5} className="mb-2 text-red-600">危险操作区域</Title>
+                      <Title level={5} className="mb-2 text-destructive">危险操作区域</Title>
                       <Alert
                         message="危险操作"
                         description="以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。"

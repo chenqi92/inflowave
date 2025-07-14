@@ -320,7 +320,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             <div className="space-y-4">
               <Upload.Dragger {...uploadProps}>
                 <div className="flex flex-col items-center space-y-2">
-                  <UploadIcon className="w-8 h-8 text-gray-400" />
+                  <UploadIcon className="w-8 h-8 text-muted-foreground" />
                   <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
                   <p className="text-sm text-muted-foreground">
                     支持 CSV、JSON 格式文件。文件大小不超过 10MB。
