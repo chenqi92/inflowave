@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
-import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table, FileText, Plus, X } from 'lucide-react';
+import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, FileText, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -275,7 +275,7 @@ const Query: React.FC = () => {
       children: measurements && measurements.length > 0 ? measurements.map((measurement, measurementIndex) => ({
         title: measurement,
         key: `${db}-${measurement}-${measurementIndex}`, // 确保 key 唯一
-        icon: <Table className="w-4 h-4"  />,
+        icon: <TableIcon className="w-4 h-4"  />,
         children: [
           {
             title: 'Fields',
@@ -684,7 +684,7 @@ const Query: React.FC = () => {
               摘要
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
-              <Table className="w-4 h-4" />
+              <TableIcon className="w-4 h-4" />
               结果
             </TabsTrigger>
           </TabsList>
@@ -791,7 +791,7 @@ const Query: React.FC = () => {
                   {queryResult.series && queryResult.series.length > 0 && (
                     <div className="bg-background border rounded-lg p-4">
                       <h4 className="font-semibold mb-3 flex items-center gap-2">
-                        <Table className="w-4 h-4" />
+                        <TableIcon className="w-4 h-4" />
                         数据结构
                       </h4>
                       <div className="space-y-2 text-sm">
