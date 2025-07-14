@@ -262,9 +262,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-4">
           {/* 通知设置 */}
           <Card>
             <CardHeader>

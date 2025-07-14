@@ -574,16 +574,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
     <>
       <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-5xl w-full h-[85vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 py-4 border-b shrink-0">
+          <DialogHeader className="px-6 py-3 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
               偏好设置
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 flex">
-            <Tabs defaultValue="general" orientation="vertical" className="flex h-full w-full">
-              <TabsList className="flex flex-col h-auto w-48 bg-muted/50 p-2 items-start justify-start shrink-0 rounded-none border-r space-y-1">
+          <div className="flex flex-1 min-h-0">
+            <Tabs defaultValue="general" orientation="vertical" className="flex flex-1 h-full">
+              <TabsList className="flex flex-col h-fit w-48 bg-muted/50 py-4 px-2 items-start justify-start shrink-0 rounded-none border-r space-y-1">
                 {tabItems.map((item) => (
                   <TabsTrigger
                     key={item.key}
@@ -603,12 +603,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   <TabsContent
                     key={item.key}
                     value={item.key}
-                    className="h-full mt-0 p-6 data-[state=inactive]:hidden"
+                    className="flex-1 mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto"
                   >
-                    <div className="h-full overflow-y-auto">
-                      <div className="max-w-2xl">
-                        {item.children}
-                      </div>
+                    <div className="max-w-3xl">
+                      {item.children}
                     </div>
                   </TabsContent>
                 ))}
