@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, Button, Space, Checkbox, Dialog, DialogContent, DialogHeader, DialogTitle, Alert, Separator } from '@/components/ui';
+import { Text, Button, Space, Checkbox, Dialog, DialogContent, DialogHeader, DialogTitle, Alert, AlertTitle, AlertDescription, Separator } from '@/components/ui';
 import { Info, Code, Globe, Monitor, X } from 'lucide-react';
 import { isBrowserEnvironment } from '@/utils/tauri';
 import { useNoticeStore } from '@/store/notice';
@@ -41,14 +41,13 @@ const BrowserModeModal: React.FC<BrowserModeModalProps> = ({ isOpen, onClose }) 
           </Text>
         </div>
 
-        <Alert
-          message="预览模式说明"
-          description="您正在体验 InfloWave 的功能预览版本。完整的数据库连接、文件操作等功能需要在桌面应用中使用。"
-          type="info"
-          icon={<Info className="w-4 h-4"  />}
-          showIcon
-          style={{ marginBottom: '24px' }}
-        />
+        <Alert style={{ marginBottom: '24px' }}>
+          <Info className="h-4 w-4" />
+          <AlertTitle>预览模式说明</AlertTitle>
+          <AlertDescription>
+            您正在体验 InfloWave 的功能预览版本。完整的数据库连接、文件操作等功能需要在桌面应用中使用。
+          </AlertDescription>
+        </Alert>
 
         <div style={{ marginBottom: '24px' }}>
           <Text className="text-lg font-semibold block mb-2">🚀 获取完整版本</Text>
