@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsList, TabsTrigger, TabsContent, Spin, Alert, Tree, Card, CardHeader, CardTitle, CardContent, Typography, Separator, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
-import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table, FileText } from 'lucide-react';
+import { Save, Database, Table as TableIcon, Download, History, Tags, PlayCircle, AlertCircle, Clock, Table, FileText, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -13,14 +13,34 @@ import type { QueryResult, QueryRequest } from '@/types';
 
 // 移除Ant Design的Option组件
 
+interface QueryTab {
+  id: string;
+  title: string;
+  query: string;
+  selectedConnectionId: string;
+  selectedDatabase: string;
+  queryResult: QueryResult | null;
+  loading: boolean;
+}
+
 const Query: React.FC = () => {
   const { toast } = useToast();
   const { activeConnectionId, connectedConnectionIds, connections, getConnection, isConnectionConnected } = useConnectionStore();
-  const [query, setQuery] = useState('SELECT * FROM measurement_name LIMIT 10');
-  const [selectedConnectionId, setSelectedConnectionId] = useState<string>('');
-  const [selectedDatabase, setSelectedDatabase] = useState<string>('');
-  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
-  const [loading, setLoading] = useState(false);
+  
+  // 多标签支持
+  const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
+    {
+      id: 'tab-1',
+      title: '查询1',
+      query: 'SELECT * FROM measurement_name LIMIT 10',
+      selectedConnectionId: '',
+      selectedDatabase: '',
+      queryResult: null,
+      loading: false
+    }
+  ]);
+  const [activeTabId, setActiveTabId] = useState('tab-1');
+  
   const [databases, setDatabases] = useState<string[]>([]);
   const [measurements, setMeasurements] = useState<string[]>([]);
   const [fields, setFields] = useState<string[]>([]);
@@ -29,9 +49,82 @@ const Query: React.FC = () => {
   const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [exportDialogVisible, setExportDialogVisible] = useState(false);
   const [activeResultTab, setActiveResultTab] = useState('results');
+  
+  // 获取当前活跃标签
+  const activeTab = queryTabs.find(tab => tab.id === activeTabId) || queryTabs[0];
+  
+  // 兼容性属性（使用当前活跃标签的值）
+  const query = activeTab?.query || '';
+  const selectedConnectionId = activeTab?.selectedConnectionId || '';
+  const selectedDatabase = activeTab?.selectedDatabase || '';
+  const queryResult = activeTab?.queryResult || null;
+  const loading = activeTab?.loading || false;
+  
+  // 更新活跃标签的属性
+  const updateActiveTab = (updates: Partial<QueryTab>) => {
+    setQueryTabs(tabs => tabs.map(tab => 
+      tab.id === activeTabId ? { ...tab, ...updates } : tab
+    ));
+  };
+  
+  // 设置查询内容
+  const setQuery = (newQuery: string) => {
+    updateActiveTab({ query: newQuery });
+  };
+  
+  // 设置选中的连接
+  const setSelectedConnectionId = (connectionId: string) => {
+    updateActiveTab({ selectedConnectionId: connectionId });
+  };
+  
+  // 设置选中的数据库
+  const setSelectedDatabase = (database: string) => {
+    updateActiveTab({ selectedDatabase: database });
+  };
+  
+  // 设置查询结果
+  const setQueryResult = (result: QueryResult | null) => {
+    updateActiveTab({ queryResult: result });
+  };
+  
+  // 设置加载状态
+  const setLoading = (isLoading: boolean) => {
+    updateActiveTab({ loading: isLoading });
+  };
 
   const currentConnection = selectedConnectionId ? getConnection(selectedConnectionId) : null;
   const connectedConnections = connections.filter(conn => isConnectionConnected(conn.id));
+  
+  // 添加新标签
+  const addNewTab = () => {
+    const newTabId = `tab-${Date.now()}`;
+    const newTab: QueryTab = {
+      id: newTabId,
+      title: `查询${queryTabs.length + 1}`,
+      query: 'SELECT * FROM measurement_name LIMIT 10',
+      selectedConnectionId: connectedConnections[0]?.id || '',
+      selectedDatabase: '',
+      queryResult: null,
+      loading: false
+    };
+    setQueryTabs(tabs => [...tabs, newTab]);
+    setActiveTabId(newTabId);
+  };
+  
+  // 关闭标签
+  const closeTab = (tabId: string) => {
+    if (queryTabs.length === 1) return; // 保持至少一个标签
+    
+    const tabIndex = queryTabs.findIndex(tab => tab.id === tabId);
+    const newTabs = queryTabs.filter(tab => tab.id !== tabId);
+    setQueryTabs(newTabs);
+    
+    // 如果关闭的是当前活跃标签，切换到相邻标签
+    if (tabId === activeTabId) {
+      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
+      setActiveTabId(newTabs[newActiveIndex].id);
+    }
+  };
 
   // 加载数据库列表
   const loadDatabases = async () => {
@@ -249,9 +342,9 @@ const Query: React.FC = () => {
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       setQueryResult(result);
-      toast({ title: "成功", description: "查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms" });
+      toast({ title: "成功", description: `查询完成，返回 ${result.rowCount} 行数据，耗时 ${result.executionTime}ms` });
     } catch (error) {
-      toast({ title: "错误", description: "查询执行失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `查询执行失败: ${error}`, variant: "destructive" });
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -279,7 +372,7 @@ const Query: React.FC = () => {
       await safeTauriInvoke('save_query', { query: savedQuery });
       toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -352,52 +445,104 @@ const Query: React.FC = () => {
   }
 
   return (
-    <div className="p-6 h-full">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <Typography variant="h2" className="text-2xl font-bold mb-2">数据查询</Typography>
-          {currentConnection && (
-            <p className="text-muted-foreground">
-              当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
-            </p>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <Select value={selectedConnectionId} onValueChange={setSelectedConnectionId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="选择数据源" />
-            </SelectTrigger>
-            <SelectContent>
-              {connectedConnections.map(conn => (
-                <SelectItem key={conn.id} value={conn.id}>
-                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-2" />
-                  {conn.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="p-6 h-full flex flex-col">
+      {/* 标签栏和工具栏 */}
+      <div className="flex flex-col gap-4 mb-4">
+        {/* 标签栏 */}
+        <div className="flex items-center gap-2 border-b">
+          <div className="flex-1 min-w-0">
+            <Tabs value={activeTabId} onValueChange={setActiveTabId} className="w-full">
+              <TabsList className="h-auto p-0 bg-transparent justify-start overflow-x-auto">
+                {queryTabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="relative px-4 py-2 data-[state=active]:bg-background data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent hover:border-muted-foreground/50 min-w-[120px] max-w-[200px]"
+                  >
+                    <span className="truncate flex-1">{tab.title}</span>
+                    {queryTabs.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 ml-2 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
           <Button
-            icon={<Database className="w-4 h-4"  />}
-            onClick={loadDatabases}
-            disabled={loadingDatabases || !selectedConnectionId}
+            variant="ghost"
+            size="sm"
+            onClick={addNewTab}
+            className="flex-shrink-0"
           >
-            刷新数据库
+            <Plus className="h-4 w-4" />
           </Button>
-          <Select value={selectedDatabase} onValueChange={setSelectedDatabase} disabled={loadingDatabases || !selectedConnectionId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="选择数据库" />
-            </SelectTrigger>
-            <SelectContent>
-              {databases.map(db => (
-                <SelectItem key={db} value={db}>
-                  <Database className="w-4 h-4 mr-2" />
-                  {db}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        </div>
+        
+        {/* 工具栏 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-shrink-0">
+            <Typography variant="h3" className="text-lg font-semibold">数据查询</Typography>
+            {currentConnection && (
+              <p className="text-muted-foreground text-sm">
+                当前连接: {currentConnection.name} ({currentConnection.host}:{currentConnection.port})
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 flex-shrink-0 min-w-0">
+            <Select value={selectedConnectionId} onValueChange={setSelectedConnectionId}>
+              <SelectTrigger className="w-[160px] min-w-[120px]">
+                <SelectValue placeholder="选择数据源" />
+              </SelectTrigger>
+              <SelectContent>
+                {connectedConnections.map(conn => (
+                  <SelectItem key={conn.id} value={conn.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                      <span className="truncate">{conn.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadDatabases}
+              disabled={loadingDatabases || !selectedConnectionId}
+              className="flex-shrink-0"
+            >
+              <Database className="w-4 h-4 mr-1" />
+              刷新
+            </Button>
+            
+            <Select value={selectedDatabase} onValueChange={setSelectedDatabase} disabled={loadingDatabases || !selectedConnectionId}>
+              <SelectTrigger className="w-[160px] min-w-[120px]">
+                <SelectValue placeholder="选择数据库" />
+              </SelectTrigger>
+              <SelectContent>
+                {databases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{db}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

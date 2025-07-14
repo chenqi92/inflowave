@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tree, Input, Tabs, TabsList, TabsTrigger, TabsContent, Button, Space, Tooltip, Dropdown, Badge, Spin, Alert, Typography } from '@/components/ui';
-import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch } from 'lucide-react';
+import { Database, Table, RefreshCw, Settings, FileText, File, Hash, Tags, Key, Clock, Link, Search as SearchIcon, MoreHorizontal, Code, GitBranch, Star, StarOff, Trash2, Calendar, MousePointer } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
+import { useFavoritesStore, favoritesUtils, type FavoriteItem } from '@/store/favorites';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 
@@ -47,11 +48,13 @@ interface DatabaseInfo {
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger }) => {
   const { connections, activeConnectionId, connectedConnectionIds, getConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
+  const { favorites, addFavorite, removeFavorite, isFavorite, getFavoritesByType, markAsAccessed } = useFavoritesStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
+  const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
@@ -205,16 +208,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
 
     for (const connection of connections) {
       const isConnected = isConnectionConnected(connection.id);
+      const connectionPath = connection.id;
+      const isFav = isFavorite(connectionPath);
       const connectionNode: DataNode = {
         title: (
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection.id)}`} />
             <span className="flex-1">{connection.name}</span>
+            {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
           </div>
         ),
         key: `connection-${connection.id}`,
-        icon: <Link className="w-4 h-4 text-primary"   />,
-        children: []};
+        icon: <Link className="w-4 h-4 text-primary" />,
+        children: []
+      };
 
       // 为已连接的连接加载数据库
       if (isConnected && connection.id) {
@@ -222,18 +229,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         try {
           const databases = await loadDatabases(connection.id);
           console.log(`📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`);
-          connectionNode.children = databases.map(db => ({
-            title: (
-              <span className="flex items-center">
-                {db}
-              </span>
-            ),
-            key: `database-${connection.id}-${db}`,
-            icon: <Database className="w-4 h-4 text-purple-600"   />,
-            isLeaf: false,
-            children: [], // 空数组表示有子节点但未加载
-            // 延迟加载表数据
-          }));
+          connectionNode.children = databases.map(db => {
+            const dbPath = `${connection.id}/${db}`;
+            const isFav = isFavorite(dbPath);
+            return {
+              title: (
+                <span className="flex items-center gap-1">
+                  {db}
+                  {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+                </span>
+              ),
+              key: `database-${connection.id}-${db}`,
+              icon: <Database className="w-4 h-4 text-purple-600" />,
+              isLeaf: false,
+              children: [], // 空数组表示有子节点但未加载
+              // 延迟加载表数据
+            };
+          });
         } catch (error) {
           console.error('❌ 加载数据库失败:', error);
         }
@@ -268,18 +280,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         console.log(`📋 加载数据库表列表: connectionId=${connectionId}, database=${database}`);
         const tables = await loadTables(connectionId, database);
         
-        const tableNodes: DataNode[] = tables.map(table => ({
-          title: (
-            <div className="flex items-center gap-2">
-              <span className="flex-1">{table}</span>
-              <span className="text-xs text-gray-400 flex-shrink-0">表</span>
-            </div>
-          ),
-          key: `table-${connectionId}-${database}-${table}`,
-          icon: <Table className="w-4 h-4 text-success"   />,
-          isLeaf: false,
-          children: [] // 空数组表示有子节点但未加载
-        }));
+        const tableNodes: DataNode[] = tables.map(table => {
+          const tablePath = `${connectionId}/${database}/${table}`;
+          const isFav = isFavorite(tablePath);
+          return {
+            title: (
+              <div className="flex items-center gap-2">
+                <span className="flex-1">{table}</span>
+                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
+                <span className="text-xs text-gray-400 flex-shrink-0">表</span>
+              </div>
+            ),
+            key: `table-${connectionId}-${database}-${table}`,
+            icon: <Table className="w-4 h-4 text-success" />,
+            isLeaf: false,
+            children: [] // 空数组表示有子节点但未加载
+          };
+        });
 
         // 更新树数据
         setTreeData(prevData => {
@@ -305,10 +322,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         
         // 直接添加标签列
         tags.forEach(tag => {
+          const tagPath = `${connectionId}/${database}/${table}/tags/${tag}`;
+          const isFav = isFavorite(tagPath);
           children.push({
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{tag}</span>
+                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
                 <span className="px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded flex-shrink-0">
                   Tag
                 </span>
@@ -316,22 +336,25 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               </div>
             ),
             key: `tag-${connectionId}-${database}-${table}-${tag}`,
-            icon: <Tags className="w-4 h-4 text-orange-500"   />,
-            isLeaf: true});
+            icon: <Tags className="w-4 h-4 text-orange-500" />,
+            isLeaf: true
+          });
         });
         
         // 直接添加字段列
         fields.forEach(field => {
+          const fieldPath = `${connectionId}/${database}/${table}/${field.name}`;
+          const isFav = isFavorite(fieldPath);
           const getFieldIcon = (type: string) => {
             switch (type.toLowerCase()) {
               case 'number':
               case 'float':
               case 'integer':
               case 'int64':
-                return <Hash className="w-4 h-4 text-primary"   />;
+                return <Hash className="w-4 h-4 text-primary" />;
               case 'string':
               case 'text':
-                return <FileText className="w-4 h-4 text-muted-foreground"   />;
+                return <FileText className="w-4 h-4 text-muted-foreground" />;
               case 'time':
               case 'timestamp':
                 return <Clock className="text-purple-500" />;
@@ -339,7 +362,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               case 'bool':
                 return <GitBranch className="w-4 h-4 text-success" />;
               default:
-                return <File className="w-4 h-4 text-gray-400"   />;
+                return <File className="w-4 h-4 text-gray-400" />;
             }
           };
 
@@ -347,6 +370,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             title: (
               <div className="flex items-center gap-2">
                 <span className="flex-1">{field.name}</span>
+                {isFav && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
                 <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-primary rounded flex-shrink-0">
                   Field
                 </span>
@@ -355,7 +379,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             ),
             key: `field-${connectionId}-${database}-${table}-${field.name}`,
             icon: getFieldIcon(field.type),
-            isLeaf: true});
+            isLeaf: true
+          });
         });
 
         // 更新树数据，同时更新表节点显示列数
@@ -398,56 +423,169 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
     }
   }, [loadingNodes]);
 
+  // 处理收藏操作
+  const handleToggleFavorite = useCallback((nodeKey: string) => {
+    const paths = {
+      connection: (key: string) => key.replace('connection-', ''),
+      database: (key: string) => {
+        const [, connectionId, database] = key.split('-');
+        return `${connectionId}/${database}`;
+      },
+      table: (key: string) => {
+        const [, connectionId, database, table] = key.split('-');
+        return `${connectionId}/${database}/${table}`;
+      },
+      field: (key: string) => {
+        const [, connectionId, database, table, field] = key.split('-');
+        return `${connectionId}/${database}/${table}/${field}`;
+      },
+      tag: (key: string) => {
+        const [, connectionId, database, table, tag] = key.split('-');
+        return `${connectionId}/${database}/${table}/tags/${tag}`;
+      }
+    };
+
+    let path = '';
+    let connectionId = '';
+    
+    if (nodeKey.startsWith('connection-')) {
+      connectionId = nodeKey.replace('connection-', '');
+      path = paths.connection(nodeKey);
+    } else if (nodeKey.startsWith('database-')) {
+      const [, connId] = nodeKey.split('-');
+      connectionId = connId;
+      path = paths.database(nodeKey);
+    } else if (nodeKey.startsWith('table-')) {
+      const [, connId] = nodeKey.split('-');
+      connectionId = connId;
+      path = paths.table(nodeKey);
+    } else if (nodeKey.startsWith('field-')) {
+      const [, connId] = nodeKey.split('-');
+      connectionId = connId;
+      path = paths.field(nodeKey);
+    } else if (nodeKey.startsWith('tag-')) {
+      const [, connId] = nodeKey.split('-');
+      connectionId = connId;
+      path = paths.tag(nodeKey);
+    }
+
+    if (isFavorite(path)) {
+      const favorite = favorites.find(fav => fav.path === path);
+      if (favorite) {
+        removeFavorite(favorite.id);
+        showMessage.success('已取消收藏');
+      }
+    } else {
+      const favoriteItem = favoritesUtils.createFavoriteFromPath(path, connectionId, connections);
+      if (favoriteItem) {
+        addFavorite(favoriteItem);
+        showMessage.success('已添加到收藏');
+      }
+    }
+  }, [favorites, connections, isFavorite, addFavorite, removeFavorite]);
+
   // 处理节点右键菜单
   const getContextMenu = (node: DataNode): MenuProps['items'] => {
     const key = node.key as string;
+    const paths = {
+      connection: () => key.replace('connection-', ''),
+      database: () => {
+        const [, connectionId, database] = key.split('-');
+        return `${connectionId}/${database}`;
+      },
+      table: () => {
+        const [, connectionId, database, table] = key.split('-');
+        return `${connectionId}/${database}/${table}`;
+      },
+      field: () => {
+        const [, connectionId, database, table, field] = key.split('-');
+        return `${connectionId}/${database}/${table}/${field}`;
+      },
+      tag: () => {
+        const [, connectionId, database, table, tag] = key.split('-');
+        return `${connectionId}/${database}/${table}/tags/${tag}`;
+      }
+    };
+
+    let path = '';
+    if (key.startsWith('connection-')) path = paths.connection();
+    else if (key.startsWith('database-')) path = paths.database();
+    else if (key.startsWith('table-')) path = paths.table();
+    else if (key.startsWith('field-')) path = paths.field();
+    else if (key.startsWith('tag-')) path = paths.tag();
+
+    const isFav = isFavorite(path);
+    
+    const favoriteMenuItem = {
+      key: 'toggle-favorite',
+      label: isFav ? '取消收藏' : '添加到收藏',
+      icon: isFav ? <StarOff className="w-4 h-4" /> : <Star className="w-4 h-4" />,
+      onClick: () => handleToggleFavorite(key)
+    };
     
     if (key.startsWith('database-')) {
       return [
+        favoriteMenuItem,
+        { type: 'divider' },
         {
           key: 'refresh-db',
           label: '刷新数据库',
-          icon: <RefreshCw className="w-4 h-4"  />},
+          icon: <RefreshCw className="w-4 h-4" />},
         {
           key: 'new-query',
           label: '新建查询',
-          icon: <FileText className="w-4 h-4"  />},
+          icon: <FileText className="w-4 h-4" />},
         { type: 'divider' },
         {
           key: 'db-properties',
           label: '属性',
-          icon: <Settings className="w-4 h-4"  />},
+          icon: <Settings className="w-4 h-4" />},
       ];
     }
 
     if (key.startsWith('table-')) {
       return [
+        favoriteMenuItem,
+        { type: 'divider' },
         {
           key: 'refresh-table',
           label: '刷新表结构',
-          icon: <RefreshCw className="w-4 h-4"  />},
+          icon: <RefreshCw className="w-4 h-4" />},
         {
           key: 'query-table',
           label: '查询此表',
-          icon: <FileText className="w-4 h-4"  />},
+          icon: <FileText className="w-4 h-4" />},
         { type: 'divider' },
         {
           key: 'table-properties',
           label: '表属性',
-          icon: <Settings className="w-4 h-4"  />},
+          icon: <Settings className="w-4 h-4" />},
       ];
     }
 
     if (key.startsWith('field-') || key.startsWith('tag-')) {
       return [
+        favoriteMenuItem,
+        { type: 'divider' },
         {
           key: 'insert-column',
           label: '插入到查询',
-          icon: <FileText className="w-4 h-4"  />},
+          icon: <FileText className="w-4 h-4" />},
         {
           key: 'copy-name',
           label: '复制列名',
-          icon: <File className="w-4 h-4"  />},
+          icon: <File className="w-4 h-4" />},
+      ];
+    }
+
+    if (key.startsWith('connection-')) {
+      return [
+        favoriteMenuItem,
+        { type: 'divider' },
+        {
+          key: 'refresh-connection',
+          label: '刷新连接',
+          icon: <RefreshCw className="w-4 h-4" />},
       ];
     }
 
@@ -658,8 +796,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
               数据源
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex items-center gap-1">
-              <Key className="w-4 h-4" />
-              收藏
+              <Star className="w-4 h-4" />
+              收藏 ({favorites.length})
             </TabsTrigger>
           </TabsList>
 
@@ -689,9 +827,128 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             )}
           </TabsContent>
 
-          <TabsContent value="favorites" className="p-4 text-center text-muted-foreground">
-            <Key className="w-4 h-4 text-2xl mb-2" />
-            <p>暂无收藏项</p>
+          <TabsContent value="favorites" className="px-2 h-full overflow-auto">
+            {/* 收藏过滤器 */}
+            <div className="p-2 border-b">
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { key: 'all', label: '全部', icon: Star },
+                  { key: 'connection', label: '连接', icon: Link },
+                  { key: 'database', label: '数据库', icon: Database },
+                  { key: 'table', label: '表', icon: Table },
+                  { key: 'field', label: '字段', icon: Hash },
+                  { key: 'tag', label: '标签', icon: Tags }
+                ].map(({ key, label, icon: Icon }) => {
+                  const count = key === 'all' ? favorites.length : getFavoritesByType(key as any).length;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setFavoritesFilter(key as any)}
+                      className={`px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors ${
+                        favoritesFilter === key
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      <Icon className="w-3 h-3" />
+                      {label}
+                      <span className="bg-background/20 px-1 rounded">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 收藏列表 */}
+            <div className="p-2">
+              {(() => {
+                const filteredFavorites = favoritesFilter === 'all' 
+                  ? favorites.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  : getFavoritesByType(favoritesFilter);
+
+                if (filteredFavorites.length === 0) {
+                  return (
+                    <div className="text-center text-muted-foreground py-8">
+                      <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">
+                        {favoritesFilter === 'all' ? '暂无收藏项' : `暂无${favoritesFilter}类型的收藏`}
+                      </p>
+                      <p className="text-xs mt-1">右键数据源树节点可添加收藏</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-1">
+                    {filteredFavorites.map((favorite) => {
+                      const IconComponent = (() => {
+                        switch (favorite.type) {
+                          case 'connection': return Link;
+                          case 'database': return Database;
+                          case 'table': return Table;
+                          case 'field': return Hash;
+                          case 'tag': return Tags;
+                          default: return Star;
+                        }
+                      })();
+
+                      const colorClass = favoritesUtils.getFavoriteColor(favorite.type);
+
+                      return (
+                        <div
+                          key={favorite.id}
+                          className="group p-2 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            markAsAccessed(favorite.id);
+                            // 这里可以添加导航到收藏项的逻辑
+                            showMessage.info(`访问收藏: ${favorite.name}`);
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <IconComponent className={`w-4 h-4 mt-0.5 ${colorClass} flex-shrink-0`} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm truncate">{favorite.name}</span>
+                                <span className={`px-1.5 py-0.5 text-xs rounded ${colorClass} bg-current/10`}>
+                                  {favorite.type}
+                                </span>
+                              </div>
+                              {favorite.description && (
+                                <p className="text-xs text-muted-foreground truncate mt-1">
+                                  {favorite.description}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(favorite.createdAt).toLocaleDateString()}
+                                </span>
+                                {favorite.accessCount > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <MousePointer className="w-3 h-3" />
+                                    {favorite.accessCount}次
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFavorite(favorite.id);
+                                showMessage.success('已移除收藏');
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

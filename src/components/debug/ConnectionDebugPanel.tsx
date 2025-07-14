@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Button, Table, Alert, Typography, Collapse, Panel } from '@/components/ui';
-import { Card, Space } from '@/components/ui';
-import { Bug, RefreshCw, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Button, Table, Alert, Typography, Collapse, Panel, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { Bug, RefreshCw, Info, Activity, Database, Wifi } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -18,8 +17,24 @@ interface DebugInfo {
 const ConnectionDebugPanel: React.FC = () => {
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   
-  const { connections, connectionStatuses, activeConnectionId } = useConnectionStore();
+  const { connections, connectionStatuses, activeConnectionId, monitoringActive, monitoringInterval } = useConnectionStore();
+  
+  // 自动刷新调试信息
+  useEffect(() => {
+    if (autoRefreshEnabled && debugInfo) {
+      const interval = setInterval(() => {
+        collectDebugInfo();
+      }, 10000); // 每10秒刷新一次
+      return () => clearInterval(interval);
+    }
+  }, [autoRefreshEnabled, debugInfo]);
+  
+  // 初始化时自动收集一次调试信息
+  useEffect(() => {
+    collectDebugInfo();
+  }, []);
 
   const collectDebugInfo = async () => {
     setLoading(true);
@@ -33,7 +48,8 @@ const ConnectionDebugPanel: React.FC = () => {
         backendConnections: backendConnections || [],
         connectionStatuses,
         activeConnectionId,
-        backendDebugInfo};
+        backendDebugInfo
+      };
       
       setDebugInfo(info);
     } catch (error) {
@@ -124,136 +140,204 @@ const ConnectionDebugPanel: React.FC = () => {
   const mismatchedConnections = findMismatchedConnections();
 
   return (
-    <Card 
-      title={
-        <div className="flex gap-2">
-          <Bug className="w-4 h-4"  />
-          连接调试面板
-        </div>
-      }
-      extra={
-        <Button 
-          icon={<RefreshCw className="w-4 h-4"  />} 
-          onClick={collectDebugInfo}
-          disabled={loading}
-          type="primary"
-        >
-          收集调试信息
-        </Button>
-      }
-    >
-      {!debugInfo ? (
-        <div className="text-center py-8">
-          <Info className="w-4 h-4 text-4xl text-gray-400 mb-4"   />
-          <Typography.Text className="text-muted-foreground">点击"收集调试信息"开始诊断连接问题</Typography.Text>
-        </div>
-      ) : (
-        <Collapse defaultActiveKey={mismatchedConnections.length > 0 ? ['mismatch'] : ['summary']}>
-          <Panel header="问题摘要" key="summary">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">
-                    {debugInfo.frontendConnections.length}
-                  </div>
-                  <div className="text-sm text-blue-800">前端连接数</div>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-success">
-                    {debugInfo.backendConnections.length}
-                  </div>
-                  <div className="text-sm text-green-800">后端连接数</div>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {Object.keys(debugInfo.connectionStatuses).length}
-                  </div>
-                  <div className="text-sm text-purple-800">状态记录数</div>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {mismatchedConnections.length}
-                  </div>
-                  <div className="text-sm text-orange-800">不匹配连接</div>
-                </div>
+    <div className="space-y-4">
+      {/* 监控状态概览 */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            实时监控状态
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+              <Database className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-blue-800 font-medium">总连接数</p>
+                <p className="text-2xl font-bold text-blue-600">{connections.length}</p>
               </div>
-              
-              {debugInfo.activeConnectionId && (
-                <Alert
-                  message="活跃连接"
-                  description={
-                    <Text code>{debugInfo.activeConnectionId}</Text>
-                  }
-                  type="info"
-                  showIcon
-                />
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+              <Wifi className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="text-sm text-green-800 font-medium">已连接</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
+              <Bug className="w-5 h-5 text-orange-600" />
+              <div>
+                <p className="text-sm text-orange-800 font-medium">错误连接</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {Object.values(connectionStatuses).filter(s => s.status === 'error').length}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+              <div className={`w-3 h-3 rounded-full ${monitoringActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+              <div>
+                <p className="text-sm text-purple-800 font-medium">监控状态</p>
+                <p className="text-sm font-bold text-purple-600">
+                  {monitoringActive ? `运行中 (${monitoringInterval}s)` : '已停止'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 调试信息面板 */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Bug className="w-4 h-4" />
+            连接调试面板
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+              className={autoRefreshEnabled ? 'bg-green-50 border-green-200 text-green-700' : ''}
+            >
+              {autoRefreshEnabled ? '停止自动刷新' : '启用自动刷新'}
+            </Button>
+            <Button
+              size="sm"
+              onClick={collectDebugInfo}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              收集调试信息
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!debugInfo ? (
+            <div className="text-center py-8">
+              <Info className="w-8 h-8 text-gray-400 mb-4 mx-auto" />
+              <Typography className="text-muted-foreground mb-4">
+                正在加载调试信息...
+              </Typography>
+              {loading && (
+                <div className="flex items-center justify-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">正在收集数据...</span>
+                </div>
               )}
             </div>
-          </Panel>
+          ) : (
+            <Collapse defaultActiveKey={mismatchedConnections.length > 0 ? ['mismatch'] : ['summary']}>
+              <Panel header="问题摘要" key="summary">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">
+                        {debugInfo.frontendConnections.length}
+                      </div>
+                      <div className="text-sm text-blue-800">前端连接数</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-success">
+                        {debugInfo.backendConnections.length}
+                      </div>
+                      <div className="text-sm text-green-800">后端连接数</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {Object.keys(debugInfo.connectionStatuses).length}
+                      </div>
+                      <div className="text-sm text-purple-800">状态记录数</div>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {mismatchedConnections.length}
+                      </div>
+                      <div className="text-sm text-orange-800">不匹配连接</div>
+                    </div>
+                  </div>
+                  
+                  {debugInfo.activeConnectionId && (
+                    <Alert
+                      message="活跃连接"
+                      description={
+                        <Text code>{debugInfo.activeConnectionId}</Text>
+                      }
+                      type="info"
+                      showIcon
+                    />
+                  )}
+                </div>
+              </Panel>
 
-          {mismatchedConnections.length > 0 && (
-            <Panel header={`连接不匹配 (${mismatchedConnections.length})`} key="mismatch">
-              <Alert
-                message="发现连接不同步问题"
-                description="前端和后端的连接配置不一致，这可能导致连接错误"
-                type="warning"
-                showIcon
-                className="mb-4"
-              />
-              <div className="space-y-2">
-                {mismatchedConnections.map((item, index) => (
+              {mismatchedConnections.length > 0 && (
+                <Panel header={`连接不匹配 (${mismatchedConnections.length})`} key="mismatch">
                   <Alert
-                    key={index}
-                    message={`连接 ID: ${item.id}`}
-                    description={item.description}
-                    type="error"
+                    message="发现连接不同步问题"
+                    description="前端和后端的连接配置不一致，这可能导致连接错误"
+                    type="warning"
                     showIcon
+                    className="mb-4"
                   />
-                ))}
-              </div>
-            </Panel>
+                  <div className="space-y-2">
+                    {mismatchedConnections.map((item, index) => (
+                      <Alert
+                        key={index}
+                        message={`连接 ID: ${item.id}`}
+                        description={item.description}
+                        type="error"
+                        showIcon
+                      />
+                    ))}
+                  </div>
+                </Panel>
+              )}
+
+              <Panel header="前端连接列表" key="frontend">
+                <div className="overflow-auto">
+                  <Table
+                    columns={columns}
+                    dataSource={debugInfo.frontendConnections}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    scroll={{ x: '100%' }}
+                    className="w-full"
+                  />
+                </div>
+              </Panel>
+
+              <Panel header="后端连接列表" key="backend">
+                <div className="overflow-auto">
+                  <Table
+                    columns={columns}
+                    dataSource={debugInfo.backendConnections}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    scroll={{ x: '100%' }}
+                    className="w-full"
+                  />
+                </div>
+              </Panel>
+
+              {debugInfo.backendDebugInfo && (
+                <Panel header="后端调试信息" key="backendDebug">
+                  <Paragraph>
+                    <pre className="bg-muted/50 p-4 rounded overflow-auto text-xs">
+                      {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
+                    </pre>
+                  </Paragraph>
+                </Panel>
+              )}
+            </Collapse>
           )}
-
-          <Panel header="前端连接列表" key="frontend">
-            <div className="overflow-auto">
-              <Table
-                columns={columns}
-                dataSource={debugInfo.frontendConnections}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                scroll={{ x: '100%' }}
-                className="w-full"
-              />
-            </div>
-          </Panel>
-
-          <Panel header="后端连接列表" key="backend">
-            <div className="overflow-auto">
-              <Table
-                columns={columns}
-                dataSource={debugInfo.backendConnections}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                scroll={{ x: '100%' }}
-                className="w-full"
-              />
-            </div>
-          </Panel>
-
-          {debugInfo.backendDebugInfo && (
-            <Panel header="后端调试信息" key="backendDebug">
-              <Paragraph>
-                <pre className="bg-muted/50 p-4 rounded overflow-auto text-xs">
-                  {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
-                </pre>
-              </Paragraph>
-            </Panel>
-          )}
-        </Collapse>
-      )}
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -127,15 +127,19 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
     try {
       if (monitoringActive) {
         await stopMonitoring();
-        showMessage.success('监控已停止');
+        showMessage.success('🛑 连接监控已停止');
       } else {
-        await startMonitoring(60); // 增加间隔到60秒减少请求频率
-        showMessage.success('监控已启动');
+        await startMonitoring(30); // 30秒间隔监控
+        showMessage.success('🟢 连接监控已启动，每30秒检查一次连接状态');
+        // 立即执行一次状态刷新
+        setTimeout(() => {
+          refreshAllStatuses();
+        }, 1000);
       }
     } catch (error) {
       showMessage.error(`监控操作失败: ${error}`);
     }
-  }, [monitoringActive, startMonitoring, stopMonitoring]);
+  }, [monitoringActive, startMonitoring, stopMonitoring, refreshAllStatuses]);
 
   // 查看连接池统计
   const handleViewPoolStats = useCallback(async (connectionId: string) => {
@@ -348,12 +352,22 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
                 刷新状态
               </Button>
               <Button
-                variant={monitoringActive ? 'outline' : 'default'}
-                icon={monitoringActive ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                variant={monitoringActive ? 'destructive' : 'default'}
                 onClick={handleMonitoringToggle}
                 size="sm"
+                className={monitoringActive ? 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200' : 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200'}
               >
-                {monitoringActive ? '停止监控' : '启动监控'}
+                {monitoringActive ? (
+                  <>
+                    <PauseCircle className="w-4 h-4 mr-1" />
+                    停止监控
+                  </>
+                ) : (
+                  <>
+                    <PlayCircle className="w-4 h-4 mr-1" />
+                    启动监控
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -376,12 +390,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({ onConnectionSelec
               </div>
             </div>
             <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-              <div className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
               <div className="text-sm">
                 <p className="text-muted-foreground">监控状态</p>
                 <p className={`font-semibold ${monitoringActive ? 'text-green-600' : 'text-gray-600'}`}>
-                  {monitoringActive ? '运行中' : '已停止'}
+                  {monitoringActive ? '🟢 运行中' : '⚫ 已停止'}
                 </p>
+                {monitoringActive && (
+                  <p className="text-xs text-green-500">自动检查连接状态</p>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
