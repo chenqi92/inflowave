@@ -5,6 +5,7 @@ import '@/styles/datagrip.css';
 // 错误处理
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { errorLogger } from '@/utils/errorLogger';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 import { safeTauriInvoke, initializeEnvironment, isBrowserEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
@@ -213,10 +214,12 @@ const App: React.FC = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <MainLayout />
-      <ModalAdapter />
-    </ErrorBoundary>
+    <ThemeProvider defaultTheme="system" storageKey="inflowave-theme">
+      <ErrorBoundary>
+        <MainLayout />
+        <ModalAdapter />
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 };
 

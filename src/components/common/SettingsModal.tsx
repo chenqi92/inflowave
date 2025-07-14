@@ -6,6 +6,7 @@ import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ErrorTestButton from '@/components/test/ErrorTestButton';
@@ -22,9 +23,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const [loading, setLoading] = useState(false);
   const form = useForm();
   const [browserModalVisible, setBrowserModalVisible] = useState(false);
-  const { config, setConfig, setTheme, setLanguage, resetConfig } = useAppStore();
+  const { config, setConfig, setLanguage, resetConfig } = useAppStore();
   const { clearConnections } = useConnectionStore();
   const { resetNoticeSettings } = useNoticeStore();
+  const { theme, setTheme } = useTheme();
 
   // 初始化表单值
   useEffect(() => {
@@ -40,8 +42,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       // 更新本地状态
       setConfig(values);
 
-      // 应用主题设置
-      setTheme(values.theme);
+      // 应用主题设置 - 使用新的主题系统
+      if (values.theme) {
+        setTheme(values.theme);
+      }
 
       // 应用语言设置
       // @ts-ignore
@@ -208,8 +212,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <div className="space-y-2">
                   <Label htmlFor="theme">主题</Label>
                   <Select
-                    value={form.watch('theme') || config.theme}
-                    onValueChange={(value) => form.setValue('theme', value)}
+                    value={theme}
+                    onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="选择主题" />
@@ -217,7 +221,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                     <SelectContent>
                       <SelectItem value="light">浅色主题</SelectItem>
                       <SelectItem value="dark">深色主题</SelectItem>
-                      <SelectItem value="auto">跟随系统</SelectItem>
+                      <SelectItem value="system">跟随系统</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

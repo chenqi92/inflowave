@@ -21,7 +21,7 @@ interface DatabaseManagerProps {
 const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   connectionId,
   database}) => {
-  const { connections, activeConnectionId } = useConnectionStore();
+  const { connections, activeConnectionId, addConnection, getConnection } = useConnectionStore();
   const [loading, setLoading] = useState(false);
   const [selectedConnection, setSelectedConnection] = useState(connectionId || activeConnectionId || '');
   const [selectedDatabase, setSelectedDatabase] = useState(database || '');
@@ -57,8 +57,10 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
             console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
             
-            // 如果ID发生变化，需要通知用户
+            // 如果ID发生变化，需要同步到前端存储
             if (newConnectionId !== selectedConnection) {
+              const newConnection = { ...connection, id: newConnectionId };
+              addConnection(newConnection);
               showMessage.warning('连接配置已重新同步，请刷新页面或重新选择连接');
               return;
             }

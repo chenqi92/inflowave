@@ -44,6 +44,7 @@ interface ConnectionState {
   startMonitoring: (intervalSeconds?: number) => Promise<void>;
   stopMonitoring: () => Promise<void>;
   refreshAllStatuses: () => Promise<void>;
+  refreshConnectionStatus: (id: string) => Promise<void>;
 
   // 连接池方法
   getPoolStats: (id: string) => Promise<void>;
@@ -327,6 +328,61 @@ export const useConnectionStore = create<ConnectionState>()(
           }
         } catch (error) {
           console.error('刷新连接状态失败:', error);
+          throw error;
+        }
+      },
+
+      // 刷新单个连接状态
+      refreshConnectionStatus: async (id: string) => {
+        try {
+          console.log(`🔄 刷新单个连接状态: ${id}`);
+          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connectionId: id });
+          if (status) {
+            set((state) => {
+              const currentStatus = state.connectionStatuses[id];
+              
+              // 应用相同的智能合并逻辑
+              let newStatus = status;
+              if (currentStatus?.status === 'connected') {
+                if (status.status === 'error' || status.error) {
+                  console.log(`🔄 连接 ${id} 状态从已连接更新为错误:`, status.error);
+                  newStatus = status;
+                } else if (status.status === 'disconnected' && status.error) {
+                  console.log(`🔄 连接 ${id} 状态从已连接更新为断开:`, status.error);
+                  newStatus = status;
+                } else {
+                  // 保持当前的已连接状态，但更新延迟等其他信息
+                  newStatus = {
+                    ...currentStatus,
+                    latency: status.latency || currentStatus.latency,
+                    lastConnected: status.lastConnected || currentStatus.lastConnected
+                  };
+                }
+              }
+
+              return {
+                connectionStatuses: {
+                  ...state.connectionStatuses,
+                  [id]: newStatus
+                }
+              };
+            });
+          }
+        } catch (error) {
+          console.error(`刷新连接状态失败 (${id}):`, error);
+          // 为单个连接创建错误状态
+          set((state) => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                id,
+                status: 'error' as const,
+                error: String(error),
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined
+              }
+            }
+          }));
           throw error;
         }
       },

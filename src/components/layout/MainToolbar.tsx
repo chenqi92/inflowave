@@ -41,6 +41,7 @@ import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
 import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
 import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -219,7 +220,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             )}
           </div>
 
-          <div className="w-px h-6 bg-gray-200 mx-3" />
+          <div className="w-px h-6 bg-border mx-3" />
 
           {/* 区域2: 文件操作 - 统一按钮尺寸 */}
           <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-lg flex-shrink-0">
@@ -286,7 +287,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             </DropdownMenu>
           </div>
 
-          <div className="w-px h-6 bg-gray-200 mx-3" />
+          <div className="w-px h-6 bg-border mx-3" />
 
           {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
           <div className="flex items-center gap-1 px-3 py-1 bg-gray-50 rounded-lg flex-shrink-0">
@@ -358,7 +359,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
         {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <div className="w-px h-6 bg-gray-200 mx-3" />
+          <div className="w-px h-6 bg-border mx-3" />
 
           {/* 刷新按钮 */}
           <Button
@@ -371,6 +372,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <RefreshCw className="w-4 h-4" />
             <span className="text-xs">刷新</span>
           </Button>
+
+          {/* 主题切换按钮 */}
+          <ThemeToggle 
+            variant="ghost"
+            size="sm"
+            showLabel={true}
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+          />
 
           {/* 设置按钮 */}
           <Button

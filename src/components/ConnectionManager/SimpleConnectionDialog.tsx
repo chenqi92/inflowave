@@ -148,9 +148,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       }
     } catch (error) {
       console.error('测试连接失败:', error);
+      const errorMessage = String(error).replace('Error: ', '');
       setTestResult({
         success: false,
-        error: String(error),
+        error: errorMessage,
         latency: 0
       });
     } finally {
@@ -195,6 +196,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       }
     } catch (error) {
       console.error('保存连接失败:', error);
+      const errorMessage = String(error).replace('Error: ', '');
+      setTestResult({
+        success: false,
+        error: `保存失败: ${errorMessage}`,
+        latency: 0
+      });
+      setCurrentStep(1); // 显示错误结果
     } finally {
       setIsSubmitting(false);
     }

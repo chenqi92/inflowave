@@ -104,7 +104,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             <ResizablePanel
               defaultSize={bottomPanelCollapsed ? 100 : 60}
               minSize={30}
-              className="bg-white overflow-hidden"
+              className="bg-background overflow-hidden"
             >
               <TabEditor 
                 onQueryResult={setQueryResult} 
@@ -115,13 +115,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             {/* 分割线和下半部分：结果面板 */}
             {!bottomPanelCollapsed && (
               <>
-                <ResizableHandle withHandle className="h-2 bg-gray-200 hover:bg-gray-300 transition-colors" />
+                <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80 transition-colors" />
 
                 <ResizablePanel
                   defaultSize={40}
                   minSize={20}
                   maxSize={70}
-                  className="bg-gray-50 border-t border-gray-200 overflow-hidden"
+                  className="bg-muted border-t border-border overflow-hidden"
                 >
                   <ResultPanel
                     collapsed={bottomPanelCollapsed}
@@ -137,12 +137,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* 原生菜单处理器 */}
       <NativeMenuHandler />
 
       {/* 主工具栏 - 统一背景，移除边框分割线 */}
-      <header className="h-12 px-4 bg-white flex items-center flex-shrink-0">
+      <header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
         <MainToolbar
           currentView={currentView}
           onViewChange={setCurrentView}
@@ -160,7 +160,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             collapsible={true}
             collapsedSize={3}
             className={cn(
-              "bg-white border-r border-gray-200 transition-all duration-200",
+              "bg-background border-r border-border transition-all duration-200",
               leftPanelCollapsed && "min-w-12"
             )}
           >
@@ -172,7 +172,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
               />
               {/* 折叠按钮 */}
               <button
-                className="absolute bottom-4 left-4 p-1 bg-gray-100 hover:bg-gray-200 rounded z-10"
+                className="absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10"
                 onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
               >
                 {leftPanelCollapsed ? '→' : '←'}
@@ -181,11 +181,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanel>
 
           {/* 分割线 */}
-          <ResizableHandle withHandle className="w-2 bg-gray-200 hover:bg-gray-300 transition-colors" />
+          <ResizableHandle withHandle className="w-2 bg-border hover:bg-border/80 transition-colors" />
 
           {/* 右侧主要工作区域 */}
           <ResizablePanel defaultSize={75} minSize={50}>
-            <main className="h-full bg-white flex flex-col">
+            <main className="h-full bg-background flex flex-col">
               {renderMainContent()}
             </main>
           </ResizablePanel>

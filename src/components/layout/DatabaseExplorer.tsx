@@ -48,7 +48,7 @@ interface DatabaseInfo {
 }
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger, onTableDoubleClick }) => {
-  const { connections, activeConnectionId, connectedConnectionIds, getConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
+  const { connections, activeConnectionId, connectedConnectionIds, getConnection, addConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
   const { favorites, addFavorite, removeFavorite, isFavorite, getFavoritesByType, markAsAccessed } = useFavoritesStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
@@ -102,8 +102,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
             const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
             console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
             
-            // 如果ID发生变化，需要通知用户
+            // 如果ID发生变化，需要同步到前端存储
             if (newConnectionId !== connectionId) {
+              const newConnection = { ...connection, id: newConnectionId };
+              addConnection(newConnection);
               showMessage.warning('连接配置已重新同步，请刷新页面或重新选择连接');
               return [];
             }

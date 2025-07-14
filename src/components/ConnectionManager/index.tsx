@@ -4,6 +4,8 @@ import {
     Button,
     Badge,
     Tooltip,
+    TooltipContent,
+    TooltipTrigger,
     Progress,
     Typography,
     DropdownMenu,
@@ -72,6 +74,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
         startMonitoring,
         stopMonitoring,
         refreshAllStatuses,
+        refreshConnectionStatus,
         getPoolStats,
         removeConnection
     } = useConnectionStore();
@@ -108,7 +111,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
             const connection = connections.find(c => c.id === connectionId);
             if (!connection) {
                 showMessage.error('连接配置不存在，请重新加载页面');
-                // 只在需要时才刷新状态
                 return;
             }
 
@@ -116,44 +118,36 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
             if (status?.status === 'connected') {
                 await disconnectFromDatabase(connectionId);
                 showMessage.success('连接已断开');
+                // 只刷新当前连接的状态
+                await refreshConnectionStatus(connectionId);
             } else {
                 try {
                     await connectToDatabase(connectionId);
                     showMessage.success('连接成功');
                     onConnectionSelect?.(connectionId);
+                    // 只刷新当前连接的状态
+                    await refreshConnectionStatus(connectionId);
                 } catch (connectError) {
-                    // 如果连接失败，尝试重新创建连接配置
-                    console.warn('直接连接失败，尝试重新创建连接配置:', connectError);
+                    // 连接失败时记录详细错误信息并刷新状态以显示错误
+                    console.error('连接失败:', connectError);
+                    const errorMessage = String(connectError).replace('Error: ', '');
+                    showMessage.error(`连接失败: ${errorMessage}`);
+                    // 刷新单个连接状态以确保错误信息正确显示
                     try {
-                        // 确保连接配置有正确的时间戳
-                        const connectionWithTimestamp = {
-                            ...connection,
-                            created_at: connection.created_at || new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-
-                        console.log('重新创建连接配置:', connectionWithTimestamp.name);
-                        const newConnectionId = await safeTauriInvoke<string>('create_connection', {config: connectionWithTimestamp});
-
-                        if (newConnectionId) {
-                            console.log('连接配置重新创建成功，尝试连接:', newConnectionId);
-                            await connectToDatabase(newConnectionId);
-                            showMessage.success('连接成功');
-                            onConnectionSelect?.(newConnectionId);
-                        }
-                    } catch (recreateError) {
-                        console.error('重新创建连接失败:', recreateError);
-                        showMessage.error(`连接失败: ${recreateError}`);
+                        await refreshConnectionStatus(connectionId);
+                    } catch (refreshError) {
+                        console.warn('刷新连接状态失败:', refreshError);
                     }
                 }
             }
         } catch (error) {
             console.error('连接操作失败:', error);
-            showMessage.error(`连接操作失败: ${error}`);
+            const errorMessage = String(error).replace('Error: ', '');
+            showMessage.error(`连接操作失败: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
-    }, [connections, connectionStatuses, connectToDatabase, disconnectFromDatabase, onConnectionSelect, refreshAllStatuses]);
+    }, [connections, connectionStatuses, connectToDatabase, disconnectFromDatabase, onConnectionSelect, refreshConnectionStatus]);
 
     // 处理监控切换
     const handleMonitoringToggle = useCallback(async () => {
@@ -208,18 +202,34 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
         // 构建tooltip内容
         let tooltipContent = '';
         if (actualStatus.error) {
-            tooltipContent = `错误: ${actualStatus.error}`;
-        } else if (actualStatus.latency) {
-            tooltipContent = `延迟: ${actualStatus.latency}ms`;
-        } else if (actualStatus.status === 'disconnected') {
+            tooltipContent = `错误详情: ${actualStatus.error}`;
+        } else if (actualStatus.latency && actualStatus.status === 'connected') {
+            tooltipContent = `连接正常，延迟: ${actualStatus.latency}ms`;
+        } else if (actualStatus.status === 'connecting') {
+            tooltipContent = '正在尝试连接到数据库...';
+        } else if (actualStatus.status === 'connected') {
+            tooltipContent = '连接正常';
+        } else {
             tooltipContent = '连接已断开';
         }
 
         return (
             <Tooltip>
-                <Badge variant={config.variant as any} className={config.className}>
-                    {config.text}
-                </Badge>
+                <TooltipTrigger asChild>
+                    <Badge variant={config.variant as any} className={config.className}>
+                        {config.text}
+                    </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <div className="max-w-xs">
+                        <p className="text-sm">{tooltipContent}</p>
+                        {actualStatus.lastConnected && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                                最后连接: {new Date(actualStatus.lastConnected).toLocaleString()}
+                            </p>
+                        )}
+                    </div>
+                </TooltipContent>
             </Tooltip>
         );
     };
