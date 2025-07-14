@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Tag, Statistic, Row, Col, Tooltip, Progress, Typography } from '@/components/ui';
-import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Tag } from '@/components/ui';
+import { Badge, Dialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui';
 import { Settings, Trash2, Edit, Eye, Wifi, Unlink, PlayCircle, PauseCircle, MoreHorizontal } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';

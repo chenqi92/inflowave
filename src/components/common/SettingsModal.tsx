@@ -549,17 +549,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   return (
     <>
       <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="max-w-5xl w-full h-[85vh] overflow-hidden">
-          <DialogHeader className="pb-4">
+        <DialogContent className="max-w-5xl w-full h-[85vh] overflow-hidden p-0">
+          <DialogHeader className="px-6 py-3 border-b space-y-0">
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
               偏好设置
             </DialogTitle>
           </DialogHeader>
-          
-          <div className="flex-1 min-h-0">
-            <Tabs defaultValue="general" orientation="vertical" className="flex h-full gap-6">
-              <TabsList className="flex flex-col h-fit w-48 bg-muted/50 p-1">
+
+          <div className="flex-1 min-h-0 flex">
+            <Tabs defaultValue="general" orientation="vertical" className="flex h-full w-full">
+              <TabsList className="flex flex-col h-fit w-48 bg-muted/50 p-1 items-start justify-start shrink-0">
                 {tabItems.map((item) => (
                   <TabsTrigger
                     key={item.key}
@@ -573,8 +573,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   </TabsTrigger>
                 ))}
               </TabsList>
-              
-              <div className="flex-1 min-w-0">
+
+              <div className="flex-1 min-w-0 px-6 pb-6">
                 {tabItems.map((item) => (
                   <TabsContent key={item.key} value={item.key} className="mt-0 h-full">
                     <div className="h-full overflow-y-auto pr-2">
