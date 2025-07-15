@@ -72,15 +72,31 @@ impl InfluxClient {
 
         debug!("执行查询: {} (数据库: {:?})", query_str, database);
 
-        let mut query = influxdb::ReadQuery::new(query_str);
-        
-        // 如果指定了数据库，尝试设置数据库
-        if let Some(db) = database {
-            // InfluxDB Rust 客户端支持在查询中指定数据库
-            query = query.query_params(&[("db", db)]);
-        }
+        // 如果指定了数据库，创建一个新的客户端实例
+        let client = if let Some(db) = database {
+            debug!("为数据库 '{}' 创建新的客户端实例", db);
+            let url = if self.config.ssl {
+                format!("https://{}:{}", self.config.host, self.config.port)
+            } else {
+                format!("http://{}:{}", self.config.host, self.config.port)
+            };
+            
+            let mut new_client = Client::new(url, db);
+            
+            // 设置认证信息
+            if let (Some(username), Some(password)) = (&self.config.username, &self.config.password) {
+                new_client = new_client.with_auth(username, password);
+            }
+            
+            new_client
+        } else {
+            // 如果没有指定数据库，使用默认客户端
+            self.client.clone()
+        };
 
-        match self.client.query(query).await {
+        let query = influxdb::ReadQuery::new(query_str);
+
+        match client.query(query).await {
             Ok(result) => {
                 let execution_time = start.elapsed().as_millis() as u64;
 
