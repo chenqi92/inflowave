@@ -238,12 +238,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             children: (
                 <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
                     <div>
-                        <div>
-                            <h3 className="flex items-center gap-2 text-lg font-semibold">
-                                <Monitor className="w-4 h-4"/>
-                                界面设置
-                            </h3>
-                            <p className="text-sm text-muted-foreground">自定义应用程序的外观和行为</p>
+                        <div className="flex items-center gap-3 mb-4">
+                            <Monitor className="w-6 h-6 text-blue-600"/>
+                            <div>
+                                <h2 className="text-2xl font-bold">界面设置</h2>
+                                <p className="text-muted-foreground">自定义应用程序的外观和行为</p>
+                            </div>
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -334,6 +334,48 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         </div>
                     </div>
 
+                    <Separator/>
+
+                    {/* 应用行为设置 */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-4">
+                            <Settings className="w-6 h-6 text-blue-600"/>
+                            <div>
+                                <h2 className="text-2xl font-bold">应用行为</h2>
+                                <p className="text-muted-foreground">配置应用程序的自动化行为</p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base">自动保存</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            自动保存查询和配置更改
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={config.autoSave || false}
+                                        onCheckedChange={(checked) => form.setValue('autoSave', checked)}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base">自动连接</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            启动时自动连接到上次使用的数据库
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={config.autoConnect || false}
+                                        onCheckedChange={(checked) => form.setValue('autoConnect', checked)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
                         <Button
                             type="button"
@@ -352,6 +394,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         </Button>
                     </div>
                 </form>
+            )
+        },
+        {
+            key: 'query',
+            icon: <Shield className="w-4 h-4"/>,
+            label: '查询设置',
+            children: (
+                <ControllerSettings/>
+            )
+        },
+        {
+            key: 'preferences',
+            icon: <User className="w-4 h-4"/>,
+            label: '用户偏好',
+            children: (
+                <UserPreferencesComponent/>
             )
         },
         {
@@ -447,6 +505,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             label: '关于',
             children: (
                 <div className="space-y-6">
+                    {/* 页面标题 */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <Info className="w-6 h-6 text-blue-600" />
+                        <div>
+                            <h2 className="text-2xl font-bold">关于应用</h2>
+                            <p className="text-muted-foreground">应用信息和版本详情</p>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-4">
                             <div>
@@ -502,11 +569,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             )
         },
         {
-            key: 'notifications',
+            key: 'user-guide',
             icon: <Bell className="w-4 h-4"/>,
-            label: '通知设置',
+            label: '用户引导',
             children: (
                 <div className="space-y-6">
+                    {/* 页面标题 */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <Bell className="w-6 h-6 text-blue-600" />
+                        <div>
+                            <h2 className="text-2xl font-bold">用户引导</h2>
+                            <p className="text-muted-foreground">管理用户引导和帮助提示</p>
+                        </div>
+                    </div>
+
                     <div>
                         <h4 className="text-sm font-medium mb-2">预览模式说明</h4>
                         <p className="text-sm text-muted-foreground">
@@ -568,6 +644,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             label: '开发者工具',
             children: (
                 <div className="space-y-6">
+                    {/* 页面标题 */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <Bug className="w-6 h-6 text-blue-600" />
+                        <div>
+                            <h2 className="text-2xl font-bold">开发者工具</h2>
+                            <p className="text-muted-foreground">调试和诊断工具</p>
+                        </div>
+                    </div>
+
                     {/* 错误测试工具 - 仅开发环境显示 */}
                     {(import.meta as any).env?.DEV && (
                         <div>
@@ -595,22 +680,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         </div>
                     </div>
                 </div>
-            )
-        },
-        {
-            key: 'controller',
-            icon: <Shield className="w-4 h-4"/>,
-            label: '控制器设置',
-            children: (
-                <ControllerSettings/>
-            )
-        },
-        {
-            key: 'preferences',
-            icon: <User className="w-4 h-4"/>,
-            label: '用户偏好',
-            children: (
-                <UserPreferencesComponent/>
             )
         },
     ];
@@ -651,7 +720,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                     <TabsContent
                                         key={item.key}
                                         value={item.key}
-                                        className="h-full mt-0 pl-6 pr-4 py-4 data-[state=inactive]:hidden overflow-y-auto"
+                                        className="h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto"
                                     >
                                         <div className="max-w-3xl h-full pb-6">
                                             {item.children}

@@ -302,12 +302,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
           <div className="flex-1 overflow-y-auto space-y-6">
           {/* 通知设置 */}
           <div>
-            <div>
-              <h3 className="flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                通知设置
-              </h3>
-              <p className="text-sm text-muted-foreground">管理各类提醒和通知</p>
+            <div className="flex items-center gap-3 mb-4">
+              <Bell className="w-6 h-6 text-blue-600" />
+              <div>
+                <h2 className="text-2xl font-bold">通知设置</h2>
+                <p className="text-muted-foreground">管理各类提醒和通知</p>
+              </div>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -440,12 +440,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
           {/* 无障碍设置 */}
           <div>
-            <div>
-              <h3 className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                无障碍设置
-              </h3>
-              <p>优化界面可访问性</p>
+            <div className="flex items-center gap-3 mb-4">
+              <Eye className="w-6 h-6 text-blue-600" />
+              <div>
+                <h2 className="text-2xl font-bold">无障碍设置</h2>
+                <p className="text-muted-foreground">优化界面可访问性</p>
+              </div>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -536,12 +536,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
           {/* 工作区设置 */}
           <div>
-            <div>
-              <h3 className="flex items-center gap-2">
-                <Layout className="w-4 h-4" />
-                工作区设置
-              </h3>
-              <p>自定义工作区布局</p>
+            <div className="flex items-center gap-3 mb-4">
+              <Layout className="w-6 h-6 text-blue-600" />
+              <div>
+                <h2 className="text-2xl font-bold">工作区设置</h2>
+                <p className="text-muted-foreground">自定义工作区布局</p>
+              </div>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -631,13 +631,15 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
           {/* 键盘快捷键 */}
           <div>
+            <div className="flex items-center gap-3 mb-4">
+              <Keyboard className="w-6 h-6 text-blue-600" />
+              <div>
+                <h2 className="text-2xl font-bold">键盘快捷键</h2>
+                <p className="text-muted-foreground">自定义快捷键设置</p>
+              </div>
+            </div>
             <div>
-              <h3 className="flex items-center gap-2">
-                <Keyboard className="w-4 h-4" />
-                键盘快捷键
-              </h3>
-              <p>
-                自定义快捷键设置
+              <p className="text-sm text-muted-foreground">
                 <Button
                   type="button"
                   variant="outline"

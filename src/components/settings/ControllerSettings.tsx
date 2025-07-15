@@ -130,8 +130,8 @@ const ControllerSettings: React.FC = () => {
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-blue-600" />
             <div>
-              <h2 className="text-2xl font-bold">控制器设置</h2>
-              <p className="text-muted-foreground">管理危险SQL语句的执行权限</p>
+              <h2 className="text-2xl font-bold">查询设置</h2>
+              <p className="text-muted-foreground">管理查询执行和安全控制</p>
             </div>
           </div>
 
