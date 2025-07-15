@@ -138,11 +138,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       }
       
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: {
-          connection_id: activeConnectionId,
-          database: database,
-          query: query.trim()
-        }
+        connection_id: activeConnectionId,
+        database: database,
+        query: query.trim()
       });
       
       console.log('✅ 查询结果:', result);
@@ -225,11 +223,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         }
         
         const results = await safeTauriInvoke<QueryResult[]>('execute_batch_queries', {
-          request: {
-            connection_id: activeConnectionId,
-            database: selectedDatabase,
-            queries: statements
-          }
+          connection_id: activeConnectionId,
+          database: selectedDatabase,
+          queries: statements
         });
         
         const executionTime = Date.now() - startTime;
@@ -269,11 +265,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         });
         
         const result = await safeTauriInvoke<QueryResult>('execute_query', {
-          request: {
-            connection_id: activeConnectionId,
-            database: selectedDatabase,
-            query: statements[0]
-          }
+          connection_id: activeConnectionId,
+          database: selectedDatabase,
+          query: statements[0]
         });
         
         const executionTime = Date.now() - startTime;
@@ -522,9 +516,242 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     }
   };
 
+  // 注册InfluxQL语言支持
+  const registerInfluxQLLanguage = () => {
+    // 注册语言
+    monaco.languages.register({ id: 'influxql' });
+
+    // 设置语法高亮
+    monaco.languages.setMonarchTokensProvider('influxql', {
+      tokenizer: {
+        root: [
+          // 关键字
+          [/\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|INTO|VALUES|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE)\b/i, 'keyword'],
+          [/\b(AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE)\b/i, 'keyword'],
+          // 函数
+          [/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM)\b/i, 'function'],
+          // InfluxQL特定关键字
+          [/\b(TIME|NOW|AGO|DURATION|FILL|SLIMIT|SOFFSET|MEASUREMENTS|FIELD|TAG|KEYS|SERIES|DATABASES|RETENTION|POLICIES|STATS|DIAGNOSTICS)\b/i, 'keyword'],
+          // 字符串
+          [/'([^'\\]|\\.)*'/, 'string'],
+          [/"([^"\\]|\\.)*"/, 'string'],
+          // 数字
+          [/\d+(\.\d+)?(ns|u|µ|ms|s|m|h|d|w)?/, 'number'],
+          // 标识符
+          [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
+          // 括号
+          [/[{}()[\]]/, '@brackets'],
+          // 操作符
+          [/[<>]=?|[!=]=|<>/, 'operator'],
+          [/[+\-*/=]/, 'operator'],
+          // 分隔符
+          [/[,;]/, 'delimiter'],
+          // 注释
+          [/--.*$/, 'comment'],
+          [/\/\*/, 'comment', '@comment'],
+        ],
+        comment: [
+          [/[^/*]+/, 'comment'],
+          [/\*\//, 'comment', '@pop'],
+          [/[/*]/, 'comment'],
+        ],
+      },
+    });
+
+    // 设置自动补全
+    monaco.languages.registerCompletionItemProvider('influxql', {
+      provideCompletionItems: async (model, position) => {
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions: monaco.languages.CompletionItem[] = [];
+
+        // InfluxQL关键字
+        const keywords = [
+          'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
+          'SHOW DATABASES', 'SHOW MEASUREMENTS', 'SHOW FIELD KEYS', 'SHOW TAG KEYS',
+          'SHOW SERIES', 'SHOW RETENTION POLICIES', 'SHOW STATS',
+          'CREATE DATABASE', 'DROP DATABASE', 'CREATE RETENTION POLICY',
+          'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS', 'NULL',
+          'TIME', 'NOW', 'AGO', 'FILL', 'SLIMIT', 'SOFFSET'
+        ];
+
+        keywords.forEach(keyword => {
+          suggestions.push({
+            label: keyword,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: keyword,
+            range,
+          });
+        });
+
+        // InfluxQL函数
+        const functions = [
+          { name: 'COUNT', desc: '计算非空值的数量' },
+          { name: 'SUM', desc: '计算数值的总和' },
+          { name: 'AVG', desc: '计算平均值' },
+          { name: 'MIN', desc: '获取最小值' },
+          { name: 'MAX', desc: '获取最大值' },
+          { name: 'FIRST', desc: '获取第一个值' },
+          { name: 'LAST', desc: '获取最后一个值' },
+          { name: 'MEAN', desc: '计算算术平均值' },
+          { name: 'MEDIAN', desc: '计算中位数' },
+          { name: 'STDDEV', desc: '计算标准差' },
+          { name: 'DERIVATIVE', desc: '计算导数' },
+          { name: 'DIFFERENCE', desc: '计算差值' },
+          { name: 'MOVING_AVERAGE', desc: '计算移动平均' },
+        ];
+
+        functions.forEach(func => {
+          suggestions.push({
+            label: func.name,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: `${func.name}(\${1})`,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: func.desc,
+            range,
+          });
+        });
+
+        // 如果有连接和数据库，获取测量名、字段名和标签名
+        if (activeConnectionId && selectedDatabase) {
+          try {
+            // 获取数据库建议
+            databases.forEach(db => {
+              suggestions.push({
+                label: db,
+                kind: monaco.languages.CompletionItemKind.Module,
+                insertText: `"${db}"`,
+                documentation: `数据库: ${db}`,
+                range,
+              });
+            });
+
+            // 获取测量建议
+            const measurementSuggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
+              connection_id: activeConnectionId,
+              database: selectedDatabase,
+              partial_query: word.word,
+            });
+
+            measurementSuggestions?.forEach(suggestion => {
+              suggestions.push({
+                label: suggestion,
+                kind: monaco.languages.CompletionItemKind.Variable,
+                insertText: suggestion,
+                documentation: `建议: ${suggestion}`,
+                range,
+              });
+            });
+          } catch (error) {
+            console.warn('获取智能提示失败:', error);
+          }
+        }
+
+        // 查询模板
+        const templates = [
+          {
+            label: '基础查询模板',
+            insertText: 'SELECT * FROM "${1:measurement_name}" WHERE time >= now() - ${2:1h} LIMIT ${3:100}',
+            documentation: '基础查询模板，包含时间范围和限制',
+          },
+          {
+            label: '聚合查询模板',
+            insertText: 'SELECT MEAN("${1:field_name}") FROM "${2:measurement_name}" WHERE time >= now() - ${3:1h} GROUP BY time(${4:5m})',
+            documentation: '聚合查询模板，按时间分组',
+          },
+          {
+            label: '显示测量',
+            insertText: 'SHOW MEASUREMENTS',
+            documentation: '显示所有测量名',
+          },
+          {
+            label: '显示字段键',
+            insertText: 'SHOW FIELD KEYS FROM "${1:measurement_name}"',
+            documentation: '显示指定测量的字段键',
+          },
+          {
+            label: '显示标签键',
+            insertText: 'SHOW TAG KEYS FROM "${1:measurement_name}"',
+            documentation: '显示指定测量的标签键',
+          },
+        ];
+
+        templates.forEach(template => {
+          suggestions.push({
+            label: template.label,
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: template.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: template.documentation,
+            range,
+          });
+        });
+
+        return { suggestions };
+      },
+    });
+
+    // 设置悬停提示
+    monaco.languages.registerHoverProvider('influxql', {
+      provideHover: (model, position) => {
+        const word = model.getWordAtPosition(position);
+        if (!word) return null;
+
+        const functionDocs: Record<string, string> = {
+          'COUNT': '计算非空值的数量。语法: COUNT(field_key)',
+          'SUM': '计算数值字段的总和。语法: SUM(field_key)',
+          'AVG': '计算数值字段的平均值。语法: AVG(field_key)',
+          'MEAN': '计算数值字段的算术平均值。语法: MEAN(field_key)',
+          'MIN': '获取字段的最小值。语法: MIN(field_key)',
+          'MAX': '获取字段的最大值。语法: MAX(field_key)',
+          'FIRST': '获取字段的第一个值。语法: FIRST(field_key)',
+          'LAST': '获取字段的最后一个值。语法: LAST(field_key)',
+          'STDDEV': '计算字段的标准差。语法: STDDEV(field_key)',
+          'DERIVATIVE': '计算字段的导数。语法: DERIVATIVE(field_key)',
+          'SELECT': '用于查询数据的关键字。语法: SELECT field_key FROM measurement_name',
+          'FROM': '指定要查询的测量名。语法: FROM measurement_name',
+          'WHERE': '添加查询条件。语法: WHERE condition',
+          'GROUP BY': '按指定字段分组。语法: GROUP BY field_key',
+          'ORDER BY': '按指定字段排序。语法: ORDER BY field_key [ASC|DESC]',
+          'LIMIT': '限制返回的行数。语法: LIMIT number',
+          'TIME': 'InfluxDB的时间列，自动索引。语法: WHERE time >= now() - 1h',
+          'NOW': '当前时间函数。语法: now()',
+          'AGO': '时间偏移函数。语法: now() - 1h',
+        };
+
+        const wordText = word.word.toUpperCase();
+        if (functionDocs[wordText]) {
+          return {
+            range: new monaco.Range(
+              position.lineNumber,
+              word.startColumn,
+              position.lineNumber,
+              word.endColumn
+            ),
+            contents: [
+              { value: `**${wordText}**` },
+              { value: functionDocs[wordText] },
+            ],
+          };
+        }
+
+        return null;
+      },
+    });
+  };
+
   // 编辑器挂载
   const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
+    
+    // 注册InfluxQL语言支持
+    registerInfluxQLLanguage();
     
     // 设置编辑器选项
     editor.updateOptions({
@@ -533,7 +760,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       wordWrap: 'on',
-      automaticLayout: true});
+      automaticLayout: true,
+      // 增强智能提示
+      quickSuggestions: {
+        other: true,
+        comments: false,
+        strings: false,
+      },
+      suggestOnTriggerCharacters: true,
+      acceptSuggestionOnEnter: 'on',
+      tabCompletion: 'on',
+      parameterHints: { enabled: true },
+      hover: { enabled: true },
+    });
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -543,6 +782,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       saveCurrentTab();
+    });
+
+    // 添加格式化快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+      editor.getAction('editor.action.formatDocument')?.run();
     });
   };
 
@@ -740,7 +984,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         {currentTab ? (
           <Editor
             height="100%"
-            language="sql"
+            language="influxql"
             theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
             value={currentTab.content}
             onValueChange={handleEditorChange}
@@ -757,10 +1001,17 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               wordWrap: 'on',
               automaticLayout: true,
               suggestOnTriggerCharacters: true,
-              quickSuggestions: true,
+              quickSuggestions: {
+                other: true,
+                comments: false,
+                strings: false,
+              },
               parameterHints: { enabled: true },
               formatOnPaste: true,
-              formatOnType: true}}
+              formatOnType: true,
+              acceptSuggestionOnEnter: 'on',
+              tabCompletion: 'on',
+              hover: { enabled: true }}}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground border-0 shadow-none">

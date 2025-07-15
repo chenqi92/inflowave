@@ -19,6 +19,11 @@ pub struct QueryResult {
     #[serde(rename = "rowCount")]
     pub row_count: Option<usize>,
     pub error: Option<String>,
+    // 兼容性字段
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Vec<Vec<serde_json::Value>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub columns: Option<Vec<String>>,
 }
 
 /// 查询结果项
@@ -47,8 +52,8 @@ impl QueryResult {
         let series = if !columns.is_empty() || !rows.is_empty() {
             vec![Series {
                 name: "query_result".to_string(),
-                columns,
-                values: rows,
+                columns: columns.clone(),
+                values: rows.clone(),
                 tags: None,
             }]
         } else {
@@ -63,11 +68,21 @@ impl QueryResult {
             execution_time: Some(execution_time),
             row_count: Some(row_count),
             error: None,
+            // 设置兼容性字段
+            data: Some(rows),
+            columns: Some(columns),
         }
     }
 
     pub fn with_series(series: Vec<Series>, execution_time: u64) -> Self {
         let total_rows: usize = series.iter().map(|s| s.values.len()).sum();
+        // 获取第一个series的数据用于兼容性
+        let (data, columns) = if let Some(first_series) = series.first() {
+            (Some(first_series.values.clone()), Some(first_series.columns.clone()))
+        } else {
+            (Some(vec![]), Some(vec![]))
+        };
+
         Self {
             results: vec![QueryResultItem {
                 series: Some(series),
@@ -76,6 +91,8 @@ impl QueryResult {
             execution_time: Some(execution_time),
             row_count: Some(total_rows),
             error: None,
+            data,
+            columns,
         }
     }
 
@@ -88,6 +105,8 @@ impl QueryResult {
             execution_time: Some(0),
             row_count: Some(0),
             error: None,
+            data: Some(vec![]),
+            columns: Some(vec![]),
         }
     }
 
@@ -100,6 +119,8 @@ impl QueryResult {
             execution_time: None,
             row_count: None,
             error: Some(error),
+            data: None,
+            columns: None,
         }
     }
 
@@ -128,6 +149,11 @@ impl QueryResult {
     }
 
     pub fn rows(&self) -> Vec<Vec<serde_json::Value>> {
+        self.get_rows()
+    }
+
+    // 添加data字段以兼容前端
+    pub fn data(&self) -> Vec<Vec<serde_json::Value>> {
         self.get_rows()
     }
 }

@@ -406,6 +406,7 @@ async fn main() {
 
             // Query operations
             execute_query,
+            execute_batch_queries,
             validate_query,
             get_query_suggestions,
             format_query,
