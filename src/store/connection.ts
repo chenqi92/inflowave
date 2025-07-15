@@ -451,23 +451,51 @@ export const connectionUtils = {
   
   // 检查是否有任何已连接的InfluxDB连接
   hasAnyConnectedInfluxDB: (): boolean => {
-    const { connections, connectionStatuses } = useConnectionStore.getState();
+    const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore.getState();
     
-    // 检查是否有任何连接状态为connected的InfluxDB连接
-    return connections.some(conn => {
-      const status = connectionStatuses[conn.id];
-      return status?.status === 'connected';
+    // 调试信息
+    console.log('hasAnyConnectedInfluxDB 检查:', {
+      connectionsCount: connections.length,
+      connectionStatusesCount: Object.keys(connectionStatuses).length,
+      connectedConnectionIdsCount: connectedConnectionIds.length,
+      connectedConnectionIds,
+      connectionStatuses
     });
+    
+    // 方法1：检查是否有任何连接状态为connected的InfluxDB连接
+    const hasConnectedByStatus = connections.some(conn => {
+      const status = connectionStatuses[conn.id];
+      const isConnected = status?.status === 'connected';
+      console.log(`连接 ${conn.name} (${conn.id}): 状态=${status?.status}, 是否已连接=${isConnected}`);
+      return isConnected;
+    });
+    
+    // 方法2：检查connectedConnectionIds数组
+    const hasConnectedByIds = connectedConnectionIds.length > 0;
+    
+    console.log('连接检查结果:', {
+      hasConnectedByStatus,
+      hasConnectedByIds,
+      finalResult: hasConnectedByStatus || hasConnectedByIds
+    });
+    
+    // 使用两种方法中的任一种为true即可
+    return hasConnectedByStatus || hasConnectedByIds;
   },
   
   // 获取所有已连接的InfluxDB连接数量
   getConnectedInfluxDBCount: (): number => {
-    const { connections, connectionStatuses } = useConnectionStore.getState();
+    const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore.getState();
     
-    return connections.filter(conn => {
+    const countByStatus = connections.filter(conn => {
       const status = connectionStatuses[conn.id];
       return status?.status === 'connected';
     }).length;
+    
+    const countByIds = connectedConnectionIds.length;
+    
+    // 使用两种方法中的较大值
+    return Math.max(countByStatus, countByIds);
   },
   
   // 获取连接显示名称

@@ -6,6 +6,27 @@
 
 /* 查询页面优化样式 */
 @layer components {
+  /* Mac平台图标优化 - 针对高DPI屏幕 */
+  @media screen and (-webkit-min-device-pixel-ratio: 2) {
+    .lucide-icon,
+    [class*="w-4"][class*="h-4"] svg,
+    .toolbar-button svg,
+    .toolbar-button-vertical svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+  }
+
+  /* 针对Mac的字体渲染优化 - 使用webkit特性检测 */
+  @supports (-webkit-appearance: none) {
+    svg[class*="lucide"],
+    .lucide-icon,
+    .toolbar-button svg,
+    .toolbar-button-vertical svg {
+      transform: scale(0.875); /* 87.5% 缩放，让图标在Mac上显示更合适 */
+    }
+  }
+
   /* 自定义滚动条样式 */
   .scrollbar-thin {
     scrollbar-width: thin;

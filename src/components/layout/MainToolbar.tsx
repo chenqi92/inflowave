@@ -61,7 +61,7 @@ interface MainToolbarProps {
 }
 
 const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
-  const { activeConnectionId, connections, connectionStatuses } = useConnectionStore();
+  const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
@@ -77,6 +77,16 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   // 检查是否有任何已连接的InfluxDB连接
   const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
   const connectedInfluxDBCount = connectionUtils.getConnectedInfluxDBCount();
+  
+  // 调试信息
+  console.log('MainToolbar - 连接状态调试:', {
+    hasAnyConnectedInfluxDB,
+    connectedInfluxDBCount,
+    activeConnectionId,
+    connectionStatuses: Object.keys(connectionStatuses).length,
+    connections: connections.length,
+    connectedConnectionIds: connectedConnectionIds.length
+  });
   
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();

@@ -1,174 +1,214 @@
 # 🔧 安装指南
 
-## 系统要求
+本指南将帮助您在不同操作系统上安装 InfloWave。
 
-### 最低要求
-- **操作系统**: Windows 10, macOS 10.15, Ubuntu 18.04
+## 📋 系统要求
+
+### 最低系统要求
+- **操作系统**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
 - **内存**: 4GB RAM
-- **存储**: 500MB 可用空间
-- **网络**: 能够访问 InfluxDB 服务器
+- **存储空间**: 200MB 可用空间
+- **网络**: 需要网络连接以访问 InfluxDB 服务器
 
-### 推荐配置
+### 推荐系统配置
 - **操作系统**: Windows 11, macOS 12+, Ubuntu 20.04+
-- **内存**: 8GB+ RAM
-- **存储**: 2GB+ 可用空间
-- **显示器**: 1920x1080 分辨率
+- **内存**: 8GB RAM 或更多
+- **存储空间**: 1GB 可用空间
+- **显示器**: 1920x1080 或更高分辨率
 
-## 📥 下载安装包
+## 📦 安装方式
 
-### 官方下载
-访问 [GitHub Releases](https://github.com/kkape/inflowave/releases) 页面下载最新版本。
+### 方式一：下载预构建版本（推荐）
 
-### 选择合适的安装包
-- **Windows**: `inflowave-setup.exe` (推荐) 或 `inflowave-portable.exe`
-- **macOS**: `inflowave.dmg` (通用版本，支持 Intel 和 Apple Silicon)
-- **Linux**: `inflowave.deb`, `inflowave.rpm`, 或 `inflowave.AppImage`
+访问 [GitHub Releases 页面](https://github.com/chenqi92/inflowave/releases) 下载最新版本。
 
-## 🖥️ Windows 安装
+#### Windows 安装
 
-### 方法一：使用安装程序 (推荐)
-1. 下载 `inflowave-setup.exe`
+**支持的架构**：
+- x64 (64位): `InfloWave_x.x.x_x64_en-US.msi`
+- x86 (32位): `InfloWave_x.x.x_x86_en-US.msi`
+
+**安装步骤**：
+1. 下载对应架构的 `.msi` 安装包
 2. 双击运行安装程序
 3. 按照安装向导完成安装
 4. 从开始菜单或桌面快捷方式启动应用
 
-### 方法二：便携版
-1. 下载 `inflowave-portable.exe`
-2. 将文件放置到任意目录
-3. 双击运行即可使用
+**注意事项**：
+- 如果出现 Windows Defender 警告，点击"更多信息"→"仍要运行"
+- 首次运行可能需要管理员权限
 
-### Windows 特殊要求
-- **WebView2**: 如果系统提示缺少 WebView2，请访问 [Microsoft WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) 下载安装
+#### macOS 安装
 
-## 🍎 macOS 安装
+**支持的架构**：
+- Intel (x64): `InfloWave_x.x.x_x64.dmg`
+- Apple Silicon (ARM64): `InfloWave_x.x.x_aarch64.dmg`
 
-### 安装步骤
-1. 下载 `inflowave.dmg`
+**安装步骤**：
+1. 下载对应架构的 `.dmg` 文件
 2. 双击打开 DMG 文件
 3. 将 InfloWave 拖拽到 Applications 文件夹
-4. 从启动台或应用程序文件夹启动应用
+4. 从 Launchpad 或 Applications 文件夹启动应用
 
-### 首次运行
-由于应用未经过 Apple 公证，首次运行时可能会显示安全警告：
-1. 右键点击应用图标
-2. 选择"打开"
-3. 在弹出的对话框中点击"打开"
+**注意事项**：
+- 首次运行时，可能需要在"系统偏好设置"→"安全性与隐私"中允许运行
+- 如果提示"无法验证开发者"，请按住 Control 键点击应用图标，选择"打开"
 
-## 🐧 Linux 安装
+#### Linux 安装
 
-### Ubuntu/Debian (.deb)
+**支持的架构**：
+- x64: `inflowave_x.x.x_amd64.deb` 或 `inflowave_x.x.x_amd64.AppImage`
+- ARM64: `inflowave_x.x.x_arm64.deb` 或 `inflowave_x.x.x_aarch64.AppImage`
+- x86: `inflowave_x.x.x_i386.deb`
+
+**DEB 包安装（Ubuntu/Debian）**：
 ```bash
-# 下载 deb 包
-wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.deb
+# 下载 deb 包后执行
+sudo dpkg -i inflowave_x.x.x_amd64.deb
 
-# 安装
-sudo dpkg -i inflowave.deb
-
-# 如果有依赖问题，运行
+# 如果有依赖问题，执行
 sudo apt-get install -f
 ```
 
-### CentOS/RHEL/Fedora (.rpm)
+**AppImage 安装**：
 ```bash
-# 下载 rpm 包
-wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.rpm
-
-# 安装
-sudo rpm -i inflowave.rpm
-
-# 或使用 dnf (Fedora)
-sudo dnf install inflowave.rpm
+# 下载 AppImage 文件后执行
+chmod +x inflowave_x.x.x_amd64.AppImage
+./inflowave_x.x.x_amd64.AppImage
 ```
 
-### AppImage (通用)
-```bash
-# 下载 AppImage
-wget https://github.com/kkape/inflowave/releases/latest/download/inflowave.AppImage
+### 方式二：从源码构建
 
-# 添加执行权限
-chmod +x inflowave.AppImage
+如果您需要自定义构建或贡献代码，可以从源码构建。
 
-# 运行
-./inflowave.AppImage
+#### 环境准备
+
+**必需工具**：
+- Node.js 18.0+
+- Rust 1.70+
+- Git
+
+**Windows 环境设置**：
+```powershell
+# 使用 Scoop 安装（推荐）
+scoop install nodejs rust git
+
+# 或使用官方安装程序
+# 访问 nodejs.org 和 rustup.rs 下载安装
 ```
 
-### Linux 依赖
-如果遇到依赖问题，请安装以下包：
-
-#### Ubuntu/Debian
+**macOS 环境设置**：
 ```bash
+# 使用 Homebrew 安装
+brew install node rust git
+
+# 或使用官方安装程序
+```
+
+**Linux 环境设置**：
+```bash
+# Ubuntu/Debian
 sudo apt update
-sudo apt install -y libwebkit2gtk-4.0-37 libgtk-3-0
+sudo apt install nodejs npm git curl
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# CentOS/RHEL
+sudo yum install nodejs npm git curl
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-#### CentOS/RHEL/Fedora
+#### 构建步骤
+
 ```bash
-sudo dnf install -y webkit2gtk3 gtk3
+# 1. 克隆项目
+git clone https://github.com/chenqi92/inflowave.git
+cd inflowave
+
+# 2. 安装前端依赖
+npm install
+
+# 3. 开发模式运行（可选）
+npm run tauri:dev
+
+# 4. 构建生产版本
+npm run tauri:build
 ```
 
-## 🔄 升级指南
+构建完成后，安装包将位于 `src-tauri/target/release/bundle/` 目录下。
 
-### 自动更新
-应用会自动检查更新，当有新版本时会提示用户下载。
+## 🚀 首次启动
 
-### 手动升级
-1. 下载最新版本的安装包
-2. 按照相同的安装步骤进行安装
-3. 新版本会自动覆盖旧版本
+### 启动应用
+- **Windows**: 从开始菜单或桌面快捷方式启动
+- **macOS**: 从 Launchpad 或 Applications 文件夹启动
+- **Linux**: 从应用菜单启动或运行 `inflowave` 命令
 
-### 配置迁移
-- 用户配置和连接信息会自动保留
-- 如需手动备份，配置文件位置：
-  - **Windows**: `%APPDATA%\inflowave\`
-  - **macOS**: `~/Library/Application Support/inflowave/`
-  - **Linux**: `~/.config/inflowave/`
+### 初始配置
+1. 应用启动后会显示欢迎界面
+2. 点击"添加连接"配置您的第一个 InfluxDB 连接
+3. 输入连接信息并测试连接
+4. 连接成功后即可开始使用
 
-## 🗑️ 卸载指南
+## 🔄 更新升级
+
+### 自动更新检查
+InfloWave 会在启动时检查更新，如有新版本会提示您下载。
+
+### 手动更新
+1. 访问 [Releases 页面](https://github.com/chenqi92/inflowave/releases)
+2. 下载最新版本
+3. 按照安装步骤重新安装（会自动覆盖旧版本）
+4. 用户数据和配置会自动保留
+
+## 🗑️ 卸载
 
 ### Windows
-- **安装版**: 通过"控制面板" → "程序和功能"卸载
-- **便携版**: 直接删除可执行文件
+- 通过"控制面板"→"程序和功能"卸载
+- 或通过"设置"→"应用"卸载
 
 ### macOS
-1. 从应用程序文件夹删除 InfloWave
-2. 删除配置文件（可选）：`~/Library/Application Support/inflowave/`
+- 将 Applications 文件夹中的 InfloWave 拖拽到废纸篓
 
 ### Linux
 ```bash
-# Ubuntu/Debian
+# DEB 包安装的版本
 sudo apt remove inflowave
 
-# CentOS/RHEL/Fedora
-sudo rpm -e inflowave
-
-# AppImage
-# 直接删除 AppImage 文件
+# AppImage 版本
+直接删除 AppImage 文件即可
 ```
 
-## 🔧 故障排除
+### 清理用户数据
+如需完全清理用户数据和配置：
+
+- **Windows**: 删除 `%APPDATA%\com.inflowave.app` 文件夹
+- **macOS**: 删除 `~/Library/Application Support/com.inflowave.app` 文件夹
+- **Linux**: 删除 `~/.local/share/com.inflowave.app` 文件夹
+
+## ❓ 安装问题
 
 ### 常见问题
 
-#### Windows
-- **应用无法启动**: 检查是否安装了 WebView2
-- **防火墙警告**: 允许应用通过防火墙
-- **权限问题**: 以管理员身份运行
+**Windows 安装失败**：
+- 确保以管理员权限运行安装程序
+- 检查是否有杀毒软件阻止安装
+- 尝试关闭 Windows Defender 实时保护后重新安装
 
-#### macOS
-- **"应用已损坏"**: 在终端运行 `sudo xattr -rd com.apple.quarantine /Applications/InfloWave.app`
-- **权限问题**: 在"系统偏好设置" → "安全性与隐私"中允许应用运行
+**macOS 无法打开**：
+- 在"系统偏好设置"→"安全性与隐私"中允许运行
+- 或按住 Control 键点击应用图标，选择"打开"
 
-#### Linux
-- **依赖缺失**: 安装所需的系统依赖包
-- **权限问题**: 确保用户有执行权限
-- **显示问题**: 检查 GTK 和 WebKit 版本
+**Linux 依赖问题**：
+```bash
+# Ubuntu/Debian 安装缺失依赖
+sudo apt-get install -f
 
-### 获取帮助
-如果遇到安装问题：
-1. 查看 [常见问题](./faq.md)
-2. 搜索 [GitHub Issues](https://github.com/kkape/inflowave/issues)
-3. 提交新的 Issue 报告问题
+# 或手动安装常见依赖
+sudo apt install libwebkit2gtk-4.0-37 libgtk-3-0
+```
+
+如果遇到其他安装问题，请访问 [GitHub Issues](https://github.com/chenqi92/inflowave/issues) 寻求帮助。
 
 ---
 
-> 💡 **提示**: 建议在安装前关闭杀毒软件，避免误报。安装完成后可重新启用。
+**安装完成后，请查看 [快速开始](./quick-start.md) 了解如何使用 InfloWave！** 🚀
