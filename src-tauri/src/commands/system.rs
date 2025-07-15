@@ -213,9 +213,10 @@ pub async fn check_for_updates() -> Result<serde_json::Value, String> {
 }
 
 /// 文件对话框结果结构
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct FileDialogResult {
     pub path: String,
+    pub name: String,
 }
 
 /// 文件对话框过滤器
@@ -241,15 +242,52 @@ pub async fn open_file_dialog(
 /// 保存文件对话框
 #[tauri::command]
 pub async fn save_file_dialog(
-    _default_path: Option<String>,
-    _filters: Option<Vec<FileFilter>>,
+    app: tauri::AppHandle,
+    default_path: Option<String>,
+    filters: Option<Vec<FileFilter>>,
 ) -> Result<Option<FileDialogResult>, String> {
     debug!("保存文件对话框");
-    
-    // 简化实现，返回模拟结果
-    // 在实际应用中，这里应该调用系统文件对话框
-    info!("文件保存对话框功能开发中");
-    Ok(None)
+
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app.dialog().file();
+
+    // 设置默认路径
+    if let Some(path) = default_path {
+        if let Some(parent) = std::path::Path::new(&path).parent() {
+            dialog = dialog.set_directory(parent);
+        }
+        if let Some(filename) = std::path::Path::new(&path).file_name() {
+            dialog = dialog.set_file_name(filename.to_string_lossy().as_ref());
+        }
+    }
+
+    // 设置文件过滤器
+    if let Some(filter_list) = filters {
+        for filter in filter_list {
+            let extensions: Vec<&str> = filter.extensions.iter().map(|s| s.as_str()).collect();
+            dialog = dialog.add_filter(&filter.name, &extensions);
+        }
+    }
+
+    // 显示保存对话框
+    match dialog.blocking_save_file() {
+        Some(file_path) => {
+            let path_buf = file_path.as_path().unwrap_or_else(|| std::path::Path::new(""));
+            let result = FileDialogResult {
+                path: path_buf.to_string_lossy().to_string(),
+                name: path_buf.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+            };
+            info!("文件保存对话框结果: {:?}", result);
+            Ok(Some(result))
+        }
+        None => {
+            info!("用户取消了文件保存对话框");
+            Ok(None)
+        }
+    }
 }
 
 /// 读取文件内容
