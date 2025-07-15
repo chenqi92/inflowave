@@ -74,6 +74,14 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose }) => {
     setCurrentIndex(index);
   };
 
+  // 处理内部文档链接导航
+  const handleInternalLinkClick = (filename: string) => {
+    const targetIndex = documents.findIndex(doc => doc.filename === filename);
+    if (targetIndex !== -1) {
+      setCurrentIndex(targetIndex);
+    }
+  };
+
   const currentDoc = documents[currentIndex];
   const progress = documents.length > 0 ? ((currentIndex + 1) / documents.length) * 100 : 0;
 
@@ -158,7 +166,11 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                 ) : currentDoc ? (
-                  <MarkdownRenderer content={currentDoc.content} className="max-w-none user-guide-content" />
+                  <MarkdownRenderer
+                    content={currentDoc.content}
+                    className="max-w-none user-guide-content"
+                    onInternalLinkClick={handleInternalLinkClick}
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-64">
                     <p className="text-muted-foreground">暂无内容</p>

@@ -4,22 +4,42 @@ import { cn } from '@/lib/utils';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  onInternalLinkClick?: (filename: string) => void;
 }
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className, onInternalLinkClick }) => {
   // 简单的 Markdown 解析器
   const parseMarkdown = (text: string): string => {
     let html = text;
 
-    // 处理代码块
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4 max-w-full"><code class="text-sm whitespace-pre-wrap break-all">${code.trim()}</code></pre>`;
+    // 首先处理代码块，使用更精确的正则表达式
+    // 处理带语言标识的代码块
+    html = html.replace(/```(\w+)\s*\n([\s\S]*?)\n```/g, (match, lang, code) => {
+      const escapedCode = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      return `<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4 max-w-full"><code class="text-sm whitespace-pre-wrap break-all language-${lang}">${escapedCode.trim()}</code></pre>`;
     });
 
-    // 处理行内代码
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all">$1</code>');
+    // 处理不带语言标识的代码块
+    html = html.replace(/```\s*\n([\s\S]*?)\n```/g, (match, code) => {
+      const escapedCode = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+      return `<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4 max-w-full"><code class="text-sm whitespace-pre-wrap break-all">${escapedCode.trim()}</code></pre>`;
+    });
 
-    // 处理标题
+    // 处理行内代码（避免与代码块冲突）
+    html = html.replace(/(?<!`)`([^`\n]+)`(?!`)/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all">$1</code>');
+
+    // 处理标题（确保不在代码块内）
+    html = html.replace(/^#### (.*$)/gm, '<h4 class="text-base font-semibold mt-4 mb-2 text-foreground">$1</h4>');
     html = html.replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-6 mb-3 text-foreground">$1</h3>');
     html = html.replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mt-8 mb-4 text-foreground">$1</h2>');
     html = html.replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-8 mb-6 text-foreground">$1</h1>');
@@ -30,8 +50,16 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
     // 处理斜体
     html = html.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
 
-    // 处理链接
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline break-all" target="_blank" rel="noopener noreferrer">$1</a>');
+    // 处理链接 - 区分内部和外部链接
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+      // 检查是否是内部文档链接
+      if (url.startsWith('./') && url.endsWith('.md')) {
+        const filename = url.replace('./', '');
+        return `<a href="#" class="text-primary hover:underline break-all internal-link" data-filename="${filename}">${text}</a>`;
+      }
+      // 外部链接
+      return `<a href="${url}" class="text-primary hover:underline break-all" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    });
 
     // 处理无序列表 - 改进的列表处理
     const listRegex = /^(- .+(?:\n- .+)*)/gm;
@@ -58,36 +86,31 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
     });
 
     // 处理表格 - 改进的表格处理
-    const tableRegex = /(\|[^|\n]+\|(?:\n\|[^|\n]+\|)*)/g;
-    html = html.replace(tableRegex, (match) => {
-      const lines = match.trim().split('\n');
-      if (lines.length < 2) return match;
-
-      const headerLine = lines[0];
-      const separatorLine = lines[1];
-      const dataLines = lines.slice(2);
-
-      // 检查是否是有效的表格格式
-      if (!separatorLine.includes('---')) return match;
+    const tableRegex = /^\|(.+)\|\s*\n\|(.+)\|\s*\n((?:\|.+\|\s*\n?)*)/gm;
+    html = html.replace(tableRegex, (match, headerRow, separatorRow, dataRows) => {
+      // 检查分隔行是否包含 ---
+      if (!separatorRow.includes('---')) return match;
 
       // 处理表头
-      const headerCells = headerLine.split('|').map(cell => cell.trim()).filter(cell => cell);
-      const headerRow = `<tr class="bg-muted/50">${headerCells.map(cell =>
+      const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(cell => cell);
+      const headerRowHtml = `<tr class="bg-muted/50">${headerCells.map(cell =>
         `<th class="border border-border px-3 py-2 text-sm font-semibold text-left">${cell}</th>`
       ).join('')}</tr>`;
 
       // 处理数据行
-      const dataRows = dataLines.map(line => {
+      const dataRowsHtml = dataRows.trim().split('\n').map(line => {
+        if (!line.trim() || !line.includes('|')) return '';
         const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
+        if (cells.length === 0) return '';
         return `<tr>${cells.map(cell =>
           `<td class="border border-border px-3 py-2 text-sm">${cell}</td>`
         ).join('')}</tr>`;
-      }).join('');
+      }).filter(row => row).join('');
 
       return `<div class="overflow-x-auto my-4">
         <table class="w-full min-w-full border-collapse border border-border rounded-lg overflow-hidden">
-          <thead>${headerRow}</thead>
-          <tbody>${dataRows}</tbody>
+          <thead>${headerRowHtml}</thead>
+          <tbody>${dataRowsHtml}</tbody>
         </table>
       </div>`;
     });
@@ -108,6 +131,18 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
     return html;
   };
 
+  // 处理内部链接点击
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'A' && target.classList.contains('internal-link')) {
+      event.preventDefault();
+      const filename = target.getAttribute('data-filename');
+      if (filename && onInternalLinkClick) {
+        onInternalLinkClick(filename);
+      }
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -122,6 +157,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         "break-words overflow-wrap-anywhere",
         className
       )}
+      onClick={handleClick}
       dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
     />
   );
