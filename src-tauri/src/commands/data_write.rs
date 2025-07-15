@@ -33,7 +33,7 @@ pub async fn write_data(
         .unwrap_or(1000);
 
     let lines: Vec<&str> = line_protocol_data.lines().collect();
-    let total_lines = lines.len();
+    let _total_lines = lines.len();
     let mut points_written = 0u64;
     let mut errors = Vec::new();
 
@@ -77,7 +77,7 @@ pub async fn write_data(
 pub async fn validate_data_format(
     data: String,
     format: DataFormat,
-    measurement: String,
+    _measurement: String,
 ) -> Result<bool, String> {
     debug!("验证数据格式: {:?}", format);
     

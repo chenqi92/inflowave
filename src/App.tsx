@@ -15,9 +15,7 @@ import {useNoticeStore} from './store/notice';
 
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
-import TypographyTest from './components/test/TypographyTest';
 import UITest from './pages/UITest';
-import TestButton from './components/test/TestButton';
 import TestFixes from './test-fixes';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
@@ -71,7 +69,6 @@ const MainLayout: React.FC = () => {
                 <Content className="flex-1 p-4">
                     <Routes>
                         <Route path="/debug" element={<ConnectionDebug/>}/>
-                        <Route path="/typography-test" element={<TypographyTest/>}/>
                         <Route path="/ui-test" element={<UITest/>}/>
                         <Route path="/test-fixes" element={<TestFixes/>}/>
                     </Routes>
@@ -88,9 +85,6 @@ const MainLayout: React.FC = () => {
                         navigate('/query', {state: {query}});
                     }}
                 />
-
-                {/* 测试按钮 - 仅在开发环境显示 */}
-                {(import.meta as any).env?.DEV && <TestButton/>}
             </Layout>
         );
     }

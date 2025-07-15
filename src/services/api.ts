@@ -1,4 +1,4 @@
-import { safeTauriInvoke } from '@/utils/tauri';
+﻿import { safeTauriInvoke } from '@/utils/tauri';
 import type { 
   ConnectionConfig, 
   ConnectionStatus, 
@@ -32,7 +32,7 @@ export class ConnectionAPI {
    * 测试连接
    */
   static async testConnection(connectionId: string): Promise<ConnectionTestResult> {
-    return safeTauriInvoke<ConnectionTestResult>('test_connection', { connectionId: connectionId });
+    return safeTauriInvoke<ConnectionTestResult>('test_connection', { connection_id: connectionId });
   }
 
   /**
@@ -46,7 +46,7 @@ export class ConnectionAPI {
    * 获取单个连接
    */
   static async getConnection(connectionId: string): Promise<ConnectionConfig | null> {
-    return safeTauriInvoke<ConnectionConfig | null>('get_connection', { connectionId: connectionId });
+    return safeTauriInvoke<ConnectionConfig | null>('get_connection', { connection_id: connectionId });
   }
 
   /**
@@ -60,28 +60,28 @@ export class ConnectionAPI {
    * 删除连接
    */
   static async deleteConnection(connectionId: string): Promise<void> {
-    return safeTauriInvoke<void>('delete_connection', { connectionId: connectionId });
+    return safeTauriInvoke<void>('delete_connection', { connection_id: connectionId });
   }
 
   /**
    * 连接到数据库
    */
   static async connectToDatabase(connectionId: string): Promise<void> {
-    return safeTauriInvoke<void>('connect_to_database', { connectionId: connectionId });
+    return safeTauriInvoke<void>('connect_to_database', { connection_id: connectionId });
   }
 
   /**
    * 断开数据库连接
    */
   static async disconnectFromDatabase(connectionId: string): Promise<void> {
-    return safeTauriInvoke<void>('disconnect_from_database', { connectionId: connectionId });
+    return safeTauriInvoke<void>('disconnect_from_database', { connection_id: connectionId });
   }
 
   /**
    * 获取连接状态
    */
-  static async getConnectionStatus(connectionId: string): Promise<ConnectionStatus | null> {
-    return safeTauriInvoke<ConnectionStatus | null>('get_connection_status', { connectionId: connectionId });
+  static async getConnectionStatus(connection_id: string): Promise<ConnectionStatus | null> {
+    return safeTauriInvoke<ConnectionStatus | null>('get_connection_status', { connection_id: connectionId });
   }
 
   /**
@@ -115,8 +115,8 @@ export class ConnectionAPI {
   /**
    * 获取连接池统计信息
    */
-  static async getConnectionPoolStats(connectionId: string): Promise<any> {
-    return safeTauriInvoke<any>('get_connection_pool_stats', { connectionId: connectionId });
+  static async getConnectionPoolStats(connection_id: string): Promise<any> {
+    return safeTauriInvoke<any>('get_connection_pool_stats', { connection_id: connectionId });
   }
 }
 
@@ -142,12 +142,11 @@ export class QueryAPI {
    * 获取查询建议
    */
   static async getQuerySuggestions(
-    connectionId: string, 
+    connection_id: string, 
     database?: string, 
     partialQuery?: string
   ): Promise<string[]> {
-    return safeTauriInvoke<string[]>('get_query_suggestions', { 
-      connectionId: connectionId, 
+    return safeTauriInvoke<string[]>('get_query_suggestions', { connection_id: connectionId, 
       database, 
       partialQuery 
     });
@@ -163,8 +162,8 @@ export class QueryAPI {
   /**
    * 解释查询执行计划
    */
-  static async explainQuery(connectionId: string, query: string): Promise<string> {
-    return safeTauriInvoke<string>('explain_query', { connectionId: connectionId, query });
+  static async explainQuery(connection_id: string, query: string): Promise<string> {
+    return safeTauriInvoke<string>('explain_query', { connection_id: connectionId, query });
   }
 }
 
@@ -175,41 +174,40 @@ export class DatabaseAPI {
   /**
    * 获取数据库列表
    */
-  static async getDatabases(connectionId: string): Promise<DatabaseInfo[]> {
-    return safeTauriInvoke<DatabaseInfo[]>('get_databases', { connectionId: connectionId });
+  static async getDatabases(connection_id: string): Promise<DatabaseInfo[]> {
+    return safeTauriInvoke<DatabaseInfo[]>('get_databases', { connection_id: connectionId });
   }
 
   /**
    * 创建数据库
    */
-  static async createDatabase(connectionId: string, name: string): Promise<void> {
-    return safeTauriInvoke<void>('create_database', { connectionId: connectionId, name });
+  static async createDatabase(connection_id: string, name: string): Promise<void> {
+    return safeTauriInvoke<void>('create_database', { connection_id: connectionId, name });
   }
 
   /**
    * 删除数据库
    */
-  static async dropDatabase(connectionId: string, name: string): Promise<void> {
-    return safeTauriInvoke<void>('drop_database', { connectionId: connectionId, name });
+  static async dropDatabase(connection_id: string, name: string): Promise<void> {
+    return safeTauriInvoke<void>('drop_database', { connection_id: connectionId, name });
   }
 
   /**
    * 获取测量列表
    */
-  static async getMeasurements(connectionId: string, database: string): Promise<MeasurementInfo[]> {
-    return safeTauriInvoke<MeasurementInfo[]>('get_measurements', { connectionId: connectionId, database });
+  static async getMeasurements(connection_id: string, database: string): Promise<MeasurementInfo[]> {
+    return safeTauriInvoke<MeasurementInfo[]>('get_measurements', { connection_id: connectionId, database });
   }
 
   /**
    * 获取字段信息
    */
   static async getFieldKeys(
-    connectionId: string, 
+    connection_id: string, 
     database: string, 
     measurement: string
   ): Promise<FieldInfo[]> {
-    return safeTauriInvoke<FieldInfo[]>('get_field_keys', { 
-      connectionId: connectionId, 
+    return safeTauriInvoke<FieldInfo[]>('get_field_keys', { connection_id: connectionId, 
       database, 
       measurement 
     });
@@ -219,12 +217,11 @@ export class DatabaseAPI {
    * 获取标签信息
    */
   static async getTagKeys(
-    connectionId: string, 
+    connection_id: string, 
     database: string, 
     measurement: string
   ): Promise<TagInfo[]> {
-    return safeTauriInvoke<TagInfo[]>('get_tag_keys', { 
-      connectionId: connectionId, 
+    return safeTauriInvoke<TagInfo[]>('get_tag_keys', { connection_id: connectionId, 
       database, 
       measurement 
     });
@@ -233,21 +230,20 @@ export class DatabaseAPI {
   /**
    * 获取数据库统计信息
    */
-  static async getDatabaseStats(connectionId: string, database: string): Promise<any> {
-    return safeTauriInvoke<any>('get_database_stats', { connectionId: connectionId, database });
+  static async getDatabaseStats(connection_id: string, database: string): Promise<any> {
+    return safeTauriInvoke<any>('get_database_stats', { connection_id: connectionId, database });
   }
 
   /**
    * 获取系列信息
    */
   static async getSeries(
-    connectionId: string, 
+    connection_id: string, 
     database: string, 
     measurement?: string,
     limit?: number
   ): Promise<string[]> {
-    return safeTauriInvoke<string[]>('get_series', { 
-      connectionId: connectionId, 
+    return safeTauriInvoke<string[]>('get_series', { connection_id: connectionId, 
       database, 
       measurement,
       limit 
@@ -263,15 +259,14 @@ export class DataWriteAPI {
    * 写入单个数据点
    */
   static async writePoint(
-    connectionId: string,
+    connection_id: string,
     database: string,
     measurement: string,
     fields: Record<string, any>,
     tags?: Record<string, string>,
     timestamp?: number
   ): Promise<void> {
-    return safeTauriInvoke<void>('write_point', {
-      connectionId: connectionId,
+    return safeTauriInvoke<void>('write_point', { connection_id: connectionId,
       database,
       measurement,
       fields,
@@ -284,7 +279,7 @@ export class DataWriteAPI {
    * 批量写入数据点
    */
   static async writePoints(
-    connectionId: string,
+    connection_id: string,
     database: string,
     points: Array<{
       measurement: string;
@@ -293,8 +288,7 @@ export class DataWriteAPI {
       timestamp?: number;
     }>
   ): Promise<void> {
-    return safeTauriInvoke<void>('write_points', {
-      connectionId: connectionId,
+    return safeTauriInvoke<void>('write_points', { connection_id: connectionId,
       database,
       points
     });
@@ -304,7 +298,7 @@ export class DataWriteAPI {
    * 从文件导入数据
    */
   static async importFromFile(
-    connectionId: string,
+    connection_id: string,
     database: string,
     filePath: string,
     fileType: 'csv' | 'json' | 'line-protocol',
@@ -315,8 +309,7 @@ export class DataWriteAPI {
       skipHeader?: boolean;
     }
   ): Promise<{ imported: number; errors: string[] }> {
-    return safeTauriInvoke<{ imported: number; errors: string[] }>('import_from_file', {
-      connectionId: connectionId,
+    return safeTauriInvoke<{ imported: number; errors: string[] }>('import_from_file', { connection_id: connectionId,
       database,
       filePath,
       fileType,
@@ -348,7 +341,7 @@ export class DataExportAPI {
    * 导出数据库
    */
   static async exportDatabase(
-    connectionId: string,
+    connection_id: string,
     database: string,
     filePath: string,
     options?: {
@@ -357,8 +350,7 @@ export class DataExportAPI {
       timeRange?: { start: string; end: string };
     }
   ): Promise<void> {
-    return safeTauriInvoke<void>('export_database', {
-      connectionId: connectionId,
+    return safeTauriInvoke<void>('export_database', { connection_id: connectionId,
       database,
       filePath,
       options

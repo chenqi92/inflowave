@@ -80,3 +80,11 @@ strip = true
 inherits = "release"
 debug = true
 strip = false
+
+# Lint 配置 - 控制警告级别
+[lints.rust]
+# 将一些常见的警告降级为允许
+dead_code = "allow"
+unused_variables = "warn"
+unused_imports = "warn"
+non_snake_case = "warn"

@@ -66,8 +66,8 @@ pub async fn generate_smart_sql(
 /// 获取数据库上下文菜单
 #[tauri::command]
 pub async fn get_database_context_menu(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    _connection_service: State<'_, ConnectionService>,
+    _connection_id: String,
     database: String,
 ) -> Result<Vec<serde_json::Value>, String> {
     debug!("获取数据库上下文菜单: {}", database);
@@ -136,8 +136,8 @@ pub async fn get_database_context_menu(
 /// 获取测量上下文菜单
 #[tauri::command]
 pub async fn get_measurement_context_menu(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    _connection_service: State<'_, ConnectionService>,
+    _connection_id: String,
     database: String,
     measurement: String,
 ) -> Result<Vec<serde_json::Value>, String> {
@@ -264,8 +264,8 @@ pub async fn get_measurement_context_menu(
 /// 获取字段上下文菜单
 #[tauri::command]
 pub async fn get_field_context_menu(
-    connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    _connection_service: State<'_, ConnectionService>,
+    _connection_id: String,
     database: String,
     measurement: String,
     field: String,

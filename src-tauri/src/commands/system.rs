@@ -21,10 +21,6 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
     Ok(system_info)
 }
 
-
-
-
-
 /// 获取应用运行时间
 fn get_uptime() -> String {
     // 简单实现，返回固定值
@@ -71,6 +67,7 @@ fn get_network_stats() -> NetworkStats {
 }
 
 /// 获取序列数量
+#[allow(dead_code)]
 async fn get_series_count(
     client: &crate::database::InfluxClient,
     database: &str,
@@ -104,8 +101,6 @@ pub async fn health_check(
     
     Ok(health_status)
 }
-
-
 
 /// 清理资源
 #[tauri::command]

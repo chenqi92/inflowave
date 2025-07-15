@@ -289,6 +289,7 @@ pub async fn delete_saved_query(
 }
 
 /// 获取查询统计信息
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_query_statistics(
     history_storage: State<'_, QueryHistoryStorage>,

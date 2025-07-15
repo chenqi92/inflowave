@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button, Dropdown } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
@@ -32,8 +32,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
       switch (action) {
         case 'view_data':
           // 查看表数据 - 生成并执行 SELECT 查询
-          await safeTauriInvoke('execute_table_query', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('execute_table_query', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName,
             queryType: 'SELECT',
@@ -44,8 +43,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
         case 'view_structure':
           // 查看表结构
           try {
-            const structure = await safeTauriInvoke('get_table_structure', {
-              connectionId: activeConnectionId,
+            const structure = await safeTauriInvoke('get_table_structure', { connection_id: activeConnectionId,
               database: databaseName,
               table: tableName});
 
@@ -75,8 +73,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
         case 'insert_data':
           // 插入数据 - 生成 INSERT 模板
           try {
-            const template = await safeTauriInvoke('generate_insert_template', {
-              connectionId: activeConnectionId,
+            const template = await safeTauriInvoke('generate_insert_template', { connection_id: activeConnectionId,
               database: databaseName,
               table: tableName});
 
@@ -105,8 +102,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'update_data':
           // 更新数据 - 生成 UPDATE 模板
-          await safeTauriInvoke('generate_update_template', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('generate_update_template', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "已生成表 ${tableName} 的更新模板" });
@@ -114,8 +110,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'delete_data':
           // 删除数据 - 生成 DELETE 模板
-          await safeTauriInvoke('generate_delete_template', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('generate_delete_template', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "已生成表 ${tableName} 的删除模板" });
@@ -155,8 +150,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                         try {
                           // 使用默认文件路径，避免动态导入问题
                           const filePath = `${tableName}_${Date.now()}.csv`;
-                          const result = await safeTauriInvoke('export_table_data', {
-                            connectionId: activeConnectionId,
+                          const result = await safeTauriInvoke('export_table_data', { connection_id: activeConnectionId,
                             database: databaseName,
                             table: tableName,
                             format: 'csv',
@@ -176,8 +170,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                         try {
                           // 使用默认文件路径，避免动态导入问题
                           const filePath = `${tableName}_${Date.now()}.json`;
-                          const result = await safeTauriInvoke('export_table_data', {
-                            connectionId: activeConnectionId,
+                          const result = await safeTauriInvoke('export_table_data', { connection_id: activeConnectionId,
                             database: databaseName,
                             table: tableName,
                             format: 'json',
@@ -207,8 +200,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'import_data':
           // 导入数据到表
-          await safeTauriInvoke('import_table_data', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('import_table_data', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "正在导入数据到表 ${tableName}" });
@@ -216,8 +208,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'refresh_table':
           // 刷新表信息
-          await safeTauriInvoke('refresh_table_info', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('refresh_table_info', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "已刷新表 ${tableName} 的信息" });
@@ -225,8 +216,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'table_info':
           // 显示表详细信息
-          await safeTauriInvoke('get_table_info', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('get_table_info', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "正在获取表 ${tableName} 的详细信息" });
@@ -234,8 +224,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
 
         case 'visualize_data':
           // 数据可视化
-          await safeTauriInvoke('create_table_visualization', {
-            connectionId: activeConnectionId,
+          await safeTauriInvoke('create_table_visualization', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
           toast({ title: "成功", description: "正在为表 ${tableName} 创建数据可视化" });
@@ -245,8 +234,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           // 删除表 - 需要确认
           const confirmed = window.confirm(`确定要删除表 "${tableName}" 吗？此操作不可撤销！`);
           if (confirmed) {
-            await safeTauriInvoke('drop_table', {
-              connectionId: activeConnectionId,
+            await safeTauriInvoke('drop_table', { connection_id: activeConnectionId,
               database: databaseName,
               table: tableName});
             toast({ title: "成功", description: "表 ${tableName} 已删除" });

@@ -1,19 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Input, Select, Tag, Empty, Row, Col, DatePicker, Space, List } from '@/components/ui';
-// TODO: Replace these Ant Design components: Tooltip, Popconfirm
-
-const { RangePicker } = DatePicker;
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import {
+  Button,
+  Typography,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Tag,
+  Empty,
+  Row,
+  Col,
+  DatePicker,
+  Space,
+  List,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Popconfirm,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui';
 import { useToast } from '@/hooks/use-toast';
 
 import { X } from 'lucide-react';
 import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
-
-const { Text, Paragraph } = Typography;
-const { Search } = Input;
-const { Option } = Select;
 
 interface QueryHistoryProps {
   onQuerySelect?: (query: string, database?: string) => void;

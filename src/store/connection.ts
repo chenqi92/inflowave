@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -14,7 +14,7 @@ interface ConnectionState {
   connectedConnectionIds: string[];
   
   // 当前活跃的连接（用于兼容现有逻辑）
-  activeConnectionId: string | null;
+  activeconnection_id: string | null;
 
   // 监控状态
   monitoringActive: boolean;
@@ -58,7 +58,7 @@ export const useConnectionStore = create<ConnectionState>()(
       connections: [],
       connectionStatuses: {},
       connectedConnectionIds: [],
-      activeConnectionId: null,
+      activeconnection_id: null,
       monitoringActive: false,
       monitoringInterval: 30,
       poolStats: {},
@@ -98,7 +98,7 @@ export const useConnectionStore = create<ConnectionState>()(
             connections: state.connections.filter((conn) => conn.id !== id),
             connectionStatuses: newStatuses,
             connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
-            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId};
+            activeconnection_id: state.activeconnection_id === id ? null : state.activeconnection_id};
         });
       },
       
@@ -132,7 +132,7 @@ export const useConnectionStore = create<ConnectionState>()(
       
       // 设置活跃连接
       setActiveConnection: (id) => {
-        set({ activeConnectionId: id });
+        set({ activeconnection_id: id });
       },
       
       // 添加已连接的连接
@@ -175,7 +175,7 @@ export const useConnectionStore = create<ConnectionState>()(
           connections: [],
           connectionStatuses: {},
           connectedConnectionIds: [],
-          activeConnectionId: null,
+          activeconnection_id: null,
           poolStats: {}});
       },
 
@@ -194,7 +194,7 @@ export const useConnectionStore = create<ConnectionState>()(
                 error: undefined}}}));
 
           console.log(`🚀 调用后端连接API: ${id}`);
-          await safeTauriInvoke('connect_to_database', { connectionId: id });
+          await safeTauriInvoke('connect_to_database', { connection_id: id });
           console.log(`✅ 后端连接成功: ${id}`);
 
           // 更新状态为已连接
@@ -211,7 +211,7 @@ export const useConnectionStore = create<ConnectionState>()(
             connectedConnectionIds: state.connectedConnectionIds.includes(id) 
               ? state.connectedConnectionIds 
               : [...state.connectedConnectionIds, id],
-            activeConnectionId: id}));
+            activeconnection_id: id}));
           console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
           console.error(`❌ 连接失败 (${id}):`, error);
@@ -235,7 +235,7 @@ export const useConnectionStore = create<ConnectionState>()(
       disconnectFromDatabase: async (id: string) => {
         console.log(`🔌 开始断开连接: ${id}`);
         try {
-          await safeTauriInvoke('disconnect_from_database', { connectionId: id });
+          await safeTauriInvoke('disconnect_from_database', { connection_id: id });
           console.log(`✅ 后端断开成功: ${id}`);
 
           // 更新状态为已断开
@@ -249,7 +249,7 @@ export const useConnectionStore = create<ConnectionState>()(
                 lastConnected: state.connectionStatuses[id]?.lastConnected,
                 latency: undefined}},
             connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
-            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId}));
+            activeconnection_id: state.activeconnection_id === id ? null : state.activeconnection_id}));
         } catch (error) {
           console.error(`❌ 断开连接失败 (${id}):`, error);
           set((state) => ({
@@ -303,11 +303,11 @@ export const useConnectionStore = create<ConnectionState>()(
                 if (currentStatus?.status === 'connected') {
                   // 只有在后端状态是 error 或者有错误信息时才更新
                   if (backendStatus.status === 'error' || backendStatus.error) {
-                    console.log(`🔄 连接 ${connectionId} 状态从已连接更新为错误:`, backendStatus.error);
+                    console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为错误:`, backendStatus.error);
                     newStatuses[connectionId] = backendStatus;
                   } else if (backendStatus.status === 'disconnected' && backendStatus.error) {
                     // 只有在有明确错误信息的情况下才认为连接真的断开了
-                    console.log(`🔄 连接 ${connectionId} 状态从已连接更新为断开:`, backendStatus.error);
+                    console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为断开:`, backendStatus.error);
                     newStatuses[connectionId] = backendStatus;
                   } else {
                     // 保持当前的已连接状态，但更新延迟等其他信息
@@ -336,7 +336,7 @@ export const useConnectionStore = create<ConnectionState>()(
       refreshConnectionStatus: async (id: string) => {
         try {
           console.log(`🔄 刷新单个连接状态: ${id}`);
-          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connectionId: id });
+          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connection_id: id });
           if (status) {
             set((state) => {
               const currentStatus = state.connectionStatuses[id];
@@ -390,7 +390,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 获取连接池统计信息
       getPoolStats: async (id: string) => {
         try {
-          const stats = await safeTauriInvoke('get_connection_pool_stats', { connectionId: id });
+          const stats = await safeTauriInvoke('get_connection_pool_stats', { connection_id: id });
           set((state) => ({
             poolStats: {
               ...state.poolStats,
@@ -432,7 +432,7 @@ export const useConnectionStore = create<ConnectionState>()(
       partialize: (state) => ({
         connections: state.connections,
         connectedConnectionIds: state.connectedConnectionIds,
-        activeConnectionId: state.activeConnectionId})},
+        activeconnection_id: state.activeconnection_id})},
   )
 );
 

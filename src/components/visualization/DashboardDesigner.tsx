@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+﻿import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert } from '@/components/ui';
 import { toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
@@ -44,7 +44,7 @@ interface DashboardConfig {
 
 interface DashboardDesignerProps {
   dashboardId?: string;
-  connectionId: string;
+  connection_id: string;
   database: string;
   onSave?: (dashboard: DashboardConfig) => void;
   onCancel?: () => void;

@@ -1,14 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Space, Tag, Typography, Input, Select, DatePicker, Alert, Collapse, Panel, Badge, Tooltip, toast } from '@/components/ui';
+import {
+  Button,
+  Space,
+  Tag,
+  Typography,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  DatePicker,
+  Alert,
+  AlertDescription,
+  Collapse,
+  Panel,
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  toast
+} from '@/components/ui';
 import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye, Table } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
 import { Modal } from '@/utils/modalAdapter';
-
-const { Text, Paragraph } = Typography;
-const { Search } = Input;
-const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 const ErrorLogViewer: React.FC = () => {
   const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
@@ -386,36 +403,43 @@ const ErrorLogViewer: React.FC = () => {
             style={{ width: 250 }}
             allowClear
           />
-          <Select
-            value={levelFilter}
-            onValueChange={setLevelFilter}
-            style={{ width: 120 }}
-            placeholder="级别"
-          >
-            <Option value="all">全部级别</Option>
-            <Option value="error">错误</Option>
-            <Option value="warn">警告</Option>
-            <Option value="info">信息</Option>
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="级别" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部级别</SelectItem>
+              <SelectItem value="error">错误</SelectItem>
+              <SelectItem value="warn">警告</SelectItem>
+              <SelectItem value="info">信息</SelectItem>
+            </SelectContent>
           </Select>
-          <Select
-            value={typeFilter}
-            onValueChange={setTypeFilter}
-            style={{ width: 140 }}
-            placeholder="类型"
-          >
-            <Option value="all">全部类型</Option>
-            <Option value="javascript">JavaScript</Option>
-            <Option value="react">React</Option>
-            <Option value="promise">Promise</Option>
-            <Option value="network">网络</Option>
-            <Option value="console">控制台</Option>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部类型</SelectItem>
+              <SelectItem value="javascript">JavaScript</SelectItem>
+              <SelectItem value="react">React</SelectItem>
+              <SelectItem value="promise">Promise</SelectItem>
+              <SelectItem value="network">网络</SelectItem>
+              <SelectItem value="console">控制台</SelectItem>
+            </SelectContent>
           </Select>
-          <RangePicker
-            value={dateRange}
-            onValueChange={setDateRange}
+          <DatePicker
+            value={dateRange?.[0]}
+            onValueChange={(date) => setDateRange(date ? [date, dateRange?.[1]] : null)}
             showTime
-            style={{ width: 350 }}
-            placeholder={['开始时间', '结束时间']}
+            placeholder="开始时间"
+            className="w-44"
+          />
+          <DatePicker
+            value={dateRange?.[1]}
+            onValueChange={(date) => setDateRange(dateRange?.[0] ? [dateRange[0], date] : null)}
+            showTime
+            placeholder="结束时间"
+            className="w-44"
           />
         </div>
       </div>
@@ -455,16 +479,16 @@ const ErrorLogViewer: React.FC = () => {
               <Panel header="基本信息" key="basic">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <Text strong>时间:</Text> {new Date(selectedLog.timestamp).toLocaleString()}
+                    <Typography.Text className="font-semibold">时间:</Typography.Text> {new Date(selectedLog.timestamp).toLocaleString()}
                   </div>
                   <div>
-                    <Text strong>级别:</Text> <Tag color={getLevelDisplay(selectedLog.level).color}>{selectedLog.level}</Tag>
+                    <Typography.Text className="font-semibold">级别:</Typography.Text> <Tag variant={getLevelDisplay(selectedLog.level).color}>{selectedLog.level}</Tag>
                   </div>
                   <div>
-                    <Text strong>类型:</Text> <Tag color={getTypeColor(selectedLog.type)}>{selectedLog.type}</Tag>
+                    <Typography.Text className="font-semibold">类型:</Typography.Text> <Tag variant={getTypeColor(selectedLog.type)}>{selectedLog.type}</Tag>
                   </div>
                   <div>
-                    <Text strong>ID:</Text> <Text code>{selectedLog.id}</Text>
+                    <Typography.Text className="font-semibold">ID:</Typography.Text> <Typography.Text className="font-mono">{selectedLog.id}</Typography.Text>
                   </div>
                   {selectedLog.url && (
                     <div className="col-span-2">

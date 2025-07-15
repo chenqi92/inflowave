@@ -11,7 +11,6 @@ mod config;
 use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}};
 use log::info;
 
-
 // Tauri commands
 use commands::connection::*;
 use commands::database::*;
@@ -412,7 +411,6 @@ async fn main() {
             get_connection_pool_stats,
             sync_connections,
             debug_connection_manager,
-            debug_connection_manager,
 
             // Database operations
             get_databases,
@@ -451,7 +449,6 @@ async fn main() {
 
             // System operations
             get_system_info,
-            get_database_stats,
             health_check,
             cleanup_resources,
             get_app_config,

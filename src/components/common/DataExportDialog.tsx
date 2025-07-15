@@ -20,8 +20,7 @@ interface DataExportDialogProps {
 }
 
 // Form validation schema
-const formSchema = z.object({
-  connectionId: z.string().min(1, '请选择连接'),
+const formSchema = z.object({ connection_id: z.string().min(1, '请选择连接'),
   database: z.string().min(1, '请输入数据库名'),
   query: z.string().min(1, '请输入查询语句'),
   format: z.string().min(1, '请选择导出格式'),
@@ -53,8 +52,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   onSuccess}) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      connectionId: '',
+    defaultValues: { connection_id: '',
       database: '',
       query: '',
       format: 'csv',
@@ -84,8 +82,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   // 初始化表单
   useEffect(() => {
     if (open) {
-      form.reset({
-        connectionId: currentConnection || '',
+      form.reset({ connection_id: currentConnection || '',
         database: currentDatabase || '',
         query: query || '',
         format: 'csv',
@@ -126,8 +123,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const values = form.getValues();
       setEstimating(true);
 
-      const estimate = await safeTauriInvoke('estimate_export_size', {
-        connectionId: values.connectionId,
+      const estimate = await safeTauriInvoke('estimate_export_size', { connection_id: values.connectionId,
         database: values.database,
         query: values.query,
         format: values.format});
@@ -180,8 +176,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setLoading(true);
       setExportResult(null);
 
-      const exportConfig: DataExportConfig = {
-        connectionId: values.connectionId,
+      const exportConfig: DataExportConfig = { connection_id: values.connectionId,
         database: values.database,
         query: values.query,
         format: values.format,

@@ -138,8 +138,7 @@ const Database: React.FC = () => {
 
     setLoading(true);
     try {
-      const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
+      const dbList = await safeTauriInvoke<string[]>('get_databases', { connection_id: activeConnectionId});
       setDatabases(Array.isArray(dbList) ? dbList : []);
 
       // 如果有数据库且没有选中的，选择第一个
@@ -163,14 +162,11 @@ const Database: React.FC = () => {
     try {
       // 并行加载测量、保留策略和统计信息
       const [measurementList, retentionPolicyList, stats] = await Promise.all([
-        safeTauriInvoke<string[]>('get_measurements', {
-          connectionId: activeConnectionId,
+        safeTauriInvoke<string[]>('get_measurements', { connection_id: activeConnectionId,
           database}).catch(() => []),
-        safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', {
-          connectionId: activeConnectionId,
+        safeTauriInvoke<RetentionPolicy[]>('get_retention_policies', { connection_id: activeConnectionId,
           database}).catch(() => []),
-        safeTauriInvoke<DatabaseStats>('get_database_stats', {
-          connectionId: activeConnectionId,
+        safeTauriInvoke<DatabaseStats>('get_database_stats', { connection_id: activeConnectionId,
           database}).catch(() => null),
       ]);
 
@@ -196,8 +192,7 @@ const Database: React.FC = () => {
     }
 
     try {
-      await safeTauriInvoke('create_database', {
-        connectionId: activeConnectionId,
+      await safeTauriInvoke('create_database', { connection_id: activeConnectionId,
         config: {
           name: values.name,
           retentionPolicy: values.retentionPolicy}});
@@ -216,8 +211,7 @@ const Database: React.FC = () => {
     if (!deleteMeasurementParams || !activeConnectionId) return;
 
     try {
-      await safeTauriInvoke('drop_measurement', {
-        connectionId: activeConnectionId,
+      await safeTauriInvoke('drop_measurement', { connection_id: activeConnectionId,
         database: deleteMeasurementParams.database,
         measurement: deleteMeasurementParams.measurement});
       toast({ title: "成功", description: `测量 "${deleteMeasurementParams.measurement}" 删除成功` });
@@ -236,8 +230,7 @@ const Database: React.FC = () => {
     }
 
     try {
-      await safeTauriInvoke('drop_database', {
-        connectionId: activeConnectionId,
+      await safeTauriInvoke('drop_database', { connection_id: activeConnectionId,
         database});
 
       toast({ title: "成功", description: "数据库删除成功" });
@@ -568,8 +561,7 @@ const Database: React.FC = () => {
                             description="删除后数据将无法恢复！"
                             onConfirm={async () => {
                               try {
-                                await safeTauriInvoke('drop_retention_policy', {
-                                  connectionId: activeConnectionId,
+                                await safeTauriInvoke('drop_retention_policy', { connection_id: activeConnectionId,
                                   database: selectedDatabase,
                                   policyName: record.name});
                                 toast.success(`保留策略 "${record.name}" 删除成功`);
@@ -730,8 +722,7 @@ const Database: React.FC = () => {
                     query += ` ORDER BY ${params.orderBy}`;
                   }
 
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   // 在新窗口或对话框中显示结果
@@ -757,8 +748,7 @@ const Database: React.FC = () => {
               case 'showFields':
                 // 查看字段信息
                 try {
-                  const fields = await safeTauriInvoke('get_field_keys', {
-                    connectionId: activeConnectionId,
+                  const fields = await safeTauriInvoke('get_field_keys', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -788,8 +778,7 @@ const Database: React.FC = () => {
               case 'showTagKeys':
                 // 查看标签键
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
-                    connectionId: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -818,8 +807,7 @@ const Database: React.FC = () => {
               case 'showTagValues':
                 // 查看标签值
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
-                    connectionId: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -829,8 +817,7 @@ const Database: React.FC = () => {
                   }
 
                   // 获取第一个标签键的值作为示例
-                  const tagValues = await safeTauriInvoke('get_tag_values', {
-                    connectionId: activeConnectionId,
+                  const tagValues = await safeTauriInvoke('get_tag_values', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement,
                     tagKey: tagKeys[0]});
@@ -861,8 +848,7 @@ const Database: React.FC = () => {
                 // 查看序列信息
                 try {
                   const query = `SHOW SERIES FROM "${params.measurement}"`;
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   Modal.info({
@@ -887,8 +873,7 @@ const Database: React.FC = () => {
                 // 获取记录总数
                 try {
                   const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   Modal.info({
@@ -914,8 +899,7 @@ const Database: React.FC = () => {
                 // 获取时间范围
                 try {
                   const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   Modal.info({
@@ -942,8 +926,7 @@ const Database: React.FC = () => {
               case 'getFieldStats':
                 // 获取字段统计
                 try {
-                  const fields = await safeTauriInvoke('get_field_keys', {
-                    connectionId: activeConnectionId,
+                  const fields = await safeTauriInvoke('get_field_keys', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -956,8 +939,7 @@ const Database: React.FC = () => {
                   const firstField = typeof fields[0] === 'string' ? fields[0] : fields[0].fieldKey;
                   const query = `SELECT MIN("${firstField}"), MAX("${firstField}"), MEAN("${firstField}") FROM "${params.measurement}"`;
 
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   Modal.info({
@@ -986,8 +968,7 @@ const Database: React.FC = () => {
               case 'getTagDistribution':
                 // 获取标签分布
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', {
-                    connectionId: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -1000,8 +981,7 @@ const Database: React.FC = () => {
                   const firstTagKey = tagKeys[0];
                   const query = `SELECT COUNT(*) FROM "${params.measurement}" GROUP BY "${firstTagKey}"`;
 
-                  const result = await safeTauriInvoke('execute_query', {
-                    connectionId: activeConnectionId,
+                  const result = await safeTauriInvoke('execute_query', { connection_id: activeConnectionId,
                     query});
 
                   Modal.info({

@@ -177,7 +177,7 @@ pub async fn record_query_performance(
     connection_id: String,
     execution_time: u64,
     rows_returned: u64,
-    success: bool,
+    _success: bool,
 ) -> Result<(), String> {
     debug!("记录查询性能: {}ms", execution_time);
     
@@ -237,7 +237,7 @@ pub async fn get_slow_query_analysis(
 #[tauri::command]
 pub async fn get_storage_analysis_report(
     connection_service: State<'_, ConnectionService>,
-    connection_id: String,
+    _connection_id: String,
 ) -> Result<StorageAnalysisInfo, String> {
     debug!("获取存储分析报告");
     
