@@ -7,6 +7,7 @@ import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ErrorTestButton from '@/components/test/ErrorTestButton';
@@ -26,7 +27,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const { config, setConfig, setLanguage, resetConfig } = useAppStore();
   const { clearConnections } = useConnectionStore();
   const { resetNoticeSettings } = useNoticeStore();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
 
   // 初始化表单值
   useEffect(() => {
@@ -225,10 +226,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                     </SelectContent>
                   </Select>
                 </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="language">语言</Label>
-              <Select 
+              <Select
                 value={form.watch('language') || config.language}
                 onValueChange={(value) => form.setValue('language', value)}
               >
@@ -241,6 +242,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* 软件风格设置 */}
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-medium">软件风格</Label>
+              <p className="text-sm text-muted-foreground">选择您喜欢的界面颜色主题</p>
+            </div>
+            <ThemeColorSelectorWithPreview
+              value={colorScheme}
+              onChange={setColorScheme}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

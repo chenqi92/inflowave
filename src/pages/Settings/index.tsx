@@ -1,6 +1,31 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Select, Button, Title, Text, Paragraph, Row, Col, Alert, AlertDescription, Tabs, TabsContent, TabsList, TabsTrigger, InputNumber, Switch, Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
+import {
+  Form,
+  Select,
+  Button,
+  Title,
+  Text,
+  Paragraph,
+  Row,
+  Col,
+  Alert,
+  AlertDescription,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  InputNumber,
+  Switch,
+  Space,
+  toast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Separator,
+  FormItem
+} from '@/components/ui';
 import { Save, RefreshCw, Trash2, Info, FileDown, FileUp, Settings, Database, User, Bug, ChevronLeft, Home, Bell } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -195,13 +220,15 @@ const Settings: React.FC = () => {
       <div className="settings-header bg-background border-b border px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="icon">\n              <ChevronLeft className="w-4 h-4" /> 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => navigate(-1)}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-muted cursor-pointer"
               title="返回"
-            />
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
             <div>
               <Title level={2} className="mb-0">应用设置</Title>
               <Text type="secondary" className="text-sm">
