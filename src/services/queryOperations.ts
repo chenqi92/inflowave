@@ -11,7 +11,8 @@ export class QueryOperationsService {
   /**
    * 预览测量数据
    */
-  static async previewData(params: { connection_id: string;
+  static async previewData(params: {
+    connectionId: string;
     database: string;
     measurement: string;
     limit?: number;
@@ -34,7 +35,7 @@ export class QueryOperationsService {
 
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -57,7 +58,7 @@ export class QueryOperationsService {
   /**
    * 显示测量的字段信息
    */
-  static async showFields(params: { connection_id: string;
+  static async showFields(params: { connectionId: string;
     database: string;
     measurement: string;
   }): Promise<QueryResult> {
@@ -65,7 +66,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connectionId,
           database: params.database,
           query
         }
@@ -92,7 +93,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -123,7 +124,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -150,7 +151,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -179,7 +180,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -207,7 +208,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -235,7 +236,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -265,7 +266,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -324,7 +325,7 @@ export class QueryOperationsService {
     try {
       // 首先执行查询获取数据
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -359,7 +360,7 @@ export class QueryOperationsService {
     
     try {
       await safeTauriInvoke('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -382,7 +383,7 @@ export class QueryOperationsService {
     
     try {
       await safeTauriInvoke('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -402,7 +403,7 @@ export class QueryOperationsService {
     database: string;
   }): Promise<any> {
     try {
-      const info = await safeTauriInvoke('get_database_stats', { connection_id: params.connectionId,
+      const info = await safeTauriInvoke('get_database_stats', { connectionId: params.connection_id,
         database: params.database
       });
 
@@ -423,7 +424,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }
@@ -449,7 +450,7 @@ export class QueryOperationsService {
     
     try {
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: { connection_id: params.connectionId,
+        request: { connectionId: params.connection_id,
           database: params.database,
           query
         }

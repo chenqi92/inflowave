@@ -141,9 +141,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     try {
       console.log('🔍 直接调用后端获取建议...');
       const suggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
-        connection_id: activeConnectionId,
+        connectionId: activeConnectionId,
         database: selectedDatabase,
-        partial_query: '', // 空字符串获取所有表
+        partialQuery: '', // 空字符串获取所有表
       });
       
       console.log('✅ 后端返回的建议:', suggestions);
@@ -201,7 +201,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       }
       
       const request: QueryRequest = {
-        connection_id: activeConnectionId,
+        connectionId: activeConnectionId,
         database: database,
         query: query.trim(),
         timeout: undefined
@@ -729,9 +729,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
                 });
                 
                 const measurementSuggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
-                  connection_id: activeConnectionId,
+                  connectionId: activeConnectionId,
                   database: selectedDatabase,
-                  partial_query: word.word || '',
+                  partialQuery: word.word || '',
                 });
                 
                 console.log('✅ 智能提示结果:', measurementSuggestions);

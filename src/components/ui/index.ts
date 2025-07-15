@@ -11,7 +11,10 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './Dialog';
 
-export { Table, BaseTable, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './Table';
+export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, TableFooter } from './Table';
+
+export { DataTable } from './DataTable';
+export type { DataTableProps, Column } from './DataTable';
 
 export { Skeleton } from './Skeleton';
 

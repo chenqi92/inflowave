@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Tabs, Button, Typography, Empty, Spin, Tag, Select, Modal } from '@/components/ui';
+import { DataTable, Tabs, Button, Typography, Empty, Spin, Tag, Select, Modal } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -166,25 +166,17 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
       children: (
         <div style={{ height: '100%', overflow: 'auto' }}>
           {result ? (
-            <Table
+            <DataTable
               columns={columns}
               dataSource={dataSource}
               scroll={{ x: 'max-content', y: 'calc(100vh - 300px)' }}
               size="small"
-              pagination={{
-                pageSize: 100,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => 
-                  `显示 ${range[0]}-${range[1]} 条，共 ${total} 条记录`,
-                pageSizeOptions: ['50', '100', '200', '500']}}
               bordered
               style={{ backgroundColor: '#fff' }}
             />
           ) : (
             <Empty
               description="暂无查询结果"
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}
         </div>

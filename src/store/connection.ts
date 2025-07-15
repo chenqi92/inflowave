@@ -194,7 +194,7 @@ export const useConnectionStore = create<ConnectionState>()(
                 error: undefined}}}));
 
           console.log(`🚀 调用后端连接API: ${id}`);
-          await safeTauriInvoke('connect_to_database', { connection_id: id });
+          await safeTauriInvoke('connect_to_database', { connectionId: id });
           console.log(`✅ 后端连接成功: ${id}`);
 
           // 更新状态为已连接
@@ -235,7 +235,7 @@ export const useConnectionStore = create<ConnectionState>()(
       disconnectFromDatabase: async (id: string) => {
         console.log(`🔌 开始断开连接: ${id}`);
         try {
-          await safeTauriInvoke('disconnect_from_database', { connection_id: id });
+          await safeTauriInvoke('disconnect_from_database', { connectionId: id });
           console.log(`✅ 后端断开成功: ${id}`);
 
           // 更新状态为已断开
@@ -336,7 +336,7 @@ export const useConnectionStore = create<ConnectionState>()(
       refreshConnectionStatus: async (id: string) => {
         try {
           console.log(`🔄 刷新单个连接状态: ${id}`);
-          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connection_id: id });
+          const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connectionId: id });
           if (status) {
             set((state) => {
               const currentStatus = state.connectionStatuses[id];
@@ -390,7 +390,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 获取连接池统计信息
       getPoolStats: async (id: string) => {
         try {
-          const stats = await safeTauriInvoke('get_connection_pool_stats', { connection_id: id });
+          const stats = await safeTauriInvoke('get_connection_pool_stats', { connectionId: id });
           set((state) => ({
             poolStats: {
               ...state.poolStats,

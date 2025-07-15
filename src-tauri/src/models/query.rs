@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 /// 查询请求
 #[derive(Debug, Deserialize)]
 pub struct QueryRequest {
+    #[serde(alias = "connectionId")]
     pub connection_id: String,
     pub database: Option<String>,
     pub query: String,
@@ -162,10 +163,13 @@ impl QueryResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHistory {
     pub id: String,
+    #[serde(alias = "connectionId")]
     pub connection_id: String,
     pub database: Option<String>,
     pub query: String,
+    #[serde(alias = "executionTime")]
     pub execution_time: u64,
+    #[serde(alias = "rowCount")]
     pub row_count: usize,
     pub success: bool,
     pub error: Option<String>,

@@ -6,7 +6,7 @@ use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 
 /// 获取数据库列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_databases(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -28,7 +28,7 @@ pub async fn get_databases(
 }
 
 /// 创建数据库
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn create_database(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -51,7 +51,7 @@ pub async fn create_database(
 }
 
 /// 删除数据库
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn drop_database(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -74,7 +74,7 @@ pub async fn drop_database(
 }
 
 /// 获取保留策略
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_retention_policies(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -288,11 +288,11 @@ pub async fn get_table_structure(
 #[tauri::command]
 pub async fn generate_insert_template(
     _connection_service: State<'_, ConnectionService>,
-    _connectionId: String,
+    _connection_id: String,
     database: String,
     table: String,
 ) -> Result<String, String> {
-    debug!("处理生成插入模板命令: {} - {} - {}", _connectionId, database, table);
+    debug!("处理生成插入模板命令: {} - {} - {}", _connection_id, database, table);
 
     // 生成 Line Protocol 格式的插入模板
     let template = format!(

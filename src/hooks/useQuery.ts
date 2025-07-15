@@ -154,7 +154,7 @@ export const useQuery = () => {
     }
 
     const request: QueryRequest = {
-      connectionId,
+      connection_id: connectionId,
       database: database || currentTab.database,
       query: currentTab.query};
 

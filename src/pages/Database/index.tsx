@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
-  Table,
+  DataTable,
   Button,
   Tag,
   Form,
@@ -138,7 +138,7 @@ const Database: React.FC = () => {
 
     setLoading(true);
     try {
-      const dbList = await safeTauriInvoke<string[]>('get_databases', { connection_id: activeConnectionId});
+      const dbList = await safeTauriInvoke<string[]>('get_databases', { connectionId: activeConnectionId});
       setDatabases(Array.isArray(dbList) ? dbList : []);
 
       // 如果有数据库且没有选中的，选择第一个
@@ -408,7 +408,7 @@ const Database: React.FC = () => {
             </div>
             <div>
               <Spin spinning={loading}>
-              <Table
+              <DataTable
                 dataSource={measurements?.map(m => ({ name: m })) || []}
                 columns={[
                   {
@@ -778,7 +778,7 @@ const Database: React.FC = () => {
               case 'showTagKeys':
                 // 查看标签键
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -807,7 +807,7 @@ const Database: React.FC = () => {
               case 'showTagValues':
                 // 查看标签值
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 
@@ -968,7 +968,7 @@ const Database: React.FC = () => {
               case 'getTagDistribution':
                 // 获取标签分布
                 try {
-                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connection_id: activeConnectionId,
+                  const tagKeys = await safeTauriInvoke('get_tag_keys', { connectionId: activeConnectionId,
                     database: params.database,
                     measurement: params.measurement});
 

@@ -16,7 +16,6 @@ import {useNoticeStore} from './store/notice';
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import UITest from './pages/UITest';
-import TestFixes from './test-fixes';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
@@ -70,7 +69,6 @@ const MainLayout: React.FC = () => {
                     <Routes>
                         <Route path="/debug" element={<ConnectionDebug/>}/>
                         <Route path="/ui-test" element={<UITest/>}/>
-                        <Route path="/test-fixes" element={<TestFixes/>}/>
                     </Routes>
                 </Content>
 

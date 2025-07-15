@@ -13,3 +13,19 @@ pub mod user_experience;
 pub mod extensions;
 pub mod optimization_history;
 
+/// 宏：为 Tauri 命令自动添加 camelCase 参数转换
+/// 使用方式：#[camel_case_command] 替代 #[tauri::command]
+#[macro_export]
+macro_rules! camel_case_command {
+    ($(#[$attr:meta])* $vis:vis async fn $name:ident($($param:tt)*) -> $ret:ty $body:block) => {
+        $(#[$attr])*
+        #[tauri::command(rename_all = "camelCase")]
+        $vis async fn $name($($param)*) -> $ret $body
+    };
+    ($(#[$attr:meta])* $vis:vis fn $name:ident($($param:tt)*) -> $ret:ty $body:block) => {
+        $(#[$attr])*
+        #[tauri::command(rename_all = "camelCase")]
+        $vis fn $name($($param)*) -> $ret $body
+    };
+}
+

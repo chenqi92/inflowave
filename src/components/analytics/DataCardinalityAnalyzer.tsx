@@ -1,5 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Progress, Badge, Button, Select, Input, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Table, List, Tag, Typography, Empty, Statistic } from '@/components/ui';
+import {
+  Progress,
+  Badge,
+  Button,
+  Select,
+  Input,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  DataTable,
+  List,
+  Tag,
+  Typography,
+  Empty,
+  Statistic,
+  Row, Col
+} from '@/components/ui';
 
 import { BarChart, TrendingUp, Database, Info, RefreshCw, Download, Eye, Bug, Copy, FileText, Key, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -389,13 +407,10 @@ export const DataCardinalityAnalyzer: React.FC<DataCardinalityAnalyzerProps> = (
         </div>
 
         {/* 统计表格 */}
-        <Table
+        <DataTable
           columns={columns}
           dataSource={filteredStats}
           rowKey={(record) => `${record.table}-${record.column}`}
-          pagination={true}
-          // scroll={{ x: 1200 }}
-          // rowClassName={(record) => record.anomalies.length > 0 ? 'anomaly-row' : ''}
         />
 
         {/* 异常列表 */}

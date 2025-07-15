@@ -22,7 +22,7 @@ pub async fn create_connection(
 }
 
 /// 测试连接
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn test_connection(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -65,7 +65,7 @@ pub async fn get_connections(
 }
 
 /// 获取单个连接
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_connection(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -151,7 +151,7 @@ pub async fn get_connection_count(
 }
 
 /// 连接到数据库
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn connect_to_database(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,

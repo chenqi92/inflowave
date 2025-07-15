@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DataWriteRequest {
+    #[serde(alias = "connectionId")]
     pub connection_id: String,
     pub database: String,
     pub measurement: String,
@@ -29,8 +30,10 @@ pub enum DataFormat {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WriteOptions {
     pub precision: Option<String>,
+    #[serde(alias = "retentionPolicy")]
     pub retention_policy: Option<String>,
     pub consistency: Option<String>,
+    #[serde(alias = "batchSize")]
     pub batch_size: Option<usize>,
 }
 

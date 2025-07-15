@@ -8,7 +8,7 @@ use log::{debug, error, info};
 use std::sync::Arc;
 
 /// 执行查询
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn execute_query(
     connection_service: State<'_, ConnectionService>,
     settings_storage: State<'_, SettingsStorage>,
@@ -116,7 +116,7 @@ pub async fn validate_query(
 
 
 /// 获取查询建议
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_query_suggestions(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,

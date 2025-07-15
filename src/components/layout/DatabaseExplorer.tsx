@@ -7,18 +7,10 @@ import {
     TabsTrigger,
     TabsContent,
     Button,
-    Space,
     Tooltip,
-    Dropdown,
     Badge,
     Spin,
-    Alert,
-    Typography,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValueHeaderContent
+    Typography
 } from '@/components/ui';
 import {
     Database,
@@ -29,12 +21,8 @@ import {
     File,
     Hash,
     Tags,
-    Key,
     Clock,
     Link,
-    Search as SearchIcon,
-    MoreHorizontal,
-    Code,
     GitBranch,
     Star,
     StarOff,
@@ -202,7 +190,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 }
             }
 
-            const dbList = await safeTauriInvoke<string[]>('get_databases', {connection_id: connection_id});
+            const dbList = await safeTauriInvoke<string[]>('get_databases', {connectionId: connection_id});
             console.log(`✅ 成功加载数据库列表:`, dbList);
             return dbList || [];
         } catch (error) {
@@ -225,7 +213,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         try {
             // 验证连接是否存在（简化版，因为loadDatabases已经做过验证）
             const tables = await safeTauriInvoke<string[]>('get_measurements', {
-                connection_id: connection_id,
+                connectionId: connection_id,
                 database
             });
             console.log(`✅ 成功加载表列表 (数据库: ${database}):`, tables);
@@ -251,12 +239,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             // 尝试分别获取字段和标签信息
             const [tags, fields] = await Promise.all([
                 safeTauriInvoke<string[]>('get_tag_keys', {
-                    connection_id: connection_id,
+                    connectionId: connection_id,
                     database,
                     measurement: table
                 }).catch(() => []),
                 safeTauriInvoke<string[]>('get_field_keys', {
-                    connection_id: connection_id,
+                    connectionId: connection_id,
                     database,
                     measurement: table
                 }).catch(() => []),

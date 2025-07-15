@@ -21,7 +21,7 @@ import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const {connections = [], activeConnectionId, connectionStatuses = {}} = useConnectionStore();
+    const {connections = [], activeconnection_id, connectionStatuses = {}} = useConnectionStore();
     const [activeTab, setActiveTab] = useState('overview');
     const [exportDialogVisible, setExportDialogVisible] = useState(false);
     const [currentDashboard, setCurrentDashboard] = useState<string | null>(null);
@@ -57,14 +57,14 @@ const Dashboard: React.FC = () => {
             description: '创建图表和仪表板',
             icon: <BarChart className="w-4 h-4"/>,
             action: () => setActiveTab('dashboards'),
-            disabled: !activeConnectionId
+            disabled: !activeconnection_id
         },
         {
             title: '数据导出',
             description: '导出查询结果到文件',
             icon: <Download className="w-4 h-4"/>,
             action: () => setExportDialogVisible(true),
-            disabled: !activeConnectionId
+            disabled: !activeconnection_id
         },
         {
             title: '仪表板管理',
