@@ -175,9 +175,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
   const savePreferences = async (values: UserPreferences) => {
     setLoading(true);
     try {
-      await safeTauriInvoke('update_user_preferences', values);
+      await safeTauriInvoke('update_user_preferences', { preferences: values });
       setPreferences(values);
-      showMessage.success("偏好设置已保存" 
+      showMessage.success("偏好设置已保存"
       );
       onSave?.(values);
     } catch (error) {

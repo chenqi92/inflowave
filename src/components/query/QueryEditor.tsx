@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button, Select, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Label } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { showMessage } from '@/utils/message';
@@ -8,6 +8,7 @@ import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { autocompleteService } from '@/services/autocompleteService';
 import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
@@ -130,7 +131,35 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       acceptSuggestionOnEnter: 'on',
       acceptSuggestionOnCommitCharacter: true,
       tabCompletion: 'on',
-      wordBasedSuggestions: true
+      wordBasedSuggestions: false, // 禁用基于单词的建议，使用我们的智能建议
+      suggest: {
+        showKeywords: true,
+        showSnippets: true,
+        showFunctions: true,
+        showConstructors: true,
+        showFields: true,
+        showVariables: true,
+        showClasses: true,
+        showStructs: true,
+        showInterfaces: true,
+        showModules: true,
+        showProperties: true,
+        showEvents: true,
+        showOperators: true,
+        showUnits: true,
+        showValues: true,
+        showConstants: true,
+        showEnums: true,
+        showEnumMembers: true,
+        showColors: true,
+        showFiles: true,
+        showReferences: true,
+        showFolders: true,
+        showTypeParameters: true,
+        showIssues: true,
+        showUsers: true,
+        snippetsPreventQuickSuggestions: false
+      }
     });
 
     // 添加快捷键
@@ -210,6 +239,11 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
   // 注册 InfluxQL 语言
   const registerInfluxQLLanguage = () => {
+    // 检查是否已经注册过
+    if (monaco.languages.getLanguages().find(lang => lang.id === 'influxql')) {
+      return;
+    }
+
     // 简化的 InfluxQL 语言定义
     monaco.languages.register({ id: 'influxql' });
 
@@ -237,96 +271,101 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           [/[/*]/, 'comment'],
         ]}});
 
-    // 设置自动补全
+    // 设置智能自动补全
     monaco.languages.registerCompletionItemProvider('influxql', {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: async (model, position) => {
+        if (!activeConnectionId || !selectedDatabase) {
+          return { suggestions: [] };
+        }
+
         const word = model.getWordUntilPosition(position);
         const range = {
           startLineNumber: position.lineNumber,
           endLineNumber: position.lineNumber,
           startColumn: word.startColumn,
-          endColumn: word.endColumn};
+          endColumn: word.endColumn
+        };
 
         const lineText = model.getLineContent(position.lineNumber);
-        const wordBeforeCursor = lineText.substring(0, position.column - 1);
+        const beforeCursor = lineText.substring(0, position.column - 1);
         
-        const suggestions: monaco.languages.CompletionItem[] = [
-          // SQL关键字
-          ...['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'INTO', 'VALUES', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'SHOW', 'DESCRIBE'].map(keyword => ({
-            label: keyword,
-            kind: monaco.languages.CompletionItemKind.Keyword,
-            insertText: keyword,
-            range,
-            documentation: `SQL关键字: ${keyword}`
-          })),
-          
-          // 逻辑操作符
-          ...['AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS', 'NULL', 'TRUE', 'FALSE'].map(op => ({
-            label: op,
-            kind: monaco.languages.CompletionItemKind.Operator,
-            insertText: op,
-            range,
-            documentation: `逻辑操作符: ${op}`
-          })),
-          
-          // 聚合函数
-          ...['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN', 'MEDIAN', 'MODE', 'STDDEV', 'SPREAD', 'PERCENTILE'].map(func => ({
-            label: func,
-            kind: monaco.languages.CompletionItemKind.Function,
-            insertText: `${func}($1)`,
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-            documentation: `聚合函数: ${func}(field)`
-          })),
-          
-          // 时间函数
-          ...['NOW', 'TIME', 'AGO', 'DURATION', 'FILL'].map(func => ({
-            label: func,
-            kind: monaco.languages.CompletionItemKind.Function,
-            insertText: func,
-            range,
-            documentation: `时间函数: ${func}`
-          })),
-          
-          // 数据库
-          ...databases.map(db => ({
-            label: db,
-            kind: monaco.languages.CompletionItemKind.Module,
-            insertText: `"${db}"`,
-            range,
-            documentation: `数据库: ${db}`
-          })),
-          
-          // 常用查询模板
-          {
-            label: 'SELECT template',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: 'SELECT ${1:*} FROM ${2:measurement} WHERE ${3:condition}',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-            documentation: 'SELECT查询模板'
-          },
-          {
-            label: 'Time range query',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: 'SELECT ${1:*} FROM ${2:measurement} WHERE time >= now() - ${3:1h}',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-            documentation: '时间范围查询模板'
-          },
-          {
-            label: 'Aggregation query',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: 'SELECT ${1:MEAN}(${2:field}) FROM ${3:measurement} WHERE time >= now() - ${4:1h} GROUP BY time(${5:5m})',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range,
-            documentation: '聚合查询模板'
-          }
-        ];
+        // 构建上下文
+        const context = {
+          line: lineText,
+          position: position.column - 1,
+          previousToken: '',
+          currentToken: word.word
+        };
 
-        return { suggestions };
-      }});
+        try {
+          // 获取智能建议
+          const items = await autocompleteService.getCompletions(
+            activeConnectionId,
+            selectedDatabase,
+            context
+          );
+
+          // 转换为Monaco格式
+          const suggestions = items.map(item => {
+            let kind: monaco.languages.CompletionItemKind;
+            switch (item.kind) {
+              case 'keyword':
+                kind = monaco.languages.CompletionItemKind.Keyword;
+                break;
+              case 'function':
+                kind = monaco.languages.CompletionItemKind.Function;
+                break;
+              case 'database':
+                kind = monaco.languages.CompletionItemKind.Module;
+                break;
+              case 'measurement':
+                kind = monaco.languages.CompletionItemKind.Class;
+                break;
+              case 'field':
+                kind = monaco.languages.CompletionItemKind.Field;
+                break;
+              case 'tag':
+                kind = monaco.languages.CompletionItemKind.Property;
+                break;
+              case 'snippet':
+                kind = monaco.languages.CompletionItemKind.Snippet;
+                break;
+              case 'operator':
+                kind = monaco.languages.CompletionItemKind.Operator;
+                break;
+              default:
+                kind = monaco.languages.CompletionItemKind.Text;
+            }
+
+            return {
+              label: item.label,
+              kind,
+              insertText: item.insertText,
+              insertTextRules: item.insertTextRules,
+              range,
+              documentation: item.documentation || item.detail,
+              detail: item.detail,
+              sortText: item.sortText,
+              filterText: item.filterText
+            };
+          });
+
+          return { suggestions };
+        } catch (error) {
+          console.error('Failed to get autocomplete suggestions:', error);
+          return { suggestions: [] };
+        }
+      },
+      triggerCharacters: [' ', '.', '(', ',', '"', "'", '=', '<', '>', '!', '~']
+    });
   };
+
+  // 更新数据库结构缓存
+  useEffect(() => {
+    if (activeConnectionId && selectedDatabase) {
+      autocompleteService.updateSchema(activeConnectionId, selectedDatabase);
+    }
+  }, [activeConnectionId, selectedDatabase]);
 
   // 执行查询
   const handleExecuteQuery = async () => {
@@ -385,9 +424,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           : tab
       ));
       
-      toast({ title: "成功", description: `查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms` });
+      showMessage.success(`查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms`);
     } catch (error) {
-      toast({ title: "错误", description: `查询执行失败: ${error}`, variant: "destructive" });
+      showMessage.error(`查询执行失败: ${error}`);
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -417,7 +456,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       await safeTauriInvoke('save_query', { query: savedQuery });
       showMessage.success("查询已保存" );
     } catch (error) {
-      toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
+      showMessage.error(`保存查询失败: ${error}`);
     }
   };
 
