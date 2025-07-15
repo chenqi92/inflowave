@@ -2,6 +2,7 @@ use crate::models::{SystemInfo, DiskUsage, NetworkStats};
 use crate::services::ConnectionService;
 use tauri::{State, Manager, AppHandle};
 use log::{debug, error, info};
+use std::path::Path;
 
 /// 获取系统信息
 #[tauri::command]
@@ -209,4 +210,88 @@ pub async fn check_for_updates() -> Result<serde_json::Value, String> {
     });
 
     Ok(update_info)
+}
+
+/// 文件对话框结果结构
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct FileDialogResult {
+    pub path: String,
+}
+
+/// 文件对话框过滤器
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct FileFilter {
+    pub name: String,
+    pub extensions: Vec<String>,
+}
+
+/// 打开文件对话框
+#[tauri::command]
+pub async fn open_file_dialog(
+    _filters: Option<Vec<FileFilter>>,
+) -> Result<Option<FileDialogResult>, String> {
+    debug!("打开文件对话框");
+    
+    // 简化实现，返回模拟结果
+    // 在实际应用中，这里应该调用系统文件对话框
+    info!("文件对话框功能开发中");
+    Ok(None)
+}
+
+/// 保存文件对话框
+#[tauri::command]
+pub async fn save_file_dialog(
+    _default_path: Option<String>,
+    _filters: Option<Vec<FileFilter>>,
+) -> Result<Option<FileDialogResult>, String> {
+    debug!("保存文件对话框");
+    
+    // 简化实现，返回模拟结果
+    // 在实际应用中，这里应该调用系统文件对话框
+    info!("文件保存对话框功能开发中");
+    Ok(None)
+}
+
+/// 读取文件内容
+#[tauri::command]
+pub async fn read_file(path: String) -> Result<String, String> {
+    debug!("读取文件: {}", path);
+    
+    match std::fs::read_to_string(&path) {
+        Ok(content) => {
+            info!("成功读取文件: {}", path);
+            Ok(content)
+        }
+        Err(e) => {
+            error!("读取文件失败: {}: {}", path, e);
+            Err(format!("读取文件失败: {}", e))
+        }
+    }
+}
+
+/// 写入文件内容
+#[tauri::command]
+pub async fn write_file(path: String, content: String) -> Result<(), String> {
+    debug!("写入文件: {}", path);
+    
+    // 确保目录存在
+    if let Some(parent) = Path::new(&path).parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                error!("创建目录失败: {}: {}", parent.display(), e);
+                format!("创建目录失败: {}", e)
+            })?;
+        }
+    }
+    
+    match std::fs::write(&path, content) {
+        Ok(_) => {
+            info!("成功写入文件: {}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("写入文件失败: {}: {}", path, e);
+            Err(format!("写入文件失败: {}", e))
+        }
+    }
 }

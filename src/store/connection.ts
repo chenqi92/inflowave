@@ -14,7 +14,7 @@ interface ConnectionState {
   connectedConnectionIds: string[];
   
   // 当前活跃的连接（用于兼容现有逻辑）
-  activeconnection_id: string | null;
+  activeConnectionId: string | null;
 
   // 监控状态
   monitoringActive: boolean;
@@ -58,7 +58,7 @@ export const useConnectionStore = create<ConnectionState>()(
       connections: [],
       connectionStatuses: {},
       connectedConnectionIds: [],
-      activeconnection_id: null,
+      activeConnectionId: null,
       monitoringActive: false,
       monitoringInterval: 30,
       poolStats: {},
@@ -98,7 +98,7 @@ export const useConnectionStore = create<ConnectionState>()(
             connections: state.connections.filter((conn) => conn.id !== id),
             connectionStatuses: newStatuses,
             connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
-            activeconnection_id: state.activeconnection_id === id ? null : state.activeconnection_id};
+            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId};
         });
       },
       
@@ -132,7 +132,7 @@ export const useConnectionStore = create<ConnectionState>()(
       
       // 设置活跃连接
       setActiveConnection: (id) => {
-        set({ activeconnection_id: id });
+        set({ activeConnectionId: id });
       },
       
       // 添加已连接的连接
@@ -175,7 +175,7 @@ export const useConnectionStore = create<ConnectionState>()(
           connections: [],
           connectionStatuses: {},
           connectedConnectionIds: [],
-          activeconnection_id: null,
+          activeConnectionId: null,
           poolStats: {}});
       },
 
@@ -211,7 +211,7 @@ export const useConnectionStore = create<ConnectionState>()(
             connectedConnectionIds: state.connectedConnectionIds.includes(id) 
               ? state.connectedConnectionIds 
               : [...state.connectedConnectionIds, id],
-            activeconnection_id: id}));
+            activeConnectionId: id}));
           console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
           console.error(`❌ 连接失败 (${id}):`, error);
@@ -249,7 +249,7 @@ export const useConnectionStore = create<ConnectionState>()(
                 lastConnected: state.connectionStatuses[id]?.lastConnected,
                 latency: undefined}},
             connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id),
-            activeconnection_id: state.activeconnection_id === id ? null : state.activeconnection_id}));
+            activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId}));
         } catch (error) {
           console.error(`❌ 断开连接失败 (${id}):`, error);
           set((state) => ({
@@ -432,7 +432,7 @@ export const useConnectionStore = create<ConnectionState>()(
       partialize: (state) => ({
         connections: state.connections,
         connectedConnectionIds: state.connectedConnectionIds,
-        activeconnection_id: state.activeconnection_id})},
+        activeConnectionId: state.activeConnectionId})},
   )
 );
 
@@ -447,6 +447,27 @@ export const connectionUtils = {
   isConnected: (id: string): boolean => {
     const status = useConnectionStore.getState().getConnectionStatus(id);
     return status?.status === 'connected';
+  },
+  
+  // 检查是否有任何已连接的InfluxDB连接
+  hasAnyConnectedInfluxDB: (): boolean => {
+    const { connections, connectionStatuses } = useConnectionStore.getState();
+    
+    // 检查是否有任何连接状态为connected的InfluxDB连接
+    return connections.some(conn => {
+      const status = connectionStatuses[conn.id];
+      return status?.status === 'connected';
+    });
+  },
+  
+  // 获取所有已连接的InfluxDB连接数量
+  getConnectedInfluxDBCount: (): number => {
+    const { connections, connectionStatuses } = useConnectionStore.getState();
+    
+    return connections.filter(conn => {
+      const status = connectionStatuses[conn.id];
+      return status?.status === 'connected';
+    }).length;
   },
   
   // 获取连接显示名称

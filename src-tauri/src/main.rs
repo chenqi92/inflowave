@@ -456,6 +456,10 @@ async fn main() {
             show_save_dialog,
             toggle_devtools,
             check_for_updates,
+            open_file_dialog,
+            save_file_dialog,
+            read_file,
+            write_file,
 
             // Data write operations
             write_data,

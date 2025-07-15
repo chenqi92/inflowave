@@ -35,7 +35,7 @@ import {
   Clock,
   MoreHorizontal
 } from 'lucide-react';
-import { useConnectionStore } from '@/store/connection';
+import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
@@ -61,7 +61,7 @@ interface MainToolbarProps {
 }
 
 const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
-  const { activeConnectionId, connections } = useConnectionStore();
+  const { activeConnectionId, connections, connectionStatuses } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
@@ -74,6 +74,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   );
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
   
+  // 检查是否有任何已连接的InfluxDB连接
+  const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
+  const connectedInfluxDBCount = connectionUtils.getConnectedInfluxDBCount();
+  
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();
 
@@ -85,24 +89,45 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         navigate('/query');
         break;
       case 'open':
-        // 打开文件
-        console.log('打开文件');
+        // 打开文件 - 使用浏览器文件选择器
+        try {
+          const fileInput = document.createElement('input');
+          fileInput.type = 'file';
+          fileInput.accept = '.sql,.txt,.json';
+          fileInput.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+              const text = await file.text();
+              // 触发自定义事件，让TabEditor接收文件内容
+              document.dispatchEvent(new CustomEvent('load-file-content', {
+                detail: { content: text, filename: file.name }
+              }));
+              showMessage.success(`已打开文件: ${file.name}`);
+            }
+          };
+          fileInput.click();
+        } catch (error) {
+          showMessage.error('打开文件失败');
+        }
         break;
       case 'save':
-        // 保存当前查询
-        console.log('保存文件');
+        // 保存当前查询 - 触发保存事件
+        document.dispatchEvent(new CustomEvent('save-current-query'));
+        showMessage.info('正在保存当前查询...');
         break;
       case 'save-as':
-        // 另存为
-        console.log('另存为');
+        // 另存为 - 触发另存为事件
+        document.dispatchEvent(new CustomEvent('save-query-as'));
+        showMessage.info('正在另存为查询...');
         break;
       case 'import':
         // 导入数据
         navigate('/data-write');
         break;
       case 'export':
-        // 导出数据  
-        console.log('导出数据功能尚未实现');
+        // 导出数据 - 触发导出数据事件
+        document.dispatchEvent(new CustomEvent('show-export-dialog'));
+        showMessage.info('正在打开数据导出...');
         break;
       default:
         console.log('未处理的文件菜单项:', key);
@@ -343,8 +368,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => onViewChange?.('query')}
-              disabled={!activeConnection}
-              title="查询编辑器"
+              disabled={!hasAnyConnectedInfluxDB}
+              title={hasAnyConnectedInfluxDB ? "查询编辑器" : `查询编辑器 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
             >
               <Edit className="w-4 h-4" />
               <span className="text-xs">查询</span>
@@ -359,8 +384,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => onViewChange?.('visualization')}
-              disabled={!activeConnection}
-              title="数据可视化"
+              disabled={!hasAnyConnectedInfluxDB}
+              title={hasAnyConnectedInfluxDB ? "数据可视化" : `数据可视化 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
             >
               <BarChart className="w-4 h-4" />
               <span className="text-xs">可视化</span>
@@ -375,8 +400,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => onViewChange?.('performance')}
-              disabled={!activeConnection}
-              title="性能监控"
+              disabled={!hasAnyConnectedInfluxDB}
+              title={hasAnyConnectedInfluxDB ? "性能监控" : `性能监控 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
             >
               <Zap className="w-4 h-4" />
               <span className="text-xs">监控</span>
@@ -395,8 +420,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             variant="ghost"
             size="sm"
             className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            disabled={!activeConnection}
-            title="刷新数据"
+            disabled={!hasAnyConnectedInfluxDB}
+            title={hasAnyConnectedInfluxDB ? "刷新数据" : `刷新数据 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
+            onClick={() => {
+              // 触发刷新数据库结构事件
+              document.dispatchEvent(new CustomEvent('refresh-database-tree'));
+              showMessage.info('正在刷新数据库结构...');
+            }}
           >
             <RefreshCw className="w-4 h-4" />
             <span className="text-xs">刷新</span>

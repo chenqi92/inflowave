@@ -8,7 +8,7 @@ import {
 import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText, Download, Upload } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { useConnectionStore } from '@/store/connection';
+import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -45,6 +45,7 @@ interface TabEditorRef {
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onBatchQueryResults }, ref) => {
   const { activeConnectionId, connections } = useConnectionStore();
+  const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
   const { resolvedTheme } = useTheme();
   const [activeKey, setActiveKey] = useState<string>('1');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -467,8 +468,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
   // 导出数据
   const exportData = () => {
-    if (!activeConnectionId || !selectedDatabase) {
-      showMessage.warning('请先选择数据库连接');
+    if (!hasAnyConnectedInfluxDB || !selectedDatabase) {
+      showMessage.warning('请先连接InfluxDB并选择数据库');
       return;
     }
     setShowExportDialog(true);
@@ -488,6 +489,72 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       setSelectedDatabase('');
     }
   }, [activeConnectionId]);
+
+  // 监听菜单事件
+  useEffect(() => {
+    const handleLoadFileContent = (event: CustomEvent) => {
+      const { content, filename } = event.detail;
+      
+      // 创建新标签页
+      const newTab: EditorTab = {
+        id: Date.now().toString(),
+        title: filename,
+        content: content,
+        type: 'query',
+        modified: false
+      };
+      
+      setTabs(prevTabs => [...prevTabs, newTab]);
+      setActiveKey(newTab.id);
+    };
+
+    const handleSaveCurrentQuery = () => {
+      saveCurrentTab();
+    };
+
+    const handleSaveQueryAs = () => {
+      saveFileAs();
+    };
+
+    const handleShowExportDialog = () => {
+      exportData();
+    };
+
+    const handleShowImportDialog = () => {
+      importData();
+    };
+
+    const handleExecuteQuery = (event: CustomEvent) => {
+      const { source } = event.detail || {};
+      console.log('📥 收到执行查询事件，来源:', source);
+      executeQuery();
+    };
+
+    const handleRefreshDatabaseTree = () => {
+      console.log('📥 收到刷新数据库树事件');
+      loadDatabases();
+    };
+
+    // 添加事件监听
+    document.addEventListener('load-file-content', handleLoadFileContent as EventListener);
+    document.addEventListener('save-current-query', handleSaveCurrentQuery);
+    document.addEventListener('save-query-as', handleSaveQueryAs);
+    document.addEventListener('show-export-dialog', handleShowExportDialog);
+    document.addEventListener('show-import-dialog', handleShowImportDialog);
+    document.addEventListener('execute-query', handleExecuteQuery as EventListener);
+    document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+
+    // 清理事件监听
+    return () => {
+      document.removeEventListener('load-file-content', handleLoadFileContent as EventListener);
+      document.removeEventListener('save-current-query', handleSaveCurrentQuery);
+      document.removeEventListener('save-query-as', handleSaveQueryAs);
+      document.removeEventListener('show-export-dialog', handleShowExportDialog);
+      document.removeEventListener('show-import-dialog', handleShowImportDialog);
+      document.removeEventListener('execute-query', handleExecuteQuery as EventListener);
+      document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+    };
+  }, [activeConnectionId, selectedDatabase, tabs, activeKey]);
 
   // 创建新标签
   const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
@@ -1061,7 +1128,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           <Select
             value={selectedDatabase}
             onValueChange={setSelectedDatabase}
-            disabled={!activeConnectionId || databases.length === 0}
+            disabled={!hasAnyConnectedInfluxDB || databases.length === 0}
           >
             <SelectTrigger className="w-[140px] h-10">
               <SelectValue placeholder="选择数据库" />
@@ -1078,9 +1145,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           <Button
             size="sm"
             onClick={executeQuery}
-            disabled={loading || !activeConnectionId || !selectedDatabase}
+            disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
             className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            title="执行查询 (Ctrl+Enter)"
+            title={hasAnyConnectedInfluxDB ? "执行查询 (Ctrl+Enter)" : "执行查询 (需要连接InfluxDB)"}
           >
             <PlayCircle className="w-4 h-4" />
             <span className="text-xs">{loading ? '执行中' : '执行'}</span>
@@ -1091,9 +1158,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             variant="outline"
             size="sm"
             onClick={testIntelliSense}
-            disabled={!activeConnectionId || !selectedDatabase}
+            disabled={!hasAnyConnectedInfluxDB || !selectedDatabase}
             className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            title="测试智能提示 (Ctrl+K)"
+            title={hasAnyConnectedInfluxDB ? "测试智能提示 (Ctrl+K)" : "测试智能提示 (需要连接InfluxDB)"}
           >
             <span className="text-xs">🧪</span>
             <span className="text-xs">提示</span>

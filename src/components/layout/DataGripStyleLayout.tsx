@@ -55,6 +55,20 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     return removeListener;
   }, []);
 
+  // 监听菜单刷新事件
+  useEffect(() => {
+    const handleRefreshDatabaseTree = () => {
+      console.log('📥 DataGripStyleLayout收到刷新数据库树事件');
+      refreshDataExplorer();
+    };
+
+    document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+
+    return () => {
+      document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+    };
+  }, []);
+
   // 处理表格双击事件
   const handleTableDoubleClick = (database: string, table: string, query: string) => {
     // 切换到查询视图

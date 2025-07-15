@@ -23,7 +23,7 @@ import {
   FileText, RotateCcw, Scissors, Copy, Clipboard, Eye, Monitor, HelpCircle,
   Plus, FolderOpen, Save, RefreshCw, Wrench, History, ExternalLink, Download, Upload, Palette
 } from 'lucide-react';
-import { useConnectionStore } from '@/store/connection';
+import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { themeColors, applyThemeColors } from '@/lib/theme-colors';
@@ -39,6 +39,7 @@ const AppMenuBar: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { activeConnectionId, connectionStatuses } = useConnectionStore();
+  const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
   const { settings, updateTheme } = useSettingsStore();
 
   // 对话框状态管理
@@ -152,21 +153,21 @@ const AppMenuBar: React.FC = () => {
       icon: <Edit className="w-4 h-4" />,
       label: '查询编辑器',
       shortcut: 'Ctrl+2',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     {
       key: '/visualization',
       icon: <BarChart className="w-4 h-4" />,
       label: '数据可视化',
       shortcut: 'Ctrl+3',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     {
       key: '/performance',
       icon: <Zap className="w-4 h-4" />,
       label: '性能监控',
       shortcut: 'Ctrl+4',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     { key: 'divider-4', type: 'divider' },
     {
@@ -196,7 +197,7 @@ const AppMenuBar: React.FC = () => {
       icon: <Webhook className="w-4 h-4" />,
       label: '测试连接',
       shortcut: 'Ctrl+T',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     { key: 'divider-5', type: 'divider' },
     {
@@ -204,13 +205,13 @@ const AppMenuBar: React.FC = () => {
       icon: <RefreshCw className="w-4 h-4" />,
       label: '刷新数据库结构',
       shortcut: 'F5',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     {
       key: 'database-info',
       icon: <Database className="w-4 h-4" />,
       label: '查看数据库信息',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
   ];
 
@@ -221,14 +222,14 @@ const AppMenuBar: React.FC = () => {
       icon: <BarChart className="w-4 h-4" />,
       label: '执行查询',
       shortcut: 'F5',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     {
       key: 'stop-query',
       icon: <RefreshCw className="w-4 h-4" />,
       label: '停止查询',
       shortcut: 'Ctrl+F2',
-      disabled: !activeConnectionId
+      disabled: !hasAnyConnectedInfluxDB
     },
     { key: 'divider-6', type: 'divider' },
     {
