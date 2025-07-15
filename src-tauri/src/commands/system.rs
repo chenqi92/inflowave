@@ -1,7 +1,7 @@
 use crate::models::{SystemInfo, DiskUsage, NetworkStats};
 use crate::services::ConnectionService;
-use tauri::State;
-use log::{debug, error};
+use tauri::{State, Manager, AppHandle};
+use log::{debug, error, info};
 
 /// 获取系统信息
 #[tauri::command]
@@ -140,4 +140,78 @@ pub async fn get_app_config() -> Result<serde_json::Value, String> {
     });
     
     Ok(config)
+}
+
+/// 显示文件打开对话框
+#[tauri::command]
+pub async fn show_open_dialog(
+    _filters: Option<Vec<serde_json::Value>>,
+) -> Result<Option<String>, String> {
+    debug!("显示文件打开对话框");
+
+    // 简化实现，返回模拟结果
+    // 在实际应用中，这里应该调用系统文件对话框
+    info!("文件打开对话框功能开发中");
+    Ok(None)
+}
+
+/// 显示文件保存对话框
+#[tauri::command]
+pub async fn show_save_dialog(
+    _default_name: Option<String>,
+    _filters: Option<Vec<serde_json::Value>>,
+) -> Result<Option<String>, String> {
+    debug!("显示文件保存对话框");
+
+    // 简化实现，返回模拟结果
+    // 在实际应用中，这里应该调用系统文件对话框
+    info!("文件保存对话框功能开发中");
+    Ok(None)
+}
+
+/// 切换开发者工具
+#[tauri::command]
+pub async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
+    debug!("切换开发者工具");
+
+    if let Some(window) = app.get_webview_window("main") {
+        #[cfg(debug_assertions)]
+        {
+            if window.is_devtools_open() {
+                window.close_devtools();
+                info!("关闭开发者工具");
+            } else {
+                window.open_devtools();
+                info!("打开开发者工具");
+            }
+        }
+
+        #[cfg(not(debug_assertions))]
+        {
+            return Err("开发者工具仅在调试模式下可用".to_string());
+        }
+
+        Ok(())
+    } else {
+        Err("找不到主窗口".to_string())
+    }
+}
+
+/// 检查更新
+#[tauri::command]
+pub async fn check_for_updates() -> Result<serde_json::Value, String> {
+    debug!("检查应用更新");
+
+    // 这里应该实现真正的更新检查逻辑
+    // 目前返回模拟数据
+    let update_info = serde_json::json!({
+        "has_update": false,
+        "current_version": env!("CARGO_PKG_VERSION"),
+        "latest_version": env!("CARGO_PKG_VERSION"),
+        "update_url": env!("CARGO_PKG_REPOSITORY"),
+        "release_notes": "当前已是最新版本",
+        "checked_at": chrono::Utc::now()
+    });
+
+    Ok(update_info)
 }

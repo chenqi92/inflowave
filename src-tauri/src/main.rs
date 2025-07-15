@@ -115,6 +115,14 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .separator()
         .text("extensions", "扩展管理")
         .text("theme_settings", "主题设置")
+        .text("theme_default_blue", "风格设置 - 默认蓝色")
+        .text("theme_natural_green", "风格设置 - 自然绿色")
+        .text("theme_vibrant_red", "风格设置 - 活力红色")
+        .text("theme_warm_orange", "风格设置 - 温暖橙色")
+        .text("theme_elegant_purple", "风格设置 - 优雅紫色")
+        .text("theme_romantic_rose", "风格设置 - 浪漫玫瑰")
+        .text("theme_bright_yellow", "风格设置 - 明亮黄色")
+        .text("theme_mysterious_violet", "风格设置 - 神秘紫罗兰")
         .text("language_settings", "语言设置")
         .separator()
         .text("preferences", "首选项\tCtrl+,")
@@ -284,6 +292,32 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
             let _ = window.emit("menu-action", "format_query");
         }
 
+        // 软件风格菜单
+        "theme_default_blue" => {
+            let _ = window.emit("theme-change", "default-blue");
+        }
+        "theme_natural_green" => {
+            let _ = window.emit("theme-change", "natural-green");
+        }
+        "theme_vibrant_red" => {
+            let _ = window.emit("theme-change", "vibrant-red");
+        }
+        "theme_warm_orange" => {
+            let _ = window.emit("theme-change", "warm-orange");
+        }
+        "theme_elegant_purple" => {
+            let _ = window.emit("theme-change", "elegant-purple");
+        }
+        "theme_romantic_rose" => {
+            let _ = window.emit("theme-change", "romantic-rose");
+        }
+        "theme_bright_yellow" => {
+            let _ = window.emit("theme-change", "bright-yellow");
+        }
+        "theme_mysterious_violet" => {
+            let _ = window.emit("theme-change", "mysterious-violet");
+        }
+
         // 工具菜单
         "console" => {
             let _ = window.emit("menu-action", "console");
@@ -418,6 +452,10 @@ async fn main() {
             health_check,
             cleanup_resources,
             get_app_config,
+            show_open_dialog,
+            show_save_dialog,
+            toggle_devtools,
+            check_for_updates,
 
             // Data write operations
             write_data,

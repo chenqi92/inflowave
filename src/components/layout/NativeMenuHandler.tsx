@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { safeTauriListen } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
+import { useSettingsStore } from '@/store/settings';
+import { applyThemeColors } from '@/lib/theme-colors';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
 
@@ -18,27 +20,68 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   onGlobalSearch}) => {
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
+  const { settings, updateTheme } = useSettingsStore();
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
 
   useEffect(() => {
-    let unlistenFn: (() => void) | null = null;
+    let unlistenMenuFn: (() => void) | null = null;
+    let unlistenThemeFn: (() => void) | null = null;
 
-    const setupListener = async () => {
-      unlistenFn = await safeTauriListen<string>('menu-action', (event) => {
+    const setupListeners = async () => {
+      // 监听菜单动作事件
+      unlistenMenuFn = await safeTauriListen<string>('menu-action', (event) => {
         const action = event.payload;
         handleMenuAction(action);
       });
+
+      // 监听主题切换事件
+      unlistenThemeFn = await safeTauriListen<string>('theme-change', (event) => {
+        const themeName = event.payload;
+        handleThemeChange(themeName);
+      });
     };
 
-    setupListener();
+    setupListeners();
 
     return () => {
-      if (unlistenFn) {
-        unlistenFn();
+      if (unlistenMenuFn) {
+        unlistenMenuFn();
+      }
+      if (unlistenThemeFn) {
+        unlistenThemeFn();
       }
     };
   }, [navigate, activeConnectionId]);
+
+  // 处理主题切换
+  const handleThemeChange = (themeName: string) => {
+    console.log('处理主题切换:', themeName);
+
+    const isDark = settings.theme.mode === 'dark' ||
+      (settings.theme.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    // 应用主题颜色
+    applyThemeColors(themeName, isDark);
+
+    // 更新设置
+    updateTheme({ primaryColor: themeName });
+
+    // 显示成功消息
+    const themeLabels: Record<string, string> = {
+      'default-blue': '默认蓝色',
+      'natural-green': '自然绿色',
+      'vibrant-red': '活力红色',
+      'warm-orange': '温暖橙色',
+      'elegant-purple': '优雅紫色',
+      'romantic-rose': '浪漫玫瑰',
+      'bright-yellow': '明亮黄色',
+      'mysterious-violet': '神秘紫罗兰'
+    };
+
+    const themeLabel = themeLabels[themeName] || themeName;
+    showMessage.success(`已切换到${themeLabel}主题`);
+  };
 
   const handleMenuAction = (action: string) => {
     console.log('处理菜单动作:', action);
