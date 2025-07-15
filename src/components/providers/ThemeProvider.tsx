@@ -85,9 +85,17 @@ export function ThemeProvider({
       mediaQuery.addEventListener('change', handleChange)
       return () => mediaQuery.removeEventListener('change', handleChange)
     } else {
-      root.classList.add(theme)
-      currentTheme = theme
-      setResolvedTheme(theme)
+      // 确保theme不是空字符串
+      if (theme && theme.trim()) {
+        root.classList.add(theme)
+        currentTheme = theme
+        setResolvedTheme(theme)
+      } else {
+        // 如果theme为空，使用默认的light主题
+        root.classList.add('light')
+        currentTheme = 'light'
+        setResolvedTheme('light')
+      }
     }
 
     // 应用颜色主题

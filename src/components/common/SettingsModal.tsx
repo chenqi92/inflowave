@@ -91,6 +91,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                 await safeTauriInvoke('save_app_config', {config: values});
             } catch (saveError) {
                 console.warn('保存配置到后端失败:', saveError);
+                // 如果后端不支持保存配置，只保存到前端状态
+                console.info('仅保存到前端状态，后端配置保存功能暂未实现');
             }
 
             toast({title: "成功", description: "设置已保存"});
@@ -293,31 +295,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="queryTimeout">查询超时时间 (毫秒)</Label>
-                                    <InputNumber
-                                        min={1000}
-                                        max={300000}
-                                        step={1000}
-                                        value={form.watch('queryTimeout') || config.queryTimeout}
-                                        onChange={(value) => form.setValue('queryTimeout', value || 30000)}
-                                        placeholder="输入超时时间"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="maxQueryResults">最大查询结果数</Label>
-                                    <InputNumber
-                                        min={100}
-                                        max={100000}
-                                        step={100}
-                                        value={form.watch('maxQueryResults') || config.maxQueryResults}
-                                        onChange={(value) => form.setValue('maxQueryResults', value || 10000)}
-                                        placeholder="输入结果数量"
-                                    />
-                                </div>
-                            </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex items-center space-x-2">
@@ -645,7 +622,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             <Dialog open={visible} onOpenChange={(open) => {
                 if (!open) onClose();
             }}>
-                <DialogContent className="max-w-5xl w-full h-[85vh] p-0 flex flex-col">
+                <DialogContent className="max-w-5xl w-full h-[90vh] p-0 flex flex-col">
                     <DialogHeader className="px-6 py-3 border-b shrink-0">
                         <DialogTitle className="flex items-center gap-2">
                             <Settings className="w-5 h-5"/>
@@ -678,7 +655,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                         value={item.key}
                                         className="h-full mt-0 px-6 data-[state=inactive]:hidden overflow-y-auto"
                                     >
-                                        <div className="max-w-3xl h-full pb-4">
+                                        <div className="max-w-3xl h-full pb-20">
                                             {item.children}
                                         </div>
                                     </TabsContent>

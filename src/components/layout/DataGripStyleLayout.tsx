@@ -149,6 +149,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                     setQueryResult(results[0]);
                   }
                 }}
+                currentTimeRange={currentTimeRange}
                 ref={tabEditorRef}
               />
             </ResizablePanel>

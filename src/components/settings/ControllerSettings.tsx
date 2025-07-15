@@ -14,7 +14,9 @@ import {
   Badge,
   toast,
   Title,
-  Text
+  Text,
+  InputNumber,
+  Label
 } from '@/components/ui';
 import {
   Shield,
@@ -34,6 +36,8 @@ interface ControllerSettings {
   allow_dangerous_operations: boolean;
   require_confirmation_for_delete: boolean;
   require_confirmation_for_drop: boolean;
+  query_timeout: number;
+  max_query_results: number;
 }
 
 const ControllerSettings: React.FC = () => {
@@ -44,6 +48,8 @@ const ControllerSettings: React.FC = () => {
     allow_dangerous_operations: false,
     require_confirmation_for_delete: true,
     require_confirmation_for_drop: true,
+    query_timeout: 30000,
+    max_query_results: 10000,
   });
 
   const form = useForm<ControllerSettings>({
@@ -99,6 +105,8 @@ const ControllerSettings: React.FC = () => {
       allow_dangerous_operations: false,
       require_confirmation_for_delete: true,
       require_confirmation_for_drop: true,
+      query_timeout: 30000,
+      max_query_results: 10000,
     };
     
     form.reset(defaultSettings);
@@ -314,6 +322,78 @@ const ControllerSettings: React.FC = () => {
                         checked={field.value}
                         onCheckedChange={field.onChange}
                         disabled={!watchedValues.allow_drop_statements}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* 查询控制设置 */}
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div className="p-6 pb-4">
+              <Title level={3} className="flex items-center gap-2 mb-2">
+                <Database className="w-5 h-5" />
+                查询控制设置
+              </Title>
+              <Text type="secondary" className="text-sm">
+                控制查询执行的限制和超时设置
+              </Text>
+            </div>
+            <div className="p-6 pt-0 space-y-6">
+              {/* 查询超时设置 */}
+              <FormField
+                control={form.control}
+                name="query_timeout"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        查询超时时间 (毫秒)
+                      </FormLabel>
+                      <FormDescription>
+                        设置查询的最大执行时间，超过此时间将自动终止查询
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <InputNumber
+                        min={1000}
+                        max={300000}
+                        step={1000}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="输入超时时间"
+                        className="w-32"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* 最大查询结果数设置 */}
+              <FormField
+                control={form.control}
+                name="max_query_results"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        最大查询结果数
+                      </FormLabel>
+                      <FormDescription>
+                        限制单次查询返回的最大记录数，防止内存溢出
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <InputNumber
+                        min={100}
+                        max={100000}
+                        step={100}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="输入结果数量"
+                        className="w-32"
                       />
                     </FormControl>
                   </FormItem>

@@ -5,7 +5,7 @@ import {
   Dialog, Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
   Popconfirm, Card, CardHeader, CardContent
 } from '@/components/ui';
-import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText, Download, Upload } from 'lucide-react';
+import { Save, PlayCircle, Database, Plus, X, Table, FolderOpen, MoreHorizontal, FileText, Download, Upload, Clock } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
@@ -37,13 +37,19 @@ interface EditorTab {
 interface TabEditorProps {
   onQueryResult?: (result: QueryResult) => void;
   onBatchQueryResults?: (results: QueryResult[], queries: string[], executionTime: number) => void;
+  currentTimeRange?: {
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  };
 }
 
 interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
 }
 
-const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onBatchQueryResults }, ref) => {
+const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onBatchQueryResults, currentTimeRange }, ref) => {
   const { activeConnectionId, connections } = useConnectionStore();
   const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
   const { resolvedTheme } = useTheme();
@@ -63,6 +69,49 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+
+  // 处理时间范围的SQL注入
+  const injectTimeRangeToQuery = (query: string, timeRange?: { start: string; end: string; value: string }) => {
+    if (!timeRange || timeRange.value === 'none' || !timeRange.start || !timeRange.end) {
+      return query; // 如果没有时间范围或选择不限制时间，直接返回原查询
+    }
+
+    // 检查查询是否已经包含时间范围条件
+    const hasTimeCondition = /WHERE\s+.*time\s*[><=]/i.test(query);
+    
+    if (hasTimeCondition) {
+      // 如果已经有时间条件，不自动添加
+      return query;
+    }
+
+    // 检查是否是 SELECT 查询
+    const isSelectQuery = /^\s*SELECT\s+/i.test(query.trim());
+    
+    if (!isSelectQuery) {
+      return query; // 非 SELECT 查询不添加时间范围
+    }
+
+    // 构建时间范围条件
+    const timeCondition = `time >= ${timeRange.start} AND time <= ${timeRange.end}`;
+    
+    // 检查查询是否已经有 WHERE 子句
+    const hasWhereClause = /\s+WHERE\s+/i.test(query);
+    
+    if (hasWhereClause) {
+      // 如果已经有 WHERE 子句，添加 AND 条件
+      return query.replace(/(\s+WHERE\s+)/i, `$1${timeCondition} AND `);
+    } else {
+      // 如果没有 WHERE 子句，添加 WHERE 条件
+      // 找到 FROM 子句之后的位置
+      const fromMatch = query.match(/(\s+FROM\s+[^\s]+)/i);
+      if (fromMatch) {
+        const fromClause = fromMatch[1];
+        return query.replace(fromClause, `${fromClause} WHERE ${timeCondition}`);
+      }
+    }
+    
+    return query;
+  };
 
   // 加载数据库列表
   const loadDatabases = async () => {
@@ -270,7 +319,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       // 检查是否包含多条 SQL 语句（以分号分隔）
       const statements = queryText.split(';')
         .map(stmt => stmt.trim())
-        .filter(stmt => stmt.length > 0);
+        .filter(stmt => stmt.length > 0)
+        .map(stmt => injectTimeRangeToQuery(stmt, currentTimeRange)); // 为每个查询注入时间范围
       
       console.log('🔍 检测到查询语句数量:', statements.length);
       
@@ -1125,6 +1175,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
         {/* 右侧工具栏 - 统一尺寸，防止被挤压 */}
         <div className="flex items-center gap-2 px-3 flex-shrink-0">
+          {/* 时间范围指示器 */}
+          {currentTimeRange && currentTimeRange.value !== 'none' && (
+            <div className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded border">
+              <Clock className="w-3 h-3" />
+              <span className="font-medium">{currentTimeRange.label}</span>
+            </div>
+          )}
+          
           <Select
             value={selectedDatabase}
             onValueChange={setSelectedDatabase}

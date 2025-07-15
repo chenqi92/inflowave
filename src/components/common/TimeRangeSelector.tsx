@@ -40,6 +40,12 @@ interface TimeRangeSelectorProps {
 
 const TIME_RANGES: TimeRange[] = [
   {
+    label: '不限制时间',
+    value: 'none',
+    start: '',
+    end: ''
+  },
+  {
     label: '最近1小时',
     value: '1h',
     start: 'now() - 1h',
@@ -90,7 +96,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   className = ''
 }) => {
   const [selectedRange, setSelectedRange] = useState<TimeRange>(
-    value || TIME_RANGES[3] // 默认选择最近1天
+    value || TIME_RANGES[0] // 默认选择不限制时间
   );
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [customStart, setCustomStart] = useState('');
@@ -176,7 +182,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               </DropdownMenuTrigger>
             </TooltipTrigger>
             <TooltipContent>
-              时间范围: {selectedRange.start} 到 {selectedRange.end}
+              {selectedRange.value === 'none' ? '不限制时间范围' : `时间范围: ${selectedRange.start} 到 ${selectedRange.end}`}
             </TooltipContent>
           </Tooltip>
           

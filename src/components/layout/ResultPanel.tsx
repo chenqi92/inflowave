@@ -362,7 +362,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
               </div>
             </div>
             
-            {executedQueries.length > 0 && (
+            {executedQueries.length > 0 ? (
               <div className="bg-background rounded border flex-1 min-h-0 flex flex-col">
                 <div className="border-b border-border p-2 flex-shrink-0">
                   <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
@@ -388,6 +388,13 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-center">
+                <div className="text-muted-foreground">
+                  <p className="text-sm">暂无执行的SQL语句详情</p>
+                  <p className="text-xs mt-1">请执行查询以查看详细信息</p>
                 </div>
               </div>
             )}
