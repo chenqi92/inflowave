@@ -180,7 +180,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
   const savePreferences = async (values: UserPreferences) => {
     setLoading(true);
     try {
-      await safeTauriInvoke('update_user_preferences', { preferences: values });
+      await safeTauriInvoke('update_user_preferences', values);
       setPreferences(values);
       toast({ 
         title: "成功", 
@@ -296,8 +296,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-6">
+    <div className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-6">
           {/* 通知设置 */}
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -762,6 +763,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
           </div>
         </form>
       </Form>
+    </div>
   );
 };
 

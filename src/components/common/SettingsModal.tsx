@@ -84,9 +84,53 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             // 应用语言设置
             setLanguage(values.language);
 
-            // 保存到后端（如果需要）
+            // 保存到后端
             try {
-                await safeTauriInvoke('save_app_config', {config: values});
+                // 构建符合后端期望的设置结构
+                const appSettings = {
+                    general: {
+                        theme: values.theme || 'auto',
+                        language: values.language || 'zh-CN',
+                        auto_save: values.autoSave || false,
+                        auto_connect: values.autoConnect || false,
+                        startup_connection: null,
+                    },
+                    editor: {
+                        font_size: 14,
+                        font_family: "Monaco, 'Courier New', monospace",
+                        tab_size: 2,
+                        word_wrap: true,
+                        line_numbers: true,
+                        minimap: true,
+                    },
+                    query: {
+                        timeout: 30000,
+                        max_results: 10000,
+                        auto_complete: true,
+                        syntax_highlight: true,
+                        format_on_save: false,
+                    },
+                    visualization: {
+                        default_chart_type: "line",
+                        refresh_interval: 5000,
+                        max_data_points: 1000,
+                        color_scheme: values.colorScheme || "default",
+                    },
+                    security: {
+                        encrypt_connections: true,
+                        session_timeout: 3600,
+                        require_confirmation: true,
+                        controller: {
+                            allow_delete_statements: false,
+                            allow_drop_statements: false,
+                            allow_dangerous_operations: false,
+                            require_confirmation_for_delete: true,
+                            require_confirmation_for_drop: true,
+                        },
+                    },
+                };
+
+                await safeTauriInvoke('update_app_settings', appSettings);
             } catch (saveError) {
                 console.warn('保存配置到后端失败:', saveError);
                 // 如果后端不支持保存配置，只保存到前端状态
@@ -722,7 +766,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                         value={item.key}
                                         className="h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto"
                                     >
-                                        <div className="max-w-3xl h-full pb-6">
+                                        <div className="max-w-3xl h-full pb-20">
                                             {item.children}
                                         </div>
                                     </TabsContent>
