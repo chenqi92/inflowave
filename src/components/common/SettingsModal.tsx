@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Alert, Tabs, TabsContent, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, InputNumber, Switch, Separator, Label, toastContentDescriptionHeaderTitle } from '@/components/ui';
-import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp, Monitor, User } from 'lucide-react';
+import { Save, RefreshCw, Trash2, Settings, Database, Bug, Bell, FileDown, FileUp, Monitor, User, Shield } from 'lucide-react';
 import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -10,6 +10,7 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
+import ControllerSettings from '@/components/settings/ControllerSettings';
 import ErrorTestButton from '@/components/test/ErrorTestButton';
 import BrowserModeModal from '@/components/common/BrowserModeModal';
 import { useNoticeStore } from '@/store/notice';
@@ -578,6 +579,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           </div>
         </div>
       )},
+    {
+      key: 'controller',
+      icon: <Shield className="w-4 h-4" />,
+      label: '控制器设置',
+      children: (
+        <ControllerSettings />
+      )
+    },
     {
       key: 'preferences',
       icon: <User className="w-4 h-4" />,

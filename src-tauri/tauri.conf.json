@@ -50,6 +50,11 @@
       "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/windows/64x64.ico",
+      "icons/windows/128x128.ico",
+      "icons/windows/256x256.ico",
       "icons/icon.ico",
       "icons/icon.icns"
     ],

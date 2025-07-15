@@ -264,7 +264,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="messages" className="flex-1 overflow-auto p-2">
+        <TabsContent value="messages" className="flex-1 overflow-auto p-2 mt-0">
           <div className="space-y-2">
             {executedQueries.map((query, index) => (
               <div key={index} className="p-2 bg-muted/50 rounded border">
@@ -296,9 +296,9 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </TabsContent>
         
-        <TabsContent value="summary" className="flex-1 overflow-auto p-2">
-          <div className="space-y-2">
-            <div className="bg-background rounded border">
+        <TabsContent value="summary" className="flex-1 overflow-auto p-2 mt-0">
+          <div className="space-y-4 h-full">
+            <div className="bg-background rounded border flex-shrink-0">
               <div className="border-b border-border p-2">
                 <h3 className="text-sm font-semibold text-gray-900">执行摘要</h3>
               </div>
@@ -343,7 +343,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
             </div>
             
             {executedQueries.length > 0 && (
-              <div className="bg-background rounded border">
+              <div className="bg-background rounded border flex-shrink-0">
                 <div className="border-b border-border p-2">
                   <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
                 </div>
@@ -374,7 +374,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </TabsContent>
         
-        <TabsContent value="results" className="flex-1 flex flex-col mt-1">
+        <TabsContent value="results" className="flex-1 flex flex-col mt-0">
           {/* 查询状态栏 */}
           {queryResult && (
             <div className="p-2 bg-muted/50 border-b border">

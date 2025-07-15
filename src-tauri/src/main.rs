@@ -484,6 +484,8 @@ async fn main() {
             update_query_settings,
             update_visualization_settings,
             update_security_settings,
+            update_controller_settings,
+            get_controller_settings,
             export_settings,
             import_settings,
             get_settings_schema,

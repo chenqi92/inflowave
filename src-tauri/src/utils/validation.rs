@@ -114,35 +114,187 @@ impl ValidationUtils {
 
     /// 验证查询语句
     pub fn validate_query(query: &str) -> Result<()> {
+        Self::validate_query_with_settings(query, None)
+    }
+
+    /// 带设置的查询验证
+    pub fn validate_query_with_settings(query: &str, controller_settings: Option<&crate::commands::settings::ControllerSettings>) -> Result<()> {
         debug!("验证查询语句");
-        
+
         let trimmed_query = query.trim();
-        
+
         if trimmed_query.is_empty() {
             return Err(anyhow::anyhow!("查询语句不能为空"));
         }
-        
+
         // 检查查询长度
         if trimmed_query.len() > 10000 {
             return Err(anyhow::anyhow!("查询语句长度不能超过 10000 个字符"));
         }
-        
+
+        let upper_query = trimmed_query.to_uppercase();
+
+        // 检查控制器设置限制
+        if let Some(settings) = controller_settings {
+            // 检查DELETE语句权限
+            if !settings.allow_delete_statements && upper_query.starts_with("DELETE") {
+                return Err(anyhow::anyhow!("DELETE语句已被管理员禁用。请在设置中启用控制器权限。"));
+            }
+
+            // 检查DROP语句权限
+            if !settings.allow_drop_statements && upper_query.starts_with("DROP") {
+                return Err(anyhow::anyhow!("DROP语句已被管理员禁用。请在设置中启用控制器权限。"));
+            }
+
+            // 检查危险操作权限（只有在对应的语句类型被允许时才检查）
+            if !settings.allow_dangerous_operations {
+                let dangerous_operations = [
+                    ("DROP DATABASE", settings.allow_drop_statements),
+                    ("DROP MEASUREMENT", settings.allow_drop_statements),
+                ];
+
+                for (operation, is_allowed) in &dangerous_operations {
+                    if upper_query.contains(operation) && !is_allowed {
+                        return Err(anyhow::anyhow!("危险操作 '{}' 已被管理员禁用。请在设置中启用控制器权限。", operation));
+                    }
+                }
+
+                // DELETE FROM 只有在DELETE语句被允许但危险操作被禁用时才检查
+                if upper_query.contains("DELETE FROM") && settings.allow_delete_statements {
+                    return Err(anyhow::anyhow!("危险操作 'DELETE FROM' 已被管理员禁用。请在设置中启用危险操作权限。"));
+                }
+            }
+        }
+
         // 基本的 SQL 注入检查
         let dangerous_patterns = [
-            "DROP DATABASE",
-            "DROP MEASUREMENT",
-            "DELETE FROM",
-            "TRUNCATE",
+            "TRUNCATE",  // InfluxDB不支持TRUNCATE
+            "; DROP",    // 防止SQL注入
+            "; DELETE",  // 防止SQL注入
         ];
-        
-        let upper_query = trimmed_query.to_uppercase();
+
         for pattern in &dangerous_patterns {
             if upper_query.contains(pattern) {
                 return Err(anyhow::anyhow!("查询包含潜在危险的操作: {}", pattern));
             }
         }
-        
+
         debug!("查询语句验证通过");
+        Ok(())
+    }
+
+    /// 检查是否为INSERT语句
+    pub fn is_insert_statement(query: &str) -> bool {
+        let trimmed_query = query.trim().to_uppercase();
+        trimmed_query.starts_with("INSERT")
+    }
+
+    /// 检查是否为DDL语句（数据定义语言）
+    pub fn is_ddl_statement(query: &str) -> bool {
+        let trimmed_query = query.trim().to_uppercase();
+        trimmed_query.starts_with("CREATE") ||
+        trimmed_query.starts_with("DROP") ||
+        trimmed_query.starts_with("ALTER")
+    }
+
+    /// 检查是否为DML语句（数据操作语言）
+    pub fn is_dml_statement(query: &str) -> bool {
+        let trimmed_query = query.trim().to_uppercase();
+        trimmed_query.starts_with("INSERT") ||
+        trimmed_query.starts_with("DELETE") ||
+        trimmed_query.starts_with("UPDATE")
+    }
+
+    /// 检查是否为查询语句
+    pub fn is_query_statement(query: &str) -> bool {
+        let trimmed_query = query.trim().to_uppercase();
+        trimmed_query.starts_with("SELECT") ||
+        trimmed_query.starts_with("SHOW") ||
+        trimmed_query.starts_with("EXPLAIN")
+    }
+
+    /// 获取SQL语句类型
+    pub fn get_statement_type(query: &str) -> String {
+        let trimmed_query = query.trim().to_uppercase();
+
+        if trimmed_query.starts_with("SELECT") {
+            "SELECT".to_string()
+        } else if trimmed_query.starts_with("INSERT") {
+            "INSERT".to_string()
+        } else if trimmed_query.starts_with("DELETE") {
+            "DELETE".to_string()
+        } else if trimmed_query.starts_with("UPDATE") {
+            "UPDATE".to_string()
+        } else if trimmed_query.starts_with("CREATE") {
+            "CREATE".to_string()
+        } else if trimmed_query.starts_with("DROP") {
+            "DROP".to_string()
+        } else if trimmed_query.starts_with("ALTER") {
+            "ALTER".to_string()
+        } else if trimmed_query.starts_with("SHOW") {
+            "SHOW".to_string()
+        } else if trimmed_query.starts_with("EXPLAIN") {
+            "EXPLAIN".to_string()
+        } else if trimmed_query.starts_with("GRANT") {
+            "GRANT".to_string()
+        } else if trimmed_query.starts_with("REVOKE") {
+            "REVOKE".to_string()
+        } else {
+            "UNKNOWN".to_string()
+        }
+    }
+
+    /// 将INSERT语句转换为Line Protocol格式
+    pub fn parse_insert_to_line_protocol(query: &str) -> Result<String> {
+        debug!("解析INSERT语句: {}", query);
+
+        let trimmed_query = query.trim();
+
+        // 检查是否为INSERT语句
+        if !Self::is_insert_statement(trimmed_query) {
+            return Err(anyhow::anyhow!("不是有效的INSERT语句"));
+        }
+
+        // 简单的INSERT语句解析
+        // 支持格式: INSERT measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+        // 去掉INSERT关键字
+        let line_protocol = trimmed_query
+            .strip_prefix("INSERT")
+            .or_else(|| trimmed_query.strip_prefix("insert"))
+            .ok_or_else(|| anyhow::anyhow!("无法解析INSERT语句"))?
+            .trim();
+
+        // 验证Line Protocol格式
+        Self::validate_line_protocol_format(line_protocol)?;
+
+        debug!("INSERT语句转换为Line Protocol: {}", line_protocol);
+        Ok(line_protocol.to_string())
+    }
+
+    /// 验证Line Protocol格式
+    fn validate_line_protocol_format(line_protocol: &str) -> Result<()> {
+        if line_protocol.trim().is_empty() {
+            return Err(anyhow::anyhow!("Line Protocol内容不能为空"));
+        }
+
+        // 基本格式验证：至少包含测量名和字段
+        let parts: Vec<&str> = line_protocol.split_whitespace().collect();
+        if parts.len() < 2 {
+            return Err(anyhow::anyhow!("Line Protocol格式错误：至少需要测量名和字段"));
+        }
+
+        // 检查测量名部分（可能包含标签）
+        let measurement_part = parts[0];
+        if measurement_part.is_empty() {
+            return Err(anyhow::anyhow!("测量名不能为空"));
+        }
+
+        // 检查字段部分
+        let fields_part = parts[1];
+        if !fields_part.contains('=') {
+            return Err(anyhow::anyhow!("字段格式错误：必须包含键值对"));
+        }
+
         Ok(())
     }
 

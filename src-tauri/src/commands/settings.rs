@@ -53,6 +53,16 @@ pub struct SecuritySettings {
     pub encrypt_connections: bool,
     pub session_timeout: u32,
     pub require_confirmation: bool,
+    pub controller: ControllerSettings,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ControllerSettings {
+    pub allow_delete_statements: bool,
+    pub allow_drop_statements: bool,
+    pub allow_dangerous_operations: bool,
+    pub require_confirmation_for_delete: bool,
+    pub require_confirmation_for_drop: bool,
 }
 
 pub type SettingsStorage = Mutex<AppSettings>;
@@ -92,6 +102,13 @@ impl Default for AppSettings {
                 encrypt_connections: true,
                 session_timeout: 3600,
                 require_confirmation: true,
+                controller: ControllerSettings {
+                    allow_delete_statements: false,  // 默认不允许DELETE语句
+                    allow_drop_statements: false,    // 默认不允许DROP语句
+                    allow_dangerous_operations: false, // 默认不允许危险操作
+                    require_confirmation_for_delete: true,
+                    require_confirmation_for_drop: true,
+                },
             },
         }
     }
@@ -303,4 +320,38 @@ pub async fn get_settings_schema() -> Result<serde_json::Value, String> {
     });
 
     Ok(schema)
+}
+
+/// 更新控制器设置
+#[tauri::command]
+pub async fn update_controller_settings(
+    settings_storage: State<'_, SettingsStorage>,
+    controller_settings: ControllerSettings,
+) -> Result<(), String> {
+    debug!("更新控制器设置");
+
+    let mut settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置锁失败: {}", e);
+        "获取设置锁失败".to_string()
+    })?;
+
+    settings.security.controller = controller_settings;
+
+    info!("控制器设置更新成功");
+    Ok(())
+}
+
+/// 获取控制器设置
+#[tauri::command]
+pub async fn get_controller_settings(
+    settings_storage: State<'_, SettingsStorage>,
+) -> Result<ControllerSettings, String> {
+    debug!("获取控制器设置");
+
+    let settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置锁失败: {}", e);
+        "获取设置锁失败".to_string()
+    })?;
+
+    Ok(settings.security.controller.clone())
 }
