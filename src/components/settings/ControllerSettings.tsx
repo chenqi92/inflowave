@@ -121,18 +121,19 @@ const ControllerSettings: React.FC = () => {
   const watchedValues = form.watch();
 
   return (
-    <div className="space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center gap-3">
-        <Shield className="w-6 h-6 text-blue-600" />
-        <div>
-          <h2 className="text-2xl font-bold">查询设置</h2>
-          <p className="text-muted-foreground">管理查询执行和安全控制</p>
+    <>
+      <div className="space-y-6">
+        {/* 页面标题 */}
+        <div className="flex items-center gap-3">
+          <Shield className="w-6 h-6 text-blue-600" />
+          <div>
+            <h2 className="text-2xl font-bold">查询设置</h2>
+            <p className="text-muted-foreground">管理查询执行和安全控制</p>
+          </div>
         </div>
-      </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+        <Form {...form}>
+          <div className="space-y-6">
 
           {/* 安全警告 */}
           <Alert className="border-amber-200 bg-amber-50">
@@ -400,28 +401,30 @@ const ControllerSettings: React.FC = () => {
             </div>
           </div>
 
-          {/* 操作按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetSettings}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              重置为默认
-            </Button>
-
-            <Button
-              type="submit"
-              disabled={loading}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              保存设置
-            </Button>
           </div>
-        </form>
-      </Form>
-    </div>
+        </Form>
+      </div>
+
+      {/* 操作按钮 - 固定在底部 */}
+      <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={resetSettings}
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          重置为默认
+        </Button>
+
+        <Button
+          onClick={() => form.handleSubmit(saveSettings)()}
+          disabled={loading}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          保存设置
+        </Button>
+      </div>
+    </>
   );
 };
 

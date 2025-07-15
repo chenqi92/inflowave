@@ -296,9 +296,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
 
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-6">
+    <>
+      <div className="space-y-6">
+        <Form {...form}>
+          <div className="space-y-6">
           {/* 通知设置 */}
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -746,24 +747,26 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
             </div>
           </div>
 
-          {/* 保存按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.reset()}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              重置为默认
-            </Button>
-            <Button type="submit" disabled={loading}>
-              <Settings className="w-4 h-4 mr-2" />
-              保存设置
-            </Button>
           </div>
-        </form>
-      </Form>
-    </div>
+        </Form>
+      </div>
+
+      {/* 保存按钮 - 固定在底部 */}
+      <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => form.reset()}
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          重置为默认
+        </Button>
+        <Button onClick={() => form.handleSubmit(savePreferences)()} disabled={loading}>
+          <Settings className="w-4 h-4 mr-2" />
+          保存设置
+        </Button>
+      </div>
+    </>
   );
 };
 

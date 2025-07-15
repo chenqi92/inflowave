@@ -766,7 +766,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                         value={item.key}
                                         className="h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto"
                                     >
-                                        <div className="max-w-3xl h-full pb-20">
+                                        <div className="max-w-3xl h-full pb-6">
                                             {item.children}
                                         </div>
                                     </TabsContent>
