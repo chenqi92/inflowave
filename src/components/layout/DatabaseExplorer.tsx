@@ -35,6 +35,12 @@ interface DatabaseExplorerProps {
   collapsed?: boolean;
   refreshTrigger?: number; // 用于触发刷新
   onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调
+  currentTimeRange?: {
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  }; // 当前时间范围
 }
 
 interface TableInfo {
@@ -48,7 +54,7 @@ interface DatabaseInfo {
   tables: TableInfo[];
 }
 
-const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger, onTableDoubleClick }) => {
+const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, refreshTrigger, onTableDoubleClick, currentTimeRange }) => {
   const { connections, activeConnectionId, connectedConnectionIds, getConnection, addConnection, connectToDatabase, disconnectFromDatabase, getConnectionStatus, isConnectionConnected } = useConnectionStore();
   const { favorites, addFavorite, removeFavorite, isFavorite, getFavoritesByType, markAsAccessed } = useFavoritesStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
@@ -61,10 +67,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
 
   const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
 
-  // 生成时间条件语句（使用默认的1小时时间范围）
+  // 生成时间条件语句（使用当前选择的时间范围）
   const generateTimeCondition = (): string => {
+    if (currentTimeRange && currentTimeRange.start && currentTimeRange.end) {
+      // 使用当前选择的时间范围
+      if (currentTimeRange.end === 'now()') {
+        return `time >= ${currentTimeRange.start}`;
+      } else {
+        return `time >= ${currentTimeRange.start} AND time <= ${currentTimeRange.end}`;
+      }
+    }
     // 默认使用最近1小时的数据
-    return `time > now() - 1h`;
+    return `time >= now() - 1h`;
   };
 
   // 生成带时间筛选的查询语句
@@ -673,7 +687,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ collapsed = false, 
         // 调用回调函数执行查询
         if (onTableDoubleClick) {
           onTableDoubleClick(database, table, query);
-          showMessage.info(`正在查询表 "${table}" 的数据...`);
+          const timeDesc = currentTimeRange ? currentTimeRange.label : '最近1小时';
+          showMessage.info(`正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`);
         } else {
           // 如果没有回调，复制查询到剪贴板
           navigator.clipboard.writeText(query).then(() => {

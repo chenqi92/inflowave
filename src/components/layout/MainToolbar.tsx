@@ -46,13 +46,32 @@ import { ThemeToggle } from '@/components/common/ThemeToggle';
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
   currentView?: string;
+  currentTimeRange?: {
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  };
+  onTimeRangeChange?: (range: {
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  }) => void;
 }
 
-const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query' }) => {
+const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
   const { activeConnectionId, connections } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
+    currentTimeRange ? {
+      label: currentTimeRange.label,
+      value: currentTimeRange.value,
+      start: currentTimeRange.start,
+      end: currentTimeRange.end
+    } : null
+  );
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
   
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
@@ -173,8 +192,12 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
   const handleTimeRangeChange = (range: TimeRange) => {
     setSelectedTimeRange(range);
-    console.log('时间范围已更改:', range);
-    // TODO: 通知其他组件时间范围变化
+    onTimeRangeChange?.({
+      label: range.label,
+      value: range.value,
+      start: range.start,
+      end: range.end
+    });
   };
 
   return (
@@ -191,7 +214,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="flex items-center gap-1">
                     <Link className="w-4 h-4 text-success" />
-                    <Badge variant="success" className="px-1.5 py-0.5">
+                    <Badge variant="default" className="px-1.5 py-0.5 bg-green-600 text-white">
                       ●
                     </Badge>
                   </div>
@@ -207,7 +230,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
                 {/* InfluxDB特色: 时间范围选择器 */}
                 <TimeRangeSelector
-                  value={selectedTimeRange || undefined}
+                  value={selectedTimeRange || currentTimeRange}
                   onChange={handleTimeRangeChange}
                   className="ml-1"
                 />

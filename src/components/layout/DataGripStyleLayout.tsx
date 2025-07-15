@@ -31,6 +31,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
   const [executedQueries, setExecutedQueries] = useState<string[]>([]);
   const [executionTime, setExecutionTime] = useState<number>(0);
+  const [currentTimeRange, setCurrentTimeRange] = useState<{
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  }>({
+    label: '最近1天',
+    value: '1d',
+    start: 'now() - 1d',
+    end: 'now()'
+  });
   const tabEditorRef = useRef<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
 
   // 刷新数据源面板的方法
@@ -171,6 +182,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         <MainToolbar
           currentView={currentView}
           onViewChange={setCurrentView}
+          currentTimeRange={currentTimeRange}
+          onTimeRangeChange={setCurrentTimeRange}
         />
       </Header>
 
@@ -194,6 +207,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                 collapsed={leftPanelCollapsed}
                 refreshTrigger={refreshTrigger}
                 onTableDoubleClick={handleTableDoubleClick}
+                currentTimeRange={currentTimeRange}
               />
               {/* 折叠按钮 */}
               <Button

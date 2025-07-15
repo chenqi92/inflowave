@@ -137,11 +137,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         return;
       }
       
-      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+      const request: QueryRequest = {
         connection_id: activeConnectionId,
         database: database,
-        query: query.trim()
-      });
+        query: query.trim(),
+        timeout: undefined
+      };
+      
+      const result = await safeTauriInvoke<QueryResult>('execute_query', request);
       
       console.log('✅ 查询结果:', result);
       
@@ -264,11 +267,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           selectedDatabase_length: selectedDatabase?.length
         });
         
-        const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        const request: QueryRequest = {
           connection_id: activeConnectionId,
           database: selectedDatabase,
-          query: statements[0]
-        });
+          query: statements[0],
+          timeout: undefined
+        };
+        
+        const result = await safeTauriInvoke<QueryResult>('execute_query', request);
         
         const executionTime = Date.now() - startTime;
         console.log('✅ 单条查询结果:', result);
@@ -632,24 +638,39 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               });
             });
 
-            // 获取测量建议
-            const measurementSuggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
-              connection_id: activeConnectionId,
-              database: selectedDatabase,
-              partial_query: word.word,
-            });
+            // 获取测量建议 - 只有当输入长度大于等于1时才获取
+            if (word.word && word.word.length >= 1) {
+              try {
+                console.log('🔍 获取智能提示:', {
+                  connection_id: activeConnectionId,
+                  database: selectedDatabase,
+                  partial_query: word.word
+                });
+                
+                const measurementSuggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
+                  connection_id: activeConnectionId,
+                  database: selectedDatabase,
+                  partial_query: word.word,
+                });
+                
+                console.log('✅ 智能提示结果:', measurementSuggestions);
 
-            measurementSuggestions?.forEach(suggestion => {
-              suggestions.push({
-                label: suggestion,
-                kind: monaco.languages.CompletionItemKind.Variable,
-                insertText: suggestion,
-                documentation: `建议: ${suggestion}`,
-                range,
-              });
-            });
+                measurementSuggestions?.forEach(suggestion => {
+                  suggestions.push({
+                    label: suggestion,
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    insertText: suggestion,
+                    documentation: `测量/字段建议: ${suggestion}`,
+                    range,
+                  });
+                });
+              } catch (error) {
+                console.warn('⚠️ 获取智能提示失败:', error);
+                // 即使获取失败也不影响其他提示
+              }
+            }
           } catch (error) {
-            console.warn('获取智能提示失败:', error);
+            console.warn('⚠️ 智能提示整体获取失败:', error);
           }
         }
 
@@ -765,19 +786,30 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       quickSuggestions: {
         other: true,
         comments: false,
-        strings: false,
+        strings: true, // 在字符串中也显示提示（用于测量名）
       },
       suggestOnTriggerCharacters: true,
       acceptSuggestionOnEnter: 'on',
       tabCompletion: 'on',
       parameterHints: { enabled: true },
       hover: { enabled: true },
+      // 增加更多提示配置
+      quickSuggestionsDelay: 100, // 减少延迟
+      suggestSelection: 'first', // 默认选择第一个建议
+      wordBasedSuggestions: true, // 基于单词的建议
+      // 自动触发提示的字符
+      autoIndent: 'full',
     });
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
       // 执行查询
       executeQuery();
+    });
+    
+    // 添加手动触发智能提示的快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+      editor.trigger('manual', 'editor.action.triggerSuggest', {});
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
