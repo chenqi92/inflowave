@@ -118,7 +118,7 @@ const ExtensionManager: React.FC = () => {
       // Store result for modal display
       console.log('API 测试结果:', result);
     } catch (error) {
-      toast({ title: "错误", description: "测试失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `测试失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

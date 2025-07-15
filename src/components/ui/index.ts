@@ -22,6 +22,10 @@ export { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastT
 export { Toaster } from './Toaster';
 export { useToast, toast } from '../../hooks/use-toast';
 
+// Sonner (新的推荐 Toast 系统)
+export { Toaster as SonnerToaster } from './sonner';
+export { toast as sonnerToast } from 'sonner';
+
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
 
 export { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from './Breadcrumb';

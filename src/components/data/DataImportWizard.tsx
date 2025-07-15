@@ -107,7 +107,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       setPreviewData(preview);
       setCurrentStep(1);
     } catch (error) {
-      toast({ title: "错误", description: "预览文件失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `预览文件失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       
       toast({ title: "成功", description: "数据导入完成" });
     } catch (error) {
-      toast({ title: "错误", description: "导入失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `导入失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

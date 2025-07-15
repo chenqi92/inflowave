@@ -37,7 +37,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             table: tableName,
             queryType: 'SELECT',
             limit: 1000});
-          toast({ title: "成功", description: "正在查看表 ${tableName} 的数据" });
+          toast({ title: "成功", description: `正在查看表 ${tableName} 的数据` });
           break;
 
         case 'view_structure':
@@ -64,9 +64,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               onOk: () => {
                 // 确保能正常关闭
               }});
-            toast({ title: "成功", description: "已获取表 ${tableName} 的结构信息" });
+            toast({ title: "成功", description: `已获取表 ${tableName} 的结构信息` });
           } catch (error) {
-            toast({ title: "错误", description: "获取表结构失败: ${error}", variant: "destructive" });
+            toast({ title: "错误", description: `获取表结构失败: ${error}`, variant: "destructive" });
           }
           break;
 
@@ -94,9 +94,9 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
               onOk: () => {
                 // 确保能正常关闭
               }});
-            toast({ title: "成功", description: "已生成表 ${tableName} 的插入模板" });
+            toast({ title: "成功", description: `已生成表 ${tableName} 的插入模板` });
           } catch (error) {
-            toast({ title: "错误", description: "生成插入模板失败: ${error}", variant: "destructive" });
+            toast({ title: "错误", description: `生成插入模板失败: ${error}`, variant: "destructive" });
           }
           break;
 
@@ -105,7 +105,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('generate_update_template', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "已生成表 ${tableName} 的更新模板" });
+          toast({ title: "成功", description: `已生成表 ${tableName} 的更新模板` });
           break;
 
         case 'delete_data':
@@ -113,13 +113,13 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('generate_delete_template', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "已生成表 ${tableName} 的删除模板" });
+          toast({ title: "成功", description: `已生成表 ${tableName} 的删除模板` });
           break;
 
         case 'copy_name':
           // 复制表名
           await navigator.clipboard.writeText(tableName);
-          toast({ title: "成功", description: "已复制表名: ${tableName}" });
+          toast({ title: "成功", description: `已复制表名: ${tableName}` });
           break;
 
         case 'copy_select': {
@@ -158,7 +158,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             filePath});
                           toast.success(result);
                         } catch (error) {
-                          toast({ title: "错误", description: "导出CSV失败: ${error}", variant: "destructive" });
+                          toast({ title: "错误", description: `导出CSV失败: ${error}`, variant: "destructive" });
                         }
                       }}
                       className="mr-2"
@@ -178,7 +178,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             filePath});
                           toast.success(result);
                         } catch (error) {
-                          toast({ title: "错误", description: "导出JSON失败: ${error}", variant: "destructive" });
+                          toast({ title: "错误", description: `导出JSON失败: ${error}`, variant: "destructive" });
                         }
                       }}
                     >
@@ -194,7 +194,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                 // 明确处理取消操作
               }});
           } catch (error) {
-            toast({ title: "错误", description: "导出数据失败: ${error}", variant: "destructive" });
+            toast({ title: "错误", description: `导出数据失败: ${error}`, variant: "destructive" });
           }
           break;
 
@@ -203,7 +203,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('import_table_data', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "正在导入数据到表 ${tableName}" });
+          toast({ title: "成功", description: `正在导入数据到表 ${tableName}` });
           break;
 
         case 'refresh_table':
@@ -211,7 +211,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('refresh_table_info', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "已刷新表 ${tableName} 的信息" });
+          toast({ title: "成功", description: `已刷新表 ${tableName} 的信息` });
           break;
 
         case 'table_info':
@@ -219,7 +219,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('get_table_info', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "正在获取表 ${tableName} 的详细信息" });
+          toast({ title: "成功", description: `正在获取表 ${tableName} 的详细信息` });
           break;
 
         case 'visualize_data':
@@ -227,7 +227,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           await safeTauriInvoke('create_table_visualization', { connection_id: activeConnectionId,
             database: databaseName,
             table: tableName});
-          toast({ title: "成功", description: "正在为表 ${tableName} 创建数据可视化" });
+          toast({ title: "成功", description: `正在为表 ${tableName} 创建数据可视化` });
           break;
 
         case 'drop_table': {
@@ -237,7 +237,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             await safeTauriInvoke('drop_table', { connection_id: activeConnectionId,
               database: databaseName,
               table: tableName});
-            toast({ title: "成功", description: "表 ${tableName} 已删除" });
+            toast({ title: "成功", description: `表 ${tableName} 已删除` });
           }
           break;
         }
@@ -253,7 +253,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
     }
   };
 

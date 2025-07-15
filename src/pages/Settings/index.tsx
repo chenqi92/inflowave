@@ -101,7 +101,7 @@ const Settings: React.FC = () => {
 
             toast({title: "成功", description: "设置已保存"});
         } catch (error) {
-            toast({title: "错误", description: "保存设置失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `保存设置失败: ${error}`, variant: "destructive"});
         } finally {
             setLoading(false);
         }
@@ -147,7 +147,7 @@ const Settings: React.FC = () => {
             }
         } catch (error) {
             console.error('导出设置失败:', error);
-            toast({title: "错误", description: "导出设置失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `导出设置失败: ${error}`, variant: "destructive"});
         }
     };
 
@@ -191,7 +191,7 @@ const Settings: React.FC = () => {
             }
         } catch (error) {
             console.error('导入设置失败:', error);
-            toast({title: "错误", description: "导入设置失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `导入设置失败: ${error}`, variant: "destructive"});
         }
     };
 

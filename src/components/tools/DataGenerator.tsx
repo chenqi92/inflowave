@@ -315,7 +315,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         
         setCompletedTasks(prev => [...prev, task.name]);
         console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
-        toast({ title: "成功", description: "${task.name} 数据生成完成 (${task.recordCount} 条记录)" });
+        toast({ title: "成功", description: `${task.name} 数据生成完成 (${task.recordCount} 条记录)` });
       }
       
       setProgress(100);
@@ -329,7 +329,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       
     } catch (error) {
       console.error('数据生成失败:', error);
-      toast({ title: "错误", description: "数据生成失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `数据生成失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -363,7 +363,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       toast({ title: "成功", description: "测试数据已清空" });
     } catch (error) {
       console.error('清空数据失败:', error);
-      toast({ title: "错误", description: "清空数据失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `清空数据失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

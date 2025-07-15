@@ -66,7 +66,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       toast({ title: "成功", description: "导出功能开发中，请查看控制台输出" });
       onClose();
     } catch (error) {
-      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

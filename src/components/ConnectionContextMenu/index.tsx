@@ -36,9 +36,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleConnect = async () => {
     try {
       await connectToDatabase(connection.id!);
-      toast({ title: "成功", description: "已连接到 ${connection.name}" });
+      toast({ title: "成功", description: `已连接到 ${connection.name}` });
     } catch (error) {
-      toast({ title: "错误", description: "连接失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `连接失败: ${error}`, variant: "destructive" });
     }
     onClose?.();
   };
@@ -46,9 +46,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleDisconnect = async () => {
     try {
       await disconnectFromDatabase(connection.id!);
-      toast({ title: "成功", description: "已断开 ${connection.name}" });
+      toast({ title: "成功", description: `已断开 ${connection.name}` });
     } catch (error) {
-      toast({ title: "错误", description: "断开连接失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `断开连接失败: ${error}`, variant: "destructive" });
     }
     onClose?.();
   };
@@ -62,7 +62,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
         toast({ title: "错误", description: "连接测试失败", variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "错误", description: "连接测试失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `连接测试失败: ${error}`, variant: "destructive" });
     }
     onClose?.();
   };
@@ -78,7 +78,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       await refreshAllStatuses();
       toast({ title: "成功", description: "状态已刷新" });
     } catch (error) {
-      toast({ title: "错误", description: "刷新状态失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `刷新状态失败: ${error}`, variant: "destructive" });
     }
     onClose?.();
   };
@@ -105,7 +105,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
         ),
         width: 500});
     } catch (error) {
-      toast({ title: "错误", description: "获取数据库列表失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取数据库列表失败: ${error}`, variant: "destructive" });
     }
     onClose?.();
   };

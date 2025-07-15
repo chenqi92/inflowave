@@ -94,7 +94,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         toast({ title: "成功", description: "数据格式验证通过" });
       }
     } catch (error) {
-      toast({ title: "错误", description: "数据格式验证失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `数据格式验证失败: ${error}`, variant: "destructive" });
     } finally {
       setValidating(false);
     }
@@ -119,7 +119,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       setPreviewData(preview);
       setShowPreview(true);
     } catch (error) {
-      toast({ title: "错误", description: "预览转换失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `预览转换失败: ${error}`, variant: "destructive" });
     } finally {
       setPreviewing(false);
     }
@@ -150,7 +150,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         toast({ title: "错误", description: "数据写入失败", variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "错误", description: "数据写入失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `数据写入失败: ${error}`, variant: "destructive" });
       setWriteResult({
         success: false,
         message: `写入失败: ${error}`,

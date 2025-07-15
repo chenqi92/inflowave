@@ -10,7 +10,7 @@ import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
 import { ToastProvider, TooltipProvider } from '@/components/ui';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 import './styles/index.css';
 

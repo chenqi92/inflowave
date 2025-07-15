@@ -58,7 +58,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       const history = await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
       setHistoryItems(history || []);
     } catch (error) {
-      toast({ title: "错误", description: "加载查询历史失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载查询历史失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
       setSavedQueries(queries || []);
     } catch (error) {
-      toast({ title: "错误", description: "加载保存的查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载保存的查询失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       await loadQueryHistory();
       toast({ title: "成功", description: "删除成功" });
     } catch (error) {
-      toast({ title: "错误", description: "删除失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -95,7 +95,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       setHistoryItems([]);
       toast({ title: "成功", description: "历史记录已清空" });
     } catch (error) {
-      toast({ title: "错误", description: "清空失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `清空失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -106,7 +106,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       await loadSavedQueries();
       toast({ title: "成功", description: "删除成功" });
     } catch (error) {
-      toast({ title: "错误", description: "删除失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -123,7 +123,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       setEditingQuery(null);
       toast({ title: "成功", description: "查询已更新" });
     } catch (error) {
-      toast({ title: "错误", description: "更新失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `更新失败: ${error}`, variant: "destructive" });
     }
   };
 

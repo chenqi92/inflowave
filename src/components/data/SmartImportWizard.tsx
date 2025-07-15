@@ -395,7 +395,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
         totalRows: wizardData.totalRows,
         errors: [String(error)],
         warnings: []});
-      toast({ title: "错误", description: "数据导入失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `数据导入失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

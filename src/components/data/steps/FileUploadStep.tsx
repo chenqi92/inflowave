@@ -147,7 +147,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       }
     } catch (error) {
       setParseError(`文件处理失败: ${error}`);
-      toast({ title: "错误", description: "文件处理失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `文件处理失败: ${error}`, variant: "destructive" });
     } finally {
       onLoadingChange(false);
     }
@@ -205,7 +205,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         totalRows});
     } catch (error) {
       setParseError(`解析失败: ${error}`);
-      toast({ title: "错误", description: "解析失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `解析失败: ${error}`, variant: "destructive" });
     } finally {
       onLoadingChange(false);
     }

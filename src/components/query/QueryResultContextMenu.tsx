@@ -46,7 +46,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制列名
           if (columnName) {
             await navigator.clipboard.writeText(columnName);
-            toast({ title: "成功", description: "已复制列名: ${columnName}" });
+            toast({ title: "成功", description: `已复制列名: ${columnName}` });
           }
           break;
 
@@ -70,28 +70,28 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
         case 'filter_by_value':
           // 按值过滤
           if (selectedData !== undefined && columnName) {
-            toast({ title: "成功", description: "正在按 ${columnName} = ${selectedData} 过滤" });
+            toast({ title: "成功", description: `正在按 ${columnName} = ${selectedData} 过滤` });
           }
           break;
 
         case 'filter_not_equal':
           // 按值排除
           if (selectedData !== undefined && columnName) {
-            toast({ title: "成功", description: "正在按 ${columnName} != ${selectedData} 过滤" });
+            toast({ title: "成功", description: `正在按 ${columnName} != ${selectedData} 过滤` });
           }
           break;
 
         case 'sort_asc':
           // 升序排序
           if (columnName) {
-            toast({ title: "成功", description: "正在按 ${columnName} 升序排序" });
+            toast({ title: "成功", description: `正在按 ${columnName} 升序排序` });
           }
           break;
 
         case 'sort_desc':
           // 降序排序
           if (columnName) {
-            toast({ title: "成功", description: "正在按 ${columnName} 降序排序" });
+            toast({ title: "成功", description: `正在按 ${columnName} 降序排序` });
           }
           break;
 
@@ -128,7 +128,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
     }
   };
 

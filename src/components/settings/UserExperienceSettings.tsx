@@ -42,7 +42,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
           workspace: prefs.workspace});
       }
     } catch (error) {
-      toast({ title: "错误", description: "加载用户偏好失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载用户偏好失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       onSettingsChange?.(updatedPreferences);
       toast({ title: "成功", description: "设置已保存" });
     } catch (error) {
-      toast({ title: "错误", description: "保存设置失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `保存设置失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -78,7 +78,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         workspace: defaultPrefs.workspace});
       toast({ title: "成功", description: "已重置为默认设置" });
     } catch (error) {
-      toast({ title: "错误", description: "重置设置失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `重置设置失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -97,7 +97,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       setPreferences(updatedPreferences);
       toast({ title: "成功", description: "快捷键已更新" });
     } catch (error) {
-      toast({ title: "错误", description: "更新快捷键失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `更新快捷键失败: ${error}`, variant: "destructive" });
     }
   };
 

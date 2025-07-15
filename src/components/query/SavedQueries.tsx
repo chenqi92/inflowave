@@ -46,7 +46,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
       setSavedQueries(queries || []);
     } catch (error) {
-      toast({ title: "错误", description: "加载保存的查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载保存的查询失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       form.resetFields();
       toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -95,7 +95,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       form.resetFields();
       toast({ title: "成功", description: "查询已更新" });
     } catch (error) {
-      toast({ title: "错误", description: "更新查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `更新查询失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -106,7 +106,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       await loadSavedQueries();
       toast({ title: "成功", description: "查询已删除" });
     } catch (error) {
-      toast({ title: "错误", description: "删除查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除查询失败: ${error}`, variant: "destructive" });
     }
   };
 

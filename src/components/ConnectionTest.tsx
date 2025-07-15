@@ -71,7 +71,7 @@ const ConnectionTest: React.FC = () => {
       
     } catch (error) {
       console.error('连接测试失败:', error);
-      toast({ title: "错误", description: "连接测试失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `连接测试失败: ${error}`, variant: "destructive" });
       setTestResult({
         success: false,
         error: String(error)

@@ -146,7 +146,7 @@ const Database: React.FC = () => {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
       // Reset databases to prevent null/undefined errors
       setDatabases([]);
     } finally {
@@ -174,7 +174,7 @@ const Database: React.FC = () => {
       setRetentionPolicies(Array.isArray(retentionPolicyList) ? retentionPolicyList : []);
       setDatabaseStats(stats);
     } catch (error) {
-      toast({ title: "错误", description: "加载数据库详细信息失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载数据库详细信息失败: ${error}`, variant: "destructive" });
       // Reset arrays to prevent null/undefined errors
       setMeasurements([]);
       setRetentionPolicies([]);
@@ -202,7 +202,7 @@ const Database: React.FC = () => {
       form.reset();
       await loadDatabases();
     } catch (error) {
-      toast({ title: "错误", description: "创建数据库失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `创建数据库失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -245,7 +245,7 @@ const Database: React.FC = () => {
 
       await loadDatabases();
     } catch (error) {
-      toast({ title: "错误", description: "删除数据库失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除数据库失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -567,7 +567,7 @@ const Database: React.FC = () => {
                                 toast.success(`保留策略 "${record.name}" 删除成功`);
                                 loadDatabaseDetails(selectedDatabase);
                               } catch (error) {
-                                toast({ title: "错误", description: "删除保留策略失败: ${error}", variant: "destructive" });
+                                toast({ title: "错误", description: `删除保留策略失败: ${error}`, variant: "destructive" });
                               }
                             }}
                             okText="确定"
@@ -685,7 +685,7 @@ const Database: React.FC = () => {
 
                   toast({ title: "成功", description: "数据库结构导出成功" });
                 } catch (error) {
-                  toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -741,7 +741,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "数据预览失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `数据预览失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -771,7 +771,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取字段信息失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取字段信息失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -800,7 +800,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取标签键失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取标签键失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -840,7 +840,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取标签值失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取标签值失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -865,7 +865,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取序列信息失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取序列信息失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -891,7 +891,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取记录数失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取记录数失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -919,7 +919,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取时间范围失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取时间范围失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -961,7 +961,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取字段统计失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取字段统计失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -1003,7 +1003,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: "获取标签分布失败: ${error}", variant: "destructive" });
+                  toast({ title: "错误", description: `获取标签分布失败: ${error}`, variant: "destructive" });
                 }
                 break;
 
@@ -1075,7 +1075,7 @@ const Database: React.FC = () => {
                 toast.info(`功能 "${action}" 开发中...`);
             }
           } catch (error) {
-            toast({ title: "错误", description: "操作失败: ${error}", variant: "destructive" });
+            toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
           }
         };
 

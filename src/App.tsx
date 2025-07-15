@@ -5,7 +5,7 @@ import '@/styles/datagrip.css';
 // 错误处理
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import {errorLogger} from '@/utils/errorLogger';
-import {ThemeProvider} from '@/components/providers/ThemeProvider';
+
 
 import {safeTauriInvoke, initializeEnvironment, isBrowserEnvironment} from './utils/tauri';
 import {showMessage} from './utils/message';
@@ -21,7 +21,7 @@ import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
 // UI 组件导入
-import {Text, Spin, Layout, Content} from '@/components/ui';
+import {Text, Spin, Layout, Content, SonnerToaster} from '@/components/ui';
 import {ModalAdapter} from '@/utils/modalAdapter';
 
 // 主布局组件
@@ -208,17 +208,11 @@ const App: React.FC = () => {
     }
 
     return (
-        <ThemeProvider
-            defaultTheme="system"
-            storageKey="inflowave-theme"
-            defaultColorScheme="default"
-            colorSchemeStorageKey="inflowave-color-scheme"
-        >
-            <ErrorBoundary>
-                <MainLayout/>
-                <ModalAdapter/>
-            </ErrorBoundary>
-        </ThemeProvider>
+        <ErrorBoundary>
+            <MainLayout/>
+            <ModalAdapter/>
+            <SonnerToaster />
+        </ErrorBoundary>
     );
 };
 

@@ -418,7 +418,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       await safeTauriInvoke('save_query', { query: savedQuery });
       toast({ title: "成功", description: "查询已保存" });
     } catch (error) {
-      toast({ title: "错误", description: "保存查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
     }
   };
 

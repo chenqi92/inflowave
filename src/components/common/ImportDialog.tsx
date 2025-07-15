@@ -116,7 +116,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       setFieldMappings(mappings);
       setCurrentStep(1);
     } catch (error) {
-      toast({ title: "错误", description: "文件解析失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `文件解析失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -216,7 +216,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         onSuccess();
       }
     } catch (error) {
-      toast({ title: "错误", description: "数据导入失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `数据导入失败: ${error}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }

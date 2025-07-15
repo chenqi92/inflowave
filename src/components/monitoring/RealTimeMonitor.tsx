@@ -72,7 +72,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      toast({ title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
     }
   };
 
@@ -196,7 +196,7 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       setEditingAlert(null);
       form.resetFields();
     } catch (error) {
-      toast({ title: "错误", description: "保存告警规则失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `保存告警规则失败: ${error}`, variant: "destructive" });
     }
   };
 

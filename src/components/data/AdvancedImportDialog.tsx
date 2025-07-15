@@ -232,7 +232,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 processedRows: 0,
                 totalRows: 0
             });
-            toast({title: "错误", description: "文件解析失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `文件解析失败: ${error}`, variant: "destructive"});
         } finally {
             setLoading(false);
         }
@@ -483,7 +483,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             const result = await performDataValidation(importData, fieldMappings);
             setValidationResult(result);
         } catch (error) {
-            toast({title: "错误", description: "数据验证失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `数据验证失败: ${error}`, variant: "destructive"});
         } finally {
             setLoading(false);
         }
@@ -628,7 +628,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 processedRows: 0,
                 totalRows: importData?.totalRows || 0
             });
-            toast({title: "错误", description: "数据导入失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `数据导入失败: ${error}`, variant: "destructive"});
         } finally {
             setLoading(false);
         }

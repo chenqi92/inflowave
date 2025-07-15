@@ -104,10 +104,10 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
         filename: `query_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`};
 
       await safeTauriInvoke('export_query_data', exportData);
-      toast({ title: "成功", description: "数据已导出为 ${exportFormat.toUpperCase()} 格式" });
+      toast({ title: "成功", description: `数据已导出为 ${exportFormat.toUpperCase()} 格式` });
       setExportModalVisible(false);
     } catch (error) {
-      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
     }
   };
 

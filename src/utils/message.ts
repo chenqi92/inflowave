@@ -1,8 +1,8 @@
 /**
- * 消息服务 - 使用Shadcn/ui Toast系统
+ * 消息服务 - 使用 Sonner Toast系统
  */
 
-import { toast } from '@/components/ui';
+import { toast } from 'sonner';
 
 
 // 为了向后兼容，保留这些空函数

@@ -44,13 +44,13 @@ export class QueryOperationsService {
       if (!result) {
         throw new Error('查询返回结果为空');
       }
-      toast({ title: "成功", description: "查询完成，返回 ${result.rowCount} 行数据" });
+      toast({ title: "成功", description: `查询完成，返回 ${result.rowCount} 行数据` });
       if (!result) {
         throw new Error('查询返回结果为空');
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `查询失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -77,7 +77,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取字段信息失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取字段信息失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -104,7 +104,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取标签键失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取标签键失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -135,7 +135,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取标签值失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取标签值失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -164,7 +164,7 @@ export class QueryOperationsService {
       message.info(`测量 "${params.measurement}" 共有 ${count} 条记录`);
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取记录数失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取记录数失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -191,7 +191,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取时间范围失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取时间范围失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -219,7 +219,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取字段统计失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取字段统计失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -247,7 +247,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取分位数统计失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取分位数统计失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -277,7 +277,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "按标签查询失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `按标签查询失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -342,9 +342,9 @@ export class QueryOperationsService {
         filename: `${params.measurement}_export_${Date.now()}.${params.format}`
       });
 
-      toast({ title: "成功", description: "数据已导出为 ${params.format.toUpperCase()} 格式" });
+      toast({ title: "成功", description: `数据已导出为 ${params.format.toUpperCase()} 格式` });
     } catch (error) {
-      toast({ title: "错误", description: "导出失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -368,7 +368,7 @@ export class QueryOperationsService {
 
       message.success(`测量 "${params.measurement}" 已删除`);
     } catch (error) {
-      toast({ title: "错误", description: "删除测量失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除测量失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -391,7 +391,7 @@ export class QueryOperationsService {
 
       message.success(`数据库 "${params.database}" 已删除`);
     } catch (error) {
-      toast({ title: "错误", description: "删除数据库失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `删除数据库失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -409,7 +409,7 @@ export class QueryOperationsService {
 
       return info;
     } catch (error) {
-      toast({ title: "错误", description: "获取数据库信息失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取数据库信息失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -435,7 +435,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取保留策略失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取保留策略失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }
@@ -461,7 +461,7 @@ export class QueryOperationsService {
       }
       return result;
     } catch (error) {
-      toast({ title: "错误", description: "获取测量列表失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `获取测量列表失败: ${error}`, variant: "destructive" });
       throw error;
     }
   }

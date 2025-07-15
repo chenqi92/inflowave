@@ -209,7 +209,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             }
         } catch (error) {
             console.error('导出设置失败:', error);
-            toast({title: "错误", description: "导出设置失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `导出设置失败: ${error}`, variant: "destructive"});
         }
     };
 
@@ -253,7 +253,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             }
         } catch (error) {
             console.error('导入设置失败:', error);
-            toast({title: "错误", description: "导入设置失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `导入设置失败: ${error}`, variant: "destructive"});
         }
     };
 

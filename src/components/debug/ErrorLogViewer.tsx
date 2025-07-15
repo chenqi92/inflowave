@@ -46,7 +46,7 @@ const ErrorLogViewer: React.FC = () => {
       const parsedLogs = parseLogContent(logContent);
       setLogs(parsedLogs);
       setFilteredLogs(parsedLogs);
-      toast({ title: "成功", description: "已加载 ${parsedLogs.length} 条错误日志" });
+      toast({ title: "成功", description: `已加载 ${parsedLogs.length} 条错误日志` });
     } catch (error) {
       console.error('加载错误日志失败:', error);
       toast({ title: "错误", description: "加载错误日志失败", variant: "destructive" });
