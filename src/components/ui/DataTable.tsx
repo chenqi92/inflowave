@@ -99,7 +99,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
           }}
         >
           <Table className={cn(
-            "w-full",
+            "w-full table-auto",
             size === 'small' && "text-xs",
             size === 'large' && "text-base",
             bordered && "border border-border"
@@ -111,13 +111,11 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                     key={column.key}
                     style={{
                       width: column.width,
-                      minWidth: column.width ? undefined : '120px',
                       textAlign: column.align || 'left'
                     }}
                     className={cn(
                       column.ellipsis && "truncate",
-                      bordered && "border-r border-border last:border-r-0",
-                      "whitespace-nowrap"
+                      bordered && "border-r border-border last:border-r-0"
                     )}
                   >
                     {column.title}

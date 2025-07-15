@@ -500,8 +500,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                         className="w-full h-full"
                         rowClassName={(record) =>
                             activeConnectionId === record.id
-                                ? 'bg-blue-50'
-                                : 'hover:bg-muted/50'
+                                ? 'bg-primary/10 dark:bg-primary/20'
+                                : ''
                         }
                     />
                 </div>
