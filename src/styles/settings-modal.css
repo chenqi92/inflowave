@@ -181,27 +181,52 @@
   margin: 16px 0;
 }
 
-/* 隐藏偏好设置弹框中的滚动条 */
+/* 统一的偏好设置弹框滚动条样式 */
 .settings-modal [data-radix-scroll-area-viewport],
 .settings-modal .overflow-y-auto,
 .settings-modal .max-h-96 {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: thin;
 }
 
 .settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar,
 .settings-modal .overflow-y-auto::-webkit-scrollbar,
 .settings-modal .max-h-96::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  width: 8px;
+  height: 8px;
 }
 
-/* 确保所有子组件的滚动条都被隐藏 */
-.settings-modal * {
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-track,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-track,
+.settings-modal .max-h-96::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 6px;
+  margin: 4px 2px;
+}
+
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-thumb,
+.settings-modal .max-h-96::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 20px;
+}
+
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.settings-modal .max-h-96::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+  background-clip: content-box;
+}
+
+/* 隐藏子组件内部的滚动条，只保留TabsContent层级的滚动条 */
+.settings-modal .overflow-y-auto .overflow-y-auto {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
 }
 
-.settings-modal *::-webkit-scrollbar {
+.settings-modal .overflow-y-auto .overflow-y-auto::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
 

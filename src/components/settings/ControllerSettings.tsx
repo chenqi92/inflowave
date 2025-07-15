@@ -124,16 +124,15 @@ const ControllerSettings: React.FC = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(saveSettings)} className="h-full flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-6">
-          {/* 页面标题 */}
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-blue-600" />
-            <div>
-              <h2 className="text-2xl font-bold">查询设置</h2>
-              <p className="text-muted-foreground">管理查询执行和安全控制</p>
-            </div>
+      <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+        {/* 页面标题 */}
+        <div className="flex items-center gap-3">
+          <Shield className="w-6 h-6 text-blue-600" />
+          <div>
+            <h2 className="text-2xl font-bold">查询设置</h2>
+            <p className="text-muted-foreground">管理查询执行和安全控制</p>
           </div>
+        </div>
 
           {/* 安全警告 */}
           <Alert className="border-amber-200 bg-amber-50">
@@ -401,10 +400,8 @@ const ControllerSettings: React.FC = () => {
             </div>
           </div>
 
-        </div>
-
         {/* 操作按钮 */}
-        <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button
             type="button"
             variant="outline"

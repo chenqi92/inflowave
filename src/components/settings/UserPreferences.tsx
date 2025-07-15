@@ -296,10 +296,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
 
 
   return (
-    <div className="h-full flex flex-col">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(savePreferences)} className="h-full flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-6">
           {/* 通知设置 */}
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -747,10 +745,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
             </div>
           </div>
 
-          </div>
-
           {/* 保存按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
@@ -766,9 +762,6 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
           </div>
         </form>
       </Form>
-
-
-    </div>
   );
 };
 
