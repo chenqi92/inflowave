@@ -116,6 +116,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
     const [connectionLoadingStates, setConnectionLoadingStates] = useState<Map<string, boolean>>(new Map());
     const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
+    const [updateTimeouts, setUpdateTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
 
 
     const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
@@ -309,14 +310,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             const isConnected = isConnectionConnected(connection.id);
             const connectionPath = connection.id;
             const isFav = isFavorite(connectionPath);
-            const isLoading = connectionLoadingStates.get(connection.id);
+            const connectionStatus = getConnectionStatus(connection.id);
+            // 检查是否正在连接中（从连接状态中获取）
+            const isConnecting = connectionStatus?.status === 'connecting';
+            // 在构建树时，只显示连接状态中的loading，不显示本地loading状态
+            const showLoading = isConnecting;
+
             const connectionNode: DataNode = {
                 title: (
                     <div className="flex items-center gap-2">
                         <span
                             className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection.id)}`}/>
                         <span className="flex-1">{connection.name}</span>
-                        {isLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
+                        {showLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
                         {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
                     </div>
                 ),
@@ -361,7 +367,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
         setTreeData(treeNodes);
         setLoading(false);
-    }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus, loadDatabases, isFavorite, connectionLoadingStates]);
+    }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus, loadDatabases, isFavorite]);
 
     // 动态加载节点数据
     const loadData = useCallback(async (node: any): Promise<void> => {
@@ -735,9 +741,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 await connectToDatabase(connection_id);
                 showMessage.success(`已连接: ${connection.name}`);
             }
-            
-            // 仅更新单个连接节点的树数据，而不是重新构建整个树
-            updateSingleConnectionNode(connection_id);
+
             console.log(`✅ 连接操作完成: ${connection.name}`);
         } catch (error) {
             console.error(`❌ 连接操作失败:`, error);
@@ -747,6 +751,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             setConnectionLoadingStates(prev => {
                 const newMap = new Map(prev);
                 newMap.delete(connection_id);
+                return newMap;
+            });
+
+            // 使用防抖机制更新节点显示，避免重复更新
+            setUpdateTimeouts(prev => {
+                const newMap = new Map(prev);
+                // 清除之前的定时器
+                const existingTimeout = newMap.get(connection_id);
+                if (existingTimeout) {
+                    clearTimeout(existingTimeout);
+                }
+
+                // 设置新的定时器 - 只更新显示状态，不重新加载数据
+                const newTimeout = setTimeout(() => {
+                    // 连接操作完成后，loading状态应该为false
+                    updateConnectionNodeDisplay(connection_id, false);
+                    // 清除定时器引用
+                    setUpdateTimeouts(current => {
+                        const updated = new Map(current);
+                        updated.delete(connection_id);
+                        return updated;
+                    });
+                }, 150);
+
+                newMap.set(connection_id, newTimeout);
                 return newMap;
             });
         }
@@ -860,77 +889,87 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         return data.map(node => filterNode(node)).filter(Boolean) as DataNode[];
     };
 
-    // 更新单个连接节点
+    // 更新单个连接节点（包含数据加载）
     const updateSingleConnectionNode = useCallback(async (connection_id: string) => {
         const connection = getConnection(connection_id);
         const isConnected = isConnectionConnected(connection_id);
-        
+        const connectionStatus = getConnectionStatus(connection_id);
+
         if (!connection) return;
 
-        console.log(`🔄 更新单个连接节点: ${connection.name}, 连接状态: ${isConnected}`);
+        console.log(`🔄 更新单个连接节点（含数据加载）: ${connection.name}, 连接状态: ${isConnected}`);
 
-        setTreeData(prevData => {
-            return prevData.map(node => {
-                if (node.key === `connection-${connection_id}`) {
-                    const isFav = isFavorite(connection_id);
-                    const isLoading = connectionLoadingStates.get(connection_id);
-                    
-                    const updatedNode: DataNode = {
-                        ...node,
-                        title: (
-                            <div className="flex items-center gap-2">
-                                <span
-                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection_id)}`}
-                                />
-                                <span className="flex-1">{connection.name}</span>
-                                {isLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
-                                {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
-                            </div>
-                        ),
-                        children: isConnected ? [] : [] // 清空子节点，连接成功后会自动重新加载
-                    };
+        // 如果连接成功，检查是否需要加载子节点数据
+        if (isConnected) {
+            setTreeData(prevData => {
+                return prevData.map(node => {
+                    if (node.key === `connection-${connection_id}`) {
+                        // 检查是否需要重新加载子节点
+                        const shouldLoadChildren = !node.children || node.children.length === 0;
 
-                    // 如果连接成功，异步加载数据库数据
-                    if (isConnected) {
-                        loadDatabases(connection_id).then(databases => {
-                            console.log(`📁 异步加载数据库: ${databases.length} 个数据库`);
-                            setTreeData(currentData => {
-                                return currentData.map(currentNode => {
-                                    if (currentNode.key === `connection-${connection_id}`) {
-                                        return {
-                                            ...currentNode,
-                                            children: databases.map(db => {
-                                                const dbPath = `${connection_id}/${db}`;
-                                                const isFav = isFavorite(dbPath);
-                                                return {
-                                                    title: (
-                                                        <span className="flex items-center gap-1">
-                                                            {db}
-                                                            {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
-                                                        </span>
-                                                    ),
-                                                    key: `database-${connection_id}-${db}`,
-                                                    icon: <Database className="w-4 h-4 text-purple-600"/>,
-                                                    isLeaf: false,
-                                                    children: []
-                                                };
-                                            })
-                                        };
-                                    }
-                                    return currentNode;
+                        if (shouldLoadChildren) {
+                            console.log(`📁 开始为连接 ${connection.name} 加载数据库数据`);
+
+                            // 异步加载数据库数据
+                            loadDatabases(connection_id).then(databases => {
+                                console.log(`📁 连接 ${connection.name} 数据库加载完成: ${databases.length} 个数据库`);
+                                setTreeData(currentData => {
+                                    return currentData.map(currentNode => {
+                                        if (currentNode.key === `connection-${connection_id}`) {
+                                            // 再次检查是否已经有子节点，避免重复加载
+                                            if (currentNode.children && currentNode.children.length > 0) {
+                                                console.log(`📁 节点已有子节点，跳过加载: ${connection.name}`);
+                                                return currentNode;
+                                            }
+
+                                            return {
+                                                ...currentNode,
+                                                children: databases.map(db => {
+                                                    const dbPath = `${connection_id}/${db}`;
+                                                    const isFav = isFavorite(dbPath);
+                                                    return {
+                                                        title: (
+                                                            <span className="flex items-center gap-1">
+                                                                {db}
+                                                                {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
+                                                            </span>
+                                                        ),
+                                                        key: `database-${connection_id}-${db}`,
+                                                        icon: <Database className="w-4 h-4 text-purple-600"/>,
+                                                        isLeaf: false,
+                                                        children: []
+                                                    };
+                                                })
+                                            };
+                                        }
+                                        return currentNode;
+                                    });
                                 });
+                            }).catch(error => {
+                                console.error('加载数据库失败:', error);
                             });
-                        }).catch(error => {
-                            console.error('加载数据库失败:', error);
-                        });
-                    }
+                        }
 
-                    return updatedNode;
-                }
-                return node;
+                        return node;
+                    }
+                    return node;
+                });
             });
-        });
-    }, [getConnection, isConnectionConnected, isFavorite, connectionLoadingStates, getConnectionStatusColor, loadDatabases]);
+        } else {
+            // 如果断开连接，清空子节点
+            setTreeData(prevData => {
+                return prevData.map(node => {
+                    if (node.key === `connection-${connection_id}`) {
+                        return {
+                            ...node,
+                            children: []
+                        };
+                    }
+                    return node;
+                });
+            });
+        }
+    }, [getConnection, isConnectionConnected, getConnectionStatus, isFavorite, loadDatabases]);
 
     // 刷新树数据
     const refreshTree = useCallback(() => {
@@ -944,7 +983,51 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(`✨ 已连接ID: [${connectedConnectionIds.join(', ')}]`);
         console.log(`🎯 活跃连接ID: ${activeConnectionId}`);
         buildCompleteTreeData();
-    }, [connections, connectedConnectionIds, activeConnectionId]); // 移除buildCompleteTreeData从依赖数组
+    }, [connections, connectedConnectionIds, activeConnectionId, buildCompleteTreeData]);
+
+    // 更新特定连接节点的显示状态（不影响其他节点）
+    const updateConnectionNodeDisplay = useCallback((connection_id: string, forceLoading?: boolean) => {
+        console.log(`🎨 更新连接节点显示: ${connection_id}`);
+
+        setTreeData(prevData => {
+            return prevData.map(node => {
+                // 只更新目标连接节点
+                if (node.key === `connection-${connection_id}`) {
+                    const connection = getConnection(connection_id);
+                    const connectionStatus = getConnectionStatus(connection_id);
+
+                    if (!connection) return node;
+
+                    const isFav = isFavorite(connection_id);
+                    const isConnecting = connectionStatus?.status === 'connecting';
+                    const showLoading = forceLoading || isConnecting;
+
+                    console.log(`🎨 节点 ${connection.name} 显示状态更新:`, {
+                        forceLoading,
+                        isConnecting,
+                        showLoading,
+                        connectionStatus: connectionStatus?.status
+                    });
+
+                    return {
+                        ...node,
+                        title: (
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection_id)}`}
+                                />
+                                <span className="flex-1">{connection.name}</span>
+                                {showLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
+                                {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
+                            </div>
+                        )
+                    };
+                }
+                // 其他节点保持不变
+                return node;
+            });
+        });
+    }, [getConnection, getConnectionStatus, isFavorite, getConnectionStatusColor]);
 
     // 监听刷新触发器
     useEffect(() => {
@@ -952,7 +1035,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.log(`🔄 收到刷新触发器，重新加载数据...`);
             buildCompleteTreeData();
         }
-    }, [refreshTrigger]); // 移除buildCompleteTreeData从依赖数组
+    }, [refreshTrigger, buildCompleteTreeData]);
 
     if (collapsed) {
         return (

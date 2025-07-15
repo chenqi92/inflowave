@@ -9,14 +9,41 @@ import { cn } from "@/lib/utils"
 
 const ToastProvider = ToastPrimitives.Provider
 
+// Toast位置配置映射
+const getToastPositionClasses = (position: string) => {
+  const baseClasses = "fixed z-[100] flex max-h-screen w-full p-4 md:max-w-[420px]";
+
+  switch (position) {
+    case 'topLeft':
+      return `${baseClasses} top-0 left-0 flex-col`;
+    case 'topCenter':
+      return `${baseClasses} top-0 left-1/2 transform -translate-x-1/2 flex-col`;
+    case 'topRight':
+      return `${baseClasses} top-0 right-0 flex-col`;
+    case 'bottomLeft':
+      return `${baseClasses} bottom-0 left-0 flex-col-reverse`;
+    case 'bottomCenter':
+      return `${baseClasses} bottom-0 left-1/2 transform -translate-x-1/2 flex-col-reverse`;
+    case 'bottomRight':
+      return `${baseClasses} bottom-0 right-0 flex-col-reverse`;
+    default:
+      // 默认右上角
+      return `${baseClasses} top-0 right-0 flex-col`;
+  }
+};
+
+interface ToastViewportProps extends React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport> {
+  position?: string;
+}
+
 const ToastViewport = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Viewport>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
->(({ className, ...props }, ref) => (
+  ToastViewportProps
+>(({ className, position = 'topRight', ...props }, ref) => (
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      getToastPositionClasses(position),
       className
     )}
     {...props}

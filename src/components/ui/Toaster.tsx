@@ -1,6 +1,7 @@
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
+import { useUserPreferences } from "@/hooks/useUserPreferences"
 import {
   Toast,
   ToastClose,
@@ -11,6 +12,10 @@ import {
 
 export function Toaster() {
   const { toasts } = useToast()
+  const { preferences } = useUserPreferences()
+
+  // 获取通知位置设置，默认为右上角
+  const notificationPosition = preferences?.notifications?.position || 'topRight'
 
   return (
     <ToastProvider>
@@ -28,7 +33,7 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport />
+      <ToastViewport position={notificationPosition} />
     </ToastProvider>
   )
 }

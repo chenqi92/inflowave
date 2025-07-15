@@ -383,10 +383,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="topRight">右上角</SelectItem>
                           <SelectItem value="topLeft">左上角</SelectItem>
-                          <SelectItem value="bottomRight">右下角</SelectItem>
+                          <SelectItem value="topCenter">顶部居中</SelectItem>
+                          <SelectItem value="topRight">右上角</SelectItem>
                           <SelectItem value="bottomLeft">左下角</SelectItem>
+                          <SelectItem value="bottomCenter">底部居中</SelectItem>
+                          <SelectItem value="bottomRight">右下角</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
