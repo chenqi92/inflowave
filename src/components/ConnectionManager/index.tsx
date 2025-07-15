@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import type {ConnectionConfig, ConnectionStatus} from '@/types';
 import {useConnectionStore} from '@/store/connection';
-import {safeTauriInvoke} from '@/utils/tauri';
+// import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import './ConnectionManager.css';
 
@@ -48,14 +48,14 @@ interface ConnectionWithStatus extends ConnectionConfig {
     poolStats?: any;
 }
 
-interface ColumnType<T = any> {
-    title: string;
-    dataIndex?: string;
-    key: string;
-    width?: number | string;
-    render?: (value: any, record: T, index: number) => React.ReactNode;
-    ellipsis?: boolean;
-}
+// interface ColumnType<T = any> {
+//     title: string;
+//     dataIndex?: string;
+//     key: string;
+//     width?: number | string;
+//     render?: (value: any, record: T, index: number) => React.ReactNode;
+//     ellipsis?: boolean;
+// }
 
 const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                                                                  onConnectionSelect,
@@ -79,7 +79,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         removeConnection
     } = useConnectionStore();
 
-    const [loading, setLoading] = useState(false);
+    // const [loading, setLoading] = useState(false);
+    const [connectionLoadingStates, setConnectionLoadingStates] = useState<Map<string, boolean>>(new Map());
     const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
     const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
 
@@ -105,7 +106,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
     // 处理连接操作
     const handleConnectionToggle = useCallback(async (connectionId: string) => {
-        setLoading(true);
+        // 设置单个连接的loading状态，而不是整个表格
+        setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
+        
         try {
             // 首先确保连接配置存在
             const connection = connections.find(c => c.id === connectionId);
@@ -145,7 +148,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             const errorMessage = String(error).replace('Error: ', '');
             showMessage.error(`连接操作失败: ${errorMessage}`);
         } finally {
-            setLoading(false);
+            // 清除单个连接的loading状态
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connectionId);
+                return newMap;
+            });
         }
     }, [connections, connectionStatuses, connectToDatabase, disconnectFromDatabase, onConnectionSelect, refreshConnectionStatus]);
 
@@ -249,22 +257,28 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             dataIndex: 'name',
             key: 'name',
             width: 280,
-            render: (name: string, record) => (
-                <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                        connectionStatuses[record.id!]?.status === 'connected' ? 'bg-green-500' :
-                            connectionStatuses[record.id!]?.status === 'error' ? 'bg-red-500' :
-                                connectionStatuses[record.id!]?.status === 'connecting' ? 'bg-yellow-500' : 'bg-gray-300'
-                    }`}/>
-                    <div className="min-w-0 flex-1">
-                        <div className="font-medium text-foreground truncate">{name}</div>
-                        <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
+            render: (name: string, record) => {
+                const isLoading = connectionLoadingStates.get(record.id!);
+                return (
+                    <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                            connectionStatuses[record.id!]?.status === 'connected' ? 'bg-green-500' :
+                                connectionStatuses[record.id!]?.status === 'error' ? 'bg-red-500' :
+                                    connectionStatuses[record.id!]?.status === 'connecting' ? 'bg-yellow-500' : 'bg-gray-300'
+                        }`}/>
+                        <div className="min-w-0 flex-1">
+                            <div className="font-medium text-foreground truncate flex items-center gap-2">
+                                {name}
+                                {isLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
+                            </div>
+                            <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
+                        </div>
+                        {activeConnectionId === record.id && (
+                            <Badge className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Badge>
+                        )}
                     </div>
-                    {activeConnectionId === record.id && (
-                        <Badge className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Badge>
-                    )}
-                </div>
-            )
+                );
+            }
         },
         {
             title: '连接信息',
@@ -325,23 +339,29 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             render: (_, record) => {
                 const status = connectionStatuses[record.id!];
                 const isConnected = status?.status === 'connected';
+                const isLoading = connectionLoadingStates.get(record.id!);
 
                 return (
                     <div className="flex items-center space-x-2">
                         <Button
                             variant={isConnected ? 'outline' : 'default'}
                             size="sm"
-                            disabled={loading}
+                            disabled={isLoading}
                             onClick={() => handleConnectionToggle(record.id!)}
                             className={isConnected ? 'text-red-600 hover:text-red-700 hover:border-red-300' : 'bg-green-600 hover:bg-green-700 text-white'}
                         >
-                            {isConnected ? <Unlink className="w-4 h-4 mr-1"/> : <Wifi className="w-4 h-4 mr-1"/>}
-                            {isConnected ? '断开' : '连接'}
+                            {isLoading ? (
+                                <RefreshCw className="w-4 h-4 mr-1 animate-spin"/>
+                            ) : (
+                                isConnected ? <Unlink className="w-4 h-4 mr-1"/> : <Wifi className="w-4 h-4 mr-1"/>
+                            )}
+                            {isLoading ? '处理中...' : (isConnected ? '断开' : '连接')}
                         </Button>
 
                         <Button
                             variant="outline"
                             size="sm"
+                            disabled={isLoading}
                             onClick={() => {
                                 console.log('编辑连接:', record);
                                 onEditConnection?.(record);
@@ -353,7 +373,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" disabled={isLoading}>
                                     <MoreHorizontal className="w-4 h-4 mr-1"/>
                                     更多
                                 </Button>
@@ -491,7 +511,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                         columns={columns}
                         dataSource={dataSource}
                         rowKey="id"
-                        loading={loading}
+                        loading={false}
                         scroll={{
                             x: 'max-content',
                             y: 'calc(100vh - 400px)'

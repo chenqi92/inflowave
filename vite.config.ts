@@ -105,6 +105,9 @@ export default defineConfig(async () => ({
       'zustand',
       'dayjs',
       'lodash-es',
+      '@tauri-apps/api',
+      '@tauri-apps/plugin-shell',
     ],
+    force: true, // 强制重新构建依赖
   },
 }));

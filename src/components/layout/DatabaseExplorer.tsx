@@ -78,10 +78,10 @@ interface TableInfo {
     fields: Array<{ name: string; type: string }>;
 }
 
-interface DatabaseInfo {
-    name: string;
-    tables: TableInfo[];
-}
+// interface DatabaseInfo {
+//     name: string;
+//     tables: TableInfo[];
+// }
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                                collapsed = false,
@@ -113,6 +113,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [searchValue, setSearchValue] = useState('');
     const [loading, setLoading] = useState(false);
     const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
+    const [connectionLoadingStates, setConnectionLoadingStates] = useState<Map<string, boolean>>(new Map());
     const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
 
 
@@ -306,12 +307,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             const isConnected = isConnectionConnected(connection.id);
             const connectionPath = connection.id;
             const isFav = isFavorite(connectionPath);
+            const isLoading = connectionLoadingStates.get(connection.id);
             const connectionNode: DataNode = {
                 title: (
                     <div className="flex items-center gap-2">
                         <span
                             className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection.id)}`}/>
                         <span className="flex-1">{connection.name}</span>
+                        {isLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
                         {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
                     </div>
                 ),
@@ -356,7 +359,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
         setTreeData(treeNodes);
         setLoading(false);
-    }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus, loadDatabases]);
+    }, [connections, connectedConnectionIds, isConnectionConnected, getConnectionStatus, loadDatabases, isFavorite, connectionLoadingStates]);
 
     // 动态加载节点数据
     const loadData = useCallback(async (node: any): Promise<void> => {
@@ -717,6 +720,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         console.log(`🔄 开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`);
 
+        // 设置该连接的loading状态
+        setConnectionLoadingStates(prev => new Map(prev).set(connection_id, true));
+
         try {
             if (isCurrentlyConnected) {
                 // 断开连接
@@ -727,11 +733,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 await connectToDatabase(connection_id);
                 showMessage.success(`已连接: ${connection.name}`);
             }
-            // 不需要手动重新构建树，依赖更新会自动触发
+            
+            // 仅更新单个连接节点的树数据，而不是重新构建整个树
+            updateSingleConnectionNode(connection_id);
             console.log(`✅ 连接操作完成: ${connection.name}`);
         } catch (error) {
             console.error(`❌ 连接操作失败:`, error);
             showMessage.error(`连接操作失败: ${error}`);
+        } finally {
+            // 清除loading状态
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connection_id);
+                return newMap;
+            });
         }
     };
 
@@ -842,6 +857,78 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         return data.map(node => filterNode(node)).filter(Boolean) as DataNode[];
     };
+
+    // 更新单个连接节点
+    const updateSingleConnectionNode = useCallback(async (connection_id: string) => {
+        const connection = getConnection(connection_id);
+        const isConnected = isConnectionConnected(connection_id);
+        
+        if (!connection) return;
+
+        console.log(`🔄 更新单个连接节点: ${connection.name}, 连接状态: ${isConnected}`);
+
+        setTreeData(prevData => {
+            return prevData.map(node => {
+                if (node.key === `connection-${connection_id}`) {
+                    const isFav = isFavorite(connection_id);
+                    const isLoading = connectionLoadingStates.get(connection_id);
+                    
+                    const updatedNode: DataNode = {
+                        ...node,
+                        title: (
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${getConnectionStatusColor(connection_id)}`}
+                                />
+                                <span className="flex-1">{connection.name}</span>
+                                {isLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
+                                {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
+                            </div>
+                        ),
+                        children: isConnected ? [] : [] // 清空子节点，连接成功后会自动重新加载
+                    };
+
+                    // 如果连接成功，异步加载数据库数据
+                    if (isConnected) {
+                        loadDatabases(connection_id).then(databases => {
+                            console.log(`📁 异步加载数据库: ${databases.length} 个数据库`);
+                            setTreeData(currentData => {
+                                return currentData.map(currentNode => {
+                                    if (currentNode.key === `connection-${connection_id}`) {
+                                        return {
+                                            ...currentNode,
+                                            children: databases.map(db => {
+                                                const dbPath = `${connection_id}/${db}`;
+                                                const isFav = isFavorite(dbPath);
+                                                return {
+                                                    title: (
+                                                        <span className="flex items-center gap-1">
+                                                            {db}
+                                                            {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
+                                                        </span>
+                                                    ),
+                                                    key: `database-${connection_id}-${db}`,
+                                                    icon: <Database className="w-4 h-4 text-purple-600"/>,
+                                                    isLeaf: false,
+                                                    children: []
+                                                };
+                                            })
+                                        };
+                                    }
+                                    return currentNode;
+                                });
+                            });
+                        }).catch(error => {
+                            console.error('加载数据库失败:', error);
+                        });
+                    }
+
+                    return updatedNode;
+                }
+                return node;
+            });
+        });
+    }, [getConnection, isConnectionConnected, isFavorite, connectionLoadingStates, getConnectionStatusColor, loadDatabases]);
 
     // 刷新树数据
     const refreshTree = useCallback(() => {
