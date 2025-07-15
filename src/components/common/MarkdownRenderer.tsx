@@ -12,9 +12,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className,
   const parseMarkdown = (text: string): string => {
     let html = text;
 
-    // 首先处理代码块，使用更精确的正则表达式
-    // 处理带语言标识的代码块
-    html = html.replace(/```(\w+)\s*\n([\s\S]*?)\n```/g, (match, lang, code) => {
+    // 首先处理代码块，支持缩进的代码块
+    // 处理带语言标识的代码块（支持缩进）
+    html = html.replace(/^(\s*)```(\w+)\s*\n([\s\S]*?)\n\s*```/gm, (match, indent, lang, code) => {
       const escapedCode = code
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -24,8 +24,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className,
       return `<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4 max-w-full"><code class="text-sm whitespace-pre-wrap break-all language-${lang}">${escapedCode.trim()}</code></pre>`;
     });
 
-    // 处理不带语言标识的代码块
-    html = html.replace(/```\s*\n([\s\S]*?)\n```/g, (match, code) => {
+    // 处理不带语言标识的代码块（支持缩进）
+    html = html.replace(/^(\s*)```\s*\n([\s\S]*?)\n\s*```/gm, (match, indent, code) => {
       const escapedCode = code
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -85,35 +85,85 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className,
       return `<ol class="my-3 space-y-1 list-decimal list-inside">${items}</ol>`;
     });
 
-    // 处理表格 - 改进的表格处理
-    const tableRegex = /^\|(.+)\|\s*\n\|(.+)\|\s*\n((?:\|.+\|\s*\n?)*)/gm;
-    html = html.replace(tableRegex, (match, headerRow, separatorRow, dataRows) => {
-      // 检查分隔行是否包含 ---
-      if (!separatorRow.includes('---')) return match;
+    // 处理表格 - 简化且可靠的方法，支持缩进
+    const lines = html.split('\n');
+    const processedLines = [];
+    let i = 0;
 
-      // 处理表头
-      const headerCells = headerRow.split('|').map(cell => cell.trim()).filter(cell => cell);
-      const headerRowHtml = `<tr class="bg-muted/50">${headerCells.map(cell =>
-        `<th class="border border-border px-3 py-2 text-sm font-semibold text-left">${cell}</th>`
-      ).join('')}</tr>`;
+    while (i < lines.length) {
+      const currentLine = lines[i];
+      const trimmedLine = currentLine.trim();
 
-      // 处理数据行
-      const dataRowsHtml = dataRows.trim().split('\n').map(line => {
-        if (!line.trim() || !line.includes('|')) return '';
-        const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
-        if (cells.length === 0) return '';
-        return `<tr>${cells.map(cell =>
-          `<td class="border border-border px-3 py-2 text-sm">${cell}</td>`
-        ).join('')}</tr>`;
-      }).filter(row => row).join('');
+      // 检查是否是表格行（以|开头和结尾）
+      if (trimmedLine.match(/^\|.*\|$/)) {
+        // 检查下一行是否是分隔符
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1].trim();
+          if (nextLine.match(/^\|[\s\-\|:]+\|$/)) {
+            // 找到表格，收集所有表格行
+            const tableLines = [];
+            let j = i;
 
-      return `<div class="overflow-x-auto my-4">
-        <table class="w-full min-w-full border-collapse border border-border rounded-lg overflow-hidden">
-          <thead>${headerRowHtml}</thead>
-          <tbody>${dataRowsHtml}</tbody>
-        </table>
-      </div>`;
-    });
+            // 收集表格行
+            while (j < lines.length) {
+              const line = lines[j].trim();
+              if (line.match(/^\|.*\|$/)) {
+                tableLines.push(line);
+                j++;
+              } else {
+                break;
+              }
+            }
+
+            if (tableLines.length >= 2) {
+              // 处理表格
+              const headerLine = tableLines[0];
+              const separatorLine = tableLines[1];
+              const dataLines = tableLines.slice(2);
+
+              // 解析表头
+              const headerCells = headerLine.split('|')
+                .map(cell => cell.trim())
+                .filter(cell => cell);
+
+              // 解析数据行
+              const dataRows = dataLines.map(line => {
+                return line.split('|')
+                  .map(cell => cell.trim())
+                  .filter(cell => cell);
+              }).filter(row => row.length > 0);
+
+              // 生成HTML
+              const headerHtml = headerCells.map(cell =>
+                `<th class="border border-border px-3 py-2 text-sm font-semibold text-left">${cell}</th>`
+              ).join('');
+
+              const bodyHtml = dataRows.map(row =>
+                `<tr>${row.map(cell =>
+                  `<td class="border border-border px-3 py-2 text-sm">${cell}</td>`
+                ).join('')}</tr>`
+              ).join('');
+
+              const tableHtml = `<div class="overflow-x-auto my-4">
+                <table class="w-full min-w-full border-collapse border border-border rounded-lg overflow-hidden">
+                  <thead><tr class="bg-muted/50">${headerHtml}</tr></thead>
+                  <tbody>${bodyHtml}</tbody>
+                </table>
+              </div>`;
+
+              processedLines.push(tableHtml);
+              i = j;
+              continue;
+            }
+          }
+        }
+      }
+
+      processedLines.push(currentLine);
+      i++;
+    }
+
+    html = processedLines.join('\n');
 
     // 处理引用块
     html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-primary pl-4 py-2 my-4 bg-muted/50 italic">$1</blockquote>');
