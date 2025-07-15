@@ -274,13 +274,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     }
   };
 
-  // 执行查询
-  const executeQuery = async () => {
+  // 执行查询 - 支持选中执行
+  const executeQuery = async (executeSelectedOnly = false) => {
     console.log('🎯 执行查询 - 开始检查条件');
     console.log('activeConnectionId:', activeConnectionId);
     console.log('selectedDatabase:', selectedDatabase);
     console.log('activeKey:', activeKey);
     console.log('tabs:', tabs);
+    console.log('executeSelectedOnly:', executeSelectedOnly);
 
     if (!activeConnectionId) {
       console.log('❌ 没有活跃连接');
@@ -303,7 +304,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       return;
     }
 
-    if (!currentTab.content.trim()) {
+    let queryText = '';
+    
+    if (executeSelectedOnly && editorRef.current) {
+      // 获取选中的文本
+      const selection = editorRef.current.getSelection();
+      if (selection && !selection.isEmpty()) {
+        queryText = editorRef.current.getModel()?.getValueInRange(selection) || '';
+      } else {
+        showMessage.warning('请先选中要执行的查询语句');
+        return;
+      }
+    } else {
+      queryText = currentTab.content.trim();
+    }
+
+    if (!queryText.trim()) {
       console.log('❌ 查询内容为空');
       showMessage.warning('请输入查询语句');
       return;
@@ -314,11 +330,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     const startTime = Date.now();
     
     try {
-      const queryText = currentTab.content.trim();
       
       // 检查是否包含多条 SQL 语句（以分号分隔）
-      const statements = queryText.split(';')
+      // 特殊处理：对于INSERT语句，分号可能出现在语句末尾但不意味着结束
+      const statements = queryText.split('\n')
         .map(stmt => stmt.trim())
+        .filter(stmt => stmt.length > 0 && !stmt.startsWith('#')) // 过滤空行和注释
+        .map(stmt => stmt.replace(/;$/, '')) // 移除末尾的分号
         .filter(stmt => stmt.length > 0)
         .map(stmt => injectTimeRangeToQuery(stmt, currentTimeRange)); // 为每个查询注入时间范围
       
@@ -340,9 +358,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         }
         
         const results = await safeTauriInvoke<QueryResult[]>('execute_batch_queries', {
-          connection_id: activeConnectionId,
-          database: selectedDatabase,
-          queries: statements
+          request: {
+            connection_id: activeConnectionId,
+            database: selectedDatabase,
+            queries: statements
+          }
         });
         
         const executionTime = Date.now() - startTime;
@@ -1049,6 +1069,16 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       saveCurrentTab();
     });
 
+    // 添加执行查询快捷键 (Ctrl+Enter)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      executeQuery(false);
+    });
+
+    // 添加执行选中快捷键 (Ctrl+Shift+Enter)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+      executeQuery(true);
+    });
+
     // 添加测试智能提示的快捷键 (Ctrl+K)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
       console.log('🧪 测试智能提示功能...');
@@ -1200,16 +1230,29 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             </SelectContent>
           </Select>
 
-          <Button
-            size="sm"
-            onClick={executeQuery}
-            disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            title={hasAnyConnectedInfluxDB ? "执行查询 (Ctrl+Enter)" : "执行查询 (需要连接InfluxDB)"}
-          >
-            <PlayCircle className="w-4 h-4" />
-            <span className="text-xs">{loading ? '执行中' : '执行'}</span>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              onClick={() => executeQuery(false)}
+              disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
+              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+              title={hasAnyConnectedInfluxDB ? "执行查询 (Ctrl+Enter)" : "执行查询 (需要连接InfluxDB)"}
+            >
+              <PlayCircle className="w-4 h-4" />
+              <span className="text-xs">{loading ? '执行中' : '执行'}</span>
+            </Button>
+            
+            <Button
+              size="sm"
+              onClick={() => executeQuery(true)}
+              disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
+              className="h-10 w-18 p-1 flex flex-col items-center justify-center gap-1"
+              title={hasAnyConnectedInfluxDB ? "执行选中 (Ctrl+Shift+Enter)" : "执行选中 (需要连接InfluxDB)"}
+            >
+              <PlayCircle className="w-4 h-4" />
+              <span className="text-xs">选中</span>
+            </Button>
+          </div>
 
           {/* 测试智能提示按钮 */}
           <Button
