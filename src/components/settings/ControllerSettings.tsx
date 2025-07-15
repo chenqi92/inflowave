@@ -7,12 +7,10 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
   Button,
   Switch,
   Alert,
   AlertDescription,
-  Separator,
   Badge,
   toast,
   Title,
@@ -26,8 +24,7 @@ import {
   Save,
   RefreshCw,
   Lock,
-  Unlock,
-  Settings
+  Unlock
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
