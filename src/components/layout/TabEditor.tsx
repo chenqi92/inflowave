@@ -274,14 +274,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     }
   };
 
-  // 执行查询 - 支持选中执行
-  const executeQuery = async (executeSelectedOnly = false) => {
+  // 执行查询 - 自动检测选中内容
+  const executeQuery = async () => {
     console.log('🎯 执行查询 - 开始检查条件');
     console.log('activeConnectionId:', activeConnectionId);
     console.log('selectedDatabase:', selectedDatabase);
     console.log('activeKey:', activeKey);
     console.log('tabs:', tabs);
-    console.log('executeSelectedOnly:', executeSelectedOnly);
 
     if (!activeConnectionId) {
       console.log('❌ 没有活跃连接');
@@ -306,14 +305,17 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
     let queryText = '';
     
-    if (executeSelectedOnly && editorRef.current) {
-      // 获取选中的文本
+    // 自动检测选中内容
+    if (editorRef.current) {
       const selection = editorRef.current.getSelection();
       if (selection && !selection.isEmpty()) {
+        // 如果有选中内容，则执行选中的内容
         queryText = editorRef.current.getModel()?.getValueInRange(selection) || '';
+        console.log('✅ 检测到选中内容，将执行选中的SQL:', queryText);
       } else {
-        showMessage.warning('请先选中要执行的查询语句');
-        return;
+        // 如果没有选中内容，则执行全部内容
+        queryText = currentTab.content.trim();
+        console.log('✅ 没有选中内容，将执行全部SQL:', queryText);
       }
     } else {
       queryText = currentTab.content.trim();
@@ -1032,11 +1034,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       parameterHints: { enabled: true },
       hover: { enabled: true },
       // 增加更多提示配置
-      quickSuggestionsDelay: 100, // 减少延迟
+      quickSuggestionsDelay: 50, // 减少延迟到50ms
       suggestSelection: 'first', // 默认选择第一个建议
       wordBasedSuggestions: true, // 基于单词的建议
       // 自动触发提示的字符
       autoIndent: 'full',
+      // 更敏感的提示设置
+      wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
     });
 
     // 添加快捷键
@@ -1060,9 +1064,33 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
       });
     });
     
-    // 添加输入事件监听，调试智能提示
-    editor.onDidChangeModelContent(() => {
-      // 可以在这里添加调试日志
+    // 添加输入事件监听，增强智能提示
+    editor.onDidChangeModelContent((e) => {
+      // 自动触发智能提示的条件
+      const position = editor.getPosition();
+      if (position) {
+        const model = editor.getModel();
+        if (model) {
+          const lineText = model.getLineContent(position.lineNumber);
+          const wordBeforeCursor = lineText.substring(0, position.column - 1);
+          
+          // 检查是否在关键位置触发提示
+          if (wordBeforeCursor.match(/\b(FROM|from)\s*$/i) || 
+              wordBeforeCursor.match(/\b(SELECT|select)\s*$/i) ||
+              wordBeforeCursor.match(/\b(WHERE|where)\s*$/i) ||
+              wordBeforeCursor.match(/\b(GROUP\s+BY|group\s+by)\s*$/i) ||
+              wordBeforeCursor.match(/\b(ORDER\s+BY|order\s+by)\s*$/i) ||
+              wordBeforeCursor.match(/"\s*$/) ||
+              wordBeforeCursor.match(/'\s*$/)) {
+            // 延迟触发，避免过于频繁
+            setTimeout(() => {
+              if (editor.hasTextFocus()) {
+                editor.trigger('auto', 'editor.action.triggerSuggest', {});
+              }
+            }, 100);
+          }
+        }
+      }
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -1071,12 +1099,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
     // 添加执行查询快捷键 (Ctrl+Enter)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      executeQuery(false);
-    });
-
-    // 添加执行选中快捷键 (Ctrl+Shift+Enter)
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
-      executeQuery(true);
+      executeQuery();
     });
 
     // 添加测试智能提示的快捷键 (Ctrl+K)
@@ -1205,13 +1228,6 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
         {/* 右侧工具栏 - 统一尺寸，防止被挤压 */}
         <div className="flex items-center gap-2 px-3 flex-shrink-0">
-          {/* 时间范围指示器 */}
-          {currentTimeRange && currentTimeRange.value !== 'none' && (
-            <div className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded border">
-              <Clock className="w-3 h-3" />
-              <span className="font-medium">{currentTimeRange.label}</span>
-            </div>
-          )}
           
           <Select
             value={selectedDatabase}
@@ -1230,41 +1246,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              onClick={() => executeQuery(false)}
-              disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
-              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-              title={hasAnyConnectedInfluxDB ? "执行查询 (Ctrl+Enter)" : "执行查询 (需要连接InfluxDB)"}
-            >
-              <PlayCircle className="w-4 h-4" />
-              <span className="text-xs">{loading ? '执行中' : '执行'}</span>
-            </Button>
-            
-            <Button
-              size="sm"
-              onClick={() => executeQuery(true)}
-              disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
-              className="h-10 w-18 p-1 flex flex-col items-center justify-center gap-1"
-              title={hasAnyConnectedInfluxDB ? "执行选中 (Ctrl+Shift+Enter)" : "执行选中 (需要连接InfluxDB)"}
-            >
-              <PlayCircle className="w-4 h-4" />
-              <span className="text-xs">选中</span>
-            </Button>
-          </div>
-
-          {/* 测试智能提示按钮 */}
           <Button
-            variant="outline"
             size="sm"
-            onClick={testIntelliSense}
-            disabled={!hasAnyConnectedInfluxDB || !selectedDatabase}
+            onClick={() => executeQuery()}
+            disabled={loading || !hasAnyConnectedInfluxDB || !selectedDatabase}
             className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            title={hasAnyConnectedInfluxDB ? "测试智能提示 (Ctrl+K)" : "测试智能提示 (需要连接InfluxDB)"}
+            title={hasAnyConnectedInfluxDB ? "执行查询 (Ctrl+Enter)" : "执行查询 (需要连接InfluxDB)"}
           >
-            <span className="text-xs">🧪</span>
-            <span className="text-xs">提示</span>
+            <PlayCircle className="w-4 h-4" />
+            <span className="text-xs">{loading ? '执行中' : '执行'}</span>
           </Button>
 
           <Button
@@ -1353,11 +1343,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               tabCompletion: 'on',
               hover: { enabled: true },
               // 增加更多智能提示配置
-              quickSuggestionsDelay: 100,
+              quickSuggestionsDelay: 50,
               suggestSelection: 'first',
               wordBasedSuggestions: true,
               // 启用更多提示触发字符
-              triggerCharacters: ['.', '"', '\'', '(', ' ', '=', '<', '>', '!'],
+              triggerCharacters: ['.', '"', '\'', '(', ' ', '=', '<', '>', '!', 'FROM', 'from'],
             }}
           />
         ) : (

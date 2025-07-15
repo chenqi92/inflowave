@@ -240,45 +240,31 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
         {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* 区域1: 连接状态显示 - 固定宽度防止挤压 */}
+          {/* 区域1: 软件名称显示 - 艺术体风格 */}
           <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0">
-            <div className="p-0 flex items-center gap-2">
-            {activeConnection ? (
-              <>
-                {/* 连接状态指示器 */}
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <Link className="w-4 h-4 text-success" />
-                    <Badge variant="default" className="px-1.5 py-0.5 bg-green-600 text-white">
-                      ●
-                    </Badge>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate max-w-[140px]">
-                      {activeConnection.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate max-w-[140px]">
-                      {activeConnection.host}:{activeConnection.port}
-                    </div>
-                  </div>
-                </div>
-
-                {/* InfluxDB特色: 时间范围选择器 */}
-                <TimeRangeSelector
-                  value={selectedTimeRange || currentTimeRange}
-                  onChange={handleTimeRangeChange}
-                  className="ml-1"
-                />
-              </>
-            ) : (
-              /* 未连接状态 */
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Unlink className="w-4 h-4" />
-                <span className="text-sm">未连接数据源</span>
+            <div className="flex items-center gap-2">
+              <Database className="w-6 h-6 text-primary" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  InfloWave
+                </span>
+                <span className="text-xs text-muted-foreground -mt-1">
+                  时序数据库管理工具
+                </span>
               </div>
-            )}
             </div>
           </div>
+
+          {/* 区域2: 时间范围选择器 - 仅在有连接时显示 */}
+          {activeConnection && (
+            <div className="flex items-center gap-2 px-2">
+              <TimeRangeSelector
+                value={selectedTimeRange || currentTimeRange}
+                onChange={handleTimeRangeChange}
+                className="ml-1"
+              />
+            </div>
+          )}
 
           <div className="w-px h-6 bg-border mx-3" />
 

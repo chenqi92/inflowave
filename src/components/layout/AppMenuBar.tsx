@@ -26,7 +26,8 @@ import {
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { themeColors, applyThemeColors } from '@/lib/theme-colors';
+import { themeColors } from '@/lib/theme-colors';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 // 导入功能组件
 import AboutDialog from '@/components/common/AboutDialog';
@@ -41,6 +42,7 @@ const AppMenuBar: React.FC = () => {
   const { activeConnectionId, connectionStatuses } = useConnectionStore();
   const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
   const { settings, updateTheme } = useSettingsStore();
+  const { setColorScheme } = useTheme();
 
   // 对话框状态管理
   const [aboutVisible, setAboutVisible] = useState(false);
@@ -246,25 +248,17 @@ const AppMenuBar: React.FC = () => {
   ];
 
   // 软件风格菜单
-  const styleMenuItems = [
-    {
-      key: 'theme-colors',
-      icon: <Palette className="w-4 h-4" />,
-      label: '颜色主题',
-      type: 'submenu',
-      children: Object.values(themeColors).map(color => ({
-        key: `theme-${color.name}`,
-        label: color.label,
-        icon: (
-          <div
-            className="w-3 h-3 rounded-full border border-gray-300"
-            style={{ backgroundColor: `hsl(${color.primary})` }}
-          />
-        ),
-        onClick: () => handleThemeChange(color.name)
-      }))
-    },
-  ];
+  const styleMenuItems = Object.values(themeColors).map(color => ({
+    key: `theme-${color.name}`,
+    label: color.label,
+    icon: (
+      <div
+        className="w-3 h-3 rounded-full border border-gray-300"
+        style={{ backgroundColor: `hsl(${color.primary})` }}
+      />
+    ),
+    onClick: () => handleThemeChange(color.name)
+  }));
 
   // 工具菜单
   const toolsMenuItems = [
@@ -323,13 +317,10 @@ const AppMenuBar: React.FC = () => {
 
   // 处理主题切换
   const handleThemeChange = (themeName: string) => {
-    const isDark = settings.theme.mode === 'dark' ||
-      (settings.theme.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // 使用主题提供者的颜色方案切换功能
+    setColorScheme(themeName);
 
-    // 应用主题颜色
-    applyThemeColors(themeName, isDark);
-
-    // 更新设置
+    // 同时更新设置存储以保持兼容性
     updateTheme({ primaryColor: themeName });
 
     toast({
@@ -576,6 +567,13 @@ const AppMenuBar: React.FC = () => {
         break;
 
       default:
+        // 检查是否是主题颜色菜单项
+        if (key.startsWith('theme-')) {
+          const themeName = key.replace('theme-', '');
+          handleThemeChange(themeName);
+          return;
+        }
+        
         console.log('未处理的菜单动作:', key);
         toast({ title: "提示", description: `功能 "${key}" 开发中...` });
         break;
@@ -616,7 +614,7 @@ const AppMenuBar: React.FC = () => {
         <DropdownMenuItem
           key={item.key}
           disabled={item.disabled}
-          onClick={() => handleMenuClick(item.key)}
+          onClick={item.onClick || (() => handleMenuClick(item.key))}
           className="flex items-center justify-between"
         >
           <div className="flex items-center space-x-2">

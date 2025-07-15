@@ -3,17 +3,12 @@ import { Button, Select, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Lab
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { useToast } from '@/hooks/use-toast';
 
-import { FlaskConical } from 'lucide-react';
-import { Save, Database, History, Settings, Maximize, Minimize, Clock, Plus, X, Copy, Edit, Zap, Lightbulb, PlayCircle, Paintbrush } from 'lucide-react';
+import { Save, Database, History, Settings, Maximize, Minimize, Plus, X, Copy, Edit, PlayCircle, Paintbrush } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
-import { useQuery } from '@/hooks/useQuery';
-import { useSettingsStore } from '@/store/settings';
 import { useTheme } from '@/components/providers/ThemeProvider';
-import { FormatUtils } from '@/utils/format';
-import { intelligentQueryEngine } from '@/services/intelligentQuery';
 import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
@@ -62,10 +57,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [optimizationLoading, setOptimizationLoading] = useState(false);
-  const [optimizationResult, setOptimizationResult] = useState<any>(null);
-  const [autoOptimize, setAutoOptimize] = useState(false);
-  const [showOptimizationTips, setShowOptimizationTips] = useState(false);
 
   // 初始化编辑器
   const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
@@ -81,8 +72,17 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       automaticLayout: true,
       theme: resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light',
       suggestOnTriggerCharacters: true,
-      quickSuggestions: true,
-      parameterHints: { enabled: true }});
+      quickSuggestions: {
+        other: true,
+        comments: false,
+        strings: false
+      },
+      parameterHints: { enabled: true },
+      acceptSuggestionOnEnter: 'on',
+      acceptSuggestionOnCommitCharacter: true,
+      tabCompletion: 'on',
+      wordBasedSuggestions: true
+    });
 
     // 添加快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -111,78 +111,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     ));
   }, [activeTabId]);
 
-  // 智能优化查询
-  const handleOptimizeQuery = useCallback(async () => {
-    if (!activeConnectionId || !getCurrentTab()?.query) {
-      toast({ title: "警告", description: "请选择连接并输入查询语句" });
-      return;
-    }
-
-    const currentTab = getCurrentTab();
-    if (!currentTab) return;
-
-    setOptimizationLoading(true);
-    try {
-      const result = await intelligentQueryEngine.optimizeQuery({
-        query: currentTab.query,
-        connectionId: activeConnectionId,
-        database: currentTab.database || selectedDatabase,
-        context: {
-          historicalQueries: [],
-          userPreferences: {
-            preferredPerformance: 'balanced',
-            maxQueryTime: 5000,
-            cachePreference: 'aggressive'
-          },
-          systemLoad: {
-            cpuUsage: 50,
-            memoryUsage: 60,
-            diskIo: 30,
-            networkLatency: 20
-          },
-          dataSize: {
-            totalRows: 100000,
-            totalSize: 1024 * 1024 * 100,
-            averageRowSize: 1024,
-            compressionRatio: 0.3
-          },
-          indexInfo: []
-        }
-      });
-
-      setOptimizationResult(result);
-      
-      // 如果用户启用了自动应用优化
-      if (autoOptimize && result.optimizedQuery !== currentTab.query) {
-        updateCurrentTabQuery(result.optimizedQuery);
-        if (editorInstance) {
-          editorInstance.setValue(result.optimizedQuery);
-        }
-        toast({ title: "成功", description: "查询已自动优化，预计性能提升 ${result.estimatedPerformanceGain}%" });
-      } else {
-        toast({ title: "成功", description: "查询分析完成，预计性能提升 ${result.estimatedPerformanceGain}%" });
-      }
-    } catch (error) {
-      console.error('Query optimization failed:', error);
-      toast({ title: "错误", description: "查询优化失败", variant: "destructive" });
-    } finally {
-      setOptimizationLoading(false);
-    }
-  }, [activeConnectionId, getCurrentTab, selectedDatabase, autoOptimize, updateCurrentTabQuery, editorInstance]);
-
-  // 应用优化建议
-  const handleApplyOptimization = useCallback(() => {
-    if (!optimizationResult || !getCurrentTab()) return;
-
-    const currentTab = getCurrentTab();
-    if (!currentTab) return;
-
-    updateCurrentTabQuery(optimizationResult.optimizedQuery);
-    if (editorInstance) {
-      editorInstance.setValue(optimizationResult.optimizedQuery);
-    }
-    toast({ title: "成功", description: "优化建议已应用" });
-  }, [optimizationResult, getCurrentTab, updateCurrentTabQuery, editorInstance]);
 
   // 添加新标签页
   const addNewTab = () => {
@@ -270,27 +198,81 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           startColumn: word.startColumn,
           endColumn: word.endColumn};
 
+        const lineText = model.getLineContent(position.lineNumber);
+        const wordBeforeCursor = lineText.substring(0, position.column - 1);
+        
         const suggestions: monaco.languages.CompletionItem[] = [
-          // 关键字
-          ...['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET'].map(keyword => ({
+          // SQL关键字
+          ...['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'INTO', 'VALUES', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'SHOW', 'DESCRIBE'].map(keyword => ({
             label: keyword,
             kind: monaco.languages.CompletionItemKind.Keyword,
             insertText: keyword,
-            range})),
-          // 函数
-          ...['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN'].map(func => ({
+            range,
+            documentation: `SQL关键字: ${keyword}`
+          })),
+          
+          // 逻辑操作符
+          ...['AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS', 'NULL', 'TRUE', 'FALSE'].map(op => ({
+            label: op,
+            kind: monaco.languages.CompletionItemKind.Operator,
+            insertText: op,
+            range,
+            documentation: `逻辑操作符: ${op}`
+          })),
+          
+          // 聚合函数
+          ...['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN', 'MEDIAN', 'MODE', 'STDDEV', 'SPREAD', 'PERCENTILE'].map(func => ({
             label: func,
             kind: monaco.languages.CompletionItemKind.Function,
-            insertText: `${func}()`,
+            insertText: `${func}($1)`,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            range})),
+            range,
+            documentation: `聚合函数: ${func}(field)`
+          })),
+          
+          // 时间函数
+          ...['NOW', 'TIME', 'AGO', 'DURATION', 'FILL'].map(func => ({
+            label: func,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: func,
+            range,
+            documentation: `时间函数: ${func}`
+          })),
+          
           // 数据库
           ...databases.map(db => ({
             label: db,
             kind: monaco.languages.CompletionItemKind.Module,
             insertText: `"${db}"`,
             range,
-            documentation: `Database: ${db}`})),
+            documentation: `数据库: ${db}`
+          })),
+          
+          // 常用查询模板
+          {
+            label: 'SELECT template',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: 'SELECT ${1:*} FROM ${2:measurement} WHERE ${3:condition}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            documentation: 'SELECT查询模板'
+          },
+          {
+            label: 'Time range query',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: 'SELECT ${1:*} FROM ${2:measurement} WHERE time >= now() - ${3:1h}',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            documentation: '时间范围查询模板'
+          },
+          {
+            label: 'Aggregation query',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: 'SELECT ${1:MEAN}(${2:field}) FROM ${3:measurement} WHERE time >= now() - ${4:1h} GROUP BY time(${5:5m})',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            documentation: '聚合查询模板'
+          }
         ];
 
         return { suggestions };
@@ -315,6 +297,18 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       return;
     }
 
+    // 检查是否有选中的内容
+    let queryToExecute = currentTab.query.trim();
+    if (editorInstance) {
+      const selection = editorInstance.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = editorInstance.getModel()?.getValueInRange(selection);
+        if (selectedText && selectedText.trim()) {
+          queryToExecute = selectedText.trim();
+        }
+      }
+    }
+
     setLoading(true);
     onLoadingChange?.(true);
     const startTime = Date.now();
@@ -323,7 +317,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       const result = await invoke<QueryResult>('execute_query', {
         connection_id: activeConnectionId,
         database: selectedDatabase,
-        query: currentTab.query.trim()
+        query: queryToExecute
       });
       const executionTime = Date.now() - startTime;
       
@@ -337,9 +331,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           : tab
       ));
       
-      toast({ title: "成功", description: "查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms" });
+      toast({ title: "成功", description: `查询完成，返回 ${result.rowCount} 行数据，耗时 ${executionTime}ms` });
     } catch (error) {
-      toast({ title: "错误", description: "查询执行失败: ${error}", variant: "destructive" });
+      toast({ title: "错误", description: `查询执行失败: ${error}`, variant: "destructive" });
       console.error('Query error:', error);
     } finally {
       setLoading(false);
@@ -418,11 +412,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         <div className="flex items-center gap-1">
           <span>{tab.name}</span>
           {tab.isModified && <div className="w-1 h-1 bg-primary rounded-full" />}
-          {tab.lastExecuted && (
-            <Tooltip title={`最后执行: ${tab.lastExecuted.toLocaleString()}`}>
-              <Clock className="w-4 h-4 text-xs text-muted-foreground"   />
-            </Tooltip>
-          )}
           {queryTabs.length > 1 && (
             <Button
               type="text"
@@ -495,11 +484,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           <div className="flex gap-2">
             <Database className="w-4 h-4"  />
             <span>查询编辑器</span>
-            {lastExecutionTime && (
-              <Text type="secondary">
-                <Clock className="w-4 h-4"  /> 上次执行: {lastExecutionTime}ms
-              </Text>
-            )}
             {currentTab?.isModified && (
               <Badge color="blue" text="未保存" />
             )}
@@ -582,34 +566,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                 格式化
               </Button>
 
-              <Tooltip title="智能优化查询">
-                <Button
-                  icon={<Zap className="w-4 h-4"  />}
-                  onClick={handleOptimizeQuery}
-                  disabled={optimizationLoading || !activeConnectionId || !currentTab?.query.trim()}
-                >
-                  智能优化
-                </Button>
-              </Tooltip>
-
-              {optimizationResult && (
-                <Tooltip title="应用优化建议">
-                  <Button
-                    icon={<Lightbulb className="w-4 h-4"  />}
-                    onClick={handleApplyOptimization}
-                    disabled={!optimizationResult || optimizationResult.optimizedQuery === currentTab?.query}
-                  >
-                    应用优化
-                  </Button>
-                </Tooltip>
-              )}
-
-              <Tooltip title="优化设置">
-                <Button
-                  icon={<ExperimentOutlined />}
-                  onClick={() => setShowOptimizationTips(true)}
-                />
-              </Tooltip>
 
               <Select
                 placeholder="选择模板"
@@ -650,57 +606,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             />
           </div>
 
-          {/* 优化结果展示 */}
-          {optimizationResult && (
-            <div style={{ borderTop: '1px solid #f0f0f0', padding: '12px 16px', background: '#fafafa' }}>
-              <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
-                <div className="flex gap-2">
-                  <Text strong>优化分析结果</Text>
-                  <Badge 
-                    count={`${optimizationResult.estimatedPerformanceGain}%`} 
-                    style={{ backgroundColor: optimizationResult.estimatedPerformanceGain > 20 ? '#52c41a' : '#faad14' }}
-                  />
-                  <Text type="secondary">预计性能提升</Text>
-                </div>
-                
-                {optimizationResult.optimizationTechniques.length > 0 && (
-                  <div className="flex gap-2" wrap>
-                    <Text type="secondary">优化技术:</Text>
-                    {optimizationResult.optimizationTechniques.map((tech: any, index: number) => (
-                      <Badge
-                        key={index}
-                        count={tech.name}
-                        style={{ 
-                          backgroundColor: tech.impact === 'high' ? '#52c41a' : 
-                                          tech.impact === 'medium' ? '#faad14' : '#d9d9d9'
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {optimizationResult.warnings.length > 0 && (
-                  <div className="flex gap-2" wrap>
-                    <Text type="warning">警告:</Text>
-                    {optimizationResult.warnings.map((warning: string, index: number) => (
-                      <Text key={index} type="warning">{warning}</Text>
-                    ))}
-                  </div>
-                )}
-
-                {optimizationResult.recommendations.length > 0 && (
-                  <div className="flex gap-2" wrap>
-                    <Text type="secondary">建议:</Text>
-                    {optimizationResult.recommendations.slice(0, 2).map((rec: any, index: number) => (
-                      <Tooltip key={index} title={rec.description}>
-                        <Badge count={rec.title} style={{ backgroundColor: '#1890ff' }} />
-                      </Tooltip>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -790,111 +695,6 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         </div>
       </Sheet>
 
-      {/* 优化设置抽屉 */}
-      <Sheet
-        title="优化设置"
-        open={showOptimizationTips}
-        onClose={() => setShowOptimizationTips(false)}
-        width={400}
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">自动应用优化</span>
-            <Switch 
-              checked={autoOptimize} 
-              onValueChange={setAutoOptimize}
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <Typography variant="h4" className="font-medium mb-3">优化技术</Typography>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">索引优化</span>
-                <Switch defaultChecked={true} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">查询重写</span>
-                <Switch defaultChecked={true} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">缓存策略</span>
-                <Switch defaultChecked={true} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">并行化</span>
-                <Switch defaultChecked={false} />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <Typography variant="h4" className="font-medium mb-3">性能目标</Typography>
-            <div className="space-y-2">
-              <div>
-                <Label className="block text-sm font-medium mb-1">最大执行时间 (秒)</Label>
-                <Select defaultValue="5" style={{ width: '100%' }}>
-                  <Option value="1">1</Option>
-                  <Option value="5">5</Option>
-                  <Option value="10">10</Option>
-                  <Option value="30">30</Option>
-                </Select>
-              </div>
-              <div>
-                <Label className="block text-sm font-medium mb-1">内存使用限制 (MB)</Label>
-                <Select defaultValue="512" style={{ width: '100%' }}>
-                  <Option value="256">256</Option>
-                  <Option value="512">512</Option>
-                  <Option value="1024">1024</Option>
-                  <Option value="2048">2048</Option>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <Typography variant="h4" className="font-medium mb-3">路由策略</Typography>
-            <div className="space-y-2">
-              <div>
-                <Label className="block text-sm font-medium mb-1">负载均衡</Label>
-                <Select defaultValue="adaptive" style={{ width: '100%' }}>
-                  <Option value="round_robin">轮询</Option>
-                  <Option value="least_connections">最少连接</Option>
-                  <Option value="weighted">加权</Option>
-                  <Option value="adaptive">自适应</Option>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">启用读写分离</span>
-                <Switch defaultChecked={true} />
-              </div>
-            </div>
-          </div>
-
-          {optimizationResult && (
-            <div className="border-t pt-4">
-              <Typography variant="h4" className="font-medium mb-3">优化历史</Typography>
-              <div className="space-y-2">
-                <div className="text-sm">
-                  <Text type="secondary">上次优化时间:</Text>
-                  <br />
-                  <Text>{new Date().toLocaleString()}</Text>
-                </div>
-                <div className="text-sm">
-                  <Text type="secondary">性能提升:</Text>
-                  <br />
-                  <Text type="success">{optimizationResult.estimatedPerformanceGain}%</Text>
-                </div>
-                <div className="text-sm">
-                  <Text type="secondary">优化技术:</Text>
-                  <br />
-                  <Text>{optimizationResult.optimizationTechniques.map((t: any) => t.name).join(', ')}</Text>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Sheet>
     </div>
   );
 };

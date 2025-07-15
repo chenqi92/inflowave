@@ -47,7 +47,7 @@ import {useConnectionStore} from '@/store/connection';
 import {useNavigate} from 'react-router-dom';
 import UserPreferences from '@/components/settings/UserPreferences';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
-import BrowserModeModal from '@/components/common/BrowserModeModal';
+import UserGuideModal from '@/components/common/UserGuideModal';
 import {useNoticeStore} from '@/store/notice';
 import {isBrowserEnvironment} from '@/utils/tauri';
 import {Modal} from '@/utils/modalAdapter';
@@ -57,7 +57,7 @@ import type {AppConfig} from '@/types';
 const Settings: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const form = useForm();
-    const [browserModalVisible, setBrowserModalVisible] = useState(false);
+    const [userGuideVisible, setUserGuideVisible] = useState(false);
     const navigate = useNavigate();
     const {config, setConfig, setTheme, setLanguage, resetConfig} = useAppStore();
 
@@ -642,51 +642,40 @@ const Settings: React.FC = () => {
                                                 </Text>
                                             </div>
 
-                                            {isBrowserEnvironment() && (
-                                                <div className="flex gap-2" direction="vertical"
-                                                     style={{width: '100%'}}>
-                                                    <Alert
-                                                        message="当前运行在浏览器预览模式"
-                                                        description="您可以重新查看功能说明，或者重置提醒设置。"
-                                                        type="info"
-                                                        showIcon
-                                                        style={{marginBottom: '16px'}}
-                                                    />
-
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="default"
-                                                            icon={<Info className="w-4 h-4"/>}
-                                                            onClick={() => setBrowserModalVisible(true)}
-                                                            className="cursor-pointer"
-                                                        >
-                                                            查看功能说明
-                                                        </Button>
-                                                        <Button
-                                                            icon={<RefreshCw className="w-4 h-4"/>}
-                                                            onClick={() => {
-                                                                resetNoticeSettings();
-                                                                toast({
-                                                                    title: "成功",
-                                                                    description: "提醒设置已重置，下次启动时会再次显示功能说明"
-                                                                });
-                                                            }}
-                                                            className="cursor-pointer"
-                                                        >
-                                                            重置提醒设置
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {!isBrowserEnvironment() && (
+                                            <div className="flex gap-2" direction="vertical"
+                                                 style={{width: '100%'}}>
                                                 <Alert
-                                                    message="当前运行在桌面应用模式"
-                                                    description="桌面应用环境中不需要显示浏览器模式提醒。"
-                                                    type="success"
+                                                    message="用户指引设置"
+                                                    description="您可以重新查看用户指引，或者重置启动时的指引显示设置。"
+                                                    type="info"
                                                     showIcon
+                                                    style={{marginBottom: '16px'}}
                                                 />
-                                            )}
+
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant="default"
+                                                        icon={<Info className="w-4 h-4"/>}
+                                                        onClick={() => setUserGuideVisible(true)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        查看用户指引
+                                                    </Button>
+                                                    <Button
+                                                        icon={<RefreshCw className="w-4 h-4"/>}
+                                                        onClick={() => {
+                                                            resetNoticeSettings();
+                                                            toast({
+                                                                title: "成功",
+                                                                description: "提醒设置已重置，下次启动时会再次显示用户指引"
+                                                            });
+                                                        }}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        重置提醒设置
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )
@@ -717,10 +706,10 @@ const Settings: React.FC = () => {
                     />
                 </div>
 
-                {/* 浏览器模式说明弹框 */}
-                <BrowserModeModal
-                    open={browserModalVisible}
-                    onClose={() => setBrowserModalVisible(false)}
+                {/* 用户指引弹框 */}
+                <UserGuideModal
+                    isOpen={userGuideVisible}
+                    onClose={() => setUserGuideVisible(false)}
                 />
             </div>
         </div>

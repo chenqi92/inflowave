@@ -10,12 +10,13 @@ import {ThemeProvider} from '@/components/providers/ThemeProvider';
 import {safeTauriInvoke, initializeEnvironment, isBrowserEnvironment} from './utils/tauri';
 import {showMessage} from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
-import BrowserModeModal from './components/common/BrowserModeModal';
+import UserGuideModal from './components/common/UserGuideModal';
 import {useNoticeStore} from './store/notice';
 
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import UITest from './pages/UITest';
+import UserGuideTest from './components/test/UserGuideTest';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
@@ -28,15 +29,15 @@ const MainLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
-    const [browserModalVisible, setBrowserModalVisible] = useState(false);
+    const [userGuideVisible, setUserGuideVisible] = useState(false);
     const {browserModeNoticeDismissed} = useNoticeStore();
 
-    // 检查是否显示浏览器模式提醒
+    // 检查是否显示用户指引
     useEffect(() => {
-        if (isBrowserEnvironment() && !browserModeNoticeDismissed) {
+        if (!browserModeNoticeDismissed) {
             // 延迟显示弹框，确保应用完全加载
             const timer = setTimeout(() => {
-                setBrowserModalVisible(true);
+                setUserGuideVisible(true);
             }, 1000);
             return () => clearTimeout(timer);
         }
@@ -57,7 +58,7 @@ const MainLayout: React.FC = () => {
     }, []);
 
     // 检查是否为需要特殊处理的页面（连接管理等）
-    const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/dev-tools'].includes(location.pathname);
+    const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/user-guide-test', '/dev-tools'].includes(location.pathname);
 
     if (isSpecialPage) {
         return (
@@ -69,6 +70,7 @@ const MainLayout: React.FC = () => {
                     <Routes>
                         <Route path="/debug" element={<ConnectionDebug/>}/>
                         <Route path="/ui-test" element={<UITest/>}/>
+                        <Route path="/user-guide-test" element={<UserGuideTest/>}/>
                     </Routes>
                 </Content>
 
@@ -112,10 +114,10 @@ const MainLayout: React.FC = () => {
                 <Route path="/connections" element={<DataGripStyleLayout />} />
             </Routes>
 
-            {/* 浏览器模式提醒弹框 */}
-            <BrowserModeModal
-                isOpen={browserModalVisible}
-                onClose={() => setBrowserModalVisible(false)}
+            {/* 用户指引弹框 */}
+            <UserGuideModal
+                isOpen={userGuideVisible}
+                onClose={() => setUserGuideVisible(false)}
             />
         </>
     );

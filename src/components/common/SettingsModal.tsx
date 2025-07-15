@@ -45,7 +45,7 @@ import {ThemeColorSelectorWithPreview} from '@/components/ui/theme-color-selecto
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
-import BrowserModeModal from '@/components/common/BrowserModeModal';
+import UserGuideModal from '@/components/common/UserGuideModal';
 import {useNoticeStore} from '@/store/notice';
 import type {AppConfig} from '@/types';
 
@@ -57,7 +57,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
     const [loading, setLoading] = useState(false);
     const form = useForm();
-    const [browserModalVisible, setBrowserModalVisible] = useState(false);
+    const [userGuideVisible, setUserGuideVisible] = useState(false);
     const {config, setConfig, setLanguage, resetConfig} = useAppStore();
     const {clearConnections} = useConnectionStore();
     const {resetNoticeSettings} = useNoticeStore();
@@ -528,11 +528,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Button
-                                    onClick={() => setBrowserModalVisible(true)}
+                                    onClick={() => setUserGuideVisible(true)}
                                     className="w-full justify-start"
                                 >
                                     <Info className="w-4 h-4 mr-2"/>
-                                    查看功能说明
+                                    查看用户指引
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -666,10 +666,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                 </DialogContent>
             </Dialog>
 
-            {/* 浏览器模式说明弹框 */}
-            <BrowserModeModal
-                open={browserModalVisible}
-                onClose={() => setBrowserModalVisible(false)}
+            {/* 用户指引弹框 */}
+            <UserGuideModal
+                isOpen={userGuideVisible}
+                onClose={() => setUserGuideVisible(false)}
             />
         </>
     );

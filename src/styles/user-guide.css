@@ -1,0 +1,154 @@
+/* 用户指引弹框样式 */
+.user-guide-modal {
+  /* 确保弹框不会超出视口 */
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.user-guide-content {
+  /* 内容区域样式 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.user-guide-content pre {
+  /* 代码块样式 */
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.user-guide-content code {
+  /* 行内代码样式 */
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.user-guide-content table {
+  /* 表格样式 */
+  table-layout: auto;
+  width: 100%;
+  max-width: 100%;
+}
+
+.user-guide-content td,
+.user-guide-content th {
+  /* 表格单元格样式 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 200px;
+}
+
+.user-guide-content img {
+  /* 图片样式 */
+  max-width: 100%;
+  height: auto;
+}
+
+.user-guide-content blockquote {
+  /* 引用块样式 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 滚动条样式 */
+.user-guide-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.user-guide-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.user-guide-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+.user-guide-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* 导航按钮样式 */
+.user-guide-nav-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.user-guide-nav-button:hover {
+  transform: translateY(-1px);
+}
+
+.user-guide-nav-button.active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-guide-modal {
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .user-guide-sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    z-index: 10;
+    background: hsl(var(--background));
+    border-right: 1px solid hsl(var(--border));
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .user-guide-content {
+    padding: 1rem;
+  }
+
+  .user-guide-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .user-guide-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .user-guide-content h3 {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .user-guide-sidebar {
+    width: 260px;
+  }
+
+  .user-guide-content {
+    padding: 0.75rem;
+  }
+
+  .user-guide-content pre {
+    font-size: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .user-guide-content code {
+    font-size: 0.75rem;
+  }
+
+  .user-guide-content table {
+    font-size: 0.875rem;
+  }
+
+  .user-guide-content td,
+  .user-guide-content th {
+    padding: 0.5rem;
+    max-width: 120px;
+  }
+}

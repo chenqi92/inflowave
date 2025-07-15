@@ -1,10 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+
+  // 静态资源配置
+  publicDir: 'public',
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

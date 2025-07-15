@@ -5,6 +5,7 @@ import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { applyThemeColors } from '@/lib/theme-colors';
+import { useTheme } from '@/components/providers/ThemeProvider';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
 
@@ -21,6 +22,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
   const { settings, updateTheme } = useSettingsStore();
+  const { setColorScheme } = useTheme();
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
 
@@ -58,25 +60,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleThemeChange = (themeName: string) => {
     console.log('处理主题切换:', themeName);
 
-    const isDark = settings.theme.mode === 'dark' ||
-      (settings.theme.mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // 使用主题提供者的颜色方案切换功能
+    setColorScheme(themeName);
 
-    // 应用主题颜色
-    applyThemeColors(themeName, isDark);
-
-    // 更新设置
+    // 同时更新设置存储以保持兼容性
     updateTheme({ primaryColor: themeName });
 
     // 显示成功消息
     const themeLabels: Record<string, string> = {
-      'default-blue': '默认蓝色',
-      'natural-green': '自然绿色',
-      'vibrant-red': '活力红色',
-      'warm-orange': '温暖橙色',
-      'elegant-purple': '优雅紫色',
-      'romantic-rose': '浪漫玫瑰',
-      'bright-yellow': '明亮黄色',
-      'mysterious-violet': '神秘紫罗兰'
+      'default': '默认蓝色',
+      'green': '自然绿色',
+      'red': '活力红色',
+      'orange': '温暖橙色',
+      'purple': '优雅紫色',
+      'rose': '浪漫玫瑰',
+      'yellow': '明亮黄色',
+      'violet': '神秘紫罗兰'
     };
 
     const themeLabel = themeLabels[themeName] || themeName;
@@ -332,7 +331,39 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         setAboutVisible(true);
         break;
 
+      // 主题切换菜单
+      case 'theme-default':
+        handleThemeChange('default');
+        break;
+      case 'theme-green':
+        handleThemeChange('green');
+        break;
+      case 'theme-red':
+        handleThemeChange('red');
+        break;
+      case 'theme-orange':
+        handleThemeChange('orange');
+        break;
+      case 'theme-purple':
+        handleThemeChange('purple');
+        break;
+      case 'theme-rose':
+        handleThemeChange('rose');
+        break;
+      case 'theme-yellow':
+        handleThemeChange('yellow');
+        break;
+      case 'theme-violet':
+        handleThemeChange('violet');
+        break;
+
       default:
+        // 检查是否是主题切换动作
+        if (action.startsWith('theme-')) {
+          const themeName = action.replace('theme-', '');
+          handleThemeChange(themeName);
+          return;
+        }
         console.log('未处理的菜单动作:', action);
         break;
     }

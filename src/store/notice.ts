@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface NoticeState {
-  browserModeNoticeDismissed: boolean;
-  dismissBrowserModeNotice: () => void;
+  browserModeNoticeDismissed: boolean; // 重命名为 userGuideNoticeDismissed 会更合适，但为了兼容性保持原名
+  dismissBrowserModeNotice: () => void; // 实际上是关闭用户指引的通知
   resetNoticeSettings: () => void;
 }
 

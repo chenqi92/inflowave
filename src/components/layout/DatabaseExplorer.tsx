@@ -91,8 +91,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                            }) => {
     const {
         connections,
-        activeconnection_id,
+        activeConnectionId,
         connectedConnectionIds,
+        connectionStatuses,
         getConnection,
         addConnection,
         connectToDatabase,
@@ -117,7 +118,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [favoritesFilter, setFavoritesFilter] = useState<'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'>('all');
 
 
-    const activeConnection = activeconnection_id ? getConnection(activeconnection_id) : null;
+    const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+    const activeConnectionStatus = activeConnectionId ? connectionStatuses[activeConnectionId] : null;
 
     // 生成时间条件语句（使用当前选择的时间范围）
     const generateTimeCondition = (): string => {
@@ -940,9 +942,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(`🔄 DatabaseExplorer: 连接或连接状态发生变化`);
         console.log(`🔗 所有连接 (${connections.length}):`, connections.map(c => `${c.name} (${c.id})`));
         console.log(`✨ 已连接ID: [${connectedConnectionIds.join(', ')}]`);
-        console.log(`🎯 活跃连接ID: ${activeconnection_id}`);
+        console.log(`🎯 活跃连接ID: ${activeConnectionId}`);
         buildCompleteTreeData();
-    }, [connections, connectedConnectionIds, activeconnection_id]); // 移除buildCompleteTreeData从依赖数组
+    }, [connections, connectedConnectionIds, activeConnectionId]); // 移除buildCompleteTreeData从依赖数组
 
     // 监听刷新触发器
     useEffect(() => {
@@ -980,14 +982,36 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             {/* 头部：连接状态和操作 */}
             <div className="p-3 border-b border">
                 <div className="flex items-center justify-between mb-3">
-                    <Badge
-                        variant={activeConnection ? "default" : "secondary"}
-                        className={activeConnection ? "bg-success text-success-foreground" : ""}
-                    >
-            <span className="text-sm font-medium">
-              {activeConnection ? activeConnection.name : '未连接'}
-            </span>
-                    </Badge>
+                    {activeConnection && activeConnectionStatus ? (
+                        <div className="flex items-center gap-2">
+                            <Badge
+                                variant={activeConnectionStatus.status === 'connected' ? "default" : "destructive"}
+                                className={activeConnectionStatus.status === 'connected' ? "bg-green-600 text-white" : ""}
+                            >
+                                <div className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-current"></span>
+                                    <span className="text-sm font-medium">
+                                        {activeConnectionStatus.status === 'connected' ? '已连接' :
+                                         activeConnectionStatus.status === 'connecting' ? '连接中' :
+                                         activeConnectionStatus.status === 'error' ? '连接错误' : '已断开'}
+                                    </span>
+                                </div>
+                            </Badge>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-foreground">
+                                    {activeConnection.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {activeConnection.host}:{activeConnection.port}
+                                    {activeConnectionStatus.latency && ` • ${activeConnectionStatus.latency}ms`}
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <Badge variant="secondary">
+                            <span className="text-sm font-medium">未连接</span>
+                        </Badge>
+                    )}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
