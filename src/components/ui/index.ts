@@ -145,3 +145,5 @@ export type { CollapseProps, PanelProps } from './Collapse';
 export { toast as message } from '../../hooks/use-toast';
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './resizable';
+
+export { ScrollArea, ScrollBar } from './scroll-area';
