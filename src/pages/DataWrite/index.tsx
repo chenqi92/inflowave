@@ -102,7 +102,7 @@ const DataWrite: React.FC = () => {
                 setSelectedDatabase(dbList[0]);
             }
         } catch (error) {
-            toast({title: "错误", description: "加载数据库列表失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive"});
         }
     };
 
@@ -242,18 +242,18 @@ const DataWrite: React.FC = () => {
             const result = await safeTauriInvoke<WriteResult>('write_data_points', {request});
 
             if (result.success) {
-                toast({title: "成功", description: "批量写入成功，写入 ${result.pointsWritten} 个数据点"});
+                toast({title: "成功", description: `批量写入成功，写入 ${result.pointsWritten} 个数据点`});
                 setDataPoints([]);
             } else {
                 toast({
                     title: "错误",
-                    description: "批量写入失败: ${result.errors.length} 个错误",
+                    description: `批量写入失败: ${result.errors.length} 个错误`,
                     variant: "destructive"
                 });
                 console.error('写入错误:', result.errors);
             }
         } catch (error) {
-            toast({title: "错误", description: "批量写入失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `批量写入失败: ${error}`, variant: "destructive"});
         } finally {
             setLoading(false);
         }
@@ -324,13 +324,13 @@ const DataWrite: React.FC = () => {
             const points = parseLineProtocol(values.lineProtocol);
             if (points.length > 0) {
                 setDataPoints(prev => [...prev, ...points]);
-                toast({title: "成功", description: "解析成功，添加了 ${points.length} 个数据点"});
-                batchForm.resetFields();
+                toast({title: "成功", description: `解析成功，添加了 ${points.length} 个数据点`});
+                batchForm.reset();
             } else {
                 toast({title: "警告", description: "未能解析出有效的数据点"});
             }
         } catch (error) {
-            toast({title: "错误", description: "解析失败: ${error}", variant: "destructive"});
+            toast({title: "错误", description: `解析失败: ${error}`, variant: "destructive"});
         }
     };
 
@@ -681,76 +681,79 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                         </div>
                     </div>
                 </TabsContent>
-                    {
-                        key: 'import',
-                        label: '文件导入',
-                        children: (
-                            <div
-                                title="文件导入"
-                                extra={
-                                    <Button
-                                        type="primary"
-                                        icon={<Upload className="w-4 h-4"/>}
-                                        onClick={() => setImportDialogVisible(true)}
-                                        disabled={!selectedDatabase}>
-                                        导入文件
-                                    </Button>
-                                }>
-                                <div className="space-y-4">
-                                    <Alert
-                                        message="文件导入功能"
-                                        description="支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库。"
-                                        type="info"
-                                        showIcon
-                                    />
 
-                                    <Row gutter={16}>
-                                        <Col span={8}>
-                                            <div size="small" title="CSV 格式">
-                                                <div className="text-sm">
-                                                    • 第一行为表头<br/>
-                                                    • 数据用逗号分隔<br/>
-                                                    • 支持时间戳字段<br/>
-                                                    • 自动推断数据类型
-                                                </div>
-                                            </div>
-                                        </Col>
-                                        <Col span={8}>
-                                            <div size="small" title="JSON 格式">
-                                                <div className="text-sm">
-                                                    • 对象数组格式<br/>
-                                                    • 每个对象一行数据<br/>
-                                                    • 支持嵌套字段<br/>
-                                                    • 灵活的数据结构
-                                                </div>
-                                            </div>
-                                        </Col>
-                                        <Col span={8}>
-                                            <div size="small" title="字段映射">
-                                                <div className="text-sm">
-                                                    • 自动字段映射<br/>
-                                                    • 支持标签和字段<br/>
-                                                    • 时间字段识别<br/>
-                                                    • 数据类型转换
-                                                </div>
-                                            </div>
-                                        </Col>
-                                    </Row>
-
-                                    {!selectedDatabase && (
-                                        <Alert
-                                            message="请先选择数据库"
-                                            description="在开始导入之前，请先选择要导入数据的目标数据库。"
-                                            type="warning"
-                                            showIcon
-                                        />
-                                    )}
-                                </div>
+                <TabsContent value="import" className="space-y-6">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-medium">文件导入</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库
+                                </p>
                             </div>
-                        )
-                    },
-                ]}
-            />
+                            <Button
+                                onClick={() => setImportDialogVisible(true)}
+                                disabled={!selectedDatabase}
+                            >
+                                <Upload className="w-4 h-4 mr-2"/>
+                                导入文件
+                            </Button>
+                        </div>
+
+                        <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertDescription>
+                                支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库。
+                            </AlertDescription>
+                        </Alert>
+
+                        <Row gutter={16}>
+                            <Col span={8}>
+                                <div className="p-4 border rounded-lg">
+                                    <h4 className="font-medium mb-2">CSV 格式</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <div>• 第一行为表头</div>
+                                        <div>• 数据用逗号分隔</div>
+                                        <div>• 支持时间戳字段</div>
+                                        <div>• 自动推断数据类型</div>
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col span={8}>
+                                <div className="p-4 border rounded-lg">
+                                    <h4 className="font-medium mb-2">JSON 格式</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <div>• 对象数组格式</div>
+                                        <div>• 每个对象一行数据</div>
+                                        <div>• 支持嵌套字段</div>
+                                        <div>• 灵活的数据结构</div>
+                                    </div>
+                                </div>
+                            </Col>
+                            <Col span={8}>
+                                <div className="p-4 border rounded-lg">
+                                    <h4 className="font-medium mb-2">字段映射</h4>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                        <div>• 自动字段映射</div>
+                                        <div>• 支持标签和字段</div>
+                                        <div>• 时间字段识别</div>
+                                        <div>• 数据类型转换</div>
+                                    </div>
+                                </div>
+                            </Col>
+                        </Row>
+
+                        {!selectedDatabase && (
+                            <Alert>
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription>
+                                    请先选择数据库。在开始导入之前，请先选择要导入数据的目标数据库。
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
 
             {/* 导入对话框 */}
             <ImportDialog
