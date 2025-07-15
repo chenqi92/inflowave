@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
 
 interface KeyboardShortcut {
   key: string;
@@ -332,7 +333,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
           // 复制当前行
           const selection = editorRef.current.getSelection();
           const lineContent = editorRef.current.getLineContent(selection.startLineNumber);
-          navigator.clipboard.writeText(lineContent);
+          writeToClipboard(lineContent, { successMessage: '已复制当前行' });
         }
       },
       description: '复制当前行',

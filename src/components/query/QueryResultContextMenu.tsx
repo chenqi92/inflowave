@@ -1,9 +1,8 @@
 import React from 'react';
-import  from '@/components/ui';
-
-// TODO: Replace these Ant Design components: Dropdown
+import { Dropdown, FileText, Filter, ArrowUp, ArrowDown, FileDown } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
 import { Copy, BarChart, Edit, Eye, Table } from 'lucide-react';
 // TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
 // You may need to find alternatives or create custom icons
@@ -29,8 +28,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
         case 'copy_cell':
           // 复制单元格内容
           if (selectedData !== undefined) {
-            await navigator.clipboard.writeText(String(selectedData));
-            showMessage.success("已复制单元格内容" );
+            await writeToClipboard(String(selectedData), { successMessage: '已复制单元格内容' });
           }
           break;
 
@@ -38,24 +36,21 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制整行数据
           if (rowData) {
             const rowText = Object.values(rowData).join('\t');
-            await navigator.clipboard.writeText(rowText);
-            showMessage.success("已复制行数据" );
+            await writeToClipboard(rowText, { successMessage: '已复制行数据' });
           }
           break;
 
         case 'copy_column':
           // 复制列名
           if (columnName) {
-            await navigator.clipboard.writeText(columnName);
-            toast({ title: "成功", description: `已复制列名: ${columnName}` });
+            await writeToClipboard(columnName, { successMessage: `已复制列名: ${columnName}` });
           }
           break;
 
         case 'copy_as_json':
           // 复制为 JSON 格式
           if (rowData) {
-            await navigator.clipboard.writeText(JSON.stringify(rowData, null, 2));
-            showMessage.success("已复制为 JSON 格式" );
+            await writeToClipboard(JSON.stringify(rowData, null, 2), { successMessage: '已复制为 JSON 格式' });
           }
           break;
 
@@ -63,36 +58,35 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制为 CSV 格式
           if (rowData) {
             const csvText = Object.values(rowData).join(',');
-            await navigator.clipboard.writeText(csvText);
-            showMessage.success("已复制为 CSV 格式" );
+            await writeToClipboard(csvText, { successMessage: '已复制为 CSV 格式' });
           }
           break;
 
         case 'filter_by_value':
           // 按值过滤
           if (selectedData !== undefined && columnName) {
-            toast({ title: "成功", description: `正在按 ${columnName} = ${selectedData} 过滤` });
+            showMessage.success(`正在按 ${columnName} = ${selectedData} 过滤`);
           }
           break;
 
         case 'filter_not_equal':
           // 按值排除
           if (selectedData !== undefined && columnName) {
-            toast({ title: "成功", description: `正在按 ${columnName} != ${selectedData} 过滤` });
+            showMessage.success(`正在按 ${columnName} != ${selectedData} 过滤`);
           }
           break;
 
         case 'sort_asc':
           // 升序排序
           if (columnName) {
-            toast({ title: "成功", description: `正在按 ${columnName} 升序排序` });
+            showMessage.success(`正在按 ${columnName} 升序排序`);
           }
           break;
 
         case 'sort_desc':
           // 降序排序
           if (columnName) {
-            toast({ title: "成功", description: `正在按 ${columnName} 降序排序` });
+            showMessage.success(`正在按 ${columnName} 降序排序`);
           }
           break;
 
@@ -129,7 +123,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
+      showMessage.error(`操作失败: ${error}`);
     }
   };
 

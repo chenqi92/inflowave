@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dropdown } from '@/components/ui';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { Plus, RefreshCw, Info, Trash2, Copy, Table, FileDown, FileText } from 'lucide-react';
@@ -53,9 +54,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               onOk: () => {
                 // 确保能正常关闭
               }});
-            toast({ title: "成功", description: `已生成数据库 ${databaseName} 的 measurement 创建模板` });
+            showMessage.success(`已生成数据库 ${databaseName} 的 measurement 创建模板`);
           } catch (error) {
-            toast({ title: "错误", description: `生成创建模板失败: ${error}`, variant: "destructive" });
+            showMessage.error(`生成创建模板失败: ${error}`);
           }
           break;
 
@@ -65,10 +66,10 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             await safeTauriInvoke('refresh_database_structure', {
               connectionId: activeConnectionId,
               database: databaseName});
-            toast({ title: "成功", description: `已刷新数据库 ${databaseName} 的结构` });
+            showMessage.success(`已刷新数据库 ${databaseName} 的结构`);
             onAction?.('refresh_database', databaseName);
           } catch (error) {
-            toast({ title: "错误", description: `刷新数据库结构失败: ${error}`, variant: "destructive" });
+            showMessage.error(`刷新数据库结构失败: ${error}`);
           }
           break;
 
@@ -96,9 +97,9 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               onOk: () => {
                 // 确保能正常关闭
               }});
-            toast({ title: "成功", description: `已获取数据库 ${databaseName} 的详细信息` });
+            showMessage.success(`已获取数据库 ${databaseName} 的详细信息`);
           } catch (error) {
-            toast({ title: "错误", description: `获取数据库信息失败: ${error}`, variant: "destructive" });
+            showMessage.error(`获取数据库信息失败: ${error}`);
           }
           break;
 
@@ -107,20 +108,18 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           await safeTauriInvoke('show_measurements', {
             connectionId: activeConnectionId,
             database: databaseName});
-          toast({ title: "成功", description: `正在显示数据库 ${databaseName} 的所有 measurements` });
+          showMessage.success(`正在显示数据库 ${databaseName} 的所有 measurements`);
           break;
 
         case 'copy_name':
           // 复制数据库名
-          await navigator.clipboard.writeText(databaseName);
-          toast({ title: "成功", description: `已复制数据库名: ${databaseName}` });
+          await writeToClipboard(databaseName, { successMessage: `已复制数据库名: ${databaseName}` });
           break;
 
         case 'copy_use_statement': {
           // 复制 USE 语句
           const useStatement = `USE "${databaseName}";`;
-          await navigator.clipboard.writeText(useStatement);
-          showMessage.success("已复制 USE 语句到剪贴板" );
+          await writeToClipboard(useStatement, { successMessage: '已复制 USE 语句到剪贴板' });
           break;
         }
 
@@ -129,7 +128,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           await safeTauriInvoke('export_database', {
             connectionId: activeConnectionId,
             database: databaseName});
-          toast({ title: "成功", description: `正在导出数据库 ${databaseName}` });
+          showMessage.success(`正在导出数据库 ${databaseName}`);
           break;
 
         case 'drop_database': {
@@ -141,7 +140,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             await safeTauriInvoke('drop_database', {
               connectionId: activeConnectionId,
               database: databaseName});
-            toast({ title: "成功", description: `数据库 ${databaseName} 已删除` });
+            showMessage.success(`数据库 ${databaseName} 已删除`);
           }
           break;
         }
@@ -157,7 +156,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
       }
     } catch (error) {
       console.error('执行菜单动作失败:', error);
-      toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
+      showMessage.error(`操作失败: ${error}`);
     }
   };
 
