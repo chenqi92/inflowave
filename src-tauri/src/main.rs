@@ -152,6 +152,9 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
 fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     let window = app.get_webview_window("main").unwrap();
 
+    // 添加调试日志
+    log::info!("菜单事件触发: {}", event.id().as_ref());
+
     match event.id().as_ref() {
         // 文件菜单
         "new_query" => {
@@ -204,7 +207,7 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
 
         // 查看菜单
         "view_datasource" => {
-            let _ = window.emit("menu-action", "navigate:/datasource");
+            let _ = window.emit("menu-action", "navigate:/connections");
         }
         "view_query" => {
             let _ = window.emit("menu-action", "navigate:/query");

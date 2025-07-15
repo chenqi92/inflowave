@@ -5,7 +5,7 @@ import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
 import ResultPanel from './ResultPanel';
-import NativeMenuHandler from './NativeMenuHandler';
+
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import type { QueryResult } from '@/types';
 
@@ -174,9 +174,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
 
   return (
     <Layout className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* 原生菜单处理器 */}
-      <NativeMenuHandler />
-
       {/* 主工具栏 - 统一背景，移除边框分割线 */}
       <Header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
         <MainToolbar

@@ -20,6 +20,7 @@ import UITest from './pages/UITest';
 import TestButton from './components/test/TestButton';
 import TestFixes from './test-fixes';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
+import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
 // UI 组件导入
 import {Text, Spin, Layout, Content} from '@/components/ui';
@@ -97,6 +98,11 @@ const MainLayout: React.FC = () => {
     // 对于主要的数据库工作区页面，使用DataGrip风格布局
     return (
         <>
+            {/* 全局菜单处理器 - 确保在所有页面都能处理菜单事件 */}
+            <NativeMenuHandler
+                onGlobalSearch={() => setGlobalSearchVisible(true)}
+            />
+
             <Routes>
                 <Route path="/" element={<DataGripStyleLayout/>}/>
                 <Route path="/dashboard" element={<DataGripStyleLayout/>}/>

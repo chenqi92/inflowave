@@ -93,7 +93,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       return;
     }
 
-    // 视图切换动作
+    // 视图切换动作 - 处理 view: 前缀的动作
     if (action.startsWith('view:')) {
       const view = action.replace('view:', '');
       const viewMap: Record<string, string> = {
