@@ -131,7 +131,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             {/* 分割线和下半部分：结果面板 */}
             {!bottomPanelCollapsed && (
               <>
-                <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80 transition-colors" />
+                <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80" />
 
                 <ResizablePanel
                   defaultSize={40}
@@ -208,7 +208,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanel>
 
           {/* 分割线 */}
-          <ResizableHandle withHandle className="w-2 bg-border hover:bg-border/80 transition-colors" />
+          <ResizableHandle withHandle className="w-2 bg-border hover:bg-border/80" />
 
           {/* 右侧主要工作区域 */}
           <ResizablePanel defaultSize={75} minSize={50}>

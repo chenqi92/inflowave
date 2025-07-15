@@ -1,0 +1,130 @@
+/* Resizable Panel 性能优化样式 */
+
+/* 优化拖动性能 - 使用 transform 而不是频繁的样式重计算 */
+.resizable-handle-optimized {
+  /* 使用 GPU 加速 */
+  will-change: transform;
+  transform: translateZ(0);
+
+  /* 减少重绘 - 移除可能影响布局的contain */
+  contain: style paint;
+
+  /* 优化拖动时的渲染 */
+  pointer-events: auto;
+}
+
+/* 拖动时禁用过渡动画以提高性能 */
+.resizable-panel-group[data-resize-handle-active] .resizable-handle-optimized {
+  transition: none !important;
+}
+
+.resizable-panel-group[data-resize-handle-active] .resizable-handle-optimized * {
+  transition: none !important;
+}
+
+/* 水平拖动优化 */
+.resizable-handle-horizontal {
+  cursor: col-resize;
+
+  /* 扩大点击区域但不影响视觉 */
+  position: relative;
+}
+
+.resizable-handle-horizontal::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  background: transparent;
+}
+
+/* 垂直拖动优化 */
+.resizable-handle-vertical {
+  cursor: row-resize;
+
+  /* 扩大点击区域但不影响视觉 */
+  position: relative;
+}
+
+.resizable-handle-vertical::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  background: transparent;
+}
+
+/* 拖动手柄图标优化 */
+.resizable-grip {
+  /* 使用 GPU 加速 */
+  transform: translateZ(0);
+  will-change: opacity;
+
+  /* 减少重绘 - 移除可能影响布局的contain */
+  contain: style paint;
+
+  /* 优化透明度过渡 */
+  transition: opacity 0.15s ease-out;
+}
+
+/* 悬停状态优化 */
+.resizable-handle-optimized:hover .resizable-grip {
+  opacity: 1;
+}
+
+/* 活动状态优化 */
+.resizable-handle-optimized:active,
+.resizable-handle-optimized[data-resize-handle-active] {
+  background-color: hsl(var(--border));
+}
+
+/* 焦点状态优化 */
+.resizable-handle-optimized:focus-visible {
+  outline: 1px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+/* 禁用文本选择以避免拖动时的干扰 */
+.resizable-panel-group {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 拖动时禁用所有过渡动画 */
+.resizable-panel-group[data-resize-handle-active] * {
+  pointer-events: none;
+}
+
+.resizable-panel-group[data-resize-handle-active] .resizable-handle-optimized {
+  pointer-events: auto;
+}
+
+/* 全局拖动状态优化 */
+body.resizing {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+body.resizing * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 拖动时优化渲染性能 */
+body.resizing .resizable-panel-group {
+  contain: style paint;
+  will-change: contents;
+}
+
+body.resizing .resizable-handle-optimized {
+  contain: style paint;
+  will-change: transform, background-color;
+}
