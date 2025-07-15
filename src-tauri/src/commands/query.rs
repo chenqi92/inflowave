@@ -26,6 +26,20 @@ pub async fn execute_query(
             format!("获取连接失败: {}", e)
         })?;
     
+    // 如果指定了数据库，先执行 USE 语句
+    if let Some(database) = &request.database {
+        if !database.is_empty() {
+            let use_query = format!("USE \"{}\"", database);
+            debug!("设置数据库上下文: {}", use_query);
+            client.execute_query(&use_query).await
+                .map_err(|e| {
+                    error!("设置数据库上下文失败: {}", e);
+                    format!("设置数据库上下文失败: {}", e)
+                })?;
+        }
+    }
+    
+    // 执行实际查询
     client.execute_query(&request.query).await
         .map_err(|e| {
             error!("查询执行失败: {}", e);
@@ -173,6 +187,17 @@ pub async fn execute_batch_queries(
             error!("获取连接失败: {}", e);
             format!("获取连接失败: {}", e)
         })?;
+    
+    // 如果指定了数据库，先执行 USE 语句
+    if !database.is_empty() {
+        let use_query = format!("USE \"{}\"", database);
+        debug!("设置数据库上下文: {}", use_query);
+        client.execute_query(&use_query).await
+            .map_err(|e| {
+                error!("设置数据库上下文失败: {}", e);
+                format!("设置数据库上下文失败: {}", e)
+            })?;
+    }
     
     let mut results = Vec::new();
     

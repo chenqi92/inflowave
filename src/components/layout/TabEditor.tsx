@@ -101,6 +101,42 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     }
   };
 
+  // 测试智能提示功能
+  const testIntelliSense = async () => {
+    console.log('🧪 开始测试智能提示功能...');
+    
+    if (!activeConnectionId || !selectedDatabase) {
+      console.error('⚠️ 缺少必要参数:', { activeConnectionId, selectedDatabase });
+      showMessage.error('请先选择数据库连接和数据库');
+      return;
+    }
+    
+    try {
+      console.log('🔍 直接调用后端获取建议...');
+      const suggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
+        connection_id: activeConnectionId,
+        database: selectedDatabase,
+        partial_query: '', // 空字符串获取所有表
+      });
+      
+      console.log('✅ 后端返回的建议:', suggestions);
+      
+      if (suggestions && suggestions.length > 0) {
+        showMessage.success(`获取到 ${suggestions.length} 个建议: ${suggestions.slice(0, 3).join(', ')}${suggestions.length > 3 ? '...' : ''}`);
+        
+        // 在编辑器中触发智能提示
+        if (editorRef.current) {
+          editorRef.current.trigger('test', 'editor.action.triggerSuggest', {});
+        }
+      } else {
+        showMessage.warning('没有获取到任何建议，请检查数据库中是否有表数据');
+      }
+    } catch (error) {
+      console.error('⚠️ 测试智能提示失败:', error);
+      showMessage.error(`测试失败: ${error}`);
+    }
+  };
+
   // 执行指定内容和数据库的查询
   const executeQueryWithContent = async (query: string, database: string) => {
     if (!activeConnectionId) {
@@ -625,9 +661,18 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         });
 
         // 如果有连接和数据库，获取测量名、字段名和标签名
+        console.log('📊 智能提示检查:', {
+          activeConnectionId,
+          selectedDatabase,
+          hasConnection: !!activeConnectionId,
+          hasDatabase: !!selectedDatabase,
+          wordLength: word.word?.length || 0
+        });
+        
         if (activeConnectionId && selectedDatabase) {
           try {
             // 获取数据库建议
+            console.log('📛 添加数据库建议:', databases.length, '个数据库');
             databases.forEach(db => {
               suggestions.push({
                 label: db,
@@ -638,29 +683,44 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               });
             });
 
-            // 获取测量建议 - 只有当输入长度大于等于1时才获取
-            if (word.word && word.word.length >= 1) {
+            // 获取测量建议 - 降低触发阀值，增加调试日志
+            console.log('🔍 尝试获取测量建议，当前输入:', {
+              word: word.word,
+              length: word.word?.length || 0,
+              activeConnectionId,
+              selectedDatabase
+            });
+            
+            // 降低触发阀值，从1降低到0，让空字符串也能触发获取所有表
+            if (word.word !== undefined && word.word.length >= 0) {
               try {
                 console.log('🔍 获取智能提示:', {
                   connection_id: activeConnectionId,
                   database: selectedDatabase,
-                  partial_query: word.word
+                  partial_query: word.word || '',
+                  triggerReason: word.word?.length === 0 ? '空输入获取所有表' : '按前缀过滤'
                 });
                 
                 const measurementSuggestions = await safeTauriInvoke<string[]>('get_query_suggestions', {
                   connection_id: activeConnectionId,
                   database: selectedDatabase,
-                  partial_query: word.word,
+                  partial_query: word.word || '',
                 });
                 
                 console.log('✅ 智能提示结果:', measurementSuggestions);
 
                 measurementSuggestions?.forEach(suggestion => {
+                  // 区分不同类型的建议
+                  const isDatabase = databases.includes(suggestion);
+                  const suggestionType = isDatabase ? '数据库' : '测量表';
+                  const insertText = isDatabase ? `"${suggestion}"` : `"${suggestion}"`;
+                  
                   suggestions.push({
                     label: suggestion,
-                    kind: monaco.languages.CompletionItemKind.Variable,
-                    insertText: suggestion,
-                    documentation: `测量/字段建议: ${suggestion}`,
+                    kind: isDatabase ? monaco.languages.CompletionItemKind.Module : monaco.languages.CompletionItemKind.Class,
+                    insertText: insertText,
+                    documentation: `${suggestionType}: ${suggestion}`,
+                    detail: `来自数据库: ${selectedDatabase}`,
                     range,
                   });
                 });
@@ -771,8 +831,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
   const handleEditorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
     
-    // 注册InfluxQL语言支持
-    registerInfluxQLLanguage();
+    // 注册InfluxQL语言支持（只注册一次）
+    try {
+      // 检查语言是否已经注册
+      const languages = monaco.languages.getLanguages();
+      const isInfluxQLRegistered = languages.some(lang => lang.id === 'influxql');
+      
+      if (!isInfluxQLRegistered) {
+        console.log('🔧 注册InfluxQL语言支持...');
+        registerInfluxQLLanguage();
+        console.log('✅ InfluxQL语言支持注册完成');
+      } else {
+        console.log('ℹ️ InfluxQL语言支持已存在');
+      }
+    } catch (error) {
+      console.error('⚠️ 注册InfluxQL语言支持失败:', error);
+    }
     
     // 设置编辑器选项
     editor.updateOptions({
@@ -811,13 +885,39 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
       editor.trigger('manual', 'editor.action.triggerSuggest', {});
     });
+    
+    // 添加焦点事件监听，确保智能提示正常工作
+    editor.onDidFocusEditorText(() => {
+      console.log('👁️ 编辑器获得焦点，智能提示已启用');
+      console.log('📊 当前数据库状态:', {
+        selectedDatabase,
+        databases: databases.length,
+        activeConnectionId
+      });
+    });
+    
+    // 添加输入事件监听，调试智能提示
+    editor.onDidChangeModelContent(() => {
+      // 可以在这里添加调试日志
+    });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       saveCurrentTab();
     });
 
-    // 添加格式化快捷键
+    // 添加测试智能提示的快捷键 (Ctrl+K)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+      console.log('🧪 测试智能提示功能...');
+      console.log('📊 当前状态:', {
+        activeConnectionId,
+        selectedDatabase,
+        databases: databases.length,
+        cursorPosition: editor.getPosition()
+      });
+      
+      // 手动触发智能提示
+      editor.trigger('test', 'editor.action.triggerSuggest', {});
+      showMessage.info('已触发智能提示，请查看控制台日志');
       editor.getAction('editor.action.formatDocument')?.run();
     });
   };
@@ -959,6 +1059,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             <span className="text-xs">{loading ? '执行中' : '执行'}</span>
           </Button>
 
+          {/* 测试智能提示按钮 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={testIntelliSense}
+            disabled={!activeConnectionId || !selectedDatabase}
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            title="测试智能提示 (Ctrl+K)"
+          >
+            <span className="text-xs">🧪</span>
+            <span className="text-xs">提示</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -1019,7 +1132,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
             language="influxql"
             theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
             value={currentTab.content}
-            onValueChange={handleEditorChange}
+            onChange={handleEditorChange}
             onMount={handleEditorDidMount}
             options={{
               minimap: { enabled: false },
@@ -1036,14 +1149,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
               quickSuggestions: {
                 other: true,
                 comments: false,
-                strings: false,
+                strings: true, // 在字符串中也显示提示（用于测量名）
               },
               parameterHints: { enabled: true },
               formatOnPaste: true,
               formatOnType: true,
               acceptSuggestionOnEnter: 'on',
               tabCompletion: 'on',
-              hover: { enabled: true }}}
+              hover: { enabled: true },
+              // 增加更多智能提示配置
+              quickSuggestionsDelay: 100,
+              suggestSelection: 'first',
+              wordBasedSuggestions: true,
+              // 启用更多提示触发字符
+              triggerCharacters: ['.', '"', '\'', '(', ' ', '=', '<', '>', '!'],
+            }}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground border-0 shadow-none">
