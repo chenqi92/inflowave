@@ -123,15 +123,16 @@ const ControllerSettings: React.FC = () => {
   const watchedValues = form.watch();
 
   return (
-    <div className="space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center gap-3">
-        <Shield className="w-6 h-6 text-blue-600" />
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">控制器设置</h2>
-          <p className="text-gray-600">管理危险SQL语句的执行权限</p>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto space-y-6">
+        {/* 页面标题 */}
+        <div className="flex items-center gap-3">
+          <Shield className="w-6 h-6 text-blue-600" />
+          <div>
+            <h2 className="text-2xl font-bold">控制器设置</h2>
+            <p className="text-muted-foreground">管理危险SQL语句的执行权限</p>
+          </div>
         </div>
-      </div>
 
       {/* 安全警告 */}
       <Alert className="border-amber-200 bg-amber-50">
@@ -142,8 +143,9 @@ const ControllerSettings: React.FC = () => {
         </AlertDescription>
       </Alert>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(saveSettings)} className="h-full flex flex-col">
+            <div className="flex-1 space-y-6">
           {/* 语句权限控制 */}
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="p-6 pb-4">
@@ -402,27 +404,30 @@ const ControllerSettings: React.FC = () => {
             </div>
           </div>
 
-          {/* 操作按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetSettings}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              重置为默认
-            </Button>
-            
-            <Button
-              type="submit"
-              disabled={loading}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              保存设置
-            </Button>
-          </div>
-        </form>
-      </Form>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetSettings}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                重置为默认
+              </Button>
+
+              <Button
+                type="submit"
+                disabled={loading}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                保存设置
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

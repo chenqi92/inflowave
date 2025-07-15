@@ -6,12 +6,19 @@ import {
     AlertTitle,
     AlertDescription,
     Text,
-    Paragraph,
     CodeBlock,
-    Collapse,
-    Panel
+    Tabs,
+    TabsList,
+    TabsTrigger,
+    TabsContent,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Badge,
+    ScrollArea
 } from '@/components/ui';
-import {Bug, RefreshCw, Info, Activity, Database, Wifi, AlertTriangle, XCircle} from 'lucide-react';
+import {Bug, RefreshCw, Info, AlertTriangle, XCircle} from 'lucide-react';
 import {useConnectionStore} from '@/store/connection';
 import {safeTauriInvoke} from '@/utils/tauri';
 
@@ -31,9 +38,7 @@ const ConnectionDebugPanel: React.FC = () => {
     const {
         connections,
         connectionStatuses,
-        activeconnection_id,
-        monitoringActive,
-        monitoringInterval
+        activeconnection_id
     } = useConnectionStore();
 
     // 自动刷新调试信息
@@ -164,89 +169,40 @@ const ConnectionDebugPanel: React.FC = () => {
     const mismatchedConnections = findMismatchedConnections();
 
     return (
-        <div className="space-y-4">
-            {/* 监控状态概览 */}
-            <div>
-                <div className="pb-3">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold">
-                        <Activity className="w-4 h-4"/>
-                        实时监控状态
-                    </h3>
+        <div className="h-full flex flex-col">
+            {/* 调试面板头部 */}
+            <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                    <Bug className="w-5 h-5"/>
+                    <h2 className="text-lg font-semibold">连接调试面板</h2>
                 </div>
-                <div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                            <Database className="w-5 h-5 text-blue-600"/>
-                            <div>
-                                <p className="text-sm text-blue-800 font-medium">总连接数</p>
-                                <p className="text-2xl font-bold text-blue-600">{connections.length}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                            <Wifi className="w-5 h-5 text-green-600"/>
-                            <div>
-                                <p className="text-sm text-green-800 font-medium">已连接</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                    {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
-                            <Bug className="w-5 h-5 text-orange-600"/>
-                            <div>
-                                <p className="text-sm text-orange-800 font-medium">错误连接</p>
-                                <p className="text-2xl font-bold text-orange-600">
-                                    {Object.values(connectionStatuses).filter(s => s.status === 'error').length}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                            <div
-                                className={`w-3 h-3 rounded-full ${monitoringActive ? 'bg-success animate-pulse' : 'bg-muted'}`}/>
-                            <div>
-                                <p className="text-sm text-purple-800 font-medium">监控状态</p>
-                                <p className="text-sm font-bold text-purple-600">
-                                    {monitoringActive ? `运行中 (${monitoringInterval}s)` : '已停止'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                        className={autoRefreshEnabled ? 'bg-green-50 border-green-200 text-green-700' : ''}
+                    >
+                        {autoRefreshEnabled ? '停止自动刷新' : '启用自动刷新'}
+                    </Button>
+                    <Button
+                        size="sm"
+                        onClick={collectDebugInfo}
+                        disabled={loading}
+                    >
+                        <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`}/>
+                        收集调试信息
+                    </Button>
                 </div>
             </div>
 
-            {/* 调试信息面板 */}
-            <div>
-                <div className="pb-3">
-                    <div className="flex items-center justify-between">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold">
-                            <Bug className="w-4 h-4"/>
-                            连接调试面板
-                        </h3>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                                className={autoRefreshEnabled ? 'bg-green-50 border-green-200 text-green-700' : ''}
-                            >
-                                {autoRefreshEnabled ? '停止自动刷新' : '启用自动刷新'}
-                            </Button>
-                            <Button
-                                size="sm"
-                                onClick={collectDebugInfo}
-                                disabled={loading}
-                            >
-                                <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`}/>
-                                收集调试信息
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    {!debugInfo ? (
-                        <div className="text-center py-8">
-                            <Info className="w-8 h-8 text-muted-foreground mb-4 mx-auto"/>
-                            <Text className="text-muted-foreground mb-4">
+            {/* 调试信息内容 */}
+            <div className="flex-1 overflow-hidden">
+                {!debugInfo ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center space-y-4">
+                            <Info className="w-8 h-8 text-muted-foreground mx-auto"/>
+                            <Text className="text-muted-foreground">
                                 正在加载调试信息...
                             </Text>
                             {loading && (
@@ -256,35 +212,62 @@ const ConnectionDebugPanel: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                    ) : (
-                        <Collapse defaultActiveKey={mismatchedConnections.length > 0 ? ['mismatch'] : ['summary']}>
-                            <Panel header="问题摘要" key="summary">
-                                <div className="space-y-4">
+                    </div>
+                ) : (
+                    <Tabs defaultValue={mismatchedConnections.length > 0 ? 'mismatch' : 'summary'} className="h-full flex flex-col">
+                        <TabsList className="mx-4 mt-4">
+                            <TabsTrigger value="summary">问题摘要</TabsTrigger>
+                            {mismatchedConnections.length > 0 && (
+                                <TabsTrigger value="mismatch">
+                                    连接不匹配
+                                    <Badge variant="destructive" className="ml-2">
+                                        {mismatchedConnections.length}
+                                    </Badge>
+                                </TabsTrigger>
+                            )}
+                            <TabsTrigger value="frontend">前端连接</TabsTrigger>
+                            <TabsTrigger value="backend">后端连接</TabsTrigger>
+                            {debugInfo.backendDebugInfo && (
+                                <TabsTrigger value="debug">调试信息</TabsTrigger>
+                            )}
+                        </TabsList>
+
+                        <TabsContent value="summary" className="flex-1 overflow-hidden mx-4">
+                            <ScrollArea className="h-full">
+                                <div className="space-y-4 p-4">
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-blue-50 p-4 rounded-lg">
-                                            <div className="text-2xl font-bold text-primary">
-                                                {debugInfo.frontendConnections.length}
-                                            </div>
-                                            <div className="text-sm text-blue-800">前端连接数</div>
-                                        </div>
-                                        <div className="bg-green-50 p-4 rounded-lg">
-                                            <div className="text-2xl font-bold text-success">
-                                                {debugInfo.backendConnections.length}
-                                            </div>
-                                            <div className="text-sm text-green-800">后端连接数</div>
-                                        </div>
-                                        <div className="bg-purple-50 p-4 rounded-lg">
-                                            <div className="text-2xl font-bold text-purple-600">
-                                                {Object.keys(debugInfo.connectionStatuses).length}
-                                            </div>
-                                            <div className="text-sm text-purple-800">状态记录数</div>
-                                        </div>
-                                        <div className="bg-orange-50 p-4 rounded-lg">
-                                            <div className="text-2xl font-bold text-orange-600">
-                                                {mismatchedConnections.length}
-                                            </div>
-                                            <div className="text-sm text-orange-800">不匹配连接</div>
-                                        </div>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-2xl font-bold text-primary">
+                                                    {debugInfo.frontendConnections.length}
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">前端连接数</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-2xl font-bold text-green-600">
+                                                    {debugInfo.backendConnections.length}
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">后端连接数</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-2xl font-bold text-purple-600">
+                                                    {Object.keys(debugInfo.connectionStatuses).length}
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">状态记录数</div>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardContent className="p-4">
+                                                <div className="text-2xl font-bold text-orange-600">
+                                                    {mismatchedConnections.length}
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">不匹配连接</div>
+                                            </CardContent>
+                                        </Card>
                                     </div>
 
                                     {debugInfo.activeconnection_id && (
@@ -297,29 +280,35 @@ const ConnectionDebugPanel: React.FC = () => {
                                         </Alert>
                                     )}
                                 </div>
-                            </Panel>
+                            </ScrollArea>
+                        </TabsContent>
 
-                            {mismatchedConnections.length > 0 && (
-                                <Panel header={`连接不匹配 (${mismatchedConnections.length})`} key="mismatch">
-                                    <Alert className="mb-4">
-                                        <AlertTriangle className="h-4 w-4"/>
-                                        <AlertTitle>发现连接不同步问题</AlertTitle>
-                                        <AlertDescription>前端和后端的连接配置不一致，这可能导致连接错误</AlertDescription>
-                                    </Alert>
-                                    <div className="space-y-2">
-                                        {mismatchedConnections.map((item, index) => (
-                                            <Alert key={index} variant="destructive">
-                                                <XCircle className="h-4 w-4"/>
-                                                <AlertTitle>连接 ID: {item.id}</AlertTitle>
-                                                <AlertDescription>{item.description}</AlertDescription>
-                                            </Alert>
-                                        ))}
+                        {mismatchedConnections.length > 0 && (
+                            <TabsContent value="mismatch" className="flex-1 overflow-hidden mx-4">
+                                <ScrollArea className="h-full">
+                                    <div className="space-y-4 p-4">
+                                        <Alert className="mb-4">
+                                            <AlertTriangle className="h-4 w-4"/>
+                                            <AlertTitle>发现连接不同步问题</AlertTitle>
+                                            <AlertDescription>前端和后端的连接配置不一致，这可能导致连接错误</AlertDescription>
+                                        </Alert>
+                                        <div className="space-y-2">
+                                            {mismatchedConnections.map((item, index) => (
+                                                <Alert key={index} variant="destructive">
+                                                    <XCircle className="h-4 w-4"/>
+                                                    <AlertTitle>连接 ID: {item.id}</AlertTitle>
+                                                    <AlertDescription>{item.description}</AlertDescription>
+                                                </Alert>
+                                            ))}
+                                        </div>
                                     </div>
-                                </Panel>
-                            )}
+                                </ScrollArea>
+                            </TabsContent>
+                        )}
 
-                            <Panel header="前端连接列表" key="frontend">
-                                <div className="overflow-auto">
+                        <TabsContent value="frontend" className="flex-1 overflow-hidden mx-4">
+                            <ScrollArea className="h-full">
+                                <div className="p-4">
                                     <DataTable
                                         columns={columns}
                                         dataSource={debugInfo.frontendConnections || []}
@@ -329,10 +318,12 @@ const ConnectionDebugPanel: React.FC = () => {
                                         className="w-full"
                                     />
                                 </div>
-                            </Panel>
+                            </ScrollArea>
+                        </TabsContent>
 
-                            <Panel header="后端连接列表" key="backend">
-                                <div className="overflow-auto">
+                        <TabsContent value="backend" className="flex-1 overflow-hidden mx-4">
+                            <ScrollArea className="h-full">
+                                <div className="p-4">
                                     <DataTable
                                         columns={columns}
                                         dataSource={debugInfo.backendConnections || []}
@@ -342,18 +333,22 @@ const ConnectionDebugPanel: React.FC = () => {
                                         className="w-full"
                                     />
                                 </div>
-                            </Panel>
+                            </ScrollArea>
+                        </TabsContent>
 
-                            {debugInfo.backendDebugInfo && (
-                                <Panel header="后端调试信息" key="backendDebug">
-                                    <CodeBlock className="text-xs">
-                                        {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
-                                    </CodeBlock>
-                                </Panel>
-                            )}
-                        </Collapse>
-                    )}
-                </div>
+                        {debugInfo.backendDebugInfo && (
+                            <TabsContent value="debug" className="flex-1 overflow-hidden mx-4">
+                                <ScrollArea className="h-full">
+                                    <div className="p-4">
+                                        <CodeBlock className="text-xs">
+                                            {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
+                                        </CodeBlock>
+                                    </div>
+                                </ScrollArea>
+                            </TabsContent>
+                        )}
+                    </Tabs>
+                )}
             </div>
         </div>
     );

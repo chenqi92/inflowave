@@ -299,7 +299,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
     <div className="h-full flex flex-col">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(savePreferences)} className="h-full flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-6">
           {/* 通知设置 */}
           <div>
             <div>

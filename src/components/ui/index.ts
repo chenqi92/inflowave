@@ -7,7 +7,7 @@ export type { InputProps } from './Input';
 
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 
-// Card component removed - use Sheet, Dialog, Collapsible, or Accordion instead
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
 
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './Dialog';
 

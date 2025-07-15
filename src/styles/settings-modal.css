@@ -181,23 +181,62 @@
   margin: 16px 0;
 }
 
-/* Scrollbar styling */
+/* 统一的偏好设置弹框滚动条样式 */
+.settings-modal [data-radix-scroll-area-viewport],
+.settings-modal .overflow-y-auto,
+.settings-modal .max-h-96 {
+  scrollbar-width: thin;
+}
+
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar,
+.settings-modal .overflow-y-auto::-webkit-scrollbar,
 .settings-modal .max-h-96::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-track,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-track,
 .settings-modal .max-h-96::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
+  background: hsl(var(--muted));
+  border-radius: 4px;
 }
 
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-thumb,
 .settings-modal .max-h-96::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
 }
 
+.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover,
+.settings-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
 .settings-modal .max-h-96::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* 确保所有子组件的滚动条都使用统一样式 */
+.settings-modal * {
+  scrollbar-width: thin;
+}
+
+.settings-modal *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.settings-modal *::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.settings-modal *::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+.settings-modal *::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }
 
 /* Compact spacing */
