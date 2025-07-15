@@ -58,16 +58,18 @@ export { Progress } from './Progress';
 export { Result } from './Result';
 export type { ResultProps } from './Result';
 
-import { Title, Text, Paragraph } from './Typography';
+import { Title, Text, Paragraph, CodeBlock, InlineCode } from './Typography';
 
-export { Title, Text, Paragraph, AntParagraph } from './Typography';
+export { Title, Text, Paragraph, AntParagraph, CodeBlock, InlineCode } from './Typography';
 export type { TypographyProps, AntParagraphProps } from './Typography';
 
 // Export Typography as a namespace object
 export const Typography = {
   Title,
   Text,
-  Paragraph
+  Paragraph,
+  CodeBlock,
+  InlineCode
 };
 
 export { Empty, EmptyDatabase, EmptySearch } from './Empty';

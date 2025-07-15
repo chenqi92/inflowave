@@ -1,12 +1,13 @@
 import React, {useState, useEffect} from 'react';
 import {
     Button,
-    Table,
+    DataTable,
     Alert,
     AlertTitle,
     AlertDescription,
     Text,
     Paragraph,
+    CodeBlock,
     Collapse,
     Panel
 } from '@/components/ui';
@@ -319,11 +320,10 @@ const ConnectionDebugPanel: React.FC = () => {
 
                             <Panel header="前端连接列表" key="frontend">
                                 <div className="overflow-auto">
-                                    <Table
+                                    <DataTable
                                         columns={columns}
                                         dataSource={debugInfo.frontendConnections || []}
                                         rowKey={(record) => record?.id || Math.random().toString()}
-                                        pagination={false}
                                         size="small"
                                         scroll={{x: '100%'}}
                                         className="w-full"
@@ -333,11 +333,10 @@ const ConnectionDebugPanel: React.FC = () => {
 
                             <Panel header="后端连接列表" key="backend">
                                 <div className="overflow-auto">
-                                    <Table
+                                    <DataTable
                                         columns={columns}
                                         dataSource={debugInfo.backendConnections || []}
                                         rowKey={(record) => record?.id || Math.random().toString()}
-                                        pagination={false}
                                         size="small"
                                         scroll={{x: '100%'}}
                                         className="w-full"
@@ -347,11 +346,9 @@ const ConnectionDebugPanel: React.FC = () => {
 
                             {debugInfo.backendDebugInfo && (
                                 <Panel header="后端调试信息" key="backendDebug">
-                                    <Paragraph>
-                    <pre className="bg-muted/50 p-4 rounded overflow-auto text-xs">
-                      {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
-                    </pre>
-                                    </Paragraph>
+                                    <CodeBlock className="text-xs">
+                                        {JSON.stringify(debugInfo.backendDebugInfo, null, 2)}
+                                    </CodeBlock>
                                 </Panel>
                             )}
                         </Collapse>

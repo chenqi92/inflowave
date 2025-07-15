@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useMemo } from 'react';
-import { Table, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal, Tooltip } from '@/components/ui';
+import { DataTable, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal, Tooltip } from '@/components/ui';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { BulkOutlined } from '@/components/ui';
@@ -502,12 +502,11 @@ const FieldMappingStep: React.FC<FieldMappingStepProps> = ({
             showIcon
           />
 
-          <Table
+          <DataTable
             columns={columns}
             dataSource={wizardData.fieldMappings.map((mapping, index) => ({
               ...mapping,
               key: index}))}
-            pagination={false}
             size="small"
             scroll={{ x: 'max-content' }}
           />

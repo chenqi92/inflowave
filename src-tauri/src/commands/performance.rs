@@ -6,16 +6,6 @@ use std::sync::Mutex;
 use std::time::Instant;
 use crate::services::ConnectionService;
 
-//! 性能监控模块
-//! 
-//! 当前实现状态：
-//! - ✅ 基本数据结构定义
-//! - ✅ 模拟数据返回
-//! - ⏳ 实际性能数据收集（待实现）
-//! - ⏳ 实时连接健康监控（待实现）
-//! - ⏳ 慢查询检测和分析（待实现）
-//! - ⏳ 存储分析和优化建议（待实现）
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PerformanceMetrics {
     pub query_performance: QueryPerformanceMetrics,

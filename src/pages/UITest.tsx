@@ -1,5 +1,28 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, Table, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertTitle, AlertDescription, Tag, Empty, Spin, Form, Title, Text, Paragraph, Statistic, Row, Col } from '@/components/ui';
+import {
+  Button,
+  Input,
+  Select,
+  DataTable,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Tag,
+  Empty,
+  Spin,
+  Form,
+  Title,
+  Text,
+  Paragraph,
+  Statistic,
+  Row,
+  Col,
+  FormItem
+} from '@/components/ui';
 import { CardHeaderTitleContent, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 const UITest: React.FC = () => {
@@ -134,7 +157,7 @@ const UITest: React.FC = () => {
           <h3>Table</h3>
         </div>
         <div>
-          <Table
+          <DataTable
             columns={tableColumns}
             dataSource={tableData}
             bordered

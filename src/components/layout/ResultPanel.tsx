@@ -1,5 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Table, TableHeader, TableBody, TableRow, TableCell, TableHead, Button, Space, Tag, Progress, Alert, Empty, Dropdown, toastHeaderContentTitle } from '@/components/ui';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  DataTable,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableHead,
+  Button,
+  Space,
+  Tag,
+  Progress,
+  Alert,
+  Empty,
+  Dropdown,
+  toastHeaderContentTitle,
+  Table
+} from '@/components/ui';
 import {
   TableIcon,
   Bug,
@@ -417,20 +437,12 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
           {/* 结果内容 */}
           <div className="flex-1 overflow-hidden p-2">
             {queryResult && tableData.length > 0 ? (
-              <Table
+              <DataTable
                 className="result-table text-xs"
                 columns={resultColumns}
                 dataSource={tableData}
                 size="small"
                 scroll={{ x: 'max-content', y: '100%' }}
-                pagination={{
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-                  pageSize: 500,
-                  pageSizeOptions: ['100', '500', '1000', '2000'],
-                  size: 'small'
-                }}
                 rowKey="_key"
               />
             ) : queryResult && tableData.length === 0 ? (

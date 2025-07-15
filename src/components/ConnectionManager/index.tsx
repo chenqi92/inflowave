@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {
-    Table,
+    DataTable,
     Button,
     Badge,
     Tooltip,
@@ -12,16 +12,12 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle
 } from '@/components/ui';
-import type { Column } from '@/components/ui/Table';
+import type {Column} from '@/components/ui/DataTable';
 import {
     Settings,
     Trash2,
@@ -61,7 +57,11 @@ interface ColumnType<T = any> {
     ellipsis?: boolean;
 }
 
-const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect, onEditConnection, onCreateConnection}) => {
+const ConnectionManager: React.FC<ConnectionManagerProps> = ({
+                                                                 onConnectionSelect,
+                                                                 onEditConnection,
+                                                                 onCreateConnection
+                                                             }) => {
     const {
         connections,
         connectionStatuses,
@@ -192,9 +192,17 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
 
         const statusConfig = {
             connected: {variant: 'default', text: '已连接', className: 'bg-success/10 text-success border-success/20'},
-            disconnected: {variant: 'secondary', text: '已断开', className: 'bg-muted text-muted-foreground border-border'},
+            disconnected: {
+                variant: 'secondary',
+                text: '已断开',
+                className: 'bg-muted text-muted-foreground border-border'
+            },
             connecting: {variant: 'default', text: '连接中', className: 'bg-warning/10 text-warning border-warning/20'},
-            error: {variant: 'destructive', text: '错误', className: 'bg-destructive/10 text-destructive border-destructive/20'}
+            error: {
+                variant: 'destructive',
+                text: '错误',
+                className: 'bg-destructive/10 text-destructive border-destructive/20'
+            }
         };
 
         const config = statusConfig[actualStatus.status] || statusConfig.disconnected;
@@ -479,17 +487,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({onConnectionSelect
             {/* 连接表格 */}
             <div className="flex-1 overflow-hidden p-4">
                 <div className="h-full rounded-lg border">
-                    <Table
+                    <DataTable
                         columns={columns}
                         dataSource={dataSource}
                         rowKey="id"
-                        pagination={{
-                            pageSize: 10,
-                            showSizeChanger: true,
-                            showQuickJumper: true,
-                            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-                            size: 'default'
-                        }}
                         loading={loading}
                         scroll={{
                             x: 'max-content',
