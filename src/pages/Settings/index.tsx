@@ -18,7 +18,6 @@ import {
     InputNumber,
     Switch,
     Space,
-    toast,
     Dialog,
     DialogContent,
     DialogHeader,
@@ -26,6 +25,7 @@ import {
     Separator,
     FormItem
 } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import {
     Save,
     RefreshCw,
@@ -99,7 +99,7 @@ const Settings: React.FC = () => {
                 console.warn('保存配置到后端失败:', error);
             }
 
-            toast({title: "成功", description: "设置已保存"});
+            showMessage.success("设置已保存");
         } catch (error) {
             toast({title: "错误", description: `保存设置失败: ${error}`, variant: "destructive"});
         } finally {
@@ -115,7 +115,7 @@ const Settings: React.FC = () => {
             const latestConfig = useAppStore.getState().config;
             form.reset(latestConfig);
         }, 0);
-        toast({title: "成功", description: "设置已重置为默认值"});
+        showMessage.success("设置已重置为默认值");
     };
 
     // 导出设置
@@ -139,11 +139,11 @@ const Settings: React.FC = () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                toast({title: "成功", description: "设置已导出到下载文件夹"});
+                showMessage.success("设置已导出到下载文件夹");
             } else {
                 // Tauri 环境：调用原生文件保存对话框
                 await safeTauriInvoke('export_settings', {settings});
-                toast({title: "成功", description: "设置已导出"});
+                showMessage.success("设置已导出");
             }
         } catch (error) {
             console.error('导出设置失败:', error);
@@ -169,13 +169,13 @@ const Settings: React.FC = () => {
                             if (settings.appConfig) {
                                 setConfig(settings.appConfig);
                                 form.reset(settings.appConfig);
-                                toast({title: "成功", description: "设置已导入"});
+                                showMessage.success("设置已导入");
                             } else {
-                                toast({title: "错误", description: "无效的设置文件格式", variant: "destructive"});
+                                showMessage.error("无效的设置文件格式");
                             }
                         } catch (parseError) {
                             console.error('解析设置文件失败:', parseError);
-                            toast({title: "错误", description: "设置文件格式错误", variant: "destructive"});
+                            showMessage.error("设置文件格式错误");
                         }
                     }
                 };
@@ -186,7 +186,7 @@ const Settings: React.FC = () => {
                 if (settings) {
                     setConfig(settings.appConfig);
                     form.reset(settings.appConfig);
-                    toast({title: "成功", description: "设置已导入"});
+                    showMessage.success("设置已导入");
                 }
             }
         } catch (error) {
@@ -210,7 +210,7 @@ const Settings: React.FC = () => {
                     const latestConfig = useAppStore.getState().config;
                     form.reset(latestConfig);
                 }, 0);
-                toast({title: "成功", description: "所有数据已清除"});
+                showMessage.success("所有数据已清除");
             }
         });
     };
@@ -225,7 +225,7 @@ const Settings: React.FC = () => {
             okType: 'danger',
             onOk: () => {
                 clearConnections();
-                toast({title: "成功", description: "连接配置已清除"});
+                showMessage.success("连接配置已清除");
             }
         });
     };
@@ -665,10 +665,8 @@ const Settings: React.FC = () => {
                                                         icon={<RefreshCw className="w-4 h-4"/>}
                                                         onClick={() => {
                                                             resetNoticeSettings();
-                                                            toast({
-                                                                title: "成功",
-                                                                description: "提醒设置已重置，下次启动时会再次显示用户指引"
-                                                            });
+                                                            showMessage.success("提醒设置已重置，下次启动时会再次显示用户指引"
+                                                            );
                                                         }}
                                                         className="cursor-pointer"
                                                     >

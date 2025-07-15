@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch, Separator, Textarea, Row, Col, InputNumber } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, Info, FileText, Code, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 // import { save } from '@tauri-apps/api/dialog'; // TODO: Update to Tauri v2 API
@@ -116,7 +117,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
     try {
       const isValid = await form.trigger(['connectionId', 'database', 'query', 'format']);
       if (!isValid) {
-        toast({ title: "错误", description: "请填写必要字段", variant: "destructive" });
+        showMessage.error("请填写必要字段");
         return;
       }
 
@@ -129,10 +130,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         format: values.format});
 
       setEstimateInfo(estimate);
-      toast({ title: "成功", description: "预估完成" });
+      showMessage.success("预估完成" );
     } catch (error) {
       console.error('预估失败:', error);
-      toast({ title: "错误", description: "预估失败", variant: "destructive" });
+      showMessage.error("预估失败");
     } finally {
       setEstimating(false);
     }
@@ -153,7 +154,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       }
     } catch (error) {
       console.error('选择文件路径失败:', error);
-      toast({ title: "错误", description: "选择文件路径失败", variant: "destructive" });
+      showMessage.error("选择文件路径失败");
     }
   };
 
@@ -162,14 +163,14 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
     try {
       const isValid = await form.trigger();
       if (!isValid) {
-        toast({ title: "错误", description: "请检查表单输入", variant: "destructive" });
+        showMessage.error("请检查表单输入");
         return;
       }
 
       const values = form.getValues();
 
       if (!values.filePath) {
-        toast({ title: "警告", description: "请选择保存路径" });
+        showMessage.warning("请选择保存路径" );
         return;
       }
 
@@ -190,10 +191,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setExportResult(result);
 
       if (result.success) {
-        toast({ title: "成功", description: "数据导出成功" });
+        showMessage.success("数据导出成功" );
         onSuccess?.(result);
       } else {
-        toast({ title: "错误", description: "数据导出失败", variant: "destructive" });
+        showMessage.error("数据导出失败");
       }
     } catch (error) {
       console.error('导出失败:', error);

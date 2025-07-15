@@ -1,7 +1,8 @@
 ﻿import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Plus, Edit, Trash2, Settings, Save, Eye, Maximize, GripVertical } from 'lucide-react';
@@ -194,9 +195,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       setEditingItem(null);
       form.resetFields();
       
-      toast({ title: "成功", description: "项目保存成功" });
+      showMessage.success("项目保存成功" );
     } catch (error) {
-      toast({ title: "错误", description: "保存失败", variant: "destructive" });
+      showMessage.error("保存失败");
     }
   }, [editingItem, dashboard.items, form]);
 
@@ -273,9 +274,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         onSave(updatedDashboard);
       }
 
-      toast({ title: "成功", description: "仪表盘保存成功" });
+      showMessage.success("仪表盘保存成功" );
     } catch (error) {
-      toast({ title: "错误", description: "保存失败", variant: "destructive" });
+      showMessage.error("保存失败");
     }
   }, [dashboard, onSave]);
 
@@ -304,9 +305,9 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
         refreshInterval: values.refreshInterval}));
 
       setShowSettingsModal(false);
-      toast({ title: "成功", description: "设置保存成功" });
+      showMessage.success("设置保存成功" );
     } catch (error) {
-      toast({ title: "错误", description: "设置保存失败", variant: "destructive" });
+      showMessage.error("设置保存失败");
     }
   }, [settingsForm]);
 

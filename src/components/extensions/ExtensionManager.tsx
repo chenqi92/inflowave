@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Switch, Separator, Textarea } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
@@ -71,18 +72,18 @@ const ExtensionManager: React.FC = () => {
       loadPlugins();
     } catch (error) {
       console.error('切换插件状态失败:', error);
-      toast({ title: "错误", description: "操作失败", variant: "destructive" });
+      showMessage.error("操作失败");
     }
   };
 
   const uninstallPlugin = async (pluginId: string) => {
     try {
       await safeTauriInvoke('uninstall_plugin', { pluginId });
-      toast({ title: "成功", description: "插件已卸载" });
+      showMessage.success("插件已卸载" );
       loadPlugins();
     } catch (error) {
       console.error('卸载插件失败:', error);
-      toast({ title: "错误", description: "卸载失败", variant: "destructive" });
+      showMessage.error("卸载失败");
     }
   };
 
@@ -100,13 +101,13 @@ const ExtensionManager: React.FC = () => {
             credentials: values.credentials || {}},
           headers: values.headers || {},
           enabled: true}});
-      toast({ title: "成功", description: "API集成创建成功" });
+      showMessage.success("API集成创建成功" );
       setApiModalOpen(false);
       apiForm.reset();
       loadApiIntegrations();
     } catch (error) {
       console.error('创建API集成失败:', error);
-      toast({ title: "错误", description: "创建失败", variant: "destructive" });
+      showMessage.error("创建失败");
     }
   };
 
@@ -140,13 +141,13 @@ const ExtensionManager: React.FC = () => {
             max_retries: values.maxRetries || 3,
             backoff_multiplier: values.backoffMultiplier || 2.0,
             max_backoff_time: values.maxBackoffTime || 300}}});
-      toast({ title: "成功", description: "Webhook创建成功" });
+      showMessage.success("Webhook创建成功" );
       setWebhookModalOpen(false);
       webhookForm.reset();
       loadWebhooks();
     } catch (error) {
       console.error('创建Webhook失败:', error);
-      toast({ title: "错误", description: "创建失败", variant: "destructive" });
+      showMessage.error("创建失败");
     }
   };
 
@@ -165,13 +166,13 @@ const ExtensionManager: React.FC = () => {
           actions: values.actions || [],
           enabled: true,
           execution_count: 0}});
-      toast({ title: "成功", description: "自动化规则创建成功" });
+      showMessage.success("自动化规则创建成功" );
       setAutomationModalOpen(false);
       automationForm.reset();
       loadAutomationRules();
     } catch (error) {
       console.error('创建自动化规则失败:', error);
-      toast({ title: "错误", description: "创建失败", variant: "destructive" });
+      showMessage.error("创建失败");
     }
   };
 
@@ -180,11 +181,11 @@ const ExtensionManager: React.FC = () => {
       const result = await safeTauriInvoke('execute_automation_rule', {
         ruleId,
         context: {}});
-      toast({ title: "成功", description: "自动化规则执行成功" });
+      showMessage.success("自动化规则执行成功" );
       console.log('执行结果:', result);
     } catch (error) {
       console.error('执行自动化规则失败:', error);
-      toast({ title: "错误", description: "执行失败", variant: "destructive" });
+      showMessage.error("执行失败");
     }
   };
 

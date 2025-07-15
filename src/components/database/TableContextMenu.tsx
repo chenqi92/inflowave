@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { Button, Dropdown } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { Table, Eye, Edit, Trash2, Copy, RefreshCw, Info, BarChart, FileDown, FileUp, FileText } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -24,7 +25,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     if (!activeConnectionId) {
-      toast({ title: "错误", description: "请先建立数据库连接", variant: "destructive" });
+      showMessage.error("请先建立数据库连接");
       return;
     }
 
@@ -126,7 +127,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           // 复制 SELECT 语句
           const selectQuery = `SELECT * FROM "${tableName}" LIMIT 100;`;
           await navigator.clipboard.writeText(selectQuery);
-          toast({ title: "成功", description: "已复制 SELECT 语句到剪贴板" });
+          showMessage.success("已复制 SELECT 语句到剪贴板" );
           break;
         }
 
@@ -156,7 +157,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             format: 'csv',
                             limit: 10000,
                             filePath});
-                          toast.success(result);
+                          showMessage.success(result);
                         } catch (error) {
                           toast({ title: "错误", description: `导出CSV失败: ${error}`, variant: "destructive" });
                         }
@@ -176,7 +177,7 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                             format: 'json',
                             limit: 10000,
                             filePath});
-                          toast.success(result);
+                          showMessage.success(result);
                         } catch (error) {
                           toast({ title: "错误", description: `导出JSON失败: ${error}`, variant: "destructive" });
                         }

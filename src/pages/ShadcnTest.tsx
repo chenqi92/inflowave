@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, InputHeaderTitleContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast, Toaster, Typography, Title, Label } from '@/components/ui';
+import { Button, InputHeaderTitleContent, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Avatar, AvatarFallback, AvatarImage, Badge, Checkbox, Switch, Slider, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Toaster, Typography, Title, Label } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 
 const ShadcnTest: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
@@ -9,9 +10,7 @@ const ShadcnTest: React.FC = () => {
   const [selectValue, setSelectValue] = useState('');
 
   const showToast = () => {
-    toast({
-      title: "测试通知",
-      description: "这是一个Shadcn/ui的Toast通知"});
+    showMessage.info("这是一个Shadcn/ui的Toast通知");
   };
 
   const tableData = [

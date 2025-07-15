@@ -18,9 +18,8 @@ import {
     SelectValue,
     Switch,
     Separator,
-    Label,
-    toast
-} from '@/components/ui';
+    Label} from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import {
     Save,
     RefreshCw,
@@ -137,9 +136,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                 console.info('仅保存到前端状态，后端配置保存功能暂未实现');
             }
 
-            toast({title: "成功", description: "设置已保存"});
+            showMessage.success("设置已保存");
         } catch (saveError) {
-            toast({title: "错误", description: `保存设置失败: ${saveError}`, variant: "destructive"});
+            showMessage.error(`保存设置失败: ${saveError}`);
         } finally {
             setLoading(false);
         }
@@ -153,7 +152,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             const latestConfig = useAppStore.getState().config;
             form.reset(latestConfig);
         }, 0);
-        toast({title: "成功", description: "设置已重置为默认值"});
+        showMessage.success("设置已重置为默认值");
     };
 
     // 导出设置
@@ -181,7 +180,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         const writable = await fileHandle.createWritable();
                         await writable.write(JSON.stringify(settings, null, 2));
                         await writable.close();
-                        toast({title: "成功", description: "设置已导出到指定位置"});
+                        showMessage.success("设置已导出到指定位置");
                     } else {
                         // 降级到传统下载方式
                         const blob = new Blob([JSON.stringify(settings, null, 2)], {type: 'application/json'});
@@ -193,11 +192,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
-                        toast({title: "成功", description: "设置已导出到下载文件夹"});
+                        showMessage.success("设置已导出到下载文件夹");
                     }
                 } catch (exportError) {
                     if ((exportError as Error).name === 'AbortError') {
-                        toast({title: "信息", description: "导出已取消"});
+                        showMessage.info("导出已取消");
                     } else {
                         throw exportError;
                     }
@@ -205,11 +204,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             } else {
                 // Tauri 环境：调用原生文件保存对话框
                 await safeTauriInvoke('export_settings', {settings});
-                toast({title: "成功", description: "设置已导出"});
+                showMessage.success("设置已导出");
             }
         } catch (error) {
             console.error('导出设置失败:', error);
-            toast({title: "错误", description: `导出设置失败: ${error}`, variant: "destructive"});
+            showMessage.error(`导出设置失败: ${error}`);
         }
     };
 
@@ -231,13 +230,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                             if (settings.appConfig) {
                                 setConfig(settings.appConfig);
                                 form.reset(settings.appConfig);
-                                toast({title: "成功", description: "设置已导入"});
+                                showMessage.success("设置已导入");
                             } else {
-                                toast({title: "错误", description: "无效的设置文件格式", variant: "destructive"});
+                                showMessage.error("无效的设置文件格式");
                             }
                         } catch (parseError) {
                             console.error('解析设置文件失败:', parseError);
-                            toast({title: "错误", description: "设置文件格式错误", variant: "destructive"});
+                            showMessage.error("设置文件格式错误");
                         }
                     }
                 };
@@ -248,12 +247,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                 if (settings) {
                     setConfig(settings.appConfig);
                     form.reset(settings.appConfig);
-                    toast({title: "成功", description: "设置已导入"});
+                    showMessage.success("设置已导入");
                 }
             }
         } catch (error) {
             console.error('导入设置失败:', error);
-            toast({title: "错误", description: `导入设置失败: ${error}`, variant: "destructive"});
+            showMessage.error(`导入设置失败: ${error}`);
         }
     };
 
@@ -265,13 +264,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             const latestConfig = useAppStore.getState().config;
             form.reset(latestConfig);
         }, 0);
-        toast({title: "成功", description: "所有数据已清除"});
+        showMessage.success("所有数据已清除");
     };
 
     // 清除连接配置（带确认）
     const clearConnectionsWithConfirm = () => {
         clearConnections();
-        toast({title: "成功", description: "连接配置已清除"});
+        showMessage.success("连接配置已清除");
     };
 
     const tabItems = [
@@ -656,10 +655,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                     variant="outline"
                                     onClick={() => {
                                         resetNoticeSettings();
-                                        toast({
-                                            title: "成功",
-                                            description: "提醒设置已重置，下次启动时会再次显示功能说明"
-                                        });
+                                        showMessage.success("提醒设置已重置，下次启动时会再次显示功能说明"
+                                        );
                                     }}
                                     className="w-full justify-start"
                                 >

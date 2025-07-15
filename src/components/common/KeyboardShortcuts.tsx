@@ -1,5 +1,5 @@
 import React from 'react';
-import {Table, Typography, Tag, Modal, Separator} from '@/components/ui';
+import {Table, Typography, Tag, Dialog, DialogContent, DialogHeader, DialogTitle, Separator} from '@/components/ui';
 import {Settings, File, Edit, Eye, Database, Wrench, Grid3X3, HelpCircle} from 'lucide-react';
 
 const {Title, Text} = Typography;
@@ -103,7 +103,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
     ];
 
     return (
-        <Modal
+        <Dialog
             title={
                 <div className="flex gap-2">
                     <Settings className="w-4 h-4"/>
@@ -150,7 +150,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                     </div>
                 </div>
             </div>
-        </Modal>
+        </Dialog>
     );
 };
 

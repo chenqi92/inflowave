@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Textarea, List, Empty } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui';
 import { Trash2, Edit, Plus, Search as SearchIcon, Database, Save, X, PlayCircle, BookOpen, Tag } from 'lucide-react';
@@ -69,7 +70,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       await loadSavedQueries();
       setShowCreateModal(false);
       form.resetFields();
-      toast({ title: "成功", description: "查询已保存" });
+      showMessage.success("查询已保存" );
     } catch (error) {
       toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
     }
@@ -93,7 +94,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       await loadSavedQueries();
       setEditingQuery(null);
       form.resetFields();
-      toast({ title: "成功", description: "查询已更新" });
+      showMessage.success("查询已更新" );
     } catch (error) {
       toast({ title: "错误", description: `更新查询失败: ${error}`, variant: "destructive" });
     }
@@ -104,7 +105,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
     try {
       await safeTauriInvoke('delete_saved_query', { id });
       await loadSavedQueries();
-      toast({ title: "成功", description: "查询已删除" });
+      showMessage.success("查询已删除" );
     } catch (error) {
       toast({ title: "错误", description: `删除查询失败: ${error}`, variant: "destructive" });
     }

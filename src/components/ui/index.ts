@@ -20,7 +20,6 @@ export { Skeleton } from './Skeleton';
 
 export { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from './Toast';
 export { Toaster } from './Toaster';
-export { useToast, toast } from '../../hooks/use-toast';
 
 // Sonner (新的推荐 Toast 系统)
 export { Toaster as SonnerToaster } from './sonner';
@@ -100,7 +99,6 @@ export type { RowProps, ColProps } from './Grid';
 export { Menu, MenuItem, MenuDivider } from './Menu';
 export type { MenuProps, MenuItemType } from './Menu';
 
-export { Modal, ModalPortal, ModalOverlay, ModalClose, ModalTrigger, ModalContent, ModalHeader, ModalFooter, ModalTitle, ModalDescription } from './Modal';
 
 export { Popconfirm } from './Popconfirm';
 export type { PopconfirmProps } from './Popconfirm';
@@ -146,7 +144,6 @@ export { Collapse, Panel } from './Collapse';
 export type { CollapseProps, PanelProps } from './Collapse';
 
 // Message system - backward compatibility
-export { toast as message } from '../../hooks/use-toast';
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './resizable';
 

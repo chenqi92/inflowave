@@ -22,9 +22,8 @@ import {
   Input,
   Switch,
   Slider,
-  Badge,
-  toast
-} from '@/components/ui';
+  Badge} from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import {
   Settings,
   Edit,
@@ -157,11 +156,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
       }
     } catch (error) {
       console.error('加载用户偏好失败:', error);
-      toast({
-        title: "错误",
-        description: "加载用户偏好失败",
-        variant: "destructive"
-      });
+      showMessage.error("加载用户偏好失败");
       // 即使加载失败，也使用默认快捷键
       const defaultPreferences = {
         shortcuts: getAllSystemShortcuts(),
@@ -182,18 +177,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
     try {
       await safeTauriInvoke('update_user_preferences', values);
       setPreferences(values);
-      toast({ 
-        title: "成功", 
-        description: "偏好设置已保存" 
-      });
+      showMessage.success("偏好设置已保存" 
+      );
       onSave?.(values);
     } catch (error) {
       console.error('保存用户偏好失败:', error);
-      toast({ 
-        title: "错误", 
-        description: "保存用户偏好失败", 
-        variant: "destructive" 
-      });
+      showMessage.error("保存用户偏好失败");
     } finally {
       setLoading(false);
     }
@@ -204,17 +193,11 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
     try {
       const shortcuts = getAllSystemShortcuts();
       form.setValue('shortcuts', shortcuts);
-      toast({
-        title: "成功",
-        description: "已重置为默认快捷键"
-      });
+      showMessage.success("已重置为默认快捷键"
+      );
     } catch (error) {
       console.error('加载默认快捷键失败:', error);
-      toast({
-        title: "错误",
-        description: "加载默认快捷键失败",
-        variant: "destructive"
-      });
+      showMessage.error("加载默认快捷键失败");
     }
   };
 
@@ -243,10 +226,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
     setEditingShortcutId(null);
     setEditingKeys([]);
 
-    toast({
-      title: "成功",
-      description: "快捷键已更新"
-    });
+    showMessage.success("快捷键已更新"
+    );
   };
 
   // 切换快捷键启用状态

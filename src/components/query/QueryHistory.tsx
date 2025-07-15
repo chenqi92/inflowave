@@ -25,8 +25,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui';
-import { useToast } from '@/hooks/use-toast';
-
+import { showMessage } from '@/utils/message';
 import { X } from 'lucide-react';
 import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -82,9 +81,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('delete_query_history', { id });
       await loadQueryHistory();
-      toast({ title: "成功", description: "删除成功" });
+      showMessage.success("删除成功" );
     } catch (error) {
-      toast({ title: "错误", description: `删除失败: ${error}`, variant: "destructive" });
+      showMessage.error(`删除失败: ${error}`);
     }
   };
 
@@ -93,9 +92,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('clear_query_history');
       setHistoryItems([]);
-      toast({ title: "成功", description: "历史记录已清空" });
+      showMessage.success("历史记录已清空" );
     } catch (error) {
-      toast({ title: "错误", description: `清空失败: ${error}`, variant: "destructive" });
+      showMessage.error(`清空失败: ${error}`);
     }
   };
 
@@ -104,9 +103,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('delete_saved_query', { id });
       await loadSavedQueries();
-      toast({ title: "成功", description: "删除成功" });
+      showMessage.success("删除成功" );
     } catch (error) {
-      toast({ title: "错误", description: `删除失败: ${error}`, variant: "destructive" });
+      showMessage.error(`删除失败: ${error}`);
     }
   };
 
@@ -121,9 +120,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       await safeTauriInvoke('update_saved_query', { query: updatedQuery });
       await loadSavedQueries();
       setEditingQuery(null);
-      toast({ title: "成功", description: "查询已更新" });
+      showMessage.success("查询已更新" );
     } catch (error) {
-      toast({ title: "错误", description: `更新失败: ${error}`, variant: "destructive" });
+      showMessage.error(`更新失败: ${error}`);
     }
   };
 

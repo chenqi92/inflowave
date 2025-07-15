@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Popconfirm } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Eye, RefreshCw, Database, FileDown } from 'lucide-react';
 import type { MenuProps } from '@/components/ui';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -57,9 +58,9 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     try {
       const result = await safeTauriInvoke('test_connection', { connectionId: connection.id });
       if (result) {
-        toast({ title: "成功", description: "连接测试成功" });
+        showMessage.success("连接测试成功" );
       } else {
-        toast({ title: "错误", description: "连接测试失败", variant: "destructive" });
+        showMessage.error("连接测试失败");
       }
     } catch (error) {
       toast({ title: "错误", description: `连接测试失败: ${error}`, variant: "destructive" });
@@ -69,14 +70,14 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
 
   const handleDelete = () => {
     removeConnection(connection.id!);
-    toast({ title: "成功", description: "连接已删除" });
+    showMessage.success("连接已删除" );
     onClose?.();
   };
 
   const handleRefreshStatus = async () => {
     try {
       await refreshAllStatuses();
-      toast({ title: "成功", description: "状态已刷新" });
+      showMessage.success("状态已刷新" );
     } catch (error) {
       toast({ title: "错误", description: `刷新状态失败: ${error}`, variant: "destructive" });
     }
@@ -85,7 +86,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
 
   const handleViewDatabases = async () => {
     if (!isConnected) {
-      toast({ title: "警告", description: "请先连接到数据库" });
+      showMessage.warning("请先连接到数据库" );
       return;
     }
 
@@ -128,7 +129,7 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    toast({ title: "成功", description: "配置已导出" });
+    showMessage.success("配置已导出" );
     onClose?.();
   };
 

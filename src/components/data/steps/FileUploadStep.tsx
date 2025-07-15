@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
-import { Space, toast } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Space} from '@/components/ui';
 import { Upload as UploadIcon, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { ImportWizardData } from '../SmartImportWizard';
@@ -67,7 +68,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       // 文件大小限制
       const maxSize = 100 * 1024 * 1024; // 100MB
       if (file.size > maxSize) {
-        toast({ title: "错误", description: "文件大小不能超过 100MB", variant: "destructive" });
+        showMessage.error("文件大小不能超过 100MB");
         return false;
       }
 
@@ -90,7 +91,7 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
                          fileName.endsWith('.xls');
       
       if (!isValidType) {
-        toast({ title: "错误", description: "只支持 CSV、JSON、Excel 格式的文件", variant: "destructive" });
+        showMessage.error("只支持 CSV、JSON、Excel 格式的文件");
         return false;
       }
 

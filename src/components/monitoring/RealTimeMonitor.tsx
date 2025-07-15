@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { RefreshCw, Settings, TrendingUp, Bell, PlayCircle, PauseCircle, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
@@ -186,10 +187,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
 
       if (editingAlert) {
         setAlertRules(prev => prev.map(r => r.id === rule.id ? rule : r));
-        toast({ title: "成功", description: "告警规则已更新" });
+        showMessage.success("告警规则已更新" );
       } else {
         setAlertRules(prev => [...prev, rule]);
-        toast({ title: "成功", description: "告警规则已创建" });
+        showMessage.success("告警规则已创建" );
       }
 
       setShowAlertModal(false);

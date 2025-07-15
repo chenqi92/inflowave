@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
 import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag, List } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 // TODO: Replace these Ant Design components: message, Divider
 import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
 
@@ -261,12 +262,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   // 执行数据生成
   const generateData = async () => {
     if (!activeConnectionId) {
-      toast({ title: "错误", description: "请先连接到InfluxDB", variant: "destructive" });
+      showMessage.error("请先连接到InfluxDB");
       return;
     }
 
     if (!selectedDatabase) {
-      toast({ title: "错误", description: "请选择目标数据库", variant: "destructive" });
+      showMessage.error("请选择目标数据库");
       return;
     }
 
@@ -320,7 +321,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       
       setProgress(100);
       setCurrentTask('');
-      toast.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
+      showMessage.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
       
       // 触发数据源面板刷新
       setTimeout(() => {
@@ -345,7 +346,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   // 清空数据
   const clearData = async () => {
     if (!activeConnectionId) {
-      toast({ title: "错误", description: "请先连接到InfluxDB", variant: "destructive" });
+      showMessage.error("请先连接到InfluxDB");
       return;
     }
 
@@ -360,7 +361,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         });
       }
       setCompletedTasks([]);
-      toast({ title: "成功", description: "测试数据已清空" });
+      showMessage.success("测试数据已清空" );
     } catch (error) {
       console.error('清空数据失败:', error);
       toast({ title: "错误", description: `清空数据失败: ${error}`, variant: "destructive" });

@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, FileText, FileSpreadsheet } from 'lucide-react';
 import type { QueryResult } from '@/types';
 
@@ -42,7 +43,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   // 执行导出
   const handleExport = async () => {
     if (!queryResult) {
-      toast({ title: "错误", description: "没有可导出的查询结果", variant: "destructive" });
+      showMessage.error("没有可导出的查询结果");
       return;
     }
 
@@ -63,10 +64,10 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
       // 模拟导出过程
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      toast({ title: "成功", description: "导出功能开发中，请查看控制台输出" });
+      showMessage.success("导出功能开发中，请查看控制台输出" );
       onClose();
     } catch (error) {
-      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
+      showMessage.error(`导出失败: ${error}`);
     } finally {
       setLoading(false);
     }

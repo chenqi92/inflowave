@@ -12,12 +12,12 @@ import {
   Alert,
   AlertDescription,
   Badge,
-  toast,
   Title,
   Text,
   InputNumber,
   Label
 } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import {
   Shield,
   AlertTriangle,
@@ -64,11 +64,7 @@ const ControllerSettings: React.FC = () => {
       form.reset(controllerSettings);
     } catch (error) {
       console.error('加载控制器设置失败:', error);
-      toast({
-        title: "错误",
-        description: "加载控制器设置失败",
-        variant: "destructive"
-      });
+      showMessage.error("加载控制器设置失败");
     }
   };
 
@@ -79,17 +75,11 @@ const ControllerSettings: React.FC = () => {
       await safeTauriInvoke('update_controller_settings', values);
       
       setSettings(values);
-      toast({
-        title: "成功",
-        description: "控制器设置已保存"
-      });
+      showMessage.success("控制器设置已保存"
+      );
     } catch (error) {
       console.error('保存控制器设置失败:', error);
-      toast({
-        title: "错误",
-        description: "保存控制器设置失败",
-        variant: "destructive"
-      });
+      showMessage.error("保存控制器设置失败");
     } finally {
       setLoading(false);
     }
@@ -108,10 +98,8 @@ const ControllerSettings: React.FC = () => {
     };
     
     form.reset(defaultSettings);
-    toast({
-      title: "成功",
-      description: "设置已重置为默认值"
-    });
+    showMessage.success("设置已重置为默认值"
+    );
   };
 
   useEffect(() => {

@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Textarea, Alert, Spin } from '@/components/ui';
-import { toast } from '@/components/ui';
-
+import { showMessage } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
 import { AreaChart } from 'lucide-react';
@@ -181,7 +180,7 @@ const Visualization: React.FC = () => {
   const createChart = async (values: any) => {
     // 验证必填字段
     if (!values.title || !values.type || !values.query || !values.database) {
-      toast({ title: "错误", description: "请填写所有必填字段", variant: "destructive" });
+      showMessage.error("请填写所有必填字段");
       return;
     }
 
@@ -199,13 +198,13 @@ const Visualization: React.FC = () => {
     setLoading(false);
 
     if (!result) {
-      toast({ title: "错误", description: "查询执行失败，请检查查询语句", variant: "destructive" });
+      showMessage.error("查询执行失败，请检查查询语句");
       return;
     }
 
     const option = convertToEChartsOption(result, chartConfig);
     if (!option) {
-      toast({ title: "错误", description: "无法生成图表，请检查数据格式", variant: "destructive" });
+      showMessage.error("无法生成图表，请检查数据格式");
       return;
     }
 
@@ -213,7 +212,7 @@ const Visualization: React.FC = () => {
     setCharts(prev => [...prev, chartConfig]);
     setCreateModalVisible(false);
     form.reset();
-    toast({ title: "成功", description: "图表创建成功" });
+    showMessage.success("图表创建成功" );
   };
 
   // 刷新图表数据
@@ -228,7 +227,7 @@ const Visualization: React.FC = () => {
             : chart
         );
         setCharts(updatedCharts);
-        toast({ title: "成功", description: "图表数据已刷新" });
+        showMessage.success("图表数据已刷新" );
       }
     }
   };
@@ -236,7 +235,7 @@ const Visualization: React.FC = () => {
   // 删除图表
   const deleteChart = (chartId: string) => {
     setCharts(prev => prev.filter(chart => chart.id !== chartId));
-    toast({ title: "成功", description: "图表已删除" });
+    showMessage.success("图表已删除" );
   };
 
   // 组件挂载时加载数据

@@ -23,7 +23,8 @@ import {
   Col,
   FormItem
 } from '@/components/ui';
-import { CardHeaderTitleContent, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { CardHeaderTitleContent, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 
 const UITest: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -58,7 +59,7 @@ const UITest: React.FC = () => {
 
   const handleFormSubmit = (values: any) => {
     console.log('Form values:', values);
-    toast({ title: "成功", description: "Form submitted successfully!" });
+    showMessage.success("Form submitted successfully!");
   };
 
   return (
@@ -251,11 +252,11 @@ const UITest: React.FC = () => {
         </div>
         <div>
           <div className="flex gap-2">
-            <Button onClick={() => toast({ title: "信息", description: "This is an info message" })}>Info</Button>
-            <Button onClick={() => toast({ title: "成功", description: "This is a success message" })}>Success</Button>
-            <Button onClick={() => toast({ title: "警告", description: "This is a warning message" })}>Warning</Button>
-            <Button onClick={() => toast({ title: "错误", description: "This is an error message", variant: "destructive" })}>Error</Button>
-            <Button onClick={() => toast({ title: "加载中", description: "Loading..." })}>Loading</Button>
+            <Button onClick={() => showMessage.info("This is an info message")}>Info</Button>
+            <Button onClick={() => showMessage.success("This is a success message")}>Success</Button>
+            <Button onClick={() => showMessage.warning("This is a warning message")}>Warning</Button>
+            <Button onClick={() => showMessage.error("This is an error message")}>Error</Button>
+            <Button onClick={() => showMessage.loading("Loading...")}>Loading</Button>
           </div>
         </div>
       </div>

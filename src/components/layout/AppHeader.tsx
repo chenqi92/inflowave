@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space, Header } from '@/components/ui';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Database, Settings, Lightbulb, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';

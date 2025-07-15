@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { LayoutOutlined } from '@/components/ui';
 import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
@@ -60,7 +61,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
       onSettingsChange?.(updatedPreferences);
-      toast({ title: "成功", description: "设置已保存" });
+      showMessage.success("设置已保存" );
     } catch (error) {
       toast({ title: "错误", description: `保存设置失败: ${error}`, variant: "destructive" });
     }
@@ -76,7 +77,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         notifications: defaultPrefs.notifications,
         accessibility: defaultPrefs.accessibility,
         workspace: defaultPrefs.workspace});
-      toast({ title: "成功", description: "已重置为默认设置" });
+      showMessage.success("已重置为默认设置" );
     } catch (error) {
       toast({ title: "错误", description: `重置设置失败: ${error}`, variant: "destructive" });
     }
@@ -95,7 +96,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
 
       await safeTauriInvoke('update_user_preferences', { preferences: updatedPreferences });
       setPreferences(updatedPreferences);
-      toast({ title: "成功", description: "快捷键已更新" });
+      showMessage.success("快捷键已更新" );
     } catch (error) {
       toast({ title: "错误", description: `更新快捷键失败: ${error}`, variant: "destructive" });
     }

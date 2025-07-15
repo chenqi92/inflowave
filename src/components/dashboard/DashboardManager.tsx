@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Modal, List } from '@/components/ui';
-// TODO: Replace these Ant Design components: Popconfirm, Divider
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Dialog, DialogContent, DialogHeader, DialogTitle, List } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Space, Popconfirm, Divider } from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
@@ -32,7 +32,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       setDashboards(result);
     } catch (error) {
       console.error('加载仪表板失败:', error);
-      toast({ title: "错误", description: "加载仪表板失败", variant: "destructive" });
+      showMessage.error("加载仪表板失败");
     } finally {
       setLoading(false);
     }
@@ -54,16 +54,16 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             start: values.timeStart || 'now() - 1h',
             end: values.timeEnd || 'now()'}}}) as string;
 
-      toast({ title: "成功", description: "仪表板创建成功" });
+      showMessage.success("仪表板创建成功" );
       setCreateModalVisible(false);
-      form.resetFields();
+      form.reset();
       loadDashboards();
       
       // 自动打开新创建的仪表板
       onOpenDashboard(dashboardId);
     } catch (error) {
       console.error('创建仪表板失败:', error);
-      toast({ title: "错误", description: "创建仪表板失败", variant: "destructive" });
+      showMessage.error("创建仪表板失败");
     }
   };
 
@@ -86,14 +86,14 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
             start: values.timeStart,
             end: values.timeEnd}}});
 
-      toast({ title: "成功", description: "仪表板更新成功" });
+      showMessage.success("仪表板更新成功" );
       setEditModalVisible(false);
       setSelectedDashboard(null);
-      form.resetFields();
+      form.reset();
       loadDashboards();
     } catch (error) {
       console.error('更新仪表板失败:', error);
-      toast({ title: "错误", description: "更新仪表板失败", variant: "destructive" });
+      showMessage.error("更新仪表板失败");
     }
   };
 
@@ -101,11 +101,11 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   const deleteDashboard = async (dashboardId: string) => {
     try {
       await safeTauriInvoke('delete_dashboard', { dashboardId });
-      toast({ title: "成功", description: "仪表板删除成功" });
+      showMessage.success("仪表板删除成功" );
       loadDashboards();
     } catch (error) {
       console.error('删除仪表板失败:', error);
-      toast({ title: "错误", description: "删除仪表板失败", variant: "destructive" });
+      showMessage.error("删除仪表板失败");
     }
   };
 
@@ -117,12 +117,12 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
         dashboardId: dashboard.id,
         newName}) as string;
 
-      toast({ title: "成功", description: "仪表板复制成功" });
+      showMessage.success("仪表板复制成功" );
       loadDashboards();
       onOpenDashboard(newDashboardId);
     } catch (error) {
       console.error('复制仪表板失败:', error);
-      toast({ title: "错误", description: "复制仪表板失败", variant: "destructive" });
+      showMessage.error("复制仪表板失败");
     }
   };
 
@@ -244,7 +244,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
         onOpenChange={(open) => {
           if (!open) {
             setCreateModalVisible(false);
-            form.resetFields();
+            form.reset();
           }
         }}>
         <Form form={form} layout="vertical" onFinish={createDashboard}>
@@ -314,7 +314,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
           if (!open) {
             setEditModalVisible(false);
             setSelectedDashboard(null);
-            form.resetFields();
+            form.reset();
           }
         }}>
         <Form form={form} layout="vertical" onFinish={updateDashboard}>

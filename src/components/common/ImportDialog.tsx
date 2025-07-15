@@ -1,8 +1,9 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Typography } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import { Upload as UploadIcon, Database, CheckCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -209,7 +210,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       // 调用后端导入接口
       await safeTauriInvoke('import_data', importRequest);
 
-      toast({ title: "成功", description: "数据导入成功" });
+      showMessage.success("数据导入成功" );
       setCurrentStep(2);
       
       if (onSuccess) {

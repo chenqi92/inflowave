@@ -1,8 +1,9 @@
 import React from 'react';
-import { toast } from '@/components/ui';
+import  from '@/components/ui';
 
 // TODO: Replace these Ant Design components: Dropdown
 import type { MenuProps } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import { Copy, BarChart, Edit, Eye, Table } from 'lucide-react';
 // TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
 // You may need to find alternatives or create custom icons
@@ -29,7 +30,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制单元格内容
           if (selectedData !== undefined) {
             await navigator.clipboard.writeText(String(selectedData));
-            toast({ title: "成功", description: "已复制单元格内容" });
+            showMessage.success("已复制单元格内容" );
           }
           break;
 
@@ -38,7 +39,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           if (rowData) {
             const rowText = Object.values(rowData).join('\t');
             await navigator.clipboard.writeText(rowText);
-            toast({ title: "成功", description: "已复制行数据" });
+            showMessage.success("已复制行数据" );
           }
           break;
 
@@ -54,7 +55,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制为 JSON 格式
           if (rowData) {
             await navigator.clipboard.writeText(JSON.stringify(rowData, null, 2));
-            toast({ title: "成功", description: "已复制为 JSON 格式" });
+            showMessage.success("已复制为 JSON 格式" );
           }
           break;
 
@@ -63,7 +64,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           if (rowData) {
             const csvText = Object.values(rowData).join(',');
             await navigator.clipboard.writeText(csvText);
-            toast({ title: "成功", description: "已复制为 CSV 格式" });
+            showMessage.success("已复制为 CSV 格式" );
           }
           break;
 
@@ -97,23 +98,23 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
 
         case 'export_results':
           // 导出查询结果
-          toast({ title: "成功", description: "正在导出查询结果" });
+          showMessage.success("正在导出查询结果" );
           break;
 
         case 'visualize_data':
           // 数据可视化
-          toast({ title: "成功", description: "正在创建数据可视化" });
+          showMessage.success("正在创建数据可视化" );
           break;
 
         case 'edit_query':
           // 编辑查询
-          toast({ title: "成功", description: "正在编辑查询" });
+          showMessage.success("正在编辑查询" );
           break;
 
         case 'view_details':
           // 查看详细信息
           if (rowData) {
-            toast({ title: "成功", description: "正在查看详细信息" });
+            showMessage.success("正在查看详细信息" );
           }
           break;
 

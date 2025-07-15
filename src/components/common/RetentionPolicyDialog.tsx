@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm, Tooltip } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, toast, Button } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';

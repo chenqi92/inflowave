@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Title, Text } from '@/components/ui';
-import { CardHeaderTitleContent, Space, toast } from '@/components/ui';
+import { CardHeaderTitleContent, Space } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -20,9 +21,9 @@ const ConnectionDebug: React.FC = () => {
     try {
       const info = await safeTauriInvoke<DebugInfo>('debug_connection_manager');
       setDebugInfo(info);
-      toast({ title: "成功", description: "调试信息获取成功" });
+      showMessage.success("调试信息获取成功");
     } catch (error) {
-      toast({ title: "错误", description: `获取调试信息失败: ${error}`, variant: "destructive" });
+      showMessage.error(`获取调试信息失败: ${error}`);
       console.error('Debug error:', error);
     } finally {
       setLoading(false);

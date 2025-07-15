@@ -2,7 +2,8 @@
 import { useForm } from 'react-hook-form';
 import { useConnection } from '@/hooks/useConnection';
 import { Button, Form, Input, InputNumber, Switch, Typography } from '@/components/ui';
-import { toast } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import  from '@/components/ui';
 
 interface ConnectionConfig {
   id: string;

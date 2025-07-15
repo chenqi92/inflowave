@@ -19,9 +19,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-  toast
+  TooltipTrigger
 } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye, Table } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
@@ -46,10 +46,10 @@ const ErrorLogViewer: React.FC = () => {
       const parsedLogs = parseLogContent(logContent);
       setLogs(parsedLogs);
       setFilteredLogs(parsedLogs);
-      toast({ title: "成功", description: `已加载 ${parsedLogs.length} 条错误日志` });
+      showMessage.success(`已加载 ${parsedLogs.length} 条错误日志`);
     } catch (error) {
       console.error('加载错误日志失败:', error);
-      toast({ title: "错误", description: "加载错误日志失败", variant: "destructive" });
+      showMessage.error("加载错误日志失败");
       setLogs([]);
       setFilteredLogs([]);
     } finally {
@@ -195,9 +195,9 @@ const ErrorLogViewer: React.FC = () => {
           await FileOperations.deleteFile('logs/error.log');
           setLogs([]);
           setFilteredLogs([]);
-          toast({ title: "成功", description: "错误日志已清除" });
+          showMessage.success("错误日志已清除");
         } catch (error) {
-          toast({ title: "错误", description: "清除日志失败", variant: "destructive" });
+          showMessage.error("清除日志失败");
         }
       },
       onCancel: () => {
@@ -218,9 +218,9 @@ const ErrorLogViewer: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: "成功", description: "日志已导出" });
+      showMessage.success("日志已导出");
     } catch (error) {
-      toast({ title: "错误", description: "导出日志失败", variant: "destructive" });
+      showMessage.error("导出日志失败");
     }
   };
 

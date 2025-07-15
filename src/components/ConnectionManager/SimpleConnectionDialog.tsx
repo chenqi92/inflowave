@@ -5,7 +5,6 @@ import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
-import './ConnectionDialog.css';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;

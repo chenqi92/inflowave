@@ -16,8 +16,7 @@ import {
   Progress,
   Alert,
   Empty,
-  Dropdown,
-  toastHeaderContentTitle,
+  DropdownHeaderContentTitle,
   Table
 } from '@/components/ui';
 import {
@@ -37,7 +36,7 @@ import {
   Database
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
-import { useToast } from '@/hooks/use-toast';
+import { showMessage } from '@/utils/message';
 import type { QueryResult } from '@/types';
 
 interface ResultPanelProps {
@@ -77,7 +76,6 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
   executionTime = 0, 
   onClearResult 
 }) => {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('messages');
   const { activeConnectionId, connections } = useConnectionStore();
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
@@ -154,7 +152,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
   // 导出为 CSV 格式
   const exportToCSV = () => {
     if (!queryResult || tableData.length === 0) {
-      toast({ title: "警告", description: "没有可导出的数据" });
+      showMessage.success("没有可导出的数据" );
       return;
     }
 
@@ -174,25 +172,25 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
     ].join('\n');
 
     downloadFile(csvContent, 'query-result.csv', 'text/csv');
-    toast({ title: "成功", description: "CSV 文件导出成功" });
+    showMessage.success("CSV 文件导出成功" );
   };
 
   // 导出为 JSON 格式
   const exportToJSON = () => {
     if (!queryResult || tableData.length === 0) {
-      toast({ title: "警告", description: "没有可导出的数据" });
+      showMessage.success("没有可导出的数据" );
       return;
     }
 
     const jsonContent = JSON.stringify(tableData, null, 2);
     downloadFile(jsonContent, 'query-result.json', 'application/json');
-    toast({ title: "成功", description: "JSON 文件导出成功" });
+    showMessage.success("JSON 文件导出成功" );
   };
 
   // 导出为 Excel 格式 (实际上是 TSV，可以被 Excel 打开)
   const exportToExcel = () => {
     if (!queryResult || tableData.length === 0) {
-      toast({ title: "警告", description: "没有可导出的数据" });
+      showMessage.success("没有可导出的数据" );
       return;
     }
 
@@ -205,7 +203,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
     ].join('\n');
 
     downloadFile(tsvContent, 'query-result.xlsx', 'application/vnd.ms-excel');
-    toast({ title: "成功", description: "Excel 文件导出成功" });
+    showMessage.success("Excel 文件导出成功" );
   };
 
   // 下载文件的通用函数
@@ -224,7 +222,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
   // 清空结果
   const handleClearResult = () => {
     onClearResult?.();
-    toast({ title: "成功", description: "查询结果已清空" });
+    showMessage.success("查询结果已清空" );
   };
 
   // 导出菜单项

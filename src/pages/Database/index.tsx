@@ -31,7 +31,7 @@ import {
   CardContent,
   Typography
 } from '@/components/ui';
-import { useToast, toast } from '@/hooks/use-toast';
+import { showMessage } from '@/utils/message';
 import { Database as DatabaseIcon, Plus, Trash2, Info, RefreshCw, BarChart, Edit, AlertCircle } from 'lucide-react';
 import { Modal } from '@/utils/modalAdapter';
 import '@/styles/database-management.css';
@@ -99,7 +99,6 @@ interface DatabaseStats {
 }
 
 const Database: React.FC = () => {
-  const { toast } = useToast();
   const { activeConnectionId } = useConnectionStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -146,7 +145,7 @@ const Database: React.FC = () => {
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
+      showMessage.error(`加载数据库列表失败: ${error}`);
       // Reset databases to prevent null/undefined errors
       setDatabases([]);
     } finally {
@@ -174,7 +173,7 @@ const Database: React.FC = () => {
       setRetentionPolicies(Array.isArray(retentionPolicyList) ? retentionPolicyList : []);
       setDatabaseStats(stats);
     } catch (error) {
-      toast({ title: "错误", description: `加载数据库详细信息失败: ${error}`, variant: "destructive" });
+      showMessage.error(`加载数据库详细信息失败: ${error}`);
       // Reset arrays to prevent null/undefined errors
       setMeasurements([]);
       setRetentionPolicies([]);
@@ -187,7 +186,7 @@ const Database: React.FC = () => {
   // 创建数据库
   const createDatabase = async (values: any) => {
     if (!activeConnectionId) {
-      toast({ title: "警告", description: "请先选择一个连接" });
+      showMessage.success("请先选择一个连接" );
       return;
     }
 
@@ -197,12 +196,12 @@ const Database: React.FC = () => {
           name: values.name,
           retentionPolicy: values.retentionPolicy}});
 
-      toast({ title: "成功", description: "数据库创建成功" });
+      showMessage.success("数据库创建成功" );
       setCreateModalVisible(false);
       form.reset();
       await loadDatabases();
     } catch (error) {
-      toast({ title: "错误", description: `创建数据库失败: ${error}`, variant: "destructive" });
+      showMessage.error(`创建数据库失败: ${error}`);
     }
   };
 
@@ -214,18 +213,18 @@ const Database: React.FC = () => {
       await safeTauriInvoke('drop_measurement', { connection_id: activeConnectionId,
         database: deleteMeasurementParams.database,
         measurement: deleteMeasurementParams.measurement});
-      toast({ title: "成功", description: `测量 "${deleteMeasurementParams.measurement}" 删除成功` });
+      showMessage.success(`测量 "${deleteMeasurementParams.measurement}" 删除成功`);
       loadDatabaseDetails(selectedDatabase);
       setDeleteMeasurementParams(null);
     } catch (error) {
-      toast({ title: "错误", description: `删除测量失败: ${error}`, variant: "destructive" });
+      showMessage.error(`删除测量失败: ${error}`);
     }
   };
 
   // 删除数据库
   const deleteDatabase = async (database: string) => {
     if (!activeConnectionId) {
-      toast({ title: "警告", description: "请先选择一个连接" });
+      showMessage.success("请先选择一个连接" );
       return;
     }
 
@@ -233,7 +232,7 @@ const Database: React.FC = () => {
       await safeTauriInvoke('drop_database', { connection_id: activeConnectionId,
         database});
 
-      toast({ title: "成功", description: "数据库删除成功" });
+      showMessage.success("数据库删除成功" );
 
       // 如果删除的是当前选中的数据库，清空选择
       if (selectedDatabase === database) {
@@ -245,7 +244,7 @@ const Database: React.FC = () => {
 
       await loadDatabases();
     } catch (error) {
-      toast({ title: "错误", description: `删除数据库失败: ${error}`, variant: "destructive" });
+      showMessage.error(`删除数据库失败: ${error}`);
     }
   };
 
@@ -451,12 +450,12 @@ const Database: React.FC = () => {
                           <Button
                             type="text"
                             icon={<Info className="w-4 h-4"  />}
-                            onClick={() => toast({ title: "信息", description: "查看测量详情功能开发中..." })}
+                            onClick={() => showMessage.success("查看测量详情功能开发中..." )}
                           />
                         </Tooltip>
                         <Popconfirm
                           title="确定要删除这个测量吗？"
-                          onConfirm={() => toast({ title: "信息", description: "删除测量功能开发中..." })}
+                          onConfirm={() => showMessage.success("删除测量功能开发中..." )}
                           okText="确定"
                           cancelText="取消"
                         >
@@ -564,10 +563,10 @@ const Database: React.FC = () => {
                                 await safeTauriInvoke('drop_retention_policy', { connection_id: activeConnectionId,
                                   database: selectedDatabase,
                                   policyName: record.name});
-                                toast.success(`保留策略 "${record.name}" 删除成功`);
+                                showMessage.success(`保留策略 "${record.name}" 删除成功`);
                                 loadDatabaseDetails(selectedDatabase);
                               } catch (error) {
-                                toast({ title: "错误", description: `删除保留策略失败: ${error}`, variant: "destructive" });
+                                showMessage.error(`删除保留策略失败: ${error}`);
                               }
                             }}
                             okText="确定"
@@ -606,12 +605,12 @@ const Database: React.FC = () => {
             switch (action) {
               case 'showMeasurements':
                 // 已经在当前页面显示
-                toast({ title: "信息", description: "测量列表已在当前页面显示" });
+                showMessage.success("测量列表已在当前页面显示" );
                 break;
 
               case 'showRetentionPolicies':
                 // 已经在当前页面显示
-                toast({ title: "信息", description: "保留策略已在当前页面显示" });
+                showMessage.success("保留策略已在当前页面显示" );
                 break;
 
               case 'showDatabaseInfo':
@@ -660,7 +659,7 @@ const Database: React.FC = () => {
                       </Row>
                     )});
                 } else {
-                  toast({ title: "信息", description: "正在加载数据库统计信息..." });
+                  showMessage.success("正在加载数据库统计信息..." );
                   loadDatabaseDetails(params.database);
                 }
                 break;
@@ -683,9 +682,9 @@ const Database: React.FC = () => {
                   link.click();
                   URL.revokeObjectURL(url);
 
-                  toast({ title: "成功", description: "数据库结构导出成功" });
+                  showMessage.success("数据库结构导出成功" );
                 } catch (error) {
-                  toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`导出失败: ${error}`);
                 }
                 break;
 
@@ -741,7 +740,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `数据预览失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`数据预览失败: ${error}`);
                 }
                 break;
 
@@ -771,7 +770,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取字段信息失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取字段信息失败: ${error}`);
                 }
                 break;
 
@@ -800,7 +799,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取标签键失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取标签键失败: ${error}`);
                 }
                 break;
 
@@ -812,7 +811,7 @@ const Database: React.FC = () => {
                     measurement: params.measurement});
 
                   if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
-                    toast({ title: "信息", description: "该测量没有标签键" });
+                    showMessage.success("该测量没有标签键" );
                     return;
                   }
 
@@ -840,7 +839,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取标签值失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取标签值失败: ${error}`);
                 }
                 break;
 
@@ -865,7 +864,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取序列信息失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取序列信息失败: ${error}`);
                 }
                 break;
 
@@ -891,7 +890,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取记录数失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取记录数失败: ${error}`);
                 }
                 break;
 
@@ -919,7 +918,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取时间范围失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取时间范围失败: ${error}`);
                 }
                 break;
 
@@ -931,7 +930,7 @@ const Database: React.FC = () => {
                     measurement: params.measurement});
 
                   if (!Array.isArray(fields) || fields.length === 0) {
-                    toast({ title: "信息", description: "该测量没有字段" });
+                    showMessage.success("该测量没有字段" );
                     return;
                   }
 
@@ -961,7 +960,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取字段统计失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取字段统计失败: ${error}`);
                 }
                 break;
 
@@ -973,7 +972,7 @@ const Database: React.FC = () => {
                     measurement: params.measurement});
 
                   if (!Array.isArray(tagKeys) || tagKeys.length === 0) {
-                    toast({ title: "信息", description: "该测量没有标签" });
+                    showMessage.success("该测量没有标签" );
                     return;
                   }
 
@@ -1003,7 +1002,7 @@ const Database: React.FC = () => {
                       </div>
                     )});
                 } catch (error) {
-                  toast({ title: "错误", description: `获取标签分布失败: ${error}`, variant: "destructive" });
+                  showMessage.error(`获取标签分布失败: ${error}`);
                 }
                 break;
 
@@ -1018,7 +1017,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                toast({ title: "成功", description: "正在跳转到可视化页面..." });
+                showMessage.success("正在跳转到可视化页面..." );
                 break;
 
               case 'createFieldChart':
@@ -1033,7 +1032,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                toast({ title: "成功", description: "正在跳转到可视化页面..." });
+                showMessage.success("正在跳转到可视化页面..." );
                 break;
 
               case 'createTagChart':
@@ -1048,7 +1047,7 @@ const Database: React.FC = () => {
                     chartType: params.chartType
                   }
                 });
-                toast({ title: "成功", description: "正在跳转到可视化页面..." });
+                showMessage.success("正在跳转到可视化页面..." );
                 break;
 
               case 'customChart':
@@ -1059,11 +1058,11 @@ const Database: React.FC = () => {
                     measurement: params.measurement
                   }
                 });
-                toast({ title: "成功", description: "正在跳转到可视化页面..." });
+                showMessage.success("正在跳转到可视化页面..." );
                 break;
 
               case 'exportData':
-                toast.info(`导出测量 "${params.measurement}" 为 ${params.format} 格式功能开发中...`);
+                showMessage.info(`导出测量 "${params.measurement}" 为 ${params.format} 格式功能开发中...`);
                 break;
 
               case 'deleteMeasurement':
@@ -1072,10 +1071,10 @@ const Database: React.FC = () => {
                 break;
 
               default:
-                toast.info(`功能 "${action}" 开发中...`);
+                showMessage.info(`功能 "${action}" 开发中...`);
             }
           } catch (error) {
-            toast({ title: "错误", description: `操作失败: ${error}`, variant: "destructive" });
+            showMessage.error(`操作失败: ${error}`);
           }
         };
 

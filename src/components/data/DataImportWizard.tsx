@@ -1,7 +1,8 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea, Typography } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -65,13 +66,13 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
                          file.name.endsWith('.txt');
       
       if (!isValidType) {
-        toast({ title: "错误", description: "只支持 CSV、JSON 和文本文件", variant: "destructive" });
+        showMessage.error("只支持 CSV、JSON 和文本文件");
         return false;
       }
 
       const isLt100M = file.size! / 1024 / 1024 < 100;
       if (!isLt100M) {
-        toast({ title: "错误", description: "文件大小不能超过 100MB", variant: "destructive" });
+        showMessage.error("文件大小不能超过 100MB");
         return false;
       }
 
@@ -85,7 +86,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   // 预览文件数据
   const previewFile = async () => {
     if (fileList.length === 0) {
-      toast({ title: "错误", description: "请先选择文件", variant: "destructive" });
+      showMessage.error("请先选择文件");
       return;
     }
 
@@ -143,7 +144,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
   // 执行导入
   const executeImport = async () => {
     if (!connectionId || !database || !importConfig.measurement) {
-      toast({ title: "错误", description: "请完善导入配置", variant: "destructive" });
+      showMessage.error("请完善导入配置");
       return;
     }
 
@@ -175,7 +176,7 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       setImportResult(result);
       setCurrentStep(3);
       
-      toast({ title: "成功", description: "数据导入完成" });
+      showMessage.success("数据导入完成" );
     } catch (error) {
       toast({ title: "错误", description: `导入失败: ${error}`, variant: "destructive" });
     } finally {

@@ -33,9 +33,10 @@ import {
     Row,
     Table, Title, Paragraph
 } from '@/components/ui';
+import { showMessage } from '@/utils/message';
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui';
 import {Upload as UploadIcon, Database, CheckCircle, Info, AlertCircle} from 'lucide-react';
-import {Dialog, DialogContent, DialogHeader, DialogTitle, toast} from '@/components/ui';
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 
 import type {UploadFile, UploadProps} from '@/components/ui';
 import {safeTauriInvoke} from '@/utils/tauri';
@@ -163,7 +164,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             // 文件大小限制 (50MB)
             const isLt50M = file.size / 1024 / 1024 < 50;
             if (!isLt50M) {
-                toast({title: "错误", description: "文件大小不能超过 50MB", variant: "destructive"});
+                showMessage.error("文件大小不能超过 50MB");
                 return false;
             }
 
@@ -615,7 +616,7 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             await safeTauriInvoke('advanced_import_data', importRequest);
 
             updateProgress('completed', 100, '数据导入完成');
-            toast({title: "成功", description: "数据导入成功"});
+            showMessage.success("数据导入成功");
 
             if (onSuccess) {
                 onSuccess();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dropdown } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, toast } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { Plus, RefreshCw, Info, Trash2, Copy, Table, FileDown, FileText } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
@@ -22,7 +23,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     if (!activeConnectionId) {
-      toast({ title: "错误", description: "请先建立数据库连接", variant: "destructive" });
+      showMessage.error("请先建立数据库连接");
       return;
     }
 
@@ -119,7 +120,7 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 复制 USE 语句
           const useStatement = `USE "${databaseName}";`;
           await navigator.clipboard.writeText(useStatement);
-          toast({ title: "成功", description: "已复制 USE 语句到剪贴板" });
+          showMessage.success("已复制 USE 语句到剪贴板" );
           break;
         }
 

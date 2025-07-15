@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Button, Select, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Label } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, Drawer
-import { useToast } from '@/hooks/use-toast';
-
+import { showMessage } from '@/utils/message';
 import { Save, Database, History, Settings, Maximize, Minimize, Plus, X, Copy, Edit, PlayCircle, Paintbrush } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -333,17 +332,17 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const handleExecuteQuery = async () => {
     const currentTab = getCurrentTab();
     if (!currentTab?.query.trim()) {
-      toast({ title: "警告", description: "请输入查询语句" });
+      showMessage.success("请输入查询语句" );
       return;
     }
 
     if (!selectedDatabase) {
-      toast({ title: "警告", description: "请选择数据库" });
+      showMessage.success("请选择数据库" );
       return;
     }
 
     if (!activeConnectionId) {
-      toast({ title: "警告", description: "请先连接到数据库" });
+      showMessage.success("请先连接到数据库" );
       return;
     }
 
@@ -400,7 +399,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const handleSaveQuery = async () => {
     const currentTab = getCurrentTab();
     if (!currentTab?.query.trim()) {
-      toast({ title: "警告", description: "请输入查询语句" });
+      showMessage.success("请输入查询语句" );
       return;
     }
 
@@ -416,7 +415,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         updatedAt: new Date()};
 
       await safeTauriInvoke('save_query', { query: savedQuery });
-      toast({ title: "成功", description: "查询已保存" });
+      showMessage.success("查询已保存" );
     } catch (error) {
       toast({ title: "错误", description: `保存查询失败: ${error}`, variant: "destructive" });
     }

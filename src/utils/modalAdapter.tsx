@@ -1,5 +1,5 @@
 import React from 'react';
-import { toast } from '@/hooks/use-toast';
+import { showMessage as messageUtil } from '@/utils/message';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
@@ -129,29 +129,16 @@ export const confirm = (config: ModalConfig): Promise<boolean> => {
 // 简化版本的通知函数，使用toast替代简单的info
 export const showMessage = {
   info: (content: string) => {
-    toast({
-      title: "信息",
-      description: content,
-    });
+    messageUtil.info(content);
   },
   success: (content: string) => {
-    toast({
-      title: "成功", 
-      description: content,
-    });
+    messageUtil.success(content);
   },
   error: (content: string) => {
-    toast({
-      title: "错误",
-      description: content,
-      variant: "destructive",
-    });
+    messageUtil.error(content);
   },
   warning: (content: string) => {
-    toast({
-      title: "警告",
-      description: content,
-    });
+    messageUtil.warning(content);
   }
 };
 

@@ -33,7 +33,7 @@ import {
     TableRow,
 } from '@/components/ui';
 import {Plus, Trash2, Upload, Save, Info, AlertCircle, X, Calendar} from 'lucide-react';
-import {useToast} from '@/hooks/use-toast';
+import { showMessage } from '@/utils/message';
 import {DatePicker, InputNumber, Separator} from '@/components/ui';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {useConnectionStore} from '@/store/connection';
@@ -56,7 +56,6 @@ interface FieldField {
 }
 
 const DataWrite: React.FC = () => {
-    const {toast} = useToast();
     const {activeconnection_id} = useConnectionStore();
     const [loading, setLoading] = useState(false);
     const [databases, setDatabases] = useState<string[]>([]);
@@ -102,7 +101,7 @@ const DataWrite: React.FC = () => {
                 setSelectedDatabase(dbList[0]);
             }
         } catch (error) {
-            toast({title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive"});
+            showMessage.error(`加载数据库列表失败: ${error}`);
         }
     };
 
@@ -110,7 +109,7 @@ const DataWrite: React.FC = () => {
     const addDataPoint = () => {
         const values = form.getValues();
         if (!values.measurement) {
-            toast({title: "警告", description: "请输入测量名称"});
+            showMessage.success("请输入测量名称");
             return;
         }
 
@@ -143,25 +142,25 @@ const DataWrite: React.FC = () => {
             fieldList: [],
             timestamp: undefined,
         });
-        toast({title: "成功", description: "数据点已添加到批次"});
+        showMessage.success("数据点已添加到批次");
     };
 
     // 删除数据点
     const removeDataPoint = (index: number) => {
         setDataPoints(prev => prev.filter((_, i) => i !== index));
-        toast({title: "成功", description: "数据点已删除"});
+        showMessage.success("数据点已删除");
     };
 
     // 清空所有数据点
     const clearDataPoints = () => {
         setDataPoints([]);
-        toast({title: "成功", description: "已清空所有数据点"});
+        showMessage.success("已清空所有数据点");
     };
 
     // 写入单个数据点
     const writeSinglePoint = async (values: any) => {
         if (!activeconnection_id || !selectedDatabase) {
-            toast({title: "警告", description: "请先选择连接和数据库"});
+            showMessage.success("请先选择连接和数据库");
             return;
         }
 
@@ -199,13 +198,13 @@ const DataWrite: React.FC = () => {
             const result = await safeTauriInvoke<WriteResult>('write_data_points', {request});
 
             if (result.success) {
-                toast({title: "成功", description: `数据写入成功，写入 ${result.pointsWritten} 个数据点`});
+                showMessage.success(`数据写入成功，写入 ${result.pointsWritten} 个数据点`);
                 form.reset();
             } else {
-                toast({title: "错误", description: `数据写入失败: ${result.errors[0]?.error || '未知错误'}`, variant: "destructive"});
+                showMessage.error(`数据写入失败: ${result.errors[0]?.error || '未知错误'}`);
             }
         } catch (error) {
-            toast({title: "错误", description: `数据写入失败: ${error}`, variant: "destructive"});
+            showMessage.error(`数据写入失败: ${error}`);
         } finally {
             setLoading(false);
         }
@@ -214,12 +213,12 @@ const DataWrite: React.FC = () => {
     // 批量写入数据点
     const writeBatchPoints = async () => {
         if (!activeconnection_id || !selectedDatabase) {
-            toast({title: "警告", description: "请先选择连接和数据库"});
+            showMessage.success("请先选择连接和数据库");
             return;
         }
 
         if (dataPoints.length === 0) {
-            toast({title: "警告", description: "请先添加数据点"});
+            showMessage.success("请先添加数据点");
             return;
         }
 
@@ -242,18 +241,14 @@ const DataWrite: React.FC = () => {
             const result = await safeTauriInvoke<WriteResult>('write_data_points', {request});
 
             if (result.success) {
-                toast({title: "成功", description: `批量写入成功，写入 ${result.pointsWritten} 个数据点`});
+                showMessage.success(`批量写入成功，写入 ${result.pointsWritten} 个数据点`);
                 setDataPoints([]);
             } else {
-                toast({
-                    title: "错误",
-                    description: `批量写入失败: ${result.errors.length} 个错误`,
-                    variant: "destructive"
-                });
+                showMessage.error(`批量写入失败: ${result.errors.length} 个错误`);
                 console.error('写入错误:', result.errors);
             }
         } catch (error) {
-            toast({title: "错误", description: `批量写入失败: ${error}`, variant: "destructive"});
+            showMessage.error(`批量写入失败: ${error}`);
         } finally {
             setLoading(false);
         }
@@ -324,13 +319,13 @@ const DataWrite: React.FC = () => {
             const points = parseLineProtocol(values.lineProtocol);
             if (points.length > 0) {
                 setDataPoints(prev => [...prev, ...points]);
-                toast({title: "成功", description: `解析成功，添加了 ${points.length} 个数据点`});
+                showMessage.success(`解析成功，添加了 ${points.length} 个数据点`);
                 batchForm.reset();
             } else {
-                toast({title: "警告", description: "未能解析出有效的数据点"});
+                showMessage.success("未能解析出有效的数据点");
             }
         } catch (error) {
-            toast({title: "错误", description: `解析失败: ${error}`, variant: "destructive"});
+            showMessage.error(`解析失败: ${error}`);
         }
     };
 
@@ -762,7 +757,7 @@ memory,host=server01 used_bytes=8589934592,available_bytes=4294967296`}
                 connectionId={activeconnection_id}
                 database={selectedDatabase}
                 onSuccess={() => {
-                    toast({title: "成功", description: "数据导入成功"});
+                    showMessage.success("数据导入成功");
                     setImportDialogVisible(false);
                 }}
             />

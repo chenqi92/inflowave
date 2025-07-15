@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { DataTable, Tabs, Button, Typography, Empty, Spin, Tag, Select, Modal } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { showMessage } from '@/utils/message';
 // 本地类型定义
 interface ColumnType<T = any> {
   title?: React.ReactNode;
@@ -27,7 +27,6 @@ interface QueryResultsProps {
 }
 
 const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) => {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('table');
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'excel'>('csv');
@@ -104,10 +103,10 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
         filename: `query_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`};
 
       await safeTauriInvoke('export_query_data', exportData);
-      toast({ title: "成功", description: `数据已导出为 ${exportFormat.toUpperCase()} 格式` });
+      showMessage.success(`数据已导出为 ${exportFormat.toUpperCase()} 格式`);
       setExportModalVisible(false);
     } catch (error) {
-      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
+      showMessage.error(`导出失败: ${error}`);
     }
   };
 

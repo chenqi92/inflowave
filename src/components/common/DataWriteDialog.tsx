@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, Input, Select, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
-import { Space, toast, Dialog, DialogContent, DialogHeader, DialogTitle, Modal } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
@@ -65,7 +66,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       setDatabases(dbList);
     } catch (error) {
       console.error('获取数据库列表失败:', error);
-      toast({ title: "错误", description: "获取数据库列表失败", variant: "destructive" });
+      showMessage.error("获取数据库列表失败");
     }
   };
 
@@ -80,7 +81,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     try {
       const values = await form.validateFields(['data', 'format', 'measurement']);
       if (!values.data?.trim()) {
-        toast({ title: "警告", description: "请输入数据内容" });
+        showMessage.warning("请输入数据内容" );
         return;
       }
 
@@ -91,7 +92,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         measurement: values.measurement});
 
       if (isValid) {
-        toast({ title: "成功", description: "数据格式验证通过" });
+        showMessage.success("数据格式验证通过" );
       }
     } catch (error) {
       toast({ title: "错误", description: `数据格式验证失败: ${error}`, variant: "destructive" });
@@ -105,7 +106,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     try {
       const values = await form.validateFields(['data', 'format', 'measurement']);
       if (!values.data?.trim()) {
-        toast({ title: "警告", description: "请输入数据内容" });
+        showMessage.warning("请输入数据内容" );
         return;
       }
 
@@ -144,10 +145,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       setWriteResult(result);
 
       if (result.success) {
-        toast({ title: "成功", description: "数据写入成功" });
+        showMessage.success("数据写入成功" );
         onSuccess?.(result);
       } else {
-        toast({ title: "错误", description: "数据写入失败", variant: "destructive" });
+        showMessage.error("数据写入失败");
       }
     } catch (error) {
       toast({ title: "错误", description: `数据写入失败: ${error}`, variant: "destructive" });
@@ -179,7 +180,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         form.setFieldValue('format', 'line-protocol');
       }
 
-      toast({ title: "成功", description: "文件内容已加载" });
+      showMessage.success("文件内容已加载" );
     };
     reader.readAsText(file);
     return false; // 阻止默认上传行为
@@ -210,7 +211,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
 
   return (
     <>
-      <Modal
+      <Dialog
         title="数据写入"
         open={visible}
         onOpenChange={(open) => !open && (onClose)()}
@@ -389,10 +390,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
             />
           )}
         </Form>
-      </Modal>
+      </Dialog>
 
       {/* 预览对话框 */}
-      <Modal
+      <Dialog
         title="转换预览"
         open={showPreview}
         onOpenChange={(open) => !open && (() => setShowPreview(false))()}
@@ -411,7 +412,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
             style={{ marginTop: 8, fontFamily: 'monospace', fontSize: 13 }}
           />
         </div>
-      </Modal>
+      </Dialog>
     </>
   );
 };

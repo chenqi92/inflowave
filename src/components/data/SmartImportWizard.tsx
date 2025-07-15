@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Alert, Progress } from '@/components/ui';
-import { toast, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -271,7 +272,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
   const handleStepComplete = useCallback(async () => {
     const isValid = await validateCurrentStep();
     if (!isValid) {
-      toast({ title: "错误", description: "请完成当前步骤的必填项", variant: "destructive" });
+      showMessage.error("请完成当前步骤的必填项");
       return;
     }
 
@@ -380,7 +381,7 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
       // 调用后端导入接口
       await safeTauriInvoke('smart_import_data', importRequest);
 
-      toast({ title: "成功", description: "数据导入成功" });
+      showMessage.success("数据导入成功" );
       
       if (onSuccess) {
         onSuccess();
