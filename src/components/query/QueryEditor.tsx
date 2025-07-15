@@ -23,6 +23,12 @@ interface QueryEditorProps {
   databases: string[];
   onQueryResult?: (result: QueryResult) => void;
   onLoadingChange?: (loading: boolean) => void;
+  currentTimeRange?: {
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  };
 }
 
 interface QueryTab {
@@ -39,9 +45,53 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   onDatabaseChange,
   databases,
   onQueryResult,
-  onLoadingChange}) => {
+  onLoadingChange,
+  currentTimeRange}) => {
   const { activeConnectionId } = useConnectionStore();
   const { resolvedTheme } = useTheme();
+
+  // 处理时间范围的SQL注入
+  const injectTimeRangeToQuery = (query: string, timeRange?: { start: string; end: string; value: string }) => {
+    if (!timeRange || timeRange.value === 'none' || !timeRange.start || !timeRange.end) {
+      return query; // 如果没有时间范围或选择不限制时间，直接返回原查询
+    }
+
+    // 检查查询是否已经包含时间范围条件
+    const hasTimeCondition = /WHERE\s+.*time\s*[><=]/i.test(query);
+
+    if (hasTimeCondition) {
+      // 如果已经有时间条件，不自动添加
+      return query;
+    }
+
+    // 检查是否是 SELECT 查询
+    const isSelectQuery = /^\s*SELECT\s+/i.test(query.trim());
+
+    if (!isSelectQuery) {
+      return query; // 非 SELECT 查询不添加时间范围
+    }
+
+    // 构建时间范围条件
+    const timeCondition = `time >= ${timeRange.start} AND time <= ${timeRange.end}`;
+
+    // 检查查询是否已经有 WHERE 子句
+    const hasWhereClause = /\s+WHERE\s+/i.test(query);
+
+    if (hasWhereClause) {
+      // 如果已经有 WHERE 子句，添加 AND 条件
+      return query.replace(/(\s+WHERE\s+)/i, `$1${timeCondition} AND `);
+    } else {
+      // 如果没有 WHERE 子句，添加 WHERE 条件
+      // 找到 FROM 子句之后的位置
+      const fromMatch = query.match(/(\s+FROM\s+[^\s]+)/i);
+      if (fromMatch) {
+        const fromClause = fromMatch[1];
+        return query.replace(fromClause, `${fromClause} WHERE ${timeCondition}`);
+      }
+    }
+
+    return query;
+  };
   const [queryTabs, setQueryTabs] = useState<QueryTab[]>([
     {
       id: 'default',
@@ -314,11 +364,16 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     const startTime = Date.now();
 
     try {
-      const result = await invoke<QueryResult>('execute_query', {
-        connection_id: activeConnectionId,
+      // 为查询注入时间范围条件
+      const queryWithTimeRange = injectTimeRangeToQuery(queryToExecute, currentTimeRange);
+
+      const request: QueryRequest = {
+        connectionId: activeConnectionId,
         database: selectedDatabase,
-        query: queryToExecute
-      });
+        query: queryWithTimeRange
+      };
+
+      const result = await invoke<QueryResult>('execute_query', { request });
       const executionTime = Date.now() - startTime;
       
       setLastExecutionTime(executionTime);

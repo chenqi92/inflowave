@@ -122,9 +122,37 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
     const activeConnectionStatus = activeConnectionId ? connectionStatuses[activeConnectionId] : null;
 
+    // 获取要显示的连接状态（优先显示正在连接的连接）
+    const getDisplayConnectionStatus = () => {
+        // 首先检查是否有正在连接的连接
+        const connectingConnection = connections.find(conn => {
+            const status = connectionStatuses[conn.id];
+            return status?.status === 'connecting';
+        });
+
+        if (connectingConnection) {
+            return {
+                connection: connectingConnection,
+                status: connectionStatuses[connectingConnection.id]
+            };
+        }
+
+        // 如果没有正在连接的，显示活跃连接状态
+        if (activeConnection && activeConnectionStatus) {
+            return {
+                connection: activeConnection,
+                status: activeConnectionStatus
+            };
+        }
+
+        return null;
+    };
+
+    const displayConnectionInfo = getDisplayConnectionStatus();
+
     // 生成时间条件语句（使用当前选择的时间范围）
     const generateTimeCondition = (): string => {
-        if (currentTimeRange && currentTimeRange.start && currentTimeRange.end) {
+        if (currentTimeRange && currentTimeRange.value !== 'none' && currentTimeRange.start && currentTimeRange.end) {
             // 使用当前选择的时间范围
             if (currentTimeRange.end === 'now()') {
                 return `time >= ${currentTimeRange.start}`;
@@ -132,8 +160,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 return `time >= ${currentTimeRange.start} AND time <= ${currentTimeRange.end}`;
             }
         }
-        // 默认使用最近1小时的数据
-        return `time >= now() - 1h`;
+        // 如果是"不限制时间"或没有时间范围，返回空字符串
+        return '';
     };
 
     // 生成带时间筛选的查询语句
@@ -144,10 +172,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         if (timeCondition) {
             return `SELECT *
                     FROM "${table}"
-                    WHERE ${timeCondition} ${limit}`;
+                    WHERE ${timeCondition}
+                    ${limit}`;
         } else {
             return `SELECT *
-                    FROM "${table}" ${limit}`;
+                    FROM "${table}"
+                    ${limit}`;
         }
     };
 
@@ -1065,28 +1095,32 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             {/* 头部：连接状态和操作 */}
             <div className="p-3 border-b border">
                 <div className="flex items-center justify-between mb-3">
-                    {activeConnection && activeConnectionStatus ? (
+                    {displayConnectionInfo ? (
                         <div className="flex items-center gap-2">
                             <Badge
-                                variant={activeConnectionStatus.status === 'connected' ? "default" : "destructive"}
-                                className={activeConnectionStatus.status === 'connected' ? "bg-green-600 text-white" : ""}
+                                variant={displayConnectionInfo.status.status === 'connected' ? "default" :
+                                        displayConnectionInfo.status.status === 'connecting' ? "secondary" : "destructive"}
+                                className={
+                                    displayConnectionInfo.status.status === 'connected' ? "bg-green-600 text-white" :
+                                    displayConnectionInfo.status.status === 'connecting' ? "bg-yellow-600 text-white" : ""
+                                }
                             >
                                 <div className="flex items-center gap-1">
                                     <span className="w-2 h-2 rounded-full bg-current"></span>
                                     <span className="text-sm font-medium">
-                                        {activeConnectionStatus.status === 'connected' ? '已连接' :
-                                         activeConnectionStatus.status === 'connecting' ? '连接中' :
-                                         activeConnectionStatus.status === 'error' ? '连接错误' : '已断开'}
+                                        {displayConnectionInfo.status.status === 'connected' ? '已连接' :
+                                         displayConnectionInfo.status.status === 'connecting' ? '连接中' :
+                                         displayConnectionInfo.status.status === 'error' ? '连接错误' : '已断开'}
                                     </span>
                                 </div>
                             </Badge>
                             <div className="flex flex-col">
                                 <span className="text-sm font-medium text-foreground">
-                                    {activeConnection.name}
+                                    {displayConnectionInfo.connection.name}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {activeConnection.host}:{activeConnection.port}
-                                    {activeConnectionStatus.latency && ` • ${activeConnectionStatus.latency}ms`}
+                                    {displayConnectionInfo.connection.host}:{displayConnectionInfo.connection.port}
+                                    {displayConnectionInfo.status.latency && ` • ${displayConnectionInfo.status.latency}ms`}
                                 </span>
                             </div>
                         </div>

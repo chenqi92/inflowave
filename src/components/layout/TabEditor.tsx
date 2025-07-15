@@ -250,11 +250,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         return;
       }
       
+      // 为查询注入时间范围条件
+      const queryWithTimeRange = injectTimeRangeToQuery(query.trim(), currentTimeRange);
+
       const request: QueryRequest = {
         connectionId: activeConnectionId,
         database: database,
-        query: query.trim(),
-        timeout: undefined
+        query: queryWithTimeRange
       };
       
       const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
@@ -361,7 +363,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         
         const results = await safeTauriInvoke<QueryResult[]>('execute_batch_queries', {
           request: {
-            connection_id: activeConnectionId,
+            connectionId: activeConnectionId,
             database: selectedDatabase,
             queries: statements
           }
@@ -403,11 +405,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           selectedDatabase_length: selectedDatabase?.length
         });
         
+        // 注意：这里的statements[0]已经通过injectTimeRangeToQuery处理过了
         const request: QueryRequest = {
-          connection_id: activeConnectionId,
+          connectionId: activeConnectionId,
           database: selectedDatabase,
-          query: statements[0],
-          timeout: undefined
+          query: statements[0]
         };
         
         const result = await safeTauriInvoke<QueryResult>('execute_query', { request });

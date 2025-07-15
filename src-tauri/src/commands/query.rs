@@ -209,9 +209,10 @@ pub async fn execute_batch_queries(
     };
     
     // 解析请求参数
-    let connection_id = request["connection_id"]
+    let connection_id = request["connectionId"]
         .as_str()
-        .ok_or("缺少 connection_id 参数")?;
+        .or_else(|| request["connection_id"].as_str())
+        .ok_or("缺少 connectionId 参数")?;
     let database = request["database"]
         .as_str()
         .ok_or("缺少 database 参数")?;

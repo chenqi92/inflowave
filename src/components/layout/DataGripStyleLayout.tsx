@@ -37,10 +37,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     start: string;
     end: string;
   }>({
-    label: '最近1天',
-    value: '1d',
-    start: 'now() - 1d',
-    end: 'now()'
+    label: '不限制时间',
+    value: 'none',
+    start: '',
+    end: ''
   });
   const tabEditorRef = useRef<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
 
