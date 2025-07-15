@@ -16,7 +16,6 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-    InputNumber,
     Switch,
     Separator,
     Label,
@@ -83,7 +82,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             }
 
             // 应用语言设置
-            // @ts-ignore
             setLanguage(values.language);
 
             // 保存到后端（如果需要）
@@ -653,7 +651,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                     <TabsContent
                                         key={item.key}
                                         value={item.key}
-                                        className="h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto"
+                                        className="h-full mt-0 pl-6 pr-4 py-4 data-[state=inactive]:hidden overflow-y-auto"
                                     >
                                         <div className="max-w-3xl h-full pb-6">
                                             {item.children}

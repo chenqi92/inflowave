@@ -186,6 +186,9 @@
 .settings-modal .overflow-y-auto,
 .settings-modal .max-h-96 {
   scrollbar-width: thin;
+  /* 为滚动条预留空间，避免与内容过于接近，同时让滚动条更接近右边框 */
+  padding-right: 20px;
+  margin-right: -12px;
 }
 
 .settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar,
@@ -198,21 +201,28 @@
 .settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-track,
 .settings-modal .overflow-y-auto::-webkit-scrollbar-track,
 .settings-modal .max-h-96::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 6px;
+  /* 轨道边距，让滚动条不贴边 */
+  margin: 4px 2px;
 }
 
 .settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb,
 .settings-modal .overflow-y-auto::-webkit-scrollbar-thumb,
 .settings-modal .max-h-96::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.4);
+  border-radius: 6px;
+  /* 滑块边距，让滑块不贴轨道边缘 */
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 20px;
 }
 
 .settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover,
 .settings-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
 .settings-modal .max-h-96::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.6);
+  background-clip: content-box;
 }
 
 /* 确保所有子组件的滚动条都使用统一样式 */
@@ -226,17 +236,59 @@
 }
 
 .settings-modal *::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 6px;
+  margin: 4px 2px;
 }
 
 .settings-modal *::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.4);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 20px;
 }
 
 .settings-modal *::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.6);
+  background-clip: content-box;
+}
+
+/* 特殊优化：TabsContent 滚动条样式 */
+.settings-modal [data-state="active"] {
+  /* 确保活动tab的滚动条有合适的间距 */
+  scrollbar-gutter: stable;
+}
+
+/* 滚动条容器优化 */
+.settings-modal .overflow-y-auto {
+  /* 使用scrollbar-gutter为滚动条预留稳定空间 */
+  scrollbar-gutter: stable;
+}
+
+/* 针对不同内容区域的滚动条微调 */
+.settings-modal [data-radix-tabs-content] {
+  /* 确保tab内容区域的滚动条位置合适 */
+  box-sizing: border-box;
+}
+
+/* 确保滚动条位置正确 */
+.settings-modal .overflow-y-auto {
+  /* 滚动条定位优化 */
+  position: relative;
+}
+
+.settings-modal .overflow-y-auto::-webkit-scrollbar {
+  /* 确保滚动条在正确位置 */
+  position: absolute;
+  right: 0;
+}
+
+/* 特殊处理：确保操作按钮不被滚动条影响 */
+.settings-modal .sticky {
+  /* 确保sticky元素不受滚动条影响 */
+  margin-right: 0;
+  padding-right: 0;
 }
 
 /* Compact spacing */
