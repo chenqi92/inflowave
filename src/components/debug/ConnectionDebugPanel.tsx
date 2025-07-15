@@ -18,7 +18,7 @@ interface DebugInfo {
     frontendConnections: any[];
     backendConnections: any[];
     connectionStatuses: any;
-    activeConnectionId: string | null;
+    activeconnection_id: string | null;
     backendDebugInfo?: any;
 }
 
@@ -30,7 +30,7 @@ const ConnectionDebugPanel: React.FC = () => {
     const {
         connections,
         connectionStatuses,
-        activeConnectionId,
+        activeconnection_id,
         monitoringActive,
         monitoringInterval
     } = useConnectionStore();
@@ -61,7 +61,7 @@ const ConnectionDebugPanel: React.FC = () => {
                 frontendConnections: (connections || []).filter(conn => conn != null),
                 backendConnections: (backendConnections || []).filter(conn => conn != null),
                 connectionStatuses: connectionStatuses || {},
-                activeConnectionId,
+                activeconnection_id,
                 backendDebugInfo
             };
 
@@ -73,7 +73,7 @@ const ConnectionDebugPanel: React.FC = () => {
                 frontendConnections: [],
                 backendConnections: [],
                 connectionStatuses: {},
-                activeConnectionId: null,
+                activeconnection_id: null,
                 backendDebugInfo: null
             });
         } finally {
@@ -221,24 +221,24 @@ const ConnectionDebugPanel: React.FC = () => {
                             <Bug className="w-4 h-4"/>
                             连接调试面板
                         </h3>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                            className={autoRefreshEnabled ? 'bg-green-50 border-green-200 text-green-700' : ''}
-                        >
-                            {autoRefreshEnabled ? '停止自动刷新' : '启用自动刷新'}
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={collectDebugInfo}
-                            disabled={loading}
-                        >
-                            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`}/>
-                            收集调试信息
-                        </Button>
-                    </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+                                className={autoRefreshEnabled ? 'bg-green-50 border-green-200 text-green-700' : ''}
+                            >
+                                {autoRefreshEnabled ? '停止自动刷新' : '启用自动刷新'}
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={collectDebugInfo}
+                                disabled={loading}
+                            >
+                                <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`}/>
+                                收集调试信息
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -286,12 +286,12 @@ const ConnectionDebugPanel: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {debugInfo.activeConnectionId && (
+                                    {debugInfo.activeconnection_id && (
                                         <Alert>
                                             <Info className="h-4 w-4"/>
                                             <AlertTitle>活跃连接</AlertTitle>
                                             <AlertDescription>
-                                                <Text code>{debugInfo.activeConnectionId}</Text>
+                                                <Text code>{debugInfo.activeconnection_id}</Text>
                                             </AlertDescription>
                                         </Alert>
                                     )}
