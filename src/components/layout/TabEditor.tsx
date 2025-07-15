@@ -65,36 +65,63 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
 
   // 加载数据库列表
   const loadDatabases = async () => {
-    if (!activeConnectionId) return;
+    console.log('🔄 开始加载数据库列表:', { activeConnectionId });
+    
+    if (!activeConnectionId) {
+      console.warn('⚠️ 没有活跃连接ID，跳过加载数据库列表');
+      return;
+    }
 
     try {
+      console.log('🔍 验证后端连接是否存在...');
       // 首先验证连接是否在后端存在
       const backendConnections = await safeTauriInvoke<any[]>('get_connections');
+      console.log('🔗 后端连接列表:', backendConnections?.length || 0, '个连接');
+      
       const backendConnection = backendConnections?.find((c: any) => c.id === activeConnectionId);
       
       if (!backendConnection) {
-        console.warn(`⚠️ 连接 ${activeConnectionId} 在后端不存在，跳过加载数据库列表`);
+        console.error(`⚠️ 连接 ${activeConnectionId} 在后端不存在`);
         showMessage.warning('连接不存在，请重新选择连接');
+        setDatabases([]);
+        setSelectedDatabase('');
         return;
       }
-
+      
+      console.log('✅ 连接存在，开始获取数据库列表...');
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: activeConnectionId});
-      console.log('✅ 成功加载数据库列表:', dbList);
-      setDatabases(dbList || []);
-      if (dbList && dbList.length > 0 && !selectedDatabase) {
-        console.log('🔄 自动选择第一个数据库:', dbList[0]);
-        setSelectedDatabase(dbList[0]);
+        connectionId: activeConnectionId
+      });
+      
+      console.log('✅ 成功获取数据库列表:', { 
+        dbList, 
+        count: dbList?.length || 0,
+        currentSelectedDatabase: selectedDatabase 
+      });
+      
+      const validDbList = dbList || [];
+      setDatabases(validDbList);
+      
+      if (validDbList.length > 0 && !selectedDatabase) {
+        console.log('🔄 自动选择第一个数据库:', validDbList[0]);
+        setSelectedDatabase(validDbList[0]);
+      } else if (validDbList.length === 0) {
+        console.warn('⚠️ 数据库列表为空');
+        setSelectedDatabase('');
       } else {
-        console.log('⚠️ 数据库列表为空或已选择数据库:', { dbList, selectedDatabase });
+        console.log('ℹ️ 已有选中的数据库:', selectedDatabase);
       }
     } catch (error) {
-      console.error('加载数据库列表失败:', error);
+      console.error('⚠️ 加载数据库列表失败:', error);
+      
+      // 重置状态
+      setDatabases([]);
+      setSelectedDatabase('');
       
       // 如果是连接不存在的错误，显示更友好的消息
       const errorStr = String(error);
       if (errorStr.includes('连接') && errorStr.includes('不存在')) {
-        showMessage.error(`连接不存在，请检查连接配置: ${activeConnectionId}`);
+        showMessage.error(`连接不存在: ${activeConnectionId}`);
       } else {
         showMessage.error(`加载数据库列表失败: ${error}`);
       }

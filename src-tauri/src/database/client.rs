@@ -63,11 +63,22 @@ impl InfluxClient {
 
     /// 执行查询
     pub async fn execute_query(&self, query_str: &str) -> Result<QueryResult> {
+        self.execute_query_with_database(query_str, None).await
+    }
+    
+    /// 指定数据库执行查询
+    pub async fn execute_query_with_database(&self, query_str: &str, database: Option<&str>) -> Result<QueryResult> {
         let start = Instant::now();
 
-        debug!("执行查询: {}", query_str);
+        debug!("执行查询: {} (数据库: {:?})", query_str, database);
 
-        let query = influxdb::ReadQuery::new(query_str);
+        let mut query = influxdb::ReadQuery::new(query_str);
+        
+        // 如果指定了数据库，尝试设置数据库
+        if let Some(db) = database {
+            // InfluxDB Rust 客户端支持在查询中指定数据库
+            query = query.query_params(&[("db", db)]);
+        }
 
         match self.client.query(query).await {
             Ok(result) => {

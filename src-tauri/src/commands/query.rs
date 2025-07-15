@@ -26,21 +26,9 @@ pub async fn execute_query(
             format!("获取连接失败: {}", e)
         })?;
     
-    // 如果指定了数据库，先执行 USE 语句
-    if let Some(database) = &request.database {
-        if !database.is_empty() {
-            let use_query = format!("USE \"{}\"", database);
-            debug!("设置数据库上下文: {}", use_query);
-            client.execute_query(&use_query).await
-                .map_err(|e| {
-                    error!("设置数据库上下文失败: {}", e);
-                    format!("设置数据库上下文失败: {}", e)
-                })?;
-        }
-    }
-    
-    // 执行实际查询
-    client.execute_query(&request.query).await
+    // 使用新的数据库指定方式
+    let database_ref = request.database.as_deref();
+    client.execute_query_with_database(&request.query, database_ref).await
         .map_err(|e| {
             error!("查询执行失败: {}", e);
             format!("查询执行失败: {}", e)
@@ -188,16 +176,8 @@ pub async fn execute_batch_queries(
             format!("获取连接失败: {}", e)
         })?;
     
-    // 如果指定了数据库，先执行 USE 语句
-    if !database.is_empty() {
-        let use_query = format!("USE \"{}\"", database);
-        debug!("设置数据库上下文: {}", use_query);
-        client.execute_query(&use_query).await
-            .map_err(|e| {
-                error!("设置数据库上下文失败: {}", e);
-                format!("设置数据库上下文失败: {}", e)
-            })?;
-    }
+    // 使用数据库指定方式，不需要 USE 语句
+    let database_opt = if database.is_empty() { None } else { Some(database) };
     
     let mut results = Vec::new();
     
@@ -211,7 +191,7 @@ pub async fn execute_batch_queries(
                 return Err(format!("第 {} 条查询验证失败: {}", index + 1, e));
             }
             
-            match client.execute_query(query_str).await {
+            match client.execute_query_with_database(query_str, database_opt).await {
                 Ok(result) => {
                     debug!("第 {} 条查询执行成功", index + 1);
                     results.push(result);
