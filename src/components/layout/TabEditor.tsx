@@ -144,7 +144,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
         timeout: undefined
       };
       
-      const result = await safeTauriInvoke<QueryResult>('execute_query', request);
+      const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
       
       console.log('✅ 查询结果:', result);
       
@@ -274,7 +274,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(({ onQueryResult, onB
           timeout: undefined
         };
         
-        const result = await safeTauriInvoke<QueryResult>('execute_query', request);
+        const result = await safeTauriInvoke<QueryResult>('execute_query', { request });
         
         const executionTime = Date.now() - startTime;
         console.log('✅ 单条查询结果:', result);
