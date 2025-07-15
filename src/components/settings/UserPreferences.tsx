@@ -34,7 +34,8 @@ import {
   Monitor,
   Keyboard,
   Palette,
-  Eye
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut, NotificationSettings, AccessibilitySettings, WorkspaceSettings } from '@/types';
@@ -745,13 +746,14 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
           </div>
 
           {/* 保存按钮 */}
-          <div className="flex justify-end gap-2 pt-4 border-t bg-background">
+          <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => form.reset()}
             >
-              重置
+              <RefreshCw className="w-4 h-4 mr-2" />
+              重置为默认
             </Button>
             <Button type="submit" disabled={loading}>
               <Settings className="w-4 h-4 mr-2" />

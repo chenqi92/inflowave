@@ -316,8 +316,8 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </TabsContent>
         
-        <TabsContent value="summary" className="flex-1 overflow-auto p-2 mt-0">
-          <div className="space-y-4 h-full">
+        <TabsContent value="summary" className="flex-1 flex flex-col overflow-hidden p-2 mt-0">
+          <div className="flex flex-col h-full gap-4">
             <div className="bg-background rounded border flex-shrink-0">
               <div className="border-b border-border p-2">
                 <h3 className="text-sm font-semibold text-gray-900">执行摘要</h3>
@@ -363,11 +363,11 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
             </div>
             
             {executedQueries.length > 0 && (
-              <div className="bg-background rounded border flex-shrink-0">
-                <div className="border-b border-border p-2">
+              <div className="bg-background rounded border flex-1 min-h-0 flex flex-col">
+                <div className="border-b border-border p-2 flex-shrink-0">
                   <h3 className="text-sm font-semibold text-gray-900">执行的SQL语句</h3>
                 </div>
-                <div className="p-0">
+                <div className="flex-1 overflow-auto">
                   <Table className="w-full text-xs">
                     <TableHeader>
                       <TableRow className="border-b border-border">

@@ -323,24 +323,22 @@ const ControllerSettings: React.FC = () => {
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex justify-between">
+          <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
             <Button
               type="button"
               variant="outline"
               onClick={resetSettings}
-              className="flex items-center gap-2"
             >
-              <RefreshCw className="w-4 h-4" />
-              重置为默认值
+              <RefreshCw className="w-4 h-4 mr-2" />
+              重置为默认
             </Button>
             
             <Button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2"
             >
-              <Save className="w-4 h-4" />
-              {loading ? '保存中...' : '保存设置'}
+              <Save className="w-4 h-4 mr-2" />
+              保存设置
             </Button>
           </div>
         </form>

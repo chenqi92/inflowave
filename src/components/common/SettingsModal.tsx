@@ -236,7 +236,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
             icon: <Settings className="w-4 h-4"/>,
             label: '常规设置',
             children: (
-                <div className="space-y-6">
+                <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
                     <div>
                         <div>
                             <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -359,25 +359,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-end gap-3">
+                    <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
                         <Button
+                            type="button"
                             variant="outline"
                             onClick={handleResetSettings}
-                            className="w-full sm:w-auto justify-center"
                         >
                             <RefreshCw className="w-4 h-4 mr-2"/>
                             重置为默认
                         </Button>
                         <Button
-                            onClick={() => saveSettings(form.getValues())}
+                            type="submit"
                             disabled={loading}
-                            className="w-full sm:w-auto justify-center"
                         >
                             <Save className="w-4 h-4 mr-2"/>
                             保存设置
                         </Button>
                     </div>
-                </div>
+                </form>
             )
         },
         {
@@ -672,14 +671,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                                 ))}
                             </TabsList>
 
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 overflow-hidden">
                                 {tabItems.map((item) => (
                                     <TabsContent
                                         key={item.key}
                                         value={item.key}
                                         className="h-full mt-0 px-6 data-[state=inactive]:hidden overflow-y-auto"
                                     >
-                                        <div className="max-w-3xl h-full">
+                                        <div className="max-w-3xl h-full pb-4">
                                             {item.children}
                                         </div>
                                     </TabsContent>
