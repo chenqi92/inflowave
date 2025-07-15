@@ -6,6 +6,16 @@ use std::sync::Mutex;
 use std::time::Instant;
 use crate::services::ConnectionService;
 
+//! 性能监控模块
+//! 
+//! 当前实现状态：
+//! - ✅ 基本数据结构定义
+//! - ✅ 模拟数据返回
+//! - ⏳ 实际性能数据收集（待实现）
+//! - ⏳ 实时连接健康监控（待实现）
+//! - ⏳ 慢查询检测和分析（待实现）
+//! - ⏳ 存储分析和优化建议（待实现）
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PerformanceMetrics {
     pub query_performance: QueryPerformanceMetrics,
@@ -323,10 +333,16 @@ async fn get_query_performance_metrics(time_range: &str) -> Result<QueryPerforma
 }
 
 async fn get_connection_health_metrics(
-    connection_service: State<'_, ConnectionService>,
+    _connection_service: State<'_, ConnectionService>,
     connection_id: Option<String>,
 ) -> Result<Vec<ConnectionHealthMetrics>, String> {
-    // 模拟连接健康数据
+    // TODO: 实现实际的连接健康监控
+    // 1. 从ConnectionService获取实际连接状态
+    // 2. 检查连接响应时间
+    // 3. 监控连接错误率
+    // 4. 收集连接资源使用情况
+    
+    // 当前为模拟数据
     let mut health_metrics = Vec::new();
     
     if let Some(conn_id) = connection_id {
@@ -398,15 +414,27 @@ async fn get_system_resource_metrics() -> Result<SystemResourceMetrics, String> 
     })
 }
 
-async fn get_slow_queries(time_range: &str) -> Result<Vec<SlowQueryInfo>, String> {
-    // 模拟慢查询数据
+async fn get_slow_queries(_time_range: &str) -> Result<Vec<SlowQueryInfo>, String> {
+    // TODO: 实现慢查询检测和分析
+    // 1. 基于时间范围查询执行历史
+    // 2. 按执行时间排序识别慢查询
+    // 3. 分析慢查询的查询模式
+    // 4. 提供优化建议
+    
+    // 当前为模拟数据
     Ok(vec![])
 }
 
 async fn get_storage_analysis(
-    connection_service: State<'_, ConnectionService>,
+    _connection_service: State<'_, ConnectionService>,
 ) -> Result<StorageAnalysisInfo, String> {
-    // 模拟存储分析数据
+    // TODO: 实现存储分析功能
+    // 1. 分析数据库磁盘使用情况
+    // 2. 评估压缩效率
+    // 3. 检查保留策略有效性
+    // 4. 生成存储优化建议
+    
+    // 当前为模拟数据
     Ok(StorageAnalysisInfo {
         databases: vec![],
         total_size: 1024 * 1024 * 1024, // 1GB
