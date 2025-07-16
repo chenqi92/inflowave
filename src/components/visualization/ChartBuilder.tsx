@@ -389,7 +389,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <Label className='text-sm font-medium'>显示网格</Label>
           <Switch
             checked={chartConfig.settings?.showGrid}
-            onValueChange={checked => handleSettingsChange('showGrid', checked)}
+            onCheckedChange={checked => handleSettingsChange('showGrid', checked)}
           />
         </div>
 
@@ -397,7 +397,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <Label className='text-sm font-medium'>显示图例</Label>
           <Switch
             checked={chartConfig.settings?.showLegend}
-            onValueChange={checked =>
+            onCheckedChange={checked =>
               handleSettingsChange('showLegend', checked)
             }
           />
@@ -407,7 +407,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <Label className='text-sm font-medium'>显示提示框</Label>
           <Switch
             checked={chartConfig.settings?.showTooltip}
-            onValueChange={checked =>
+            onCheckedChange={checked =>
               handleSettingsChange('showTooltip', checked)
             }
           />
@@ -417,7 +417,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <Label className='text-sm font-medium'>启用动画</Label>
           <Switch
             checked={chartConfig.settings?.animation}
-            onValueChange={checked =>
+            onCheckedChange={checked =>
               handleSettingsChange('animation', checked)
             }
           />
@@ -430,7 +430,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             <Label className='text-sm font-medium'>平滑曲线</Label>
             <Switch
               checked={chartConfig.settings?.smooth}
-              onValueChange={checked => handleSettingsChange('smooth', checked)}
+              onCheckedChange={checked => handleSettingsChange('smooth', checked)}
             />
           </div>
 
@@ -438,7 +438,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
             <Label className='text-sm font-medium'>堆叠显示</Label>
             <Switch
               checked={chartConfig.settings?.stack}
-              onValueChange={checked => handleSettingsChange('stack', checked)}
+              onCheckedChange={checked => handleSettingsChange('stack', checked)}
             />
           </div>
         </div>
@@ -448,7 +448,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         <Label className='text-sm font-medium'>显示数据标签</Label>
         <Switch
           checked={chartConfig.settings?.showDataLabels}
-          onValueChange={checked =>
+          onCheckedChange={checked =>
             handleSettingsChange('showDataLabels', checked)
           }
         />
