@@ -1,17 +1,29 @@
 import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, Progress, Typography, Tag, List } from '@/components/ui';
-import { showMessage, showNotification } from '@/utils/message';
-// TODO: Replace these Ant Design components: message, Divider
-import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
-
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Alert,
+  Progress,
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Separator
+} from '@/components/ui';
+import { showMessage } from '@/utils/message';
+import { PlayCircle, Database, RefreshCw, CheckCircle, Clock, Tag as TagIcon } from 'lucide-react';
 
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
-
-const { Title, Text } = Typography;
 
 interface DataGeneratorProps {
   database?: string;
@@ -35,7 +47,6 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState(database);
   const [databases, setDatabases] = useState<string[]>([]);
-  const form = useForm();
 
   // 预定义的数据生成任务
   const generatorTasks: GeneratorTask[] = [
@@ -315,10 +326,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         
         setCompletedTasks(prev => [...prev, task.name]);
         console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
-        showNotification.success({
-          message: "数据生成完成",
-          description: `${task.name} (${task.recordCount} 条记录)`
-        });
+        showMessage.success(`数据生成完成: ${task.name} (${task.recordCount} 条记录)`);
       }
       
       setProgress(100);
@@ -332,10 +340,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       
     } catch (error) {
       console.error('数据生成失败:', error);
-      showNotification.error({
-        message: "数据生成失败",
-        description: String(error)
-      });
+      showMessage.error(`数据生成失败: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -369,32 +374,28 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       showMessage.success("测试数据已清空" );
     } catch (error) {
       console.error('清空数据失败:', error);
-      showNotification.error({
-        message: "清空数据失败",
-        description: String(error)
-      });
+      showMessage.error(`清空数据失败: ${error}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div 
-      title={
-        <div className="flex gap-2">
-          <Database className="w-4 h-4"  />
-          InfluxDB 测试数据生成器
+    <div className="space-y-6">
+      {/* 页面标题和操作区域 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Database className="w-5 h-5" />
+          <h2 className="text-xl font-semibold">InfluxDB 测试数据生成器</h2>
         </div>
-      }
-      extra={
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span>目标数据库:</span>
+            <span className="text-sm font-medium">目标数据库:</span>
             <Select
               value={selectedDatabase}
               onValueChange={setSelectedDatabase}
             >
-              <SelectTrigger style={{ minWidth: 150 }}>
+              <SelectTrigger className="min-w-[150px]">
                 <SelectValue placeholder="选择数据库" />
               </SelectTrigger>
               <SelectContent>
@@ -424,99 +425,122 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             </Button>
           </div>
         </div>
-      }
-    >
-      {!activeConnectionId && (
-        <Alert
-          message="请先连接到InfluxDB"
-          description="在连接管理页面选择一个InfluxDB连接并激活后，才能生成测试数据。"
-          type="warning"
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      </div>
 
-      {activeConnectionId && !selectedDatabase && databases.length === 0 && (
-        <Alert
-          message="未找到数据库"
-          description="当前连接中没有可用的数据库，请先创建一个数据库。"
-          type="warning"
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {/* 内容区域 */}
+      <div className="space-y-4">
+        {!activeConnectionId && (
+          <Alert>
+            <div>
+              <div className="font-medium">请先连接到InfluxDB</div>
+              <div className="text-sm text-muted-foreground">
+                在连接管理页面选择一个InfluxDB连接并激活后，才能生成测试数据。
+              </div>
+            </div>
+          </Alert>
+        )}
+
+        {activeConnectionId && !selectedDatabase && databases.length === 0 && (
+          <Alert>
+            <div>
+              <div className="font-medium">未找到数据库</div>
+              <div className="text-sm text-muted-foreground">
+                当前连接中没有可用的数据库，请先创建一个数据库。
+              </div>
+            </div>
+          </Alert>
+        )}
 
       {activeConnectionId && databases.length > 0 && !selectedDatabase && (
-        <Alert
-          message="请选择目标数据库"
-          description="请从上方的下拉框中选择一个数据库来生成测试数据。"
-          type="warning"
-          style={{ marginBottom: 16 }}
-        />
+        <Alert className="mb-4">
+          <div>
+            <div className="font-medium">请选择目标数据库</div>
+            <div className="text-sm text-muted-foreground">
+              请从上方的下拉框中选择一个数据库来生成测试数据。
+            </div>
+          </div>
+        </Alert>
       )}
 
       {loading && (
-        <div style={{ marginBottom: 16 }}>
-          <Progress 
-            percent={progress} 
-            status={progress === 100 ? 'success' : 'active'}
-          />
+        <div className="mb-4">
+          <Progress value={progress} className="mb-2" />
           {currentTask && (
-            <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>
+            <div className="text-sm text-muted-foreground">
               正在生成: {currentTask}
-            </Text>
+            </div>
           )}
         </div>
       )}
 
-      <Title level={4}>将要创建的数据表</Title>
-      <List
-        itemLayout="horizontal"
-        dataSource={generatorTasks}
-        renderItem={(task, index) => (
-          <List.Item
-            extra={
-              completedTasks.includes(task.name) ? (
-                <Tag color="success" icon={<CheckCircle />}>
-                  已完成
-                </Tag>
-              ) : (
-                <Tag color="default">
-                  {task.recordCount} 条记录
-                </Tag>
-              )
-            }
-          >
-            <List.Item.Meta
-              title={task.name}
-              description={
-                <div>
-                  <Text>{task.description}</Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    表名: {task.measurement} | 时间范围: {task.timeRange} | 
-                    标签: {task.tags.join(', ')} | 
-                    字段: {task.fields.join(', ')}
-                  </Text>
+      <h4 className="text-lg font-semibold mb-4">将要创建的数据表</h4>
+      <div className="space-y-4">
+        {generatorTasks.map((task, index) => (
+          <Card key={task.name}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-base">{task.name}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {task.description}
+                  </CardDescription>
                 </div>
-              }
-            />
-          </List.Item>
-        )}
-      />
+                <div className="flex items-center gap-2">
+                  {completedTasks.includes(task.name) ? (
+                    <Badge variant="default" className="bg-green-100 text-green-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      已完成
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      {task.recordCount} 条记录
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Database className="w-3 h-3" />
+                    <span>表名: {task.measurement}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>时间范围: {task.timeRange}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <TagIcon className="w-3 h-3" />
+                    <span>标签: {task.tags.join(', ')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Database className="w-3 h-3" />
+                    <span>字段: {task.fields.join(', ')}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      <div className="border-t border my-4" />
-      
-      <Alert
-        message="数据生成说明"
-        description={
-          <div>
-            <p>• 将在数据库 <code>{selectedDatabase || '未选择'}</code> 中创建 {generatorTasks.length} 张测试数据表</p>
+      <Separator className="my-4" />
+
+      <Alert>
+        <div>
+          <div className="font-medium mb-2">数据生成说明</div>
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>• 将在数据库 <code className="bg-muted px-1 rounded">{selectedDatabase || '未选择'}</code> 中创建 {generatorTasks.length} 张测试数据表</p>
             <p>• 总共将生成约 {generatorTasks.reduce((sum, task) => sum + task.recordCount, 0)} 条测试记录</p>
             <p>• 数据时间戳将分布在指定的时间范围内</p>
             <p>• 所有数值都是随机生成的模拟数据</p>
           </div>
-        }
-        type="info"
-      />
+        </div>
+      </Alert>
+      </div>
     </div>
   );
 };

@@ -1,543 +1,606 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-  Button,
-  Space,
-  Tag,
-  Typography,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  DatePicker,
-  Alert,
-  AlertDescription,
-  Collapse,
-  Panel,
-  Badge,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
+    Button,
+    Badge,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+    Input,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+    ScrollArea
 } from '@/components/ui';
-import { showMessage } from '@/utils/message';
-import { RefreshCw, Trash2, Download, Bug, AlertTriangle, Info, AlertCircle, Search as SearchIcon, Eye, Table } from 'lucide-react';
-import { FileOperations } from '@/utils/fileOperations';
-import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
-import { Modal } from '@/utils/modalAdapter';
+import {showMessage} from '@/utils/message';
+import {
+    RefreshCw,
+    Trash2,
+    Download,
+    Bug,
+    AlertTriangle,
+    Info,
+    AlertCircle,
+    Search as SearchIcon,
+    Eye,
+    ChevronDown,
+    Copy
+} from 'lucide-react';
+import {FileOperations} from '@/utils/fileOperations';
+import {errorLogger, type ErrorLogEntry} from '@/utils/errorLogger';
 
 const ErrorLogViewer: React.FC = () => {
-  const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<ErrorLogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<[any, any] | null>(null);
+    const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
+    const [filteredLogs, setFilteredLogs] = useState<ErrorLogEntry[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [searchText, setSearchText] = useState('');
+    const [levelFilter, setLevelFilter] = useState<string>('all');
+    const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  // 加载错误日志
-  const loadErrorLogs = async () => {
-    setLoading(true);
-    try {
-      const logContent = await FileOperations.readFile('logs/error.log');
-      const parsedLogs = parseLogContent(logContent);
-      setLogs(parsedLogs);
-      setFilteredLogs(parsedLogs);
-      showMessage.success(`已加载 ${parsedLogs.length} 条错误日志`);
-    } catch (error) {
-      console.error('加载错误日志失败:', error);
-      showMessage.error("加载错误日志失败");
-      setLogs([]);
-      setFilteredLogs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 解析日志内容
-  const parseLogContent = (content: string): ErrorLogEntry[] => {
-    const entries: ErrorLogEntry[] = [];
-    const logEntries = content.split('='.repeat(80));
-
-    for (const entry of logEntries) {
-      if (!entry.trim()) continue;
-
-      try {
-        const lines = entry.trim().split('\n');
-        if (lines.length === 0) continue;
-
-        const headerLine = lines[0];
-        const timestampMatch = headerLine.match(/\[([\d\-T:.Z]+)\]/);
-        const sessionMatch = headerLine.match(/\[session-[^\]]+\]/);
-        const typeMatch = headerLine.match(/\[([A-Z]+):([A-Z]+)\]/);
-
-        if (!timestampMatch || !typeMatch) continue;
-
-        const timestamp = timestampMatch[1];
-        const [, type, level] = typeMatch;
-        const messageStartIndex = headerLine.indexOf(']', headerLine.lastIndexOf('[')) + 1;
-        const message = headerLine.substring(messageStartIndex).trim();
-
-        let stack = '';
-        let url = '';
-        let lineNumber: number | undefined;
-        let columnNumber: number | undefined;
-        let componentStack = '';
-        let additional: any = {};
-
-        // 解析其他信息
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line.startsWith('URL: ')) {
-            const urlInfo = line.substring(5);
-            const colonIndex = urlInfo.lastIndexOf(':');
-            if (colonIndex > urlInfo.indexOf('://')) {
-              const parts = urlInfo.substring(colonIndex + 1).split(':');
-              if (parts.length >= 1 && !isNaN(Number(parts[0]))) {
-                url = urlInfo.substring(0, colonIndex);
-                lineNumber = Number(parts[0]);
-                if (parts.length >= 2 && !isNaN(Number(parts[1]))) {
-                  columnNumber = Number(parts[1]);
-                }
-              } else {
-                url = urlInfo;
-              }
-            } else {
-              url = urlInfo;
-            }
-          } else if (line.startsWith('Stack: ')) {
-            stack = line.substring(7);
-          } else if (line.startsWith('Component Stack: ')) {
-            componentStack = line.substring(17);
-          } else if (line.startsWith('Additional: ')) {
-            try {
-              additional = JSON.parse(line.substring(12));
-            } catch {
-              additional = { raw: line.substring(12) };
-            }
-          }
-        }
-
-        const logEntry: ErrorLogEntry = {
-          id: `log-${entries.length + 1}`,
-          timestamp,
-          type: type.toLowerCase() as any,
-          level: level.toLowerCase() as any,
-          message,
-          stack,
-          url,
-          lineNumber,
-          columnNumber,
-          componentStack,
-          userAgent: additional.userAgent || '',
-          pathname: additional.pathname || '',
-          additional};
-
-        entries.push(logEntry);
-      } catch (error) {
-        console.error('解析日志条目失败:', error);
-      }
-    }
-
-    return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  };
-
-  // 应用过滤器
-  useEffect(() => {
-    let filtered = logs;
-
-    // 搜索过滤
-    if (searchText) {
-      filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(searchText.toLowerCase()) ||
-        log.stack?.toLowerCase().includes(searchText.toLowerCase()) ||
-        log.url?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    // 级别过滤
-    if (levelFilter !== 'all') {
-      filtered = filtered.filter(log => log.level === levelFilter);
-    }
-
-    // 类型过滤
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(log => log.type === typeFilter);
-    }
-
-    // 日期范围过滤
-    if (dateRange && dateRange[0] && dateRange[1]) {
-      const [start, end] = dateRange;
-      filtered = filtered.filter(log => {
-        const logDate = new Date(log.timestamp);
-        return logDate >= start.toDate() && logDate <= end.toDate();
-      });
-    }
-
-    setFilteredLogs(filtered);
-  }, [logs, searchText, levelFilter, typeFilter, dateRange]);
-
-  // 清除错误日志
-  const clearLogs = async () => {
-    Modal.confirm({
-      title: '确认清除日志',
-      content: '这将删除所有错误日志，此操作不可恢复。',
-      okText: '确认',
-      cancelText: '取消',
-      closable: true,
-      keyboard: true,
-      maskClosable: true,
-      onOk: async () => {
+    // 加载错误日志
+    const loadErrorLogs = async () => {
+        setLoading(true);
         try {
-          await FileOperations.deleteFile('logs/error.log');
-          setLogs([]);
-          setFilteredLogs([]);
-          showMessage.success("错误日志已清除");
+            const logContent = await FileOperations.readFile('logs/error.log');
+            const parsedLogs = parseLogContent(logContent);
+            setLogs(parsedLogs);
+            setFilteredLogs(parsedLogs);
+            showMessage.success(`已加载 ${parsedLogs.length} 条错误日志`);
         } catch (error) {
-          showMessage.error("清除日志失败");
+            console.error('加载错误日志失败:', error);
+            showMessage.error("加载错误日志失败");
+            setLogs([]);
+            setFilteredLogs([]);
+        } finally {
+            setLoading(false);
         }
-      },
-      onCancel: () => {
-        // 明确处理取消操作
-      }});
-  };
+    };
 
-  // 导出日志
-  const exportLogs = async () => {
-    try {
-      const logContent = await FileOperations.readFile('logs/error.log');
-      const blob = new Blob([logContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `error-logs-${new Date().toISOString().split('T')[0]}.log`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      showMessage.success("日志已导出");
-    } catch (error) {
-      showMessage.error("导出日志失败");
-    }
-  };
+    // 解析日志内容
+    const parseLogContent = (content: string): ErrorLogEntry[] => {
+        const entries: ErrorLogEntry[] = [];
+        const logEntries = content.split('='.repeat(80));
 
-  // 获取级别图标和颜色
-  const getLevelDisplay = (level: string) => {
-    switch (level) {
-      case 'error':
-        return { icon: <AlertCircle />, color: 'red' };
-      case 'warn':
-        return { icon: <AlertTriangle />, color: 'orange' };
-      case 'info':
-        return { icon: <Info className="w-4 h-4"  />, color: 'blue' };
-      default:
-        return { icon: <Bug className="w-4 h-4"  />, color: 'default' };
-    }
-  };
+        for (const entry of logEntries) {
+            if (!entry.trim()) continue;
 
-  // 获取类型颜色
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'javascript':
-        return 'red';
-      case 'react':
-        return 'cyan';
-      case 'promise':
-        return 'orange';
-      case 'network':
-        return 'purple';
-      case 'console':
-        return 'blue';
-      default:
-        return 'default';
-    }
-  };
+            try {
+                const lines = entry.trim().split('\n');
+                if (lines.length === 0) continue;
 
-  // 表格列定义
-  const columns = [
-    {
-      title: '时间',
-      dataIndex: 'timestamp',
-      key: 'timestamp',
-      width: 160,
-      render: (timestamp: string) => (
-        <Text className="text-xs">
-          {new Date(timestamp).toLocaleString()}
-        </Text>
-      )},
-    {
-      title: '级别',
-      dataIndex: 'level',
-      key: 'level',
-      width: 80,
-      render: (level: string) => {
-        const { icon, color } = getLevelDisplay(level);
-        return (
-          <Tag icon={icon} color={color} className="text-xs">
-            {level.toUpperCase()}
-          </Tag>
-        );
-      }},
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      width: 100,
-      render: (type: string) => (
-        <Tag color={getTypeColor(type)} className="text-xs">
-          {type.toUpperCase()}
-        </Tag>
-      )},
-    {
-      title: '消息',
-      dataIndex: 'message',
-      key: 'message',
-      ellipsis: true,
-      render: (message: string) => (
-        <Tooltip title={message}>
-          <Text className="text-xs">{message}</Text>
-        </Tooltip>
-      )},
-    {
-      title: '来源',
-      dataIndex: 'url',
-      key: 'url',
-      width: 200,
-      ellipsis: true,
-      render: (url: string, record: ErrorLogEntry) => {
-        if (!url) return '-';
-        const displayUrl = url.length > 50 ? `...${url.slice(-47)}` : url;
-        const lineInfo = record.lineNumber ? `:${record.lineNumber}` : '';
-        return (
-          <Tooltip title={`${url}${lineInfo}`}>
-            <Text className="text-xs font-mono">{displayUrl}{lineInfo}</Text>
-          </Tooltip>
-        );
-      }},
-    {
-      title: '操作',
-      key: 'actions',
-      width: 100,
-      render: (_: any, record: ErrorLogEntry) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<Eye className="w-4 h-4"  />}
-          onClick={() => {
-            setSelectedLog(record);
-            setModalVisible(true);
-          }}
-        >
-          详情
-        </Button>
-      )},
-  ];
+                const headerLine = lines[0];
+                const timestampMatch = headerLine.match(/\[([\d\-T:.Z]+)\]/);
+                const typeMatch = headerLine.match(/\[([A-Z]+):([A-Z]+)\]/);
 
-  // 组件挂载时加载日志
-  useEffect(() => {
-    loadErrorLogs();
-  }, []);
+                if (!timestampMatch || !typeMatch) continue;
 
-  return (
-    <div className="space-y-4">
-      {/* 头部统计和操作 */}
-      <div>
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2" size="large">
-            <div>
-              <Badge count={logs.length} overflowCount={9999} color="blue">
-                <Text strong>总日志数</Text>
-              </Badge>
-            </div>
-            <div>
-              <Badge count={logs.filter(log => log.level === 'error').length} overflowCount={9999} color="red">
-                <Text strong>错误</Text>
-              </Badge>
-            </div>
-            <div>
-              <Badge count={logs.filter(log => log.level === 'warn').length} overflowCount={9999} color="orange">
-                <Text strong>警告</Text>
-              </Badge>
-            </div>
-            <div>
-              <Text strong>当前会话: </Text>
-              <Text code className="text-xs">{errorLogger.getSessionId()}</Text>
-            </div>
-          </div>
+                const timestamp = timestampMatch[1];
+                const [, type, level] = typeMatch;
+                const messageStartIndex = headerLine.indexOf(']', headerLine.lastIndexOf('[')) + 1;
+                const message = headerLine.substring(messageStartIndex).trim();
 
-          <div className="flex gap-2">
-            <Button
-              icon={<RefreshCw className="w-4 h-4"  />}
-              onClick={loadErrorLogs}
-              disabled={loading}
-            >
-              刷新
-            </Button>
-            <Button
-              icon={<Download className="w-4 h-4"  />}
-              onClick={exportLogs}
-            >
-              导出
-            </Button>
-            <Button
-              icon={<Trash2 className="w-4 h-4"  />}
-              danger
-              onClick={clearLogs}
-            >
-              清除
-            </Button>
-          </div>
-        </div>
-      </div>
+                let stack = '';
+                let url = '';
+                let lineNumber: number | undefined;
+                let columnNumber: number | undefined;
+                let componentStack = '';
+                let additional: any = {};
 
-      {/* 过滤器 */}
-      <div>
-        <div className="flex gap-2" wrap>
-          <Search
-            placeholder="搜索错误消息..."
-            value={searchText}
-            onValueChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 250 }}
-            allowClear
-          />
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="级别" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部级别</SelectItem>
-              <SelectItem value="error">错误</SelectItem>
-              <SelectItem value="warn">警告</SelectItem>
-              <SelectItem value="info">信息</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="类型" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部类型</SelectItem>
-              <SelectItem value="javascript">JavaScript</SelectItem>
-              <SelectItem value="react">React</SelectItem>
-              <SelectItem value="promise">Promise</SelectItem>
-              <SelectItem value="network">网络</SelectItem>
-              <SelectItem value="console">控制台</SelectItem>
-            </SelectContent>
-          </Select>
-          <DatePicker
-            value={dateRange?.[0]}
-            onValueChange={(date) => setDateRange(date ? [date, dateRange?.[1]] : null)}
-            showTime
-            placeholder="开始时间"
-            className="w-44"
-          />
-          <DatePicker
-            value={dateRange?.[1]}
-            onValueChange={(date) => setDateRange(dateRange?.[0] ? [dateRange[0], date] : null)}
-            showTime
-            placeholder="结束时间"
-            className="w-44"
-          />
-        </div>
-      </div>
+                // 解析其他信息
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line.startsWith('URL: ')) {
+                        const urlInfo = line.substring(5);
+                        const colonIndex = urlInfo.lastIndexOf(':');
+                        if (colonIndex > urlInfo.indexOf('://')) {
+                            const parts = urlInfo.substring(colonIndex + 1).split(':');
+                            if (parts.length >= 1 && !isNaN(Number(parts[0]))) {
+                                url = urlInfo.substring(0, colonIndex);
+                                lineNumber = Number(parts[0]);
+                                if (parts.length >= 2 && !isNaN(Number(parts[1]))) {
+                                    columnNumber = Number(parts[1]);
+                                }
+                            } else {
+                                url = urlInfo;
+                            }
+                        } else {
+                            url = urlInfo;
+                        }
+                    } else if (line.startsWith('Stack: ')) {
+                        stack = line.substring(7);
+                    } else if (line.startsWith('Component Stack: ')) {
+                        componentStack = line.substring(17);
+                    } else if (line.startsWith('Additional: ')) {
+                        try {
+                            additional = JSON.parse(line.substring(12));
+                        } catch {
+                            additional = {raw: line.substring(12)};
+                        }
+                    }
+                }
 
-      {/* 错误日志表格 */}
-      <div>
-        <Table
-          columns={columns}
-          dataSource={filteredLogs}
-          rowKey="id"
-          size="small"
-          disabled={loading}
-          pagination={{
-            pageSize: 50,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`}}
-          scroll={{ x: 'max-content' }}
-        />
-      </div>
+                const logEntry: ErrorLogEntry = {
+                    id: `log-${entries.length + 1}`,
+                    timestamp,
+                    type: type.toLowerCase() as any,
+                    level: level.toLowerCase() as any,
+                    message,
+                    stack,
+                    url,
+                    lineNumber,
+                    columnNumber,
+                    componentStack,
+                    userAgent: additional.userAgent || '',
+                    pathname: additional.pathname || '',
+                    additional
+                };
 
-      {/* 错误详情弹窗 */}
-      <Dialog
-        title="错误详情"
-        open={modalVisible}
-        onOpenChange={(open) => !open && (() => setModalVisible(false))()}
-        footer={[
-          <Button key="close" onClick={() => setModalVisible(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={800}
-      >
-        {selectedLog && (
-          <div className="space-y-4">
-            <Collapse defaultActiveKey={['basic', 'stack']} ghost>
-              <Panel header="基本信息" key="basic">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Typography.Text className="font-semibold">时间:</Typography.Text> {new Date(selectedLog.timestamp).toLocaleString()}
-                  </div>
-                  <div>
-                    <Typography.Text className="font-semibold">级别:</Typography.Text> <Tag variant={getLevelDisplay(selectedLog.level).color}>{selectedLog.level}</Tag>
-                  </div>
-                  <div>
-                    <Typography.Text className="font-semibold">类型:</Typography.Text> <Tag variant={getTypeColor(selectedLog.type)}>{selectedLog.type}</Tag>
-                  </div>
-                  <div>
-                    <Typography.Text className="font-semibold">ID:</Typography.Text> <Typography.Text className="font-mono">{selectedLog.id}</Typography.Text>
-                  </div>
-                  {selectedLog.url && (
-                    <div className="col-span-2">
-                      <Text strong>来源:</Text> <Text code>{selectedLog.url}</Text>
-                      {selectedLog.lineNumber && <Text>:{selectedLog.lineNumber}</Text>}
-                      {selectedLog.columnNumber && <Text>:{selectedLog.columnNumber}</Text>}
+                entries.push(logEntry);
+            } catch (error) {
+                console.error('解析日志条目失败:', error);
+            }
+        }
+
+        return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    };
+
+    // 应用过滤器
+    useEffect(() => {
+        let filtered = logs;
+
+        // 搜索过滤
+        if (searchText) {
+            filtered = filtered.filter(log =>
+                log.message.toLowerCase().includes(searchText.toLowerCase()) ||
+                log.stack?.toLowerCase().includes(searchText.toLowerCase()) ||
+                log.url?.toLowerCase().includes(searchText.toLowerCase())
+            );
+        }
+
+        // 级别过滤
+        if (levelFilter !== 'all') {
+            filtered = filtered.filter(log => log.level === levelFilter);
+        }
+
+        // 类型过滤
+        if (typeFilter !== 'all') {
+            filtered = filtered.filter(log => log.type === typeFilter);
+        }
+
+        setFilteredLogs(filtered);
+    }, [logs, searchText, levelFilter, typeFilter]);
+
+    // 清除错误日志
+    const clearLogs = async () => {
+        if (window.confirm('确认清除所有错误日志？此操作不可恢复。')) {
+            try {
+                await FileOperations.deleteFile('logs/error.log');
+                setLogs([]);
+                setFilteredLogs([]);
+                showMessage.success("错误日志已清除");
+            } catch (error) {
+                showMessage.error("清除日志失败");
+            }
+        }
+    };
+
+    // 导出日志
+    const exportLogs = async () => {
+        try {
+            const logContent = await FileOperations.readFile('logs/error.log');
+            const blob = new Blob([logContent], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `error-logs-${new Date().toISOString().split('T')[0]}.log`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showMessage.success("日志已导出");
+        } catch (error) {
+            showMessage.error("导出日志失败");
+        }
+    };
+
+// 获取级别显示信息
+    const getLevelBadgeVariant = (level: string): "default" | "secondary" | "destructive" | "outline" => {
+        switch (level) {
+            case 'error':
+                return 'destructive';
+            case 'warn':
+                return 'default';
+            case 'info':
+                return 'secondary';
+            default:
+                return 'outline';
+        }
+    };
+
+    // 获取级别图标
+    const getLevelIcon = (level: string) => {
+        switch (level) {
+            case 'error':
+                return <AlertCircle className="w-3 h-3"/>;
+            case 'warn':
+                return <AlertTriangle className="w-3 h-3"/>;
+            case 'info':
+                return <Info className="w-3 h-3"/>;
+            default:
+                return <Bug className="w-3 h-3"/>;
+        }
+    };
+
+    // 获取类型显示颜色
+    const getTypeBadgeVariant = (type: string): "default" | "secondary" | "destructive" | "outline" => {
+        switch (type) {
+            case 'javascript':
+            case 'react':
+                return 'destructive';
+            case 'promise':
+            case 'network':
+                return 'default';
+            default:
+                return 'secondary';
+        }
+    };
+
+    // 组件挂载时加载日志
+    useEffect(() => {
+        loadErrorLogs();
+    }, []);
+
+    return (
+        <div className="space-y-6">
+            {/* 头部统计和操作 */}
+            <Card>
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">总日志数:</span>
+                                <Badge variant="secondary">{logs.length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">错误:</span>
+                                <Badge variant="destructive">{logs.filter(log => log.level === 'error').length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">警告:</span>
+                                <Badge variant="default">{logs.filter(log => log.level === 'warn').length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">当前会话:</span>
+                                <code className="text-xs bg-muted px-1 rounded">{errorLogger.getSessionId()}</code>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={loadErrorLogs}
+                                disabled={loading}
+                                variant="outline"
+                                size="sm"
+                            >
+                                <RefreshCw className="w-4 h-4 mr-2"/>
+                                刷新
+                            </Button>
+                            <Button
+                                onClick={exportLogs}
+                                variant="outline"
+                                size="sm"
+                            >
+                                <Download className="w-4 h-4 mr-2"/>
+                                导出
+                            </Button>
+                            <Button
+                                onClick={clearLogs}
+                                variant="destructive"
+                                size="sm"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2"/>
+                                清除
+                            </Button>
+                        </div>
                     </div>
-                  )}
-                  <div className="col-span-2">
-                    <Text strong>页面:</Text> <Text code>{selectedLog.pathname || '-'}</Text>
-                  </div>
-                </div>
-              </Panel>
+                </CardHeader>
+            </Card>
 
-              <Panel header="错误消息" key="message">
-                <Paragraph code copyable>
-                  {selectedLog.message}
-                </Paragraph>
-              </Panel>
+            {/* 过滤器 */}
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base">过滤选项</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-4">
+                        <div className="flex items-center gap-2">
+                            <SearchIcon className="w-4 h-4 text-muted-foreground"/>
+                            <Input
+                                placeholder="搜索错误消息..."
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                                className="w-64"
+                            />
+                        </div>
+                        <Select value={levelFilter} onValueChange={setLevelFilter}>
+                            <SelectTrigger className="w-32">
+                                <SelectValue placeholder="级别"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">全部级别</SelectItem>
+                                <SelectItem value="error">错误</SelectItem>
+                                <SelectItem value="warn">警告</SelectItem>
+                                <SelectItem value="info">信息</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={typeFilter} onValueChange={setTypeFilter}>
+                            <SelectTrigger className="w-36">
+                                <SelectValue placeholder="类型"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">全部类型</SelectItem>
+                                <SelectItem value="javascript">JavaScript</SelectItem>
+                                <SelectItem value="react">React</SelectItem>
+                                <SelectItem value="promise">Promise</SelectItem>
+                                <SelectItem value="network">网络</SelectItem>
+                                <SelectItem value="console">控制台</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+            </Card>
 
-              {selectedLog.stack && (
-                <Panel header="错误堆栈" key="stack">
-                  <Paragraph code copyable style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
-                    {selectedLog.stack}
-                  </Paragraph>
-                </Panel>
-              )}
+            {/* 错误日志表格 */}
+            <Card>
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base">错误日志 ({filteredLogs.length} 条)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[600px]">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[160px]">时间</TableHead>
+                                    <TableHead className="w-[80px]">级别</TableHead>
+                                    <TableHead className="w-[100px]">类型</TableHead>
+                                    <TableHead>消息</TableHead>
+                                    <TableHead className="w-[200px]">来源</TableHead>
+                                    <TableHead className="w-[80px]">操作</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredLogs.map((log) => (
+                                    <TableRow key={log.id}>
+                                        <TableCell className="text-xs">
+                                            {new Date(log.timestamp).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={getLevelBadgeVariant(log.level)} className="text-xs">
+                                                {getLevelIcon(log.level)}
+                                                <span className="ml-1">{log.level.toUpperCase()}</span>
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={getTypeBadgeVariant(log.type)} className="text-xs">
+                                                {log.type.toUpperCase()}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="max-w-[300px]">
+                                            <div className="truncate text-xs" title={log.message}>
+                                                {log.message}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-xs">
+                                            {log.url ? (
+                                                <div className="truncate font-mono"
+                                                     title={`${log.url}${log.lineNumber ? `:${log.lineNumber}` : ''}`}>
+                                                    {log.url.length > 30 ? `...${log.url.slice(-27)}` : log.url}
+                                                    {log.lineNumber && `:${log.lineNumber}`}
+                                                </div>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setSelectedLog(log);
+                                                    setDialogOpen(true);
+                                                }}
+                                            >
+                                                <Eye className="w-4 h-4"/>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
 
-              {selectedLog.componentStack && (
-                <Panel header="组件堆栈" key="component">
-                  <Paragraph code copyable style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
-                    {selectedLog.componentStack}
-                  </Paragraph>
-                </Panel>
-              )}
+            {/* 错误详情对话框 */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>错误详情</DialogTitle>
+                    </DialogHeader>
+                    {selectedLog && (
+                        <div className="space-y-4">
+                            {/* 基本信息 */}
+                            <Collapsible defaultOpen>
+                                <CollapsibleTrigger
+                                    className="flex items-center gap-2 w-full p-2 bg-muted rounded hover:bg-muted/80">
+                                    <ChevronDown className="w-4 h-4"/>
+                                    <span className="font-medium">基本信息</span>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="p-4 border rounded-b">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span
+                                                className="font-semibold">时间:</span> {new Date(selectedLog.timestamp).toLocaleString()}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold">级别:</span>
+                                            <Badge variant={getLevelBadgeVariant(selectedLog.level)}>
+                                                {selectedLog.level}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold">类型:</span>
+                                            <Badge variant={getTypeBadgeVariant(selectedLog.type)}>
+                                                {selectedLog.type}
+                                            </Badge>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold">ID:</span> <code
+                                            className="text-xs bg-muted px-1 rounded">{selectedLog.id}</code>
+                                        </div>
+                                        {selectedLog.url && (
+                                            <div className="col-span-2">
+                                                <span className="font-semibold">来源:</span>
+                                                <code className="text-xs bg-muted px-1 rounded ml-2">
+                                                    {selectedLog.url}
+                                                    {selectedLog.lineNumber && `:${selectedLog.lineNumber}`}
+                                                    {selectedLog.columnNumber && `:${selectedLog.columnNumber}`}
+                                                </code>
+                                            </div>
+                                        )}
+                                        <div className="col-span-2">
+                                            <span className="font-semibold">页面:</span>
+                                            <code
+                                                className="text-xs bg-muted px-1 rounded ml-2">{selectedLog.pathname || '-'}</code>
+                                        </div>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
 
-              {selectedLog.additional && Object.keys(selectedLog.additional).length > 0 && (
-                <Panel header="附加信息" key="additional">
-                  <Paragraph code copyable style={{ whiteSpace: 'pre-wrap', fontSize: '12px' }}>
-                    {JSON.stringify(selectedLog.additional, null, 2)}
-                  </Paragraph>
-                </Panel>
-              )}
-            </Collapse>
-          </div>
-        )}
-      </Dialog>
-    </div>
-  );
+                            {/* 错误消息 */}
+                            <Collapsible defaultOpen>
+                                <CollapsibleTrigger
+                                    className="flex items-center gap-2 w-full p-2 bg-muted rounded hover:bg-muted/80">
+                                    <ChevronDown className="w-4 h-4"/>
+                                    <span className="font-medium">错误消息</span>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="p-4 border rounded-b">
+                                    <div className="relative">
+                    <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
+                      {selectedLog.message}
+                    </pre>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="absolute top-2 right-2"
+                                            onClick={() => navigator.clipboard.writeText(selectedLog.message)}
+                                        >
+                                            <Copy className="w-3 h-3"/>
+                                        </Button>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+
+                            {/* 错误堆栈 */}
+                            {selectedLog.stack && (
+                                <Collapsible defaultOpen>
+                                    <CollapsibleTrigger
+                                        className="flex items-center gap-2 w-full p-2 bg-muted rounded hover:bg-muted/80">
+                                        <ChevronDown className="w-4 h-4"/>
+                                        <span className="font-medium">错误堆栈</span>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="p-4 border rounded-b">
+                                        <div className="relative">
+                      <pre className="text-xs bg-muted p-3 rounded overflow-x-auto whitespace-pre-wrap">
+                        {selectedLog.stack}
+                      </pre>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="absolute top-2 right-2"
+                                                onClick={() => navigator.clipboard.writeText(selectedLog.stack || '')}
+                                            >
+                                                <Copy className="w-3 h-3"/>
+                                            </Button>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            )}
+
+                            {/* 组件堆栈 */}
+                            {selectedLog.componentStack && (
+                                <Collapsible>
+                                    <CollapsibleTrigger
+                                        className="flex items-center gap-2 w-full p-2 bg-muted rounded hover:bg-muted/80">
+                                        <ChevronDown className="w-4 h-4"/>
+                                        <span className="font-medium">组件堆栈</span>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="p-4 border rounded-b">
+                                        <div className="relative">
+                      <pre className="text-xs bg-muted p-3 rounded overflow-x-auto whitespace-pre-wrap">
+                        {selectedLog.componentStack}
+                      </pre>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="absolute top-2 right-2"
+                                                onClick={() => navigator.clipboard.writeText(selectedLog.componentStack || '')}
+                                            >
+                                                <Copy className="w-3 h-3"/>
+                                            </Button>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            )}
+
+                            {/* 附加信息 */}
+                            {selectedLog.additional && Object.keys(selectedLog.additional).length > 0 && (
+                                <Collapsible>
+                                    <CollapsibleTrigger
+                                        className="flex items-center gap-2 w-full p-2 bg-muted rounded hover:bg-muted/80">
+                                        <ChevronDown className="w-4 h-4"/>
+                                        <span className="font-medium">附加信息</span>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="p-4 border rounded-b">
+                                        <div className="relative">
+                      <pre className="text-xs bg-muted p-3 rounded overflow-x-auto whitespace-pre-wrap">
+                        {JSON.stringify(selectedLog.additional, null, 2)}
+                      </pre>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="absolute top-2 right-2"
+                                                onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedLog.additional, null, 2))}
+                                            >
+                                                <Copy className="w-3 h-3"/>
+                                            </Button>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 };
 
 export default ErrorLogViewer;

@@ -57,7 +57,7 @@ const MainLayout: React.FC = () => {
     }, []);
 
     // 检查是否为需要特殊处理的页面（连接管理等）
-    const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/user-guide-test', '/dev-tools'].includes(location.pathname);
+    const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/user-guide-test'].includes(location.pathname);
 
     if (isSpecialPage) {
         return (

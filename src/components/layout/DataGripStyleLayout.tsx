@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
@@ -25,7 +26,18 @@ export interface DataGripStyleLayoutProps {
 
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
   const { preferences, updateWorkspaceSettings } = useUserPreferences();
-  
+  const location = useLocation();
+
+  // 路径到视图的映射
+  const getViewFromPath = (pathname: string): string => {
+    if (pathname === '/connections') return 'datasource';
+    if (pathname === '/database') return 'database';
+    if (pathname === '/visualization') return 'visualization';
+    if (pathname === '/performance') return 'performance';
+    if (pathname === '/dev-tools') return 'dev-tools';
+    return 'query'; // 默认视图
+  };
+
   // 从用户偏好中获取初始状态，如果没有则使用默认值
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => {
     return preferences?.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false;
@@ -34,7 +46,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     return preferences?.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false;
   });
   const [currentView, setCurrentView] = useState(() => {
-    return preferences?.workspace.layout || 'query';
+    // 优先使用路径映射的视图，其次是用户偏好，最后是默认值
+    return getViewFromPath(location.pathname) !== 'query'
+      ? getViewFromPath(location.pathname)
+      : preferences?.workspace.layout || 'query';
   });
   
   // 面板尺寸状态
@@ -94,16 +109,27 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     await updateWorkspaceSettings(updatedWorkspace);
   }, [preferences, leftPanelCollapsed, bottomPanelCollapsed, currentView, leftPanelSize, bottomPanelSize, updateWorkspaceSettings]);
 
+  // 监听路径变化，自动切换视图
+  useEffect(() => {
+    const newView = getViewFromPath(location.pathname);
+    if (newView !== currentView) {
+      setCurrentView(newView);
+    }
+  }, [location.pathname, currentView]);
+
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {
     if (preferences?.workspace) {
       setLeftPanelCollapsed(preferences.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false);
       setBottomPanelCollapsed(preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false);
-      setCurrentView(preferences.workspace.layout || 'query');
+      // 只有在非特殊路径时才使用偏好设置的布局
+      if (getViewFromPath(location.pathname) === 'query') {
+        setCurrentView(preferences.workspace.layout || 'query');
+      }
       setLeftPanelSize(preferences.workspace.panel_positions?.['left-panel'] || 25);
       setBottomPanelSize(preferences.workspace.panel_positions?.['bottom-panel'] || 40);
     }
-  }, [preferences]);
+  }, [preferences, location.pathname]);
 
   // 当布局状态改变时自动保存
   useEffect(() => {
