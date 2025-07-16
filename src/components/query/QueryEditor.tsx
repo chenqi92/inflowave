@@ -8,7 +8,7 @@ import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
-import { autocompleteService } from '@/services/autocompleteService';
+import { smartAutoCompleteEngine } from '@/utils/smartAutoComplete';
 import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
@@ -127,11 +127,12 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         comments: false,
         strings: false
       },
+      quickSuggestionsDelay: 100, // 快速响应
       parameterHints: { enabled: true },
       acceptSuggestionOnEnter: 'on',
       acceptSuggestionOnCommitCharacter: true,
       tabCompletion: 'on',
-      wordBasedSuggestions: false, // 禁用基于单词的建议，使用我们的智能建议
+      wordBasedSuggestions: 'off', // 禁用基于单词的建议，使用我们的智能建议
       suggest: {
         showKeywords: true,
         showSnippets: true,
@@ -158,7 +159,12 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         showTypeParameters: true,
         showIssues: true,
         showUsers: true,
-        snippetsPreventQuickSuggestions: false
+        snippetsPreventQuickSuggestions: false,
+        localityBonus: true, // 优先显示本地相关的建议
+        shareSuggestSelections: false,
+        showStatusBar: true,
+        filterGraceful: true,
+        insertMode: 'insert'
       }
     });
 
@@ -286,29 +292,23 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           endColumn: word.endColumn
         };
 
-        const lineText = model.getLineContent(position.lineNumber);
-        const beforeCursor = lineText.substring(0, position.column - 1);
-        
-        // 构建上下文
-        const context = {
-          line: lineText,
-          position: position.column - 1,
-          previousToken: '',
-          currentToken: word.word
-        };
+        // 获取完整的查询文本和光标位置
+        const fullText = model.getValue();
+        const offset = model.getOffsetAt(position);
 
         try {
-          // 获取智能建议
-          const items = await autocompleteService.getCompletions(
+          // 使用新的智能自动补全引擎
+          const smartSuggestions = await smartAutoCompleteEngine.generateSuggestions(
             activeConnectionId,
             selectedDatabase,
-            context
+            fullText,
+            offset
           );
 
           // 转换为Monaco格式
-          const suggestions = items.map(item => {
+          const suggestions = smartSuggestions.map(item => {
             let kind: monaco.languages.CompletionItemKind;
-            switch (item.kind) {
+            switch (item.type) {
               case 'keyword':
                 kind = monaco.languages.CompletionItemKind.Keyword;
                 break;
@@ -327,11 +327,14 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               case 'tag':
                 kind = monaco.languages.CompletionItemKind.Property;
                 break;
-              case 'snippet':
+              case 'template':
                 kind = monaco.languages.CompletionItemKind.Snippet;
                 break;
               case 'operator':
                 kind = monaco.languages.CompletionItemKind.Operator;
+                break;
+              case 'value':
+                kind = monaco.languages.CompletionItemKind.Value;
                 break;
               default:
                 kind = monaco.languages.CompletionItemKind.Text;
@@ -341,18 +344,18 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               label: item.label,
               kind,
               insertText: item.insertText,
-              insertTextRules: item.insertTextRules,
+              insertTextRules: item.snippet ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
               range,
-              documentation: item.documentation || item.detail,
-              detail: item.detail,
-              sortText: item.sortText,
-              filterText: item.filterText
+              documentation: item.documentation || item.description,
+              detail: item.description,
+              sortText: `${1000 - item.priority}_${item.label}`, // 使用优先级排序
+              preselect: item.priority > 90 // 高优先级项目预选
             };
           });
 
           return { suggestions };
         } catch (error) {
-          console.error('Failed to get autocomplete suggestions:', error);
+          console.error('Failed to get smart autocomplete suggestions:', error);
           return { suggestions: [] };
         }
       },
@@ -363,7 +366,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   // 更新数据库结构缓存
   useEffect(() => {
     if (activeConnectionId && selectedDatabase) {
-      autocompleteService.updateSchema(activeConnectionId, selectedDatabase);
+      smartAutoCompleteEngine.updateDatabaseCache(activeConnectionId, selectedDatabase);
     }
   }, [activeConnectionId, selectedDatabase]);
 

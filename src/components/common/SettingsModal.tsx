@@ -129,7 +129,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                     },
                 };
 
-                await safeTauriInvoke('update_app_settings', appSettings);
+                await safeTauriInvoke('update_app_settings', { new_settings: appSettings });
             } catch (saveError) {
                 console.warn('保存配置到后端失败:', saveError);
                 // 如果后端不支持保存配置，只保存到前端状态
