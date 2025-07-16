@@ -57,10 +57,11 @@ interface DataNode {
 interface MenuProps {
   items?: Array<{
     key: string;
-    label: React.ReactNode;
+    label?: React.ReactNode;
     icon?: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
+    type?: 'divider' | 'group';
   }>;
 }
 

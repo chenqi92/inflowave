@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
-import React, { useState, useEffect, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Button,
   Select,
@@ -29,15 +30,12 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/ui';
-import type { ChartConfig as ShadcnChartConfig } from '@/components/ui';
-
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui';
+import type { ChartConfig as ShadcnChartConfig } from '@/components/ui';
 import {
   BarChart,
   TrendingUp,
@@ -47,7 +45,7 @@ import {
   Save,
   Eye,
   Copy,
-  Scatter,
+  ScatterChart,
 } from 'lucide-react';
 import {
   LineChart,
@@ -158,7 +156,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
     {
       label: '散点图',
       value: 'scatter',
-      icon: <Scatter className='w-4 h-4' />,
+      icon: <ScatterChart className='w-4 h-4' />,
     },
     { label: '饼图', value: 'pie', icon: <PieChart className='w-4 h-4' /> },
   ];
@@ -253,7 +251,6 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       <FormField
         control={form.control}
         name='title'
-        rules={{ required: '请输入图表标题' }}
         render={({ field }) => (
           <FormItem>
             <FormLabel>图表标题</FormLabel>
@@ -276,7 +273,6 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         <FormField
           control={form.control}
           name='xField'
-          rules={{ required: '请选择X轴字段' }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>X轴字段</FormLabel>
@@ -314,7 +310,6 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         <FormField
           control={form.control}
           name='yField'
-          rules={{ required: '请选择Y轴字段' }}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Y轴字段</FormLabel>
@@ -580,8 +575,9 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   };
 
   return (
-    <div className={`h-full ${className}`}>
-      <Card className='h-full'>
+    <TooltipProvider>
+      <div className={`h-full ${className}`}>
+        <Card className='h-full'>
         <CardHeader className='pb-4'>
           <div className='flex items-center justify-between'>
             <CardTitle className='flex items-center gap-2'>
@@ -594,50 +590,44 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
               )}
             </CardTitle>
             <div className='flex gap-2'>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handlePreview}
-                      variant={previewMode ? 'default' : 'outline'}
-                      size='icon'
-                    >
-                      <Eye className='w-4 h-4' />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>预览图表</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handlePreview}
+                    variant={previewMode ? 'default' : 'outline'}
+                    size='icon'
+                  >
+                    <Eye className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>预览图表</TooltipContent>
+              </Tooltip>
 
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setSettingsVisible(true)}
-                      variant='outline'
-                      size='icon'
-                    >
-                      <Settings className='w-4 h-4' />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>高级设置</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setSettingsVisible(true)}
+                    variant='outline'
+                    size='icon'
+                  >
+                    <Settings className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>高级设置</TooltipContent>
+              </Tooltip>
 
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleCopyConfig}
-                      variant='outline'
-                      size='icon'
-                    >
-                      <Copy className='w-4 h-4' />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>复制配置</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleCopyConfig}
+                    variant='outline'
+                    size='icon'
+                  >
+                    <Copy className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>复制配置</TooltipContent>
+              </Tooltip>
 
               <Button
                 onClick={handleSaveChart}
@@ -696,6 +686,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <div className='mt-6'>{renderAdvancedSettings()}</div>
         </SheetContent>
       </Sheet>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };

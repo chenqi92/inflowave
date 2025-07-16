@@ -26,6 +26,7 @@ use commands::performance::*;
 use commands::user_experience::*;
 use commands::extensions::*;
 use commands::optimization_history::*;
+use commands::port_manager::*;
 
 // Services
 use services::ConnectionService;
@@ -590,6 +591,20 @@ async fn main() {
             delete_optimization_history,
             update_optimization_feedback,
             clear_optimization_history,
+
+            // Port manager
+            init_port_manager,
+            allocate_port,
+            release_port,
+            get_current_port,
+            get_service_port,
+            is_port_available,
+            port_health_check,
+            start_health_check_loop,
+            try_reallocate_port,
+            check_port_conflicts,
+            get_port_stats,
+            find_available_port,
         ])
         .setup(|app| {
             info!("Application setup started");
