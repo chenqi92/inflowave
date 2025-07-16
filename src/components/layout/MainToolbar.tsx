@@ -7,10 +7,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui';
 import {
   Tooltip,
@@ -39,21 +35,15 @@ import {
   FolderOpen,
   Plus,
   Clock,
-  MoreHorizontal,
-  Sun,
-  Moon,
-  Monitor,
-  Globe,
-  User
+  MoreHorizontal
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
 import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useTheme } from '@/components/providers/ThemeProvider';
-import { useAppStore } from '@/store/app';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -74,16 +64,8 @@ interface MainToolbarProps {
 
 const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
   const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
-  const { theme, setTheme } = useTheme();
-  const { setTheme: setAppTheme } = useAppStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
-
-  // 同步主题设置函数
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
-    setAppTheme(newTheme as 'light' | 'dark' | 'auto'); // 转换system为auto
-  };
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
     currentTimeRange ? {
       label: currentTimeRange.label,
@@ -439,66 +421,25 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <span className="text-xs">刷新</span>
           </Button>
 
-          {/* 样式和设置菜单 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-                title="样式设置"
-              >
-                <Settings className="w-4 h-4" />
-                <span className="text-xs">样式</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {/* 主题设置子菜单 */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Sun className="w-4 h-4" />
-                  <span>主题设置</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => handleThemeChange('light')}>
-                    <Sun className="w-4 h-4" />
-                    <span>浅色模式</span>
-                    {theme === 'light' && <span className="ml-auto">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleThemeChange('dark')}>
-                    <Moon className="w-4 h-4" />
-                    <span>深色模式</span>
-                    {theme === 'dark' && <span className="ml-auto">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleThemeChange('system')}>
-                    <Monitor className="w-4 h-4" />
-                    <span>跟随系统</span>
-                    {theme === 'system' && <span className="ml-auto">✓</span>}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              
-              <DropdownMenuSeparator />
-              
-              {/* 应用设置 */}
-              <DropdownMenuItem onClick={() => setSettingsVisible(true)}>
-                <Settings className="w-4 h-4" />
-                <span>应用设置</span>
-              </DropdownMenuItem>
-              
-              {/* 语言设置 */}
-              <DropdownMenuItem onClick={() => showMessage.info('语言设置将在后续版本提供')}>
-                <Globe className="w-4 h-4" />
-                <span>语言设置</span>
-              </DropdownMenuItem>
-              
-              {/* 偏好设置 */}
-              <DropdownMenuItem onClick={() => navigate('/settings?tab=preferences')}>
-                <User className="w-4 h-4" />
-                <span>偏好设置</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* 主题切换按钮 */}
+          <ThemeToggle 
+            variant="ghost"
+            size="sm"
+            showLabel={true}
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+          />
+
+          {/* 设置按钮 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+            onClick={() => setSettingsVisible(true)}
+            title="应用设置"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-xs">设置</span>
+          </Button>
 
           {/* 工具菜单 */}
           <DropdownMenu>
