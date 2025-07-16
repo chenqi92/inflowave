@@ -570,12 +570,15 @@ async fn main() {
             create_api_integration,
             get_api_integrations,
             test_api_integration,
+            toggle_api_integration,
             create_webhook,
             get_webhooks,
             trigger_webhook,
+            toggle_webhook,
             create_automation_rule,
             get_automation_rules,
             execute_automation_rule,
+            toggle_automation_rule,
             get_integration_templates,
 
             // Optimization history

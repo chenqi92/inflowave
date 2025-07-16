@@ -231,8 +231,31 @@ pub async fn test_api_integration(
     integration: APIIntegration,
 ) -> Result<serde_json::Value, String> {
     debug!("测试 API 集成: {}", integration.name);
-    
+
     test_api_connection(&integration).await
+}
+
+/// 切换 API 集成状态
+#[tauri::command]
+pub async fn toggle_api_integration(
+    api_storage: State<'_, APIIntegrationStorage>,
+    integration_id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    debug!("切换 API 集成状态: {} -> {}", integration_id, enabled);
+
+    let mut storage = api_storage.lock().map_err(|e| {
+        error!("获取 API 集成存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    if let Some(integration) = storage.get_mut(&integration_id) {
+        integration.enabled = enabled;
+        info!("API 集成状态已更新: {} -> {}", integration_id, enabled);
+        Ok(())
+    } else {
+        Err("API 集成不存在".to_string())
+    }
 }
 
 /// 创建 Webhook
@@ -279,7 +302,7 @@ pub async fn trigger_webhook(
     payload: serde_json::Value,
 ) -> Result<(), String> {
     debug!("触发 Webhook: {} -> {}", webhook_id, event);
-    
+
     let webhook_to_send = {
         let storage = webhook_storage.lock().map_err(|e| {
             error!("获取 Webhook 存储锁失败: {}", e);
@@ -294,8 +317,31 @@ pub async fn trigger_webhook(
     if let Some(webhook) = webhook_to_send {
         send_webhook(&webhook, &event, &payload).await?;
     }
-    
+
     Ok(())
+}
+
+/// 切换 Webhook 状态
+#[tauri::command]
+pub async fn toggle_webhook(
+    webhook_storage: State<'_, WebhookStorage>,
+    webhook_id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    debug!("切换 Webhook 状态: {} -> {}", webhook_id, enabled);
+
+    let mut storage = webhook_storage.lock().map_err(|e| {
+        error!("获取 Webhook 存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    if let Some(webhook) = storage.get_mut(&webhook_id) {
+        webhook.enabled = enabled;
+        info!("Webhook 状态已更新: {} -> {}", webhook_id, enabled);
+        Ok(())
+    } else {
+        Err("Webhook 不存在".to_string())
+    }
 }
 
 /// 创建自动化规则
@@ -383,6 +429,29 @@ pub async fn execute_automation_rule(
             "results": results,
             "execution_count": rule.execution_count
         }))
+    } else {
+        Err("自动化规则不存在".to_string())
+    }
+}
+
+/// 切换自动化规则状态
+#[tauri::command]
+pub async fn toggle_automation_rule(
+    automation_storage: State<'_, AutomationStorage>,
+    rule_id: String,
+    enabled: bool,
+) -> Result<(), String> {
+    debug!("切换自动化规则状态: {} -> {}", rule_id, enabled);
+
+    let mut storage = automation_storage.lock().map_err(|e| {
+        error!("获取自动化存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    if let Some(rule) = storage.get_mut(&rule_id) {
+        rule.enabled = enabled;
+        info!("自动化规则状态已更新: {} -> {}", rule_id, enabled);
+        Ok(())
     } else {
         Err("自动化规则不存在".to_string())
     }
