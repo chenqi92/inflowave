@@ -25,7 +25,7 @@ import {
     Separator,
     FormItem
 } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import {
     Save,
     RefreshCw,
@@ -101,7 +101,10 @@ const Settings: React.FC = () => {
 
             showMessage.success("设置已保存");
         } catch (error) {
-            toast({title: "错误", description: `保存设置失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "保存设置失败",
+                description: String(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -147,7 +150,10 @@ const Settings: React.FC = () => {
             }
         } catch (error) {
             console.error('导出设置失败:', error);
-            toast({title: "错误", description: `导出设置失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "导出设置失败",
+                description: String(error)
+            });
         }
     };
 
@@ -191,7 +197,10 @@ const Settings: React.FC = () => {
             }
         } catch (error) {
             console.error('导入设置失败:', error);
-            toast({title: "错误", description: `导入设置失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "导入设置失败",
+                description: String(error)
+            });
         }
     };
 

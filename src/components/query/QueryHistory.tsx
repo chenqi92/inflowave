@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { X } from 'lucide-react';
 import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -57,7 +57,10 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       const history = await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
       setHistoryItems(history || []);
     } catch (error) {
-      toast({ title: "错误", description: `加载查询历史失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "加载查询历史失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -70,7 +73,10 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
       setSavedQueries(queries || []);
     } catch (error) {
-      toast({ title: "错误", description: `加载保存的查询失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "加载保存的查询失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

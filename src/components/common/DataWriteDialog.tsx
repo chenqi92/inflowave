@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, Input, Select, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -95,7 +95,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         showMessage.success("数据格式验证通过" );
       }
     } catch (error) {
-      toast({ title: "错误", description: `数据格式验证失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "数据格式验证失败",
+        description: String(error)
+      });
     } finally {
       setValidating(false);
     }
@@ -120,7 +123,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       setPreviewData(preview);
       setShowPreview(true);
     } catch (error) {
-      toast({ title: "错误", description: `预览转换失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "预览转换失败",
+        description: String(error)
+      });
     } finally {
       setPreviewing(false);
     }
@@ -151,7 +157,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         showMessage.error("数据写入失败");
       }
     } catch (error) {
-      toast({ title: "错误", description: `数据写入失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "数据写入失败",
+        description: String(error)
+      });
       setWriteResult({
         success: false,
         message: `写入失败: ${error}`,

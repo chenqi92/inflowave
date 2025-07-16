@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Row, Col, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Input, Textarea, Alert, Spin } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { TrendingUp, BarChart, PieChart, Plus, RefreshCw, Settings, PlayCircle, AlertCircle } from 'lucide-react';
 import { AreaChart } from 'lucide-react';
@@ -40,7 +40,10 @@ const Visualization: React.FC = () => {
         connectionId: activeConnectionId});
       setDatabases(dbList);
     } catch (error) {
-      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "加载数据库列表失败",
+        description: String(error)
+      });
     }
   }, [activeConnectionId]);
 

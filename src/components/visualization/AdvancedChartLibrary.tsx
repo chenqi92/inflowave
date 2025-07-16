@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Select, Button, Row, Col, Typography, Alert } from '@/components/ui';
+import {Select, Button, Row, Col, Typography, Alert, Tooltip} from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
-import { Space } from '@/components/ui';
-import { Maximize, Download, Settings, RefreshCw } from 'lucide-react';
+import { Maximize, Download, RefreshCw } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts';
 
 const { Text } = Typography;
 const { Option } = Select;

@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Switch, Separator, Textarea } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -68,7 +68,10 @@ const ExtensionManager: React.FC = () => {
   const togglePlugin = async (pluginId: string, enabled: boolean) => {
     try {
       await safeTauriInvoke('toggle_plugin', { pluginId, enabled });
-      toast({ title: "成功", description: `插件已${enabled ? '启用' : '禁用'}` });
+      showNotification.success({
+        message: "操作成功",
+        description: `插件已${enabled ? '启用' : '禁用'}`
+      });
       loadPlugins();
     } catch (error) {
       console.error('切换插件状态失败:', error);
@@ -119,7 +122,10 @@ const ExtensionManager: React.FC = () => {
       // Store result for modal display
       console.log('API 测试结果:', result);
     } catch (error) {
-      toast({ title: "错误", description: `测试失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "测试失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

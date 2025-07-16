@@ -17,7 +17,11 @@ import {
   Alert,
   Empty,
   DropdownHeaderContentTitle,
-  Table
+  Table,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui';
 import {
   TableIcon,
@@ -411,20 +415,30 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <Dropdown 
-                    menu={{ items: exportMenuItems }} 
-                    placement="bottomLeft"
-                    disabled={!queryResult || tableData.length === 0}
-                  >
-                    <Button 
-                      icon={<FileDown className="w-3 h-3" />} 
-                      size="small"
-                      disabled={!queryResult || tableData.length === 0}
-                      className="text-xs px-2 h-6"
-                    >
-                      导出
-                    </Button>
-                  </Dropdown>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        icon={<FileDown className="w-3 h-3" />}
+                        size="small"
+                        disabled={!queryResult || tableData.length === 0}
+                        className="text-xs px-2 h-6"
+                      >
+                        导出
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {exportMenuItems.map((item) => (
+                        <DropdownMenuItem
+                          key={item.key}
+                          onClick={item.onClick}
+                          className="flex items-center gap-2"
+                        >
+                          {item.icon}
+                          {item.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button 
                     icon={<X className="w-3 h-3" />} 
                     size="small"

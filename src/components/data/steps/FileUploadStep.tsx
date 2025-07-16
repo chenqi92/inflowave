@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Space} from '@/components/ui';
 import { Upload as UploadIcon, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
@@ -148,7 +148,10 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
       }
     } catch (error) {
       setParseError(`文件处理失败: ${error}`);
-      toast({ title: "错误", description: `文件处理失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "文件处理失败",
+        description: String(error)
+      });
     } finally {
       onLoadingChange(false);
     }
@@ -206,7 +209,10 @@ const FileUploadStep: React.FC<FileUploadStepProps> = ({
         totalRows});
     } catch (error) {
       setParseError(`解析失败: ${error}`);
-      toast({ title: "错误", description: `解析失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "解析失败",
+        description: String(error)
+      });
     } finally {
       onLoadingChange(false);
     }

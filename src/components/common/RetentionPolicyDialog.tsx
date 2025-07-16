@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm, Tooltip } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -78,12 +78,18 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         await safeTauriInvoke('create_retention_policy', {
           connectionId,
           config});
-        toast({ title: "成功", description: `保留策略 "${values.name}" 创建成功` });
+        showNotification.success({
+          message: "创建成功",
+          description: `保留策略 "${values.name}" 创建成功`
+        });
       } else {
         await safeTauriInvoke('alter_retention_policy', {
           connectionId,
           config});
-        toast({ title: "成功", description: `保留策略 "${values.name}" 修改成功` });
+        showNotification.success({
+          message: "修改成功",
+          description: `保留策略 "${values.name}" 修改成功`
+        });
       }
 
       if (onSuccess) {
@@ -91,7 +97,10 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       }
       onClose();
     } catch (error) {
-      toast({ title: "错误", description: `${mode === 'create' ? '创建' : '修改'}保留策略失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: `${mode === 'create' ? '创建' : '修改'}保留策略失败`,
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -107,13 +116,19 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         connectionId,
         database,
         policyName: policy.name});
-      toast({ title: "成功", description: `保留策略 "${policy.name}" 删除成功` });
+      showNotification.success({
+        message: "删除成功",
+        description: `保留策略 "${policy.name}" 删除成功`
+      });
       if (onSuccess) {
         onSuccess();
       }
       onClose();
     } catch (error) {
-      toast({ title: "错误", description: `删除保留策略失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "删除保留策略失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

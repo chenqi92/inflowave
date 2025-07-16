@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Button, Alert, Switch, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Typography } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Upload as UploadIcon, Database, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 
@@ -117,7 +117,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       setFieldMappings(mappings);
       setCurrentStep(1);
     } catch (error) {
-      toast({ title: "错误", description: `文件解析失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "文件解析失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -217,7 +220,10 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         onSuccess();
       }
     } catch (error) {
-      toast({ title: "错误", description: `数据导入失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "数据导入失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

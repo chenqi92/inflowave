@@ -33,7 +33,7 @@ import {
     Row,
     Table, Title, Paragraph
 } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui';
 import {Upload as UploadIcon, Database, CheckCircle, Info, AlertCircle} from 'lucide-react';
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
@@ -233,7 +233,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 processedRows: 0,
                 totalRows: 0
             });
-            toast({title: "错误", description: `文件解析失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "文件解析失败",
+                description: String(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -484,7 +487,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
             const result = await performDataValidation(importData, fieldMappings);
             setValidationResult(result);
         } catch (error) {
-            toast({title: "错误", description: `数据验证失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "数据验证失败",
+                description: String(error)
+            });
         } finally {
             setLoading(false);
         }
@@ -629,7 +635,10 @@ const AdvancedImportDialog: React.FC<AdvancedImportDialogProps> = ({
                 processedRows: 0,
                 totalRows: importData?.totalRows || 0
             });
-            toast({title: "错误", description: `数据导入失败: ${error}`, variant: "destructive"});
+            showNotification.error({
+                message: "数据导入失败",
+                description: String(error)
+            });
         } finally {
             setLoading(false);
         }

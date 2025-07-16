@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, Popconfirm } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Wifi, Unlink, Edit, Trash2, Eye, RefreshCw, Database, FileDown } from 'lucide-react';
 import type { MenuProps } from '@/components/ui';
@@ -37,9 +37,15 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleConnect = async () => {
     try {
       await connectToDatabase(connection.id!);
-      toast({ title: "成功", description: `已连接到 ${connection.name}` });
+      showNotification.success({
+        message: "连接成功",
+        description: `已连接到 ${connection.name}`
+      });
     } catch (error) {
-      toast({ title: "错误", description: `连接失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "连接失败",
+        description: String(error)
+      });
     }
     onClose?.();
   };
@@ -47,9 +53,15 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
   const handleDisconnect = async () => {
     try {
       await disconnectFromDatabase(connection.id!);
-      toast({ title: "成功", description: `已断开 ${connection.name}` });
+      showNotification.success({
+        message: "断开连接成功",
+        description: `已断开 ${connection.name}`
+      });
     } catch (error) {
-      toast({ title: "错误", description: `断开连接失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "断开连接失败",
+        description: String(error)
+      });
     }
     onClose?.();
   };
@@ -63,7 +75,10 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
         showMessage.error("连接测试失败");
       }
     } catch (error) {
-      toast({ title: "错误", description: `连接测试失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "连接测试失败",
+        description: String(error)
+      });
     }
     onClose?.();
   };
@@ -79,7 +94,10 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
       await refreshAllStatuses();
       showMessage.success("状态已刷新" );
     } catch (error) {
-      toast({ title: "错误", description: `刷新状态失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "刷新状态失败",
+        description: String(error)
+      });
     }
     onClose?.();
   };
@@ -106,7 +124,10 @@ const ConnectionContextMenu: React.FC<ConnectionContextMenuProps> = ({
         ),
         width: 500});
     } catch (error) {
-      toast({ title: "错误", description: `获取数据库列表失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "获取数据库列表失败",
+        description: String(error)
+      });
     }
     onClose?.();
   };

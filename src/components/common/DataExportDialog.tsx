@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Switch, Separator, Textarea, Row, Col, InputNumber } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Download, Table, Info, FileText, Code, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -198,7 +198,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       }
     } catch (error) {
       console.error('导出失败:', error);
-      toast({ title: "错误", description: `导出失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "导出失败",
+        description: String(error)
+      });
       setExportResult({
         success: false,
         message: `导出失败: ${error}`,

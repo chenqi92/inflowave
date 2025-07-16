@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { LayoutOutlined } from '@/components/ui';
@@ -43,7 +43,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
           workspace: prefs.workspace});
       }
     } catch (error) {
-      toast({ title: "错误", description: `加载用户偏好失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "加载用户偏好失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -63,7 +66,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       onSettingsChange?.(updatedPreferences);
       showMessage.success("设置已保存" );
     } catch (error) {
-      toast({ title: "错误", description: `保存设置失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "保存设置失败",
+        description: String(error)
+      });
     }
   };
 
@@ -79,7 +85,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
         workspace: defaultPrefs.workspace});
       showMessage.success("已重置为默认设置" );
     } catch (error) {
-      toast({ title: "错误", description: `重置设置失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "重置设置失败",
+        description: String(error)
+      });
     }
   };
 
@@ -98,7 +107,10 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       setPreferences(updatedPreferences);
       showMessage.success("快捷键已更新" );
     } catch (error) {
-      toast({ title: "错误", description: `更新快捷键失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "更新快捷键失败",
+        description: String(error)
+      });
     }
   };
 

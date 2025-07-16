@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
 import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { RefreshCw, Settings, TrendingUp, Bell, PlayCircle, PauseCircle, AlertCircle, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
@@ -73,7 +73,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
         setSelectedDatabase(dbList[0]);
       }
     } catch (error) {
-      toast({ title: "错误", description: `加载数据库列表失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "加载数据库列表失败",
+        description: String(error)
+      });
     }
   };
 
@@ -197,7 +200,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       setEditingAlert(null);
       form.resetFields();
     } catch (error) {
-      toast({ title: "错误", description: `保存告警规则失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "保存告警规则失败",
+        description: String(error)
+      });
     }
   };
 

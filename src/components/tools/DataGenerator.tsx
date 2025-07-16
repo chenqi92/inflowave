@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
-import { Button, Select, InputNumber, Form, Alert, Progress, Space, Typography, Tag, List } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { Button, Select,  Alert, Progress, Typography, Tag, List } from '@/components/ui';
+import { showMessage, showNotification } from '@/utils/message';
 // TODO: Replace these Ant Design components: message, Divider
 import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
 
@@ -316,7 +316,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         
         setCompletedTasks(prev => [...prev, task.name]);
         console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
-        toast({ title: "成功", description: `${task.name} 数据生成完成 (${task.recordCount} 条记录)` });
+        showNotification.success({
+          message: "数据生成完成",
+          description: `${task.name} (${task.recordCount} 条记录)`
+        });
       }
       
       setProgress(100);
@@ -330,7 +333,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       
     } catch (error) {
       console.error('数据生成失败:', error);
-      toast({ title: "错误", description: `数据生成失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "数据生成失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -364,7 +370,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
       showMessage.success("测试数据已清空" );
     } catch (error) {
       console.error('清空数据失败:', error);
-      toast({ title: "错误", description: `清空数据失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "清空数据失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

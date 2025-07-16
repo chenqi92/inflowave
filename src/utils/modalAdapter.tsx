@@ -126,21 +126,8 @@ export const confirm = (config: ModalConfig): Promise<boolean> => {
   });
 };
 
-// 简化版本的通知函数，使用toast替代简单的info
-export const showMessage = {
-  info: (content: string) => {
-    messageUtil.info(content);
-  },
-  success: (content: string) => {
-    messageUtil.success(content);
-  },
-  error: (content: string) => {
-    messageUtil.error(content);
-  },
-  warning: (content: string) => {
-    messageUtil.warning(content);
-  }
-};
+// 注意：showMessage 已在 @/utils/message 中定义，这里不再重复定义
+// 如果需要使用消息功能，请从 @/utils/message 导入 showMessage
 
 // Modal适配器组件
 export const ModalAdapter: React.FC = () => {

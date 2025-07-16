@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Alert, Progress } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload, Database, Settings, Eye, CheckCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -396,7 +396,10 @@ const SmartImportWizard: React.FC<SmartImportWizardProps> = ({
         totalRows: wizardData.totalRows,
         errors: [String(error)],
         warnings: []});
-      toast({ title: "错误", description: `数据导入失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "数据导入失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

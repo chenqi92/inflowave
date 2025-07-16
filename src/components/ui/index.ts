@@ -18,12 +18,12 @@ export type { DataTableProps, Column } from './DataTable';
 
 export { Skeleton } from './Skeleton';
 
-export { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from './Toast';
-export { Toaster } from './Toaster';
+// Sonner Toast 系统 (shadcn/ui 推荐)
+export { Toaster } from './sonner';
+export { toast } from 'sonner';
 
-// Sonner (新的推荐 Toast 系统)
-export { Toaster as SonnerToaster } from './sonner';
-export { toast as sonnerToast } from 'sonner';
+// 消息系统工具函数
+export { showMessage, showNotification, specialMessage, toastControl } from '@/utils/message';
 
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
 

@@ -7,7 +7,7 @@ import ErrorBoundary from '@/components/common/ErrorBoundary';
 import {errorLogger} from '@/utils/errorLogger';
 
 
-import {safeTauriInvoke, initializeEnvironment, isBrowserEnvironment} from './utils/tauri';
+import {safeTauriInvoke, initializeEnvironment} from './utils/tauri';
 import {showMessage} from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
@@ -15,13 +15,12 @@ import {useNoticeStore} from './store/notice';
 
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
-import UITest from './pages/UITest';
 import UserGuideTest from './components/test/UserGuideTest';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
 // UI 组件导入
-import {Text, Spin, Layout, Content, SonnerToaster} from '@/components/ui';
+import {Text, Spin, Layout, Content, Toaster} from '@/components/ui';
 import {ModalAdapter} from '@/utils/modalAdapter';
 
 // 主布局组件
@@ -69,7 +68,6 @@ const MainLayout: React.FC = () => {
                 <Content className="flex-1 p-4">
                     <Routes>
                         <Route path="/debug" element={<ConnectionDebug/>}/>
-                        <Route path="/ui-test" element={<UITest/>}/>
                         <Route path="/user-guide-test" element={<UserGuideTest/>}/>
                     </Routes>
                 </Content>
@@ -170,6 +168,7 @@ const App: React.FC = () => {
                 // 在开发模式下加载测试工具
                 if ((import.meta as any).env?.DEV) {
                     try {
+                        // 加载主测试工具
                         import('./utils/masterTestRunner').then(({masterTestRunner: _testRunner}) => {
                             console.log('🧪 测试工具已加载');
                             console.log('使用以下命令运行测试:');
@@ -178,6 +177,7 @@ const App: React.FC = () => {
                             console.log('- runUITests() // 运行UI测试');
                             console.log('- runFeatureTests() // 运行功能测试');
                         });
+
                     } catch (error) {
                         console.warn('测试工具加载失败:', error);
                     }
@@ -211,7 +211,7 @@ const App: React.FC = () => {
         <ErrorBoundary>
             <MainLayout/>
             <ModalAdapter/>
-            <SonnerToaster />
+            <Toaster />
         </ErrorBoundary>
     );
 };

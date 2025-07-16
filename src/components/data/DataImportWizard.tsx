@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Alert, Progress, Checkbox, Textarea, Typography } from '@/components/ui';
-import { showMessage } from '@/utils/message';
+import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Upload as UploadIcon, Database, Settings, FileText, FileUp, CheckCircle } from 'lucide-react';
 import type { UploadFile, UploadProps } from '@/components/ui';
@@ -108,7 +108,10 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       setPreviewData(preview);
       setCurrentStep(1);
     } catch (error) {
-      toast({ title: "错误", description: `预览文件失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "预览文件失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -178,7 +181,10 @@ const DataImportWizard: React.FC<DataImportWizardProps> = ({
       
       showMessage.success("数据导入完成" );
     } catch (error) {
-      toast({ title: "错误", description: `导入失败: ${error}`, variant: "destructive" });
+      showNotification.error({
+        message: "导入失败",
+        description: String(error)
+      });
     } finally {
       setLoading(false);
     }

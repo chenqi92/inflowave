@@ -9,7 +9,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
 import App from './App';
-import { ToastProvider, TooltipProvider } from '@/components/ui';
+import { TooltipProvider } from '@/components/ui';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 import './styles/index.css';
@@ -32,15 +32,13 @@ const AppWrapper: React.FC = () => {
   return (
     <ThemeProvider defaultTheme="system" storageKey="inflowave-ui-theme">
       <TooltipProvider>
-        <ToastProvider>
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true}}
-          >
-            <InnerApp />
-          </BrowserRouter>
-        </ToastProvider>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true}}
+        >
+          <InnerApp />
+        </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
   );
