@@ -11,14 +11,12 @@ declare global {
 
 // 检查是否在 Tauri 环境中运行
 export const isTauriEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && 
-         window.__TAURI__ !== undefined;
+  return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
 };
 
 // 检查是否在浏览器开发环境中
 export const isBrowserEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && 
-         window.__TAURI__ === undefined;
+  return typeof window !== 'undefined' && window.__TAURI__ === undefined;
 };
 
 // 安全的 Tauri API 调用包装器
@@ -47,7 +45,9 @@ export const safeTauriListen = async <T = any>(
   handler: (event: { payload: T }) => void
 ): Promise<() => void> => {
   if (!isTauriEnvironment()) {
-    console.warn(`Tauri event listener "${event}" called in browser environment, using mock handler`);
+    console.warn(
+      `Tauri event listener "${event}" called in browser environment, using mock handler`
+    );
     // 返回一个空的取消监听函数
     return () => {};
   }
@@ -64,7 +64,10 @@ export const safeTauriListen = async <T = any>(
 };
 
 // 模拟数据生成器 - 已禁用，直接返回 null
-const _getMockData = <T = any>(command: string, args?: Record<string, any>): T | null => {
+const _getMockData = <T = any>(
+  command: string,
+  args?: Record<string, any>
+): T | null => {
   console.log(`Mock data generator disabled for command: ${command}`, args);
   return null;
 };
@@ -74,8 +77,10 @@ export const getEnvironmentInfo = () => {
   return {
     isTauri: isTauriEnvironment(),
     isBrowser: isBrowserEnvironment(),
-    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown',
-    platform: typeof window !== 'undefined' ? window.navigator.platform : 'Unknown'
+    userAgent:
+      typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown',
+    platform:
+      typeof window !== 'undefined' ? window.navigator.platform : 'Unknown',
   };
 };
 
@@ -93,12 +98,12 @@ export const showEnvironmentWarning = () => {
 // 初始化环境检测
 export const initializeEnvironment = () => {
   const envInfo = getEnvironmentInfo();
-  
+
   console.log('🔍 环境信息:', envInfo);
-  
+
   if (envInfo.isBrowser) {
     showEnvironmentWarning();
   }
-  
+
   return envInfo;
 };

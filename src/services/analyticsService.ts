@@ -63,7 +63,13 @@ export interface ExecutionStatistics {
 
 export interface QueryRecommendation {
   id: string;
-  type: 'index' | 'rewrite' | 'configuration' | 'statistics' | 'partitioning' | 'caching';
+  type:
+    | 'index'
+    | 'rewrite'
+    | 'configuration'
+    | 'statistics'
+    | 'partitioning'
+    | 'caching';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
   description: string;
@@ -91,7 +97,11 @@ export interface DataCardinalityStats {
   avgValue?: any;
   medianValue?: any;
   mostFrequentValues: { value: any; count: number; percentage: number }[];
-  distributionHistogram: { bucket: string; count: number; percentage: number }[];
+  distributionHistogram: {
+    bucket: string;
+    count: number;
+    percentage: number;
+  }[];
   cardinality: number;
   cardinalityRatio: number;
   entropy: number;
@@ -102,7 +112,13 @@ export interface DataCardinalityStats {
 }
 
 export interface DataAnomaly {
-  type: 'outlier' | 'duplicate' | 'missing' | 'inconsistent' | 'format' | 'range';
+  type:
+    | 'outlier'
+    | 'duplicate'
+    | 'missing'
+    | 'inconsistent'
+    | 'format'
+    | 'range';
   severity: 'low' | 'medium' | 'high';
   description: string;
   affectedRows: number;
@@ -156,7 +172,8 @@ export class QueryAnalyticsService {
     return safeTauriInvoke<QueryExecutionPlan>('get_query_execution_plan', {
       connectionId,
       database,
-      query});
+      query,
+    });
   }
 
   /**
@@ -172,7 +189,8 @@ export class QueryAnalyticsService {
       connectionId,
       database,
       query,
-      executionResult});
+      executionResult,
+    });
   }
 
   /**
@@ -183,10 +201,14 @@ export class QueryAnalyticsService {
     database: string,
     query: string
   ): Promise<QueryRecommendation[]> {
-    return safeTauriInvoke<QueryRecommendation[]>('get_query_optimization_suggestions', {
-      connectionId,
-      database,
-      query});
+    return safeTauriInvoke<QueryRecommendation[]>(
+      'get_query_optimization_suggestions',
+      {
+        connectionId,
+        database,
+        query,
+      }
+    );
   }
 
   /**
@@ -202,7 +224,8 @@ export class QueryAnalyticsService {
   }> {
     return safeTauriInvoke('compare_query_plans', {
       plan1,
-      plan2});
+      plan2,
+    });
   }
 
   /**
@@ -214,11 +237,15 @@ export class QueryAnalyticsService {
     query?: string,
     limit?: number
   ): Promise<QueryExecutionPlan[]> {
-    return safeTauriInvoke<QueryExecutionPlan[]>('get_historical_execution_plans', {
-      connectionId,
-      database,
-      query,
-      limit});
+    return safeTauriInvoke<QueryExecutionPlan[]>(
+      'get_historical_execution_plans',
+      {
+        connectionId,
+        database,
+        query,
+        limit,
+      }
+    );
   }
 
   /**
@@ -249,11 +276,15 @@ export class DataCardinalityService {
     table: string,
     columns?: string[]
   ): Promise<DataCardinalityStats[]> {
-    return safeTauriInvoke<DataCardinalityStats[]>('calculate_table_cardinality_stats', {
-      connectionId,
-      database,
-      table,
-      columns});
+    return safeTauriInvoke<DataCardinalityStats[]>(
+      'calculate_table_cardinality_stats',
+      {
+        connectionId,
+        database,
+        table,
+        columns,
+      }
+    );
   }
 
   /**
@@ -265,11 +296,15 @@ export class DataCardinalityService {
     table: string,
     column: string
   ): Promise<DataCardinalityStats> {
-    return safeTauriInvoke<DataCardinalityStats>('calculate_column_cardinality_stats', {
-      connectionId,
-      database,
-      table,
-      column});
+    return safeTauriInvoke<DataCardinalityStats>(
+      'calculate_column_cardinality_stats',
+      {
+        connectionId,
+        database,
+        table,
+        column,
+      }
+    );
   }
 
   /**
@@ -282,14 +317,20 @@ export class DataCardinalityService {
   ): Promise<{
     overallScore: number;
     tableScores: { table: string; score: number; issues: number }[];
-    columnScores: { table: string; column: string; score: number; issues: number }[];
+    columnScores: {
+      table: string;
+      column: string;
+      score: number;
+      issues: number;
+    }[];
     anomalies: DataAnomaly[];
     recommendations: string[];
   }> {
     return safeTauriInvoke('get_data_quality_report', {
       connectionId,
       database,
-      table});
+      table,
+    });
   }
 
   /**
@@ -305,7 +346,8 @@ export class DataCardinalityService {
       connectionId,
       database,
       table,
-      columns});
+      columns,
+    });
   }
 
   /**
@@ -325,7 +367,11 @@ export class DataCardinalityService {
     columns: DataCardinalityStats[];
     relationships: {
       primaryKeys: string[];
-      foreignKeys: { column: string; referencedTable: string; referencedColumn: string }[];
+      foreignKeys: {
+        column: string;
+        referencedTable: string;
+        referencedColumn: string;
+      }[];
       indexes: { name: string; columns: string[]; type: string }[];
     };
     recommendations: string[];
@@ -333,7 +379,8 @@ export class DataCardinalityService {
     return safeTauriInvoke('generate_data_profile_report', {
       connectionId,
       database,
-      table});
+      table,
+    });
   }
 }
 
@@ -348,9 +395,13 @@ export class PerformanceBottleneckService {
     connectionId: string,
     timeRange?: { start: Date; end: Date }
   ): Promise<PerformanceBottleneck[]> {
-    return safeTauriInvoke<PerformanceBottleneck[]>('detect_performance_bottlenecks', {
-      connectionId,
-      timeRange});
+    return safeTauriInvoke<PerformanceBottleneck[]>(
+      'detect_performance_bottlenecks',
+      {
+        connectionId,
+        timeRange,
+      }
+    );
   }
 
   /**
@@ -362,14 +413,38 @@ export class PerformanceBottleneckService {
   ): Promise<{
     cpu: { timestamp: Date; usage: number }[];
     memory: { timestamp: Date; usage: number; available: number }[];
-    disk: { timestamp: Date; readIops: number; writeIops: number; readThroughput: number; writeThroughput: number }[];
-    network: { timestamp: Date; bytesIn: number; bytesOut: number; packetsIn: number; packetsOut: number }[];
-    connections: { timestamp: Date; active: number; idle: number; total: number }[];
-    queries: { timestamp: Date; executing: number; queued: number; completed: number; failed: number }[];
+    disk: {
+      timestamp: Date;
+      readIops: number;
+      writeIops: number;
+      readThroughput: number;
+      writeThroughput: number;
+    }[];
+    network: {
+      timestamp: Date;
+      bytesIn: number;
+      bytesOut: number;
+      packetsIn: number;
+      packetsOut: number;
+    }[];
+    connections: {
+      timestamp: Date;
+      active: number;
+      idle: number;
+      total: number;
+    }[];
+    queries: {
+      timestamp: Date;
+      executing: number;
+      queued: number;
+      completed: number;
+      failed: number;
+    }[];
   }> {
     return safeTauriInvoke('get_system_performance_metrics', {
       connectionId,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -399,7 +474,8 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('get_slow_query_log', {
       connectionId,
-      options});
+      options,
+    });
   }
 
   /**
@@ -427,7 +503,8 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('analyze_lock_waits', {
       connectionId,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -458,7 +535,8 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('get_connection_pool_stats', {
       connectionId,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -500,7 +578,8 @@ export class PerformanceBottleneckService {
   }> {
     return safeTauriInvoke('generate_performance_report', {
       connectionId,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -512,7 +591,8 @@ export class PerformanceBottleneckService {
   ): Promise<void> {
     return safeTauriInvoke<void>('mark_bottleneck_resolved', {
       bottleneckId,
-      resolution});
+      resolution,
+    });
   }
 
   /**
@@ -524,7 +604,8 @@ export class PerformanceBottleneckService {
   ): Promise<void> {
     return safeTauriInvoke<void>('ignore_bottleneck', {
       bottleneckId,
-      reason});
+      reason,
+    });
   }
 }
 
@@ -570,7 +651,8 @@ export class AnalyticsService {
   }> {
     return safeTauriInvoke('get_analytics_dashboard', {
       connectionId,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -591,7 +673,8 @@ export class AnalyticsService {
     return safeTauriInvoke('generate_comprehensive_report', {
       connectionId,
       database,
-      timeRange});
+      timeRange,
+    });
   }
 
   /**
@@ -605,7 +688,8 @@ export class AnalyticsService {
     return safeTauriInvoke<void>('export_analytics_report', {
       reportData,
       format,
-      filePath});
+      filePath,
+    });
   }
 }
 

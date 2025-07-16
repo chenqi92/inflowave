@@ -19,14 +19,14 @@ export interface ClipboardOptions {
  * @param options 配置选项
  */
 export async function writeToClipboard(
-  text: string, 
+  text: string,
   options: ClipboardOptions = {}
 ): Promise<boolean> {
   const {
     showSuccess = true,
     showError = true,
     successMessage = '已复制到剪贴板',
-    errorMessage = '复制失败'
+    errorMessage = '复制失败',
   } = options;
 
   try {
@@ -42,7 +42,10 @@ export async function writeToClipboard(
           return true;
         } catch (clipboardError) {
           // 如果 Clipboard API 失败，尝试降级方案
-          console.warn('Clipboard API failed, trying fallback:', clipboardError);
+          console.warn(
+            'Clipboard API failed, trying fallback:',
+            clipboardError
+          );
           return tryFallbackCopy(text, options);
         }
       } else {
@@ -81,33 +84,33 @@ function tryFallbackCopy(text: string, options: ClipboardOptions): boolean {
     showSuccess = true,
     showError = true,
     successMessage = '已复制到剪贴板',
-    errorMessage = '复制失败'
+    errorMessage = '复制失败',
   } = options;
 
   try {
     // 创建临时文本区域
     const textArea = document.createElement('textarea');
     textArea.value = text;
-    
+
     // 设置样式使其不可见
     textArea.style.position = 'fixed';
     textArea.style.left = '-999999px';
     textArea.style.top = '-999999px';
     textArea.style.opacity = '0';
     textArea.style.pointerEvents = 'none';
-    
+
     document.body.appendChild(textArea);
-    
+
     // 选择文本
     textArea.focus();
     textArea.select();
-    
+
     // 尝试复制
     const success = document.execCommand('copy');
-    
+
     // 清理临时元素
     document.body.removeChild(textArea);
-    
+
     if (success) {
       if (showSuccess) {
         showMessage.success(successMessage);
@@ -158,7 +161,9 @@ export function isClipboardSupported(): boolean {
 export async function requestClipboardPermission(): Promise<boolean> {
   try {
     if (navigator.permissions && navigator.permissions.query) {
-      const permission = await navigator.permissions.query({ name: 'clipboard-write' as any });
+      const permission = await navigator.permissions.query({
+        name: 'clipboard-write' as any,
+      });
       return permission.state === 'granted';
     }
     return true; // 假设有权限
@@ -173,5 +178,5 @@ export const clipboard = {
   write: writeToClipboard,
   read: readFromClipboard,
   isSupported: isClipboardSupported,
-  requestPermission: requestClipboardPermission
+  requestPermission: requestClipboardPermission,
 };

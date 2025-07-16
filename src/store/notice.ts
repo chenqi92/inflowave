@@ -9,14 +9,16 @@ interface NoticeState {
 
 export const useNoticeStore = create<NoticeState>()(
   persist(
-    (set) => ({
+    set => ({
       browserModeNoticeDismissed: false,
-      
+
       dismissBrowserModeNotice: () => set({ browserModeNoticeDismissed: true }),
-      
-      resetNoticeSettings: () => set({ browserModeNoticeDismissed: false })}),
+
+      resetNoticeSettings: () => set({ browserModeNoticeDismissed: false }),
+    }),
     {
       name: 'notice-settings',
-      version: 1}
+      version: 1,
+    }
   )
 );

@@ -18,10 +18,16 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage
+  FormMessage,
 } from '@/components/ui';
-import { showMessage, showNotification } from '@/utils/message';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@/components/ui';
+import { showNotification } from '@/utils/message';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Button,
+} from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
@@ -53,7 +59,8 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   database,
   connectionId,
   onClose,
-  onSuccess}) => {
+  onSuccess,
+}) => {
   const form = useForm<RetentionPolicyForm>();
   const [loading, setLoading] = useState(false);
 
@@ -66,13 +73,15 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           duration: policy.duration,
           shardDuration: policy.shardGroupDuration,
           replicaN: policy.replicaN,
-          default: policy.default});
+          default: policy.default,
+        });
       } else {
         form.reset({
           duration: '30d',
           shardDuration: '1h',
           replicaN: 1,
-          default: false});
+          default: false,
+        });
       }
     }
   }, [visible, mode, policy, form]);
@@ -88,23 +97,26 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         duration: values.duration,
         shard_duration: values.shardDuration,
         replica_n: values.replicaN,
-        default: values.default};
+        default: values.default,
+      };
 
       if (mode === 'create') {
         await safeTauriInvoke('create_retention_policy', {
           connectionId,
-          config});
+          config,
+        });
         showNotification.success({
-          message: "创建成功",
-          description: `保留策略 "${values.name}" 创建成功`
+          message: '创建成功',
+          description: `保留策略 "${values.name}" 创建成功`,
         });
       } else {
         await safeTauriInvoke('alter_retention_policy', {
           connectionId,
-          config});
+          config,
+        });
         showNotification.success({
-          message: "修改成功",
-          description: `保留策略 "${values.name}" 修改成功`
+          message: '修改成功',
+          description: `保留策略 "${values.name}" 修改成功`,
         });
       }
 
@@ -115,7 +127,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
     } catch (error) {
       showNotification.error({
         message: `${mode === 'create' ? '创建' : '修改'}保留策略失败`,
-        description: String(error)
+        description: String(error),
       });
     } finally {
       setLoading(false);
@@ -131,10 +143,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       await safeTauriInvoke('drop_retention_policy', {
         connectionId,
         database,
-        policyName: policy.name});
+        policyName: policy.name,
+      });
       showNotification.success({
-        message: "删除成功",
-        description: `保留策略 "${policy.name}" 删除成功`
+        message: '删除成功',
+        description: `保留策略 "${policy.name}" 删除成功`,
       });
       if (onSuccess) {
         onSuccess();
@@ -142,8 +155,8 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
       onClose();
     } catch (error) {
       showNotification.error({
-        message: "删除保留策略失败",
-        description: String(error)
+        message: '删除保留策略失败',
+        description: String(error),
       });
     } finally {
       setLoading(false);
@@ -172,223 +185,230 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   ];
 
   return (
-    <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={visible} onOpenChange={open => !open && onClose()}>
+      <DialogContent className='max-w-2xl'>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Info className="w-4 h-4" />
+          <DialogTitle className='flex items-center gap-2'>
+            <Info className='w-4 h-4' />
             {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
           </DialogTitle>
         </DialogHeader>
-      <div className="space-y-6">
-        {/* 说明信息 */}
-        <Alert
-          message="保留策略说明"
-          description="保留策略定义了数据在 InfluxDB 中的存储时间和分片策略。删除默认策略可能会影响数据写入。"
-          type="info"
-          showIcon
-        />
-
-        {/* 表单 */}
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="name"
-            rules={{
-              required: '请输入策略名称',
-              pattern: {
-                value: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
-                message: '策略名称只能包含字母、数字和下划线，且不能以数字开头'
-              }
-            }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>策略名称</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="请输入策略名称"
-                    disabled={mode === 'edit'}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+        <div className='space-y-6'>
+          {/* 说明信息 */}
+          <Alert
+            message='保留策略说明'
+            description='保留策略定义了数据在 InfluxDB 中的存储时间和分片策略。删除默认策略可能会影响数据写入。'
+            type='info'
+            showIcon
           />
 
-          <FormField
-            control={form.control}
-            name="duration"
-            rules={{ required: '请选择保留时间' }}
-            defaultValue="30d"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  <div className="flex gap-2">
-                    保留时间
-                    <Tooltip title="数据在数据库中保留的时间，超过此时间的数据将被自动删除">
-                      <HelpCircle className="w-4 h-4" />
-                    </Tooltip>
-                  </div>
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择保留时间" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {durationOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="shardDuration"
-            defaultValue="1h"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  <div className="flex gap-2">
-                    分片组持续时间
-                    <Tooltip title="每个分片组覆盖的时间范围，影响查询性能和存储效率">
-                      <HelpCircle className="w-4 h-4" />
-                    </Tooltip>
-                  </div>
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择分片组持续时间" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {shardDurationOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="replicaN"
-            defaultValue={1}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  <div className="flex gap-2">
-                    副本数
-                    <Tooltip title="数据副本的数量，用于高可用性部署">
-                      <HelpCircle className="w-4 h-4" />
-                    </Tooltip>
-                  </div>
-                </FormLabel>
-                <FormControl>
-                  <InputNumber
-                    min={1}
-                    max={10}
-                    placeholder="副本数"
-                    className="w-full"
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="default"
-            defaultValue={false}
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    <div className="flex gap-2">
-                      设为默认策略
-                      <Tooltip title="将此策略设为数据库的默认保留策略">
-                        <HelpCircle className="w-4 h-4" />
-                      </Tooltip>
-                    </div>
-                  </FormLabel>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          </form>
-        </Form>
-
-        {/* 格式说明 */}
-        <Alert
-          message="时间格式说明"
-          description={
-            <div>
-              <Paragraph>
-                <strong>持续时间格式:</strong> 支持 ns(纳秒)、us(微秒)、ms(毫秒)、s(秒)、m(分钟)、h(小时)、d(天)、w(周)
-              </Paragraph>
-              <Paragraph>
-                <strong>示例:</strong> 1h30m (1小时30分钟)、7d (7天)、0s (永久保留)
-              </Paragraph>
-            </div>
-          }
-          type="info"
-          showIcon
-        />
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button onClick={onClose}>
-          取消
-        </Button>
-        {mode === 'edit' && policy && !policy.default && (
-          <Popconfirm
-            title="确认删除保留策略"
-            description={`确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`}
-            onConfirm={handleDelete}
-            okText="删除"
-            cancelText="取消"
-            okType="danger"
-          >
-            <Button
-              variant="destructive"
-              disabled={loading}
+          {/* 表单 */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className='space-y-6'
             >
-              删除
-            </Button>
-          </Popconfirm>
-        )}
-        <Button
-          variant="default"
-          disabled={loading}
-          onClick={form.handleSubmit(handleSubmit)}
-        >
-          {mode === 'create' ? '创建' : '保存'}
-        </Button>
-      </div>
+              <FormField
+                control={form.control}
+                name='name'
+                rules={{
+                  required: '请输入策略名称',
+                  pattern: {
+                    value: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+                    message:
+                      '策略名称只能包含字母、数字和下划线，且不能以数字开头',
+                  },
+                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>策略名称</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='请输入策略名称'
+                        disabled={mode === 'edit'}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='duration'
+                rules={{ required: '请选择保留时间' }}
+                defaultValue='30d'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className='flex gap-2'>
+                        保留时间
+                        <Tooltip title='数据在数据库中保留的时间，超过此时间的数据将被自动删除'>
+                          <HelpCircle className='w-4 h-4' />
+                        </Tooltip>
+                      </div>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='选择保留时间' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {durationOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='shardDuration'
+                defaultValue='1h'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className='flex gap-2'>
+                        分片组持续时间
+                        <Tooltip title='每个分片组覆盖的时间范围，影响查询性能和存储效率'>
+                          <HelpCircle className='w-4 h-4' />
+                        </Tooltip>
+                      </div>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='选择分片组持续时间' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {shardDurationOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='replicaN'
+                defaultValue={1}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className='flex gap-2'>
+                        副本数
+                        <Tooltip title='数据副本的数量，用于高可用性部署'>
+                          <HelpCircle className='w-4 h-4' />
+                        </Tooltip>
+                      </div>
+                    </FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={1}
+                        max={10}
+                        placeholder='副本数'
+                        className='w-full'
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='default'
+                defaultValue={false}
+                render={({ field }) => (
+                  <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                    <div className='space-y-0.5'>
+                      <FormLabel className='text-base'>
+                        <div className='flex gap-2'>
+                          设为默认策略
+                          <Tooltip title='将此策略设为数据库的默认保留策略'>
+                            <HelpCircle className='w-4 h-4' />
+                          </Tooltip>
+                        </div>
+                      </FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+
+          {/* 格式说明 */}
+          <Alert
+            message='时间格式说明'
+            description={
+              <div>
+                <Paragraph>
+                  <strong>持续时间格式:</strong> 支持
+                  ns(纳秒)、us(微秒)、ms(毫秒)、s(秒)、m(分钟)、h(小时)、d(天)、w(周)
+                </Paragraph>
+                <Paragraph>
+                  <strong>示例:</strong> 1h30m (1小时30分钟)、7d (7天)、0s
+                  (永久保留)
+                </Paragraph>
+              </div>
+            }
+            type='info'
+            showIcon
+          />
+        </div>
+
+        {/* Footer */}
+        <div className='flex justify-end gap-3 pt-4 border-t'>
+          <Button onClick={onClose}>取消</Button>
+          {mode === 'edit' && policy && !policy.default && (
+            <Popconfirm
+              title='确认删除保留策略'
+              description={`确定要删除保留策略 "${policy.name}" 吗？此操作不可撤销！`}
+              onConfirm={handleDelete}
+              okText='删除'
+              cancelText='取消'
+              okType='danger'
+            >
+              <Button variant='destructive' disabled={loading}>
+                删除
+              </Button>
+            </Popconfirm>
+          )}
+          <Button
+            variant='default'
+            disabled={loading}
+            onClick={form.handleSubmit(handleSubmit)}
+          >
+            {mode === 'create' ? '创建' : '保存'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

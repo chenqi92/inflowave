@@ -74,6 +74,7 @@
 ### 编写第一个查询
 
 1. 在查询编辑器中输入：
+
    ```sql
    SHOW DATABASES
    ```
@@ -93,7 +94,7 @@ SHOW MEASUREMENTS
 SELECT * FROM "your_measurement" LIMIT 10
 
 -- 按时间范围查询
-SELECT * FROM "your_measurement" 
+SELECT * FROM "your_measurement"
 WHERE time > now() - 1h
 ```
 
@@ -155,6 +156,7 @@ WHERE time > now() - 1h
 ### 右键快捷操作
 
 在数据库和测量列表中右键点击，可以快速执行：
+
 - 查看数据
 - 复制名称
 - 刷新列表
@@ -181,12 +183,14 @@ WHERE time > now() - 1h
 恭喜！您已经掌握了 InfloWave 的基本使用方法。接下来可以：
 
 ### 深入学习
+
 - **[连接管理](./connection-management.md)** - 学习高级连接配置
 - **[数据库操作](./database-operations.md)** - 掌握数据库管理技巧
 - **[查询功能](./query-features.md)** - 学习高级查询技巧
 - **[数据可视化](./data-visualization.md)** - 创建专业的监控面板
 
 ### 实际应用
+
 - 连接您的生产环境数据库
 - 创建监控仪表板
 - 设置数据导入任务

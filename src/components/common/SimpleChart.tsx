@@ -14,10 +14,10 @@ interface SimpleChartProps {
   height?: number;
 }
 
-const SimpleChart: React.FC<SimpleChartProps> = ({ 
-  data, 
-  type, 
-  height = 400 
+const SimpleChart: React.FC<SimpleChartProps> = ({
+  data,
+  type,
+  height = 400,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
@@ -37,22 +37,27 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
 
     if (type === 'pie') {
       // 饼图配置
-      const pieData = data.valueColumns.slice(0, 1).map(col => {
-        return data.data.map((item: any, index: number) => ({
-          name: item[data.timeColumn || 'index'] || `Item ${index}`,
-          value: Number(item[col]) || 0}));
-      })[0] || [];
+      const pieData =
+        data.valueColumns.slice(0, 1).map(col => {
+          return data.data.map((item: any, index: number) => ({
+            name: item[data.timeColumn || 'index'] || `Item ${index}`,
+            value: Number(item[col]) || 0,
+          }));
+        })[0] || [];
 
       option = {
         title: {
           text: '数据分布',
-          left: 'center'},
+          left: 'center',
+        },
         tooltip: {
           trigger: 'item',
-          formatter: '{a} <br/>{b}: {c} ({d}%)'},
+          formatter: '{a} <br/>{b}: {c} ({d}%)',
+        },
         legend: {
           orient: 'vertical',
-          left: 'left'},
+          left: 'left',
+        },
         series: [
           {
             name: data.valueColumns[0] || 'Value',
@@ -63,8 +68,12 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'}}},
-        ]};
+                shadowColor: 'rgba(0, 0, 0, 0.5)',
+              },
+            },
+          },
+        ],
+      };
     } else {
       // 时序图表配置
       const xAxisData = data.data.map(item => {
@@ -84,32 +93,42 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
         type: type === 'area' ? 'line' : type,
         data: data.data.map(item => Number(item[col]) || 0),
         smooth: type === 'line' || type === 'area',
-        areaStyle: type === 'area' ? {} : undefined}));
+        areaStyle: type === 'area' ? {} : undefined,
+      }));
 
       option = {
         title: {
           text: '时序数据图表',
-          left: 'center'},
+          left: 'center',
+        },
         tooltip: {
           trigger: 'axis',
           axisPointer: {
             type: 'cross',
             label: {
-              backgroundColor: '#6a7985'}}},
+              backgroundColor: '#6a7985',
+            },
+          },
+        },
         legend: {
           data: data.valueColumns,
-          top: 30},
+          top: 30,
+        },
         toolbox: {
           feature: {
             saveAsImage: {},
             dataZoom: {
-              yAxisIndex: 'none'},
-            restore: {}}},
+              yAxisIndex: 'none',
+            },
+            restore: {},
+          },
+        },
         grid: {
           left: '3%',
           right: '4%',
           bottom: '3%',
-          containLabel: true},
+          containLabel: true,
+        },
         xAxis: [
           {
             type: 'category',
@@ -117,30 +136,38 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
             data: xAxisData,
             axisLabel: {
               rotate: 45,
-              interval: Math.max(1, Math.floor(xAxisData.length / 10))}},
+              interval: Math.max(1, Math.floor(xAxisData.length / 10)),
+            },
+          },
         ],
         yAxis: [
           {
-            type: 'value'},
+            type: 'value',
+          },
         ],
         dataZoom: [
           {
             type: 'inside',
             start: 0,
-            end: 100},
+            end: 100,
+          },
           {
             start: 0,
             end: 100,
-            handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23.1h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+            handleIcon:
+              'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23.1h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
             handleSize: '80%',
             handleStyle: {
               color: '#fff',
               shadowBlur: 3,
               shadowColor: 'rgba(0, 0, 0, 0.6)',
               shadowOffsetX: 2,
-              shadowOffsetY: 2}},
+              shadowOffsetY: 2,
+            },
+          },
         ],
-        series};
+        series,
+      };
     }
 
     // 设置图表配置
@@ -169,10 +196,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
 
   if (!data) {
     return (
-      <Empty
-        description="暂无图表数据"
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-      />
+      <Empty description='暂无图表数据' image={Empty.PRESENTED_IMAGE_SIMPLE} />
     );
   }
 
@@ -182,7 +206,8 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       style={{
         width: '100%',
         height,
-        minHeight: 300}}
+        minHeight: 300,
+      }}
     />
   );
 };

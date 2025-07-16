@@ -1,6 +1,15 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Database, Search, BarChart, Edit, Settings, Webhook, LayoutDashboard, Package } from 'lucide-react';
+import {
+  Database,
+  Search,
+  BarChart,
+  Edit,
+  Settings,
+  Webhook,
+  LayoutDashboard,
+  Package,
+} from 'lucide-react';
 import { Button, Separator, Sider } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 
@@ -17,44 +26,54 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
   const menuItems = [
     {
       key: '/dashboard',
-      icon: <LayoutDashboard className="w-4 h-4" />,
-      label: '仪表板'},
+      icon: <LayoutDashboard className='w-4 h-4' />,
+      label: '仪表板',
+    },
     {
       key: '/connections',
-      icon: <Webhook className="w-4 h-4" />,
-      label: '连接管理'},
+      icon: <Webhook className='w-4 h-4' />,
+      label: '连接管理',
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: '/query',
-      icon: <Search className="w-4 h-4" />,
+      icon: <Search className='w-4 h-4' />,
       label: '数据查询',
-      disabled: !activeConnectionId},
+      disabled: !activeConnectionId,
+    },
     {
       key: '/database',
-      icon: <Database className="w-4 h-4" />,
+      icon: <Database className='w-4 h-4' />,
       label: '数据库管理',
-      disabled: !activeConnectionId},
+      disabled: !activeConnectionId,
+    },
     {
       key: '/visualization',
-      icon: <BarChart className="w-4 h-4" />,
+      icon: <BarChart className='w-4 h-4' />,
       label: '数据可视化',
-      disabled: !activeConnectionId},
+      disabled: !activeConnectionId,
+    },
     {
       key: '/write',
-      icon: <Edit className="w-4 h-4" />,
+      icon: <Edit className='w-4 h-4' />,
       label: '数据写入',
-      disabled: !activeConnectionId},
+      disabled: !activeConnectionId,
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: '/extensions',
-      icon: <Package className="w-4 h-4" />,
-      label: '扩展管理'},
+      icon: <Package className='w-4 h-4' />,
+      label: '扩展管理',
+    },
     {
       key: '/settings',
-      icon: <Settings className="w-4 h-4" />,
-      label: '应用设置'},
+      icon: <Settings className='w-4 h-4' />,
+      label: '应用设置',
+    },
   ];
 
   // 处理菜单点击
@@ -73,10 +92,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
       width={collapsed ? 64 : 240}
       collapsible={false}
     >
-      <nav className="h-full py-2">
-        {menuItems.map((item) => {
+      <nav className='h-full py-2'>
+        {menuItems.map(item => {
           if (item.type === 'divider') {
-            return <Separator key={item.key} className="my-2 mx-4" />;
+            return <Separator key={item.key} className='my-2 mx-4' />;
           }
 
           const isSelected = selectedKeys.includes(item.key);
@@ -92,7 +111,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
               disabled={item.disabled}
             >
               {item.icon}
-              {!collapsed && <span className="ml-3">{item.label}</span>}
+              {!collapsed && <span className='ml-3'>{item.label}</span>}
             </Button>
           );
         })}

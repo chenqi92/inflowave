@@ -548,7 +548,6 @@ export interface Dashboard {
 
 // 性能监控相关类型
 
-
 export interface SlowQueryInfo {
   id: string;
   query: string;
@@ -680,8 +679,6 @@ export interface WebhookConfig {
   };
 }
 
-
-
 export interface AutomationRule {
   id: string;
   name: string;
@@ -809,7 +806,7 @@ export enum QueryErrorType {
   SyntaxError = 'syntax_error',
   TypeError = 'type_error',
   ReferenceError = 'reference_error',
-  ValidationError = 'validation_error'
+  ValidationError = 'validation_error',
 }
 
 // 数据库结构类型

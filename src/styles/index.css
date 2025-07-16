@@ -9,7 +9,7 @@
   /* Mac平台图标优化 - 针对高DPI屏幕 */
   @media screen and (-webkit-min-device-pixel-ratio: 2) {
     .lucide-icon,
-    [class*="w-4"][class*="h-4"] svg,
+    [class*='w-4'][class*='h-4'] svg,
     .toolbar-button svg,
     .toolbar-button-vertical svg {
       width: 14px !important;
@@ -19,7 +19,7 @@
 
   /* 针对Mac的字体渲染优化 - 使用webkit特性检测 */
   @supports (-webkit-appearance: none) {
-    svg[class*="lucide"],
+    svg[class*='lucide'],
     .lucide-icon,
     .toolbar-button svg,
     .toolbar-button-vertical svg {
@@ -135,8 +135,18 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -152,7 +162,8 @@ body {
 code,
 pre,
 .monaco-editor {
-  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-family:
+    'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
 
 /* 滚动条样式 */
@@ -545,8 +556,12 @@ pre,
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式设计 */
@@ -977,8 +992,6 @@ pre,
     padding: 8px 4px;
   }
 }
-
-
 
 .desktop-toolbar {
   display: flex;

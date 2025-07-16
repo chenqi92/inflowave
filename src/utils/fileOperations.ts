@@ -15,11 +15,11 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return;
     }
-    
+
     try {
       await safeTauriInvoke('write_text_file', {
         path,
-        content
+        content,
       });
     } catch (error) {
       console.error(`写入文件失败 ${path}:`, error);
@@ -37,11 +37,11 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return;
     }
-    
+
     try {
       await safeTauriInvoke('append_text_file', {
         path,
-        content
+        content,
       });
     } catch (error) {
       console.error(`追加文件失败 ${path}:`, error);
@@ -59,7 +59,7 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return '';
     }
-    
+
     try {
       const result = await safeTauriInvoke<string>('read_text_file', { path });
       return result || '';
@@ -78,7 +78,7 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return;
     }
-    
+
     try {
       await safeTauriInvoke('delete_file', { path });
     } catch (error) {
@@ -97,7 +97,7 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return false;
     }
-    
+
     try {
       const result = await safeTauriInvoke<boolean>('file_exists', { path });
       return result || false;
@@ -116,7 +116,7 @@ export class FileOperations {
     if (isBrowserEnvironment()) {
       return;
     }
-    
+
     try {
       await safeTauriInvoke('create_dir', { path });
     } catch (error) {
@@ -144,10 +144,10 @@ export class FileOperations {
         modified: new Date().toISOString(),
         created: new Date().toISOString(),
         isFile: true,
-        isDir: false
+        isDir: false,
       };
     }
-    
+
     try {
       const result = await safeTauriInvoke<{
         size: number;
@@ -156,13 +156,15 @@ export class FileOperations {
         isFile: boolean;
         isDir: boolean;
       }>('get_file_info', { path });
-      return result || {
-        size: 0,
-        modified: new Date().toISOString(),
-        created: new Date().toISOString(),
-        isFile: true,
-        isDir: false
-      };
+      return (
+        result || {
+          size: 0,
+          modified: new Date().toISOString(),
+          created: new Date().toISOString(),
+          isFile: true,
+          isDir: false,
+        }
+      );
     } catch (error) {
       console.error(`获取文件信息失败 ${path}:`, error);
       throw error;

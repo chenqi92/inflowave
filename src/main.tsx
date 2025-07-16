@@ -28,14 +28,14 @@ const InnerApp: React.FC = () => {
 
 // 主应用组件
 const AppWrapper: React.FC = () => {
-
   return (
-    <ThemeProvider defaultTheme="system" storageKey="inflowave-ui-theme">
+    <ThemeProvider defaultTheme='system' storageKey='inflowave-ui-theme'>
       <TooltipProvider>
         <BrowserRouter
           future={{
             v7_startTransition: true,
-            v7_relativeSplatPath: true}}
+            v7_relativeSplatPath: true,
+          }}
         >
           <InnerApp />
         </BrowserRouter>

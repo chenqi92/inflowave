@@ -42,16 +42,8 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src-tauri"
-  ],
+  "include": ["src/**/*", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "src-tauri"],
   "references": [
     {
       "path": "./tsconfig.node.json"

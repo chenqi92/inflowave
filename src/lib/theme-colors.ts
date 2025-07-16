@@ -38,7 +38,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '221.2 83.2% 53.3%'
+    ring: '221.2 83.2% 53.3%',
   },
   green: {
     name: 'green',
@@ -57,7 +57,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '142.1 76.2% 36.3%'
+    ring: '142.1 76.2% 36.3%',
   },
   red: {
     name: 'red',
@@ -76,7 +76,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '0 72.2% 50.6%'
+    ring: '0 72.2% 50.6%',
   },
   orange: {
     name: 'orange',
@@ -95,7 +95,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '24.6 95% 53.1%'
+    ring: '24.6 95% 53.1%',
   },
   purple: {
     name: 'purple',
@@ -114,7 +114,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '262.1 83.3% 57.8%'
+    ring: '262.1 83.3% 57.8%',
   },
   rose: {
     name: 'rose',
@@ -133,7 +133,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '346.8 77.2% 49.8%'
+    ring: '346.8 77.2% 49.8%',
   },
   yellow: {
     name: 'yellow',
@@ -152,7 +152,7 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '47.9 95.8% 53.1%'
+    ring: '47.9 95.8% 53.1%',
   },
   violet: {
     name: 'violet',
@@ -171,8 +171,8 @@ export const themeColors: Record<string, ThemeColors> = {
     successForeground: '210 40% 98%',
     warning: '32.6 94.6% 43.7%',
     warningForeground: '210 40% 98%',
-    ring: '262.1 83.3% 57.8%'
-  }
+    ring: '262.1 83.3% 57.8%',
+  },
 };
 
 // 深色主题的颜色配置
@@ -186,7 +186,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '217.2 32.6% 17.5%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '224.3 76.3% 94.1%'
+    ring: '224.3 76.3% 94.1%',
   },
   green: {
     primary: '142.1 70.6% 45.3%',
@@ -197,7 +197,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '142.1 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '142.1 70.6% 45.3%'
+    ring: '142.1 70.6% 45.3%',
   },
   red: {
     primary: '0 62.8% 50.6%',
@@ -208,7 +208,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '0 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '0 62.8% 50.6%'
+    ring: '0 62.8% 50.6%',
   },
   orange: {
     primary: '20.5 90.2% 48.2%',
@@ -219,7 +219,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '20.5 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '20.5 90.2% 48.2%'
+    ring: '20.5 90.2% 48.2%',
   },
   purple: {
     primary: '263.4 70% 50.4%',
@@ -230,7 +230,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '263.4 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '263.4 70% 50.4%'
+    ring: '263.4 70% 50.4%',
   },
   rose: {
     primary: '346.8 77.2% 49.8%',
@@ -241,7 +241,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '346.8 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '346.8 77.2% 49.8%'
+    ring: '346.8 77.2% 49.8%',
   },
   yellow: {
     primary: '47.9 95.8% 53.1%',
@@ -252,7 +252,7 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '47.9 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '47.9 95.8% 53.1%'
+    ring: '47.9 95.8% 53.1%',
   },
   violet: {
     primary: '262.1 83.3% 57.8%',
@@ -263,8 +263,8 @@ export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
     accentForeground: '210 40% 98%',
     muted: '262.1 13% 15%',
     mutedForeground: '215 20.2% 65.1%',
-    ring: '262.1 83.3% 57.8%'
-  }
+    ring: '262.1 83.3% 57.8%',
+  },
 };
 
 // 应用主题颜色到CSS变量
@@ -275,19 +275,26 @@ export function applyThemeColors(colorScheme: string, isDark: boolean = false) {
 
   if (!colors) return;
 
-  const finalColors = isDark && darkColors ? { ...colors, ...darkColors } : colors;
+  const finalColors =
+    isDark && darkColors ? { ...colors, ...darkColors } : colors;
 
   // 应用颜色变量
   root.style.setProperty('--primary', finalColors.primary);
   root.style.setProperty('--primary-foreground', finalColors.primaryForeground);
   root.style.setProperty('--secondary', finalColors.secondary);
-  root.style.setProperty('--secondary-foreground', finalColors.secondaryForeground);
+  root.style.setProperty(
+    '--secondary-foreground',
+    finalColors.secondaryForeground
+  );
   root.style.setProperty('--accent', finalColors.accent);
   root.style.setProperty('--accent-foreground', finalColors.accentForeground);
   root.style.setProperty('--muted', finalColors.muted);
   root.style.setProperty('--muted-foreground', finalColors.mutedForeground);
   root.style.setProperty('--destructive', finalColors.destructive);
-  root.style.setProperty('--destructive-foreground', finalColors.destructiveForeground);
+  root.style.setProperty(
+    '--destructive-foreground',
+    finalColors.destructiveForeground
+  );
   root.style.setProperty('--success', finalColors.success);
   root.style.setProperty('--success-foreground', finalColors.successForeground);
   root.style.setProperty('--warning', finalColors.warning);
@@ -300,6 +307,6 @@ export function getThemeColorOptions() {
   return Object.values(themeColors).map(color => ({
     value: color.name,
     label: color.label,
-    primary: color.primary
+    primary: color.primary,
   }));
 }

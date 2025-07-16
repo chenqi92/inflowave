@@ -213,7 +213,8 @@
   min-height: 20px;
 }
 
-.settings-modal [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover,
+.settings-modal
+  [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover,
 .settings-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover,
 .settings-modal .max-h-96::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.6);
@@ -229,8 +230,6 @@
 .settings-modal .overflow-y-auto .overflow-y-auto::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
-
-
 
 /* Compact spacing */
 .settings-modal .space-compact {
@@ -266,21 +265,21 @@
     width: 95% !important;
     max-width: none;
   }
-  
+
   .settings-modal [data-tabs] {
     flex-direction: column;
   }
-  
+
   .settings-modal [data-tabs]-nav {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
   }
-  
+
   .settings-modal [data-tabs]-content {
     padding: 12px 16px;
   }
-  
+
   .settings-modal .grid-col {
     padding: 0 4px;
   }

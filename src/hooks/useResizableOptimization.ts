@@ -10,16 +10,16 @@ export const useResizableOptimization = () => {
   // 开始拖动时的优化
   const handleResizeStart = useCallback(() => {
     isResizingRef.current = true;
-    
+
     // 添加拖动状态类到 body，用于全局样式优化
     document.body.classList.add('resizing');
-    
+
     // 禁用页面滚动
     document.body.style.overflow = 'hidden';
-    
+
     // 禁用文本选择
     document.body.style.userSelect = 'none';
-    
+
     // 提高渲染优先级
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
@@ -29,7 +29,7 @@ export const useResizableOptimization = () => {
   // 拖动结束时的清理
   const handleResizeEnd = useCallback(() => {
     isResizingRef.current = false;
-    
+
     // 延迟移除优化类，避免闪烁
     rafIdRef.current = requestAnimationFrame(() => {
       document.body.classList.remove('resizing');

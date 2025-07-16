@@ -111,7 +111,7 @@ interface SettingsState {
   setDarkMode: (enabled: boolean) => void;
   setCompactMode: (enabled: boolean) => void;
   setLanguage: (language: string) => void;
-  
+
   // 状态管理
   markSaved: () => void;
   markUnsaved: () => void;
@@ -124,7 +124,8 @@ const defaultSettings: UserSettings = {
     mode: 'auto',
     primaryColor: '#1890ff',
     borderRadius: 6,
-    compact: false},
+    compact: false,
+  },
   editor: {
     fontSize: 14,
     fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
@@ -135,14 +136,16 @@ const defaultSettings: UserSettings = {
     showMinimap: true,
     theme: 'vs-light',
     autoComplete: true,
-    autoFormat: true},
+    autoFormat: true,
+  },
   query: {
     maxHistorySize: 100,
     autoSaveInterval: 30,
     defaultLimit: 1000,
     timeout: 60,
     formatOnExecute: false,
-    confirmBeforeExecute: false},
+    confirmBeforeExecute: false,
+  },
   chart: {
     defaultChartType: 'line',
     animationEnabled: true,
@@ -151,13 +154,15 @@ const defaultSettings: UserSettings = {
     showLegend: true,
     gridEnabled: true,
     tooltipEnabled: true,
-    refreshInterval: 0},
+    refreshInterval: 0,
+  },
   security: {
     encryptPasswords: true,
     autoLockTimeout: 0,
     requirePasswordConfirmation: true,
     rememberConnections: true,
-    maxFailedAttempts: 3},
+    maxFailedAttempts: 3,
+  },
   performance: {
     connectionPoolSize: 10,
     queryTimeout: 30,
@@ -165,19 +170,22 @@ const defaultSettings: UserSettings = {
     cacheSize: 100,
     maxConcurrentQueries: 5,
     enablePagination: true,
-    defaultPageSize: 1000},
+    defaultPageSize: 1000,
+  },
   notification: {
     enableDesktopNotifications: true,
     enableSoundNotifications: false,
     notifyOnQueryComplete: true,
     notifyOnConnectionLost: true,
     notifyOnError: true,
-    soundVolume: 50},
+    soundVolume: 50,
+  },
   language: 'zh-CN',
   timezone: 'Asia/Shanghai',
   dateFormat: 'YYYY-MM-DD',
   timeFormat: 'HH:mm:ss',
-  numberFormat: '0,0.00'};
+  numberFormat: '0,0.00',
+};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -188,78 +196,94 @@ export const useSettingsStore = create<SettingsState>()(
       hasUnsavedChanges: false,
 
       // 设置操作
-      updateSettings: (updates) => {
+      updateSettings: updates => {
         set(state => ({
           settings: { ...state.settings, ...updates },
-          hasUnsavedChanges: true}));
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateTheme: (theme) => {
+      updateTheme: theme => {
         set(state => ({
           settings: {
             ...state.settings,
-            theme: { ...state.settings.theme, ...theme }},
-          hasUnsavedChanges: true}));
+            theme: { ...state.settings.theme, ...theme },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateEditor: (editor) => {
+      updateEditor: editor => {
         set(state => ({
           settings: {
             ...state.settings,
-            editor: { ...state.settings.editor, ...editor }},
-          hasUnsavedChanges: true}));
+            editor: { ...state.settings.editor, ...editor },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateQuery: (query) => {
+      updateQuery: query => {
         set(state => ({
           settings: {
             ...state.settings,
-            query: { ...state.settings.query, ...query }},
-          hasUnsavedChanges: true}));
+            query: { ...state.settings.query, ...query },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateChart: (chart) => {
+      updateChart: chart => {
         set(state => ({
           settings: {
             ...state.settings,
-            chart: { ...state.settings.chart, ...chart }},
-          hasUnsavedChanges: true}));
+            chart: { ...state.settings.chart, ...chart },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateSecurity: (security) => {
+      updateSecurity: security => {
         set(state => ({
           settings: {
             ...state.settings,
-            security: { ...state.settings.security, ...security }},
-          hasUnsavedChanges: true}));
+            security: { ...state.settings.security, ...security },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updatePerformance: (performance) => {
+      updatePerformance: performance => {
         set(state => ({
           settings: {
             ...state.settings,
-            performance: { ...state.settings.performance, ...performance }},
-          hasUnsavedChanges: true}));
+            performance: { ...state.settings.performance, ...performance },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
-      updateNotification: (notification) => {
+      updateNotification: notification => {
         set(state => ({
           settings: {
             ...state.settings,
-            notification: { ...state.settings.notification, ...notification }},
-          hasUnsavedChanges: true}));
+            notification: { ...state.settings.notification, ...notification },
+          },
+          hasUnsavedChanges: true,
+        }));
       },
 
       // 文件操作
       saveSettings: async () => {
         set({ isLoading: true });
-        
+
         try {
           await SettingsAPI.saveUserSettings(get().settings);
-          set({ 
+          set({
             lastSaved: new Date(),
             hasUnsavedChanges: false,
-            isLoading: false});
+            isLoading: false,
+          });
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -268,13 +292,14 @@ export const useSettingsStore = create<SettingsState>()(
 
       loadSettings: async () => {
         set({ isLoading: true });
-        
+
         try {
           const settings = await SettingsAPI.getUserSettings();
-          set({ 
+          set({
             settings: { ...defaultSettings, ...settings },
             isLoading: false,
-            hasUnsavedChanges: false});
+            hasUnsavedChanges: false,
+          });
         } catch (error) {
           set({ isLoading: false });
           console.warn('加载用户设置失败，使用默认设置:', error);
@@ -284,16 +309,17 @@ export const useSettingsStore = create<SettingsState>()(
       resetSettings: async () => {
         try {
           await SettingsAPI.resetSettings();
-          set({ 
+          set({
             settings: defaultSettings,
             hasUnsavedChanges: false,
-            lastSaved: new Date()});
+            lastSaved: new Date(),
+          });
         } catch (error) {
           throw error;
         }
       },
 
-      exportSettings: async (filePath) => {
+      exportSettings: async filePath => {
         try {
           await SettingsAPI.exportSettings(filePath);
         } catch (error) {
@@ -301,7 +327,7 @@ export const useSettingsStore = create<SettingsState>()(
         }
       },
 
-      importSettings: async (filePath) => {
+      importSettings: async filePath => {
         try {
           await SettingsAPI.importSettings(filePath);
           // 重新加载设置
@@ -312,23 +338,24 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       // 快速设置
-      setDarkMode: (enabled) => {
+      setDarkMode: enabled => {
         get().updateTheme({ mode: enabled ? 'dark' : 'light' });
       },
 
-      setCompactMode: (enabled) => {
+      setCompactMode: enabled => {
         get().updateTheme({ compact: enabled });
       },
 
-      setLanguage: (language) => {
+      setLanguage: language => {
         get().updateSettings({ language });
       },
 
       // 状态管理
       markSaved: () => {
-        set({ 
+        set({
           lastSaved: new Date(),
-          hasUnsavedChanges: false});
+          hasUnsavedChanges: false,
+        });
       },
 
       markUnsaved: () => {
@@ -337,11 +364,14 @@ export const useSettingsStore = create<SettingsState>()(
 
       clearUnsavedChanges: () => {
         set({ hasUnsavedChanges: false });
-      }}),
+      },
+    }),
     {
       name: 'settings-store',
-      partialize: (state) => ({
+      partialize: state => ({
         settings: state.settings,
-        lastSaved: state.lastSaved})}
+        lastSaved: state.lastSaved,
+      }),
+    }
   )
 );

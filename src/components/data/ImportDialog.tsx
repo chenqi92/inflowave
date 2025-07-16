@@ -7,27 +7,16 @@ import {
   Button,
   Alert,
   Progress,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  Switch
+  Switch,
 } from '@/components/ui';
-import { Upload, Database, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { Database, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { showMessage } from '@/utils/message';
-import { safeTauriInvoke } from '@/utils/tauri';
 
 interface ImportDialogProps {
   open: boolean;
@@ -50,7 +39,13 @@ interface ImportConfig {
 }
 
 interface ImportProgress {
-  stage: 'idle' | 'uploading' | 'processing' | 'importing' | 'completed' | 'error';
+  stage:
+    | 'idle'
+    | 'uploading'
+    | 'processing'
+    | 'importing'
+    | 'completed'
+    | 'error';
   progress: number;
   message: string;
   processedRows: number;
@@ -63,7 +58,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   onClose,
   connectionId,
   database,
-  onSuccess
+  onSuccess,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -75,20 +70,20 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
     hasHeader: true,
     tagColumns: [],
     fieldColumns: [],
-    batchSize: 1000
+    batchSize: 1000,
   });
   const [importProgress, setImportProgress] = useState<ImportProgress>({
     stage: 'idle',
     progress: 0,
     message: '',
     processedRows: 0,
-    totalRows: 0
+    totalRows: 0,
   });
 
   const steps = [
     { title: '选择文件', description: '上传数据文件' },
     { title: '配置导入', description: '设置导入参数' },
-    { title: '执行导入', description: '导入数据到数据库' }
+    { title: '执行导入', description: '导入数据到数据库' },
   ];
 
   // 重置状态
@@ -103,68 +98,75 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       hasHeader: true,
       tagColumns: [],
       fieldColumns: [],
-      batchSize: 1000
+      batchSize: 1000,
     });
     setImportProgress({
       stage: 'idle',
       progress: 0,
       message: '',
       processedRows: 0,
-      totalRows: 0
+      totalRows: 0,
     });
   }, []);
 
   // 文件选择处理
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    setSelectedFile(file);
-    setImportProgress({
-      stage: 'uploading',
-      progress: 0,
-      message: '正在读取文件...',
-      processedRows: 0,
-      totalRows: 0
-    });
-
-    try {
-      // 读取文件预览
-      const text = await file.text();
-      const lines = text.split('\n').slice(0, 10); // 只预览前10行
-      
-      if (importConfig.format === 'csv') {
-        const preview = lines.map(line => line.split(importConfig.delimiter || ','));
-        setPreviewData(preview);
-      } else if (importConfig.format === 'json') {
-        try {
-          const jsonData = JSON.parse(text);
-          setPreviewData(Array.isArray(jsonData) ? jsonData.slice(0, 10) : [jsonData]);
-        } catch {
-          setPreviewData([{ error: '无效的JSON格式' }]);
-        }
-      }
-
+      setSelectedFile(file);
       setImportProgress({
-        stage: 'idle',
-        progress: 100,
-        message: '文件读取完成',
-        processedRows: 0,
-        totalRows: lines.length
-      });
-
-      showMessage.success('文件上传成功');
-    } catch (error) {
-      showMessage.error(`文件读取失败: ${error}`);
-      setImportProgress({
-        stage: 'error',
+        stage: 'uploading',
         progress: 0,
-        message: `文件读取失败: ${error}`,
+        message: '正在读取文件...',
         processedRows: 0,
-        totalRows: 0
+        totalRows: 0,
       });
-    }
-  }, [importConfig.format, importConfig.delimiter]);
+
+      try {
+        // 读取文件预览
+        const text = await file.text();
+        const lines = text.split('\n').slice(0, 10); // 只预览前10行
+
+        if (importConfig.format === 'csv') {
+          const preview = lines.map(line =>
+            line.split(importConfig.delimiter || ',')
+          );
+          setPreviewData(preview);
+        } else if (importConfig.format === 'json') {
+          try {
+            const jsonData = JSON.parse(text);
+            setPreviewData(
+              Array.isArray(jsonData) ? jsonData.slice(0, 10) : [jsonData]
+            );
+          } catch {
+            setPreviewData([{ error: '无效的JSON格式' }]);
+          }
+        }
+
+        setImportProgress({
+          stage: 'idle',
+          progress: 100,
+          message: '文件读取完成',
+          processedRows: 0,
+          totalRows: lines.length,
+        });
+
+        showMessage.success('文件上传成功');
+      } catch (error) {
+        showMessage.error(`文件读取失败: ${error}`);
+        setImportProgress({
+          stage: 'error',
+          progress: 0,
+          message: `文件读取失败: ${error}`,
+          processedRows: 0,
+          totalRows: 0,
+        });
+      }
+    },
+    [importConfig.format, importConfig.delimiter]
+  );
 
   // 执行导入
   const executeImport = useCallback(async () => {
@@ -178,7 +180,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       progress: 0,
       message: '开始导入数据...',
       processedRows: 0,
-      totalRows: previewData.length
+      totalRows: previewData.length,
     });
 
     try {
@@ -189,7 +191,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           ...prev,
           progress: i,
           message: `正在导入数据... ${i}%`,
-          processedRows: Math.floor((i / 100) * prev.totalRows)
+          processedRows: Math.floor((i / 100) * prev.totalRows),
         }));
       }
 
@@ -198,7 +200,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         progress: 100,
         message: '导入完成',
         processedRows: previewData.length,
-        totalRows: previewData.length
+        totalRows: previewData.length,
       });
 
       showMessage.success('数据导入成功');
@@ -210,7 +212,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
         message: `导入失败: ${error}`,
         processedRows: 0,
         totalRows: 0,
-        errors: [String(error)]
+        errors: [String(error)],
       });
       showMessage.error(`导入失败: ${error}`);
     }
@@ -218,20 +220,20 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   // 渲染文件选择步骤
   const renderFileStep = () => (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <Alert>
-        <Info className="w-4 h-4" />
+        <Info className='w-4 h-4' />
         <div>
-          <div className="font-medium">支持的文件格式</div>
-          <div className="text-sm text-muted-foreground">
+          <div className='font-medium'>支持的文件格式</div>
+          <div className='text-sm text-muted-foreground'>
             CSV、JSON、Line Protocol 格式的数据文件
           </div>
         </div>
       </Alert>
 
-      <div className="space-y-4">
+      <div className='space-y-4'>
         <div>
-          <label className="block text-sm font-medium mb-2">选择文件格式</label>
+          <label className='block text-sm font-medium mb-2'>选择文件格式</label>
           <Select
             value={importConfig.format}
             onValueChange={(value: 'csv' | 'json' | 'line_protocol') =>
@@ -242,29 +244,30 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="csv">CSV 格式</SelectItem>
-              <SelectItem value="json">JSON 格式</SelectItem>
-              <SelectItem value="line_protocol">Line Protocol</SelectItem>
+              <SelectItem value='csv'>CSV 格式</SelectItem>
+              <SelectItem value='json'>JSON 格式</SelectItem>
+              <SelectItem value='line_protocol'>Line Protocol</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">选择文件</label>
+          <label className='block text-sm font-medium mb-2'>选择文件</label>
           <Input
-            type="file"
-            accept=".csv,.json,.txt"
+            type='file'
+            accept='.csv,.json,.txt'
             onChange={handleFileSelect}
           />
         </div>
 
         {selectedFile && (
           <Alert>
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className='w-4 h-4' />
             <div>
-              <div className="font-medium">文件信息</div>
-              <div className="text-sm text-muted-foreground">
-                文件名: {selectedFile.name} | 大小: {(selectedFile.size / 1024).toFixed(2)} KB
+              <div className='font-medium'>文件信息</div>
+              <div className='text-sm text-muted-foreground'>
+                文件名: {selectedFile.name} | 大小:{' '}
+                {(selectedFile.size / 1024).toFixed(2)} KB
               </div>
             </div>
           </Alert>
@@ -272,9 +275,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
         {previewData.length > 0 && (
           <div>
-            <h4 className="font-medium mb-2">数据预览</h4>
-            <div className="border rounded p-2 bg-muted max-h-40 overflow-auto">
-              <pre className="text-xs">
+            <h4 className='font-medium mb-2'>数据预览</h4>
+            <div className='border rounded p-2 bg-muted max-h-40 overflow-auto'>
+              <pre className='text-xs'>
                 {JSON.stringify(previewData.slice(0, 5), null, 2)}
               </pre>
             </div>
@@ -286,26 +289,32 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   // 渲染配置步骤
   const renderConfigStep = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <div className='space-y-4'>
+      <div className='grid grid-cols-2 gap-4'>
         <div>
-          <label className="block text-sm font-medium mb-2">测量名称</label>
+          <label className='block text-sm font-medium mb-2'>测量名称</label>
           <Input
             value={importConfig.measurement}
-            onChange={(e) =>
-              setImportConfig(prev => ({ ...prev, measurement: e.target.value }))
+            onChange={e =>
+              setImportConfig(prev => ({
+                ...prev,
+                measurement: e.target.value,
+              }))
             }
-            placeholder="请输入测量名称"
+            placeholder='请输入测量名称'
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">批处理大小</label>
+          <label className='block text-sm font-medium mb-2'>批处理大小</label>
           <Input
-            type="number"
+            type='number'
             value={importConfig.batchSize}
-            onChange={(e) =>
-              setImportConfig(prev => ({ ...prev, batchSize: parseInt(e.target.value) || 1000 }))
+            onChange={e =>
+              setImportConfig(prev => ({
+                ...prev,
+                batchSize: parseInt(e.target.value) || 1000,
+              }))
             }
             min={100}
             max={10000}
@@ -314,22 +323,22 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       </div>
 
       {importConfig.format === 'csv' && (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
+        <div className='space-y-4'>
+          <div className='flex items-center space-x-2'>
             <Switch
               checked={importConfig.hasHeader}
-              onCheckedChange={(checked) =>
+              onCheckedChange={checked =>
                 setImportConfig(prev => ({ ...prev, hasHeader: checked }))
               }
             />
-            <label className="text-sm font-medium">包含表头</label>
+            <label className='text-sm font-medium'>包含表头</label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">分隔符</label>
+            <label className='block text-sm font-medium mb-2'>分隔符</label>
             <Select
               value={importConfig.delimiter}
-              onValueChange={(value) =>
+              onValueChange={value =>
                 setImportConfig(prev => ({ ...prev, delimiter: value }))
               }
             >
@@ -337,9 +346,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=",">逗号 (,)</SelectItem>
-                <SelectItem value=";">分号 (;)</SelectItem>
-                <SelectItem value="\t">制表符 (\t)</SelectItem>
+                <SelectItem value=','>逗号 (,)</SelectItem>
+                <SelectItem value=';'>分号 (;)</SelectItem>
+                <SelectItem value='\t'>制表符 (\t)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -349,15 +358,15 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={open => !open && onClose()}>
+      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>数据导入</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {/* 步骤指示器 */}
-          <div className="flex items-center justify-between">
+          <div className='flex items-center justify-between'>
             {steps.map((step, index) => (
               <div
                 key={index}
@@ -374,49 +383,55 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 >
                   {index + 1}
                 </div>
-                <div className="ml-2">
-                  <div className="text-sm font-medium">{step.title}</div>
-                  <div className="text-xs text-muted-foreground">{step.description}</div>
+                <div className='ml-2'>
+                  <div className='text-sm font-medium'>{step.title}</div>
+                  <div className='text-xs text-muted-foreground'>
+                    {step.description}
+                  </div>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="flex-1 h-px bg-muted-foreground mx-4" />
+                  <div className='flex-1 h-px bg-muted-foreground mx-4' />
                 )}
               </div>
             ))}
           </div>
 
           {/* 步骤内容 */}
-          <div className="min-h-[400px]">
+          <div className='min-h-[400px]'>
             {currentStep === 0 && renderFileStep()}
             {currentStep === 1 && renderConfigStep()}
             {currentStep === 2 && (
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 <Alert>
-                  <Database className="w-4 h-4" />
+                  <Database className='w-4 h-4' />
                   <div>
-                    <div className="font-medium">准备导入</div>
-                    <div className="text-sm text-muted-foreground">
-                      将数据导入到数据库 {database} 的测量 {importConfig.measurement}
+                    <div className='font-medium'>准备导入</div>
+                    <div className='text-sm text-muted-foreground'>
+                      将数据导入到数据库 {database} 的测量{' '}
+                      {importConfig.measurement}
                     </div>
                   </div>
                 </Alert>
 
                 {importProgress.stage !== 'idle' && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                  <div className='space-y-2'>
+                    <div className='flex justify-between text-sm'>
                       <span>{importProgress.message}</span>
-                      <span>{importProgress.processedRows} / {importProgress.totalRows}</span>
+                      <span>
+                        {importProgress.processedRows} /{' '}
+                        {importProgress.totalRows}
+                      </span>
                     </div>
                     <Progress value={importProgress.progress} />
                   </div>
                 )}
 
                 {importProgress.stage === 'error' && importProgress.errors && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="w-4 h-4" />
+                  <Alert variant='destructive'>
+                    <AlertCircle className='w-4 h-4' />
                     <div>
-                      <div className="font-medium">导入失败</div>
-                      <div className="text-sm">
+                      <div className='font-medium'>导入失败</div>
+                      <div className='text-sm'>
                         {importProgress.errors.map((error, index) => (
                           <div key={index}>{error}</div>
                         ))}
@@ -429,15 +444,15 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           </div>
 
           {/* 底部按钮 */}
-          <div className="flex justify-between pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
+          <div className='flex justify-between pt-4 border-t'>
+            <Button variant='outline' onClick={onClose}>
               取消
             </Button>
 
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               {currentStep > 0 && (
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={() => setCurrentStep(prev => prev - 1)}
                   disabled={importProgress.stage === 'importing'}
                 >
@@ -458,13 +473,16 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
               )}
 
               {currentStep === 2 && importProgress.stage === 'idle' && (
-                <Button onClick={executeImport}>
-                  开始导入
-                </Button>
+                <Button onClick={executeImport}>开始导入</Button>
               )}
 
               {importProgress.stage === 'completed' && (
-                <Button onClick={() => { resetState(); onSuccess?.(); }}>
+                <Button
+                  onClick={() => {
+                    resetState();
+                    onSuccess?.();
+                  }}
+                >
                   继续导入
                 </Button>
               )}

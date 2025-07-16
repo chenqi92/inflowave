@@ -11,6 +11,7 @@
 ## 🌟 核心功能
 
 ### 📊 **数据库管理**
+
 - ✅ **多连接管理** - 支持多个 InfluxDB 实例连接，安全存储凭据
 - ✅ **数据库操作** - 创建、删除、查看数据库，完整的 CRUD 操作
 - ✅ **保留策略管理** - 查看和管理数据保留策略
@@ -18,6 +19,7 @@
 - ✅ **右键快捷操作** - 数据库表格右键菜单，快速执行常用操作
 
 ### 🔍 **高级查询系统**
+
 - ✅ **专业查询编辑器** - Monaco Editor，支持 InfluxQL 语法高亮
 - ✅ **智能代码提示** - 数据库、测量、字段、标签自动补全
 - ✅ **查询历史管理** - 保存和管理查询历史，支持书签功能
@@ -25,6 +27,7 @@
 - ✅ **查询性能分析** - 执行时间统计和性能监控
 
 ### 📈 **数据可视化**
+
 - ✅ **多种图表类型** - 折线图、柱状图、饼图、面积图等
 - ✅ **时序数据专用** - 针对时间序列数据优化的图表展示
 - ✅ **交互式图表** - 缩放、平移、数据点提示等交互功能
@@ -32,12 +35,14 @@
 - ✅ **响应式仪表板** - 自适应布局的数据仪表板
 
 ### 📥📤 **数据管理**
+
 - ✅ **数据写入** - 单条和批量数据写入，支持 Line Protocol
 - ✅ **文件导入** - CSV、JSON 文件导入，智能字段映射
 - ✅ **数据验证** - 完整的数据格式验证和错误提示
 - ✅ **导入预览** - 导入前数据预览和字段配置
 
 ### 🔧 **系统功能**
+
 - ✅ **性能监控** - 系统资源使用情况和数据库性能指标
 - ✅ **连接池管理** - 高效的连接池和资源管理
 - ✅ **错误处理** - 完善的错误处理和用户友好的错误提示
@@ -46,6 +51,7 @@
 ## 🏗️ 技术架构
 
 ### 前端技术栈
+
 - **框架**: React 18 + TypeScript
 - **状态管理**: Zustand
 - **UI 组件**: Ant Design
@@ -55,6 +61,7 @@
 - **构建工具**: Vite
 
 ### 后端技术栈
+
 - **框架**: Tauri 2.0
 - **语言**: Rust
 - **数据库客户端**: influxdb crate
@@ -65,6 +72,7 @@
 ## 🏗️ 技术架构
 
 ### 前端技术栈
+
 - **框架**: React 18 + TypeScript
 - **状态管理**: Zustand
 - **UI 组件**: Ant Design
@@ -74,6 +82,7 @@
 - **构建工具**: Vite
 
 ### 后端技术栈
+
 - **框架**: Tauri 2.0
 - **语言**: Rust
 - **数据库客户端**: influxdb crate
@@ -84,6 +93,7 @@
 ## 📚 文档导航
 
 ### 🔧 开发文档
+
 详细的开发指南和技术文档，按模块分类：
 
 - **[📋 开发文档索引](./dev-docs/index.md)** - 完整的开发文档导航
@@ -103,6 +113,7 @@
   - [数据流设计](./dev-docs/integration/data-flow.md) - 数据处理流程
 
 ### 📖 用户文档
+
 面向最终用户的使用指南：
 
 - **[📖 用户手册](./user-docs/README.md)** - 完整的用户使用指南
@@ -161,6 +172,7 @@ inflowave/
 ### 📦 安装使用
 
 #### 方式一：下载预构建版本 (推荐)
+
 1. 访问 [Releases 页面](https://github.com/kkape/inflowave/releases)
 2. 根据您的系统和架构选择合适的安装包：
 
@@ -183,12 +195,14 @@ inflowave/
 #### 方式二：从源码构建
 
 **系统要求**
+
 - **操作系统**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
 - **Node.js**: 18.0+
 - **Rust**: 1.70+ (推荐通过 Scoop 安装)
 - **InfluxDB**: 1.x 服务器
 
 **Windows 自动化设置**
+
 ```powershell
 # 克隆项目
 git clone https://github.com/kkape/inflowave.git
@@ -202,6 +216,7 @@ npm run tauri:dev
 ```
 
 **手动安装**
+
 ```bash
 # 1. 克隆项目
 git clone https://github.com/kkape/inflowave.git
@@ -215,6 +230,7 @@ npm run tauri:dev
 ```
 
 **生产构建**
+
 ```powershell
 # Windows 一键构建
 .\scripts\one-click-build.ps1 -Target build
@@ -224,6 +240,7 @@ npm run tauri:build
 ```
 
 **多架构构建**
+
 ```powershell
 # 检测当前系统架构和构建建议
 .\scripts\detect-arch.ps1
@@ -254,6 +271,7 @@ npm run tauri:build
 ### ✅ 已完成功能 (99%)
 
 #### 🔗 连接管理
+
 - ✅ 多数据库连接配置和管理
 - ✅ 连接状态实时监控和健康检查
 - ✅ 安全的连接凭据存储
@@ -261,6 +279,7 @@ npm run tauri:build
 - ✅ 连接池管理和自动重连
 
 #### 🗄️ 数据库操作
+
 - ✅ 数据库列表展示和管理
 - ✅ 数据库创建、删除操作
 - ✅ 保留策略查看和管理
@@ -269,6 +288,7 @@ npm run tauri:build
 - ✅ 右键快捷操作菜单
 
 #### 🔍 查询系统
+
 - ✅ 专业的 InfluxQL 查询编辑器 (Monaco Editor)
 - ✅ 语法高亮和智能代码提示
 - ✅ 数据库、测量、字段自动补全
@@ -277,6 +297,7 @@ npm run tauri:build
 - ✅ 多格式结果导出 (CSV, JSON, Excel)
 
 #### 📈 数据可视化
+
 - ✅ 多种图表类型 (折线图、柱状图、饼图、面积图)
 - ✅ 时序数据专用图表组件
 - ✅ 交互式图表 (缩放、平移、提示)
@@ -284,6 +305,7 @@ npm run tauri:build
 - ✅ 实时数据刷新和监控
 
 #### 📥📤 数据管理
+
 - ✅ 单条和批量数据写入
 - ✅ Line Protocol 格式支持
 - ✅ CSV、JSON 文件导入
@@ -291,6 +313,7 @@ npm run tauri:build
 - ✅ 数据验证和错误处理
 
 #### 🔧 系统功能
+
 - ✅ 性能监控和系统资源显示
 - ✅ 应用配置和用户偏好管理
 - ✅ 完善的错误处理和用户提示
@@ -299,15 +322,18 @@ npm run tauri:build
 ### 🚧 待优化功能 (1%)
 
 #### 🔄 连接池优化
+
 - ⏳ 连接池性能调优
 - ⏳ 连接超时和重试策略优化
 
 #### 🎨 用户体验增强
+
 - ⏳ 更多右键快捷操作
 - ⏳ 键盘快捷键支持
 - ⏳ 主题和外观定制
 
 #### 📊 高级分析
+
 - ⏳ 查询执行计划分析
 - ⏳ 数据基数统计
 - ⏳ 性能瓶颈诊断
@@ -315,11 +341,13 @@ npm run tauri:build
 ## 🛠️ 开发环境
 
 ### 系统要求
+
 - **Node.js**: 18.0+
 - **Rust**: 1.70+
 - **操作系统**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
 
 ### 快速设置 (Windows)
+
 ```powershell
 # 使用自动化脚本设置完整开发环境
 .\scripts\setup-dev.ps1
@@ -329,6 +357,7 @@ npm run tauri:build
 ```
 
 ### 手动设置
+
 ```bash
 # 1. 安装前端依赖
 npm install
@@ -342,6 +371,7 @@ npm run tauri:dev
 ```
 
 ### 开发命令
+
 ```bash
 # 启动开发服务器
 npm run tauri:dev
@@ -362,6 +392,7 @@ npm run lint
 ## 🚀 版本发布
 
 ### 自动化发布流程
+
 项目支持基于 package.json 版本的自动化发布：
 
 ```powershell
@@ -378,6 +409,7 @@ git push origin main
 ```
 
 ### 发布产物
+
 - **Windows**: `.msi` 安装程序
 - **macOS**: `.dmg` 磁盘映像 (Universal Binary)
 - **Linux**: `.deb` 和 `.AppImage` 包
@@ -387,6 +419,7 @@ git push origin main
 ## 📖 文档
 
 ### 📚 完整文档导航
+
 - **[🔧 开发文档](./dev-docs/index.md)** - 详细的开发指南和技术文档
   - [后端开发](./dev-docs/backend/README.md) - Rust + Tauri 后端开发
   - [前端开发](./dev-docs/frontend/README.md) - React + TypeScript 前端开发
@@ -396,7 +429,9 @@ git push origin main
 - **[📊 功能进度](./PROGRESS.md)** - 详细的功能实现进度跟踪
 
 ### 🛠️ 构建脚本
+
 项目提供了完整的跨平台构建脚本：
+
 - **[🐧 Ubuntu AppImage 修复](./dev-docs/ubuntu-appimage-fix.md)** - 解决 Linux AppImage 打包图标问题
 
 ## 🤝 贡献指南
@@ -404,11 +439,13 @@ git push origin main
 我们欢迎任何形式的贡献！
 
 ### 贡献方式
+
 1. **报告问题** - 在 [Issues](https://github.com/kkape/inflowave/issues) 中报告 bug 或提出功能建议
 2. **改进文档** - 帮助完善文档和使用指南
 3. **代码贡献** - 提交代码修复或新功能
 
 ### 开发流程
+
 1. Fork 项目到您的 GitHub 账户
 2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
 3. 进行开发并确保代码质量
@@ -417,6 +454,7 @@ git push origin main
 6. 创建 Pull Request
 
 ### 代码规范
+
 - 遵循项目的代码风格和命名约定
 - 添加必要的注释和文档
 - 确保所有测试通过

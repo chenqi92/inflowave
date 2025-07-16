@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Typography, Breadcrumb, Tooltip, Space } from '@/components/ui';
+import {
+  Button,
+  Typography,
+  Breadcrumb,
+  Tooltip,
+  Space,
+} from '@/components/ui';
 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { HddOutlined } from '@/components/ui';
@@ -54,7 +60,8 @@ const AppStatusBar: React.FC = () => {
       '/performance': '性能监控',
       '/extensions': '扩展管理',
       '/dev-tools': '开发者工具',
-      '/settings': '应用设置'};
+      '/settings': '应用设置',
+    };
 
     const items = [
       {
@@ -62,17 +69,19 @@ const AppStatusBar: React.FC = () => {
           <Button
             type='text'
             size='small'
-            icon={<Home className="w-4 h-4"  />}
+            icon={<Home className='w-4 h-4' />}
             onClick={() => navigate('/dashboard')}
             style={{ padding: '0 4px', height: '20px' }}
           />
-        )},
+        ),
+      },
     ];
 
     const currentPageTitle = pathMap[path] || '未知页面';
     if (path !== '/' && path !== '/dashboard') {
       items.push({
-        title: currentPageTitle});
+        title: currentPageTitle,
+      });
     }
 
     return items;
@@ -85,41 +94,48 @@ const AppStatusBar: React.FC = () => {
         <div className='flex items-center space-x-4'>
           <Breadcrumb
             items={generateBreadcrumb()}
-            separator={<ChevronRight className="w-4 h-4" style={{ fontSize: '10px' }}  />}
+            separator={
+              <ChevronRight className='w-4 h-4' style={{ fontSize: '10px' }} />
+            }
           />
         </div>
 
         {/* 中间 - 连接信息 */}
         <div className='flex items-center space-x-4'>
           {activeConnectionId && currentConnection && currentStatus ? (
-            <Space split={<div className="border-t border my-4" type='vertical' />}>
+            <Space
+              split={<div className='border-t border my-4' type='vertical' />}
+            >
               <Tooltip
                 title={`${currentConnection.host}:${currentConnection.port}`}
               >
-                <div className="flex gap-2">
-                  <Wifi className="w-4 h-4" style={{
+                <div className='flex gap-2'>
+                  <Wifi
+                    className='w-4 h-4'
+                    style={{
                       color:
                         currentStatus.status === 'connected'
                           ? '#52c41a'
                           : '#ff4d4f',
-                      fontSize: '12px'}}
-                   />
+                      fontSize: '12px',
+                    }}
+                  />
                   <Text className='text-xs'>{currentConnection.name}</Text>
                 </div>
               </Tooltip>
 
               {currentStatus.latency && (
                 <Tooltip title='连接延迟'>
-                  <div className="flex gap-2">
-                    <Zap className="w-3 h-3" />
+                  <div className='flex gap-2'>
+                    <Zap className='w-3 h-3' />
                     <Text className='text-xs'>{currentStatus.latency}ms</Text>
                   </div>
                 </Tooltip>
               )}
             </Space>
           ) : (
-            <div className="flex gap-2">
-              <Wifi className="w-3 h-3" style={{ color: '#d9d9d9' }} />
+            <div className='flex gap-2'>
+              <Wifi className='w-3 h-3' style={{ color: '#d9d9d9' }} />
               <Text className='text-xs' type='secondary'>
                 无活跃连接
               </Text>
@@ -129,27 +145,29 @@ const AppStatusBar: React.FC = () => {
 
         {/* 右侧 - 系统信息 */}
         <div className='flex items-center space-x-4'>
-          <Space split={<div className="border-t border my-4" type='vertical' />}>
+          <Space
+            split={<div className='border-t border my-4' type='vertical' />}
+          >
             {/* 内存使用 */}
             <Tooltip title='内存使用情况'>
-              <div className="flex gap-2">
-                <HddOutlined className="text-xs" />
+              <div className='flex gap-2'>
+                <HddOutlined className='text-xs' />
                 <Text className='text-xs'>{getMemoryUsage()}MB</Text>
               </div>
             </Tooltip>
 
             {/* 应用版本 */}
             <Tooltip title='应用版本'>
-              <div className="flex gap-2">
-                <Globe className="w-3 h-3" />
+              <div className='flex gap-2'>
+                <Globe className='w-3 h-3' />
                 <Text className='text-xs'>v0.1.0</Text>
               </div>
             </Tooltip>
 
             {/* 当前时间 */}
             <Tooltip title='当前时间'>
-              <div className="flex gap-2">
-                <Clock className="w-3 h-3" />
+              <div className='flex gap-2'>
+                <Clock className='w-3 h-3' />
                 <Text className='text-xs'>
                   {currentTime.format('HH:mm:ss')}
                 </Text>

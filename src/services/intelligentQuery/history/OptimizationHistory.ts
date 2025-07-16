@@ -118,7 +118,7 @@ export interface ExportOptions {
 
 /**
  * 查询优化历史记录管理器
- * 
+ *
  * 核心功能：
  * 1. 记录查询优化历史
  * 2. 提供历史查询和分析
@@ -139,7 +139,7 @@ export class OptimizationHistory {
     this.maxHistorySize = options?.maxHistorySize || 10000;
     this.persistenceEnabled = options?.persistenceEnabled ?? true;
     this.compressionEnabled = options?.compressionEnabled ?? true;
-    
+
     this.loadHistory();
   }
 
@@ -165,10 +165,11 @@ export class OptimizationHistory {
       context,
       performance: performance || this.createDefaultPerformance(),
       tags: this.generateTags(optimizationResult, context),
-      metadata: this.createMetadata(optimizationResult)};
+      metadata: this.createMetadata(optimizationResult),
+    };
 
     this.history.unshift(entry);
-    
+
     // 限制历史记录大小
     if (this.history.length > this.maxHistorySize) {
       this.history = this.history.slice(0, this.maxHistorySize);
@@ -292,15 +293,20 @@ export class OptimizationHistory {
    * 生成历史统计
    */
   generateStatistics(filter?: HistoryFilter): HistoryStatistics {
-    const filtered = filter ? this.applyFilter(this.history, filter) : this.history;
+    const filtered = filter
+      ? this.applyFilter(this.history, filter)
+      : this.history;
 
     const totalOptimizations = filtered.length;
-    const successfulOptimizations = filtered.filter(e => e.performance.success).length;
+    const successfulOptimizations = filtered.filter(
+      e => e.performance.success
+    ).length;
     const averagePerformanceGain = this.calculateAverageGain(filtered);
-    
+
     const topOptimizationTechniques = this.calculateTechniqueStats(filtered);
     const queryTypeDistribution = this.calculateQueryTypeDistribution(filtered);
-    const performanceDistribution = this.calculatePerformanceDistribution(filtered);
+    const performanceDistribution =
+      this.calculatePerformanceDistribution(filtered);
     const userSatisfaction = this.calculateUserSatisfaction(filtered);
     const trends = this.calculateTrends(filtered);
 
@@ -312,15 +318,18 @@ export class OptimizationHistory {
       queryTypeDistribution,
       performanceDistribution,
       userSatisfaction,
-      trends};
+      trends,
+    };
   }
 
   /**
    * 导出历史数据
    */
   async exportHistory(options: ExportOptions): Promise<string> {
-    const filtered = options.filter ? this.applyFilter(this.history, options.filter) : this.history;
-    
+    const filtered = options.filter
+      ? this.applyFilter(this.history, options.filter)
+      : this.history;
+
     const data = filtered.map(entry => this.serializeEntry(entry, options));
 
     switch (options.format) {
@@ -354,9 +363,12 @@ export class OptimizationHistory {
 
     // 验证数据格式
     const validEntries = entries.filter(entry => this.validateEntry(entry));
-    
+
     // 合并到现有历史记录
-    this.history = [...validEntries, ...this.history].slice(0, this.maxHistorySize);
+    this.history = [...validEntries, ...this.history].slice(
+      0,
+      this.maxHistorySize
+    );
 
     if (this.persistenceEnabled) {
       await this.saveHistory();
@@ -375,7 +387,8 @@ export class OptimizationHistory {
   ): OptimizationHistoryEntry[] {
     const similarities = this.history.map(entry => ({
       entry,
-      similarity: this.calculateQuerySimilarity(query, entry.originalQuery)}));
+      similarity: this.calculateQuerySimilarity(query, entry.originalQuery),
+    }));
 
     return similarities
       .filter(item => item.similarity >= threshold)
@@ -389,8 +402,13 @@ export class OptimizationHistory {
    */
   getBestOptimizations(limit: number = 10): OptimizationHistoryEntry[] {
     return this.history
-      .filter(entry => entry.performance.success && entry.performance.performanceGain > 0)
-      .sort((a, b) => b.performance.performanceGain - a.performance.performanceGain)
+      .filter(
+        entry =>
+          entry.performance.success && entry.performance.performanceGain > 0
+      )
+      .sort(
+        (a, b) => b.performance.performanceGain - a.performance.performanceGain
+      )
       .slice(0, limit);
   }
 
@@ -399,8 +417,13 @@ export class OptimizationHistory {
    */
   getWorstOptimizations(limit: number = 10): OptimizationHistoryEntry[] {
     return this.history
-      .filter(entry => !entry.performance.success || entry.performance.performanceGain < 0)
-      .sort((a, b) => a.performance.performanceGain - b.performance.performanceGain)
+      .filter(
+        entry =>
+          !entry.performance.success || entry.performance.performanceGain < 0
+      )
+      .sort(
+        (a, b) => a.performance.performanceGain - b.performance.performanceGain
+      )
       .slice(0, limit);
   }
 
@@ -412,20 +435,36 @@ export class OptimizationHistory {
     filter: HistoryFilter
   ): OptimizationHistoryEntry[] {
     return entries.filter(entry => {
-      if (filter.connectionId && entry.connectionId !== filter.connectionId) return false;
+      if (filter.connectionId && entry.connectionId !== filter.connectionId)
+        return false;
       if (filter.database && entry.database !== filter.database) return false;
       if (filter.dateRange) {
         const entryDate = entry.timestamp;
-        if (entryDate < filter.dateRange.start || entryDate > filter.dateRange.end) return false;
+        if (
+          entryDate < filter.dateRange.start ||
+          entryDate > filter.dateRange.end
+        )
+          return false;
       }
-      if (filter.queryType && entry.metadata.queryType !== filter.queryType) return false;
-      if (filter.minPerformanceGain !== undefined && entry.performance.performanceGain < filter.minPerformanceGain) return false;
-      if (filter.maxPerformanceGain !== undefined && entry.performance.performanceGain > filter.maxPerformanceGain) return false;
+      if (filter.queryType && entry.metadata.queryType !== filter.queryType)
+        return false;
+      if (
+        filter.minPerformanceGain !== undefined &&
+        entry.performance.performanceGain < filter.minPerformanceGain
+      )
+        return false;
+      if (
+        filter.maxPerformanceGain !== undefined &&
+        entry.performance.performanceGain > filter.maxPerformanceGain
+      )
+        return false;
       if (filter.successOnly && !entry.performance.success) return false;
       if (filter.withFeedback && !entry.userFeedback) return false;
-      if (filter.tags && !filter.tags.some(tag => entry.tags.includes(tag))) return false;
-      if (filter.search && !this.matchesSearch(entry, filter.search)) return false;
-      
+      if (filter.tags && !filter.tags.some(tag => entry.tags.includes(tag)))
+        return false;
+      if (filter.search && !this.matchesSearch(entry, filter.search))
+        return false;
+
       return true;
     });
   }
@@ -450,7 +489,8 @@ export class OptimizationHistory {
       ioOperations: 0,
       networkTraffic: 0,
       rowsAffected: 0,
-      success: false};
+      success: false,
+    };
   }
 
   /**
@@ -470,12 +510,15 @@ export class OptimizationHistory {
 
     // 基于性能提升的标签
     if (result.estimatedPerformanceGain > 50) tags.push('major-optimization');
-    else if (result.estimatedPerformanceGain > 20) tags.push('moderate-optimization');
+    else if (result.estimatedPerformanceGain > 20)
+      tags.push('moderate-optimization');
     else tags.push('minor-optimization');
 
     // 基于查询特征的标签
-    if (context.dataSize && context.dataSize.totalRows > 1000000) tags.push('large-dataset');
-    if (context.systemLoad && context.systemLoad.cpuUsage > 80) tags.push('high-system-load');
+    if (context.dataSize && context.dataSize.totalRows > 1000000)
+      tags.push('large-dataset');
+    if (context.systemLoad && context.systemLoad.cpuUsage > 80)
+      tags.push('high-system-load');
 
     return tags;
   }
@@ -491,7 +534,8 @@ export class OptimizationHistory {
       estimatedBenefit: result.estimatedPerformanceGain,
       actualBenefit: 0, // 将在性能数据更新时填充
       confidenceScore: this.calculateConfidenceScore(result),
-      engineVersion: '1.0.0'};
+      engineVersion: '1.0.0',
+    };
   }
 
   /**
@@ -499,21 +543,29 @@ export class OptimizationHistory {
    */
   private calculateAverageGain(entries: OptimizationHistoryEntry[]): number {
     if (entries.length === 0) return 0;
-    
-    const totalGain = entries.reduce((sum, entry) => sum + entry.performance.performanceGain, 0);
+
+    const totalGain = entries.reduce(
+      (sum, entry) => sum + entry.performance.performanceGain,
+      0
+    );
     return totalGain / entries.length;
   }
 
   /**
    * 私有方法 - 计算技术统计
    */
-  private calculateTechniqueStats(entries: OptimizationHistoryEntry[]): TechniqueStats[] {
-    const techniqueMap = new Map<string, {
-      count: number;
-      totalGain: number;
-      successCount: number;
-      ratings: number[];
-    }>();
+  private calculateTechniqueStats(
+    entries: OptimizationHistoryEntry[]
+  ): TechniqueStats[] {
+    const techniqueMap = new Map<
+      string,
+      {
+        count: number;
+        totalGain: number;
+        successCount: number;
+        ratings: number[];
+      }
+    >();
 
     entries.forEach(entry => {
       entry.optimizationResult.optimizationTechniques.forEach(tech => {
@@ -521,12 +573,14 @@ export class OptimizationHistory {
           count: 0,
           totalGain: 0,
           successCount: 0,
-          ratings: []};
+          ratings: [],
+        };
 
         existing.count++;
         existing.totalGain += entry.performance.performanceGain;
         if (entry.performance.success) existing.successCount++;
-        if (entry.userFeedback) existing.ratings.push(entry.userFeedback.rating);
+        if (entry.userFeedback)
+          existing.ratings.push(entry.userFeedback.rating);
 
         techniqueMap.set(tech.name, existing);
       });
@@ -538,17 +592,23 @@ export class OptimizationHistory {
         count: stats.count,
         averageGain: stats.totalGain / stats.count,
         successRate: stats.successCount / stats.count,
-        userRating: stats.ratings.length > 0 ? 
-          stats.ratings.reduce((sum, rating) => sum + rating, 0) / stats.ratings.length : 0}))
+        userRating:
+          stats.ratings.length > 0
+            ? stats.ratings.reduce((sum, rating) => sum + rating, 0) /
+              stats.ratings.length
+            : 0,
+      }))
       .sort((a, b) => b.count - a.count);
   }
 
   /**
    * 私有方法 - 计算查询类型分布
    */
-  private calculateQueryTypeDistribution(entries: OptimizationHistoryEntry[]): Record<string, number> {
+  private calculateQueryTypeDistribution(
+    entries: OptimizationHistoryEntry[]
+  ): Record<string, number> {
     const distribution: Record<string, number> = {};
-    
+
     entries.forEach(entry => {
       const queryType = entry.metadata.queryType;
       distribution[queryType] = (distribution[queryType] || 0) + 1;
@@ -560,13 +620,16 @@ export class OptimizationHistory {
   /**
    * 私有方法 - 计算性能分布
    */
-  private calculatePerformanceDistribution(entries: OptimizationHistoryEntry[]): PerformanceDistribution {
+  private calculatePerformanceDistribution(
+    entries: OptimizationHistoryEntry[]
+  ): PerformanceDistribution {
     const distribution: PerformanceDistribution = {
       excellent: 0,
       good: 0,
       moderate: 0,
       minimal: 0,
-      negative: 0};
+      negative: 0,
+    };
 
     entries.forEach(entry => {
       const gain = entry.performance.performanceGain;
@@ -583,21 +646,27 @@ export class OptimizationHistory {
   /**
    * 私有方法 - 计算用户满意度
    */
-  private calculateUserSatisfaction(entries: OptimizationHistoryEntry[]): SatisfactionStats {
+  private calculateUserSatisfaction(
+    entries: OptimizationHistoryEntry[]
+  ): SatisfactionStats {
     const entriesWithFeedback = entries.filter(e => e.userFeedback);
-    
+
     if (entriesWithFeedback.length === 0) {
       return {
         averageRating: 0,
         totalRatings: 0,
         ratingDistribution: {},
         helpfulPercentage: 0,
-        commonIssues: []};
+        commonIssues: [],
+      };
     }
 
     const totalRatings = entriesWithFeedback.length;
-    const averageRating = entriesWithFeedback.reduce((sum, entry) => 
-      sum + entry.userFeedback!.rating, 0) / totalRatings;
+    const averageRating =
+      entriesWithFeedback.reduce(
+        (sum, entry) => sum + entry.userFeedback!.rating,
+        0
+      ) / totalRatings;
 
     const ratingDistribution: Record<number, number> = {};
     entriesWithFeedback.forEach(entry => {
@@ -605,7 +674,9 @@ export class OptimizationHistory {
       ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
     });
 
-    const helpfulCount = entriesWithFeedback.filter(e => e.userFeedback!.helpful).length;
+    const helpfulCount = entriesWithFeedback.filter(
+      e => e.userFeedback!.helpful
+    ).length;
     const helpfulPercentage = helpfulCount / totalRatings;
 
     // 收集常见问题
@@ -616,7 +687,8 @@ export class OptimizationHistory {
       totalRatings,
       ratingDistribution,
       helpfulPercentage,
-      commonIssues};
+      commonIssues,
+    };
   }
 
   /**
@@ -624,12 +696,15 @@ export class OptimizationHistory {
    */
   private calculateTrends(entries: OptimizationHistoryEntry[]): HistoryTrend[] {
     const trends: HistoryTrend[] = [];
-    const dailyData = new Map<string, {
-      count: number;
-      totalGain: number;
-      successCount: number;
-      ratings: number[];
-    }>();
+    const dailyData = new Map<
+      string,
+      {
+        count: number;
+        totalGain: number;
+        successCount: number;
+        ratings: number[];
+      }
+    >();
 
     entries.forEach(entry => {
       const dateKey = entry.timestamp.toISOString().split('T')[0];
@@ -637,7 +712,8 @@ export class OptimizationHistory {
         count: 0,
         totalGain: 0,
         successCount: 0,
-        ratings: []};
+        ratings: [],
+      };
 
       existing.count++;
       existing.totalGain += entry.performance.performanceGain;
@@ -655,8 +731,12 @@ export class OptimizationHistory {
           optimizationCount: data.count,
           averageGain: data.totalGain / data.count,
           successRate: data.successCount / data.count,
-          userSatisfaction: data.ratings.length > 0 ? 
-            data.ratings.reduce((sum, rating) => sum + rating, 0) / data.ratings.length : 0});
+          userSatisfaction:
+            data.ratings.length > 0
+              ? data.ratings.reduce((sum, rating) => sum + rating, 0) /
+                data.ratings.length
+              : 0,
+        });
       });
 
     return trends;
@@ -709,31 +789,35 @@ export class OptimizationHistory {
   private calculateQueryComplexity(query: string): number {
     let complexity = 0;
     const lowerQuery = query.toLowerCase();
-    
+
     // 基础复杂度
     complexity += query.length / 100;
-    
+
     // 连接复杂度
     complexity += (lowerQuery.match(/join/g) || []).length * 10;
-    
+
     // 子查询复杂度
     complexity += (lowerQuery.match(/\(\s*select/g) || []).length * 15;
-    
+
     // 聚合函数复杂度
-    complexity += (lowerQuery.match(/\b(count|sum|avg|min|max|group_concat)\(/g) || []).length * 5;
-    
+    complexity +=
+      (lowerQuery.match(/\b(count|sum|avg|min|max|group_concat)\(/g) || [])
+        .length * 5;
+
     return Math.min(complexity, 100);
   }
 
   private calculateConfidenceScore(result: QueryOptimizationResult): number {
-    const highImpactTechniques = result.optimizationTechniques.filter(t => t.impact === 'high').length;
+    const highImpactTechniques = result.optimizationTechniques.filter(
+      t => t.impact === 'high'
+    ).length;
     const totalTechniques = result.optimizationTechniques.length;
-    
+
     if (totalTechniques === 0) return 0;
-    
+
     const technicianScore = (highImpactTechniques / totalTechniques) * 100;
     const estimatedBenefit = result.estimatedPerformanceGain;
-    
+
     return Math.min((technicianScore + estimatedBenefit) / 2, 100);
   }
 
@@ -741,35 +825,40 @@ export class OptimizationHistory {
     // 简化的相似度计算，实际应用中可以使用更复杂的算法
     const normalized1 = this.normalizeQuery(query1);
     const normalized2 = this.normalizeQuery(query2);
-    
+
     if (normalized1 === normalized2) return 1.0;
-    
+
     const words1 = normalized1.split(' ');
     const words2 = normalized2.split(' ');
-    
+
     const intersection = words1.filter(word => words2.includes(word));
     const union = [...new Set([...words1, ...words2])];
-    
+
     return intersection.length / union.length;
   }
 
   private normalizeQuery(query: string): string {
-    return query.toLowerCase()
-      .replace(/\s+/g, ' ')
-      .replace(/['"]/g, '')
-      .trim();
+    return query.toLowerCase().replace(/\s+/g, ' ').replace(/['"]/g, '').trim();
   }
 
-  private matchesSearch(entry: OptimizationHistoryEntry, search: string): boolean {
+  private matchesSearch(
+    entry: OptimizationHistoryEntry,
+    search: string
+  ): boolean {
     const searchLower = search.toLowerCase();
-    
-    return entry.originalQuery.toLowerCase().includes(searchLower) ||
-           entry.optimizedQuery.toLowerCase().includes(searchLower) ||
-           entry.database.toLowerCase().includes(searchLower) ||
-           entry.tags.some(tag => tag.toLowerCase().includes(searchLower));
+
+    return (
+      entry.originalQuery.toLowerCase().includes(searchLower) ||
+      entry.optimizedQuery.toLowerCase().includes(searchLower) ||
+      entry.database.toLowerCase().includes(searchLower) ||
+      entry.tags.some(tag => tag.toLowerCase().includes(searchLower))
+    );
   }
 
-  private serializeEntry(entry: OptimizationHistoryEntry, options: ExportOptions): any {
+  private serializeEntry(
+    entry: OptimizationHistoryEntry,
+    options: ExportOptions
+  ): any {
     const serialized: any = {
       id: entry.id,
       timestamp: entry.timestamp.toISOString(),
@@ -781,11 +870,14 @@ export class OptimizationHistory {
       queryType: entry.metadata.queryType,
       complexity: entry.metadata.complexity,
       estimatedBenefit: entry.metadata.estimatedBenefit,
-      actualBenefit: entry.metadata.actualBenefit};
+      actualBenefit: entry.metadata.actualBenefit,
+    };
 
     if (options.includePerformance) {
-      serialized.originalExecutionTime = entry.performance.originalExecutionTime;
-      serialized.optimizedExecutionTime = entry.performance.optimizedExecutionTime;
+      serialized.originalExecutionTime =
+        entry.performance.originalExecutionTime;
+      serialized.optimizedExecutionTime =
+        entry.performance.optimizedExecutionTime;
       serialized.performanceGain = entry.performance.performanceGain;
       serialized.success = entry.performance.success;
     }
@@ -801,18 +893,20 @@ export class OptimizationHistory {
 
   private convertToCSV(data: any[]): string {
     if (data.length === 0) return '';
-    
+
     const headers = Object.keys(data[0]);
     const csvRows = [headers.join(',')];
-    
+
     data.forEach(row => {
       const values = headers.map(header => {
         const value = row[header];
-        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+        return typeof value === 'string'
+          ? `"${value.replace(/"/g, '""')}"`
+          : value;
       });
       csvRows.push(values.join(','));
     });
-    
+
     return csvRows.join('\n');
   }
 
@@ -829,16 +923,18 @@ export class OptimizationHistory {
   }
 
   private validateEntry(entry: any): boolean {
-    return entry.id && 
-           entry.timestamp && 
-           entry.connectionId && 
-           entry.originalQuery && 
-           entry.optimizedQuery;
+    return (
+      entry.id &&
+      entry.timestamp &&
+      entry.connectionId &&
+      entry.originalQuery &&
+      entry.optimizedQuery
+    );
   }
 
   private extractCommonIssues(entries: OptimizationHistoryEntry[]): string[] {
     const issues: string[] = [];
-    
+
     entries.forEach(entry => {
       if (entry.userFeedback?.reportedIssues) {
         issues.push(...entry.userFeedback.reportedIssues);

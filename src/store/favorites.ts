@@ -18,9 +18,11 @@ export interface FavoriteItem {
 
 interface FavoritesState {
   favorites: FavoriteItem[];
-  
+
   // 操作方法
-  addFavorite: (item: Omit<FavoriteItem, 'id' | 'createdAt' | 'accessCount'>) => void;
+  addFavorite: (
+    item: Omit<FavoriteItem, 'id' | 'createdAt' | 'accessCount'>
+  ) => void;
   removeFavorite: (id: string) => void;
   updateFavorite: (id: string, updates: Partial<FavoriteItem>) => void;
   isFavorite: (path: string) => boolean;
@@ -38,9 +40,9 @@ export const useFavoritesStore = create<FavoritesState>()(
     (set, get) => ({
       favorites: [],
 
-      addFavorite: (item) => {
+      addFavorite: item => {
         const { favorites } = get();
-        
+
         // 检查是否已存在相同路径的收藏
         if (favorites.some(fav => fav.path === item.path)) {
           console.warn('收藏项已存在:', item.path);
@@ -51,17 +53,17 @@ export const useFavoritesStore = create<FavoritesState>()(
           ...item,
           id: `fav_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           createdAt: new Date(),
-          accessCount: 0
+          accessCount: 0,
         };
 
         set({
-          favorites: [...favorites, newFavorite]
+          favorites: [...favorites, newFavorite],
         });
       },
 
-      removeFavorite: (id) => {
+      removeFavorite: id => {
         set({
-          favorites: get().favorites.filter(fav => fav.id !== id)
+          favorites: get().favorites.filter(fav => fav.id !== id),
         });
       },
 
@@ -69,29 +71,37 @@ export const useFavoritesStore = create<FavoritesState>()(
         set({
           favorites: get().favorites.map(fav =>
             fav.id === id ? { ...fav, ...updates } : fav
-          )
+          ),
         });
       },
 
-      isFavorite: (path) => {
+      isFavorite: path => {
         return get().favorites.some(fav => fav.path === path);
       },
 
-      getFavorite: (path) => {
+      getFavorite: path => {
         return get().favorites.find(fav => fav.path === path);
       },
 
-      getFavoritesByType: (type) => {
-        return get().favorites.filter(fav => fav.type === type)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      getFavoritesByType: type => {
+        return get()
+          .favorites.filter(fav => fav.type === type)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
       },
 
-      getFavoritesByConnection: (connectionId) => {
-        return get().favorites.filter(fav => fav.connectionId === connectionId)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      getFavoritesByConnection: connectionId => {
+        return get()
+          .favorites.filter(fav => fav.connectionId === connectionId)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
       },
 
-      markAsAccessed: (id) => {
+      markAsAccessed: id => {
         const favorite = get().favorites.find(fav => fav.id === id);
         if (favorite) {
           set({
@@ -100,10 +110,10 @@ export const useFavoritesStore = create<FavoritesState>()(
                 ? {
                     ...fav,
                     lastAccessed: new Date(),
-                    accessCount: fav.accessCount + 1
+                    accessCount: fav.accessCount + 1,
                   }
                 : fav
-            )
+            ),
           });
         }
       },
@@ -116,15 +126,15 @@ export const useFavoritesStore = create<FavoritesState>()(
         return get().favorites;
       },
 
-      importFavorites: (favorites) => {
+      importFavorites: favorites => {
         set({ favorites });
-      }
+      },
     }),
     {
       name: 'inflowave-favorites-store',
-      partialize: (state) => ({
-        favorites: state.favorites
-      })
+      partialize: state => ({
+        favorites: state.favorites,
+      }),
     }
   )
 );
@@ -132,10 +142,14 @@ export const useFavoritesStore = create<FavoritesState>()(
 // 工具函数
 export const favoritesUtils = {
   // 根据路径生成收藏项
-  createFavoriteFromPath: (path: string, connectionId: string, connections: any[]): Omit<FavoriteItem, 'id' | 'createdAt' | 'accessCount'> | null => {
+  createFavoriteFromPath: (
+    path: string,
+    connectionId: string,
+    connections: any[]
+  ): Omit<FavoriteItem, 'id' | 'createdAt' | 'accessCount'> | null => {
     const parts = path.split('/');
     const connection = connections.find(c => c.id === connectionId);
-    
+
     if (!connection) return null;
 
     if (parts.length === 1) {
@@ -145,7 +159,7 @@ export const favoritesUtils = {
         name: connection.name,
         path,
         connectionId,
-        description: `${connection.host}:${connection.port}`
+        description: `${connection.host}:${connection.port}`,
       };
     } else if (parts.length === 2) {
       // 数据库级别
@@ -155,7 +169,7 @@ export const favoritesUtils = {
         path,
         connectionId,
         database: parts[1],
-        description: `数据库 - ${connection.name}`
+        description: `数据库 - ${connection.name}`,
       };
     } else if (parts.length === 3) {
       // 表级别
@@ -166,7 +180,7 @@ export const favoritesUtils = {
         connectionId,
         database: parts[1],
         table: parts[2],
-        description: `表 - ${parts[1]}.${parts[2]}`
+        description: `表 - ${parts[1]}.${parts[2]}`,
       };
     } else if (parts.length === 4) {
       // 字段或标签级别
@@ -178,7 +192,7 @@ export const favoritesUtils = {
         connectionId,
         database: parts[1],
         table: parts[2],
-        description: `${isTag ? '标签' : '字段'} - ${parts[1]}.${parts[2]}.${parts[3]}`
+        description: `${isTag ? '标签' : '字段'} - ${parts[1]}.${parts[2]}.${parts[3]}`,
       };
     }
 
@@ -188,24 +202,36 @@ export const favoritesUtils = {
   // 生成收藏项的显示图标
   getFavoriteIcon: (type: FavoriteItem['type']) => {
     switch (type) {
-      case 'connection': return 'Link';
-      case 'database': return 'Database';
-      case 'table': return 'Table';
-      case 'field': return 'Hash';
-      case 'tag': return 'Tags';
-      default: return 'Star';
+      case 'connection':
+        return 'Link';
+      case 'database':
+        return 'Database';
+      case 'table':
+        return 'Table';
+      case 'field':
+        return 'Hash';
+      case 'tag':
+        return 'Tags';
+      default:
+        return 'Star';
     }
   },
 
   // 生成收藏项的颜色
   getFavoriteColor: (type: FavoriteItem['type']) => {
     switch (type) {
-      case 'connection': return 'text-blue-600';
-      case 'database': return 'text-purple-600';
-      case 'table': return 'text-green-600';
-      case 'field': return 'text-orange-600';
-      case 'tag': return 'text-pink-600';
-      default: return 'text-gray-600';
+      case 'connection':
+        return 'text-blue-600';
+      case 'database':
+        return 'text-purple-600';
+      case 'table':
+        return 'text-green-600';
+      case 'field':
+        return 'text-orange-600';
+      case 'tag':
+        return 'text-pink-600';
+      default:
+        return 'text-gray-600';
     }
-  }
+  },
 };

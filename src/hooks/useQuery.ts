@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQueryStore } from '@/store/query';
-import { QueryAPI } from '@/services/api';
 import type { QueryRequest, QueryResult, QueryValidationResult } from '@/types';
 
 /**
@@ -25,7 +24,8 @@ export const useQuery = () => {
     formatQuery: storeFormatQuery,
     getQuerySuggestions: storeGetSuggestions,
     clearQueryResult,
-    clearQueryError} = useQueryStore();
+    clearQueryError,
+  } = useQueryStore();
 
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -34,28 +34,31 @@ export const useQuery = () => {
   /**
    * 执行查询
    */
-  const executeQuery = useCallback(async (request: QueryRequest): Promise<QueryResult> => {
-    // 取消之前的查询
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const executeQuery = useCallback(
+    async (request: QueryRequest): Promise<QueryResult> => {
+      // 取消之前的查询
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-    abortControllerRef.current = new AbortController();
-    setLocalLoading(true);
-    setLocalError(null);
+      abortControllerRef.current = new AbortController();
+      setLocalLoading(true);
+      setLocalError(null);
 
-    try {
-      const result = await storeExecuteQuery(request);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setLocalError(errorMessage);
-      throw err;
-    } finally {
-      setLocalLoading(false);
-      abortControllerRef.current = null;
-    }
-  }, [storeExecuteQuery]);
+      try {
+        const result = await storeExecuteQuery(request);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setLocalError(errorMessage);
+        throw err;
+      } finally {
+        setLocalLoading(false);
+        abortControllerRef.current = null;
+      }
+    },
+    [storeExecuteQuery]
+  );
 
   /**
    * 取消查询
@@ -72,57 +75,70 @@ export const useQuery = () => {
   /**
    * 验证查询
    */
-  const validateQuery = useCallback(async (query: string): Promise<QueryValidationResult> => {
-    setLocalLoading(true);
-    setLocalError(null);
+  const validateQuery = useCallback(
+    async (query: string): Promise<QueryValidationResult> => {
+      setLocalLoading(true);
+      setLocalError(null);
 
-    try {
-      const result = await storeValidateQuery(query);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setLocalError(errorMessage);
-      throw err;
-    } finally {
-      setLocalLoading(false);
-    }
-  }, [storeValidateQuery]);
+      try {
+        const result = await storeValidateQuery(query);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setLocalError(errorMessage);
+        throw err;
+      } finally {
+        setLocalLoading(false);
+      }
+    },
+    [storeValidateQuery]
+  );
 
   /**
    * 格式化查询
    */
-  const formatQuery = useCallback(async (query: string): Promise<string> => {
-    setLocalLoading(true);
-    setLocalError(null);
+  const formatQuery = useCallback(
+    async (query: string): Promise<string> => {
+      setLocalLoading(true);
+      setLocalError(null);
 
-    try {
-      const result = await storeFormatQuery(query);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setLocalError(errorMessage);
-      throw err;
-    } finally {
-      setLocalLoading(false);
-    }
-  }, [storeFormatQuery]);
+      try {
+        const result = await storeFormatQuery(query);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        setLocalError(errorMessage);
+        throw err;
+      } finally {
+        setLocalLoading(false);
+      }
+    },
+    [storeFormatQuery]
+  );
 
   /**
    * 获取查询建议
    */
-  const getQuerySuggestions = useCallback(async (
-    connectionId: string,
-    database?: string,
-    partialQuery?: string
-  ): Promise<string[]> => {
-    try {
-      const result = await storeGetSuggestions(connectionId, database, partialQuery);
-      return result;
-    } catch (err) {
-      console.warn('获取查询建议失败:', err);
-      return [];
-    }
-  }, [storeGetSuggestions]);
+  const getQuerySuggestions = useCallback(
+    async (
+      connectionId: string,
+      database?: string,
+      partialQuery?: string
+    ): Promise<string[]> => {
+      try {
+        const result = await storeGetSuggestions(
+          connectionId,
+          database,
+          partialQuery
+        );
+        return result;
+      } catch (err) {
+        console.warn('获取查询建议失败:', err);
+        return [];
+      }
+    },
+    [storeGetSuggestions]
+  );
 
   /**
    * 获取当前选项卡
@@ -135,79 +151,102 @@ export const useQuery = () => {
   /**
    * 更新当前选项卡查询
    */
-  const updateCurrentTabQuery = useCallback((query: string) => {
-    if (activeTabId) {
-      updateTabQuery(activeTabId, query);
-    }
-  }, [activeTabId, updateTabQuery]);
+  const updateCurrentTabQuery = useCallback(
+    (query: string) => {
+      if (activeTabId) {
+        updateTabQuery(activeTabId, query);
+      }
+    },
+    [activeTabId, updateTabQuery]
+  );
 
   /**
    * 在当前选项卡执行查询
    */
-  const executeCurrentTabQuery = useCallback(async (
-    connectionId: string,
-    database?: string
-  ): Promise<QueryResult | null> => {
-    const currentTab = getCurrentTab();
-    if (!currentTab || !currentTab.query.trim()) {
-      throw new Error('没有可执行的查询');
-    }
+  const executeCurrentTabQuery = useCallback(
+    async (
+      connectionId: string,
+      database?: string
+    ): Promise<QueryResult | null> => {
+      const currentTab = getCurrentTab();
+      if (!currentTab || !currentTab.query.trim()) {
+        throw new Error('没有可执行的查询');
+      }
 
-    const request: QueryRequest = {
-      connection_id: connectionId,
-      database: database || currentTab.database,
-      query: currentTab.query};
+      const request: QueryRequest = {
+        connection_id: connectionId,
+        database: database || currentTab.database,
+        query: currentTab.query,
+      };
 
-    return executeQuery(request);
-  }, [getCurrentTab, executeQuery]);
+      return executeQuery(request);
+    },
+    [getCurrentTab, executeQuery]
+  );
 
   /**
    * 创建新的查询选项卡
    */
-  const newQueryTab = useCallback((query?: string, database?: string) => {
-    return createTab(query, database);
-  }, [createTab]);
+  const newQueryTab = useCallback(
+    (query?: string, database?: string) => {
+      return createTab(query, database);
+    },
+    [createTab]
+  );
 
   /**
    * 关闭查询选项卡
    */
-  const closeQueryTab = useCallback((tabId: string) => {
-    closeTab(tabId);
-  }, [closeTab]);
+  const closeQueryTab = useCallback(
+    (tabId: string) => {
+      closeTab(tabId);
+    },
+    [closeTab]
+  );
 
   /**
    * 切换到指定选项卡
    */
-  const switchToTab = useCallback((tabId: string) => {
-    setActiveTab(tabId);
-  }, [setActiveTab]);
+  const switchToTab = useCallback(
+    (tabId: string) => {
+      setActiveTab(tabId);
+    },
+    [setActiveTab]
+  );
 
   /**
    * 获取查询历史
    */
-  const getQueryHistory = useCallback((limit?: number) => {
-    return limit ? history.slice(0, limit) : history;
-  }, [history]);
+  const getQueryHistory = useCallback(
+    (limit?: number) => {
+      return limit ? history.slice(0, limit) : history;
+    },
+    [history]
+  );
 
   /**
    * 从历史记录中重新执行查询
    */
-  const rerunFromHistory = useCallback(async (
-    historyItemId: string,
-    connectionId: string
-  ): Promise<QueryResult> => {
-    const historyItem = history.find(item => item.id === historyItemId);
-    if (!historyItem) {
-      throw new Error('历史记录项不存在');
-    }
+  const rerunFromHistory = useCallback(
+    async (
+      historyItemId: string,
+      connectionId: string
+    ): Promise<QueryResult> => {
+      const historyItem = history.find(item => item.id === historyItemId);
+      if (!historyItem) {
+        throw new Error('历史记录项不存在');
+      }
 
-    const request: QueryRequest = {
-      connectionId,
-      database: historyItem.database,
-      query: historyItem.query};
+      const request: QueryRequest = {
+        connectionId,
+        database: historyItem.database,
+        query: historyItem.query,
+      };
 
-    return executeQuery(request);
-  }, [history, executeQuery]);
+      return executeQuery(request);
+    },
+    [history, executeQuery]
+  );
 
   /**
    * 清除本地错误
@@ -251,5 +290,6 @@ export const useQuery = () => {
     rerunFromHistory,
     clearQueryResult,
     clearLocalError,
-    clearAllErrors};
+    clearAllErrors,
+  };
 };

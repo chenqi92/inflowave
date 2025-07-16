@@ -1,33 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button,
-  Typography,
-  Input,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Tag,
   Empty,
   Row,
   Col,
-  DatePicker,
-  Space,
   List,
   Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
   Popconfirm,
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-import { X } from 'lucide-react';
-import { Trash2, Search as SearchIcon, Database, Edit, History, Clock, FileDown, Book, PlayCircle } from 'lucide-react';
+import { Trash2, Edit, History, Clock, Book, PlayCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 
@@ -40,13 +25,16 @@ interface QueryHistoryProps {
 const QueryHistory: React.FC<QueryHistoryProps> = ({
   onQuerySelect,
   visible = true,
-  onClose}) => {
+  onClose,
+}) => {
   const [historyItems, setHistoryItems] = useState<QueryHistoryItem[]>([]);
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filterDatabase, setFilterDatabase] = useState<string>('');
-  const [filterDateRange, setFilterDateRange] = useState<[any, any] | null>(null);
+  const [filterDateRange, setFilterDateRange] = useState<[any, any] | null>(
+    null
+  );
   const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
 
@@ -54,12 +42,13 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   const loadQueryHistory = async () => {
     setLoading(true);
     try {
-      const history = await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
+      const history =
+        await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
       setHistoryItems(history || []);
     } catch (error) {
       showNotification.error({
-        message: "加载查询历史失败",
-        description: String(error)
+        message: '加载查询历史失败',
+        description: String(error),
       });
     } finally {
       setLoading(false);
@@ -74,8 +63,8 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       setSavedQueries(queries || []);
     } catch (error) {
       showNotification.error({
-        message: "加载保存的查询失败",
-        description: String(error)
+        message: '加载保存的查询失败',
+        description: String(error),
       });
     } finally {
       setLoading(false);
@@ -87,7 +76,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('delete_query_history', { id });
       await loadQueryHistory();
-      showMessage.success("删除成功" );
+      showMessage.success('删除成功');
     } catch (error) {
       showMessage.error(`删除失败: ${error}`);
     }
@@ -98,7 +87,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('clear_query_history');
       setHistoryItems([]);
-      showMessage.success("历史记录已清空" );
+      showMessage.success('历史记录已清空');
     } catch (error) {
       showMessage.error(`清空失败: ${error}`);
     }
@@ -109,7 +98,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       await safeTauriInvoke('delete_saved_query', { id });
       await loadSavedQueries();
-      showMessage.success("删除成功" );
+      showMessage.success('删除成功');
     } catch (error) {
       showMessage.error(`删除失败: ${error}`);
     }
@@ -126,7 +115,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       await safeTauriInvoke('update_saved_query', { query: updatedQuery });
       await loadSavedQueries();
       setEditingQuery(null);
-      showMessage.success("查询已更新" );
+      showMessage.success('查询已更新');
     } catch (error) {
       showMessage.error(`更新失败: ${error}`);
     }
@@ -134,37 +123,42 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
 
   // 过滤历史记录
   const filteredHistoryItems = historyItems.filter(item => {
-    const matchesSearch = !searchText || 
+    const matchesSearch =
+      !searchText ||
       item.query.toLowerCase().includes(searchText.toLowerCase()) ||
       item.database?.toLowerCase().includes(searchText.toLowerCase());
-    
+
     const matchesDatabase = !filterDatabase || item.database === filterDatabase;
-    
-    const matchesDateRange = !filterDateRange || (
-      new Date(item.executedAt) >= filterDateRange[0] &&
-      new Date(item.executedAt) <= filterDateRange[1]
-    );
+
+    const matchesDateRange =
+      !filterDateRange ||
+      (new Date(item.executedAt) >= filterDateRange[0] &&
+        new Date(item.executedAt) <= filterDateRange[1]);
 
     return matchesSearch && matchesDatabase && matchesDateRange;
   });
 
   // 过滤保存的查询
   const filteredSavedQueries = savedQueries.filter(query => {
-    const matchesSearch = !searchText || 
+    const matchesSearch =
+      !searchText ||
       query.query.toLowerCase().includes(searchText.toLowerCase()) ||
       query.name.toLowerCase().includes(searchText.toLowerCase()) ||
       query.description?.toLowerCase().includes(searchText.toLowerCase());
-    
-    const matchesDatabase = !filterDatabase || query.database === filterDatabase;
+
+    const matchesDatabase =
+      !filterDatabase || query.database === filterDatabase;
 
     return matchesSearch && matchesDatabase;
   });
 
   // 获取所有数据库列表（用于过滤）
-  const allDatabases = Array.from(new Set([
-    ...historyItems.map(item => item.database).filter(Boolean),
-    ...savedQueries.map(query => query.database).filter(Boolean),
-  ]));
+  const allDatabases = Array.from(
+    new Set([
+      ...historyItems.map(item => item.database).filter(Boolean),
+      ...savedQueries.map(query => query.database).filter(Boolean),
+    ])
+  );
 
   useEffect(() => {
     if (visible) {
@@ -177,32 +171,32 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     <List.Item
       key={item.id}
       actions={[
-        <Tooltip title="执行查询">
+        <Tooltip title='执行查询'>
           <Button
-            type="text"
+            type='text'
             icon={<PlayCircle />}
             onClick={() => onQuerySelect?.(item.query, item.database)}
           />
         </Tooltip>,
-        <Tooltip title="删除">
+        <Tooltip title='删除'>
           <Popconfirm
-            title="确定删除这条历史记录吗？"
+            title='确定删除这条历史记录吗？'
             onConfirm={() => handleDeleteHistoryItem(item.id)}
           >
-            <Button type="text" icon={<Trash2 className="w-4 h-4"  />} danger />
+            <Button type='text' icon={<Trash2 className='w-4 h-4' />} danger />
           </Popconfirm>
         </Tooltip>,
       ]}
     >
       <List.Item.Meta
         title={
-          <div className="flex gap-2">
+          <div className='flex gap-2'>
             <Text strong>{item.database || '未知数据库'}</Text>
             <Tag color={item.success ? 'green' : 'red'}>
               {item.success ? '成功' : '失败'}
             </Tag>
             {item.executionTime && (
-              <Tag color="blue">{item.executionTime}ms</Tag>
+              <Tag color='blue'>{item.executionTime}ms</Tag>
             )}
           </div>
         }
@@ -214,8 +208,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             >
               {item.query}
             </Paragraph>
-            <Text type="secondary" style={{ fontSize: '11px' }}>
-              <Clock className="w-4 h-4"  /> {new Date(item.executedAt).toLocaleString()}
+            <Text type='secondary' style={{ fontSize: '11px' }}>
+              <Clock className='w-4 h-4' />{' '}
+              {new Date(item.executedAt).toLocaleString()}
             </Text>
           </div>
         }
@@ -227,44 +222,49 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     <List.Item
       key={query.id}
       actions={[
-        <Tooltip title="执行查询">
+        <Tooltip title='执行查询'>
           <Button
-            type="text"
+            type='text'
             icon={<PlayCircle />}
             onClick={() => onQuerySelect?.(query.query, query.database)}
           />
         </Tooltip>,
-        <Tooltip title="编辑">
+        <Tooltip title='编辑'>
           <Button
-            type="text"
-            icon={<Edit className="w-4 h-4"  />}
+            type='text'
+            icon={<Edit className='w-4 h-4' />}
             onClick={() => handleEditSavedQuery(query)}
           />
         </Tooltip>,
-        <Tooltip title="删除">
+        <Tooltip title='删除'>
           <Popconfirm
-            title="确定删除这个保存的查询吗？"
+            title='确定删除这个保存的查询吗？'
             onConfirm={() => handleDeleteSavedQuery(query.id)}
           >
-            <Button type="text" icon={<Trash2 className="w-4 h-4"  />} danger />
+            <Button type='text' icon={<Trash2 className='w-4 h-4' />} danger />
           </Popconfirm>
         </Tooltip>,
       ]}
     >
       <List.Item.Meta
         title={
-          <div className="flex gap-2">
+          <div className='flex gap-2'>
             <Text strong>{query.name}</Text>
-            <Tag color="blue">{query.database || '未指定数据库'}</Tag>
+            <Tag color='blue'>{query.database || '未指定数据库'}</Tag>
             {query.tags?.map(tag => (
-              <Tag key={tag} color="default">{tag}</Tag>
+              <Tag key={tag} color='default'>
+                {tag}
+              </Tag>
             ))}
           </div>
         }
         description={
           <div>
             {query.description && (
-              <Text type="secondary" style={{ fontSize: '12px', display: 'block' }}>
+              <Text
+                type='secondary'
+                style={{ fontSize: '12px', display: 'block' }}
+              >
                 {query.description}
               </Text>
             )}
@@ -274,7 +274,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             >
               {query.query}
             </Paragraph>
-            <Text type="secondary" style={{ fontSize: '11px' }}>
+            <Text type='secondary' style={{ fontSize: '11px' }}>
               创建于 {new Date(query.createdAt).toLocaleString()}
             </Text>
           </div>
@@ -290,27 +290,29 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
         <Row gutter={[8, 8]}>
           <Col span={12}>
             <Search
-              placeholder="搜索查询..."
+              placeholder='搜索查询...'
               value={searchText}
-              onValueChange={(e) => setSearchText(e.target.value)}
+              onValueChange={e => setSearchText(e.target.value)}
               allowClear
             />
           </Col>
           <Col span={6}>
             <Select
-              placeholder="筛选数据库"
+              placeholder='筛选数据库'
               value={filterDatabase}
               onValueChange={setFilterDatabase}
               allowClear
               style={{ width: '100%' }}
             >
               {allDatabases.map(db => (
-                <Option key={db} value={db}>{db}</Option>
+                <Option key={db} value={db}>
+                  {db}
+                </Option>
               ))}
             </Select>
           </Col>
           <Col span={6}>
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               <Button
                 icon={<ClearOutlined />}
                 onClick={() => {
@@ -324,7 +326,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             </div>
           </Col>
         </Row>
-        
+
         {activeTab === 'history' && (
           <Row style={{ marginTop: 8 }}>
             <Col span={12}>
@@ -336,12 +338,12 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
               />
             </Col>
             <Col span={12} style={{ textAlign: 'right' }}>
-              <div className="flex gap-2">
+              <div className='flex gap-2'>
                 <Popconfirm
-                  title="确定清空所有历史记录吗？"
+                  title='确定清空所有历史记录吗？'
                   onConfirm={handleClearHistory}
                 >
-                  <Button icon={<Trash2 className="w-4 h-4"  />} danger>
+                  <Button icon={<Trash2 className='w-4 h-4' />} danger>
                     清空历史
                   </Button>
                 </Popconfirm>
@@ -353,17 +355,17 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
 
       {/* 标签页切换 */}
       <div style={{ padding: '0 16px', borderBottom: '1px solid #f0f0f0' }}>
-        <div className="flex gap-2">
+        <div className='flex gap-2'>
           <Button
             type={activeTab === 'history' ? 'primary' : 'text'}
-            icon={<History className="w-4 h-4"  />}
+            icon={<History className='w-4 h-4' />}
             onClick={() => setActiveTab('history')}
           >
             查询历史 ({filteredHistoryItems.length})
           </Button>
           <Button
             type={activeTab === 'saved' ? 'primary' : 'text'}
-            icon={<Book className="w-4 h-4"  />}
+            icon={<Book className='w-4 h-4' />}
             onClick={() => setActiveTab('saved')}
           >
             保存的查询 ({filteredSavedQueries.length})
@@ -381,10 +383,11 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             locale={{
               emptyText: (
                 <Empty
-                  description="暂无查询历史"
+                  description='暂无查询历史'
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />
-              )}}
+              ),
+            }}
           />
         ) : (
           <List
@@ -394,10 +397,11 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             locale={{
               emptyText: (
                 <Empty
-                  description="暂无保存的查询"
+                  description='暂无保存的查询'
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />
-              )}}
+              ),
+            }}
           />
         )}
       </div>
@@ -408,13 +412,13 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     return (
       <Dialog
         title={
-          <div className="flex gap-2">
-            <History className="w-4 h-4"  />
+          <div className='flex gap-2'>
+            <History className='w-4 h-4' />
             <span>查询历史</span>
           </div>
         }
         open={visible}
-        onOpenChange={(open) => !open && (onClose)()}
+        onOpenChange={open => !open && onClose()}
         footer={null}
         width={800}
         style={{ top: 20 }}
@@ -427,8 +431,8 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   return (
     <div
       title={
-        <div className="flex gap-2">
-          <History className="w-4 h-4"  />
+        <div className='flex gap-2'>
+          <History className='w-4 h-4' />
           <span>查询历史</span>
         </div>
       }

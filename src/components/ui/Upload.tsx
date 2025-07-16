@@ -56,9 +56,11 @@ const Upload: React.FC<UploadProps> & {
     }
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(event.target.files || []);
-    
+
     for (const file of files) {
       if (maxCount && fileList.length >= maxCount) {
         break;
@@ -100,45 +102,47 @@ const Upload: React.FC<UploadProps> & {
     <div className={cn('space-y-2', className)}>
       <input
         ref={fileInputRef}
-        type="file"
+        type='file'
         accept={accept}
         multiple={multiple}
         onChange={handleFileChange}
-        className="hidden"
+        className='hidden'
         disabled={disabled}
       />
-      
+
       <div onClick={handleClick}>
         {children || (
-          <Button variant="outline" disabled={disabled}>
-            <UploadIcon className="w-4 h-4 mr-2" />
+          <Button variant='outline' disabled={disabled}>
+            <UploadIcon className='w-4 h-4 mr-2' />
             选择文件
           </Button>
         )}
       </div>
 
       {showUploadList && fileList.length > 0 && (
-        <div className="space-y-2">
-          {fileList.map((file) => (
+        <div className='space-y-2'>
+          {fileList.map(file => (
             <div
               key={file.uid}
-              className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
+              className='flex items-center justify-between p-2 border rounded-md bg-muted/50'
             >
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">{file.name}</span>
+              <div className='flex items-center space-x-2'>
+                <span className='text-sm text-muted-foreground'>
+                  {file.name}
+                </span>
                 {file.size && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className='text-xs text-muted-foreground'>
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                 )}
               </div>
               <Button
-                variant="ghost"
-                size="sm"
+                variant='ghost'
+                size='sm'
                 onClick={() => handleRemove(file)}
-                className="h-6 w-6 p-0"
+                className='h-6 w-6 p-0'
               >
-                <X className="w-3 h-3" />
+                <X className='w-3 h-3' />
               </Button>
             </div>
           ))}
@@ -156,51 +160,59 @@ const Dragger: React.FC<DraggerProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (!disabled) {
-      setIsDragOver(true);
-    }
-  }, [disabled]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!disabled) {
+        setIsDragOver(true);
+      }
+    },
+    [disabled]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    if (disabled) return;
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    
-    for (const file of files) {
-      if (props.maxCount && (props.fileList?.length || 0) >= props.maxCount) {
-        break;
+      if (disabled) return;
+
+      const files = Array.from(e.dataTransfer.files);
+
+      for (const file of files) {
+        if (props.maxCount && (props.fileList?.length || 0) >= props.maxCount) {
+          break;
+        }
+
+        let shouldUpload = true;
+        if (props.beforeUpload) {
+          shouldUpload = await props.beforeUpload(file, files);
+        }
+
+        if (shouldUpload) {
+          const uploadFile: UploadFile = {
+            uid: `${Date.now()}-${Math.random()}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            status: 'done',
+            originFileObj: file,
+          };
+
+          const newFileList = props.multiple
+            ? [...(props.fileList || []), uploadFile]
+            : [uploadFile];
+          props.onChange?.({ file: uploadFile, fileList: newFileList });
+        }
       }
-
-      let shouldUpload = true;
-      if (props.beforeUpload) {
-        shouldUpload = await props.beforeUpload(file, files);
-      }
-
-      if (shouldUpload) {
-        const uploadFile: UploadFile = {
-          uid: `${Date.now()}-${Math.random()}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          status: 'done',
-          originFileObj: file,
-        };
-
-        const newFileList = props.multiple ? [...(props.fileList || []), uploadFile] : [uploadFile];
-        props.onChange?.({ file: uploadFile, fileList: newFileList });
-      }
-    }
-  }, [disabled, props]);
+    },
+    [disabled, props]
+  );
 
   return (
     <div
@@ -214,44 +226,50 @@ const Dragger: React.FC<DraggerProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <Upload {...props} showUploadList={false} className="w-full">
-        <div className="space-y-2">
+      <Upload {...props} showUploadList={false} className='w-full'>
+        <div className='space-y-2'>
           {children || (
             <>
-              <UploadIcon className="w-8 h-8 mx-auto text-muted-foreground" />
-              <Typography.Text className="text-muted-foreground">点击或拖拽文件到此区域上传</Typography.Text>
+              <UploadIcon className='w-8 h-8 mx-auto text-muted-foreground' />
+              <Typography.Text className='text-muted-foreground'>
+                点击或拖拽文件到此区域上传
+              </Typography.Text>
             </>
           )}
         </div>
       </Upload>
-      
-      {props.showUploadList !== false && props.fileList && props.fileList.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {props.fileList.map((file) => (
-            <div
-              key={file.uid}
-              className="flex items-center justify-between p-2 border rounded-md bg-muted/50"
-            >
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">{file.name}</span>
-                {file.size && (
-                  <span className="text-xs text-muted-foreground">
-                    ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => props.onRemove?.(file)}
-                className="h-6 w-6 p-0"
+
+      {props.showUploadList !== false &&
+        props.fileList &&
+        props.fileList.length > 0 && (
+          <div className='mt-4 space-y-2'>
+            {props.fileList.map(file => (
+              <div
+                key={file.uid}
+                className='flex items-center justify-between p-2 border rounded-md bg-muted/50'
               >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+                <div className='flex items-center space-x-2'>
+                  <span className='text-sm text-muted-foreground'>
+                    {file.name}
+                  </span>
+                  {file.size && (
+                    <span className='text-xs text-muted-foreground'>
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => props.onRemove?.(file)}
+                  className='h-6 w-6 p-0'
+                >
+                  <X className='w-3 h-3' />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
     </div>
   );
 };

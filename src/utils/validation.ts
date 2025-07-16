@@ -16,9 +16,9 @@ export class ValidationUtils {
    * 验证字符串长度
    */
   static stringLength(
-    value: string, 
-    min?: number, 
-    max?: number, 
+    value: string,
+    min?: number,
+    max?: number,
     fieldName?: string
   ): string | null {
     if (typeof value !== 'string') {
@@ -40,9 +40,9 @@ export class ValidationUtils {
    * 验证数字范围
    */
   static numberRange(
-    value: number, 
-    min?: number, 
-    max?: number, 
+    value: number,
+    min?: number,
+    max?: number,
     fieldName?: string
   ): string | null {
     if (typeof value !== 'number' || isNaN(value)) {
@@ -109,7 +109,7 @@ export class ValidationUtils {
   static ipAddress(value: string, fieldName?: string): string | null {
     const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
     const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-    
+
     if (!ipv4Regex.test(value) && !ipv6Regex.test(value)) {
       return `${fieldName || 'IP地址'}格式不正确`;
     }
@@ -142,8 +142,9 @@ export class ValidationUtils {
    * 验证主机名
    */
   static hostname(value: string, fieldName?: string): string | null {
-    const hostnameRegex = /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])*$/;
-    
+    const hostnameRegex =
+      /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(\.[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])*$/;
+
     if (!hostnameRegex.test(value)) {
       return `${fieldName || '主机名'}格式不正确`;
     }
@@ -217,7 +218,7 @@ export class ValidationUtils {
       /;\s*create\s+/i,
       /;\s*alter\s+/i,
       /--/,
-      /\/\*/
+      /\/\*/,
     ];
 
     for (const pattern of dangerousPatterns) {
@@ -249,10 +250,14 @@ export class ValidationUtils {
   /**
    * 验证时间格式
    */
-  static timeFormat(value: string, format?: string, fieldName?: string): string | null {
+  static timeFormat(
+    value: string,
+    format?: string,
+    fieldName?: string
+  ): string | null {
     // 这里可以使用dayjs等库进行更精确的时间格式验证
     const timeRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/;
-    
+
     if (!timeRegex.test(value)) {
       return `${fieldName || '时间'}格式不正确，应为 YYYY-MM-DD 或 YYYY-MM-DD HH:mm:ss`;
     }
@@ -266,7 +271,7 @@ export class ValidationUtils {
   static filePath(value: string, fieldName?: string): string | null {
     // 检查路径中的危险字符
     const dangerousChars = ['<', '>', '|', '\0'];
-    
+
     for (const char of dangerousChars) {
       if (value.includes(char)) {
         return `${fieldName || '文件路径'}包含非法字符`;
@@ -297,7 +302,12 @@ export class ValidationUtils {
     const hasNumbers = /\d/.test(value);
     const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(value);
 
-    const strength = [hasLowerCase, hasUpperCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+    const strength = [
+      hasLowerCase,
+      hasUpperCase,
+      hasNumbers,
+      hasSpecialChar,
+    ].filter(Boolean).length;
 
     if (strength < 3) {
       return `${fieldName || '密码'}强度不够，应包含大小写字母、数字和特殊字符中的至少3种`;
@@ -309,7 +319,10 @@ export class ValidationUtils {
   /**
    * 复合验证器
    */
-  static validate(value: any, validators: Array<(value: any) => string | null>): string[] {
+  static validate(
+    value: any,
+    validators: Array<(value: any) => string | null>
+  ): string[] {
     const errors: string[] = [];
 
     for (const validator of validators) {
@@ -337,15 +350,15 @@ export class ValidationUtils {
 
     // 验证连接名称
     const nameErrors = this.validate(config.name, [
-      (v) => this.required(v, '连接名称'),
-      (v) => this.stringLength(v, 1, 100, '连接名称'),
+      v => this.required(v, '连接名称'),
+      v => this.stringLength(v, 1, 100, '连接名称'),
     ]);
     if (nameErrors.length > 0) errors.name = nameErrors;
 
     // 验证主机
     const hostErrors = this.validate(config.host, [
-      (v) => this.required(v, '主机地址'),
-      (v) => {
+      v => this.required(v, '主机地址'),
+      v => {
         // 可以是IP地址或主机名
         const ipError = this.ipAddress(v);
         const hostnameError = this.hostname(v);
@@ -356,15 +369,15 @@ export class ValidationUtils {
 
     // 验证端口
     const portErrors = this.validate(config.port, [
-      (v) => this.required(v, '端口'),
-      (v) => this.port(v, '端口'),
+      v => this.required(v, '端口'),
+      v => this.port(v, '端口'),
     ]);
     if (portErrors.length > 0) errors.port = portErrors;
 
     // 验证用户名（可选）
     if (config.username) {
       const usernameErrors = this.validate(config.username, [
-        (v) => this.stringLength(v, 1, 50, '用户名'),
+        v => this.stringLength(v, 1, 50, '用户名'),
       ]);
       if (usernameErrors.length > 0) errors.username = usernameErrors;
     }
@@ -372,7 +385,7 @@ export class ValidationUtils {
     // 验证密码（可选）
     if (config.password) {
       const passwordErrors = this.validate(config.password, [
-        (v) => this.stringLength(v, 1, 128, '密码'),
+        v => this.stringLength(v, 1, 128, '密码'),
       ]);
       if (passwordErrors.length > 0) errors.password = passwordErrors;
     }
@@ -380,7 +393,7 @@ export class ValidationUtils {
     // 验证数据库名称（可选）
     if (config.database) {
       const databaseErrors = this.validate(config.database, [
-        (v) => this.databaseName(v, '数据库名称'),
+        v => this.databaseName(v, '数据库名称'),
       ]);
       if (databaseErrors.length > 0) errors.database = databaseErrors;
     }

@@ -1,12 +1,12 @@
-import * as React from "react"
-import * as TooltipPrimitive from "@radix-ui/react-tooltip"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import { cn } from '@/lib/utils';
 
-const TooltipProvider = TooltipPrimitive.Provider
+const TooltipProvider = TooltipPrimitive.Provider;
 
-const Tooltip = TooltipPrimitive.Root
+const Tooltip = TooltipPrimitive.Root;
 
-const TooltipTrigger = TooltipPrimitive.Trigger
+const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
@@ -16,55 +16,62 @@ const TooltipContent = React.forwardRef<
     ref={ref}
     sideOffset={sideOffset}
     className={cn(
-      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      'z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
       className
     )}
     {...props}
   />
-))
-TooltipContent.displayName = TooltipPrimitive.Content.displayName
+));
+TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 interface TooltipWrapperProps {
-  children: React.ReactNode
-  title?: React.ReactNode
-  placement?: "top" | "bottom" | "left" | "right"
-  trigger?: "hover" | "focus" | "click"
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
+  children: React.ReactNode;
+  title?: React.ReactNode;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+  trigger?: 'hover' | 'focus' | 'click';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const TooltipWrapper = React.forwardRef<HTMLDivElement, TooltipWrapperProps>(
-  ({ children, title, placement = "top", trigger = "hover", open, onOpenChange, ...props }, ref) => {
+  (
+    {
+      children,
+      title,
+      placement = 'top',
+      trigger = 'hover',
+      open,
+      onOpenChange,
+      ...props
+    },
+    ref
+  ) => {
     if (!title) {
-      return <>{children}</>
+      return <>{children}</>;
     }
 
     const triggerProps = {
-      ...(trigger === "hover" && {}),
-      ...(trigger === "focus" && { delayDuration: 0 }),
-      ...(trigger === "click" && { delayDuration: 0 }),
-    }
+      ...(trigger === 'hover' && {}),
+      ...(trigger === 'focus' && { delayDuration: 0 }),
+      ...(trigger === 'click' && { delayDuration: 0 }),
+    };
 
     // Don't wrap with TooltipProvider since it's already provided at the app level
     return (
       <Tooltip open={open} onOpenChange={onOpenChange} {...triggerProps}>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-        <TooltipContent side={placement}>
-          {title}
-        </TooltipContent>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side={placement}>{title}</TooltipContent>
       </Tooltip>
-    )
+    );
   }
-)
-TooltipWrapper.displayName = "TooltipWrapper"
+);
+TooltipWrapper.displayName = 'TooltipWrapper';
 
-export { 
-  Tooltip, 
-  TooltipTrigger, 
-  TooltipContent, 
+export {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
   TooltipProvider,
-  TooltipWrapper 
-}
-export type { TooltipWrapperProps }
+  TooltipWrapper,
+};
+export type { TooltipWrapperProps };

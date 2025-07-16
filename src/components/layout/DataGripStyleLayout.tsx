@@ -1,7 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button } from '@/components/ui';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+  Layout,
+  Header,
+  Button,
+} from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
@@ -19,13 +32,13 @@ import ConnectionsPage from '../../pages/Connections';
 import DevTools from '../../pages/DevTools';
 import Extensions from '../../pages/Extensions';
 
-
-
 export interface DataGripStyleLayoutProps {
   children?: React.ReactNode;
 }
 
-const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
+const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
+  children,
+}) => {
   const { preferences, updateWorkspaceSettings } = useUserPreferences();
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,10 +57,16 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
 
   // 从用户偏好中获取初始状态，如果没有则使用默认值
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => {
-    return preferences?.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false;
+    return (
+      preferences?.workspace.panel_sizes?.['left-panel-collapsed'] === 1 ||
+      false
+    );
   });
   const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(() => {
-    return preferences?.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false;
+    return (
+      preferences?.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 ||
+      false
+    );
   });
   const [currentView, setCurrentView] = useState(() => {
     // 优先使用路径映射的视图，其次是用户偏好，最后是默认值
@@ -55,7 +74,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       ? getViewFromPath(location.pathname)
       : preferences?.workspace.layout || 'query';
   });
-  
+
   // 面板尺寸状态
   const [leftPanelSize, setLeftPanelSize] = useState(() => {
     return preferences?.workspace.panel_positions?.['left-panel'] || 25;
@@ -63,7 +82,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const [bottomPanelSize, setBottomPanelSize] = useState(() => {
     return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
   });
-  
+
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
@@ -78,9 +97,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     label: '不限制时间',
     value: 'none',
     start: '',
-    end: ''
+    end: '',
   });
-  const tabEditorRef = useRef<{ executeQueryWithContent?: (query: string, database: string) => void } | null>(null);
+  const tabEditorRef = useRef<{
+    executeQueryWithContent?: (query: string, database: string) => void;
+  } | null>(null);
 
   // 刷新数据源面板的方法
   const refreshDataExplorer = () => {
@@ -90,7 +111,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   // 保存工作区设置到用户偏好
   const saveWorkspaceSettings = useCallback(async () => {
     if (!preferences) return;
-    
+
     const currentPanelSizes = {
       ...preferences.workspace.panel_sizes,
       'left-panel-collapsed': leftPanelCollapsed ? 1 : 0,
@@ -111,7 +132,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     };
 
     await updateWorkspaceSettings(updatedWorkspace);
-  }, [preferences, leftPanelCollapsed, bottomPanelCollapsed, currentView, leftPanelSize, bottomPanelSize, updateWorkspaceSettings]);
+  }, [
+    preferences,
+    leftPanelCollapsed,
+    bottomPanelCollapsed,
+    currentView,
+    leftPanelSize,
+    bottomPanelSize,
+    updateWorkspaceSettings,
+  ]);
 
   // 监听路径变化，自动切换视图
   useEffect(() => {
@@ -126,14 +155,24 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {
     if (preferences?.workspace) {
-      setLeftPanelCollapsed(preferences.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false);
-      setBottomPanelCollapsed(preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false);
+      setLeftPanelCollapsed(
+        preferences.workspace.panel_sizes?.['left-panel-collapsed'] === 1 ||
+          false
+      );
+      setBottomPanelCollapsed(
+        preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 ||
+          false
+      );
       // 只有在非特殊路径时才使用偏好设置的布局
       if (getViewFromPath(location.pathname) === 'query') {
         setCurrentView(preferences.workspace.layout || 'query');
       }
-      setLeftPanelSize(preferences.workspace.panel_positions?.['left-panel'] || 25);
-      setBottomPanelSize(preferences.workspace.panel_positions?.['bottom-panel'] || 40);
+      setLeftPanelSize(
+        preferences.workspace.panel_positions?.['left-panel'] || 25
+      );
+      setBottomPanelSize(
+        preferences.workspace.panel_positions?.['bottom-panel'] || 40
+      );
     }
   }, [preferences, location.pathname]);
 
@@ -144,7 +183,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     }, 500); // 防抖，500ms后保存
 
     return () => clearTimeout(timer);
-  }, [leftPanelCollapsed, bottomPanelCollapsed, currentView, leftPanelSize, bottomPanelSize, saveWorkspaceSettings]);
+  }, [
+    leftPanelCollapsed,
+    bottomPanelCollapsed,
+    currentView,
+    leftPanelSize,
+    bottomPanelSize,
+    saveWorkspaceSettings,
+  ]);
 
   // 监听全局刷新事件
   useEffect(() => {
@@ -159,15 +205,25 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       refreshDataExplorer();
     };
 
-    document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+    document.addEventListener(
+      'refresh-database-tree',
+      handleRefreshDatabaseTree
+    );
 
     return () => {
-      document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+      document.removeEventListener(
+        'refresh-database-tree',
+        handleRefreshDatabaseTree
+      );
     };
   }, []);
 
   // 处理表格双击事件
-  const handleTableDoubleClick = (database: string, table: string, query: string) => {
+  const handleTableDoubleClick = (
+    database: string,
+    table: string,
+    query: string
+  ) => {
     // 切换到查询视图
     setCurrentView('query');
     // 使用TabEditor的引用来执行查询
@@ -177,41 +233,44 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   };
 
   // 处理视图变化 - 特殊处理开发者工具
-  const handleViewChange = useCallback((newView: string) => {
-    // 如果当前在开发者工具页面，并且要切换到其他视图，需要同时导航
-    if (currentView === 'dev-tools' && newView !== 'dev-tools') {
-      setCurrentView(newView);
-      // 根据视图导航到对应路径
-      const pathMap: Record<string, string> = {
-        'datasource': '/connections',
-        'query': '/query',
-        'visualization': '/visualization',
-        'performance': '/performance'
-      };
-      if (pathMap[newView]) {
-        navigate(pathMap[newView]);
+  const handleViewChange = useCallback(
+    (newView: string) => {
+      // 如果当前在开发者工具页面，并且要切换到其他视图，需要同时导航
+      if (currentView === 'dev-tools' && newView !== 'dev-tools') {
+        setCurrentView(newView);
+        // 根据视图导航到对应路径
+        const pathMap: Record<string, string> = {
+          datasource: '/connections',
+          query: '/query',
+          visualization: '/visualization',
+          performance: '/performance',
+        };
+        if (pathMap[newView]) {
+          navigate(pathMap[newView]);
+        }
+      } else {
+        setCurrentView(newView);
       }
-    } else {
-      setCurrentView(newView);
-    }
-  }, [currentView, navigate]);
+    },
+    [currentView, navigate]
+  );
 
   // 根据当前视图渲染主要内容 - 使用 useMemo 优化性能
   const mainContent = useMemo(() => {
     switch (currentView) {
       case 'datasource':
         return (
-          <div className="h-full">
-            <div className="p-0 h-full">
+          <div className='h-full'>
+            <div className='p-0 h-full'>
               <ConnectionsPage />
             </div>
           </div>
         );
       case 'database':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden p-0">
-              <div className="h-full overflow-y-auto p-4">
+          <div className='h-full flex flex-col'>
+            <div className='flex-1 overflow-hidden p-0'>
+              <div className='h-full overflow-y-auto p-4'>
                 <DatabasePage />
               </div>
             </div>
@@ -219,9 +278,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         );
       case 'visualization':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden p-0">
-              <div className="h-full overflow-y-auto p-4">
+          <div className='h-full flex flex-col'>
+            <div className='flex-1 overflow-hidden p-0'>
+              <div className='h-full overflow-y-auto p-4'>
                 <VisualizationPage />
               </div>
             </div>
@@ -229,9 +288,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         );
       case 'performance':
         return (
-          <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-hidden p-0">
-              <div className="h-full overflow-y-auto p-4">
+          <div className='h-full flex flex-col'>
+            <div className='flex-1 overflow-hidden p-0'>
+              <div className='h-full overflow-y-auto p-4'>
                 <PerformancePage />
               </div>
             </div>
@@ -239,16 +298,16 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         );
       case 'dev-tools':
         return (
-          <div className="h-full">
-            <div className="p-0 h-full">
+          <div className='h-full'>
+            <div className='p-0 h-full'>
               <DevTools />
             </div>
           </div>
         );
       case 'extensions':
         return (
-          <div className="h-full">
-            <div className="p-0 h-full">
+          <div className='h-full'>
+            <div className='p-0 h-full'>
               <Extensions />
             </div>
           </div>
@@ -256,15 +315,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       case 'query':
       default:
         return (
-          <ResizablePanelGroup direction="vertical">
+          <ResizablePanelGroup direction='vertical'>
             {/* 上半部分：编辑器 */}
             <ResizablePanel
-              defaultSize={bottomPanelCollapsed ? 100 : (100 - bottomPanelSize)}
+              defaultSize={bottomPanelCollapsed ? 100 : 100 - bottomPanelSize}
               minSize={30}
-              className="bg-background overflow-hidden"
+              className='bg-background overflow-hidden'
             >
-              <TabEditor 
-                onQueryResult={setQueryResult} 
+              <TabEditor
+                onQueryResult={setQueryResult}
                 onBatchQueryResults={(results, queries, executionTime) => {
                   setQueryResults(results);
                   setExecutedQueries(queries);
@@ -282,28 +341,31 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             {/* 分割线和下半部分：结果面板 */}
             {!bottomPanelCollapsed && (
               <>
-                <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80" />
+                <ResizableHandle
+                  withHandle
+                  className='h-2 bg-border hover:bg-border/80'
+                />
 
                 <ResizablePanel
                   defaultSize={bottomPanelSize}
                   minSize={25}
                   maxSize={70}
-                  onResize={(size) => setBottomPanelSize(size)}
+                  onResize={size => setBottomPanelSize(size)}
                 >
-                  <div className="h-full border-t border-0 shadow-none bg-background overflow-hidden">
-                  <ResultPanel
-                    collapsed={bottomPanelCollapsed}
-                    queryResult={queryResult}
-                    queryResults={queryResults}
-                    executedQueries={executedQueries}
-                    executionTime={executionTime}
-                    onClearResult={() => {
-                      setQueryResult(null);
-                      setQueryResults([]);
-                      setExecutedQueries([]);
-                      setExecutionTime(0);
-                    }}
-                  />
+                  <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
+                    <ResultPanel
+                      collapsed={bottomPanelCollapsed}
+                      queryResult={queryResult}
+                      queryResults={queryResults}
+                      executedQueries={executedQueries}
+                      executionTime={executionTime}
+                      onClearResult={() => {
+                        setQueryResult(null);
+                        setQueryResults([]);
+                        setExecutedQueries([]);
+                        setExecutionTime(0);
+                      }}
+                    />
                   </div>
                 </ResizablePanel>
               </>
@@ -311,12 +373,21 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanelGroup>
         );
     }
-  }, [currentView, bottomPanelCollapsed, bottomPanelSize, queryResult, queryResults, executedQueries, executionTime, currentTimeRange]);
+  }, [
+    currentView,
+    bottomPanelCollapsed,
+    bottomPanelSize,
+    queryResult,
+    queryResults,
+    executedQueries,
+    executionTime,
+    currentTimeRange,
+  ]);
 
   return (
-    <Layout className="h-screen bg-background flex flex-col overflow-hidden">
+    <Layout className='h-screen bg-background flex flex-col overflow-hidden'>
       {/* 主工具栏 - 统一背景，移除边框分割线 */}
-      <Header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
+      <Header className='h-12 px-4 bg-background flex items-center flex-shrink-0'>
         <MainToolbar
           currentView={currentView}
           onViewChange={handleViewChange}
@@ -326,8 +397,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       </Header>
 
       {/* 主要内容区域 - 使用可调整大小的面板 */}
-      <div className="flex-1 min-h-0">
-        <ResizablePanelGroup direction="horizontal">
+      <div className='flex-1 min-h-0'>
+        <ResizablePanelGroup direction='horizontal'>
           {/* 左侧数据库面板 */}
           <ResizablePanel
             defaultSize={leftPanelSize}
@@ -335,13 +406,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
             maxSize={40}
             collapsible={true}
             collapsedSize={3}
-            onResize={(size) => setLeftPanelSize(size)}
+            onResize={size => setLeftPanelSize(size)}
             className={cn(
-              "bg-background border-r border-border transition-all duration-200",
-              leftPanelCollapsed && "min-w-12"
+              'bg-background border-r border-border transition-all duration-200',
+              leftPanelCollapsed && 'min-w-12'
             )}
           >
-            <div className="h-full relative">
+            <div className='h-full relative'>
               <DatabaseExplorer
                 collapsed={leftPanelCollapsed}
                 refreshTrigger={refreshTrigger}
@@ -350,9 +421,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
               />
               {/* 折叠按钮 */}
               <Button
-                variant="ghost"
-                size="sm"
-                className="absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10 h-8 w-8"
+                variant='ghost'
+                size='sm'
+                className='absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10 h-8 w-8'
                 onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
               >
                 {leftPanelCollapsed ? '→' : '←'}
@@ -361,12 +432,18 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanel>
 
           {/* 分割线 */}
-          <ResizableHandle withHandle className="w-2 bg-border hover:bg-border/80" />
+          <ResizableHandle
+            withHandle
+            className='w-2 bg-border hover:bg-border/80'
+          />
 
           {/* 右侧主要工作区域 */}
           <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
-            <main className="h-full bg-background flex flex-col">
-              <div key={currentView} className="h-full transition-all duration-200 ease-in-out">
+            <main className='h-full bg-background flex flex-col'>
+              <div
+                key={currentView}
+                className='h-full transition-all duration-200 ease-in-out'
+              >
                 {mainContent}
               </div>
             </main>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography } from '@/components/ui';
-import { Space } from '@/components/ui';
 
 import { HddOutlined } from '@/components/ui';
 import { Database, Wifi, Clock } from 'lucide-react';
@@ -24,7 +23,7 @@ const AppFooter: React.FC = () => {
   }, []);
 
   // 获取当前连接状态
-  const currentStatus = activeConnectionId 
+  const currentStatus = activeConnectionId
     ? connectionStatuses[activeConnectionId]
     : null;
 
@@ -35,49 +34,56 @@ const AppFooter: React.FC = () => {
   };
 
   return (
-    <Footer className="app-footer">
-      <div className="flex items-center justify-between">
+    <Footer className='app-footer'>
+      <div className='flex items-center justify-between'>
         {/* 左侧 - 应用信息 */}
-        <div className="flex gap-2" split={<div className="border-t border my-4" type="vertical" />}>
-          <Text className="text-xs">
-            InfluxDB GUI Manager v0.1.0
-          </Text>
-          
-          <div className="flex gap-2">
+        <div
+          className='flex gap-2'
+          split={<div className='border-t border my-4' type='vertical' />}
+        >
+          <Text className='text-xs'>InfluxDB GUI Manager v0.1.0</Text>
+
+          <div className='flex gap-2'>
             <HddOutlined />
-            <Text className="text-xs">
-              内存: {getMemoryUsage()}MB
-            </Text>
+            <Text className='text-xs'>内存: {getMemoryUsage()}MB</Text>
           </div>
         </div>
 
         {/* 中间 - 连接状态 */}
-        <div className="flex gap-2" split={<div className="border-t border my-4" type="vertical" />}>
+        <div
+          className='flex gap-2'
+          split={<div className='border-t border my-4' type='vertical' />}
+        >
           {activeConnectionId && currentStatus ? (
             <>
-              <div className="flex gap-2">
-                <Wifi className="w-4 h-4" style={{ 
-                    color: currentStatus.status === 'connected' ? '#52c41a' : '#ff4d4f' 
-                  }} 
-                 />
-                <Text className="text-xs">
+              <div className='flex gap-2'>
+                <Wifi
+                  className='w-4 h-4'
+                  style={{
+                    color:
+                      currentStatus.status === 'connected'
+                        ? '#52c41a'
+                        : '#ff4d4f',
+                  }}
+                />
+                <Text className='text-xs'>
                   {currentStatus.status === 'connected' ? '已连接' : '未连接'}
                 </Text>
               </div>
-              
+
               {currentStatus.latency && (
-                <div className="flex gap-2">
-                  <Database className="w-4 h-4"  />
-                  <Text className="text-xs">
+                <div className='flex gap-2'>
+                  <Database className='w-4 h-4' />
+                  <Text className='text-xs'>
                     延迟: {currentStatus.latency}ms
                   </Text>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex gap-2">
-              <Wifi className="w-4 h-4" style={{ color: '#d9d9d9' }}  />
-              <Text className="text-xs" type="secondary">
+            <div className='flex gap-2'>
+              <Wifi className='w-4 h-4' style={{ color: '#d9d9d9' }} />
+              <Text className='text-xs' type='secondary'>
                 无活跃连接
               </Text>
             </div>
@@ -85,9 +91,9 @@ const AppFooter: React.FC = () => {
         </div>
 
         {/* 右侧 - 时间 */}
-        <div className="flex gap-2">
-          <Clock className="w-4 h-4"  />
-          <Text className="text-xs">
+        <div className='flex gap-2'>
+          <Clock className='w-4 h-4' />
+          <Text className='text-xs'>
             {currentTime.format('YYYY-MM-DD HH:mm:ss')}
           </Text>
         </div>

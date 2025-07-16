@@ -11,7 +11,6 @@ import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleCon
 import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
-
 const Connections: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -20,47 +19,67 @@ const Connections: React.FC = () => {
     updateConnection,
     setConnectionStatus,
     clearConnections,
-    syncConnectionsToBackend} = useConnectionStore();
+    syncConnectionsToBackend,
+  } = useConnectionStore();
 
   const [isDialogVisible, setIsDialogVisible] = useState(false);
-  const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
+  const [editingConnection, setEditingConnection] =
+    useState<ConnectionConfig | null>(null);
 
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
     try {
-      const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
-      
+      const backendConnections =
+        await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+
       if (backendConnections && backendConnections.length > 0) {
         // 对比前端和后端的连接，只更新有差异的
         const currentConnections = connections;
         const needsUpdate = backendConnections.some(backendConn => {
-          const frontendConn = currentConnections.find(c => c.id === backendConn.id);
-          return !frontendConn || JSON.stringify(frontendConn) !== JSON.stringify(backendConn);
+          const frontendConn = currentConnections.find(
+            c => c.id === backendConn.id
+          );
+          return (
+            !frontendConn ||
+            JSON.stringify(frontendConn) !== JSON.stringify(backendConn)
+          );
         });
-        
-        if (needsUpdate || currentConnections.length !== backendConnections.length) {
+
+        if (
+          needsUpdate ||
+          currentConnections.length !== backendConnections.length
+        ) {
           // 保存当前活跃连接ID和连接状态
-          const { activeConnectionId, connectedConnectionIds, connectionStatuses } = useConnectionStore.getState();
-          
+          const {
+            activeConnectionId,
+            connectedConnectionIds,
+            connectionStatuses,
+          } = useConnectionStore.getState();
+
           // 清空前端存储的连接
           clearConnections();
-          
+
           // 重新添加从后端获取的连接
           for (const conn of backendConnections) {
             addConnection(conn);
           }
-          
+
           // 恢复活跃连接和连接状态
-          if (activeConnectionId && backendConnections.some(conn => conn.id === activeConnectionId)) {
-            useConnectionStore.getState().setActiveConnection(activeConnectionId);
-            
+          if (
+            activeConnectionId &&
+            backendConnections.some(conn => conn.id === activeConnectionId)
+          ) {
+            useConnectionStore
+              .getState()
+              .setActiveConnection(activeConnectionId);
+
             // 恢复连接状态
             Object.entries(connectionStatuses).forEach(([id, status]) => {
               if (backendConnections.some(conn => conn.id === id)) {
                 setConnectionStatus(id, status);
               }
             });
-            
+
             // 恢复已连接列表
             connectedConnectionIds.forEach(id => {
               if (backendConnections.some(conn => conn.id === id)) {
@@ -68,8 +87,10 @@ const Connections: React.FC = () => {
               }
             });
           }
-          
-          console.log(`已同步 ${backendConnections.length} 个连接配置，保持活跃连接: ${activeConnectionId}`);
+
+          console.log(
+            `已同步 ${backendConnections.length} 个连接配置，保持活跃连接: ${activeConnectionId}`
+          );
         }
       } else if (connections.length > 0) {
         // 如果后端没有连接但前端有，将前端连接推送到后端
@@ -94,12 +115,15 @@ const Connections: React.FC = () => {
       await syncConnectionsFromBackend();
 
       // 然后获取连接状态
-      const connectionList = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+      const connectionList =
+        await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (connectionList) {
         // 批量获取所有连接状态，避免单个请求导致的状态不一致
         try {
-          const allStatuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
+          const allStatuses = await safeTauriInvoke<
+            Record<string, ConnectionStatus>
+          >('get_all_connection_statuses');
 
           // 为每个连接设置状态
           for (const conn of connectionList) {
@@ -113,7 +137,7 @@ const Connections: React.FC = () => {
                 status: 'disconnected' as const,
                 error: undefined,
                 lastConnected: undefined,
-                latency: undefined
+                latency: undefined,
               };
               setConnectionStatus(conn.id!, defaultStatus);
             }
@@ -124,9 +148,12 @@ const Connections: React.FC = () => {
           // 如果批量获取失败，回退到单个请求
           for (const conn of connectionList) {
             try {
-              const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', {
-                connectionId: conn.id
-              });
+              const status = await safeTauriInvoke<ConnectionStatus>(
+                'get_connection_status',
+                {
+                  connectionId: conn.id,
+                }
+              );
               if (status) {
                 setConnectionStatus(conn.id!, status);
               } else {
@@ -135,7 +162,7 @@ const Connections: React.FC = () => {
                   status: 'disconnected' as const,
                   error: undefined,
                   lastConnected: undefined,
-                  latency: undefined
+                  latency: undefined,
                 };
                 setConnectionStatus(conn.id!, defaultStatus);
               }
@@ -145,7 +172,7 @@ const Connections: React.FC = () => {
                 status: 'disconnected' as const,
                 error: String(error),
                 lastConnected: undefined,
-                latency: undefined
+                latency: undefined,
               };
               setConnectionStatus(conn.id!, errorStatus);
             }
@@ -186,7 +213,7 @@ const Connections: React.FC = () => {
           ...connection,
           id: editingConnection.id,
           created_at: editingConnection.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
         await safeTauriInvoke('update_connection', { config: updateConfig });
         updateConnection(editingConnection.id, updateConfig);
@@ -196,9 +223,12 @@ const Connections: React.FC = () => {
         const connectionWithTimestamp = {
           ...connection,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
-        const connectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
+        const connectionId = await safeTauriInvoke<string>(
+          'create_connection',
+          { config: connectionWithTimestamp }
+        );
         if (connectionId) {
           const newConnection = { ...connection, id: connectionId };
           addConnection(newConnection);
@@ -221,49 +251,47 @@ const Connections: React.FC = () => {
     navigate('/database', { state: { connectionId } });
   };
 
-
   return (
-    <div className="h-full bg-background flex flex-col">
+    <div className='h-full bg-background flex flex-col'>
       {/* 页面标题 */}
-      <div className="border-b bg-background">
-        <div className="p-6">
-          <h1 className="text-2xl font-semibold text-foreground">数据源管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">管理和监控 InfluxDB 数据库连接</p>
+      <div className='border-b bg-background'>
+        <div className='p-6'>
+          <h1 className='text-2xl font-semibold text-foreground'>数据源管理</h1>
+          <p className='text-sm text-muted-foreground mt-1'>
+            管理和监控 InfluxDB 数据库连接
+          </p>
         </div>
       </div>
 
       {/* 连接管理器 */}
-      <div className="flex-1 overflow-hidden bg-background">
-        <Tabs
-          defaultValue="manager"
-          className="h-full flex flex-col"
-        >
-          <div className="border-b">
-            <TabsList className="h-12 w-full justify-start bg-transparent p-0 space-x-8">
+      <div className='flex-1 overflow-hidden bg-background'>
+        <Tabs defaultValue='manager' className='h-full flex flex-col'>
+          <div className='border-b'>
+            <TabsList className='h-12 w-full justify-start bg-transparent p-0 space-x-8'>
               <TabsTrigger
-                value="manager"
-                className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                value='manager'
+                className='relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none'
               >
-                <Unplug className="w-4 h-4 mr-2" />
+                <Unplug className='w-4 h-4 mr-2' />
                 连接列表
               </TabsTrigger>
               <TabsTrigger
-                value="debug"
-                className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                value='debug'
+                className='relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none'
               >
-                <Bug className="w-4 h-4 mr-2" />
+                <Bug className='w-4 h-4 mr-2' />
                 调试面板
               </TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="manager" className="mt-0 flex-1 overflow-hidden">
+          <TabsContent value='manager' className='mt-0 flex-1 overflow-hidden'>
             <ConnectionManager
               onConnectionSelect={handleConnectionSelect}
               onEditConnection={handleOpenDialog}
               onCreateConnection={() => handleOpenDialog()}
             />
           </TabsContent>
-          <TabsContent value="debug" className="mt-0 flex-1 overflow-hidden">
+          <TabsContent value='debug' className='mt-0 flex-1 overflow-hidden'>
             <ConnectionDebugPanel />
           </TabsContent>
         </Tabs>

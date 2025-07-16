@@ -31,7 +31,7 @@ function copyFile(src, dest) {
 // 复制所有 .md 文件
 function copyUserDocs() {
   console.log('📚 开始复制用户文档...');
-  
+
   if (!fs.existsSync(sourceDir)) {
     console.error(`❌ 源目录不存在: ${sourceDir}`);
     return;

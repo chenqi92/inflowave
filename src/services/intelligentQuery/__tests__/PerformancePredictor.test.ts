@@ -7,36 +7,37 @@ describe('PerformancePredictor', () => {
 
   beforeEach(() => {
     predictor = new PerformancePredictor();
-    
+
     mockContext = {
       historicalQueries: ['SELECT * FROM measurements'],
       userPreferences: {
         preferredPerformance: 'balanced',
         maxQueryTime: 5000,
-        cachePreference: 'aggressive'
+        cachePreference: 'aggressive',
       },
       systemLoad: {
         cpuUsage: 50,
         memoryUsage: 60,
         diskIo: 30,
-        networkLatency: 20
+        networkLatency: 20,
       },
       dataSize: {
         totalRows: 100000,
         totalSize: 1024 * 1024 * 100,
         averageRowSize: 1024,
-        compressionRatio: 0.3
+        compressionRatio: 0.3,
       },
-      indexInfo: []
+      indexInfo: [],
     };
   });
 
   describe('predict', () => {
     it('should predict performance for simple query', async () => {
-      const query = 'SELECT time, value FROM measurements WHERE time > \'2023-01-01\'';
-      
+      const query =
+        "SELECT time, value FROM measurements WHERE time > '2023-01-01'";
+
       const prediction = await predictor.predict(query, mockContext);
-      
+
       expect(prediction).toBeDefined();
       expect(prediction.estimatedDuration).toBeGreaterThan(0);
       expect(prediction.estimatedMemoryUsage).toBeGreaterThan(0);
@@ -60,9 +61,9 @@ describe('PerformancePredictor', () => {
         ORDER BY time
         LIMIT 1000
       `;
-      
+
       const prediction = await predictor.predict(complexQuery, mockContext);
-      
+
       expect(prediction.estimatedDuration).toBeGreaterThan(0);
       expect(prediction.bottlenecks.length).toBeGreaterThanOrEqual(0);
       expect(prediction.recommendations.length).toBeGreaterThanOrEqual(0);
@@ -70,9 +71,9 @@ describe('PerformancePredictor', () => {
 
     it('should handle queries without context', async () => {
       const query = 'SELECT * FROM measurements';
-      
+
       const prediction = await predictor.predict(query);
-      
+
       expect(prediction).toBeDefined();
       expect(prediction.estimatedDuration).toBeGreaterThan(0);
       expect(prediction.confidence).toBeGreaterThan(0);
@@ -86,21 +87,21 @@ describe('PerformancePredictor', () => {
         ORDER BY time, value 
         LIMIT 10000
       `;
-      
+
       const highLoadContext = {
         ...mockContext,
         systemLoad: {
           cpuUsage: 90,
           memoryUsage: 85,
           diskIo: 95,
-          networkLatency: 150
-        }
+          networkLatency: 150,
+        },
       };
 
       const prediction = await predictor.predict(heavyQuery, highLoadContext);
-      
+
       expect(prediction.bottlenecks.length).toBeGreaterThan(0);
-      
+
       const bottleneckTypes = prediction.bottlenecks.map(b => b.type);
       expect(bottleneckTypes).toContain('cpu');
       expect(bottleneckTypes).toContain('memory');
@@ -108,10 +109,10 @@ describe('PerformancePredictor', () => {
     });
 
     it('should provide appropriate recommendations', async () => {
-      const query = 'SELECT * FROM measurements WHERE time > \'2023-01-01\'';
-      
+      const query = "SELECT * FROM measurements WHERE time > '2023-01-01'";
+
       const prediction = await predictor.predict(query, mockContext);
-      
+
       if (prediction.recommendations.length > 0) {
         prediction.recommendations.forEach(rec => {
           expect(rec).toHaveProperty('type');
@@ -121,33 +122,40 @@ describe('PerformancePredictor', () => {
           expect(rec).toHaveProperty('expectedImprovement');
           expect(rec).toHaveProperty('implementationCost');
           expect(['low', 'medium', 'high']).toContain(rec.priority);
-          expect(['optimization', 'resource', 'configuration', 'architecture']).toContain(rec.type);
+          expect([
+            'optimization',
+            'resource',
+            'configuration',
+            'architecture',
+          ]).toContain(rec.type);
         });
       }
     });
 
     it('should cache predictions', async () => {
       const query = 'SELECT * FROM measurements';
-      
+
       // First prediction
       const prediction1 = await predictor.predict(query, mockContext);
-      
+
       // Second prediction (should be cached)
       const prediction2 = await predictor.predict(query, mockContext);
-      
+
       expect(prediction1).toEqual(prediction2);
     });
 
     it('should return conservative estimate on error', async () => {
       // This should trigger the fallback mechanism
       const invalidQuery = 'INVALID SQL QUERY !!!';
-      
+
       const prediction = await predictor.predict(invalidQuery, mockContext);
-      
+
       expect(prediction).toBeDefined();
       expect(prediction.confidence).toBeLessThan(1);
       expect(prediction.recommendations.length).toBeGreaterThan(0);
-      expect(prediction.recommendations[0].title).toContain('Performance analysis unavailable');
+      expect(prediction.recommendations[0].title).toContain(
+        'Performance analysis unavailable'
+      );
     });
   });
 
@@ -160,7 +168,7 @@ describe('PerformancePredictor', () => {
           description: 'Scan table measurements',
           estimatedCost: 1000,
           dependencies: [],
-          canParallelize: true
+          canParallelize: true,
         },
         {
           id: 'filter_1',
@@ -168,8 +176,8 @@ describe('PerformancePredictor', () => {
           description: 'Apply WHERE conditions',
           estimatedCost: 200,
           dependencies: ['scan_1'],
-          canParallelize: true
-        }
+          canParallelize: true,
+        },
       ];
 
       const resourceRequirements = {
@@ -177,31 +185,37 @@ describe('PerformancePredictor', () => {
         maxMemory: 1024,
         cpuIntensive: false,
         ioIntensive: true,
-        networkIntensive: false
+        networkIntensive: false,
       };
 
-      const duration = predictor.estimateDuration(steps, resourceRequirements, mockContext);
-      
+      const duration = predictor.estimateDuration(
+        steps,
+        resourceRequirements,
+        mockContext
+      );
+
       expect(duration).toBeGreaterThan(0);
       expect(duration).toBeGreaterThanOrEqual(10); // Minimum duration
     });
 
     it('should adjust for system load', () => {
-      const steps = [{
-        id: 'scan_1',
-        operation: 'TABLE_SCAN',
-        description: 'Scan table measurements',
-        estimatedCost: 1000,
-        dependencies: [],
-        canParallelize: false
-      }];
+      const steps = [
+        {
+          id: 'scan_1',
+          operation: 'TABLE_SCAN',
+          description: 'Scan table measurements',
+          estimatedCost: 1000,
+          dependencies: [],
+          canParallelize: false,
+        },
+      ];
 
       const resourceRequirements = {
         minMemory: 256,
         maxMemory: 1024,
         cpuIntensive: true,
         ioIntensive: true,
-        networkIntensive: false
+        networkIntensive: false,
       };
 
       const highLoadContext = {
@@ -210,13 +224,21 @@ describe('PerformancePredictor', () => {
           cpuUsage: 90,
           memoryUsage: 85,
           diskIo: 95,
-          networkLatency: 200
-        }
+          networkLatency: 200,
+        },
       };
 
-      const normalDuration = predictor.estimateDuration(steps, resourceRequirements, mockContext);
-      const highLoadDuration = predictor.estimateDuration(steps, resourceRequirements, highLoadContext);
-      
+      const normalDuration = predictor.estimateDuration(
+        steps,
+        resourceRequirements,
+        mockContext
+      );
+      const highLoadDuration = predictor.estimateDuration(
+        steps,
+        resourceRequirements,
+        highLoadContext
+      );
+
       expect(highLoadDuration).toBeGreaterThan(normalDuration);
     });
 
@@ -228,7 +250,7 @@ describe('PerformancePredictor', () => {
           description: 'Scan table measurements',
           estimatedCost: 1000,
           dependencies: [],
-          canParallelize: true
+          canParallelize: true,
         },
         {
           id: 'scan_2',
@@ -236,8 +258,8 @@ describe('PerformancePredictor', () => {
           description: 'Scan table metadata',
           estimatedCost: 1000,
           dependencies: [],
-          canParallelize: true
-        }
+          canParallelize: true,
+        },
       ];
 
       const sequentialSteps = [
@@ -247,7 +269,7 @@ describe('PerformancePredictor', () => {
           description: 'Scan table measurements',
           estimatedCost: 1000,
           dependencies: [],
-          canParallelize: false
+          canParallelize: false,
         },
         {
           id: 'scan_2',
@@ -255,8 +277,8 @@ describe('PerformancePredictor', () => {
           description: 'Scan table metadata',
           estimatedCost: 1000,
           dependencies: ['scan_1'],
-          canParallelize: false
-        }
+          canParallelize: false,
+        },
       ];
 
       const resourceRequirements = {
@@ -264,12 +286,20 @@ describe('PerformancePredictor', () => {
         maxMemory: 1024,
         cpuIntensive: false,
         ioIntensive: true,
-        networkIntensive: false
+        networkIntensive: false,
       };
 
-      const parallelDuration = predictor.estimateDuration(parallelSteps, resourceRequirements, mockContext);
-      const sequentialDuration = predictor.estimateDuration(sequentialSteps, resourceRequirements, mockContext);
-      
+      const parallelDuration = predictor.estimateDuration(
+        parallelSteps,
+        resourceRequirements,
+        mockContext
+      );
+      const sequentialDuration = predictor.estimateDuration(
+        sequentialSteps,
+        resourceRequirements,
+        mockContext
+      );
+
       expect(parallelDuration).toBeLessThan(sequentialDuration);
     });
   });
@@ -284,15 +314,17 @@ describe('PerformancePredictor', () => {
         diskReads: 100,
         diskWrites: 10,
         networkBytes: 1024,
-        success: true
+        success: true,
       };
 
-      await expect(predictor.updateModel(query, executionResult, mockContext)).resolves.not.toThrow();
+      await expect(
+        predictor.updateModel(query, executionResult, mockContext)
+      ).resolves.not.toThrow();
     });
 
     it('should provide model metrics', () => {
       const metrics = predictor.getMetrics();
-      
+
       expect(metrics).toBeDefined();
       expect(metrics).toHaveProperty('accuracy');
       expect(metrics).toHaveProperty('precision');
@@ -304,10 +336,10 @@ describe('PerformancePredictor', () => {
 
     it('should provide model information', () => {
       const modelInfo = predictor.getModelInfo();
-      
+
       expect(modelInfo).toBeInstanceOf(Array);
       expect(modelInfo.length).toBeGreaterThan(0);
-      
+
       modelInfo.forEach(model => {
         expect(model).toHaveProperty('name');
         expect(model).toHaveProperty('version');
@@ -340,21 +372,21 @@ describe('PerformancePredictor', () => {
         ORDER BY time, value 
         LIMIT 10000
       `;
-      
+
       const riskContext = {
         ...mockContext,
         systemLoad: {
           cpuUsage: 85,
           memoryUsage: 90,
           diskIo: 80,
-          networkLatency: 100
-        }
+          networkLatency: 100,
+        },
       };
 
       const prediction = await predictor.predict(complexQuery, riskContext);
-      
+
       expect(prediction.riskFactors.length).toBeGreaterThan(0);
-      
+
       prediction.riskFactors.forEach(risk => {
         expect(risk).toHaveProperty('factor');
         expect(risk).toHaveProperty('riskLevel');
@@ -386,10 +418,12 @@ describe('PerformancePredictor', () => {
         ORDER BY time, avg_value
         LIMIT 1000
       `;
-      
+
       const prediction = await predictor.predict(veryComplexQuery, mockContext);
-      
-      const complexityRisk = prediction.riskFactors.find(r => r.factor === 'Query Complexity');
+
+      const complexityRisk = prediction.riskFactors.find(
+        r => r.factor === 'Query Complexity'
+      );
       expect(complexityRisk).toBeDefined();
       if (complexityRisk) {
         expect(complexityRisk.riskLevel).toBe('high');

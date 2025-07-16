@@ -5,8 +5,8 @@ import PerformanceBottleneckDiagnostics from '@/components/analytics/Performance
 const Performance: React.FC = () => {
   return (
     <DesktopPageWrapper
-      title="性能监控与诊断"
-      description="全面的性能监控、瓶颈诊断和系统分析工具"
+      title='性能监控与诊断'
+      description='全面的性能监控、瓶颈诊断和系统分析工具'
     >
       <PerformanceBottleneckDiagnostics />
     </DesktopPageWrapper>

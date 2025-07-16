@@ -8,66 +8,66 @@ export interface DocumentInfo {
 
 // 定义文档顺序和元信息
 export const DOCUMENT_ORDER: DocumentInfo[] = [
-  { 
-    filename: 'README.md', 
-    title: '📖 欢迎使用 InfloWave', 
+  {
+    filename: 'README.md',
+    title: '📖 欢迎使用 InfloWave',
     order: 1,
-    description: '软件介绍和功能概览'
+    description: '软件介绍和功能概览',
   },
-  { 
-    filename: 'installation.md', 
-    title: '🔧 安装指南', 
+  {
+    filename: 'installation.md',
+    title: '🔧 安装指南',
     order: 2,
-    description: '详细的安装步骤和系统要求'
+    description: '详细的安装步骤和系统要求',
   },
-  { 
-    filename: 'quick-start.md', 
-    title: '🚀 快速开始', 
+  {
+    filename: 'quick-start.md',
+    title: '🚀 快速开始',
     order: 3,
-    description: '5分钟快速上手指南'
+    description: '5分钟快速上手指南',
   },
-  { 
-    filename: 'connection-management.md', 
-    title: '🔗 连接管理', 
+  {
+    filename: 'connection-management.md',
+    title: '🔗 连接管理',
     order: 4,
-    description: '数据库连接配置和管理'
+    description: '数据库连接配置和管理',
   },
-  { 
-    filename: 'database-operations.md', 
-    title: '🗄️ 数据库操作', 
+  {
+    filename: 'database-operations.md',
+    title: '🗄️ 数据库操作',
     order: 5,
-    description: '数据库和保留策略管理'
+    description: '数据库和保留策略管理',
   },
-  { 
-    filename: 'query-features.md', 
-    title: '🔍 查询功能', 
+  {
+    filename: 'query-features.md',
+    title: '🔍 查询功能',
     order: 6,
-    description: 'InfluxQL 查询编辑和执行'
+    description: 'InfluxQL 查询编辑和执行',
   },
-  { 
-    filename: 'data-visualization.md', 
-    title: '📊 数据可视化', 
+  {
+    filename: 'data-visualization.md',
+    title: '📊 数据可视化',
     order: 7,
-    description: '图表创建和仪表板配置'
+    description: '图表创建和仪表板配置',
   },
-  { 
-    filename: 'data-import.md', 
-    title: '📥 数据写入', 
+  {
+    filename: 'data-import.md',
+    title: '📥 数据写入',
     order: 8,
-    description: '数据导入和写入操作'
+    description: '数据导入和写入操作',
   },
-  { 
-    filename: 'shortcuts.md', 
-    title: '⚡ 快捷操作', 
+  {
+    filename: 'shortcuts.md',
+    title: '⚡ 快捷操作',
     order: 9,
-    description: '键盘快捷键和右键菜单'
+    description: '键盘快捷键和右键菜单',
   },
-  { 
-    filename: 'faq.md', 
-    title: '❓ 常见问题', 
+  {
+    filename: 'faq.md',
+    title: '❓ 常见问题',
     order: 10,
-    description: '常见问题解答'
-  }
+    description: '常见问题解答',
+  },
 ];
 
 /**
@@ -75,7 +75,9 @@ export const DOCUMENT_ORDER: DocumentInfo[] = [
  * @param filename 文件名
  * @returns 文档内容
  */
-export const loadDocumentContent = async (filename: string): Promise<string> => {
+export const loadDocumentContent = async (
+  filename: string
+): Promise<string> => {
   try {
     // 在 Vite 中使用动态导入加载文本文件
     const response = await fetch(`/user-docs/${filename}`);
@@ -85,7 +87,7 @@ export const loadDocumentContent = async (filename: string): Promise<string> => 
     return await response.text();
   } catch (error) {
     console.warn(`Failed to load document: ${filename}`, error);
-    
+
     // 返回错误提示内容
     return `# 文档加载失败
 
@@ -116,7 +118,7 @@ export const loadDocumentContent = async (filename: string): Promise<string> => 
  */
 export const loadAllDocuments = async () => {
   const documents = [];
-  
+
   for (const docInfo of DOCUMENT_ORDER) {
     try {
       const content = await loadDocumentContent(docInfo.filename);
@@ -126,7 +128,7 @@ export const loadAllDocuments = async () => {
         filename: docInfo.filename,
         content,
         order: docInfo.order,
-        description: docInfo.description
+        description: docInfo.description,
       });
     } catch (error) {
       console.error(`Failed to load document: ${docInfo.filename}`, error);
@@ -137,11 +139,11 @@ export const loadAllDocuments = async () => {
         filename: docInfo.filename,
         content: `# ${docInfo.title}\n\n文档加载失败，请稍后重试。`,
         order: docInfo.order,
-        description: docInfo.description
+        description: docInfo.description,
       });
     }
   }
-  
+
   return documents.sort((a, b) => a.order - b.order);
 };
 

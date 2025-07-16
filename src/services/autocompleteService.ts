@@ -4,13 +4,21 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { Measurement, Field, Tag, DatabaseInfo, MeasurementInfo } from '@/types';
+import type { Field, Tag, MeasurementInfo } from '@/types';
 
 // 自动补全项类型
 export interface AutocompleteItem {
   label: string;
   insertText: string;
-  kind: 'keyword' | 'function' | 'database' | 'measurement' | 'field' | 'tag' | 'snippet' | 'operator';
+  kind:
+    | 'keyword'
+    | 'function'
+    | 'database'
+    | 'measurement'
+    | 'field'
+    | 'tag'
+    | 'snippet'
+    | 'operator';
   detail?: string;
   documentation?: string;
   insertTextRules?: number;
@@ -41,31 +49,117 @@ class AutocompleteService {
     databases: [],
     measurements: new Map(),
     fields: new Map(),
-    tags: new Map()
+    tags: new Map(),
   };
 
   private influxQLKeywords = [
-    'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
-    'SHOW', 'DESCRIBE', 'INSERT', 'INTO', 'VALUES', 'CREATE', 'DROP', 'ALTER',
-    'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS', 'NULL', 'TRUE', 'FALSE',
-    'AS', 'ASC', 'DESC', 'DISTINCT', 'ON', 'FILL', 'SLIMIT', 'SOFFSET'
+    'SELECT',
+    'FROM',
+    'WHERE',
+    'GROUP BY',
+    'ORDER BY',
+    'LIMIT',
+    'OFFSET',
+    'SHOW',
+    'DESCRIBE',
+    'INSERT',
+    'INTO',
+    'VALUES',
+    'CREATE',
+    'DROP',
+    'ALTER',
+    'AND',
+    'OR',
+    'NOT',
+    'IN',
+    'LIKE',
+    'BETWEEN',
+    'IS',
+    'NULL',
+    'TRUE',
+    'FALSE',
+    'AS',
+    'ASC',
+    'DESC',
+    'DISTINCT',
+    'ON',
+    'FILL',
+    'SLIMIT',
+    'SOFFSET',
   ];
 
   private influxQLFunctions = [
-    'COUNT', 'SUM', 'MEAN', 'MEDIAN', 'MODE', 'SPREAD', 'STDDEV', 'MIN', 'MAX',
-    'FIRST', 'LAST', 'DISTINCT', 'INTEGRAL', 'MOVING_AVERAGE', 'CUMULATIVE_SUM',
-    'DERIVATIVE', 'DIFFERENCE', 'NON_NEGATIVE_DERIVATIVE', 'NON_NEGATIVE_DIFFERENCE',
-    'ELAPSED', 'FLOOR', 'CEIL', 'ROUND', 'ABS', 'SIN', 'COS', 'TAN', 'ASIN',
-    'ACOS', 'ATAN', 'EXP', 'LN', 'LOG', 'LOG2', 'LOG10', 'SQRT', 'POW'
+    'COUNT',
+    'SUM',
+    'MEAN',
+    'MEDIAN',
+    'MODE',
+    'SPREAD',
+    'STDDEV',
+    'MIN',
+    'MAX',
+    'FIRST',
+    'LAST',
+    'DISTINCT',
+    'INTEGRAL',
+    'MOVING_AVERAGE',
+    'CUMULATIVE_SUM',
+    'DERIVATIVE',
+    'DIFFERENCE',
+    'NON_NEGATIVE_DERIVATIVE',
+    'NON_NEGATIVE_DIFFERENCE',
+    'ELAPSED',
+    'FLOOR',
+    'CEIL',
+    'ROUND',
+    'ABS',
+    'SIN',
+    'COS',
+    'TAN',
+    'ASIN',
+    'ACOS',
+    'ATAN',
+    'EXP',
+    'LN',
+    'LOG',
+    'LOG2',
+    'LOG10',
+    'SQRT',
+    'POW',
   ];
 
   private timeKeywords = [
-    'NOW', 'TIME', 'AGO', 'DURATION', 'FILL', 'GROUP BY TIME', 'time',
-    'ns', 'us', 'µs', 'ms', 's', 'm', 'h', 'd', 'w'
+    'NOW',
+    'TIME',
+    'AGO',
+    'DURATION',
+    'FILL',
+    'GROUP BY TIME',
+    'time',
+    'ns',
+    'us',
+    'µs',
+    'ms',
+    's',
+    'm',
+    'h',
+    'd',
+    'w',
   ];
 
   private operators = [
-    '=', '!=', '<>', '<', '<=', '>', '>=', '~', '!~', 'AND', 'OR', 'NOT'
+    '=',
+    '!=',
+    '<>',
+    '<',
+    '<=',
+    '>',
+    '>=',
+    '~',
+    '!~',
+    'AND',
+    'OR',
+    'NOT',
   ];
 
   /**
@@ -74,7 +168,9 @@ class AutocompleteService {
   async updateSchema(connectionId: string, database?: string): Promise<void> {
     try {
       // 获取数据库列表
-      const databases = await safeTauriInvoke<string[]>('get_databases', { connectionId });
+      const databases = await safeTauriInvoke<string[]>('get_databases', {
+        connectionId,
+      });
       this.schemaCache.databases = databases;
 
       // 如果指定了数据库，获取其详细信息
@@ -89,25 +185,31 @@ class AutocompleteService {
   /**
    * 更新指定数据库的结构
    */
-  private async updateDatabaseSchema(connectionId: string, database: string): Promise<void> {
+  private async updateDatabaseSchema(
+    connectionId: string,
+    database: string
+  ): Promise<void> {
     try {
       // 获取 measurements
-      const measurements = await safeTauriInvoke<MeasurementInfo[]>('get_measurements', {
-        connectionId,
-        database
-      });
+      const measurements = await safeTauriInvoke<MeasurementInfo[]>(
+        'get_measurements',
+        {
+          connectionId,
+          database,
+        }
+      );
       this.schemaCache.measurements.set(database, measurements);
 
       // 获取每个 measurement 的字段和标签
       for (const measurement of measurements) {
         const key = `${database}.${measurement.name}`;
-        
+
         // 获取字段
         try {
           const fields = await safeTauriInvoke<Field[]>('get_field_keys', {
             connectionId,
             database,
-            measurement: measurement.name
+            measurement: measurement.name,
           });
           this.schemaCache.fields.set(key, fields);
         } catch (error) {
@@ -119,7 +221,7 @@ class AutocompleteService {
           const tags = await safeTauriInvoke<Tag[]>('get_tag_keys', {
             connectionId,
             database,
-            measurement: measurement.name
+            measurement: measurement.name,
           });
           this.schemaCache.tags.set(key, tags);
         } catch (error) {
@@ -163,11 +265,15 @@ class AutocompleteService {
     }
 
     if (parsedContext.expectingField) {
-      suggestions.push(...this.getFieldSuggestions(database, parsedContext.measurement));
+      suggestions.push(
+        ...this.getFieldSuggestions(database, parsedContext.measurement)
+      );
     }
 
     if (parsedContext.expectingTag) {
-      suggestions.push(...this.getTagSuggestions(database, parsedContext.measurement));
+      suggestions.push(
+        ...this.getTagSuggestions(database, parsedContext.measurement)
+      );
     }
 
     if (parsedContext.expectingDatabase) {
@@ -187,7 +293,9 @@ class AutocompleteService {
       suggestions.push(...this.getTemplateSuggestions(database));
     }
 
-    return suggestions.sort((a, b) => (a.sortText || a.label).localeCompare(b.sortText || b.label));
+    return suggestions.sort((a, b) =>
+      (a.sortText || a.label).localeCompare(b.sortText || b.label)
+    );
   }
 
   /**
@@ -235,7 +343,7 @@ class AutocompleteService {
       expectingDatabase: this.isExpectingDatabase(beforeCursor),
       expectingOperator: this.isExpectingOperator(beforeCursor),
       expectingTimeValue: this.isExpectingTimeValue(beforeCursor),
-      canInsertTemplate: this.canInsertTemplate(beforeCursor)
+      canInsertTemplate: this.canInsertTemplate(beforeCursor),
     };
   }
 
@@ -244,37 +352,41 @@ class AutocompleteService {
    */
   private isExpectingKeyword(beforeCursor: string): boolean {
     const trimmed = beforeCursor.trim();
-    return !trimmed || 
-           trimmed.endsWith(' ') || 
-           trimmed.endsWith('(') ||
-           /\b(and|or|not)\s*$/i.test(trimmed);
+    return (
+      !trimmed ||
+      trimmed.endsWith(' ') ||
+      trimmed.endsWith('(') ||
+      /\b(and|or|not)\s*$/i.test(trimmed)
+    );
   }
 
   /**
    * 检测是否期望函数
    */
   private isExpectingFunction(beforeCursor: string): boolean {
-    return /\bselect\s+[^from]*$/i.test(beforeCursor) ||
-           /,\s*$/i.test(beforeCursor);
+    return (
+      /\bselect\s+[^from]*$/i.test(beforeCursor) || /,\s*$/i.test(beforeCursor)
+    );
   }
 
   /**
    * 检测是否期望测量名
    */
   private isExpectingMeasurement(beforeCursor: string): boolean {
-    return /\bfrom\s+$/i.test(beforeCursor) ||
-           /\binto\s+$/i.test(beforeCursor);
+    return /\bfrom\s+$/i.test(beforeCursor) || /\binto\s+$/i.test(beforeCursor);
   }
 
   /**
    * 检测是否期望字段名
    */
   private isExpectingField(beforeCursor: string): boolean {
-    return /\bselect\s+[^from]*$/i.test(beforeCursor) ||
-           /,\s*$/i.test(beforeCursor) ||
-           /\bwhere\s+[^=<>!~]*$/i.test(beforeCursor) ||
-           /\bgroup\s+by\s+[^order]*$/i.test(beforeCursor) ||
-           /\border\s+by\s+[^limit]*$/i.test(beforeCursor);
+    return (
+      /\bselect\s+[^from]*$/i.test(beforeCursor) ||
+      /,\s*$/i.test(beforeCursor) ||
+      /\bwhere\s+[^=<>!~]*$/i.test(beforeCursor) ||
+      /\bgroup\s+by\s+[^order]*$/i.test(beforeCursor) ||
+      /\border\s+by\s+[^limit]*$/i.test(beforeCursor)
+    );
   }
 
   /**
@@ -288,25 +400,31 @@ class AutocompleteService {
    * 检测是否期望数据库名
    */
   private isExpectingDatabase(beforeCursor: string): boolean {
-    return /\buse\s+$/i.test(beforeCursor) ||
-           /\bshow\s+measurements\s+on\s+$/i.test(beforeCursor);
+    return (
+      /\buse\s+$/i.test(beforeCursor) ||
+      /\bshow\s+measurements\s+on\s+$/i.test(beforeCursor)
+    );
   }
 
   /**
    * 检测是否期望操作符
    */
   private isExpectingOperator(beforeCursor: string): boolean {
-    return /\bwhere\s+\w+\s*$/i.test(beforeCursor) ||
-           /\band\s+\w+\s*$/i.test(beforeCursor) ||
-           /\bor\s+\w+\s*$/i.test(beforeCursor);
+    return (
+      /\bwhere\s+\w+\s*$/i.test(beforeCursor) ||
+      /\band\s+\w+\s*$/i.test(beforeCursor) ||
+      /\bor\s+\w+\s*$/i.test(beforeCursor)
+    );
   }
 
   /**
    * 检测是否期望时间值
    */
   private isExpectingTimeValue(beforeCursor: string): boolean {
-    return /\btime\s*[=<>!~]\s*$/i.test(beforeCursor) ||
-           /\bnow\(\)\s*[-+]\s*$/i.test(beforeCursor);
+    return (
+      /\btime\s*[=<>!~]\s*$/i.test(beforeCursor) ||
+      /\bnow\(\)\s*[-+]\s*$/i.test(beforeCursor)
+    );
   }
 
   /**
@@ -334,7 +452,7 @@ class AutocompleteService {
       kind: 'keyword',
       detail: 'InfluxQL关键字',
       documentation: `InfluxQL关键字: ${keyword}`,
-      sortText: `0_${keyword}`
+      sortText: `0_${keyword}`,
     }));
   }
 
@@ -349,7 +467,7 @@ class AutocompleteService {
       detail: '聚合函数',
       documentation: `聚合函数: ${func}()`,
       insertTextRules: 4, // InsertAsSnippet
-      sortText: `1_${func}`
+      sortText: `1_${func}`,
     }));
   }
 
@@ -364,45 +482,51 @@ class AutocompleteService {
       kind: 'measurement',
       detail: '测量',
       documentation: `测量: ${measurement.name}`,
-      sortText: `2_${measurement.name}`
+      sortText: `2_${measurement.name}`,
     }));
   }
 
   /**
    * 获取字段建议
    */
-  private getFieldSuggestions(database: string, measurement?: string | null): AutocompleteItem[] {
+  private getFieldSuggestions(
+    database: string,
+    measurement?: string | null
+  ): AutocompleteItem[] {
     if (!measurement) return [];
-    
+
     const key = `${database}.${measurement}`;
     const fields = this.schemaCache.fields.get(key) || [];
-    
+
     return fields.map(field => ({
       label: field.name,
       insertText: `"${field.name}"`,
       kind: 'field',
       detail: `字段 (${field.type})`,
       documentation: `字段: ${field.name} (类型: ${field.type})`,
-      sortText: `3_${field.name}`
+      sortText: `3_${field.name}`,
     }));
   }
 
   /**
    * 获取标签建议
    */
-  private getTagSuggestions(database: string, measurement?: string | null): AutocompleteItem[] {
+  private getTagSuggestions(
+    database: string,
+    measurement?: string | null
+  ): AutocompleteItem[] {
     if (!measurement) return [];
-    
+
     const key = `${database}.${measurement}`;
     const tags = this.schemaCache.tags.get(key) || [];
-    
+
     return tags.map(tag => ({
       label: tag.name,
       insertText: `"${tag.name}"`,
       kind: 'tag',
       detail: '标签',
       documentation: `标签: ${tag.name}`,
-      sortText: `3_${tag.name}`
+      sortText: `3_${tag.name}`,
     }));
   }
 
@@ -416,7 +540,7 @@ class AutocompleteService {
       kind: 'database',
       detail: '数据库',
       documentation: `数据库: ${db}`,
-      sortText: `4_${db}`
+      sortText: `4_${db}`,
     }));
   }
 
@@ -430,7 +554,7 @@ class AutocompleteService {
       kind: 'operator',
       detail: '操作符',
       documentation: `操作符: ${op}`,
-      sortText: `5_${op}`
+      sortText: `5_${op}`,
     }));
   }
 
@@ -445,7 +569,7 @@ class AutocompleteService {
       'now() - 1d',
       'now() - 1w',
       'now() - 1m',
-      ...this.timeKeywords
+      ...this.timeKeywords,
     ];
 
     return timeValues.map(time => ({
@@ -454,7 +578,7 @@ class AutocompleteService {
       kind: 'keyword',
       detail: '时间值',
       documentation: `时间值: ${time}`,
-      sortText: `6_${time}`
+      sortText: `6_${time}`,
     }));
   }
 
@@ -471,25 +595,27 @@ class AutocompleteService {
         detail: '基本查询模板',
         documentation: '基本的SELECT查询模板',
         insertTextRules: 4,
-        sortText: '0_template_basic'
+        sortText: '0_template_basic',
       },
       {
         label: 'SELECT time range',
-        insertText: 'SELECT ${1:*} FROM ${2:measurement} WHERE time >= ${3:now() - 1h} AND time <= ${4:now()}',
+        insertText:
+          'SELECT ${1:*} FROM ${2:measurement} WHERE time >= ${3:now() - 1h} AND time <= ${4:now()}',
         kind: 'snippet',
         detail: '时间范围查询模板',
         documentation: '带时间范围的SELECT查询模板',
         insertTextRules: 4,
-        sortText: '0_template_time'
+        sortText: '0_template_time',
       },
       {
         label: 'SELECT aggregation',
-        insertText: 'SELECT ${1:MEAN}(${2:field}) FROM ${3:measurement} WHERE time >= ${4:now() - 1h} GROUP BY time(${5:5m})${6:, tag}',
+        insertText:
+          'SELECT ${1:MEAN}(${2:field}) FROM ${3:measurement} WHERE time >= ${4:now() - 1h} GROUP BY time(${5:5m})${6:, tag}',
         kind: 'snippet',
         detail: '聚合查询模板',
         documentation: '聚合查询模板',
         insertTextRules: 4,
-        sortText: '0_template_agg'
+        sortText: '0_template_agg',
       },
       {
         label: 'SHOW MEASUREMENTS',
@@ -497,8 +623,8 @@ class AutocompleteService {
         kind: 'snippet',
         detail: '显示所有测量',
         documentation: '显示数据库中的所有测量',
-        sortText: '0_template_show_measurements'
-      }
+        sortText: '0_template_show_measurements',
+      },
     ];
 
     // 为每个测量添加特定的模板
@@ -509,7 +635,7 @@ class AutocompleteService {
         kind: 'snippet',
         detail: `查询 ${measurement.name}`,
         documentation: `查询测量 ${measurement.name} 的数据`,
-        sortText: `0_template_${measurement.name}`
+        sortText: `0_template_${measurement.name}`,
       });
     });
 
@@ -524,7 +650,7 @@ class AutocompleteService {
       databases: [],
       measurements: new Map(),
       fields: new Map(),
-      tags: new Map()
+      tags: new Map(),
     };
   }
 }

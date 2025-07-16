@@ -1,5 +1,12 @@
 import React from 'react';
-import { Dropdown, FileText, Filter, ArrowUp, ArrowDown, FileDown } from '@/components/ui';
+import {
+  Dropdown,
+  FileText,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  FileDown,
+} from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
@@ -20,7 +27,8 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
   selectedData,
   columnName,
   rowData,
-  onAction}) => {
+  onAction,
+}) => {
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     try {
@@ -28,7 +36,9 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
         case 'copy_cell':
           // 复制单元格内容
           if (selectedData !== undefined) {
-            await writeToClipboard(String(selectedData), { successMessage: '已复制单元格内容' });
+            await writeToClipboard(String(selectedData), {
+              successMessage: '已复制单元格内容',
+            });
           }
           break;
 
@@ -43,14 +53,18 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
         case 'copy_column':
           // 复制列名
           if (columnName) {
-            await writeToClipboard(columnName, { successMessage: `已复制列名: ${columnName}` });
+            await writeToClipboard(columnName, {
+              successMessage: `已复制列名: ${columnName}`,
+            });
           }
           break;
 
         case 'copy_as_json':
           // 复制为 JSON 格式
           if (rowData) {
-            await writeToClipboard(JSON.stringify(rowData, null, 2), { successMessage: '已复制为 JSON 格式' });
+            await writeToClipboard(JSON.stringify(rowData, null, 2), {
+              successMessage: '已复制为 JSON 格式',
+            });
           }
           break;
 
@@ -58,7 +72,9 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
           // 复制为 CSV 格式
           if (rowData) {
             const csvText = Object.values(rowData).join(',');
-            await writeToClipboard(csvText, { successMessage: '已复制为 CSV 格式' });
+            await writeToClipboard(csvText, {
+              successMessage: '已复制为 CSV 格式',
+            });
           }
           break;
 
@@ -92,23 +108,23 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
 
         case 'export_results':
           // 导出查询结果
-          showMessage.success("正在导出查询结果" );
+          showMessage.success('正在导出查询结果');
           break;
 
         case 'visualize_data':
           // 数据可视化
-          showMessage.success("正在创建数据可视化" );
+          showMessage.success('正在创建数据可视化');
           break;
 
         case 'edit_query':
           // 编辑查询
-          showMessage.success("正在编辑查询" );
+          showMessage.success('正在编辑查询');
           break;
 
         case 'view_details':
           // 查看详细信息
           if (rowData) {
-            showMessage.success("正在查看详细信息" );
+            showMessage.success('正在查看详细信息');
           }
           break;
 
@@ -132,113 +148,135 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
     {
       key: 'copy_group',
       label: '复制操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'copy_cell',
-      icon: <Copy className="w-4 h-4"  />,
+      icon: <Copy className='w-4 h-4' />,
       label: '复制单元格',
       onClick: () => handleMenuClick('copy_cell'),
-      disabled: selectedData === undefined},
+      disabled: selectedData === undefined,
+    },
     {
       key: 'copy_row',
-      icon: <Copy className="w-4 h-4"  />,
+      icon: <Copy className='w-4 h-4' />,
       label: '复制整行',
       onClick: () => handleMenuClick('copy_row'),
-      disabled: !rowData},
+      disabled: !rowData,
+    },
     {
       key: 'copy_column',
-      icon: <Copy className="w-4 h-4"  />,
+      icon: <Copy className='w-4 h-4' />,
       label: '复制列名',
       onClick: () => handleMenuClick('copy_column'),
-      disabled: !columnName},
+      disabled: !columnName,
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'format_group',
       label: '格式化复制',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'copy_as_json',
-      icon: <FileText className="w-4 h-4"  />,
+      icon: <FileText className='w-4 h-4' />,
       label: '复制为 JSON',
       onClick: () => handleMenuClick('copy_as_json'),
-      disabled: !rowData},
+      disabled: !rowData,
+    },
     {
       key: 'copy_as_csv',
-      icon: <Table className="w-4 h-4"  />,
+      icon: <Table className='w-4 h-4' />,
       label: '复制为 CSV',
       onClick: () => handleMenuClick('copy_as_csv'),
-      disabled: !rowData},
+      disabled: !rowData,
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'filter_group',
       label: '过滤操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'filter_by_value',
-      icon: <Filter className="w-4 h-4"  />,
+      icon: <Filter className='w-4 h-4' />,
       label: '按此值过滤',
       onClick: () => handleMenuClick('filter_by_value'),
-      disabled: selectedData === undefined || !columnName},
+      disabled: selectedData === undefined || !columnName,
+    },
     {
       key: 'filter_not_equal',
-      icon: <Filter className="w-4 h-4"  />,
+      icon: <Filter className='w-4 h-4' />,
       label: '排除此值',
       onClick: () => handleMenuClick('filter_not_equal'),
-      disabled: selectedData === undefined || !columnName},
+      disabled: selectedData === undefined || !columnName,
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'sort_group',
       label: '排序操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'sort_asc',
-      icon: <ArrowUp className="w-4 h-4"  />,
+      icon: <ArrowUp className='w-4 h-4' />,
       label: '升序排序',
       onClick: () => handleMenuClick('sort_asc'),
-      disabled: !columnName},
+      disabled: !columnName,
+    },
     {
       key: 'sort_desc',
-      icon: <ArrowDown className="w-4 h-4"  />,
+      icon: <ArrowDown className='w-4 h-4' />,
       label: '降序排序',
       onClick: () => handleMenuClick('sort_desc'),
-      disabled: !columnName},
+      disabled: !columnName,
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'action_group',
       label: '其他操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'view_details',
-      icon: <Eye className="w-4 h-4"  />,
+      icon: <Eye className='w-4 h-4' />,
       label: '查看详情',
       onClick: () => handleMenuClick('view_details'),
-      disabled: !rowData},
+      disabled: !rowData,
+    },
     {
       key: 'visualize_data',
-      icon: <BarChart className="w-4 h-4"  />,
+      icon: <BarChart className='w-4 h-4' />,
       label: '数据可视化',
-      onClick: () => handleMenuClick('visualize_data')},
+      onClick: () => handleMenuClick('visualize_data'),
+    },
     {
       key: 'export_results',
-      icon: <FileDown className="w-4 h-4"  />,
+      icon: <FileDown className='w-4 h-4' />,
       label: '导出结果',
-      onClick: () => handleMenuClick('export_results')},
+      onClick: () => handleMenuClick('export_results'),
+    },
     {
       key: 'edit_query',
-      icon: <Edit className="w-4 h-4"  />,
+      icon: <Edit className='w-4 h-4' />,
       label: '编辑查询',
-      onClick: () => handleMenuClick('edit_query')},
+      onClick: () => handleMenuClick('edit_query'),
+    },
   ];
 
   return (
     <Dropdown
       menu={{ items: menuItems }}
       trigger={['contextMenu']}
-      placement="bottomLeft"
+      placement='bottomLeft'
     >
       {children}
     </Dropdown>

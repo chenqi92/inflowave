@@ -9,6 +9,7 @@
 **A: 请按以下步骤排查**：
 
 1. **检查服务器状态**
+
    ```bash
    # 检查 InfluxDB 服务是否运行
    systemctl status influxdb  # Linux
@@ -17,6 +18,7 @@
    ```
 
 2. **验证网络连通性**
+
    ```bash
    # 测试网络连接
    ping your-influxdb-server
@@ -56,6 +58,7 @@
    - 检查是否有特殊字符需要转义
 
 2. **检查用户权限**
+
    ```sql
    -- 在 InfluxDB 中检查用户权限
    SHOW USERS
@@ -123,27 +126,29 @@
 **A: 性能优化建议**：
 
 1. **添加时间范围限制**
+
    ```sql
    -- 推荐：指定时间范围
-   SELECT * FROM "measurement" 
+   SELECT * FROM "measurement"
    WHERE time > now() - 1h AND time < now()
-   
+
    -- 避免：无时间限制
    SELECT * FROM "measurement"
    ```
 
 2. **使用标签过滤**
+
    ```sql
    -- 利用标签索引加速查询
-   SELECT * FROM "measurement" 
+   SELECT * FROM "measurement"
    WHERE "host" = 'server1' AND time > now() - 1h
    ```
 
 3. **限制返回结果**
    ```sql
    -- 使用 LIMIT 限制结果数量
-   SELECT * FROM "measurement" 
-   WHERE time > now() - 1h 
+   SELECT * FROM "measurement"
+   WHERE time > now() - 1h
    LIMIT 1000
    ```
 
@@ -160,10 +165,11 @@
    - 注意大小写敏感性
 
 3. **数据存在性**
+
    ```sql
    -- 检查测量是否存在
    SHOW MEASUREMENTS
-   
+
    -- 检查字段是否存在
    SHOW FIELD KEYS FROM "measurement"
    ```
@@ -173,15 +179,17 @@
 **A: 常见语法问题**：
 
 1. **引号使用**
+
    ```sql
    -- 正确：标识符使用双引号
    SELECT "field_name" FROM "measurement"
-   
+
    -- 正确：字符串值使用单引号
    WHERE "tag_name" = 'value'
    ```
 
 2. **时间格式**
+
    ```sql
    -- 正确的时间格式
    WHERE time > '2024-01-15T10:00:00Z'
@@ -191,8 +199,8 @@
 3. **聚合函数**
    ```sql
    -- 使用聚合函数时需要 GROUP BY
-   SELECT MEAN("value") FROM "measurement" 
-   WHERE time > now() - 1h 
+   SELECT MEAN("value") FROM "measurement"
+   WHERE time > now() - 1h
    GROUP BY time(5m)
    ```
 
@@ -336,6 +344,7 @@
 ### 日志文件位置
 
 **应用日志**：
+
 - Windows: `%APPDATA%\com.inflowave.app\logs`
 - macOS: `~/Library/Logs/com.inflowave.app`
 - Linux: `~/.local/share/com.inflowave.app/logs`

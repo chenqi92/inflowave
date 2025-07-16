@@ -21,7 +21,12 @@ export interface CollapseProps {
   className?: string;
 }
 
-export const Panel: React.FC<PanelProps> = ({ children, header, disabled, className }) => {
+export const Panel: React.FC<PanelProps> = ({
+  children,
+  header,
+  disabled,
+  className,
+}) => {
   // This component is just for type checking, actual rendering is handled by Collapse
   return <div className={className}>{children}</div>;
 };
@@ -34,15 +39,17 @@ export const Collapse: React.FC<CollapseProps> = ({
   accordion = false,
   ghost = false,
   size = 'default',
-  className
+  className,
 }) => {
-  const [internalActiveKeys, setInternalActiveKeys] = useState<string[]>(defaultActiveKey);
-  
-  const currentActiveKeys = activeKey !== undefined ? activeKey : internalActiveKeys;
-  
+  const [internalActiveKeys, setInternalActiveKeys] =
+    useState<string[]>(defaultActiveKey);
+
+  const currentActiveKeys =
+    activeKey !== undefined ? activeKey : internalActiveKeys;
+
   const handleToggle = (key: string) => {
     let newActiveKeys: string[];
-    
+
     if (accordion) {
       // Accordion mode: only one panel can be open
       newActiveKeys = currentActiveKeys.includes(key) ? [] : [key];
@@ -54,38 +61,45 @@ export const Collapse: React.FC<CollapseProps> = ({
         newActiveKeys = [...currentActiveKeys, key];
       }
     }
-    
+
     if (activeKey === undefined) {
       setInternalActiveKeys(newActiveKeys);
     }
-    
+
     onChange?.(newActiveKeys);
   };
 
   const sizeClasses = {
     small: 'text-sm',
     default: 'text-base',
-    large: 'text-lg'
+    large: 'text-lg',
   };
 
   return (
-    <div className={cn(
-      'border border rounded-lg overflow-hidden',
-      ghost && 'border-none bg-transparent',
-      className
-    )}>
+    <div
+      className={cn(
+        'border border rounded-lg overflow-hidden',
+        ghost && 'border-none bg-transparent',
+        className
+      )}
+    >
       {React.Children.map(children, (child, index) => {
         if (!React.isValidElement(child)) return null;
 
-        const { header, children: panelChildren, disabled = false } = child.props;
+        const {
+          header,
+          children: panelChildren,
+          disabled = false,
+        } = child.props;
         // Use React's key if available, otherwise fall back to index
         const key = child.key || index.toString();
         const isActive = currentActiveKeys.includes(key);
-        
+
         return (
-          <div key={key} className={cn(
-            !ghost && index > 0 && 'border-t border'
-          )}>
+          <div
+            key={key}
+            className={cn(!ghost && index > 0 && 'border-t border')}
+          >
             {/* Header */}
             <button
               className={cn(
@@ -99,32 +113,31 @@ export const Collapse: React.FC<CollapseProps> = ({
               )}
               onClick={() => !disabled && handleToggle(key)}
               disabled={disabled}
-              type="button"
+              type='button'
             >
-              <div className="flex-1">
-                {header}
-              </div>
-              <div className={cn(
-                'ml-2 transition-transform duration-200',
-                isActive && 'transform rotate-90'
-              )}>
+              <div className='flex-1'>{header}</div>
+              <div
+                className={cn(
+                  'ml-2 transition-transform duration-200',
+                  isActive && 'transform rotate-90'
+                )}
+              >
                 {isActive ? (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className='h-4 w-4' />
                 ) : (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className='h-4 w-4' />
                 )}
               </div>
             </button>
-            
+
             {/* Content */}
-            <div className={cn(
-              'overflow-hidden transition-all duration-200 ease-in-out',
-              isActive ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-            )}>
-              <div className={cn(
-                'px-4 py-3',
-                ghost && 'px-0'
-              )}>
+            <div
+              className={cn(
+                'overflow-hidden transition-all duration-200 ease-in-out',
+                isActive ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+              )}
+            >
+              <div className={cn('px-4 py-3', ghost && 'px-0')}>
                 {panelChildren}
               </div>
             </div>

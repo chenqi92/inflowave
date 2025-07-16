@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { QueryResult } from '@/types';
 
-export type ChartType = 'line' | 'bar' | 'pie' | 'scatter' | 'area' | 'gauge' | 'heatmap';
+export type ChartType =
+  | 'line'
+  | 'bar'
+  | 'pie'
+  | 'scatter'
+  | 'area'
+  | 'gauge'
+  | 'heatmap';
 
 export interface ChartDataSeries {
   name: string;
@@ -52,7 +59,14 @@ export interface ChartGrid {
 export interface ChartAnimation {
   enabled: boolean;
   duration: number;
-  easing: 'linear' | 'quadraticIn' | 'quadraticOut' | 'quadraticInOut' | 'cubicIn' | 'cubicOut' | 'cubicInOut';
+  easing:
+    | 'linear'
+    | 'quadraticIn'
+    | 'quadraticOut'
+    | 'quadraticInOut'
+    | 'cubicIn'
+    | 'cubicOut'
+    | 'cubicInOut';
   delay: number;
   threshold: number;
 }
@@ -116,25 +130,25 @@ interface VisualizationState {
   // 图表配置
   charts: ChartConfiguration[];
   activeChartId: string | null;
-  
+
   // 仪表板
   dashboards: Dashboard[];
   activeDashboardId: string | null;
-  
+
   // 数据源
   dataSources: Record<string, QueryResult>; // chartId -> QueryResult
-  
+
   // 加载状态
   loadingCharts: Record<string, boolean>;
-  
+
   // 实时更新
   realTimeEnabled: boolean;
   realTimeCharts: Set<string>;
-  
+
   // 主题和样式
   currentTheme: string;
   availableThemes: string[];
-  
+
   // 错误状态
   errors: Record<string, string>;
 
@@ -150,32 +164,47 @@ interface VisualizationState {
   setChartData: (chartId: string, data: QueryResult) => void;
   refreshChartData: (chartId: string, queryResult: QueryResult) => void;
   clearChartData: (chartId: string) => void;
-  
+
   // 仪表板管理
-  createDashboard: (dashboard: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  createDashboard: (
+    dashboard: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt'>
+  ) => string;
   updateDashboard: (id: string, updates: Partial<Dashboard>) => void;
   deleteDashboard: (id: string) => void;
   duplicateDashboard: (id: string) => string;
   getDashboard: (id: string) => Dashboard | undefined;
   setActiveDashboard: (id: string | null) => void;
-  addChartToDashboard: (dashboardId: string, chartId: string, layout: { x: number; y: number; w: number; h: number }) => void;
+  addChartToDashboard: (
+    dashboardId: string,
+    chartId: string,
+    layout: { x: number; y: number; w: number; h: number }
+  ) => void;
   removeChartFromDashboard: (dashboardId: string, chartId: string) => void;
-  updateDashboardLayout: (dashboardId: string, layout: Array<{ chartId: string; x: number; y: number; w: number; h: number }>) => void;
+  updateDashboardLayout: (
+    dashboardId: string,
+    layout: Array<{
+      chartId: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }>
+  ) => void;
 
   // 实时更新
   enableRealTime: (chartId: string) => void;
   disableRealTime: (chartId: string) => void;
   setRealTimeEnabled: (enabled: boolean) => void;
-  
+
   // 主题管理
   setTheme: (theme: string) => void;
   addTheme: (theme: string) => void;
-  
+
   // 错误处理
   setError: (chartId: string, error: string) => void;
   clearError: (chartId: string) => void;
   clearAllErrors: () => void;
-  
+
   // 导入导出
   exportChart: (chartId: string) => ChartConfiguration | null;
   importChart: (config: ChartConfiguration) => string;
@@ -184,42 +213,54 @@ interface VisualizationState {
 }
 
 // 默认图表配置
-const createDefaultChart = (type: ChartType): Omit<ChartConfiguration, 'id'> => ({
+const createDefaultChart = (
+  type: ChartType
+): Omit<ChartConfiguration, 'id'> => ({
   title: `新 ${type} 图表`,
   type,
   series: [],
   xAxis: {
     type: 'category',
-    name: 'X轴'},
-  yAxis: [{
-    type: 'value',
-    name: 'Y轴',
-    position: 'left'}],
+    name: 'X轴',
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: 'Y轴',
+      position: 'left',
+    },
+  ],
   legend: {
     show: true,
     position: 'top',
     orient: 'horizontal',
-    align: 'center'},
+    align: 'center',
+  },
   tooltip: {
     show: true,
     trigger: 'axis',
     axisPointer: {
       type: 'line',
-      animation: true}},
+      animation: true,
+    },
+  },
   grid: {
     show: true,
     left: '10%',
     top: '15%',
     right: '10%',
     bottom: '15%',
-    containLabel: true},
+    containLabel: true,
+  },
   animation: {
     enabled: true,
     duration: 1000,
     easing: 'quadraticOut',
     delay: 0,
-    threshold: 2000},
-  theme: 'default'});
+    threshold: 2000,
+  },
+  theme: 'default',
+});
 
 export const useVisualizationStore = create<VisualizationState>()(
   persist(
@@ -238,16 +279,18 @@ export const useVisualizationStore = create<VisualizationState>()(
       errors: {},
 
       // 图表管理
-      createChart: (config) => {
+      createChart: config => {
         const id = `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newChart: ChartConfiguration = {
           ...createDefaultChart(config.type),
           ...config,
-          id};
+          id,
+        };
 
         set(state => ({
           charts: [...state.charts, newChart],
-          activeChartId: id}));
+          activeChartId: id,
+        }));
 
         return id;
       },
@@ -256,10 +299,11 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           charts: state.charts.map(chart =>
             chart.id === id ? { ...chart, ...updates } : chart
-          )}));
+          ),
+        }));
       },
 
-      deleteChart: (id) => {
+      deleteChart: id => {
         set(state => {
           const newRealTimeCharts = new Set(state.realTimeCharts);
           newRealTimeCharts.delete(id);
@@ -275,15 +319,17 @@ export const useVisualizationStore = create<VisualizationState>()(
 
           return {
             charts: state.charts.filter(chart => chart.id !== id),
-            activeChartId: state.activeChartId === id ? null : state.activeChartId,
+            activeChartId:
+              state.activeChartId === id ? null : state.activeChartId,
             dataSources: newDataSources,
             loadingCharts: newLoadingCharts,
             realTimeCharts: newRealTimeCharts,
-            errors: newErrors};
+            errors: newErrors,
+          };
         });
       },
 
-      duplicateChart: (id) => {
+      duplicateChart: id => {
         const chart = get().getChart(id);
         if (!chart) return '';
 
@@ -291,20 +337,22 @@ export const useVisualizationStore = create<VisualizationState>()(
         const duplicatedChart: ChartConfiguration = {
           ...chart,
           id: newId,
-          title: `${chart.title} (副本)`};
+          title: `${chart.title} (副本)`,
+        };
 
         set(state => ({
           charts: [...state.charts, duplicatedChart],
-          activeChartId: newId}));
+          activeChartId: newId,
+        }));
 
         return newId;
       },
 
-      getChart: (id) => {
+      getChart: id => {
         return get().charts.find(chart => chart.id === id);
       },
 
-      setActiveChart: (id) => {
+      setActiveChart: id => {
         set({ activeChartId: id });
       },
 
@@ -313,20 +361,25 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           dataSources: {
             ...state.dataSources,
-            [chartId]: data},
+            [chartId]: data,
+          },
           loadingCharts: {
             ...state.loadingCharts,
-            [chartId]: false}}));
+            [chartId]: false,
+          },
+        }));
       },
 
       refreshChartData: (chartId, queryResult) => {
         set(state => ({
           dataSources: {
             ...state.dataSources,
-            [chartId]: queryResult}}));
+            [chartId]: queryResult,
+          },
+        }));
       },
 
-      clearChartData: (chartId) => {
+      clearChartData: chartId => {
         set(state => {
           const newDataSources = { ...state.dataSources };
           delete newDataSources[chartId];
@@ -335,18 +388,20 @@ export const useVisualizationStore = create<VisualizationState>()(
       },
 
       // 仪表板管理
-      createDashboard: (dashboard) => {
+      createDashboard: dashboard => {
         const id = `dashboard-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const now = new Date();
         const newDashboard: Dashboard = {
           ...dashboard,
           id,
           createdAt: now,
-          updatedAt: now};
+          updatedAt: now,
+        };
 
         set(state => ({
           dashboards: [...state.dashboards, newDashboard],
-          activeDashboardId: id}));
+          activeDashboardId: id,
+        }));
 
         return id;
       },
@@ -354,19 +409,22 @@ export const useVisualizationStore = create<VisualizationState>()(
       updateDashboard: (id, updates) => {
         set(state => ({
           dashboards: state.dashboards.map(dashboard =>
-            dashboard.id === id 
+            dashboard.id === id
               ? { ...dashboard, ...updates, updatedAt: new Date() }
               : dashboard
-          )}));
+          ),
+        }));
       },
 
-      deleteDashboard: (id) => {
+      deleteDashboard: id => {
         set(state => ({
           dashboards: state.dashboards.filter(dashboard => dashboard.id !== id),
-          activeDashboardId: state.activeDashboardId === id ? null : state.activeDashboardId}));
+          activeDashboardId:
+            state.activeDashboardId === id ? null : state.activeDashboardId,
+        }));
       },
 
-      duplicateDashboard: (id) => {
+      duplicateDashboard: id => {
         const dashboard = get().getDashboard(id);
         if (!dashboard) return '';
 
@@ -377,20 +435,22 @@ export const useVisualizationStore = create<VisualizationState>()(
           id: newId,
           name: `${dashboard.name} (副本)`,
           createdAt: now,
-          updatedAt: now};
+          updatedAt: now,
+        };
 
         set(state => ({
           dashboards: [...state.dashboards, duplicatedDashboard],
-          activeDashboardId: newId}));
+          activeDashboardId: newId,
+        }));
 
         return newId;
       },
 
-      getDashboard: (id) => {
+      getDashboard: id => {
         return get().dashboards.find(dashboard => dashboard.id === id);
       },
 
-      setActiveDashboard: (id) => {
+      setActiveDashboard: id => {
         set({ activeDashboardId: id });
       },
 
@@ -400,11 +460,19 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === dashboardId
               ? {
                   ...dashboard,
-                  charts: [...dashboard.charts.filter(c => c.id !== chartId), get().getChart(chartId)!].filter(Boolean),
-                  layout: [...dashboard.layout.filter(l => l.chartId !== chartId), { chartId, ...layout }],
-                  updatedAt: new Date()}
+                  charts: [
+                    ...dashboard.charts.filter(c => c.id !== chartId),
+                    get().getChart(chartId)!,
+                  ].filter(Boolean),
+                  layout: [
+                    ...dashboard.layout.filter(l => l.chartId !== chartId),
+                    { chartId, ...layout },
+                  ],
+                  updatedAt: new Date(),
+                }
               : dashboard
-          )}));
+          ),
+        }));
       },
 
       removeChartFromDashboard: (dashboardId, chartId) => {
@@ -415,9 +483,11 @@ export const useVisualizationStore = create<VisualizationState>()(
                   ...dashboard,
                   charts: dashboard.charts.filter(c => c.id !== chartId),
                   layout: dashboard.layout.filter(l => l.chartId !== chartId),
-                  updatedAt: new Date()}
+                  updatedAt: new Date(),
+                }
               : dashboard
-          )}));
+          ),
+        }));
       },
 
       updateDashboardLayout: (dashboardId, layout) => {
@@ -426,16 +496,18 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === dashboardId
               ? { ...dashboard, layout, updatedAt: new Date() }
               : dashboard
-          )}));
+          ),
+        }));
       },
 
       // 实时更新
-      enableRealTime: (chartId) => {
+      enableRealTime: chartId => {
         set(state => ({
-          realTimeCharts: new Set([...state.realTimeCharts, chartId])}));
+          realTimeCharts: new Set([...state.realTimeCharts, chartId]),
+        }));
       },
 
-      disableRealTime: (chartId) => {
+      disableRealTime: chartId => {
         set(state => {
           const newRealTimeCharts = new Set(state.realTimeCharts);
           newRealTimeCharts.delete(chartId);
@@ -443,18 +515,19 @@ export const useVisualizationStore = create<VisualizationState>()(
         });
       },
 
-      setRealTimeEnabled: (enabled) => {
+      setRealTimeEnabled: enabled => {
         set({ realTimeEnabled: enabled });
       },
 
       // 主题管理
-      setTheme: (theme) => {
+      setTheme: theme => {
         set({ currentTheme: theme });
       },
 
-      addTheme: (theme) => {
+      addTheme: theme => {
         set(state => ({
-          availableThemes: [...new Set([...state.availableThemes, theme])]}));
+          availableThemes: [...new Set([...state.availableThemes, theme])],
+        }));
       },
 
       // 错误处理
@@ -462,10 +535,12 @@ export const useVisualizationStore = create<VisualizationState>()(
         set(state => ({
           errors: {
             ...state.errors,
-            [chartId]: error}}));
+            [chartId]: error,
+          },
+        }));
       },
 
-      clearError: (chartId) => {
+      clearError: chartId => {
         set(state => {
           const newErrors = { ...state.errors };
           delete newErrors[chartId];
@@ -478,51 +553,58 @@ export const useVisualizationStore = create<VisualizationState>()(
       },
 
       // 导入导出
-      exportChart: (chartId) => {
+      exportChart: chartId => {
         return get().getChart(chartId) || null;
       },
 
-      importChart: (config) => {
+      importChart: config => {
         const id = `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const importedChart: ChartConfiguration = {
           ...config,
-          id};
+          id,
+        };
 
         set(state => ({
           charts: [...state.charts, importedChart],
-          activeChartId: id}));
+          activeChartId: id,
+        }));
 
         return id;
       },
 
-      exportDashboard: (dashboardId) => {
+      exportDashboard: dashboardId => {
         return get().getDashboard(dashboardId) || null;
       },
 
-      importDashboard: (dashboard) => {
+      importDashboard: dashboard => {
         const id = `dashboard-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const now = new Date();
         const importedDashboard: Dashboard = {
           ...dashboard,
           id,
           createdAt: now,
-          updatedAt: now};
+          updatedAt: now,
+        };
 
         set(state => ({
           dashboards: [...state.dashboards, importedDashboard],
-          activeDashboardId: id}));
+          activeDashboardId: id,
+        }));
 
         return id;
-      }}),
+      },
+    }),
     {
       name: 'visualization-store',
-      partialize: (state) => ({
+      partialize: state => ({
         charts: state.charts,
         dashboards: state.dashboards,
         currentTheme: state.currentTheme,
         availableThemes: state.availableThemes,
         activeChartId: state.activeChartId,
         activeDashboardId: state.activeDashboardId,
-        realTimeEnabled: state.realTimeEnabled})}
+        realTimeEnabled: state.realTimeEnabled,
+      }),
+    }
   )
 );

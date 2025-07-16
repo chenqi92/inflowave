@@ -4,7 +4,6 @@ import { safeTauriListen } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
-import { applyThemeColors } from '@/lib/theme-colors';
 import { useTheme } from '@/components/providers/ThemeProvider';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
@@ -18,7 +17,8 @@ interface NativeMenuHandlerProps {
 const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   onToggleSidebar,
   onToggleStatusbar,
-  onGlobalSearch}) => {
+  onGlobalSearch,
+}) => {
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
   const { settings, updateTheme } = useSettingsStore();
@@ -32,21 +32,21 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     const setupListeners = async () => {
       console.log('🎛️ 设置原生菜单监听器...');
-      
+
       // 监听菜单动作事件
-      unlistenMenuFn = await safeTauriListen<string>('menu-action', (event) => {
+      unlistenMenuFn = await safeTauriListen<string>('menu-action', event => {
         console.log('📋 收到菜单动作事件:', event);
         const action = event.payload;
         handleMenuAction(action);
       });
 
       // 监听主题切换事件
-      unlistenThemeFn = await safeTauriListen<string>('theme-change', (event) => {
+      unlistenThemeFn = await safeTauriListen<string>('theme-change', event => {
         console.log('🎨 收到主题切换事件:', event);
         const themeName = event.payload;
         handleThemeChange(themeName);
       });
-      
+
       console.log('✅ 原生菜单监听器设置完成');
     };
 
@@ -68,7 +68,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     // 处理新的主题名称格式，将其转换为系统使用的格式
     let actualThemeName = themeName;
-    
+
     // 映射从菜单发来的主题名称到系统内部使用的格式
     const themeMapping: Record<string, string> = {
       'default-blue': 'default',
@@ -78,7 +78,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       'elegant-purple': 'purple',
       'romantic-rose': 'rose',
       'bright-yellow': 'yellow',
-      'mysterious-violet': 'violet'
+      'mysterious-violet': 'violet',
     };
 
     if (themeMapping[themeName]) {
@@ -93,14 +93,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     // 显示成功消息
     const themeLabels: Record<string, string> = {
-      'default': '默认蓝色',
-      'green': '自然绿色',
-      'red': '活力红色',
-      'orange': '温暖橙色',
-      'purple': '优雅紫色',
-      'rose': '浪漫玫瑰',
-      'yellow': '明亮黄色',
-      'violet': '神秘紫罗兰'
+      default: '默认蓝色',
+      green: '自然绿色',
+      red: '活力红色',
+      orange: '温暖橙色',
+      purple: '优雅紫色',
+      rose: '浪漫玫瑰',
+      yellow: '明亮黄色',
+      violet: '神秘紫罗兰',
     };
 
     const themeLabel = themeLabels[actualThemeName] || actualThemeName;
@@ -121,14 +121,16 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     if (action.startsWith('view:')) {
       const view = action.replace('view:', '');
       const viewMap: Record<string, string> = {
-        'datasource': '/connections',
-        'query': '/query',
-        'visualization': '/visualization',
-        'performance': '/performance'
+        datasource: '/connections',
+        query: '/query',
+        visualization: '/visualization',
+        performance: '/performance',
       };
       if (viewMap[view]) {
         navigate(viewMap[view]);
-        showMessage.success(`切换到${view === 'datasource' ? '数据源管理' : view === 'query' ? '查询编辑器' : view === 'visualization' ? '数据可视化' : '性能监控'}`);
+        showMessage.success(
+          `切换到${view === 'datasource' ? '数据源管理' : view === 'query' ? '查询编辑器' : view === 'visualization' ? '数据可视化' : '性能监控'}`
+        );
       }
       return;
     }
@@ -195,7 +197,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           const event = new KeyboardEvent('keydown', {
             key: 'f',
             ctrlKey: true,
-            bubbles: true
+            bubbles: true,
           });
           document.activeElement.dispatchEvent(event);
         }
@@ -291,7 +293,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'execute_query':
       case 'execute-query':
         if (activeConnectionId) {
-          document.dispatchEvent(new CustomEvent('execute-query', { detail: { source: 'menu' } }));
+          document.dispatchEvent(
+            new CustomEvent('execute-query', { detail: { source: 'menu' } })
+          );
           showMessage.info('执行查询...');
         } else {
           showMessage.warning('请先建立数据库连接');
@@ -300,7 +304,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'stop_query':
       case 'stop-query':
-        document.dispatchEvent(new CustomEvent('stop-query', { detail: { source: 'menu' } }));
+        document.dispatchEvent(
+          new CustomEvent('stop-query', { detail: { source: 'menu' } })
+        );
         showMessage.info('已停止查询');
         break;
 
@@ -309,7 +315,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'save-query':
-        document.dispatchEvent(new CustomEvent('save-query', { detail: { source: 'menu' } }));
+        document.dispatchEvent(
+          new CustomEvent('save-query', { detail: { source: 'menu' } })
+        );
         break;
 
       // 工具菜单
@@ -403,10 +411,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         visible={shortcutsVisible}
         onClose={() => setShortcutsVisible(false)}
       /> */}
-      <AboutDialog
-        open={aboutVisible}
-        onClose={() => setAboutVisible(false)}
-      />
+      <AboutDialog open={aboutVisible} onClose={() => setAboutVisible(false)} />
     </>
   );
 };

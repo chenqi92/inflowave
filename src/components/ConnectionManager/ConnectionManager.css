@@ -114,7 +114,7 @@
   z-index: 1000;
 }
 
-.dialog-overlay[data-priority="high"] {
+.dialog-overlay[data-priority='high'] {
   z-index: 1200 !important;
 }
 
@@ -124,6 +124,6 @@
 }
 
 /* 强制确保编辑对话框在最顶层 */
-.dialog-overlay[data-z-index="1200"] {
+.dialog-overlay[data-z-index='1200'] {
   z-index: 1200 !important;
 }

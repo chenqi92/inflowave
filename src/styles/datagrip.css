@@ -379,7 +379,9 @@
 
 /* 控制台样式 */
 .console-panel {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-family:
+    'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', Consolas, 'Courier New',
+    monospace;
   background: #1e1e1e;
   color: #d4d4d4;
   font-size: 13px;

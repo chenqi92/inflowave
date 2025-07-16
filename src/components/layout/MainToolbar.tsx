@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Button, 
-  Badge,
+import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -16,15 +15,16 @@ import {
   BarChart,
   Edit,
   Zap,
-  Wrench
+  Wrench,
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
-import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
+import TimeRangeSelector, {
+  TimeRange,
+} from '@/components/common/TimeRangeSelector';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -43,20 +43,34 @@ interface MainToolbarProps {
   }) => void;
 }
 
-const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
-  const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
+const MainToolbar: React.FC<MainToolbarProps> = ({
+  onViewChange,
+  currentView = 'query',
+  currentTimeRange,
+  onTimeRangeChange,
+}) => {
+  const {
+    activeConnectionId,
+    connections,
+    connectionStatuses,
+    connectedConnectionIds,
+  } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
-    currentTimeRange ? {
-      label: currentTimeRange.label,
-      value: currentTimeRange.value,
-      start: currentTimeRange.start,
-      end: currentTimeRange.end
-    } : null
+    currentTimeRange
+      ? {
+          label: currentTimeRange.label,
+          value: currentTimeRange.value,
+          start: currentTimeRange.start,
+          end: currentTimeRange.end,
+        }
+      : null
   );
-  const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
-  
+  const activeConnection = activeConnectionId
+    ? connections.find(c => c.id === activeConnectionId)
+    : null;
+
   // 缓存连接状态检查，避免每次渲染都重新计算
   const connectionStatus = useMemo(() => {
     const hasConnected = connectionUtils.hasAnyConnectedInfluxDB();
@@ -66,12 +80,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
   const hasAnyConnectedInfluxDB = connectionStatus.hasConnected;
   const connectedInfluxDBCount = connectionStatus.count;
-  
+
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();
-
-
-
 
   const handleToolsMenuClick = ({ key }: { key: string }) => {
     switch (key) {
@@ -85,7 +96,11 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         if (typeof window !== 'undefined' && window.console) {
           showMessage.info('请查看浏览器控制台（F12）');
           // 可以执行一些日志输出来引导用户
-          console.log('%c=== InfloWave Debug Console ===%c', 'color: #2196F3; font-size: 16px; font-weight: bold;', 'color: normal;');
+          console.log(
+            '%c=== InfloWave Debug Console ===%c',
+            'color: #2196F3; font-size: 16px; font-weight: bold;',
+            'color: normal;'
+          );
           console.log('当前时间:', new Date().toLocaleString());
           console.log('应用版本: v0.1.0');
           console.log('活跃连接:', activeConnectionId || '无');
@@ -107,15 +122,18 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
     {
       key: 'query-history',
       label: '查询历史',
-      icon: <History className="w-4 h-4" />},
+      icon: <History className='w-4 h-4' />,
+    },
     {
       key: 'console',
       label: '控制台',
-      icon: <Bug className="w-4 h-4" />},
+      icon: <Bug className='w-4 h-4' />,
+    },
     {
       key: 'dev-tools',
       label: '开发者工具',
-      icon: <Wrench className="w-4 h-4" />},
+      icon: <Wrench className='w-4 h-4' />,
+    },
   ];
 
   const handleTimeRangeChange = (range: TimeRange) => {
@@ -124,63 +142,63 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       label: range.label,
       value: range.value,
       start: range.start,
-      end: range.end
+      end: range.end,
     });
   };
 
   return (
-    <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
-        {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* 区域1: 软件名称显示 - 艺术体风格 */}
-          <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <Database className="w-6 h-6 text-primary" />
-              <div className="flex flex-col">
-                <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  InfloWave
-                </span>
-                <span className="text-xs text-muted-foreground -mt-1">
-                  时序数据库管理工具
-                </span>
-              </div>
+    <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
+      {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
+      <div className='flex items-center gap-2 flex-1 min-w-0'>
+        {/* 区域1: 软件名称显示 - 艺术体风格 */}
+        <div className='flex items-center gap-2 px-3 py-2 flex-shrink-0'>
+          <div className='flex items-center gap-2'>
+            <Database className='w-6 h-6 text-primary' />
+            <div className='flex flex-col'>
+              <span className='text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent'>
+                InfloWave
+              </span>
+              <span className='text-xs text-muted-foreground -mt-1'>
+                时序数据库管理工具
+              </span>
             </div>
           </div>
+        </div>
 
-          {/* 区域2: 时间范围选择器 - 仅在有连接时显示 */}
-          {activeConnection && (
-            <div className="flex items-center gap-2 px-3">
-              <TimeRangeSelector
-                value={selectedTimeRange || currentTimeRange}
-                onChange={handleTimeRangeChange}
-                className="ml-1"
-              />
-            </div>
-          )}
+        {/* 区域2: 时间范围选择器 - 仅在有连接时显示 */}
+        {activeConnection && (
+          <div className='flex items-center gap-2 px-3'>
+            <TimeRangeSelector
+              value={selectedTimeRange || currentTimeRange}
+              onChange={handleTimeRangeChange}
+              className='ml-1'
+            />
+          </div>
+        )}
 
-          <div className="w-px h-6 bg-border mx-3" />
+        <div className='w-px h-6 bg-border mx-3' />
 
-          {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
-          <div className="flex items-center gap-1 px-4 py-1 flex-shrink-0">
-            <div className="p-0 flex items-center gap-1">
+        {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
+        <div className='flex items-center gap-1 px-4 py-1 flex-shrink-0'>
+          <div className='p-0 flex items-center gap-1'>
             <Button
               variant={currentView === 'datasource' ? 'default' : 'ghost'}
-              size="sm"
+              size='sm'
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'datasource'
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
               onClick={() => onViewChange?.('datasource')}
-              title="数据源管理"
+              title='数据源管理'
             >
-              <Database className="w-4 h-4" />
-              <span className="text-xs">数据源</span>
+              <Database className='w-4 h-4' />
+              <span className='text-xs'>数据源</span>
             </Button>
 
             <Button
               variant={currentView === 'query' ? 'default' : 'ghost'}
-              size="sm"
+              size='sm'
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'query'
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
@@ -188,15 +206,19 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               }`}
               onClick={() => onViewChange?.('query')}
               disabled={!hasAnyConnectedInfluxDB}
-              title={hasAnyConnectedInfluxDB ? "查询编辑器" : `查询编辑器 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
+              title={
+                hasAnyConnectedInfluxDB
+                  ? '查询编辑器'
+                  : `查询编辑器 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
+              }
             >
-              <Edit className="w-4 h-4" />
-              <span className="text-xs">查询</span>
+              <Edit className='w-4 h-4' />
+              <span className='text-xs'>查询</span>
             </Button>
 
             <Button
               variant={currentView === 'visualization' ? 'default' : 'ghost'}
-              size="sm"
+              size='sm'
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'visualization'
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
@@ -204,15 +226,19 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               }`}
               onClick={() => onViewChange?.('visualization')}
               disabled={!hasAnyConnectedInfluxDB}
-              title={hasAnyConnectedInfluxDB ? "数据可视化" : `数据可视化 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
+              title={
+                hasAnyConnectedInfluxDB
+                  ? '数据可视化'
+                  : `数据可视化 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
+              }
             >
-              <BarChart className="w-4 h-4" />
-              <span className="text-xs">可视化</span>
+              <BarChart className='w-4 h-4' />
+              <span className='text-xs'>可视化</span>
             </Button>
 
             <Button
               variant={currentView === 'performance' ? 'default' : 'ghost'}
-              size="sm"
+              size='sm'
               className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 currentView === 'performance'
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
@@ -220,90 +246,97 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
               }`}
               onClick={() => onViewChange?.('performance')}
               disabled={!hasAnyConnectedInfluxDB}
-              title={hasAnyConnectedInfluxDB ? "性能监控" : `性能监控 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
+              title={
+                hasAnyConnectedInfluxDB
+                  ? '性能监控'
+                  : `性能监控 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
+              }
             >
-              <Zap className="w-4 h-4" />
-              <span className="text-xs">监控</span>
+              <Zap className='w-4 h-4' />
+              <span className='text-xs'>监控</span>
             </Button>
-            </div>
           </div>
-
         </div>
-
-        {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <div className="w-px h-6 bg-border mx-3" />
-
-          {/* 刷新按钮 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            disabled={!hasAnyConnectedInfluxDB}
-            title={hasAnyConnectedInfluxDB ? "刷新数据" : `刷新数据 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`}
-            onClick={() => {
-              // 触发刷新数据库结构事件
-              document.dispatchEvent(new CustomEvent('refresh-database-tree'));
-              showMessage.info('正在刷新数据库结构...');
-            }}
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span className="text-xs">刷新</span>
-          </Button>
-
-          {/* 主题切换按钮 */}
-          <ThemeToggle 
-            variant="ghost"
-            size="sm"
-            showLabel={true}
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-          />
-
-          {/* 设置按钮 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            onClick={() => setSettingsVisible(true)}
-            title="应用设置"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="text-xs">设置</span>
-          </Button>
-
-          {/* 工具菜单 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-                title="更多工具"
-              >
-                <Wrench className="w-4 h-4" />
-                <span className="text-xs">工具</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {toolsMenuItems.map((item) => (
-                <DropdownMenuItem
-                  key={item.key}
-                  onClick={() => handleToolsMenuClick({ key: item.key })}
-                >
-                  {item.icon}
-                  <span className="ml-2">{item.label}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* 设置模态框 */}
-        <SettingsModal
-          visible={settingsVisible}
-          onClose={() => setSettingsVisible(false)}
-        />
       </div>
+
+      {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
+      <div className='flex items-center gap-1 flex-shrink-0'>
+        <div className='w-px h-6 bg-border mx-3' />
+
+        {/* 刷新按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          disabled={!hasAnyConnectedInfluxDB}
+          title={
+            hasAnyConnectedInfluxDB
+              ? '刷新数据'
+              : `刷新数据 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
+          }
+          onClick={() => {
+            // 触发刷新数据库结构事件
+            document.dispatchEvent(new CustomEvent('refresh-database-tree'));
+            showMessage.info('正在刷新数据库结构...');
+          }}
+        >
+          <RefreshCw className='w-4 h-4' />
+          <span className='text-xs'>刷新</span>
+        </Button>
+
+        {/* 主题切换按钮 */}
+        <ThemeToggle
+          variant='ghost'
+          size='sm'
+          showLabel={true}
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+        />
+
+        {/* 设置按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          onClick={() => setSettingsVisible(true)}
+          title='应用设置'
+        >
+          <Settings className='w-4 h-4' />
+          <span className='text-xs'>设置</span>
+        </Button>
+
+        {/* 工具菜单 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+              title='更多工具'
+            >
+              <Wrench className='w-4 h-4' />
+              <span className='text-xs'>工具</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            {toolsMenuItems.map(item => (
+              <DropdownMenuItem
+                key={item.key}
+                onClick={() => handleToolsMenuClick({ key: item.key })}
+              >
+                {item.icon}
+                <span className='ml-2'>{item.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* 设置模态框 */}
+      <SettingsModal
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+      />
+    </div>
   );
 };
 

@@ -110,21 +110,21 @@
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .dashboard-header-right {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .dashboard-content {
     padding: 8px;
   }
-  
+
   .dashboard-grid {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto !important;
   }
-  
+
   .dashboard-widget {
     grid-column: 1 !important;
     grid-row: auto !important;

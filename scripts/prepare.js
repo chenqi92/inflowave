@@ -8,10 +8,11 @@
 import { execSync } from 'child_process';
 
 // Check if we're in a CI environment
-const isCI = process.env.CI ||
-             process.env.GITHUB_ACTIONS ||
-             process.env.HUSKY === '0' ||
-             process.env.NODE_ENV === 'production';
+const isCI =
+  process.env.CI ||
+  process.env.GITHUB_ACTIONS ||
+  process.env.HUSKY === '0' ||
+  process.env.NODE_ENV === 'production';
 
 if (isCI) {
   console.log('Skipping husky installation in CI environment');

@@ -33,10 +33,11 @@
 **诊断步骤**:
 
 1. **网络连通性测试**
+
    ```bash
    # 测试网络连接
    ping influxdb-server-ip
-   
+
    # 测试端口连通性
    telnet influxdb-server-ip 8086
    # 或使用 nc 命令
@@ -44,28 +45,31 @@
    ```
 
 2. **防火墙检查**
+
    ```bash
    # Linux 检查防火墙状态
    sudo ufw status
    sudo iptables -L
-   
+
    # Windows 检查防火墙
    netsh advfirewall show allprofiles
    ```
 
 3. **服务状态检查**
+
    ```bash
    # 检查 InfluxDB 服务状态
    systemctl status influxdb
-   
+
    # 检查进程
    ps aux | grep influxd
-   
+
    # 检查端口监听
    netstat -tlnp | grep 8086
    ```
 
 **解决方案**:
+
 - 调整连接超时设置（增加到 30-60 秒）
 - 检查并配置防火墙规则
 - 确认 InfluxDB 服务正常运行
@@ -78,6 +82,7 @@
 **诊断步骤**:
 
 1. **验证凭据**
+
    ```bash
    # 使用 curl 测试认证
    curl -i -XPOST http://localhost:8086/query \
@@ -86,6 +91,7 @@
    ```
 
 2. **检查用户权限**
+
    ```sql
    -- 在 InfluxDB 中检查用户
    SHOW USERS
@@ -99,6 +105,7 @@
    ```
 
 **解决方案**:
+
 - 确认用户名和密码正确
 - 检查用户是否存在且有相应权限
 - 确认 InfluxDB 启用了认证
@@ -111,6 +118,7 @@
 **诊断步骤**:
 
 1. **证书验证**
+
    ```bash
    # 检查 SSL 证书
    openssl s_client -connect influxdb-server:8086 -servername influxdb-server
@@ -123,6 +131,7 @@
    ```
 
 **解决方案**:
+
 - 更新 SSL 证书
 - 配置正确的 TLS 版本
 - 添加证书到信任列表
@@ -137,16 +146,18 @@
 **诊断步骤**:
 
 1. **权限检查**
+
    ```sql
    -- 检查当前用户权限
    SHOW GRANTS FOR "current_user"
    ```
 
 2. **存储空间检查**
+
    ```bash
    # 检查磁盘空间
    df -h
-   
+
    # 检查 InfluxDB 数据目录
    du -sh /var/lib/influxdb/
    ```
@@ -157,6 +168,7 @@
    - 长度限制检查
 
 **解决方案**:
+
 - 确保用户有 CREATE DATABASE 权限
 - 清理磁盘空间
 - 使用符合规范的数据库名称
@@ -169,18 +181,20 @@
 **诊断步骤**:
 
 1. **查询分析**
+
    ```sql
    -- 使用 EXPLAIN 分析查询计划
    EXPLAIN SELECT * FROM "measurement" WHERE time > now() - 1h
    ```
 
 2. **系统资源监控**
+
    ```bash
    # 监控系统资源
    top
    htop
    iotop
-   
+
    # 检查 InfluxDB 进程资源使用
    ps aux | grep influxd
    ```
@@ -193,6 +207,7 @@
    ```
 
 **解决方案**:
+
 - 添加时间范围限制
 - 使用标签过滤优化查询
 - 增加系统内存
@@ -208,6 +223,7 @@
 **诊断步骤**:
 
 1. **数据验证**
+
    ```sql
    -- 验证查询返回的数据格式
    SELECT * FROM "measurement" LIMIT 5
@@ -224,6 +240,7 @@
    - 确认时间字段格式
 
 **解决方案**:
+
 - 修正查询语句返回正确格式数据
 - 调整图表配置参数
 - 清除浏览器缓存
@@ -237,6 +254,7 @@
 **诊断步骤**:
 
 1. **网络连接检查**
+
    ```bash
    # 测试网络延迟
    ping -c 10 influxdb-server
@@ -253,6 +271,7 @@
    - 确认没有内存泄漏
 
 **解决方案**:
+
 - 优化查询语句性能
 - 调整刷新间隔
 - 减少同时刷新的图表数量
@@ -267,6 +286,7 @@
 **诊断步骤**:
 
 1. **格式验证**
+
    ```bash
    # 验证 Line Protocol 格式
    echo "measurement,tag1=value1 field1=1.0 $(date +%s)000000000" | \
@@ -274,6 +294,7 @@
    ```
 
 2. **权限检查**
+
    ```sql
    -- 检查写入权限
    SHOW GRANTS FOR "username"
@@ -286,6 +307,7 @@
    ```
 
 **解决方案**:
+
 - 修正数据格式错误
 - 确保用户有写入权限
 - 创建目标数据库
@@ -298,10 +320,11 @@
 **诊断步骤**:
 
 1. **文件格式检查**
+
    ```bash
    # 检查文件编码
    file -i data.csv
-   
+
    # 查看文件前几行
    head -n 5 data.csv
    ```
@@ -319,6 +342,7 @@
    ```
 
 **解决方案**:
+
 - 转换文件编码为 UTF-8
 - 清理数据中的异常值
 - 分批导入大文件
@@ -333,37 +357,41 @@
 **诊断步骤**:
 
 1. **系统要求检查**
+
    ```bash
    # 检查系统版本
    uname -a
    lsb_release -a  # Linux
-   
+
    # 检查可用内存
    free -h
-   
+
    # 检查磁盘空间
    df -h
    ```
 
 2. **依赖库检查**
+
    ```bash
    # Linux 检查依赖库
    ldd /path/to/inflowave
-   
+
    # 检查缺失的库
    ldconfig -p | grep webkit
    ```
 
 3. **权限检查**
+
    ```bash
    # 检查文件权限
    ls -la /path/to/inflowave
-   
+
    # 检查配置目录权限
    ls -la ~/.local/share/com.inflowave.app/
    ```
 
 **解决方案**:
+
 - 升级系统到支持的版本
 - 安装缺失的依赖库
 - 修正文件权限
@@ -377,15 +405,17 @@
 **诊断步骤**:
 
 1. **资源使用监控**
+
    ```bash
    # 实时监控资源使用
    top -p $(pgrep inflowave)
-   
+
    # 内存使用详情
    cat /proc/$(pgrep inflowave)/status
    ```
 
 2. **网络延迟测试**
+
    ```bash
    # 测试到 InfluxDB 的延迟
    ping -c 100 influxdb-server | tail -1
@@ -398,6 +428,7 @@
    ```
 
 **解决方案**:
+
 - 关闭不必要的后台程序
 - 增加系统内存
 - 使用 SSD 硬盘
@@ -409,36 +440,41 @@
 ### 日志文件位置
 
 **应用日志**:
+
 - Windows: `%APPDATA%\com.inflowave.app\logs\`
 - macOS: `~/Library/Logs/com.inflowave.app/`
 - Linux: `~/.local/share/com.inflowave.app/logs/`
 
 **InfluxDB 日志**:
+
 - Linux: `/var/log/influxdb/influxd.log`
 - Docker: `docker logs influxdb-container`
 
 ### 日志分析技巧
 
 1. **错误级别过滤**
+
    ```bash
    # 查看错误级别日志
    grep -i "error\|fatal\|panic" app.log
-   
+
    # 查看最近的错误
    tail -f app.log | grep -i error
    ```
 
 2. **时间范围过滤**
+
    ```bash
    # 查看特定时间范围的日志
    sed -n '/2024-01-15 10:00/,/2024-01-15 11:00/p' app.log
    ```
 
 3. **关键字搜索**
+
    ```bash
    # 搜索连接相关问题
    grep -i "connection\|timeout\|refused" app.log
-   
+
    # 搜索查询相关问题
    grep -i "query\|sql\|syntax" app.log
    ```
@@ -450,6 +486,7 @@
 在联系技术支持前，请准备：
 
 1. **系统信息**
+
    ```bash
    # 收集系统信息
    uname -a > system_info.txt
@@ -480,28 +517,35 @@
 
 ```markdown
 ## 问题描述
+
 [简要描述遇到的问题]
 
 ## 系统环境
+
 - 操作系统: [Windows 10/macOS 12/Ubuntu 20.04]
 - InfloWave 版本: [1.0.5]
 - InfluxDB 版本: [1.8.10]
 
 ## 重现步骤
+
 1. [第一步]
 2. [第二步]
 3. [第三步]
 
 ## 预期结果
+
 [描述预期的正常行为]
 
 ## 实际结果
+
 [描述实际发生的异常行为]
 
 ## 错误信息
+
 [粘贴完整的错误消息]
 
 ## 附加信息
+
 [其他可能有用的信息]
 ```
 

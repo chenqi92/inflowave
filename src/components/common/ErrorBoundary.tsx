@@ -11,7 +11,7 @@ import {
   ScrollArea,
   Text,
   CodeBlock,
-  Space
+  Space,
 } from '@/components/ui';
 import { Bug, RefreshCw, FileText, AlertTriangle, Copy } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
@@ -36,19 +36,22 @@ class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: null};
+      errorId: null,
+    };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       error,
-      errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`};
+      errorId: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({
-      errorInfo});
+      errorInfo,
+    });
 
     // 记录到错误日志系统
     errorLogger.logReactError(error, errorInfo);
@@ -75,7 +78,8 @@ class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-      errorId: null});
+      errorId: null,
+    });
   };
 
   handleReportError = async () => {
@@ -89,12 +93,15 @@ class ErrorBoundary extends Component<Props, State> {
         error: {
           name: error?.name,
           message: error?.message,
-          stack: error?.stack},
+          stack: error?.stack,
+        },
         errorInfo: {
-          componentStack: errorInfo?.componentStack},
+          componentStack: errorInfo?.componentStack,
+        },
         userAgent: navigator.userAgent,
         url: window.location.href,
-        sessionId: errorLogger.getSessionId()};
+        sessionId: errorLogger.getSessionId(),
+      };
 
       const reportContent = JSON.stringify(errorReport, null, 2);
       const fileName = `error-report-${errorId}-${new Date().toISOString().split('T')[0]}.json`;
@@ -107,14 +114,14 @@ class ErrorBoundary extends Component<Props, State> {
           defaultPath: fileName,
           filters: [
             { name: 'JSON Files', extensions: ['json'] },
-            { name: 'All Files', extensions: ['*'] }
-          ]
+            { name: 'All Files', extensions: ['*'] },
+          ],
         });
 
         if (result?.path) {
           await safeTauriInvoke('write_file', {
             path: result.path,
-            content: reportContent
+            content: reportContent,
           });
           alert(`错误报告已保存到: ${result.path}`);
           return; // 成功保存，直接返回
@@ -130,10 +137,12 @@ class ErrorBoundary extends Component<Props, State> {
         if ('showSaveFilePicker' in window) {
           const fileHandle = await (window as any).showSaveFilePicker({
             suggestedName: fileName,
-            types: [{
-              description: 'JSON files',
-              accept: {'application/json': ['.json']}
-            }]
+            types: [
+              {
+                description: 'JSON files',
+                accept: { 'application/json': ['.json'] },
+              },
+            ],
           });
 
           const writable = await fileHandle.createWritable();
@@ -168,7 +177,6 @@ class ErrorBoundary extends Component<Props, State> {
         `Detailed React Error Report for ${errorId}`,
         errorReport
       );
-
     } catch (err) {
       console.error('无法保存错误报告:', err);
       alert('保存错误报告失败，请查看控制台获取详细信息');
@@ -185,20 +193,22 @@ class ErrorBoundary extends Component<Props, State> {
       const { error, errorInfo, errorId } = this.state;
 
       return (
-        <div className="h-screen flex items-center justify-center p-4 bg-muted/50">
-          <div className="max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <div className="p-6 flex-shrink-0">
+        <div className='h-screen flex items-center justify-center p-4 bg-muted/50'>
+          <div className='max-w-4xl w-full max-h-[90vh] flex flex-col'>
+            <div className='p-6 flex-shrink-0'>
               {/* 主要错误信息 */}
-              <Alert variant="destructive" className="mb-6">
-                <Bug className="h-4 w-4" />
-                <AlertTitle className="text-lg font-semibold">应用程序发生错误</AlertTitle>
-                <AlertDescription className="mt-2">
-                  <div className="space-y-3">
-                    <Text variant="muted">
+              <Alert variant='destructive' className='mb-6'>
+                <Bug className='h-4 w-4' />
+                <AlertTitle className='text-lg font-semibold'>
+                  应用程序发生错误
+                </AlertTitle>
+                <AlertDescription className='mt-2'>
+                  <div className='space-y-3'>
+                    <Text variant='muted'>
                       很抱歉，应用程序遇到了一个意外错误。错误已被记录，您可以尝试以下操作：
                     </Text>
                     {errorId && (
-                      <div className="bg-muted/50 p-2 rounded border font-mono text-xs break-all">
+                      <div className='bg-muted/50 p-2 rounded border font-mono text-xs break-all'>
                         错误 ID: {errorId}
                       </div>
                     )}
@@ -207,60 +217,67 @@ class ErrorBoundary extends Component<Props, State> {
               </Alert>
 
               {/* 操作按钮 */}
-              <Space size="middle" className="mb-6">
+              <Space size='middle' className='mb-6'>
                 <Button
-                  variant="default"
+                  variant='default'
                   onClick={this.handleReload}
-                  className="flex items-center gap-2"
+                  className='flex items-center gap-2'
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className='w-4 h-4' />
                   重新加载页面
                 </Button>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={this.handleReset}
-                  className="flex items-center gap-2"
+                  className='flex items-center gap-2'
                 >
-                  <AlertTriangle className="w-4 h-4" />
+                  <AlertTriangle className='w-4 h-4' />
                   尝试恢复
                 </Button>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={this.handleReportError}
-                  className="flex items-center gap-2"
+                  className='flex items-center gap-2'
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className='w-4 h-4' />
                   保存错误报告
                 </Button>
               </Space>
             </div>
 
             {/* 错误详情（开发环境） */}
-            <div className="flex-1 min-h-0">
-              {(import.meta.env?.DEV || window.location.search.includes('debug=1')) && (
-                <Accordion type="single" collapsible className="w-full h-full">
-                  <AccordionItem value="error-details" className="h-full">
-                    <AccordionTrigger className="text-destructive font-semibold px-6">
+            <div className='flex-1 min-h-0'>
+              {(import.meta.env?.DEV ||
+                window.location.search.includes('debug=1')) && (
+                <Accordion type='single' collapsible className='w-full h-full'>
+                  <AccordionItem value='error-details' className='h-full'>
+                    <AccordionTrigger className='text-destructive font-semibold px-6'>
                       🔍 错误详情 (开发模式)
                     </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6 h-full">
-                      <ScrollArea className="h-[50vh]">
-                        <div className="space-y-6 pr-4">
+                    <AccordionContent className='px-6 pb-6 h-full'>
+                      <ScrollArea className='h-[50vh]'>
+                        <div className='space-y-6 pr-4'>
                           {error && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Text className="font-semibold">错误消息:</Text>
+                            <div className='space-y-2'>
+                              <div className='flex items-center justify-between'>
+                                <Text className='font-semibold'>错误消息:</Text>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0'
                                   onClick={async () => {
                                     try {
-                                      await navigator.clipboard.writeText(error.message);
+                                      await navigator.clipboard.writeText(
+                                        error.message
+                                      );
                                     } catch (err) {
-                                      console.warn('复制到剪贴板失败，使用备用方法:', err);
+                                      console.warn(
+                                        '复制到剪贴板失败，使用备用方法:',
+                                        err
+                                      );
                                       // 备用方法：创建临时文本区域
-                                      const textArea = document.createElement('textarea');
+                                      const textArea =
+                                        document.createElement('textarea');
                                       textArea.value = error.message;
                                       document.body.appendChild(textArea);
                                       textArea.select();
@@ -269,31 +286,35 @@ class ErrorBoundary extends Component<Props, State> {
                                     }
                                   }}
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  <Copy className='h-3 w-3' />
                                 </Button>
                               </div>
-                              <CodeBlock
-                                className="bg-destructive/10 border border-destructive text-sm p-3 rounded whitespace-pre-wrap break-words"
-                              >
+                              <CodeBlock className='bg-destructive/10 border border-destructive text-sm p-3 rounded whitespace-pre-wrap break-words'>
                                 {error.message}
                               </CodeBlock>
                             </div>
                           )}
 
                           {error?.stack && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Text className="font-semibold">错误堆栈:</Text>
+                            <div className='space-y-2'>
+                              <div className='flex items-center justify-between'>
+                                <Text className='font-semibold'>错误堆栈:</Text>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0'
                                   onClick={async () => {
                                     try {
-                                      await navigator.clipboard.writeText(error.stack || '');
+                                      await navigator.clipboard.writeText(
+                                        error.stack || ''
+                                      );
                                     } catch (err) {
-                                      console.warn('复制到剪贴板失败，使用备用方法:', err);
-                                      const textArea = document.createElement('textarea');
+                                      console.warn(
+                                        '复制到剪贴板失败，使用备用方法:',
+                                        err
+                                      );
+                                      const textArea =
+                                        document.createElement('textarea');
                                       textArea.value = error.stack || '';
                                       document.body.appendChild(textArea);
                                       textArea.select();
@@ -302,13 +323,11 @@ class ErrorBoundary extends Component<Props, State> {
                                     }
                                   }}
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  <Copy className='h-3 w-3' />
                                 </Button>
                               </div>
-                              <ScrollArea className="max-h-64 border rounded">
-                                <CodeBlock
-                                  className="bg-muted/50 text-xs p-3 whitespace-pre-wrap break-words"
-                                >
+                              <ScrollArea className='max-h-64 border rounded'>
+                                <CodeBlock className='bg-muted/50 text-xs p-3 whitespace-pre-wrap break-words'>
                                   {error.stack}
                                 </CodeBlock>
                               </ScrollArea>
@@ -316,20 +335,27 @@ class ErrorBoundary extends Component<Props, State> {
                           )}
 
                           {errorInfo?.componentStack && (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Text className="font-semibold">组件堆栈:</Text>
+                            <div className='space-y-2'>
+                              <div className='flex items-center justify-between'>
+                                <Text className='font-semibold'>组件堆栈:</Text>
                                 <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0'
                                   onClick={async () => {
                                     try {
-                                      await navigator.clipboard.writeText(errorInfo.componentStack || '');
+                                      await navigator.clipboard.writeText(
+                                        errorInfo.componentStack || ''
+                                      );
                                     } catch (err) {
-                                      console.warn('复制到剪贴板失败，使用备用方法:', err);
-                                      const textArea = document.createElement('textarea');
-                                      textArea.value = errorInfo.componentStack || '';
+                                      console.warn(
+                                        '复制到剪贴板失败，使用备用方法:',
+                                        err
+                                      );
+                                      const textArea =
+                                        document.createElement('textarea');
+                                      textArea.value =
+                                        errorInfo.componentStack || '';
                                       document.body.appendChild(textArea);
                                       textArea.select();
                                       document.execCommand('copy');
@@ -337,26 +363,34 @@ class ErrorBoundary extends Component<Props, State> {
                                     }
                                   }}
                                 >
-                                  <Copy className="h-3 w-3" />
+                                  <Copy className='h-3 w-3' />
                                 </Button>
                               </div>
-                              <ScrollArea className="max-h-64 border border-blue-200 dark:border-blue-800 rounded">
-                                <CodeBlock
-                                  className="bg-blue-50 dark:bg-blue-950/20 text-xs p-3 whitespace-pre-wrap break-words"
-                                >
+                              <ScrollArea className='max-h-64 border border-blue-200 dark:border-blue-800 rounded'>
+                                <CodeBlock className='bg-blue-50 dark:bg-blue-950/20 text-xs p-3 whitespace-pre-wrap break-words'>
                                   {errorInfo.componentStack}
                                 </CodeBlock>
                               </ScrollArea>
                             </div>
                           )}
 
-                          <div className="space-y-2">
-                            <Text className="font-semibold">环境信息:</Text>
-                            <div className="bg-muted/50 p-3 rounded border text-xs font-mono space-y-1">
-                              <div className="break-words"><strong>URL:</strong> {window.location.href}</div>
-                              <div className="break-words"><strong>用户代理:</strong> {navigator.userAgent}</div>
-                              <div><strong>时间戳:</strong> {new Date().toISOString()}</div>
-                              <div><strong>会话 ID:</strong> {errorLogger.getSessionId()}</div>
+                          <div className='space-y-2'>
+                            <Text className='font-semibold'>环境信息:</Text>
+                            <div className='bg-muted/50 p-3 rounded border text-xs font-mono space-y-1'>
+                              <div className='break-words'>
+                                <strong>URL:</strong> {window.location.href}
+                              </div>
+                              <div className='break-words'>
+                                <strong>用户代理:</strong> {navigator.userAgent}
+                              </div>
+                              <div>
+                                <strong>时间戳:</strong>{' '}
+                                {new Date().toISOString()}
+                              </div>
+                              <div>
+                                <strong>会话 ID:</strong>{' '}
+                                {errorLogger.getSessionId()}
+                              </div>
                             </div>
                           </div>
                         </div>

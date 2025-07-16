@@ -15,12 +15,14 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 ## 🎯 核心功能
 
 ### 📊 连接管理
+
 - 支持多个 InfluxDB 实例连接
 - 连接状态实时监控
 - 安全的凭据存储
 - 连接测试和验证
 
 ### 🗄️ 数据库操作
+
 - 数据库创建、删除、查看
 - 保留策略管理
 - 测量（Measurement）浏览
@@ -28,6 +30,7 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 - 右键快捷操作菜单
 
 ### 🔍 查询系统
+
 - 专业的 InfluxQL 查询编辑器
 - 语法高亮和智能代码提示
 - 查询历史记录和书签管理
@@ -35,6 +38,7 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 - 查询性能分析
 
 ### 📈 数据可视化
+
 - 多种图表类型（折线图、柱状图、饼图、面积图）
 - 时序数据专用图表组件
 - 交互式图表操作
@@ -42,6 +46,7 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 - 实时数据刷新
 
 ### 📥 数据写入
+
 - 单条和批量数据写入
 - Line Protocol 格式支持
 - CSV、JSON 文件导入
@@ -51,10 +56,12 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 ## 📚 文档导航
 
 ### 🚀 快速开始
+
 - **[安装指南](./installation.md)** - 详细的安装步骤和系统要求
 - **[快速开始](./quick-start.md)** - 5分钟快速上手指南
 
 ### 📋 功能指南
+
 - **[连接管理](./connection-management.md)** - 如何配置和管理数据库连接
 - **[数据库操作](./database-operations.md)** - 数据库和保留策略管理
 - **[查询功能](./query-features.md)** - InfluxQL 查询编辑和执行
@@ -62,23 +69,27 @@ InfloWave 是基于 Tauri + React + TypeScript + Rust 开发的跨平台桌面�
 - **[数据写入](./data-import.md)** - 数据导入和写入操作
 
 ### 🔧 高级功能
+
 - **[性能优化](./performance-tips.md)** - 查询优化和性能调优
 - **[快捷操作](./shortcuts.md)** - 右键菜单和键盘快捷键
 - **[故障排除](./troubleshooting.md)** - 常见问题诊断和解决
 
 ### ❓ 帮助支持
+
 - **[常见问题](./faq.md)** - 常见问题解答
 - **[更新日志](./changelog.md)** - 版本更新记录
 
 ## 🎯 学习路径
 
 ### 新手用户
+
 1. [安装软件](./installation.md) → 下载并安装 InfloWave
 2. [快速开始](./quick-start.md) → 5分钟快速上手
 3. [连接管理](./connection-management.md) → 配置第一个数据库连接
 4. [数据库操作](./database-operations.md) → 学习基本的数据库管理
 
 ### 进阶用户
+
 1. [查询功能](./query-features.md) → 掌握 InfluxQL 查询技巧
 2. [数据可视化](./data-visualization.md) → 创建专业的数据图表
 3. [数据写入](./data-import.md) → 批量导入和写入数据

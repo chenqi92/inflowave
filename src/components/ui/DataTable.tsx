@@ -1,15 +1,15 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "./Table"
-import { Spin } from "./Spin"
-import { Empty } from "./Empty"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './Table';
+import { Spin } from './Spin';
+import { Empty } from './Empty';
 
 // 兼容 Ant Design Table API 的数据表格组件
 interface Column {
@@ -37,22 +37,29 @@ interface DataTableProps {
 }
 
 const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
-  ({
-    columns = [],
-    dataSource = [],
-    loading = false,
-    rowKey = 'key',
-    rowClassName,
-    size = 'middle',
-    scroll,
-    bordered = false,
-    className,
-    style,
-    ...props
-  }, ref) => {
+  (
+    {
+      columns = [],
+      dataSource = [],
+      loading = false,
+      rowKey = 'key',
+      rowClassName,
+      size = 'middle',
+      scroll,
+      bordered = false,
+      className,
+      style,
+      ...props
+    },
+    ref
+  ) => {
     if (loading) {
       return (
-        <div ref={ref} className={cn("flex items-center justify-center p-8", className)} style={style}>
+        <div
+          ref={ref}
+          className={cn('flex items-center justify-center p-8', className)}
+          style={style}
+        >
           <Spin />
         </div>
       );
@@ -60,8 +67,12 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
 
     if (!dataSource || dataSource.length === 0) {
       return (
-        <div ref={ref} className={cn("flex items-center justify-center p-8", className)} style={style}>
-          <Empty description="暂无数据" />
+        <div
+          ref={ref}
+          className={cn('flex items-center justify-center p-8', className)}
+          style={style}
+        >
+          <Empty description='暂无数据' />
         </div>
       );
     }
@@ -83,39 +94,41 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
     return (
       <div
         ref={ref}
-        className={cn("relative w-full", className)}
+        className={cn('relative w-full', className)}
         style={style}
         {...props}
       >
-        <div 
+        <div
           className={cn(
-            "w-full",
-            scroll?.x && "overflow-x-auto",
-            scroll?.y && "overflow-y-auto"
-          )} 
+            'w-full',
+            scroll?.x && 'overflow-x-auto',
+            scroll?.y && 'overflow-y-auto'
+          )}
           style={{
             maxHeight: scroll?.y,
-            maxWidth: scroll?.x
+            maxWidth: scroll?.x,
           }}
         >
-          <Table className={cn(
-            "w-full table-auto",
-            size === 'small' && "text-xs",
-            size === 'large' && "text-base",
-            bordered && "border border-border"
-          )}>
+          <Table
+            className={cn(
+              'w-full table-auto',
+              size === 'small' && 'text-xs',
+              size === 'large' && 'text-base',
+              bordered && 'border border-border'
+            )}
+          >
             <TableHeader>
               <TableRow>
-                {columns.map((column) => (
+                {columns.map(column => (
                   <TableHead
                     key={column.key}
                     style={{
                       width: column.width,
-                      textAlign: column.align || 'left'
+                      textAlign: column.align || 'left',
                     }}
                     className={cn(
-                      column.ellipsis && "truncate",
-                      bordered && "border-r border-border last:border-r-0"
+                      column.ellipsis && 'truncate',
+                      bordered && 'border-r border-border last:border-r-0'
                     )}
                   >
                     {column.title}
@@ -129,24 +142,23 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                   key={getRowKey(record, index)}
                   className={cn(
                     getRowClassName(record, index),
-                    bordered && "border-b border-border"
+                    bordered && 'border-b border-border'
                   )}
                 >
-                  {columns.map((column) => (
+                  {columns.map(column => (
                     <TableCell
                       key={column.key}
                       style={{
-                        textAlign: column.align || 'left'
+                        textAlign: column.align || 'left',
                       }}
                       className={cn(
-                        column.ellipsis && "truncate",
-                        bordered && "border-r border-border last:border-r-0"
+                        column.ellipsis && 'truncate',
+                        bordered && 'border-r border-border last:border-r-0'
                       )}
                     >
                       {column.render
                         ? column.render(record[column.dataIndex], record, index)
-                        : record[column.dataIndex]
-                      }
+                        : record[column.dataIndex]}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -159,7 +171,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
   }
 );
 
-DataTable.displayName = "DataTable";
+DataTable.displayName = 'DataTable';
 
 export { DataTable };
 export type { DataTableProps, Column };

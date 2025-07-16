@@ -57,19 +57,23 @@ export interface SiderProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Sider = forwardRef<HTMLDivElement, SiderProps>(
-  ({ 
-    className, 
-    children, 
-    collapsed = false,
-    width = 200,
-    collapsedWidth = 80,
-    trigger,
-    collapsible = false,
-    onCollapse,
-    ...props 
-  }, ref) => {
+  (
+    {
+      className,
+      children,
+      collapsed = false,
+      width = 200,
+      collapsedWidth = 80,
+      trigger,
+      collapsible = false,
+      onCollapse,
+      ...props
+    },
+    ref
+  ) => {
     const currentWidth = collapsed ? collapsedWidth : width;
-    const widthStyle = typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
+    const widthStyle =
+      typeof currentWidth === 'number' ? `${currentWidth}px` : currentWidth;
 
     return (
       <aside
@@ -81,12 +85,10 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
         style={{ width: widthStyle }}
         {...props}
       >
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
+        <div className='flex-1 overflow-auto'>{children}</div>
         {collapsible && trigger && (
-          <div 
-            className="border-t p-2 cursor-pointer hover:bg-muted/50"
+          <div
+            className='border-t p-2 cursor-pointer hover:bg-muted/50'
             onClick={() => onCollapse?.(!collapsed)}
           >
             {trigger}
@@ -106,10 +108,7 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(
     return (
       <main
         ref={ref}
-        className={cn(
-          'flex-1 overflow-auto bg-background',
-          className
-        )}
+        className={cn('flex-1 overflow-auto bg-background', className)}
         {...props}
       >
         {children}
@@ -127,10 +126,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
     return (
       <footer
         ref={ref}
-        className={cn(
-          'border-t bg-background px-4 py-2',
-          className
-        )}
+        className={cn('border-t bg-background px-4 py-2', className)}
         {...props}
       >
         {children}

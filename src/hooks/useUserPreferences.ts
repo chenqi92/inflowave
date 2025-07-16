@@ -71,8 +71,8 @@ const defaultPreferences: UserPreferences = {
     layout: 'default',
     panel_sizes: {},
     panel_positions: {
-      'left-panel': 25,     // 左侧面板默认25%宽度
-      'bottom-panel': 40,   // 底部面板默认40%高度
+      'left-panel': 25, // 左侧面板默认25%宽度
+      'bottom-panel': 40, // 底部面板默认40%高度
     },
     open_tabs: [],
     pinned_queries: [],
@@ -92,9 +92,11 @@ export const useUserPreferences = () => {
   const loadPreferences = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const result = await safeTauriInvoke<UserPreferences>('get_user_preferences');
+      const result = await safeTauriInvoke<UserPreferences>(
+        'get_user_preferences'
+      );
       if (result) {
         setPreferences(result);
       } else {
@@ -112,53 +114,67 @@ export const useUserPreferences = () => {
   }, []);
 
   // 更新用户偏好设置
-  const updatePreferences = useCallback(async (newPreferences: UserPreferences) => {
-    try {
-      await safeTauriInvoke('update_user_preferences', { preferences: newPreferences });
-      setPreferences(newPreferences);
-      return true;
-    } catch (err) {
-      console.error('更新用户偏好失败:', err);
-      setError(String(err));
-      return false;
-    }
-  }, []);
+  const updatePreferences = useCallback(
+    async (newPreferences: UserPreferences) => {
+      try {
+        await safeTauriInvoke('update_user_preferences', {
+          preferences: newPreferences,
+        });
+        setPreferences(newPreferences);
+        return true;
+      } catch (err) {
+        console.error('更新用户偏好失败:', err);
+        setError(String(err));
+        return false;
+      }
+    },
+    []
+  );
 
   // 更新通知设置
-  const updateNotificationSettings = useCallback(async (notifications: NotificationSettings) => {
-    if (!preferences) return false;
-    
-    const newPreferences = {
-      ...preferences,
-      notifications,
-    };
-    
-    return updatePreferences(newPreferences);
-  }, [preferences, updatePreferences]);
+  const updateNotificationSettings = useCallback(
+    async (notifications: NotificationSettings) => {
+      if (!preferences) return false;
+
+      const newPreferences = {
+        ...preferences,
+        notifications,
+      };
+
+      return updatePreferences(newPreferences);
+    },
+    [preferences, updatePreferences]
+  );
 
   // 更新无障碍设置
-  const updateAccessibilitySettings = useCallback(async (accessibility: AccessibilitySettings) => {
-    if (!preferences) return false;
-    
-    const newPreferences = {
-      ...preferences,
-      accessibility,
-    };
-    
-    return updatePreferences(newPreferences);
-  }, [preferences, updatePreferences]);
+  const updateAccessibilitySettings = useCallback(
+    async (accessibility: AccessibilitySettings) => {
+      if (!preferences) return false;
+
+      const newPreferences = {
+        ...preferences,
+        accessibility,
+      };
+
+      return updatePreferences(newPreferences);
+    },
+    [preferences, updatePreferences]
+  );
 
   // 更新工作区设置
-  const updateWorkspaceSettings = useCallback(async (workspace: WorkspaceSettings) => {
-    if (!preferences) return false;
-    
-    const newPreferences = {
-      ...preferences,
-      workspace,
-    };
-    
-    return updatePreferences(newPreferences);
-  }, [preferences, updatePreferences]);
+  const updateWorkspaceSettings = useCallback(
+    async (workspace: WorkspaceSettings) => {
+      if (!preferences) return false;
+
+      const newPreferences = {
+        ...preferences,
+        workspace,
+      };
+
+      return updatePreferences(newPreferences);
+    },
+    [preferences, updatePreferences]
+  );
 
   // 重置为默认设置
   const resetToDefaults = useCallback(async () => {

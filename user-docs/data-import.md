@@ -5,12 +5,14 @@ InfloWave 提供了多种数据写入方式，支持单条数据写入、批量�
 ## 📊 数据写入概述
 
 ### 支持的写入方式
+
 - **手动写入** - 单条数据手动输入
 - **批量写入** - 多条数据批量提交
 - **文件导入** - CSV、JSON 文件导入
 - **Line Protocol** - InfluxDB 原生格式写入
 
 ### 数据格式要求
+
 - **时间戳** - 必须包含时间字段
 - **测量名称** - 数据所属的测量（表）
 - **字段** - 实际的数值数据
@@ -65,12 +67,14 @@ measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
 ### 格式说明
 
 **基本结构**：
+
 - `measurement` - 测量名称
 - `tag1=value1` - 标签键值对（可选）
 - `field1=value1` - 字段键值对（必需）
 - `timestamp` - 时间戳（可选，默认当前时间）
 
 **示例**：
+
 ```
 temperature,location=office,sensor=temp001 value=23.5,unit="celsius" 1642248600000000000
 cpu_usage,host=server1,region=us-east value=85.2 1642248600000000000
@@ -89,11 +93,13 @@ memory_usage,host=server1 used=4096,total=8192,percentage=50.0
 ### 支持的文件格式
 
 **CSV 格式**
+
 - 标准的逗号分隔值文件
 - 支持自定义分隔符
 - 第一行可以是列标题
 
 **JSON 格式**
+
 - 标准 JSON 数组格式
 - 支持嵌套对象结构
 - 灵活的字段映射
@@ -103,6 +109,7 @@ memory_usage,host=server1 used=4096,total=8192,percentage=50.0
 #### 准备 CSV 文件
 
 示例 CSV 文件内容：
+
 ```csv
 timestamp,location,sensor_id,temperature,humidity
 2024-01-15 10:00:00,office,temp001,23.5,45.2
@@ -139,6 +146,7 @@ timestamp,location,sensor_id,temperature,humidity
 #### JSON 文件格式
 
 示例 JSON 文件：
+
 ```json
 [
   {
@@ -171,6 +179,7 @@ timestamp,location,sensor_id,temperature,humidity
 #### 导入配置
 
 JSON 导入支持更灵活的字段映射：
+
 - 自动识别嵌套结构
 - 支持数组数据展开
 - 可自定义字段路径
@@ -180,6 +189,7 @@ JSON 导入支持更灵活的字段映射：
 ### 批量数据写入
 
 **批量 Line Protocol**：
+
 ```
 temperature,location=office value=23.5 1642248600000000000
 temperature,location=office value=24.1 1642248660000000000
@@ -187,6 +197,7 @@ temperature,location=office value=23.8 1642248720000000000
 ```
 
 **批量写入优势**：
+
 - 提高写入性能
 - 减少网络开销
 - 支持事务性写入
@@ -194,12 +205,14 @@ temperature,location=office value=23.8 1642248720000000000
 ### 数据验证
 
 **自动验证**：
+
 - 时间戳格式检查
 - 数据类型验证
 - 字段名称规范检查
 - 数值范围验证
 
 **错误处理**：
+
 - 显示详细错误信息
 - 支持部分数据写入
 - 错误数据跳过选项
@@ -207,11 +220,13 @@ temperature,location=office value=23.8 1642248720000000000
 ### 写入性能优化
 
 **批量大小控制**：
+
 - 默认批量大小：1000 条
 - 可根据数据大小调整
 - 避免单次写入过多数据
 
 **并发写入**：
+
 - 支持多线程写入
 - 自动负载均衡
 - 写入队列管理
@@ -220,12 +235,12 @@ temperature,location=office value=23.8 1642248720000000000
 
 ### 字段数据类型
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| Float | 浮点数 | 23.5, -10.2 |
-| Integer | 整数 | 100, -50 |
-| String | 字符串 | "temperature", "sensor001" |
-| Boolean | 布尔值 | true, false |
+| 类型    | 说明   | 示例                       |
+| ------- | ------ | -------------------------- |
+| Float   | 浮点数 | 23.5, -10.2                |
+| Integer | 整数   | 100, -50                   |
+| String  | 字符串 | "temperature", "sensor001" |
+| Boolean | 布尔值 | true, false                |
 
 ### 标签数据类型
 
@@ -236,6 +251,7 @@ temperature,location=office value=23.8 1642248720000000000
 ### 时间戳格式
 
 **支持的时间格式**：
+
 - RFC3339: `2024-01-15T10:30:00Z`
 - Unix 时间戳: `1642248600`
 - 纳秒时间戳: `1642248600000000000`
@@ -246,16 +262,19 @@ temperature,location=office value=23.8 1642248720000000000
 ### 数据设计原则
 
 **测量设计**：
+
 - 使用有意义的测量名称
 - 避免过多细粒度的测量
 - 考虑查询模式设计结构
 
 **标签设计**：
+
 - 标签用于元数据和过滤
 - 避免高基数标签
 - 使用一致的命名规范
 
 **字段设计**：
+
 - 字段存储实际数值
 - 合理选择数据类型
 - 避免在字段中存储元数据
@@ -263,11 +282,13 @@ temperature,location=office value=23.8 1642248720000000000
 ### 性能优化
 
 **写入优化**：
+
 - 使用批量写入
 - 按时间顺序写入数据
 - 避免频繁的小批量写入
 
 **数据组织**：
+
 - 合理设计时间精度
 - 使用适当的保留策略
 - 定期清理过期数据
@@ -275,11 +296,13 @@ temperature,location=office value=23.8 1642248720000000000
 ### 错误处理
 
 **数据验证**：
+
 - 写入前验证数据格式
 - 处理时间戳异常
 - 检查必需字段
 
 **异常恢复**：
+
 - 记录写入失败的数据
 - 支持重试机制
 - 提供错误日志
@@ -289,16 +312,19 @@ temperature,location=office value=23.8 1642248720000000000
 ### 写入失败
 
 **时间戳问题**：
+
 - 检查时间格式是否正确
 - 确认时区设置
 - 验证时间戳精度
 
 **数据类型错误**：
+
 - 确认字段数据类型匹配
 - 检查数值格式
 - 验证字符串编码
 
 **权限问题**：
+
 - 确认用户有写入权限
 - 检查数据库是否存在
 - 验证连接配置
@@ -306,11 +332,13 @@ temperature,location=office value=23.8 1642248720000000000
 ### 性能问题
 
 **写入速度慢**：
+
 - 增加批量大小
 - 检查网络延迟
 - 优化数据结构
 
 **内存占用高**：
+
 - 减少批量大小
 - 分批处理大文件
 - 监控系统资源

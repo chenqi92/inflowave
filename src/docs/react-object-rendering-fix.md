@@ -36,7 +36,7 @@ case 'get_databases':
 case 'get_databases':
   return [
     'mydb',
-    'telegraf', 
+    'telegraf',
     '_internal'
   ] as T;
 ```
@@ -59,6 +59,7 @@ case 'get_database_info':
 ### 3. 添加其他相关 API
 
 还添加了：
+
 - `get_measurements` - 返回测量名称列表
 - `get_retention_policies` - 返回指定数据库的保留策略详情
 
@@ -71,6 +72,7 @@ case 'get_database_info':
 ## 影响范围
 
 此修复确保了：
+
 1. 数据库列表正确显示为字符串数组
 2. 需要详细信息的组件可以通过专门的 API 获取数据库对象
 3. React 组件不会尝试渲染原始对象作为子元素

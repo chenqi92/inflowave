@@ -26,7 +26,12 @@ export interface RouteMetadata {
 }
 
 export interface LoadBalancingConfig {
-  strategy: 'round_robin' | 'least_connections' | 'weighted' | 'hash' | 'adaptive';
+  strategy:
+    | 'round_robin'
+    | 'least_connections'
+    | 'weighted'
+    | 'hash'
+    | 'adaptive';
   healthCheckInterval: number;
   failoverTimeout: number;
   maxRetries: number;
@@ -86,7 +91,7 @@ export interface RoutingRuleStats {
 
 /**
  * 智能查询路由器
- * 
+ *
  * 核心功能：
  * 1. 智能负载均衡
  * 2. 健康检查与故障转移
@@ -111,7 +116,8 @@ export class QueryRouter {
       retryInterval: 1000, // 1秒
       stickySession: false,
       weights: {},
-      ...config};
+      ...config,
+    };
 
     this.routingStatistics = {
       totalRequests: 0,
@@ -122,7 +128,8 @@ export class QueryRouter {
       healthyNodes: 0,
       unhealthyNodes: 0,
       failoverCount: 0,
-      routingRules: []};
+      routingRules: [],
+    };
 
     this.initializeRoutingRules();
     this.startHealthChecks();
@@ -142,46 +149,54 @@ export class QueryRouter {
     try {
       // 1. 获取可用候选节点
       const candidates = await this.getAvailableCandidates(query, context);
-      
+
       // 2. 应用路由规则
       const selectedRoute = this.applyRoutingRules(query, candidates, context);
-      
+
       // 3. 如果没有规则匹配，使用负载均衡策略
-      const finalRoute = selectedRoute || this.selectByLoadBalancing(candidates);
-      
+      const finalRoute =
+        selectedRoute || this.selectByLoadBalancing(candidates);
+
       // 4. 构建路由策略
       const strategy: RoutingStrategy = {
         targetConnection: finalRoute?.connectionId || defaultConnectionId,
         loadBalancing: this.loadBalancingConfig.strategy,
         priority: finalRoute?.priority || 0,
-        reason: this.getRoutingReason(finalRoute, selectedRoute !== null)};
+        reason: this.getRoutingReason(finalRoute, selectedRoute !== null),
+      };
 
       // 5. 记录路由历史
       this.recordRouting(query, strategy, finalRoute, Date.now() - startTime);
-      
+
       this.routingStatistics.successfulRoutes++;
       return strategy;
     } catch (error) {
       this.routingStatistics.failedRoutes++;
       console.error('Failed to determine routing:', error);
-      
+
       // 返回默认路由
       return {
         targetConnection: defaultConnectionId,
         loadBalancing: 'round_robin' as const,
         priority: 0,
-        reason: 'Fallback to default connection due to routing error'};
+        reason: 'Fallback to default connection due to routing error',
+      };
     } finally {
-      this.routingStatistics.avgRoutingTime = 
-        (this.routingStatistics.avgRoutingTime * (this.routingStatistics.totalRequests - 1) + 
-         (Date.now() - startTime)) / this.routingStatistics.totalRequests;
+      this.routingStatistics.avgRoutingTime =
+        (this.routingStatistics.avgRoutingTime *
+          (this.routingStatistics.totalRequests - 1) +
+          (Date.now() - startTime)) /
+        this.routingStatistics.totalRequests;
     }
   }
 
   /**
    * 注册连接节点
    */
-  async registerConnection(connectionId: string, metadata: RouteMetadata): Promise<void> {
+  async registerConnection(
+    connectionId: string,
+    metadata: RouteMetadata
+  ): Promise<void> {
     const candidate: RouteCandidate = {
       connectionId,
       score: 0,
@@ -191,10 +206,11 @@ export class QueryRouter {
       health: 1.0,
       priority: 1,
       tags: [],
-      metadata};
+      metadata,
+    };
 
     this.candidates.set(connectionId, candidate);
-    
+
     // 初始化健康状态
     await this.updateHealthStatus(connectionId);
   }
@@ -210,20 +226,27 @@ export class QueryRouter {
   /**
    * 更新权重
    */
-  async updateWeights(query: string, executionResult: QueryExecutionResult): Promise<void> {
-    const routingEntry = this.routingHistory.find(entry => 
-      entry.query === query && Date.now() - entry.timestamp < 300000 // 5分钟内
+  async updateWeights(
+    query: string,
+    executionResult: QueryExecutionResult
+  ): Promise<void> {
+    const routingEntry = this.routingHistory.find(
+      entry => entry.query === query && Date.now() - entry.timestamp < 300000 // 5分钟内
     );
 
     if (routingEntry) {
-      const candidate = this.candidates.get(routingEntry.strategy.targetConnection);
+      const candidate = this.candidates.get(
+        routingEntry.strategy.targetConnection
+      );
       if (candidate) {
         // 根据执行结果调整权重
-        const performanceScore = this.calculatePerformanceScore(executionResult);
-        candidate.score = (candidate.score * 0.8) + (performanceScore * 0.2);
-        
+        const performanceScore =
+          this.calculatePerformanceScore(executionResult);
+        candidate.score = candidate.score * 0.8 + performanceScore * 0.2;
+
         // 更新权重配置
-        this.loadBalancingConfig.weights[candidate.connectionId] = candidate.score;
+        this.loadBalancingConfig.weights[candidate.connectionId] =
+          candidate.score;
       }
     }
   }
@@ -235,7 +258,7 @@ export class QueryRouter {
     // 更新健康节点统计
     let healthyCount = 0;
     let unhealthyCount = 0;
-    
+
     this.healthStatus.forEach(health => {
       if (health.healthy) {
         healthyCount++;
@@ -262,14 +285,16 @@ export class QueryRouter {
    * 移除路由规则
    */
   removeRoutingRule(ruleName: string): void {
-    this.routingRules = this.routingRules.filter(rule => rule.name !== ruleName);
+    this.routingRules = this.routingRules.filter(
+      rule => rule.name !== ruleName
+    );
   }
 
   /**
    * 手动触发健康检查
    */
   async triggerHealthCheck(): Promise<void> {
-    const promises = Array.from(this.candidates.keys()).map(connectionId => 
+    const promises = Array.from(this.candidates.keys()).map(connectionId =>
       this.updateHealthStatus(connectionId)
     );
     await Promise.all(promises);
@@ -283,14 +308,19 @@ export class QueryRouter {
     context?: QueryContext
   ): Promise<RouteCandidate[]> {
     const candidates: RouteCandidate[] = [];
-    
+
     for (const [connectionId, candidate] of this.candidates.entries()) {
       const health = this.healthStatus.get(connectionId);
-      
+
       // 只考虑健康的节点
       if (health?.healthy) {
         // 更新候选节点分数
-        candidate.score = this.calculateCandidateScore(candidate, health, query, context);
+        candidate.score = this.calculateCandidateScore(
+          candidate,
+          health,
+          query,
+          context
+        );
         candidates.push(candidate);
       }
     }
@@ -322,7 +352,9 @@ export class QueryRouter {
   /**
    * 使用负载均衡策略选择节点
    */
-  private selectByLoadBalancing(candidates: RouteCandidate[]): RouteCandidate | null {
+  private selectByLoadBalancing(
+    candidates: RouteCandidate[]
+  ): RouteCandidate | null {
     if (candidates.length === 0) return null;
 
     switch (this.loadBalancingConfig.strategy) {
@@ -353,7 +385,7 @@ export class QueryRouter {
    * 最少连接选择
    */
   private selectLeastConnections(candidates: RouteCandidate[]): RouteCandidate {
-    return candidates.reduce((min, candidate) => 
+    return candidates.reduce((min, candidate) =>
       candidate.load < min.load ? candidate : min
     );
   }
@@ -362,20 +394,23 @@ export class QueryRouter {
    * 加权选择
    */
   private selectWeighted(candidates: RouteCandidate[]): RouteCandidate {
-    const totalWeight = candidates.reduce((sum, candidate) => 
-      sum + (this.loadBalancingConfig.weights[candidate.connectionId] || 1), 0
+    const totalWeight = candidates.reduce(
+      (sum, candidate) =>
+        sum + (this.loadBalancingConfig.weights[candidate.connectionId] || 1),
+      0
     );
-    
+
     const random = Math.random() * totalWeight;
     let currentWeight = 0;
-    
+
     for (const candidate of candidates) {
-      currentWeight += this.loadBalancingConfig.weights[candidate.connectionId] || 1;
+      currentWeight +=
+        this.loadBalancingConfig.weights[candidate.connectionId] || 1;
       if (random <= currentWeight) {
         return candidate;
       }
     }
-    
+
     return candidates[0];
   }
 
@@ -383,7 +418,9 @@ export class QueryRouter {
    * 哈希选择
    */
   private selectHash(candidates: RouteCandidate[]): RouteCandidate {
-    const hash = this.hashString(JSON.stringify(candidates.map(c => c.connectionId)));
+    const hash = this.hashString(
+      JSON.stringify(candidates.map(c => c.connectionId))
+    );
     const index = Math.abs(hash) % candidates.length;
     return candidates[index];
   }
@@ -411,7 +448,10 @@ export class QueryRouter {
     const healthScore = candidate.health * 0.4;
     const loadScore = (1 - candidate.load) * 0.3;
     const latencyScore = (1 - Math.min(candidate.latency / 1000, 1)) * 0.2;
-    const capacityScore = (candidate.capacity - health.details.activeConnections) / candidate.capacity * 0.1;
+    const capacityScore =
+      ((candidate.capacity - health.details.activeConnections) /
+        candidate.capacity) *
+      0.1;
 
     return healthScore + loadScore + latencyScore + capacityScore;
   }
@@ -437,7 +477,8 @@ export class QueryRouter {
     score += Math.max(0, 20 - candidate.latency / 10);
 
     // 容量分数
-    const utilizationRate = health.details.activeConnections / candidate.capacity;
+    const utilizationRate =
+      health.details.activeConnections / candidate.capacity;
     score += (1 - utilizationRate) * 10;
 
     // 错误率惩罚
@@ -460,20 +501,30 @@ export class QueryRouter {
     context: QueryContext
   ): boolean {
     const queryType = query.trim().toLowerCase();
-    
+
     // 分析查询路由到专用节点
-    if (queryType.startsWith('select') && candidate.metadata.nodeType === 'analytics') {
+    if (
+      queryType.startsWith('select') &&
+      candidate.metadata.nodeType === 'analytics'
+    ) {
       return true;
     }
 
     // 写操作路由到主节点
-    if ((queryType.startsWith('insert') || queryType.startsWith('update') || 
-         queryType.startsWith('delete')) && candidate.metadata.nodeType === 'primary') {
+    if (
+      (queryType.startsWith('insert') ||
+        queryType.startsWith('update') ||
+        queryType.startsWith('delete')) &&
+      candidate.metadata.nodeType === 'primary'
+    ) {
       return true;
     }
 
     // 缓存查询路由到缓存节点
-    if (candidate.metadata.nodeType === 'cache' && context.userPreferences.cachePreference !== 'disabled') {
+    if (
+      candidate.metadata.nodeType === 'cache' &&
+      context.userPreferences.cachePreference !== 'disabled'
+    ) {
       return true;
     }
 
@@ -485,8 +536,12 @@ export class QueryRouter {
    */
   private async updateHealthStatus(connectionId: string): Promise<void> {
     try {
-      const healthData = await safeTauriInvoke<HealthDetails>('check_connection_health', {
-        connectionId});
+      const healthData = await safeTauriInvoke<HealthDetails>(
+        'check_connection_health',
+        {
+          connectionId,
+        }
+      );
 
       if (!healthData) {
         throw new Error('No health data received');
@@ -500,10 +555,11 @@ export class QueryRouter {
         errorRate: 0, // 需要从历史数据计算
         lastCheck: new Date(),
         consecutiveFailures: 0,
-        details: healthData};
+        details: healthData,
+      };
 
       this.healthStatus.set(connectionId, health);
-      
+
       // 更新候选节点信息
       const candidate = this.candidates.get(connectionId);
       if (candidate) {
@@ -513,7 +569,7 @@ export class QueryRouter {
       }
     } catch (error) {
       console.error(`Health check failed for ${connectionId}:`, error);
-      
+
       // 记录失败
       const existingHealth = this.healthStatus.get(connectionId);
       if (existingHealth) {
@@ -545,18 +601,21 @@ export class QueryRouter {
     this.addRoutingRule({
       name: 'read_write_separation',
       priority: 100,
-      condition: (query) => {
+      condition: query => {
         const queryStr = typeof query === 'string' ? query : String(query);
         const lowerQuery = queryStr.toLowerCase().trim();
         return lowerQuery.startsWith('select') || lowerQuery.startsWith('show');
       },
-      route: (candidates) => {
-        const readReplicas = candidates.filter(c => 
-          c.metadata.nodeType === 'secondary' || c.metadata.nodeType === 'analytics'
+      route: candidates => {
+        const readReplicas = candidates.filter(
+          c =>
+            c.metadata.nodeType === 'secondary' ||
+            c.metadata.nodeType === 'analytics'
         );
         return readReplicas.length > 0 ? readReplicas[0] : candidates[0];
       },
-      description: 'Route read queries to secondary or analytics nodes'});
+      description: 'Route read queries to secondary or analytics nodes',
+    });
 
     // 大查询路由规则
     this.addRoutingRule({
@@ -564,15 +623,20 @@ export class QueryRouter {
       priority: 90,
       condition: (query, context) => {
         const queryStr = typeof query === 'string' ? query : String(query);
-        return (context?.dataSize?.totalRows || 0) > 1000000 || 
-               queryStr.toLowerCase().includes('group by') ||
-               queryStr.toLowerCase().includes('order by');
+        return (
+          (context?.dataSize?.totalRows || 0) > 1000000 ||
+          queryStr.toLowerCase().includes('group by') ||
+          queryStr.toLowerCase().includes('order by')
+        );
       },
-      route: (candidates) => {
-        const analyticsNodes = candidates.filter(c => c.metadata.nodeType === 'analytics');
+      route: candidates => {
+        const analyticsNodes = candidates.filter(
+          c => c.metadata.nodeType === 'analytics'
+        );
         return analyticsNodes.length > 0 ? analyticsNodes[0] : null;
       },
-      description: 'Route large or complex queries to analytics nodes'});
+      description: 'Route large or complex queries to analytics nodes',
+    });
 
     // 地理位置路由规则
     this.addRoutingRule({
@@ -581,13 +645,14 @@ export class QueryRouter {
       condition: (query, context) => {
         return (context?.systemLoad?.networkLatency || 0) > 100;
       },
-      route: (candidates) => {
+      route: candidates => {
         // 选择延迟最低的节点
-        return candidates.reduce((best, candidate) => 
+        return candidates.reduce((best, candidate) =>
           candidate.latency < best.latency ? candidate : best
         );
       },
-      description: 'Route queries to geographically closest nodes'});
+      description: 'Route queries to geographically closest nodes',
+    });
   }
 
   /**
@@ -621,30 +686,38 @@ export class QueryRouter {
     const entry: RoutingHistoryEntry = {
       query: query.substring(0, 200), // 限制查询长度
       strategy,
-      candidate: candidate ? {
-        connectionId: candidate.connectionId,
-        score: candidate.score,
-        latency: candidate.latency,
-        load: candidate.load} : null,
+      candidate: candidate
+        ? {
+            connectionId: candidate.connectionId,
+            score: candidate.score,
+            latency: candidate.latency,
+            load: candidate.load,
+          }
+        : null,
       routingTime,
-      timestamp: Date.now()};
+      timestamp: Date.now(),
+    };
 
     this.routingHistory.push(entry);
-    
+
     // 保持最近1000条记录
     if (this.routingHistory.length > 1000) {
       this.routingHistory.shift();
     }
 
     // 更新路由分发统计
-    this.routingStatistics.routeDistribution[strategy.targetConnection] = 
-      (this.routingStatistics.routeDistribution[strategy.targetConnection] || 0) + 1;
+    this.routingStatistics.routeDistribution[strategy.targetConnection] =
+      (this.routingStatistics.routeDistribution[strategy.targetConnection] ||
+        0) + 1;
   }
 
   /**
    * 获取路由原因
    */
-  private getRoutingReason(candidate: RouteCandidate | null, ruleMatched: boolean): string {
+  private getRoutingReason(
+    candidate: RouteCandidate | null,
+    ruleMatched: boolean
+  ): string {
     if (!candidate) {
       return 'No suitable candidate found, using default connection';
     }
@@ -660,14 +733,17 @@ export class QueryRouter {
    * 更新规则统计
    */
   private updateRuleStats(ruleName: string): void {
-    let ruleStats = this.routingStatistics.routingRules.find(r => r.name === ruleName);
+    let ruleStats = this.routingStatistics.routingRules.find(
+      r => r.name === ruleName
+    );
     if (!ruleStats) {
       ruleStats = {
         name: ruleName,
         hitCount: 0,
         successRate: 1.0,
         avgExecutionTime: 0,
-        lastUsed: new Date()};
+        lastUsed: new Date(),
+      };
       this.routingStatistics.routingRules.push(ruleStats);
     }
 
@@ -682,11 +758,14 @@ export class QueryRouter {
     let score = 1.0;
 
     // 执行时间惩罚
-    if (result.executionTime > 10000) { // 10秒
+    if (result.executionTime > 10000) {
+      // 10秒
       score *= 0.5;
-    } else if (result.executionTime > 5000) { // 5秒
+    } else if (result.executionTime > 5000) {
+      // 5秒
       score *= 0.7;
-    } else if (result.executionTime > 1000) { // 1秒
+    } else if (result.executionTime > 1000) {
+      // 1秒
       score *= 0.9;
     }
 
@@ -698,7 +777,8 @@ export class QueryRouter {
     }
 
     // 资源使用惩罚
-    if (result.memoryUsed > 1024 * 1024 * 1024) { // 1GB
+    if (result.memoryUsed > 1024 * 1024 * 1024) {
+      // 1GB
       score *= 0.8;
     }
 
@@ -711,13 +791,13 @@ export class QueryRouter {
   private hashString(str: string): number {
     let hash = 0;
     if (str.length === 0) return hash;
-    
+
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 转换为32位整数
     }
-    
+
     return hash;
   }
 }

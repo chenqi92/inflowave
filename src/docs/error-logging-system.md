@@ -59,13 +59,13 @@ InfloWave 应用内置了一套完整的错误日志系统，能够自动捕获�
 [2025-07-11T10:30:45.123Z] [session-abc123] [JAVASCRIPT:ERROR] 错误消息
   URL: http://localhost:1422/query:42:15
   Page: /query
-  Stack: 
+  Stack:
     at Component.render (http://localhost:1422/query:42:15)
     at ReactDOMServer.renderToString...
   Component Stack:
     in Component (at Query.tsx:42:15)
     in QueryPage (at App.tsx:108:23)
-  Additional: 
+  Additional:
     {
       "userId": 123,
       "action": "query-execution"
@@ -96,13 +96,13 @@ import { errorLogger } from '@/utils/errorLogger';
 await errorLogger.logCustomError('用户操作失败', {
   userId: 123,
   action: 'save-document',
-  error: errorObject
+  error: errorObject,
 });
 
 // 记录警告
 await errorLogger.logCustomWarning('性能问题检测', {
   loadTime: 5000,
-  component: 'DataTable'
+  component: 'DataTable',
 });
 ```
 
@@ -128,25 +128,31 @@ await errorLogger.logCustomWarning('性能问题检测', {
 ```typescript
 class ErrorLogger {
   // 记录错误
-  logError(errorInfo: Partial<ErrorLogEntry>): void
-  
+  logError(errorInfo: Partial<ErrorLogEntry>): void;
+
   // 记录 React 错误
-  logReactError(error: Error, errorInfo: { componentStack: string }): void
-  
+  logReactError(error: Error, errorInfo: { componentStack: string }): void;
+
   // 记录自定义错误
-  async logCustomError(message: string, additional?: Record<string, any>): Promise<void>
-  
+  async logCustomError(
+    message: string,
+    additional?: Record<string, any>
+  ): Promise<void>;
+
   // 记录自定义警告
-  async logCustomWarning(message: string, additional?: Record<string, any>): Promise<void>
-  
+  async logCustomWarning(
+    message: string,
+    additional?: Record<string, any>
+  ): Promise<void>;
+
   // 获取会话 ID
-  getSessionId(): string
-  
+  getSessionId(): string;
+
   // 强制刷新缓冲区
-  async forceFlush(): Promise<void>
-  
+  async forceFlush(): Promise<void>;
+
   // 清理资源
-  async cleanup(): Promise<void>
+  async cleanup(): Promise<void>;
 }
 ```
 
@@ -163,19 +169,21 @@ interface Props {
 ## 最佳实践
 
 1. **在关键操作周围添加错误处理**
+
    ```typescript
    try {
      await criticalOperation();
    } catch (error) {
      await errorLogger.logCustomError('关键操作失败', {
        operation: 'data-sync',
-       error: error.message
+       error: error.message,
      });
      throw error;
    }
    ```
 
 2. **为用户交互添加错误上下文**
+
    ```typescript
    const handleUserAction = async () => {
      try {
@@ -184,7 +192,7 @@ interface Props {
        await errorLogger.logCustomError('用户操作失败', {
          userId: user.id,
          action: 'save-settings',
-         timestamp: Date.now()
+         timestamp: Date.now(),
        });
      }
    };
@@ -232,6 +240,7 @@ interface Props {
 ### 调试模式
 
 开发环境下：
+
 - 错误详情在控制台输出
 - 错误边界显示详细堆栈信息
 - 可通过 `?debug=1` 参数启用生产环境调试
@@ -239,6 +248,7 @@ interface Props {
 ## 更新日志
 
 ### v1.0.5 (2025-07-11)
+
 - ✅ 实现完整的错误日志系统
 - ✅ 添加错误查看和分析工具
 - ✅ 集成到设置页面开发者工具

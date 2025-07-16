@@ -18,7 +18,9 @@
   transition: none !important;
 }
 
-.resizable-panel-group[data-resize-handle-active] .resizable-handle-optimized * {
+.resizable-panel-group[data-resize-handle-active]
+  .resizable-handle-optimized
+  * {
   transition: none !important;
 }
 
@@ -106,13 +108,15 @@
 }
 
 /* 水平拖拽时的特殊优化 */
-.resizable-panel-group[data-panel-group-direction="horizontal"][data-resize-handle-active] * {
+.resizable-panel-group[data-panel-group-direction='horizontal'][data-resize-handle-active]
+  * {
   pointer-events: none;
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
-.resizable-panel-group[data-panel-group-direction="horizontal"][data-resize-handle-active] .resizable-handle-optimized {
+.resizable-panel-group[data-panel-group-direction='horizontal'][data-resize-handle-active]
+  .resizable-handle-optimized {
   pointer-events: auto;
 }
 
@@ -130,13 +134,13 @@ body.resizing * {
 }
 
 /* 拖动时优化渲染性能 - 差异化优化 */
-body.resizing .resizable-panel-group[data-panel-group-direction="horizontal"] {
+body.resizing .resizable-panel-group[data-panel-group-direction='horizontal'] {
   contain: layout style;
   will-change: auto;
   transform: translateZ(0);
 }
 
-body.resizing .resizable-panel-group[data-panel-group-direction="vertical"] {
+body.resizing .resizable-panel-group[data-panel-group-direction='vertical'] {
   contain: style paint;
   will-change: contents;
 }
@@ -161,13 +165,15 @@ body.resizing .resizable-handle-vertical {
 }
 
 /* 减少水平拖拽时的重绘范围 */
-.resizable-panel-group[data-panel-group-direction="horizontal"] > .resizable-panel {
+.resizable-panel-group[data-panel-group-direction='horizontal']
+  > .resizable-panel {
   contain: layout;
   isolation: isolate;
 }
 
 /* 垂直拖拽保持原有优化 */
-.resizable-panel-group[data-panel-group-direction="vertical"] > .resizable-panel {
+.resizable-panel-group[data-panel-group-direction='vertical']
+  > .resizable-panel {
   contain: style;
 }
 

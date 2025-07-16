@@ -1,12 +1,67 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Switch, Slider, Input, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, Label } from '@/components/ui';
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  Switch,
+  Slider,
+  Input,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  Label,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui';
+import type { ChartConfig as ShadcnChartConfig } from '@/components/ui';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-import { BarChart, TrendingUp, PieChart, AreaChart, Settings, Save, Eye, Copy, PlayCircle } from 'lucide-react';
-import { useQuery } from '@/hooks/useQuery';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui';
+import {
+  BarChart,
+  TrendingUp,
+  PieChart,
+  AreaChart,
+  Settings,
+  Save,
+  Eye,
+  Copy,
+  Scatter,
+} from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart as RechartsBarChart,
+  Bar,
+  AreaChart as RechartsAreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from 'recharts';
 import { useVisualizationStore } from '@/store/visualization';
-import { FormatUtils } from '@/utils/format';
 import type { ChartConfig, QueryResult, FieldInfo } from '@/types';
 
 interface ChartBuilderProps {
@@ -24,15 +79,17 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   onChartCreate,
   onChartUpdate,
   initialChart,
-  className}) => {
+  className,
+}) => {
   const form = useForm<ChartConfig>({
     defaultValues: {
-      title: '',
-      type: 'line',
-      xField: '',
-      yField: '',
-      settings: {}
-    }
+      title: initialChart?.title || '',
+      type: initialChart?.type || 'line',
+      xField: initialChart?.xAxis?.field || '',
+      yField: initialChart?.yAxis?.field || '',
+      groupBy: initialChart?.groupBy || '',
+      settings: initialChart?.settings || {},
+    },
   });
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -51,7 +108,9 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         stack: false,
         showDataLabels: false,
         theme: 'default',
-        colors: ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1']}}
+        colors: ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1'],
+      },
+    }
   );
 
   const { createChart, updateChart } = useVisualizationStore();
@@ -61,7 +120,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
     return fields.map(field => ({
       label: `${field.name} (${field.type})`,
       value: field.name,
-      type: field.type}));
+      type: field.type,
+    }));
   }, [fields]);
 
   // 数值字段选项（用于Y轴）
@@ -71,7 +131,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       .map(field => ({
         label: `${field.name} (${field.type})`,
         value: field.name,
-        type: field.type}));
+        type: field.type,
+      }));
   }, [fields]);
 
   // 时间字段选项（用于X轴）
@@ -81,16 +142,25 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       .map(field => ({
         label: `${field.name} (${field.type})`,
         value: field.name,
-        type: field.type}));
+        type: field.type,
+      }));
   }, [fields]);
 
   // 图表类型选项
   const chartTypes = [
-    { label: '折线图', value: 'line', icon: <TrendingUp className="w-4 h-4"  /> },
-    { label: '柱状图', value: 'bar', icon: <BarChart className="w-4 h-4"  /> },
-    { label: '面积图', value: 'area', icon: <AreaChart className="w-4 h-4"  /> },
-    { label: '散点图', value: 'scatter', icon: <ScatterChartOutlined /> },
-    { label: '饼图', value: 'pie', icon: <PieChart className="w-4 h-4"  /> },
+    {
+      label: '折线图',
+      value: 'line',
+      icon: <TrendingUp className='w-4 h-4' />,
+    },
+    { label: '柱状图', value: 'bar', icon: <BarChart className='w-4 h-4' /> },
+    { label: '面积图', value: 'area', icon: <AreaChart className='w-4 h-4' /> },
+    {
+      label: '散点图',
+      value: 'scatter',
+      icon: <Scatter className='w-4 h-4' />,
+    },
+    { label: '饼图', value: 'pie', icon: <PieChart className='w-4 h-4' /> },
   ];
 
   useEffect(() => {
@@ -99,7 +169,10 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       // Set form values with shadcn form
       Object.keys(initialChart).forEach(key => {
         if (key in initialChart) {
-          form.setValue(key as keyof ChartConfig, initialChart[key as keyof ChartConfig]);
+          form.setValue(
+            key as keyof ChartConfig,
+            initialChart[key as keyof ChartConfig]
+          );
         }
       });
     }
@@ -115,7 +188,9 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       ...chartConfig,
       settings: {
         ...chartConfig.settings,
-        [setting]: value}};
+        [setting]: value,
+      },
+    };
     setChartConfig(newConfig);
   };
 
@@ -127,7 +202,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         ...values,
         id: chartConfig.id || `chart_${Date.now()}`,
         createdAt: chartConfig.createdAt || new Date(),
-        updatedAt: new Date()} as ChartConfig;
+        updatedAt: new Date(),
+      } as ChartConfig;
 
       if (chartConfig.id) {
         await updateChart(finalConfig);
@@ -157,266 +233,468 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   };
 
   const renderChartTypeSelector = () => (
-    <div className="grid grid-cols-5 gap-2 mb-4">
+    <div className='grid grid-cols-5 gap-2 mb-4'>
       {chartTypes.map(type => (
         <Button
           key={type.value}
           variant={chartConfig.type === type.value ? 'default' : 'outline'}
           onClick={() => handleFieldChange('type', type.value)}
-          className="h-16 flex flex-col items-center justify-center"
+          className='h-16 flex flex-col items-center justify-center'
         >
           {type.icon}
-          <div className="text-xs mt-1">{type.label}</div>
+          <div className='text-xs mt-1'>{type.label}</div>
         </Button>
       ))}
     </div>
   );
 
   const renderBasicSettings = () => (
-    <div className="space-y-4">
-      <FormItem name="title"
-        label="图表标题"
-        rules={[{ required: true, message: '请输入图表标题' }]}
-      >
-        <Input
-          placeholder="输入图表标题"
-          value={chartConfig.title}
-          onValueChange={(e) => handleFieldChange('title', e.target.value)}
+    <div className='space-y-4'>
+      <FormField
+        control={form.control}
+        name='title'
+        rules={{ required: '请输入图表标题' }}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>图表标题</FormLabel>
+            <FormControl>
+              <Input
+                placeholder='输入图表标题'
+                {...field}
+                onChange={e => {
+                  field.onChange(e);
+                  handleFieldChange('title', e.target.value);
+                }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className='grid grid-cols-2 gap-4'>
+        <FormField
+          control={form.control}
+          name='xField'
+          rules={{ required: '请选择X轴字段' }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>X轴字段</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={value => {
+                  field.onChange(value);
+                  handleFieldChange('xAxis', {
+                    ...chartConfig.xAxis,
+                    field: value,
+                  });
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder='选择X轴字段' />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {(chartConfig.type === 'pie'
+                    ? fieldOptions
+                    : timeFieldOptions
+                  ).map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </FormItem>
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormItem
-          name={['xAxis', 'field']}
-          label="X轴字段"
-          rules={[{ required: true, message: '请选择X轴字段' }]}
-        >
-          <Select
-            placeholder="选择X轴字段"
-            options={chartConfig.type === 'pie' ? fieldOptions : timeFieldOptions}
-            value={chartConfig.xAxis?.field}
-            onValueChange={(value) => handleFieldChange('xAxis', { ...chartConfig.xAxis, field: value })}
-          />
-        </FormItem>
-
-        <FormItem
-          name={['yAxis', 'field']}
-          label="Y轴字段"
-          rules={[{ required: true, message: '请选择Y轴字段' }]}
-        >
-          <Select
-            placeholder="选择Y轴字段"
-            options={numericFieldOptions}
-            value={chartConfig.yAxis?.field}
-            onValueChange={(value) => handleFieldChange('yAxis', { ...chartConfig.yAxis, field: value })}
-          />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name='yField'
+          rules={{ required: '请选择Y轴字段' }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Y轴字段</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={value => {
+                  field.onChange(value);
+                  handleFieldChange('yAxis', {
+                    ...chartConfig.yAxis,
+                    field: value,
+                  });
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder='选择Y轴字段' />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {numericFieldOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       {chartConfig.type !== 'pie' && (
-        <FormItem name="groupBy" label="分组字段（可选）">
-          <Select
-            placeholder="选择分组字段"
-            options={fieldOptions}
-            allowClear
-            value={chartConfig.groupBy}
-            onValueChange={(value) => handleFieldChange('groupBy', value)}
-          />
-        </FormItem>
+        <FormField
+          control={form.control}
+          name='groupBy'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>分组字段（可选）</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={value => {
+                  field.onChange(value);
+                  handleFieldChange('groupBy', value);
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder='选择分组字段' />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {fieldOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       )}
     </div>
   );
 
   const renderAdvancedSettings = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">显示网格</Label>
+    <div className='space-y-4'>
+      <div className='grid grid-cols-2 gap-4'>
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>显示网格</Label>
           <Switch
             checked={chartConfig.settings?.showGrid}
-            onValueChange={(checked) => handleSettingsChange('showGrid', checked)}
+            onValueChange={checked => handleSettingsChange('showGrid', checked)}
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">显示图例</Label>
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>显示图例</Label>
           <Switch
             checked={chartConfig.settings?.showLegend}
-            onValueChange={(checked) => handleSettingsChange('showLegend', checked)}
+            onValueChange={checked =>
+              handleSettingsChange('showLegend', checked)
+            }
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">显示提示框</Label>
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>显示提示框</Label>
           <Switch
             checked={chartConfig.settings?.showTooltip}
-            onValueChange={(checked) => handleSettingsChange('showTooltip', checked)}
+            onValueChange={checked =>
+              handleSettingsChange('showTooltip', checked)
+            }
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">启用动画</Label>
+        <div className='space-y-2'>
+          <Label className='text-sm font-medium'>启用动画</Label>
           <Switch
             checked={chartConfig.settings?.animation}
-            onValueChange={(checked) => handleSettingsChange('animation', checked)}
+            onValueChange={checked =>
+              handleSettingsChange('animation', checked)
+            }
           />
         </div>
       </div>
 
       {['line', 'area'].includes(chartConfig.type!) && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">平滑曲线</Label>
+        <div className='grid grid-cols-2 gap-4'>
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium'>平滑曲线</Label>
             <Switch
               checked={chartConfig.settings?.smooth}
-              onValueChange={(checked) => handleSettingsChange('smooth', checked)}
+              onValueChange={checked => handleSettingsChange('smooth', checked)}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">堆叠显示</Label>
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium'>堆叠显示</Label>
             <Switch
               checked={chartConfig.settings?.stack}
-              onValueChange={(checked) => handleSettingsChange('stack', checked)}
+              onValueChange={checked => handleSettingsChange('stack', checked)}
             />
           </div>
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">显示数据标签</Label>
+      <div className='space-y-2'>
+        <Label className='text-sm font-medium'>显示数据标签</Label>
         <Switch
           checked={chartConfig.settings?.showDataLabels}
-          onValueChange={(checked) => handleSettingsChange('showDataLabels', checked)}
+          onValueChange={checked =>
+            handleSettingsChange('showDataLabels', checked)
+          }
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">透明度</Label>
+      <div className='space-y-2'>
+        <Label className='text-sm font-medium'>透明度</Label>
         <Slider
           min={0}
           max={1}
           step={0.1}
-          value={chartConfig.settings?.opacity || 1}
-          onValueChange={(value) => handleSettingsChange('opacity', value)}
-          marks={{ 0: '0%', 0.5: '50%', 1: '100%' }}
+          value={[chartConfig.settings?.opacity || 1]}
+          onValueChange={value => handleSettingsChange('opacity', value[0])}
+          className='w-full'
         />
+        <div className='flex justify-between text-xs text-muted-foreground'>
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">主题</Label>
+      <div className='space-y-2'>
+        <Label className='text-sm font-medium'>主题</Label>
         <Select
           value={chartConfig.settings?.theme || 'default'}
-          onValueChange={(value) => handleSettingsChange('theme', value)}
-          options={[
-            { label: '默认', value: 'default' },
-            { label: '深色', value: 'dark' },
-            { label: '简约', value: 'minimal' },
-            { label: '商务', value: 'business' },
-          ]}
-        />
+          onValueChange={value => handleSettingsChange('theme', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder='选择主题' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='default'>默认</SelectItem>
+            <SelectItem value='dark'>深色</SelectItem>
+            <SelectItem value='minimal'>简约</SelectItem>
+            <SelectItem value='business'>商务</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
 
+  // 生成预览图表数据
+  const generatePreviewData = () => {
+    if (
+      !queryResult?.data ||
+      !chartConfig.xAxis?.field ||
+      !chartConfig.yAxis?.field
+    ) {
+      return [];
+    }
+
+    return queryResult.data.slice(0, 10).map((row: any) => ({
+      x: row[chartConfig.xAxis!.field],
+      y: row[chartConfig.yAxis!.field],
+      name: row[chartConfig.xAxis!.field],
+      value: row[chartConfig.yAxis!.field],
+    }));
+  };
+
+  // 渲染预览图表
+  const renderPreviewChart = () => {
+    const data = generatePreviewData();
+    const chartConfigForShadcn: ShadcnChartConfig = {
+      [chartConfig.yAxis?.field || 'value']: {
+        label: chartConfig.yAxis?.field || 'Value',
+        color: chartConfig.settings?.colors?.[0] || '#1890ff',
+      },
+    };
+
+    if (!data.length) {
+      return (
+        <div className='flex items-center justify-center h-64 text-muted-foreground'>
+          <div className='text-center'>
+            <BarChart className='w-12 h-12 mx-auto mb-2 opacity-50' />
+            <div>暂无数据预览</div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <ChartContainer config={chartConfigForShadcn} className='h-64'>
+        <ResponsiveContainer width='100%' height='100%'>
+          {chartConfig.type === 'line' && (
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray='3 3' />
+              <XAxis dataKey='x' />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line
+                type='monotone'
+                dataKey='y'
+                stroke={chartConfig.settings?.colors?.[0] || '#1890ff'}
+                strokeWidth={2}
+              />
+            </LineChart>
+          )}
+          {chartConfig.type === 'bar' && (
+            <RechartsBarChart data={data}>
+              <CartesianGrid strokeDasharray='3 3' />
+              <XAxis dataKey='x' />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar
+                dataKey='y'
+                fill={chartConfig.settings?.colors?.[0] || '#1890ff'}
+              />
+            </RechartsBarChart>
+          )}
+          {chartConfig.type === 'area' && (
+            <RechartsAreaChart data={data}>
+              <CartesianGrid strokeDasharray='3 3' />
+              <XAxis dataKey='x' />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area
+                type='monotone'
+                dataKey='y'
+                stroke={chartConfig.settings?.colors?.[0] || '#1890ff'}
+                fill={chartConfig.settings?.colors?.[0] || '#1890ff'}
+                fillOpacity={0.6}
+              />
+            </RechartsAreaChart>
+          )}
+        </ResponsiveContainer>
+      </ChartContainer>
+    );
+  };
+
   return (
     <div className={`h-full ${className}`}>
-      <div
-        title={
-          <div className="flex gap-2">
-            <BarChart className="w-4 h-4"  />
-            <span>图表构建器</span>
-            {queryResult && (
-              <span className="text-sm text-muted-foreground">
-                数据源: {queryResult.rowCount} 行
-              </span>
-            )}
+      <Card className='h-full'>
+        <CardHeader className='pb-4'>
+          <div className='flex items-center justify-between'>
+            <CardTitle className='flex items-center gap-2'>
+              <BarChart className='w-5 h-5' />
+              <span>图表构建器</span>
+              {queryResult && (
+                <span className='text-sm text-muted-foreground font-normal'>
+                  数据源: {queryResult.rowCount} 行
+                </span>
+              )}
+            </CardTitle>
+            <div className='flex gap-2'>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handlePreview}
+                      variant={previewMode ? 'default' : 'outline'}
+                      size='icon'
+                    >
+                      <Eye className='w-4 h-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>预览图表</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setSettingsVisible(true)}
+                      variant='outline'
+                      size='icon'
+                    >
+                      <Settings className='w-4 h-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>高级设置</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleCopyConfig}
+                      variant='outline'
+                      size='icon'
+                    >
+                      <Copy className='w-4 h-4' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>复制配置</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <Button
+                onClick={handleSaveChart}
+                disabled={
+                  !chartConfig.title ||
+                  !chartConfig.xAxis?.field ||
+                  !chartConfig.yAxis?.field
+                }
+              >
+                <Save className='w-4 h-4 mr-2' />
+                保存图表
+              </Button>
+            </div>
           </div>
-        }
-        extra={
-          <div className="flex gap-2">
-            <Tooltip title="预览图表">
-              <Button
-                onClick={handlePreview}
-                variant={previewMode ? 'default' : 'outline'}
-                size="icon"
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-            </Tooltip>
+        </CardHeader>
+        <CardContent className='h-full flex flex-col'>
+          <Form {...form}>
+            <form className='space-y-6 flex-shrink-0'>
+              {/* 图表类型选择 */}
+              {renderChartTypeSelector()}
 
-            <Tooltip title="高级设置">
-              <Button
-                onClick={() => setSettingsVisible(true)}
-                variant="outline"
-                size="icon"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="复制配置">
-              <Button
-                onClick={handleCopyConfig}
-                variant="outline"
-                size="icon"
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-            </Tooltip>
-
-            <Button
-              onClick={handleSaveChart}
-              disabled={!chartConfig.title || !chartConfig.xAxis?.field || !chartConfig.yAxis?.field}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              保存图表
-            </Button>
-          </div>
-        }
-        className="h-full"
-      >
-        <div className="h-full flex flex-col">
-          <Form
-            form={form}
-            layout="vertical"
-            className="flex-shrink-0"
-            initialValues={chartConfig}
-          >
-            {/* 图表类型选择 */}
-            {renderChartTypeSelector()}
-
-            {/* 基础设置 */}
-            {renderBasicSettings()}
+              {/* 基础设置 */}
+              {renderBasicSettings()}
+            </form>
           </Form>
 
           {/* 预览区域 */}
-          {previewMode && queryResult && (
-            <div className="flex-1 mt-4 border rounded p-4 bg-muted/50">
-              <div className="text-center text-muted-foreground">
-                <BarChart className="w-4 h-4 text-4xl mb-2"   />
-                <div>图表预览区域</div>
-                <div className="text-sm">
-                  类型: {chartTypes.find(t => t.value === chartConfig.type)?.label}
-                </div>
-                <div className="text-sm">
-                  X轴: {chartConfig.xAxis?.field} | Y轴: {chartConfig.yAxis?.field}
-                </div>
-              </div>
+          {previewMode && (
+            <div className='flex-1 mt-6'>
+              <Card>
+                <CardHeader>
+                  <CardTitle className='text-lg'>图表预览</CardTitle>
+                  <div className='text-sm text-muted-foreground'>
+                    类型:{' '}
+                    {chartTypes.find(t => t.value === chartConfig.type)?.label}{' '}
+                    | X轴: {chartConfig.xAxis?.field} | Y轴:{' '}
+                    {chartConfig.yAxis?.field}
+                  </div>
+                </CardHeader>
+                <CardContent>{renderPreviewChart()}</CardContent>
+              </Card>
             </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 高级设置抽屉 */}
-      <Sheet
-        title="高级设置"
-        open={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-        width={400}
-        placement="right"
-      >
-        {renderAdvancedSettings()}
+      <Sheet open={settingsVisible} onOpenChange={setSettingsVisible}>
+        <SheetContent className='w-[400px] sm:w-[540px]'>
+          <SheetHeader>
+            <SheetTitle>高级设置</SheetTitle>
+            <SheetDescription>
+              配置图表的高级显示选项和样式设置
+            </SheetDescription>
+          </SheetHeader>
+          <div className='mt-6'>{renderAdvancedSettings()}</div>
+        </SheetContent>
       </Sheet>
     </div>
   );

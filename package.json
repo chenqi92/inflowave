@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -30,9 +30,15 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint:fix-all": "eslint . --ext ts,tsx --fix --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:all": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md,html}\" --ignore-path .gitignore",
     "type-check": "tsc --noEmit",
+    "code-quality": "npm run type-check && npm run lint:fix-all && npm run format:all",
+    "fix-all": "node scripts/fix-code-quality.js",
+    "clean-imports": "eslint . --ext ts,tsx --fix",
+    "check-unused": "eslint . --ext ts,tsx",
     "prepare": "node scripts/prepare.js"
   },
   "dependencies": {
@@ -79,6 +85,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^3.0.3",
     "react-router-dom": "^6.20.1",
+    "recharts": "2.15.4",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
@@ -99,6 +106,7 @@
     "@types/react-grid-layout": "^1.3.5",
     "@types/xlsx": "^0.0.35",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^7.0.2",
     "@typescript-eslint/parser": "^8.36.0",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^1.0.4",
@@ -106,6 +114,7 @@
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.3.0",
     "husky": "^9.1.7",
     "jsdom": "^23.0.1",

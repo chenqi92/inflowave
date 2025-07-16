@@ -9,7 +9,6 @@ import {
   Typography,
   Row,
   Col,
-  Spin,
   Alert,
   Progress,
   Tag,
@@ -21,24 +20,45 @@ import {
   SelectTrigger,
   SelectValue,
   Table,
-  Collapse,
-  Panel,
   List,
-  Tooltip,
   Badge,
   Descriptions,
-  Timeline
+  Timeline,
 } from '@/components/ui';
 // TODO: Replace these Ant Design components: Descriptions, Drawer, Timeline
-import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
-import { MemoryOutlined, CpuOutlined, HddOutlined, NetworkOutlined, ShareAltOutlined, ExperimentOutlined, SafetyCertificateOutlined } from '@/components/ui';
-import { Zap, Rocket, BarChart, Settings, Info, Eye, Download, RefreshCw, Lightbulb, Clock, Database, TrendingUp, Trophy, Flame, History, Webhook, Star, PlayCircle, PauseCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  MemoryOutlined,
+  CpuOutlined,
+  HddOutlined,
+  NetworkOutlined,
+  ShareAltOutlined,
+  ExperimentOutlined,
+} from '@/components/ui';
+import {
+  Zap,
+  Rocket,
+  Settings,
+  Info,
+  Eye,
+  Download,
+  RefreshCw,
+  Clock,
+  Database,
+  TrendingUp,
+  Trophy,
+  History,
+  Webhook,
+} from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
-import { intelligentQueryEngine, type QueryOptimizationResult, type QueryContext } from '@/services/intelligentQuery';
+import {
+  intelligentQueryEngine,
+  type QueryOptimizationResult,
+  type QueryContext,
+} from '@/services/intelligentQuery';
 import { showMessage } from '@/utils/message';
 import CodeEditor from '@/components/common/CodeEditor';
-import {Modal} from "@utils/modalAdapter.tsx";
+import { Modal } from '@utils/modalAdapter.tsx';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -48,15 +68,19 @@ interface IntelligentQueryEngineProps {
 }
 
 export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
-  className}) => {
+  className,
+}) => {
   const { activeConnectionId, connections } = useConnectionStore();
   const [query, setQuery] = useState('');
   const [database, setDatabase] = useState('');
   const [loading, setLoading] = useState(false);
-  const [optimizationResult, setOptimizationResult] = useState<QueryOptimizationResult | null>(null);
+  const [optimizationResult, setOptimizationResult] =
+    useState<QueryOptimizationResult | null>(null);
   const [activeTab, setActiveTab] = useState('optimizer');
   const [autoOptimize, setAutoOptimize] = useState(false);
-  const [optimizationHistory, setOptimizationHistory] = useState<QueryOptimizationResult[]>([]);
+  const [optimizationHistory, setOptimizationHistory] = useState<
+    QueryOptimizationResult[]
+  >([]);
   const [performanceMetrics, setPerformanceMetrics] = useState<any>(null);
   const [queryStats, setQueryStats] = useState<any>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -65,14 +89,16 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     enableRouting: true,
     enablePrediction: true,
     optimizationLevel: 'balanced' as 'conservative' | 'balanced' | 'aggressive',
-    maxOptimizationTime: 5000});
+    maxOptimizationTime: 5000,
+  });
 
   // 获取查询统计
   const getQueryStats = useCallback(async () => {
     if (!activeConnectionId) return;
 
     try {
-      const stats = await intelligentQueryEngine.getQueryStats(activeConnectionId);
+      const stats =
+        await intelligentQueryEngine.getQueryStats(activeConnectionId);
       setQueryStats(stats);
     } catch (error) {
       console.error('获取查询统计失败:', error);
@@ -97,25 +123,32 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           userPreferences: {
             preferredPerformance: optimizationConfig.optimizationLevel,
             maxQueryTime: optimizationConfig.maxOptimizationTime,
-            cachePreference: optimizationConfig.enableCaching ? 'aggressive' : 'disabled'},
+            cachePreference: optimizationConfig.enableCaching
+              ? 'aggressive'
+              : 'disabled',
+          },
           systemLoad: {
             cpuUsage: 50,
             memoryUsage: 60,
             diskIo: 30,
-            networkLatency: 20},
+            networkLatency: 20,
+          },
           dataSize: {
             totalRows: 1000000,
             totalSize: 1024 * 1024 * 1024,
             averageRowSize: 1024,
-            compressionRatio: 0.3},
-          indexInfo: []} as QueryContext};
+            compressionRatio: 0.3,
+          },
+          indexInfo: [],
+        } as QueryContext,
+      };
 
       const result = await intelligentQueryEngine.optimizeQuery(request);
       setOptimizationResult(result);
-      
+
       // 添加到历史记录
       setOptimizationHistory(prev => [result, ...prev.slice(0, 9)]);
-      
+
       showMessage.success('查询优化完成');
     } catch (error) {
       console.error('查询优化失败:', error);
@@ -123,14 +156,23 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, query, database, optimizationConfig, optimizationHistory]);
+  }, [
+    activeConnectionId,
+    query,
+    database,
+    optimizationConfig,
+    optimizationHistory,
+  ]);
 
   // 获取优化建议
   const getOptimizationRecommendations = useCallback(async () => {
     if (!activeConnectionId) return;
 
     try {
-      const recommendations = await intelligentQueryEngine.getOptimizationRecommendations(activeConnectionId);
+      const recommendations =
+        await intelligentQueryEngine.getOptimizationRecommendations(
+          activeConnectionId
+        );
       return recommendations;
     } catch (error) {
       console.error('获取优化建议失败:', error);
@@ -169,65 +211,76 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <div>
-            <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div
+              className='flex gap-2'
+              direction='vertical'
+              style={{ width: '100%' }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
                 <Title level={4}>
-                  <Zap className="w-4 h-4"  /> 智能查询优化器
+                  <Zap className='w-4 h-4' /> 智能查询优化器
                 </Title>
-                <div className="flex gap-2">
+                <div className='flex gap-2'>
                   <Switch
                     checked={autoOptimize}
                     onValueChange={setAutoOptimize}
-                    checkedChildren="自动优化"
-                    unCheckedChildren="手动优化"
+                    checkedChildren='自动优化'
+                    unCheckedChildren='手动优化'
                   />
                   <Button
-                    icon={<Settings className="w-4 h-4"  />}
+                    icon={<Settings className='w-4 h-4' />}
                     onClick={() => setSettingsVisible(true)}
                   >
                     设置
                   </Button>
                 </div>
               </div>
-              
+
               <Row gutter={[16, 16]}>
                 <Col span={8}>
-                  <Select
-                    value={database}
-                    onValueChange={setDatabase}
-                  >
+                  <Select value={database} onValueChange={setDatabase}>
                     <SelectTrigger style={{ width: '100%' }}>
-                      <SelectValue placeholder="选择数据库" />
+                      <SelectValue placeholder='选择数据库' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">默认数据库</SelectItem>
-                      <SelectItem value="analytics">分析数据库</SelectItem>
-                      <SelectItem value="cache">缓存数据库</SelectItem>
+                      <SelectItem value='default'>默认数据库</SelectItem>
+                      <SelectItem value='analytics'>分析数据库</SelectItem>
+                      <SelectItem value='cache'>缓存数据库</SelectItem>
                     </SelectContent>
                   </Select>
                 </Col>
                 <Col span={16}>
-                  <div className="flex gap-2">
+                  <div className='flex gap-2'>
                     <Button
-                      type="primary"
-                      icon={<Rocket className="w-4 h-4"  />}
+                      type='primary'
+                      icon={<Rocket className='w-4 h-4' />}
                       onClick={optimizeQuery}
                       disabled={loading}
                     >
                       优化查询
                     </Button>
                     <Button
-                      icon={<RefreshCw className="w-4 h-4"  />}
+                      icon={<RefreshCw className='w-4 h-4' />}
                       onClick={clearCache}
                     >
                       清空缓存
                     </Button>
                     <Button
-                      icon={<Download className="w-4 h-4"  />}
+                      icon={<Download className='w-4 h-4' />}
                       onClick={() => {
                         if (optimizationResult) {
-                          const blob = new Blob([JSON.stringify(optimizationResult, null, 2)], {
-                            type: 'application/json'});
+                          const blob = new Blob(
+                            [JSON.stringify(optimizationResult, null, 2)],
+                            {
+                              type: 'application/json',
+                            }
+                          );
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
@@ -243,15 +296,15 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   </div>
                 </Col>
               </Row>
-              
+
               <div>
                 <Text strong>原始查询</Text>
                 <CodeEditor
                   value={query}
                   onValueChange={setQuery}
-                  language="sql"
-                  height="200px"
-                  placeholder="输入您的SQL查询语句..."
+                  language='sql'
+                  height='200px'
+                  placeholder='输入您的SQL查询语句...'
                 />
               </div>
             </div>
@@ -262,38 +315,42 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
       {optimizationResult && (
         <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
           <Col span={24}>
-            <div title="优化结果">
+            <div title='优化结果'>
               <Row gutter={[16, 16]}>
                 <Col span={12}>
-                  <div size="small" title="优化后查询">
-                    <pre style={{ 
-                      backgroundColor: '#f5f5f5', 
-                      padding: '12px', 
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      overflow: 'auto',
-                      maxHeight: '200px'
-                    }}>
+                  <div size='small' title='优化后查询'>
+                    <pre
+                      style={{
+                        backgroundColor: '#f5f5f5',
+                        padding: '12px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        overflow: 'auto',
+                        maxHeight: '200px',
+                      }}
+                    >
                       {optimizationResult.optimizedQuery}
                     </pre>
                   </div>
                 </Col>
                 <Col span={12}>
-                  <div size="small" title="性能指标">
+                  <div size='small' title='性能指标'>
                     <Row gutter={[8, 8]}>
                       <Col span={12}>
                         <Statistic
-                          title="预期性能提升"
+                          title='预期性能提升'
                           value={optimizationResult.estimatedPerformanceGain}
-                          suffix="%"
+                          suffix='%'
                           valueStyle={{ color: '#3f8600' }}
                         />
                       </Col>
                       <Col span={12}>
                         <Statistic
-                          title="优化技术数"
-                          value={optimizationResult.optimizationTechniques.length}
-                          suffix="项"
+                          title='优化技术数'
+                          value={
+                            optimizationResult.optimizationTechniques.length
+                          }
+                          suffix='项'
                           valueStyle={{ color: '#1890ff' }}
                         />
                       </Col>
@@ -301,22 +358,26 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   </div>
                 </Col>
               </Row>
-              
+
               <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
                 <Col span={8}>
-                  <div size="small" title="优化技术">
+                  <div size='small' title='优化技术'>
                     <List
-                      size="small"
+                      size='small'
                       dataSource={optimizationResult.optimizationTechniques}
-                      renderItem={(technique) => (
+                      renderItem={technique => (
                         <List.Item>
                           <List.Item.Meta
                             avatar={
                               <Badge
-                                count={`${technique.estimatedGain  }%`}
-                                style={{ backgroundColor: 
-                                  technique.impact === 'high' ? '#52c41a' :
-                                  technique.impact === 'medium' ? '#faad14' : '#d9d9d9'
+                                count={`${technique.estimatedGain}%`}
+                                style={{
+                                  backgroundColor:
+                                    technique.impact === 'high'
+                                      ? '#52c41a'
+                                      : technique.impact === 'medium'
+                                        ? '#faad14'
+                                        : '#d9d9d9',
                                 }}
                               />
                             }
@@ -329,53 +390,65 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   </div>
                 </Col>
                 <Col span={8}>
-                  <div size="small" title="路由策略">
-                    <Descriptions column={1} size="small">
-                      <Descriptions.Item label="目标连接">
+                  <div size='small' title='路由策略'>
+                    <Descriptions column={1} size='small'>
+                      <Descriptions.Item label='目标连接'>
                         {optimizationResult.routingStrategy.targetConnection}
                       </Descriptions.Item>
-                      <Descriptions.Item label="负载均衡">
+                      <Descriptions.Item label='负载均衡'>
                         {optimizationResult.routingStrategy.loadBalancing}
                       </Descriptions.Item>
-                      <Descriptions.Item label="优先级">
+                      <Descriptions.Item label='优先级'>
                         {optimizationResult.routingStrategy.priority}
                       </Descriptions.Item>
-                      <Descriptions.Item label="原因">
+                      <Descriptions.Item label='原因'>
                         {optimizationResult.routingStrategy.reason}
                       </Descriptions.Item>
                     </Descriptions>
                   </div>
                 </Col>
                 <Col span={8}>
-                  <div size="small" title="执行计划">
+                  <div size='small' title='执行计划'>
                     <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-                      <Timeline size="small">
-                        {optimizationResult.executionPlan.steps.map((step, index) => (
-                          <Timeline.Item
-                            key={step.id}
-                            dot={step.canParallelize ? <Webhook className="w-4 h-4"  /> : <Clock className="w-4 h-4"  />}
-                            color={step.canParallelize ? 'green' : 'blue'}
-                          >
-                            <div>
-                              <Text strong>{step.operation}</Text>
-                              <div style={{ fontSize: '12px', color: '#666' }}>
-                                {step.description}
+                      <Timeline size='small'>
+                        {optimizationResult.executionPlan.steps.map(
+                          (step, index) => (
+                            <Timeline.Item
+                              key={step.id}
+                              dot={
+                                step.canParallelize ? (
+                                  <Webhook className='w-4 h-4' />
+                                ) : (
+                                  <Clock className='w-4 h-4' />
+                                )
+                              }
+                              color={step.canParallelize ? 'green' : 'blue'}
+                            >
+                              <div>
+                                <Text strong>{step.operation}</Text>
+                                <div
+                                  style={{ fontSize: '12px', color: '#666' }}
+                                >
+                                  {step.description}
+                                </div>
+                                <div
+                                  style={{ fontSize: '11px', color: '#999' }}
+                                >
+                                  成本: {step.estimatedCost}
+                                </div>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#999' }}>
-                                成本: {step.estimatedCost}
-                              </div>
-                            </div>
-                          </Timeline.Item>
-                        ))}
+                            </Timeline.Item>
+                          )
+                        )}
                       </Timeline>
                     </div>
                   </div>
                 </Col>
               </Row>
-              
+
               {optimizationResult.warnings.length > 0 && (
                 <Alert
-                  message="优化警告"
+                  message='优化警告'
                   description={
                     <ul style={{ marginBottom: 0 }}>
                       {optimizationResult.warnings.map((warning, index) => (
@@ -383,25 +456,34 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       ))}
                     </ul>
                   }
-                  type="warning"
+                  type='warning'
                   showIcon
                   style={{ marginTop: '16px' }}
                 />
               )}
-              
+
               {optimizationResult.recommendations.length > 0 && (
-                <div size="small" title="优化建议" style={{ marginTop: '16px' }}>
+                <div
+                  size='small'
+                  title='优化建议'
+                  style={{ marginTop: '16px' }}
+                >
                   <List
-                    size="small"
+                    size='small'
                     dataSource={optimizationResult.recommendations}
-                    renderItem={(recommendation) => (
+                    renderItem={recommendation => (
                       <List.Item>
                         <List.Item.Meta
                           avatar={
-                            <Tag color={
-                              recommendation.priority === 'high' ? 'red' :
-                              recommendation.priority === 'medium' ? 'orange' : 'blue'
-                            }>
+                            <Tag
+                              color={
+                                recommendation.priority === 'high'
+                                  ? 'red'
+                                  : recommendation.priority === 'medium'
+                                    ? 'orange'
+                                    : 'blue'
+                              }
+                            >
                               {recommendation.priority.toUpperCase()}
                             </Tag>
                           }
@@ -411,7 +493,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                               <Paragraph style={{ marginBottom: '8px' }}>
                                 {recommendation.description}
                               </Paragraph>
-                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                              <Text
+                                type='secondary'
+                                style={{ fontSize: '12px' }}
+                              >
                                 预期收益: {recommendation.estimatedBenefit}%
                               </Text>
                             </div>
@@ -436,28 +521,28 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         <Col span={6}>
           <div>
             <Statistic
-              title="总查询数"
+              title='总查询数'
               value={queryStats?.totalQueries || 0}
-              prefix={<Database className="w-4 h-4"  />}
+              prefix={<Database className='w-4 h-4' />}
             />
           </div>
         </Col>
         <Col span={6}>
           <div>
             <Statistic
-              title="平均执行时间"
+              title='平均执行时间'
               value={queryStats?.avgExecutionTime || 0}
-              suffix="ms"
-              prefix={<Clock className="w-4 h-4"  />}
+              suffix='ms'
+              prefix={<Clock className='w-4 h-4' />}
             />
           </div>
         </Col>
         <Col span={6}>
           <div>
             <Statistic
-              title="缓存命中率"
+              title='缓存命中率'
               value={queryStats?.cacheHitRate || 0}
-              suffix="%"
+              suffix='%'
               prefix={<MemoryOutlined />}
               valueStyle={{ color: '#3f8600' }}
             />
@@ -466,10 +551,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         <Col span={6}>
           <div>
             <Statistic
-              title="优化成功率"
+              title='优化成功率'
               value={queryStats?.optimizationSuccessRate || 0}
-              suffix="%"
-              prefix={<Trophy className="w-4 h-4"  />}
+              suffix='%'
+              prefix={<Trophy className='w-4 h-4' />}
               valueStyle={{ color: '#1890ff' }}
             />
           </div>
@@ -478,9 +563,9 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
       <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
         <Col span={12}>
-          <div title="慢查询统计">
+          <div title='慢查询统计'>
             <Table
-              size="small"
+              size='small'
               dataSource={queryStats?.slowQueries || []}
               columns={[
                 {
@@ -488,27 +573,30 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   dataIndex: 'query',
                   key: 'query',
                   ellipsis: true,
-                  width: 200},
+                  width: 200,
+                },
                 {
                   title: '执行时间',
                   dataIndex: 'executionTime',
                   key: 'executionTime',
                   render: (time: number) => `${time}ms`,
-                  sorter: (a: any, b: any) => a.executionTime - b.executionTime},
+                  sorter: (a: any, b: any) => a.executionTime - b.executionTime,
+                },
                 {
                   title: '频次',
                   dataIndex: 'frequency',
                   key: 'frequency',
-                  sorter: (a: any, b: any) => a.frequency - b.frequency},
+                  sorter: (a: any, b: any) => a.frequency - b.frequency,
+                },
               ]}
               pagination={{ pageSize: 5 }}
             />
           </div>
         </Col>
         <Col span={12}>
-          <div title="热门查询">
+          <div title='热门查询'>
             <Table
-              size="small"
+              size='small'
               dataSource={queryStats?.frequentQueries || []}
               columns={[
                 {
@@ -516,18 +604,22 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   dataIndex: 'query',
                   key: 'query',
                   ellipsis: true,
-                  width: 200},
+                  width: 200,
+                },
                 {
                   title: '平均时间',
                   dataIndex: 'avgExecutionTime',
                   key: 'avgExecutionTime',
                   render: (time: number) => `${time}ms`,
-                  sorter: (a: any, b: any) => a.avgExecutionTime - b.avgExecutionTime},
+                  sorter: (a: any, b: any) =>
+                    a.avgExecutionTime - b.avgExecutionTime,
+                },
                 {
                   title: '频次',
                   dataIndex: 'frequency',
                   key: 'frequency',
-                  sorter: (a: any, b: any) => a.frequency - b.frequency},
+                  sorter: (a: any, b: any) => a.frequency - b.frequency,
+                },
               ]}
               pagination={{ pageSize: 5 }}
             />
@@ -537,7 +629,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
       <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
         <Col span={24}>
-          <div title="资源使用情况">
+          <div title='资源使用情况'>
             <Row gutter={[16, 16]}>
               <Col span={6}>
                 <div style={{ textAlign: 'center' }}>
@@ -545,8 +637,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   <div style={{ marginTop: '8px' }}>
                     <Text>CPU使用率</Text>
                     <Progress
-                      percent={queryStats?.resourceUtilization?.avgCpuUsage || 0}
-                      size="small"
+                      percent={
+                        queryStats?.resourceUtilization?.avgCpuUsage || 0
+                      }
+                      size='small'
                       style={{ marginTop: '4px' }}
                     />
                   </div>
@@ -554,12 +648,16 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               </Col>
               <Col span={6}>
                 <div style={{ textAlign: 'center' }}>
-                  <MemoryOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                  <MemoryOutlined
+                    style={{ fontSize: '24px', color: '#52c41a' }}
+                  />
                   <div style={{ marginTop: '8px' }}>
                     <Text>内存使用率</Text>
                     <Progress
-                      percent={queryStats?.resourceUtilization?.avgMemoryUsage || 0}
-                      size="small"
+                      percent={
+                        queryStats?.resourceUtilization?.avgMemoryUsage || 0
+                      }
+                      size='small'
                       style={{ marginTop: '4px' }}
                     />
                   </div>
@@ -572,7 +670,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     <Text>I/O使用率</Text>
                     <Progress
                       percent={queryStats?.resourceUtilization?.avgIoUsage || 0}
-                      size="small"
+                      size='small'
                       style={{ marginTop: '4px' }}
                     />
                   </div>
@@ -580,12 +678,16 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               </Col>
               <Col span={6}>
                 <div style={{ textAlign: 'center' }}>
-                  <NetworkOutlined style={{ fontSize: '24px', color: '#722ed1' }} />
+                  <NetworkOutlined
+                    style={{ fontSize: '24px', color: '#722ed1' }}
+                  />
                   <div style={{ marginTop: '8px' }}>
                     <Text>网络使用率</Text>
                     <Progress
-                      percent={queryStats?.resourceUtilization?.avgNetworkUsage || 0}
-                      size="small"
+                      percent={
+                        queryStats?.resourceUtilization?.avgNetworkUsage || 0
+                      }
+                      size='small'
                       style={{ marginTop: '4px' }}
                     />
                   </div>
@@ -607,14 +709,14 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           <List.Item
             actions={[
               <Button
-                size="small"
-                icon={<Eye className="w-4 h-4"  />}
+                size='small'
+                icon={<Eye className='w-4 h-4' />}
                 onClick={() => setOptimizationResult(item)}
               >
                 查看
               </Button>,
               <Button
-                size="small"
+                size='small'
                 icon={<ShareAltOutlined />}
                 onClick={() => setQuery(item.optimizedQuery)}
               >
@@ -625,14 +727,14 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <List.Item.Meta
               avatar={
                 <Badge
-                  count={`${item.estimatedPerformanceGain  }%`}
+                  count={`${item.estimatedPerformanceGain}%`}
                   style={{ backgroundColor: '#52c41a' }}
                 />
               }
               title={
                 <div>
                   <Text strong>优化 #{index + 1}</Text>
-                  <Tag color="blue" style={{ marginLeft: '8px' }}>
+                  <Tag color='blue' style={{ marginLeft: '8px' }}>
                     {item.optimizationTechniques.length} 项技术
                   </Tag>
                 </div>
@@ -643,7 +745,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     {item.originalQuery}
                   </Text>
                   <div style={{ marginTop: '4px' }}>
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                    <Text type='secondary' style={{ fontSize: '12px' }}>
                       目标: {item.routingStrategy.targetConnection}
                     </Text>
                   </div>
@@ -660,22 +762,22 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
     <div className={className}>
       <div
         title={
-          <div className="flex gap-2">
+          <div className='flex gap-2'>
             <ExperimentOutlined />
             <span>智能查询优化引擎</span>
           </div>
         }
         extra={
-          <div className="flex gap-2">
+          <div className='flex gap-2'>
             <Button
-              icon={<RefreshCw className="w-4 h-4"  />}
+              icon={<RefreshCw className='w-4 h-4' />}
               onClick={getQueryStats}
-              size="small"
+              size='small'
             >
               刷新
             </Button>
             <Button
-              icon={<Info className="w-4 h-4"  />}
+              icon={<Info className='w-4 h-4' />}
               onClick={() => {
                 Modal.info({
                   title: '智能查询优化引擎',
@@ -692,9 +794,10 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                       </ul>
                     </div>
                   ),
-                  width: 800});
+                  width: 800,
+                });
               }}
-              size="small"
+              size='small'
             >
               帮助
             </Button>
@@ -702,36 +805,34 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         }
       >
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="optimizer">
-              <span className="flex items-center gap-2">
-                <Rocket className="w-4 h-4" />
+          <TabsList className='grid w-full grid-cols-3'>
+            <TabsTrigger value='optimizer'>
+              <span className='flex items-center gap-2'>
+                <Rocket className='w-4 h-4' />
                 查询优化器
               </span>
             </TabsTrigger>
-            <TabsTrigger value="performance">
-              <span className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
+            <TabsTrigger value='performance'>
+              <span className='flex items-center gap-2'>
+                <TrendingUp className='w-4 h-4' />
                 性能监控
               </span>
             </TabsTrigger>
-            <TabsTrigger value="history">
-              <span className="flex items-center gap-2">
-                <History className="w-4 h-4" />
+            <TabsTrigger value='history'>
+              <span className='flex items-center gap-2'>
+                <History className='w-4 h-4' />
                 优化历史
               </span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="optimizer">
-            {renderOptimizer()}
-          </TabsContent>
+          <TabsContent value='optimizer'>{renderOptimizer()}</TabsContent>
 
-          <TabsContent value="performance">
+          <TabsContent value='performance'>
             {renderPerformanceMonitor()}
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value='history'>
             {renderOptimizationHistory()}
           </TabsContent>
         </Tabs>
@@ -739,95 +840,109 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
       {/* 设置抽屉 */}
       <Drawer
-        title="优化引擎设置"
-        placement="right"
+        title='优化引擎设置'
+        placement='right'
         onClose={() => setSettingsVisible(false)}
         open={settingsVisible}
         width={400}
       >
-        <div className="flex gap-2" direction="vertical" style={{ width: '100%' }}>
+        <div
+          className='flex gap-2'
+          direction='vertical'
+          style={{ width: '100%' }}
+        >
           <div>
             <Text strong>缓存设置</Text>
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enableCaching}
-                onValueChange={(checked) => setOptimizationConfig(prev => ({
-                  ...prev,
-                  enableCaching: checked
-                }))}
-                checkedChildren="启用"
-                unCheckedChildren="禁用"
+                onValueChange={checked =>
+                  setOptimizationConfig(prev => ({
+                    ...prev,
+                    enableCaching: checked,
+                  }))
+                }
+                checkedChildren='启用'
+                unCheckedChildren='禁用'
               />
               <Text style={{ marginLeft: '8px' }}>启用智能缓存</Text>
             </div>
           </div>
-          
+
           <div>
             <Text strong>路由设置</Text>
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enableRouting}
-                onValueChange={(checked) => setOptimizationConfig(prev => ({
-                  ...prev,
-                  enableRouting: checked
-                }))}
-                checkedChildren="启用"
-                unCheckedChildren="禁用"
+                onValueChange={checked =>
+                  setOptimizationConfig(prev => ({
+                    ...prev,
+                    enableRouting: checked,
+                  }))
+                }
+                checkedChildren='启用'
+                unCheckedChildren='禁用'
               />
               <Text style={{ marginLeft: '8px' }}>启用智能路由</Text>
             </div>
           </div>
-          
+
           <div>
             <Text strong>性能预测</Text>
             <div style={{ marginTop: '8px' }}>
               <Switch
                 checked={optimizationConfig.enablePrediction}
-                onValueChange={(checked) => setOptimizationConfig(prev => ({
-                  ...prev,
-                  enablePrediction: checked
-                }))}
-                checkedChildren="启用"
-                unCheckedChildren="禁用"
+                onValueChange={checked =>
+                  setOptimizationConfig(prev => ({
+                    ...prev,
+                    enablePrediction: checked,
+                  }))
+                }
+                checkedChildren='启用'
+                unCheckedChildren='禁用'
               />
               <Text style={{ marginLeft: '8px' }}>启用性能预测</Text>
             </div>
           </div>
-          
+
           <div>
             <Text strong>优化级别</Text>
             <div style={{ marginTop: '8px' }}>
               <Select
                 value={optimizationConfig.optimizationLevel}
-                onValueChange={(value) => setOptimizationConfig(prev => ({
-                  ...prev,
-                  optimizationLevel: value
-                }))}
+                onValueChange={value =>
+                  setOptimizationConfig(prev => ({
+                    ...prev,
+                    optimizationLevel: value,
+                  }))
+                }
               >
                 <SelectTrigger style={{ width: '100%' }}>
-                  <SelectValue placeholder="选择优化级别" />
+                  <SelectValue placeholder='选择优化级别' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="conservative">保守</SelectItem>
-                  <SelectItem value="balanced">平衡</SelectItem>
-                  <SelectItem value="aggressive">激进</SelectItem>
+                  <SelectItem value='conservative'>保守</SelectItem>
+                  <SelectItem value='balanced'>平衡</SelectItem>
+                  <SelectItem value='aggressive'>激进</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          
+
           <div>
             <Text strong>最大优化时间</Text>
             <div style={{ marginTop: '8px' }}>
               <Select
                 value={optimizationConfig.maxOptimizationTime}
-                onValueChange={(value) => setOptimizationConfig(prev => ({
-                  ...prev,
-                  maxOptimizationTime: value
-                }))}
+                onValueChange={value =>
+                  setOptimizationConfig(prev => ({
+                    ...prev,
+                    maxOptimizationTime: value,
+                  }))
+                }
               >
                 <SelectTrigger style={{ width: '100%' }}>
-                  <SelectValue placeholder="选择最大优化时间" />
+                  <SelectValue placeholder='选择最大优化时间' />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={1000}>1秒</SelectItem>

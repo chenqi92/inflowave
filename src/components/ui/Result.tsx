@@ -16,38 +16,38 @@ const statusConfig = {
   success: {
     color: 'text-success',
     bgColor: 'bg-success/10',
-    borderColor: 'border-success'
+    borderColor: 'border-success',
   },
   error: {
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-destructive'
+    borderColor: 'border-destructive',
   },
   info: {
     color: 'text-primary',
     bgColor: 'bg-primary/10',
-    borderColor: 'border-primary'
+    borderColor: 'border-primary',
   },
   warning: {
     color: 'text-yellow-500 dark:text-yellow-400',
     bgColor: 'bg-yellow-100/50 dark:bg-yellow-900/20',
-    borderColor: 'border-yellow-300 dark:border-yellow-700'
+    borderColor: 'border-yellow-300 dark:border-yellow-700',
   },
   '404': {
     color: 'text-muted-foreground',
     bgColor: 'bg-muted/50',
-    borderColor: 'border'
+    borderColor: 'border',
   },
   '403': {
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-destructive'
+    borderColor: 'border-destructive',
   },
   '500': {
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    borderColor: 'border-destructive'
-  }
+    borderColor: 'border-destructive',
+  },
 };
 
 const Result: React.FC<ResultProps> = ({
@@ -77,11 +77,7 @@ const Result: React.FC<ResultProps> = ({
       )}
       {...domProps}
     >
-      {icon && (
-        <div className={cn('mb-4 text-4xl', config.color)}>
-          {icon}
-        </div>
-      )}
+      {icon && <div className={cn('mb-4 text-4xl', config.color)}>{icon}</div>}
 
       {title && (
         <h3 className={cn('text-lg font-semibold mb-2', config.color)}>
@@ -90,21 +86,13 @@ const Result: React.FC<ResultProps> = ({
       )}
 
       {subTitle && (
-        <div className="text-muted-foreground mb-4 max-w-md">
-          {subTitle}
-        </div>
+        <div className='text-muted-foreground mb-4 max-w-md'>{subTitle}</div>
       )}
 
-      {children && (
-        <div className="mb-4">
-          {children}
-        </div>
-      )}
+      {children && <div className='mb-4'>{children}</div>}
 
       {extra && (
-        <div className="flex flex-wrap gap-2 justify-center">
-          {extra}
-        </div>
+        <div className='flex flex-wrap gap-2 justify-center'>{extra}</div>
       )}
     </div>
   );

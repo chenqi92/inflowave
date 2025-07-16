@@ -1,32 +1,37 @@
 import { create } from 'zustand';
-import type { DatabaseInfo, MeasurementInfo, FieldInfo, TagInfo } from '@/types';
+import type {
+  DatabaseInfo,
+  MeasurementInfo,
+  FieldInfo,
+  TagInfo,
+} from '@/types';
 import { DatabaseAPI } from '@/services/api';
 
 interface DatabaseState {
   // 数据库列表
   databases: Record<string, DatabaseInfo[]>; // connectionId -> databases
-  
+
   // 测量列表
   measurements: Record<string, MeasurementInfo[]>; // connectionId:database -> measurements
-  
+
   // 字段信息
   fields: Record<string, FieldInfo[]>; // connectionId:database:measurement -> fields
-  
+
   // 标签信息
   tags: Record<string, TagInfo[]>; // connectionId:database:measurement -> tags
-  
+
   // 系列信息
   series: Record<string, string[]>; // connectionId:database:measurement -> series
-  
+
   // 当前选中的数据库
   selectedDatabase: Record<string, string>; // connectionId -> database
-  
+
   // 加载状态
   loadingDatabases: boolean;
   loadingMeasurements: boolean;
   loadingFields: boolean;
   loadingTags: boolean;
-  
+
   // 错误状态
   error: string | null;
 
@@ -38,20 +43,51 @@ interface DatabaseState {
   getSelectedDatabase: (connectionId: string) => string | undefined;
 
   // 测量操作
-  loadMeasurements: (connectionId: string, database: string) => Promise<MeasurementInfo[]>;
-  getMeasurements: (connectionId: string, database: string) => MeasurementInfo[];
+  loadMeasurements: (
+    connectionId: string,
+    database: string
+  ) => Promise<MeasurementInfo[]>;
+  getMeasurements: (
+    connectionId: string,
+    database: string
+  ) => MeasurementInfo[];
 
   // 字段操作
-  loadFields: (connectionId: string, database: string, measurement: string) => Promise<FieldInfo[]>;
-  getFields: (connectionId: string, database: string, measurement: string) => FieldInfo[];
+  loadFields: (
+    connectionId: string,
+    database: string,
+    measurement: string
+  ) => Promise<FieldInfo[]>;
+  getFields: (
+    connectionId: string,
+    database: string,
+    measurement: string
+  ) => FieldInfo[];
 
   // 标签操作
-  loadTags: (connectionId: string, database: string, measurement: string) => Promise<TagInfo[]>;
-  getTags: (connectionId: string, database: string, measurement: string) => TagInfo[];
+  loadTags: (
+    connectionId: string,
+    database: string,
+    measurement: string
+  ) => Promise<TagInfo[]>;
+  getTags: (
+    connectionId: string,
+    database: string,
+    measurement: string
+  ) => TagInfo[];
 
   // 系列操作
-  loadSeries: (connectionId: string, database: string, measurement?: string, limit?: number) => Promise<string[]>;
-  getSeries: (connectionId: string, database: string, measurement?: string) => string[];
+  loadSeries: (
+    connectionId: string,
+    database: string,
+    measurement?: string,
+    limit?: number
+  ) => Promise<string[]>;
+  getSeries: (
+    connectionId: string,
+    database: string,
+    measurement?: string
+  ) => string[];
 
   // 统计信息
   getDatabaseStats: (connectionId: string, database: string) => Promise<any>;
@@ -59,7 +95,7 @@ interface DatabaseState {
   // 缓存管理
   clearCache: (connectionId?: string) => void;
   clearDatabaseCache: (connectionId: string, database?: string) => void;
-  
+
   // 错误处理
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -80,24 +116,27 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   error: null,
 
   // 数据库操作
-  loadDatabases: async (connectionId) => {
+  loadDatabases: async connectionId => {
     set({ loadingDatabases: true, error: null });
-    
+
     try {
       const databases = await DatabaseAPI.getDatabases(connectionId);
-      
+
       set(state => ({
         databases: {
           ...state.databases,
-          [connectionId]: databases},
-        loadingDatabases: false}));
+          [connectionId]: databases,
+        },
+        loadingDatabases: false,
+      }));
 
       return databases;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      set({ 
-        loadingDatabases: false, 
-        error: `加载数据库列表失败: ${errorMessage}` 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      set({
+        loadingDatabases: false,
+        error: `加载数据库列表失败: ${errorMessage}`,
       });
       throw error;
     }
@@ -106,11 +145,12 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   createDatabase: async (connectionId, name) => {
     try {
       await DatabaseAPI.createDatabase(connectionId, name);
-      
+
       // 重新加载数据库列表
       await get().loadDatabases(connectionId);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       set({ error: `创建数据库失败: ${errorMessage}` });
       throw error;
     }
@@ -119,14 +159,15 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   dropDatabase: async (connectionId, name) => {
     try {
       await DatabaseAPI.dropDatabase(connectionId, name);
-      
+
       // 清除相关缓存
       get().clearDatabaseCache(connectionId, name);
-      
+
       // 重新加载数据库列表
       await get().loadDatabases(connectionId);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       set({ error: `删除数据库失败: ${errorMessage}` });
       throw error;
     }
@@ -136,10 +177,12 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set(state => ({
       selectedDatabase: {
         ...state.selectedDatabase,
-        [connectionId]: database}}));
+        [connectionId]: database,
+      },
+    }));
   },
 
-  getSelectedDatabase: (connectionId) => {
+  getSelectedDatabase: connectionId => {
     return get().selectedDatabase[connectionId];
   },
 
@@ -147,22 +190,28 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   loadMeasurements: async (connectionId, database) => {
     const key = `${connectionId}:${database}`;
     set({ loadingMeasurements: true, error: null });
-    
+
     try {
-      const measurements = await DatabaseAPI.getMeasurements(connectionId, database);
-      
+      const measurements = await DatabaseAPI.getMeasurements(
+        connectionId,
+        database
+      );
+
       set(state => ({
         measurements: {
           ...state.measurements,
-          [key]: measurements},
-        loadingMeasurements: false}));
+          [key]: measurements,
+        },
+        loadingMeasurements: false,
+      }));
 
       return measurements;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      set({ 
-        loadingMeasurements: false, 
-        error: `加载测量列表失败: ${errorMessage}` 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      set({
+        loadingMeasurements: false,
+        error: `加载测量列表失败: ${errorMessage}`,
       });
       throw error;
     }
@@ -177,22 +226,29 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   loadFields: async (connectionId, database, measurement) => {
     const key = `${connectionId}:${database}:${measurement}`;
     set({ loadingFields: true, error: null });
-    
+
     try {
-      const fields = await DatabaseAPI.getFieldKeys(connectionId, database, measurement);
-      
+      const fields = await DatabaseAPI.getFieldKeys(
+        connectionId,
+        database,
+        measurement
+      );
+
       set(state => ({
         fields: {
           ...state.fields,
-          [key]: fields},
-        loadingFields: false}));
+          [key]: fields,
+        },
+        loadingFields: false,
+      }));
 
       return fields;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      set({ 
-        loadingFields: false, 
-        error: `加载字段信息失败: ${errorMessage}` 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      set({
+        loadingFields: false,
+        error: `加载字段信息失败: ${errorMessage}`,
       });
       throw error;
     }
@@ -207,22 +263,29 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   loadTags: async (connectionId, database, measurement) => {
     const key = `${connectionId}:${database}:${measurement}`;
     set({ loadingTags: true, error: null });
-    
+
     try {
-      const tags = await DatabaseAPI.getTagKeys(connectionId, database, measurement);
-      
+      const tags = await DatabaseAPI.getTagKeys(
+        connectionId,
+        database,
+        measurement
+      );
+
       set(state => ({
         tags: {
           ...state.tags,
-          [key]: tags},
-        loadingTags: false}));
+          [key]: tags,
+        },
+        loadingTags: false,
+      }));
 
       return tags;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      set({ 
-        loadingTags: false, 
-        error: `加载标签信息失败: ${errorMessage}` 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      set({
+        loadingTags: false,
+        error: `加载标签信息失败: ${errorMessage}`,
       });
       throw error;
     }
@@ -235,28 +298,36 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
 
   // 系列操作
   loadSeries: async (connectionId, database, measurement, limit) => {
-    const key = measurement 
+    const key = measurement
       ? `${connectionId}:${database}:${measurement}`
       : `${connectionId}:${database}`;
-    
+
     try {
-      const series = await DatabaseAPI.getSeries(connectionId, database, measurement, limit);
-      
+      const series = await DatabaseAPI.getSeries(
+        connectionId,
+        database,
+        measurement,
+        limit
+      );
+
       set(state => ({
         series: {
           ...state.series,
-          [key]: series}}));
+          [key]: series,
+        },
+      }));
 
       return series;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       set({ error: `加载系列信息失败: ${errorMessage}` });
       throw error;
     }
   },
 
   getSeries: (connectionId, database, measurement) => {
-    const key = measurement 
+    const key = measurement
       ? `${connectionId}:${database}:${measurement}`
       : `${connectionId}:${database}`;
     return get().series[key] || [];
@@ -267,14 +338,15 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     try {
       return await DatabaseAPI.getDatabaseStats(connectionId, database);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       set({ error: `获取数据库统计信息失败: ${errorMessage}` });
       throw error;
     }
   },
 
   // 缓存管理
-  clearCache: (connectionId) => {
+  clearCache: connectionId => {
     if (connectionId) {
       set(state => {
         const newDatabases = { ...state.databases };
@@ -318,7 +390,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           fields: newFields,
           tags: newTags,
           series: newSeries,
-          selectedDatabase: newSelectedDatabase};
+          selectedDatabase: newSelectedDatabase,
+        };
       });
     } else {
       // 清除所有缓存
@@ -328,7 +401,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         fields: {},
         tags: {},
         series: {},
-        selectedDatabase: {}});
+        selectedDatabase: {},
+      });
     }
   },
 
@@ -370,7 +444,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
           measurements: newMeasurements,
           fields: newFields,
           tags: newTags,
-          series: newSeries};
+          series: newSeries,
+        };
       });
     } else {
       get().clearCache(connectionId);
@@ -378,10 +453,11 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   },
 
   // 错误处理
-  setError: (error) => {
+  setError: error => {
     set({ error });
   },
 
   clearError: () => {
     set({ error: null });
-  }}));
+  },
+}));

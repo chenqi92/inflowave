@@ -1,8 +1,13 @@
 import React from 'react';
-import { showMessage as messageUtil } from '@/utils/message';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 interface ModalConfig {
@@ -24,45 +29,47 @@ let currentModal: {
   resolve?: (value: boolean) => void;
 } = {
   isOpen: false,
-  config: {}
+  config: {},
 };
 
 // Modal状态更新回调
 let updateModalState: ((state: typeof currentModal) => void) | null = null;
 
 // 设置状态更新回调
-export const setModalStateUpdater = (updater: (state: typeof currentModal) => void) => {
+export const setModalStateUpdater = (
+  updater: (state: typeof currentModal) => void
+) => {
   updateModalState = updater;
 };
 
 // 获取图标
 const getIcon = (type?: string, customIcon?: React.ReactNode) => {
   if (customIcon) return customIcon;
-  
+
   switch (type) {
     case 'info':
-      return <Info className="w-5 h-5 text-primary" />;
+      return <Info className='w-5 h-5 text-primary' />;
     case 'success':
-      return <CheckCircle className="w-5 h-5 text-success" />;
+      return <CheckCircle className='w-5 h-5 text-success' />;
     case 'error':
-      return <XCircle className="w-5 h-5 text-destructive" />;
+      return <XCircle className='w-5 h-5 text-destructive' />;
     case 'warning':
     case 'confirm':
-      return <AlertTriangle className="w-5 h-5 text-warning" />;
+      return <AlertTriangle className='w-5 h-5 text-warning' />;
     default:
-      return <Info className="w-5 h-5 text-primary" />;
+      return <Info className='w-5 h-5 text-primary' />;
   }
 };
 
 // 显示模态框的通用函数
 const showModal = (config: ModalConfig): Promise<boolean> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     currentModal = {
       isOpen: true,
       config,
-      resolve
+      resolve,
     };
-    
+
     if (updateModalState) {
       updateModalState({ ...currentModal });
     }
@@ -74,13 +81,13 @@ const closeModal = (result: boolean = false) => {
   if (currentModal.resolve) {
     currentModal.resolve(result);
   }
-  
+
   currentModal = {
     isOpen: false,
     config: {},
-    resolve: undefined
+    resolve: undefined,
   };
-  
+
   if (updateModalState) {
     updateModalState({ ...currentModal });
   }
@@ -90,7 +97,7 @@ const closeModal = (result: boolean = false) => {
 export const info = (config: ModalConfig) => {
   return showModal({
     ...config,
-    type: 'info'
+    type: 'info',
   });
 };
 
@@ -98,7 +105,7 @@ export const info = (config: ModalConfig) => {
 export const success = (config: ModalConfig) => {
   return showModal({
     ...config,
-    type: 'success'
+    type: 'success',
   });
 };
 
@@ -106,7 +113,7 @@ export const success = (config: ModalConfig) => {
 export const error = (config: ModalConfig) => {
   return showModal({
     ...config,
-    type: 'error'
+    type: 'error',
   });
 };
 
@@ -114,7 +121,7 @@ export const error = (config: ModalConfig) => {
 export const warning = (config: ModalConfig) => {
   return showModal({
     ...config,
-    type: 'warning'
+    type: 'warning',
   });
 };
 
@@ -122,7 +129,7 @@ export const warning = (config: ModalConfig) => {
 export const confirm = (config: ModalConfig): Promise<boolean> => {
   return showModal({
     ...config,
-    type: 'confirm'
+    type: 'confirm',
   });
 };
 
@@ -132,7 +139,7 @@ export const confirm = (config: ModalConfig): Promise<boolean> => {
 // Modal适配器组件
 export const ModalAdapter: React.FC = () => {
   const [modalState, setModalState] = React.useState(currentModal);
-  
+
   React.useEffect(() => {
     setModalStateUpdater(setModalState);
     return () => {
@@ -167,16 +174,19 @@ export const ModalAdapter: React.FC = () => {
   const icon = getIcon(config.type, config.icon);
 
   return (
-    <Dialog open={modalState.isOpen} onOpenChange={(open) => !open && handleCancel()}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog
+      open={modalState.isOpen}
+      onOpenChange={open => !open && handleCancel()}
+    >
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className='flex items-center gap-2'>
             {icon}
             {config.title || '提示'}
           </DialogTitle>
           {config.content && (
             <DialogDescription asChild>
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 {typeof config.content === 'string' ? (
                   <p>{config.content}</p>
                 ) : (
@@ -186,10 +196,10 @@ export const ModalAdapter: React.FC = () => {
             </DialogDescription>
           )}
         </DialogHeader>
-        
-        <DialogFooter className="flex gap-2">
+
+        <DialogFooter className='flex gap-2'>
           {config.type === 'confirm' && (
-            <Button variant="outline" onClick={handleCancel}>
+            <Button variant='outline' onClick={handleCancel}>
               {config.cancelText || '取消'}
             </Button>
           )}
@@ -208,7 +218,7 @@ export const Modal = {
   success,
   error,
   warning,
-  confirm
+  confirm,
 };
 
 // 导出适配器组件供App.tsx使用

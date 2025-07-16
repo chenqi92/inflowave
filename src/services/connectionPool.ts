@@ -1,5 +1,4 @@
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
 export interface ConnectionPoolConfig {
   minConnections: number;
@@ -46,7 +45,8 @@ export class ConnectionPoolManager {
     maxRetries: 3,
     retryInterval: 1000,
     healthCheckInterval: 60000, // 1分钟
-    enablePooling: true};
+    enablePooling: true,
+  };
 
   private constructor() {}
 
@@ -60,7 +60,10 @@ export class ConnectionPoolManager {
   /**
    * 创建连接池
    */
-  async createPool(connectionId: string, config?: Partial<ConnectionPoolConfig>): Promise<void> {
+  async createPool(
+    connectionId: string,
+    config?: Partial<ConnectionPoolConfig>
+  ): Promise<void> {
     const poolConfig = { ...this.defaultConfig, ...config };
     const pool = new ConnectionPool(connectionId, poolConfig);
     this.pools.set(connectionId, pool);
@@ -73,7 +76,9 @@ export class ConnectionPoolManager {
   async getConnection(connectionId: string): Promise<PoolConnection | null> {
     const pool = this.pools.get(connectionId);
     if (!pool) {
-      throw new Error(`Connection pool not found for connection: ${connectionId}`);
+      throw new Error(
+        `Connection pool not found for connection: ${connectionId}`
+      );
     }
     return pool.getConnection();
   }
@@ -81,10 +86,15 @@ export class ConnectionPoolManager {
   /**
    * 释放连接
    */
-  async releaseConnection(connectionId: string, connection: PoolConnection): Promise<void> {
+  async releaseConnection(
+    connectionId: string,
+    connection: PoolConnection
+  ): Promise<void> {
     const pool = this.pools.get(connectionId);
     if (!pool) {
-      throw new Error(`Connection pool not found for connection: ${connectionId}`);
+      throw new Error(
+        `Connection pool not found for connection: ${connectionId}`
+      );
     }
     return pool.releaseConnection(connection);
   }
@@ -123,16 +133,22 @@ export class ConnectionPoolManager {
    * 健康检查所有连接池
    */
   async healthCheckAllPools(): Promise<void> {
-    const promises = Array.from(this.pools.values()).map(pool => pool.healthCheck());
+    const promises = Array.from(this.pools.values()).map(pool =>
+      pool.healthCheck()
+    );
     await Promise.all(promises);
   }
 
   /**
    * 优化连接池配置
    */
-  async optimizePoolConfiguration(connectionId: string, usageStats: any): Promise<ConnectionPoolConfig> {
-    const currentConfig = this.pools.get(connectionId)?.getConfig() || this.defaultConfig;
-    
+  async optimizePoolConfiguration(
+    connectionId: string,
+    usageStats: any
+  ): Promise<ConnectionPoolConfig> {
+    const currentConfig =
+      this.pools.get(connectionId)?.getConfig() || this.defaultConfig;
+
     // 基于使用统计优化配置
     const optimizedConfig: ConnectionPoolConfig = {
       ...currentConfig,
@@ -144,7 +160,8 @@ export class ConnectionPoolManager {
       // 根据查询频率调整空闲超时
       idleTimeout: usageStats.avgQueryInterval > 600000 ? 300000 : 600000,
       // 根据错误率调整重试配置
-      maxRetries: usageStats.errorRate > 0.1 ? 5 : 3};
+      maxRetries: usageStats.errorRate > 0.1 ? 5 : 3,
+    };
 
     return optimizedConfig;
   }
@@ -169,7 +186,8 @@ class ConnectionPool {
     failedConnections: 0,
     avgConnectionTime: 0,
     poolUtilization: 0,
-    lastHealthCheck: new Date()};
+    lastHealthCheck: new Date(),
+  };
 
   constructor(
     private connectionId: string,
@@ -205,7 +223,9 @@ class ConnectionPool {
     }
 
     // 查找空闲连接
-    const idleConnection = this.connections.find(conn => conn.status === 'idle');
+    const idleConnection = this.connections.find(
+      conn => conn.status === 'idle'
+    );
     if (idleConnection) {
       idleConnection.status = 'active';
       idleConnection.lastUsed = new Date();
@@ -227,7 +247,9 @@ class ConnectionPool {
     // 等待连接可用
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        const index = this.waitingQueue.findIndex(item => item.resolve === resolve);
+        const index = this.waitingQueue.findIndex(
+          item => item.resolve === resolve
+        );
         if (index !== -1) {
           this.waitingQueue.splice(index, 1);
         }
@@ -235,15 +257,16 @@ class ConnectionPool {
       }, this.config.connectionTimeout);
 
       this.waitingQueue.push({
-        resolve: (connection) => {
+        resolve: connection => {
           clearTimeout(timeout);
           resolve(connection);
         },
-        reject: (error) => {
+        reject: error => {
           clearTimeout(timeout);
           reject(error);
         },
-        timestamp: Date.now()});
+        timestamp: Date.now(),
+      });
 
       this.stats.waitingRequests = this.waitingQueue.length;
     });
@@ -284,12 +307,14 @@ class ConnectionPool {
       status: 'idle',
       createdAt: new Date(),
       lastUsed: new Date(),
-      useCount: 0};
+      useCount: 0,
+    };
 
     try {
       await safeTauriInvoke('create_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id});
+        poolConnectionId: connection.id,
+      });
 
       this.connections.push(connection);
       this.stats.totalConnections++;
@@ -310,11 +335,13 @@ class ConnectionPool {
       status: 'active',
       createdAt: new Date(),
       lastUsed: new Date(),
-      useCount: 1};
+      useCount: 1,
+    };
 
     await safeTauriInvoke('create_direct_connection', {
       connectionId: this.connectionId,
-      directConnectionId: connection.id});
+      directConnectionId: connection.id,
+    });
 
     return connection;
   }
@@ -326,7 +353,8 @@ class ConnectionPool {
     try {
       await safeTauriInvoke('destroy_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id});
+        poolConnectionId: connection.id,
+      });
 
       const index = this.connections.indexOf(connection);
       if (index !== -1) {
@@ -369,7 +397,10 @@ class ConnectionPool {
       try {
         await this.createConnection();
       } catch (error) {
-        console.error('Failed to create connection during health check:', error);
+        console.error(
+          'Failed to create connection during health check:',
+          error
+        );
         break;
       }
     }
@@ -385,7 +416,8 @@ class ConnectionPool {
     try {
       await safeTauriInvoke('test_pool_connection', {
         connectionId: this.connectionId,
-        poolConnectionId: connection.id});
+        poolConnectionId: connection.id,
+      });
     } catch (error) {
       connection.status = 'failed';
       this.stats.failedConnections++;
@@ -410,12 +442,17 @@ class ConnectionPool {
    * 更新统计信息
    */
   private updateStats(): void {
-    this.stats.activeConnections = this.connections.filter(conn => conn.status === 'active').length;
-    this.stats.idleConnections = this.connections.filter(conn => conn.status === 'idle').length;
+    this.stats.activeConnections = this.connections.filter(
+      conn => conn.status === 'active'
+    ).length;
+    this.stats.idleConnections = this.connections.filter(
+      conn => conn.status === 'idle'
+    ).length;
     this.stats.waitingRequests = this.waitingQueue.length;
-    this.stats.poolUtilization = this.stats.totalConnections > 0 
-      ? this.stats.activeConnections / this.stats.totalConnections 
-      : 0;
+    this.stats.poolUtilization =
+      this.stats.totalConnections > 0
+        ? this.stats.activeConnections / this.stats.totalConnections
+        : 0;
   }
 
   /**
@@ -440,7 +477,9 @@ class ConnectionPool {
       clearInterval(this.healthCheckTimer);
     }
 
-    const promises = this.connections.map(connection => this.destroyConnection(connection));
+    const promises = this.connections.map(connection =>
+      this.destroyConnection(connection)
+    );
     await Promise.all(promises);
 
     // 清空等待队列

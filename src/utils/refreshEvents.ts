@@ -7,7 +7,7 @@ class RefreshEventManager {
   // 添加监听器
   addListener(listener: RefreshEventListener) {
     this.listeners.push(listener);
-    
+
     // 返回移除监听器的函数
     return () => {
       const index = this.listeners.indexOf(listener);

@@ -263,22 +263,22 @@
     padding: 0 12px;
     font-size: 14px;
   }
-  
+
   .database-management .input {
     height: 36px;
     padding: 8px 10px;
     font-size: 14px;
   }
-  
+
   .database-management .select-selector {
     height: 36px;
     padding: 8px 10px;
   }
-  
+
   .database-management .card-body {
     padding: 16px;
   }
-  
+
   .database-management .data-table thead tr th,
   .database-management .data-table tbody tr td {
     padding: 8px 12px;
@@ -292,17 +292,17 @@
     background: #1f1f1f;
     border-bottom-color: #434343;
   }
-  
+
   .database-management .data-table thead tr th {
     background-color: #1f1f1f;
     color: #fff;
   }
-  
+
   .database-management .card {
     background: #2d3748;
     border-color: #4a5568;
   }
-  
+
   .database-management .card-header {
     background: #1a202c;
     border-bottom-color: #4a5568;

@@ -2,9 +2,17 @@ import React from 'react';
 import { Dropdown } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui';
 import type { MenuProps } from '@/components/ui';
-import { Plus, RefreshCw, Info, Trash2, Copy, Table, FileDown, FileText } from 'lucide-react';
+import {
+  Plus,
+  RefreshCw,
+  Info,
+  Trash2,
+  Copy,
+  Table,
+  FileDown,
+  FileText,
+} from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Modal } from '@/utils/modalAdapter';
@@ -18,13 +26,14 @@ interface DatabaseContextMenuProps {
 const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
   children,
   databaseName,
-  onAction}) => {
+  onAction,
+}) => {
   const { activeConnectionId } = useConnectionStore();
 
   // 处理菜单点击
   const handleMenuClick = async (action: string) => {
     if (!activeConnectionId) {
-      showMessage.error("请先建立数据库连接");
+      showMessage.error('请先建立数据库连接');
       return;
     }
 
@@ -33,9 +42,13 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
         case 'create_measurement':
           // 创建新的 measurement (InfluxDB 中的表)
           try {
-            const template = await safeTauriInvoke('create_measurement_template', {
-              connectionId: activeConnectionId,
-              database: databaseName});
+            const template = await safeTauriInvoke(
+              'create_measurement_template',
+              {
+                connectionId: activeConnectionId,
+                database: databaseName,
+              }
+            );
 
             // 显示创建模板
             Modal.info({
@@ -46,15 +59,18 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap">
+                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap'>
                     {template}
                   </pre>
                 </div>
               ),
               onOk: () => {
                 // 确保能正常关闭
-              }});
-            showMessage.success(`已生成数据库 ${databaseName} 的 measurement 创建模板`);
+              },
+            });
+            showMessage.success(
+              `已生成数据库 ${databaseName} 的 measurement 创建模板`
+            );
           } catch (error) {
             showMessage.error(`生成创建模板失败: ${error}`);
           }
@@ -65,7 +81,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           try {
             await safeTauriInvoke('refresh_database_structure', {
               connectionId: activeConnectionId,
-              database: databaseName});
+              database: databaseName,
+            });
             showMessage.success(`已刷新数据库 ${databaseName} 的结构`);
             onAction?.('refresh_database', databaseName);
           } catch (error) {
@@ -78,7 +95,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           try {
             const info = await safeTauriInvoke('get_database_info', {
               connectionId: activeConnectionId,
-              database: databaseName});
+              database: databaseName,
+            });
 
             // 显示数据库信息
             Modal.info({
@@ -89,14 +107,15 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
               maskClosable: true,
               content: (
                 <div>
-                  <pre className="bg-muted p-4 rounded max-h-96 overflow-auto">
+                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto'>
                     {JSON.stringify(info, null, 2)}
                   </pre>
                 </div>
               ),
               onOk: () => {
                 // 确保能正常关闭
-              }});
+              },
+            });
             showMessage.success(`已获取数据库 ${databaseName} 的详细信息`);
           } catch (error) {
             showMessage.error(`获取数据库信息失败: ${error}`);
@@ -107,19 +126,26 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 显示所有 measurements
           await safeTauriInvoke('show_measurements', {
             connectionId: activeConnectionId,
-            database: databaseName});
-          showMessage.success(`正在显示数据库 ${databaseName} 的所有 measurements`);
+            database: databaseName,
+          });
+          showMessage.success(
+            `正在显示数据库 ${databaseName} 的所有 measurements`
+          );
           break;
 
         case 'copy_name':
           // 复制数据库名
-          await writeToClipboard(databaseName, { successMessage: `已复制数据库名: ${databaseName}` });
+          await writeToClipboard(databaseName, {
+            successMessage: `已复制数据库名: ${databaseName}`,
+          });
           break;
 
         case 'copy_use_statement': {
           // 复制 USE 语句
           const useStatement = `USE "${databaseName}";`;
-          await writeToClipboard(useStatement, { successMessage: '已复制 USE 语句到剪贴板' });
+          await writeToClipboard(useStatement, {
+            successMessage: '已复制 USE 语句到剪贴板',
+          });
           break;
         }
 
@@ -127,7 +153,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           // 导出整个数据库
           await safeTauriInvoke('export_database', {
             connectionId: activeConnectionId,
-            database: databaseName});
+            database: databaseName,
+          });
           showMessage.success(`正在导出数据库 ${databaseName}`);
           break;
 
@@ -139,7 +166,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
           if (confirmed) {
             await safeTauriInvoke('drop_database', {
               connectionId: activeConnectionId,
-              database: databaseName});
+              database: databaseName,
+            });
             showMessage.success(`数据库 ${databaseName} 已删除`);
           }
           break;
@@ -165,79 +193,96 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     {
       key: 'structure_group',
       label: '结构操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'create_measurement',
-      icon: <Plus className="w-4 h-4"  />,
+      icon: <Plus className='w-4 h-4' />,
       label: '创建 Measurement',
-      onClick: () => handleMenuClick('create_measurement')},
+      onClick: () => handleMenuClick('create_measurement'),
+    },
     {
       key: 'refresh_database',
-      icon: <RefreshCw className="w-4 h-4"  />,
+      icon: <RefreshCw className='w-4 h-4' />,
       label: '刷新数据库',
-      onClick: () => handleMenuClick('refresh_database')},
+      onClick: () => handleMenuClick('refresh_database'),
+    },
     {
       key: 'database_info',
-      icon: <Info className="w-4 h-4"  />,
+      icon: <Info className='w-4 h-4' />,
       label: '数据库信息',
-      onClick: () => handleMenuClick('database_info')},
+      onClick: () => handleMenuClick('database_info'),
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'query_group',
       label: '查询操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'show_measurements',
-      icon: <Table className="w-4 h-4"  />,
+      icon: <Table className='w-4 h-4' />,
       label: '显示 Measurements',
-      onClick: () => handleMenuClick('show_measurements')},
+      onClick: () => handleMenuClick('show_measurements'),
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'copy_group',
       label: '复制操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'copy_name',
-      icon: <Copy className="w-4 h-4"  />,
+      icon: <Copy className='w-4 h-4' />,
       label: '复制数据库名',
-      onClick: () => handleMenuClick('copy_name')},
+      onClick: () => handleMenuClick('copy_name'),
+    },
     {
       key: 'copy_use_statement',
-      icon: <FileText className="w-4 h-4"  />,
+      icon: <FileText className='w-4 h-4' />,
       label: '复制 USE 语句',
-      onClick: () => handleMenuClick('copy_use_statement')},
+      onClick: () => handleMenuClick('copy_use_statement'),
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'import_export_group',
       label: '导入导出',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'export_database',
-      icon: <FileDown className="w-4 h-4"  />,
+      icon: <FileDown className='w-4 h-4' />,
       label: '导出数据库',
-      onClick: () => handleMenuClick('export_database')},
+      onClick: () => handleMenuClick('export_database'),
+    },
     {
-      type: 'divider'},
+      type: 'divider',
+    },
     {
       key: 'danger_group',
       label: '危险操作',
-      type: 'group'},
+      type: 'group',
+    },
     {
       key: 'drop_database',
-      icon: <Trash2 className="w-4 h-4"  />,
+      icon: <Trash2 className='w-4 h-4' />,
       label: '删除数据库',
       onClick: () => handleMenuClick('drop_database'),
-      danger: true},
+      danger: true,
+    },
   ];
 
   return (
     <Dropdown
       menu={{ items: menuItems }}
       trigger={['contextMenu']}
-      placement="bottomLeft"
+      placement='bottomLeft'
     >
       {children}
     </Dropdown>

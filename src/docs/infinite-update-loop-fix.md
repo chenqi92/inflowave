@@ -47,15 +47,18 @@ useEffect(() => {
 
 ```typescript
 // 使用 memo 来确保 config 对象稳定性
-const stableConfig = useMemo(() => config, [
-  config.theme,
-  config.language,
-  config.queryTimeout,
-  config.maxQueryResults,
-  config.autoSave,
-  config.autoConnect,
-  config.logLevel
-]);
+const stableConfig = useMemo(
+  () => config,
+  [
+    config.theme,
+    config.language,
+    config.queryTimeout,
+    config.maxQueryResults,
+    config.autoSave,
+    config.autoConnect,
+    config.logLevel,
+  ]
+);
 ```
 
 这确保只有当 config 的实际属性值发生变化时，`stableConfig` 才会重新创建。

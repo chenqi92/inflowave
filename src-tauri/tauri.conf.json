@@ -36,15 +36,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "msi",
-      "nsis",
-      "deb",
-      "rpm",
-      "appimage",
-      "dmg",
-      "app"
-    ],
+    "targets": ["msi", "nsis", "deb", "rpm", "appimage", "dmg", "app"],
     "icon": [
       "icons/icon.png",
       "icons/32x32.png",

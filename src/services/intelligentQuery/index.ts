@@ -3,9 +3,7 @@ import { QueryAnalyzer } from './analyzer/QueryAnalyzer';
 import { IntelligentCache } from './cache/IntelligentCache';
 import QueryRouter from './router/QueryRouter';
 import PerformancePredictor from './predictor/PerformancePredictor';
-import MLOptimizer from './ml/MLOptimizer';
 import OptimizationHistory from './history/OptimizationHistory';
-import { safeTauriInvoke } from '@/utils/tauri';
 
 export interface QueryOptimizationRequest {
   query: string;
@@ -74,7 +72,12 @@ export interface OptimizationTechnique {
 
 export interface RoutingStrategy {
   targetConnection: string;
-  loadBalancing: 'round_robin' | 'least_connections' | 'weighted' | 'hash' | 'adaptive';
+  loadBalancing:
+    | 'round_robin'
+    | 'least_connections'
+    | 'weighted'
+    | 'hash'
+    | 'adaptive';
   priority: number;
   reason: string;
 }
@@ -110,7 +113,12 @@ export interface ResourceRequirements {
 }
 
 export interface Recommendation {
-  type: 'index' | 'query_rewrite' | 'caching' | 'partitioning' | 'configuration';
+  type:
+    | 'index'
+    | 'query_rewrite'
+    | 'caching'
+    | 'partitioning'
+    | 'configuration';
   priority: 'high' | 'medium' | 'low';
   title: string;
   description: string;
@@ -120,7 +128,7 @@ export interface Recommendation {
 
 /**
  * 智能查询优化引擎
- * 
+ *
  * 核心功能：
  * 1. 查询性能分析和优化
  * 2. 智能缓存管理
@@ -147,33 +155,47 @@ export class IntelligentQueryEngine {
   /**
    * 优化查询
    */
-  async optimizeQuery(request: QueryOptimizationRequest): Promise<QueryOptimizationResult> {
+  async optimizeQuery(
+    request: QueryOptimizationRequest
+  ): Promise<QueryOptimizationResult> {
     const { query, connectionId, database, context } = request;
 
     // 1. 分析查询特征
     const analysis = await this.analyzer.analyzeQuery(query, context);
-    
+
     // 2. 检查缓存
     const cacheKey = this.cache.generateCacheKey(query, connectionId, database);
     const cachedResult = await this.cache.get(cacheKey);
-    
+
     if (cachedResult && this.cache.isValid(cachedResult)) {
       return {
         ...cachedResult,
-        optimizationTechniques: [...cachedResult.optimizationTechniques, {
-          name: 'Cache Hit',
-          description: 'Result retrieved from intelligent cache',
-          impact: 'high' as const,
-          appliedTo: ['query_result'],
-          estimatedGain: 95}]};
+        optimizationTechniques: [
+          ...cachedResult.optimizationTechniques,
+          {
+            name: 'Cache Hit',
+            description: 'Result retrieved from intelligent cache',
+            impact: 'high' as const,
+            appliedTo: ['query_result'],
+            estimatedGain: 95,
+          },
+        ],
+      };
     }
 
     // 3. 优化查询
-    const optimizedQuery = await this.optimizer.optimize(query, analysis, context);
-    
+    const optimizedQuery = await this.optimizer.optimize(
+      query,
+      analysis,
+      context
+    );
+
     // 4. 预测性能
-    const performanceMetrics = await this.predictor.predict(optimizedQuery, context);
-    
+    const performanceMetrics = await this.predictor.predict(
+      optimizedQuery,
+      context
+    );
+
     // 5. 确定路由策略
     const routingStrategy = await this.router.determineRouting(
       optimizedQuery,
@@ -204,12 +226,14 @@ export class IntelligentQueryEngine {
       routingStrategy,
       executionPlan,
       warnings: analysis.warnings,
-      recommendations};
+      recommendations,
+    };
 
     // 8. 缓存结果
     await this.cache.set(cacheKey, result, {
       ttl: this.cache.calculateTTL(analysis),
-      tags: analysis.tags});
+      tags: analysis.tags,
+    });
 
     // 9. 记录优化历史
     await this.history.recordOptimization(
@@ -226,31 +250,35 @@ export class IntelligentQueryEngine {
   /**
    * 批量优化查询
    */
-  async optimizeQueries(requests: QueryOptimizationRequest[]): Promise<QueryOptimizationResult[]> {
+  async optimizeQueries(
+    requests: QueryOptimizationRequest[]
+  ): Promise<QueryOptimizationResult[]> {
     const results: QueryOptimizationResult[] = [];
-    
+
     // 分析查询间的依赖关系
-    const dependencies = this.analyzer.analyzeDependencies(requests.map(r => r.query));
-    
-    // 并行优化独立查询
-    const independentQueries = requests.filter((_, index) => 
-      !dependencies.some(dep => dep.dependentIndex === index)
+    const dependencies = this.analyzer.analyzeDependencies(
+      requests.map(r => r.query)
     );
-    
+
+    // 并行优化独立查询
+    const independentQueries = requests.filter(
+      (_, index) => !dependencies.some(dep => dep.dependentIndex === index)
+    );
+
     const independentResults = await Promise.all(
       independentQueries.map(request => this.optimizeQuery(request))
     );
-    
+
     // 按依赖顺序优化相关查询
-    const dependentQueries = requests.filter((_, index) => 
+    const dependentQueries = requests.filter((_, index) =>
       dependencies.some(dep => dep.dependentIndex === index)
     );
-    
+
     for (const request of dependentQueries) {
       const result = await this.optimizeQuery(request);
       results.push(result);
     }
-    
+
     return [...independentResults, ...results];
   }
 
@@ -264,13 +292,13 @@ export class IntelligentQueryEngine {
   ): Promise<void> {
     // 记录查询性能
     await this.analyzer.recordPerformance(query, executionResult);
-    
+
     // 更新预测模型
     await this.predictor.updateModel(query, executionResult, context);
-    
+
     // 优化缓存策略
     await this.cache.updateStrategy(query, executionResult);
-    
+
     // 更新路由权重
     await this.router.updateWeights(query, executionResult);
   }
@@ -278,7 +306,10 @@ export class IntelligentQueryEngine {
   /**
    * 获取查询统计信息
    */
-  async getQueryStats(connectionId: string, timeRange?: TimeRange): Promise<QueryStatistics> {
+  async getQueryStats(
+    connectionId: string,
+    timeRange?: TimeRange
+  ): Promise<QueryStatistics> {
     return this.analyzer.getStatistics(connectionId, timeRange);
   }
 
@@ -298,9 +329,9 @@ export class IntelligentQueryEngine {
   ): Promise<Recommendation[]> {
     const stats = await this.getQueryStats(connectionId);
     const slowQueries = stats.slowQueries.slice(0, limit);
-    
+
     const recommendations: Recommendation[] = [];
-    
+
     for (const slowQuery of slowQueries) {
       const analysis = await this.analyzer.analyzeQuery(slowQuery.query);
       const queryRecommendations = await this.generateRecommendations(
@@ -309,7 +340,7 @@ export class IntelligentQueryEngine {
       );
       recommendations.push(...queryRecommendations);
     }
-    
+
     return recommendations
       .sort((a, b) => b.estimatedBenefit - a.estimatedBenefit)
       .slice(0, limit);
@@ -360,7 +391,10 @@ export class IntelligentQueryEngine {
   /**
    * 更新执行性能
    */
-  async updateExecutionPerformance(entryId: string, performance: any): Promise<boolean> {
+  async updateExecutionPerformance(
+    entryId: string,
+    performance: any
+  ): Promise<boolean> {
     return this.history.updatePerformance(entryId, performance);
   }
 
@@ -409,7 +443,10 @@ export class IntelligentQueryEngine {
   /**
    * 导入历史数据
    */
-  async importOptimizationHistory(data: string, format: 'json' | 'csv'): Promise<number> {
+  async importOptimizationHistory(
+    data: string,
+    format: 'json' | 'csv'
+  ): Promise<number> {
     return this.history.importHistory(data, format);
   }
 
@@ -444,7 +481,8 @@ export class IntelligentQueryEngine {
       steps,
       parallelization,
       resourceRequirements,
-      estimatedDuration};
+      estimatedDuration,
+    };
   }
 
   /**
@@ -458,15 +496,24 @@ export class IntelligentQueryEngine {
     const recommendations: Recommendation[] = [];
 
     // 索引建议
-    const indexRecommendations = await this.optimizer.recommendIndexes(query, analysis);
+    const indexRecommendations = await this.optimizer.recommendIndexes(
+      query,
+      analysis
+    );
     recommendations.push(...indexRecommendations);
 
     // 查询重写建议
-    const rewriteRecommendations = await this.optimizer.recommendRewrites(query, analysis);
+    const rewriteRecommendations = await this.optimizer.recommendRewrites(
+      query,
+      analysis
+    );
     recommendations.push(...rewriteRecommendations);
 
     // 缓存建议
-    const cacheRecommendations = await this.cache.recommendCaching(query, analysis);
+    const cacheRecommendations = await this.cache.recommendCaching(
+      query,
+      analysis
+    );
     recommendations.push(...cacheRecommendations);
 
     // 配置建议
@@ -597,15 +644,21 @@ export interface TimeRange {
 }
 
 // Export ML-related interfaces
-export type { MLModel, MLPrediction, MLTrainingData, PerformanceMetrics, UserFeedback } from './ml/MLOptimizer';
+export type {
+  MLModel,
+  MLPrediction,
+  MLTrainingData,
+  PerformanceMetrics,
+  UserFeedback,
+} from './ml/MLOptimizer';
 
 // Export History-related interfaces
-export type { 
-  OptimizationHistoryEntry, 
-  ExecutionPerformance, 
-  HistoryFilter, 
-  HistoryStatistics, 
-  ExportOptions 
+export type {
+  OptimizationHistoryEntry,
+  ExecutionPerformance,
+  HistoryFilter,
+  HistoryStatistics,
+  ExportOptions,
 } from './history/OptimizationHistory';
 
 // 创建单例实例

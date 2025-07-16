@@ -23,7 +23,7 @@ export class FormatUtils {
    * 格式化数字
    */
   static formatNumber(
-    value: number, 
+    value: number,
     options: {
       decimals?: number;
       thousandsSeparator?: string;
@@ -37,7 +37,7 @@ export class FormatUtils {
       thousandsSeparator = ',',
       decimalSeparator = '.',
       prefix = '',
-      suffix = ''
+      suffix = '',
     } = options;
 
     if (isNaN(value)) return 'NaN';
@@ -45,23 +45,26 @@ export class FormatUtils {
 
     const isNegative = value < 0;
     const absValue = Math.abs(value);
-    
+
     const formatted = absValue.toFixed(decimals);
-    
+
     // 分离整数和小数部分
     const parts = formatted.split('.');
     const integerPart = parts[0];
     const decimalPart = parts[1];
-    
+
     // 添加千位分隔符
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
-    
+    const formattedInteger = integerPart.replace(
+      /\B(?=(\d{3})+(?!\d))/g,
+      thousandsSeparator
+    );
+
     // 组装最终结果
     let result = formattedInteger;
     if (decimals > 0 && decimalPart) {
       result += decimalSeparator + decimalPart;
     }
-    
+
     return `${prefix}${isNegative ? '-' : ''}${result}${suffix}`;
   }
 
@@ -76,7 +79,7 @@ export class FormatUtils {
    * 格式化时间
    */
   static formatTime(
-    value: string | number | Date, 
+    value: string | number | Date,
     format = 'YYYY-MM-DD HH:mm:ss'
   ): string {
     try {
@@ -139,11 +142,11 @@ export class FormatUtils {
    */
   static formatQueryResultSize(rowCount: number, dataSize?: number): string {
     let result = `${this.formatNumber(rowCount, { decimals: 0 })} 行`;
-    
+
     if (dataSize !== undefined) {
       result += ` (${this.formatFileSize(dataSize)})`;
     }
-    
+
     return result;
   }
 
@@ -176,15 +179,15 @@ export class FormatUtils {
     if (error instanceof Error) {
       return error.message;
     }
-    
+
     if (typeof error === 'string') {
       return error;
     }
-    
+
     if (typeof error === 'object' && error !== null) {
       return JSON.stringify(error);
     }
-    
+
     return String(error);
   }
 
@@ -195,7 +198,7 @@ export class FormatUtils {
     if (text.length <= maxLength) {
       return text;
     }
-    
+
     return text.substring(0, maxLength - suffix.length) + suffix;
   }
 
@@ -204,7 +207,7 @@ export class FormatUtils {
    */
   static highlightText(text: string, keyword: string): string {
     if (!keyword) return text;
-    
+
     const regex = new RegExp(`(${keyword})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
   }
@@ -219,15 +222,15 @@ export class FormatUtils {
     username?: string;
   }): string {
     let result = `${config.host}:${config.port}`;
-    
+
     if (config.database) {
       result += `/${config.database}`;
     }
-    
+
     if (config.username) {
       result = `${config.username}@${result}`;
     }
-    
+
     return result;
   }
 
@@ -235,7 +238,7 @@ export class FormatUtils {
    * 格式化键值对
    */
   static formatKeyValue(
-    obj: Record<string, any>, 
+    obj: Record<string, any>,
     options: {
       separator?: string;
       keyValueSeparator?: string;
@@ -245,14 +248,13 @@ export class FormatUtils {
     const {
       separator = ', ',
       keyValueSeparator = ': ',
-      quote = false
+      quote = false,
     } = options;
 
     return Object.entries(obj)
       .map(([key, value]) => {
-        const formattedValue = quote && typeof value === 'string' 
-          ? `"${value}"` 
-          : String(value);
+        const formattedValue =
+          quote && typeof value === 'string' ? `"${value}"` : String(value);
         return `${key}${keyValueSeparator}${formattedValue}`;
       })
       .join(separator);
@@ -262,31 +264,27 @@ export class FormatUtils {
    * 格式化列表
    */
   static formatList(
-    items: string[], 
+    items: string[],
     options: {
       separator?: string;
       lastSeparator?: string;
       quote?: boolean;
     } = {}
   ): string {
-    const {
-      separator = ', ',
-      lastSeparator = ' 和 ',
-      quote = false
-    } = options;
+    const { separator = ', ', lastSeparator = ' 和 ', quote = false } = options;
 
     if (items.length === 0) return '';
     if (items.length === 1) return quote ? `"${items[0]}"` : items[0];
 
     const formattedItems = quote ? items.map(item => `"${item}"`) : items;
-    
+
     if (items.length === 2) {
       return formattedItems.join(lastSeparator);
     }
 
     const allButLast = formattedItems.slice(0, -1).join(separator);
     const last = formattedItems[formattedItems.length - 1];
-    
+
     return `${allButLast}${lastSeparator}${last}`;
   }
 }
