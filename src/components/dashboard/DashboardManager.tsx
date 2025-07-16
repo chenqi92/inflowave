@@ -14,31 +14,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Typography,
+  Text,
   Tag,
-  Row,
-  Col,
   InputNumber,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
   List,
+  ListItem,
+  ListItemMeta,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
+  Popconfirm,
+  Empty,
+  Spin,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
-
-import { Textarea } from '@/components/ui';
-const { Text } = Typography;
 
 interface DashboardManagerProps {
   onOpenDashboard: (dashboardId: string) => void;
@@ -171,7 +170,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   // 打开编辑对话框
   const openEditModal = (dashboard: DashboardConfig) => {
     setSelectedDashboard(dashboard);
-    form.setFieldsValue({
+    form.reset({
       name: dashboard.name,
       description: dashboard.description,
       columns: dashboard.layout.columns,
@@ -201,103 +200,120 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
   }, []);
 
   return (
-    <div className='dashboard-manager'>
-      <div
-        title='仪表板管理'
-        extra={
+    <div className='dashboard-manager p-6'>
+      <Card>
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
+          <CardTitle className='text-2xl font-bold'>仪表板管理</CardTitle>
           <Button
-            type='primary'
-            icon={<Plus className='w-4 h-4' />}
             onClick={() => setCreateModalVisible(true)}
+            className='gap-2'
           >
+            <Plus className='w-4 h-4' />
             创建仪表板
           </Button>
-        }
-      >
-        <List
-          disabled={loading}
-          dataSource={dashboards}
-          locale={{ emptyText: '暂无仪表板' }}
-          renderItem={dashboard => (
-            <List.Item
-              actions={[
-                <Button
-                  type='text'
-                  icon={<Eye className='w-4 h-4' />}
-                  onClick={() => onOpenDashboard(dashboard.id)}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className='flex justify-center py-8'>
+              <Spin />
+            </div>
+          ) : dashboards.length === 0 ? (
+            <Empty
+              description="暂无仪表板"
+              className='py-8'
+            />
+          ) : (
+            <List>
+              {dashboards.map(dashboard => (
+                <ListItem
+                  key={dashboard.id}
+                  actions={[
+                    <Button
+                      key="view"
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => onOpenDashboard(dashboard.id)}
+                      className='gap-2'
+                    >
+                      <Eye className='w-4 h-4' />
+                      查看
+                    </Button>,
+                    <Button
+                      key="edit"
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => openEditModal(dashboard)}
+                      className='gap-2'
+                    >
+                      <Edit className='w-4 h-4' />
+                      编辑
+                    </Button>,
+                    <Button
+                      key="copy"
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => duplicateDashboard(dashboard)}
+                      className='gap-2'
+                    >
+                      <Copy className='w-4 h-4' />
+                      复制
+                    </Button>,
+                    <Popconfirm
+                      key="delete"
+                      title='确定要删除这个仪表板吗？'
+                      onConfirm={() => deleteDashboard(dashboard.id)}
+                    >
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        className='gap-2 text-destructive hover:text-destructive'
+                      >
+                        <Trash2 className='w-4 h-4' />
+                        删除
+                      </Button>
+                    </Popconfirm>,
+                  ]}
                 >
-                  查看
-                </Button>,
-                <Button
-                  type='text'
-                  icon={<Edit className='w-4 h-4' />}
-                  onClick={() => openEditModal(dashboard)}
-                >
-                  编辑
-                </Button>,
-                <Button
-                  type='text'
-                  icon={<Copy className='w-4 h-4' />}
-                  onClick={() => duplicateDashboard(dashboard)}
-                >
-                  复制
-                </Button>,
-                <Popconfirm
-                  title='确定要删除这个仪表板吗？'
-                  onConfirm={() => deleteDashboard(dashboard.id)}
-                >
-                  <Button
-                    type='text'
-                    danger
-                    icon={<Trash2 className='w-4 h-4' />}
-                  >
-                    删除
-                  </Button>
-                </Popconfirm>,
-              ]}
-            >
-              <List.Item.Meta
-                avatar={
-                  <BarChart
-                    className='w-4 h-4'
-                    style={{ fontSize: 24, color: '#1890ff' }}
-                  />
-                }
-                title={
-                  <div className='flex gap-2'>
-                    <Text strong>{dashboard.name}</Text>
-                    <Tag color='blue'>{dashboard.widgets.length} 个组件</Tag>
-                    <Tag color='green'>
-                      {getRefreshIntervalLabel(dashboard.refreshInterval)}
-                    </Tag>
-                  </div>
-                }
-                description={
-                  <div>
-                    {dashboard.description && (
-                      <Text type='secondary'>{dashboard.description}</Text>
-                    )}
-                    <div style={{ marginTop: 4 }}>
-                      <div className='flex gap-2' size='small'>
-                        <Text type='secondary' style={{ fontSize: 12 }}>
-                          布局: {dashboard.layout.columns}x
-                          {dashboard.layout.rows}
-                        </Text>
-                        <Text type='secondary' style={{ fontSize: 12 }}>
-                          创建时间: {formatTime(dashboard.createdAt)}
-                        </Text>
-                        <Text type='secondary' style={{ fontSize: 12 }}>
-                          更新时间: {formatTime(dashboard.updatedAt)}
-                        </Text>
+                  <ListItemMeta
+                    avatar={
+                      <div className='flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg'>
+                        <BarChart className='w-5 h-5 text-primary' />
                       </div>
-                    </div>
-                  </div>
-                }
-              />
-            </List.Item>
+                    }
+                    title={
+                      <div className='flex items-center gap-2 mb-1'>
+                        <Text className='font-semibold text-lg'>{dashboard.name}</Text>
+                        <Tag variant='secondary'>{dashboard.widgets?.length || 0} 个组件</Tag>
+                        <Tag variant='outline'>
+                          {getRefreshIntervalLabel(dashboard.refreshInterval)}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div className='space-y-2'>
+                        {dashboard.description && (
+                          <Text className='text-muted-foreground'>{dashboard.description}</Text>
+                        )}
+                        <div className='flex flex-wrap gap-4 text-xs text-muted-foreground'>
+                          <span>
+                            布局: {dashboard.layout.columns}x{dashboard.layout.rows}
+                          </span>
+                          <span>
+                            创建时间: {formatTime(dashboard.createdAt)}
+                          </span>
+                          <span>
+                            更新时间: {formatTime(dashboard.updatedAt)}
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
           )}
-        />
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 创建仪表板对话框 */}
       <Dialog
@@ -351,12 +367,9 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                 )}
               />
 
-              <div className='border-t border-gray-200 my-4 pt-4'>
+              <div className='border-t border-border my-6 pt-6'>
                 <h4 className='text-sm font-medium mb-4'>布局设置</h4>
-              </div>
-
-              <Row gutter={16}>
-                <Col span={8}>
+                <div className='grid grid-cols-3 gap-4'>
                   <FormField
                     control={form.control}
                     name='columns'
@@ -377,8 +390,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={8}>
                   <FormField
                     control={form.control}
                     name='rows'
@@ -399,8 +410,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={8}>
                   <FormField
                     control={form.control}
                     name='gap'
@@ -421,15 +430,12 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-              </Row>
-
-              <div className='border-t border-gray-200 my-4 pt-4'>
-                <h4 className='text-sm font-medium mb-4'>时间和刷新设置</h4>
+                </div>
               </div>
 
-              <Row gutter={16}>
-                <Col span={12}>
+              <div className='border-t border-border my-6 pt-6'>
+                <h4 className='text-sm font-medium mb-4'>时间和刷新设置</h4>
+                <div className='grid grid-cols-2 gap-4 mb-4'>
                   <FormField
                     control={form.control}
                     name='timeStart'
@@ -444,8 +450,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={12}>
                   <FormField
                     control={form.control}
                     name='timeEnd'
@@ -460,8 +464,8 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-              </Row>
+                </div>
+              </div>
 
               <FormField
                 control={form.control}
@@ -494,6 +498,16 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
               />
 
               <DialogFooter>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    setCreateModalVisible(false);
+                    form.reset();
+                  }}
+                >
+                  取消
+                </Button>
                 <Button type='submit' disabled={loading}>
                   {loading ? '创建中...' : '创建仪表板'}
                 </Button>
@@ -556,12 +570,9 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                 )}
               />
 
-              <div className='border-t border-gray-200 my-4 pt-4'>
+              <div className='border-t border-border my-6 pt-6'>
                 <h4 className='text-sm font-medium mb-4'>布局设置</h4>
-              </div>
-
-              <Row gutter={16}>
-                <Col span={8}>
+                <div className='grid grid-cols-3 gap-4'>
                   <FormField
                     control={form.control}
                     name='columns'
@@ -581,8 +592,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={8}>
                   <FormField
                     control={form.control}
                     name='rows'
@@ -602,8 +611,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={8}>
                   <FormField
                     control={form.control}
                     name='gap'
@@ -623,15 +630,12 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-              </Row>
-
-              <div className='border-t border-gray-200 my-4 pt-4'>
-                <h4 className='text-sm font-medium mb-4'>时间和刷新设置</h4>
+                </div>
               </div>
 
-              <Row gutter={16}>
-                <Col span={12}>
+              <div className='border-t border-border my-6 pt-6'>
+                <h4 className='text-sm font-medium mb-4'>时间和刷新设置</h4>
+                <div className='grid grid-cols-2 gap-4 mb-4'>
                   <FormField
                     control={form.control}
                     name='timeStart'
@@ -645,8 +649,6 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={12}>
                   <FormField
                     control={form.control}
                     name='timeEnd'
@@ -660,8 +662,8 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-              </Row>
+                </div>
+              </div>
 
               <FormField
                 control={form.control}
@@ -693,6 +695,17 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
               />
 
               <DialogFooter>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    setEditModalVisible(false);
+                    setSelectedDashboard(null);
+                    form.reset();
+                  }}
+                >
+                  取消
+                </Button>
                 <Button type='submit' disabled={loading}>
                   {loading ? '更新中...' : '更新仪表板'}
                 </Button>
