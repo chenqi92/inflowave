@@ -17,6 +17,7 @@ import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
 import DevTools from '../../pages/DevTools';
+import Extensions from '../../pages/Extensions';
 
 
 
@@ -36,6 +37,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     if (pathname === '/query') return 'query';
     if (pathname === '/visualization') return 'visualization';
     if (pathname === '/performance') return 'performance';
+    if (pathname === '/extensions') return 'extensions';
     if (pathname === '/dev-tools') return 'dev-tools';
     return 'query'; // 默认视图
   };
@@ -240,6 +242,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           <div className="h-full">
             <div className="p-0 h-full">
               <DevTools />
+            </div>
+          </div>
+        );
+      case 'extensions':
+        return (
+          <div className="h-full">
+            <div className="p-0 h-full">
+              <Extensions />
             </div>
           </div>
         );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Database, Search, BarChart, Edit, Settings, Webhook, LayoutDashboard } from 'lucide-react';
+import { Database, Search, BarChart, Edit, Settings, Webhook, LayoutDashboard, Package } from 'lucide-react';
 import { Button, Separator, Sider } from '@/components/ui';
 import { useConnectionStore } from '@/store/connection';
 
@@ -47,6 +47,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
       disabled: !activeConnectionId},
     {
       type: 'divider'},
+    {
+      key: '/extensions',
+      icon: <Package className="w-4 h-4" />,
+      label: '扩展管理'},
     {
       key: '/settings',
       icon: <Settings className="w-4 h-4" />,

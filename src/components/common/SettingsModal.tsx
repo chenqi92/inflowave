@@ -419,7 +419,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({visible, onClose}) => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+                    <div className="flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky">
                         <Button
                             type="button"
                             variant="outline"

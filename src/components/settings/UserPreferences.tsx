@@ -723,7 +723,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({ onS
       </div>
 
       {/* 保存按钮 - 固定在底部 */}
-      <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
+      <div className="flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky">
         <Button
           type="button"
           variant="outline"
