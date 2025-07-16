@@ -396,7 +396,7 @@ impl ValidationUtils {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ConnectionConfig;
+    // use crate::models::ConnectionConfig;
 
     #[test]
     fn test_validate_host() {

@@ -15,6 +15,7 @@ import {
   Typography,
   Card,
   CardContent,
+  Space,
 } from '@/components/ui';
 import {
   Database,
@@ -779,7 +780,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (key.startsWith('database-')) {
       return [
         favoriteMenuItem,
-        { type: 'divider' },
+        { key: 'divider-db-1', type: 'divider' },
         {
           key: 'refresh-db',
           label: '刷新数据库',
@@ -790,7 +791,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           label: '新建查询',
           icon: <FileText className='w-4 h-4' />,
         },
-        { type: 'divider' },
+        { key: 'divider-db-2', type: 'divider' },
         {
           key: 'db-properties',
           label: '属性',
@@ -802,7 +803,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (key.startsWith('table-')) {
       return [
         favoriteMenuItem,
-        { type: 'divider' },
+        { key: 'divider-table-1', type: 'divider' },
         {
           key: 'refresh-table',
           label: '刷新表结构',
@@ -813,7 +814,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           label: '查询此表',
           icon: <FileText className='w-4 h-4' />,
         },
-        { type: 'divider' },
+        { key: 'divider-table-2', type: 'divider' },
         {
           key: 'table-properties',
           label: '表属性',
@@ -825,7 +826,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (key.startsWith('field-') || key.startsWith('tag-')) {
       return [
         favoriteMenuItem,
-        { type: 'divider' },
+        { key: 'divider-field-1', type: 'divider' },
         {
           key: 'insert-column',
           label: '插入到查询',
@@ -842,7 +843,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (key.startsWith('connection-')) {
       return [
         favoriteMenuItem,
-        { type: 'divider' },
+        { key: 'divider-connection-1', type: 'divider' },
         {
           key: 'refresh-connection',
           label: '刷新连接',
@@ -1396,29 +1397,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   if (collapsed) {
     return (
-      <div className='h-full flex flex-col items-center py-4 space-y-4'>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant='ghost' size='icon' className='w-8 h-8'>
-              <Database className='w-4 h-4' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side='right'>数据库浏览器</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='w-8 h-8'
-              onClick={refreshTree}
-              disabled={loading}
-            >
-              <RefreshCw className='w-4 h-4' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side='right'>刷新</TooltipContent>
-        </Tooltip>
+      <div className='h-full flex flex-col items-center py-4'>
+        <Space direction='vertical' size='large'>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='ghost' size='icon' className='w-8 h-8'>
+                <Database className='w-4 h-4' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='right'>数据库浏览器</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='w-8 h-8'
+                onClick={refreshTree}
+                disabled={loading}
+              >
+                <RefreshCw className='w-4 h-4' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='right'>刷新</TooltipContent>
+          </Tooltip>
+        </Space>
       </div>
     );
   }
@@ -1611,7 +1614,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   }
 
                   return (
-                    <div className='space-y-1'>
+                    <Space direction='vertical' size='small'>
                       {filteredFavorites.map(favorite => {
                         const IconComponent = (() => {
                           switch (favorite.type) {
@@ -1698,7 +1701,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                           </Card>
                         );
                       })}
-                    </div>
+                    </Space>
                   );
                 })()}
               </div>
