@@ -157,9 +157,12 @@ const Connections: React.FC = () => {
     }
   }, [setConnectionStatus]); // 移除syncConnectionsFromBackend依赖
 
-  // 组件挂载时加载连接列表
+  // 组件挂载时加载连接列表 - 避免每次切换都重新加载
   useEffect(() => {
-    loadConnections();
+    // 只有当连接列表为空时才加载，避免不必要的重新加载
+    if (connections.length === 0) {
+      loadConnections();
+    }
   }, []); // 只在组件挂载时执行一次
 
   // 打开新建/编辑连接对话框

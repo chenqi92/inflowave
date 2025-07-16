@@ -412,6 +412,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         setLoadingNodes(prev => new Set(prev).add(key));
 
+        // 添加超时保护
+        const timeoutId = setTimeout(() => {
+            console.warn(`⏰ 节点 ${key} 加载超时，强制清除loading状态`);
+            setLoadingNodes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(key);
+                return newSet;
+            });
+            showMessage.error(`加载超时: ${key}`);
+        }, 30000); // 30秒超时
+
         try {
             if (key.startsWith('database-')) {
                 // 加载表列表
@@ -554,13 +565,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 });
             }
         } catch (error) {
+            console.error(`❌ 加载节点数据失败: ${key}`, error);
             showMessage.error(`加载数据失败: ${error}`);
         } finally {
-            setLoadingNodes(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(key);
-                return newSet;
-            });
+            clearTimeout(timeoutId);
+            // 使用 setTimeout 确保在下一个事件循环中清除状态，避免竞态条件
+            setTimeout(() => {
+                setLoadingNodes(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(key);
+                    return newSet;
+                });
+            }, 0);
         }
     }, [loadingNodes]);
 
@@ -1040,6 +1056,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         connectionStatus: connectionStatus?.status
                     });
 
+                    const isConnected = isConnectionConnected(connection_id);
                     return {
                         ...node,
                         title: (
@@ -1051,14 +1068,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 {showLoading && <RefreshCw className="w-3 h-3 text-muted-foreground animate-spin"/>}
                                 {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
                             </div>
-                        )
+                        ),
+                        icon: isConnected ? <Database className="w-4 h-4 text-success"/> : <Link className="w-4 h-4 text-muted-foreground"/>
                     };
                 }
                 // 其他节点保持不变
                 return node;
             });
         });
-    }, [getConnection, getConnectionStatus, isFavorite, getConnectionStatusColor]);
+    }, [getConnection, getConnectionStatus, isFavorite, getConnectionStatusColor, isConnectionConnected]);
 
     // 监听连接配置变化（只有连接增删改时才全量刷新）
     useEffect(() => {
