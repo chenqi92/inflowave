@@ -1,4 +1,4 @@
-﻿import React, {useState, useEffect, useCallback} from 'react';
+﻿import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {
     Tree,
     Input,
@@ -33,6 +33,7 @@ import {
 import {TooltipTrigger, TooltipContent} from '@/components/ui/tooltip';
 import {useConnectionStore} from '@/store/connection';
 import {useFavoritesStore, favoritesUtils} from '@/store/favorites';
+import {useDatabaseStore} from '@/store/database';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 
@@ -760,6 +761,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         // 设置该连接的loading状态
         setConnectionLoadingStates(prev => new Map(prev).set(connection_id, true));
+        
+        // 立即更新该连接节点的显示状态为加载中
+        updateConnectionNodeDisplay(connection_id, true);
 
         try {
             if (isCurrentlyConnected) {
@@ -794,9 +798,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 }
 
                 // 设置新的定时器 - 只更新显示状态，不重新加载数据
-                const newTimeout = setTimeout(() => {
+                const newTimeout = setTimeout(async () => {
                     // 连接操作完成后，loading状态应该为false
                     updateConnectionNodeDisplay(connection_id, false);
+                    
+                    // 如果连接成功，为该连接加载数据库节点
+                    if (isConnectionConnected(connection_id)) {
+                        await addDatabaseNodesToConnection(connection_id);
+                    }
+                    
                     // 清除定时器引用
                     setUpdateTimeouts(current => {
                         const updated = new Map(current);
@@ -1006,15 +1016,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         buildCompleteTreeData();
     }, [buildCompleteTreeData]);
 
-    // 监听连接和连接变化
-    useEffect(() => {
-        console.log(`🔄 DatabaseExplorer: 连接或连接状态发生变化`);
-        console.log(`🔗 所有连接 (${connections.length}):`, connections.map(c => `${c.name} (${c.id})`));
-        console.log(`✨ 已连接ID: [${connectedConnectionIds.join(', ')}]`);
-        console.log(`🎯 活跃连接ID: ${activeConnectionId}`);
-        buildCompleteTreeData();
-    }, [connections, connectedConnectionIds, activeConnectionId, buildCompleteTreeData]);
-
     // 更新特定连接节点的显示状态（不影响其他节点）
     const updateConnectionNodeDisplay = useCallback((connection_id: string, forceLoading?: boolean) => {
         console.log(`🎨 更新连接节点显示: ${connection_id}`);
@@ -1058,6 +1059,103 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             });
         });
     }, [getConnection, getConnectionStatus, isFavorite, getConnectionStatusColor]);
+
+    // 监听连接配置变化（只有连接增删改时才全量刷新）
+    useEffect(() => {
+        console.log(`🔄 DatabaseExplorer: 连接配置发生变化，需要重建树`);
+        console.log(`🔗 所有连接 (${connections.length}):`, connections.map(c => `${c.name} (${c.id})`));
+        buildCompleteTreeData();
+    }, [connections, buildCompleteTreeData]);
+
+    // 监听连接状态变化（仅更新相关节点显示，不重建整棵树）
+    const prevConnectedIdsRef = useRef<string[]>([]);
+    const prevActiveIdRef = useRef<string | null>(null);
+    
+    useEffect(() => {
+        const prevConnectedIds = prevConnectedIdsRef.current;
+        const prevActiveId = prevActiveIdRef.current;
+        
+        // 找出状态发生变化的连接
+        const changedConnections = new Set<string>();
+        
+        // 检查已连接列表的变化
+        connectedConnectionIds.forEach(id => {
+            if (!prevConnectedIds.includes(id)) {
+                changedConnections.add(id); // 新连接
+            }
+        });
+        
+        prevConnectedIds.forEach(id => {
+            if (!connectedConnectionIds.includes(id)) {
+                changedConnections.add(id); // 断开的连接
+            }
+        });
+        
+        // 检查活跃连接的变化
+        if (activeConnectionId !== prevActiveId) {
+            if (activeConnectionId) changedConnections.add(activeConnectionId);
+            if (prevActiveId) changedConnections.add(prevActiveId);
+        }
+        
+        // 只更新发生变化的连接节点
+        if (changedConnections.size > 0) {
+            console.log(`🎯 DatabaseExplorer: 检测到连接状态变化:`, Array.from(changedConnections));
+            changedConnections.forEach(connectionId => {
+                updateConnectionNodeDisplay(connectionId, false);
+            });
+        }
+        
+        // 更新引用值
+        prevConnectedIdsRef.current = [...connectedConnectionIds];
+        prevActiveIdRef.current = activeConnectionId;
+    }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay]);
+
+    // 为单个连接添加数据库子节点（局部更新）
+    const addDatabaseNodesToConnection = useCallback(async (connection_id: string) => {
+        console.log(`📂 为连接 ${connection_id} 加载数据库节点`);
+        
+        const connection = getConnection(connection_id);
+        if (!connection) return;
+
+        try {
+            // 获取数据库列表
+            const databases = await loadDatabases(connection_id);
+            
+            setTreeData(prevData => {
+                return prevData.map(node => {
+                    if (node.key === `connection-${connection_id}`) {
+                        // 构建数据库子节点
+                        const databaseChildren: DataNode[] = databases.map(databaseName => ({
+                            title: (
+                                <div className="flex items-center gap-2">
+                                    <Database className="w-3 h-3 text-primary"/>
+                                    <span className="flex-1">{databaseName}</span>
+                                    {isFavorite(`${connection_id}-${databaseName}`) && 
+                                        <Star className="w-3 h-3 text-warning fill-current"/>}
+                                </div>
+                            ),
+                            key: `database-${connection_id}-${databaseName}`,
+                            children: [{
+                                title: '加载中...',
+                                key: `loading-${connection_id}-${databaseName}`,
+                                isLeaf: true,
+                                selectable: false
+                            }]
+                        }));
+
+                        return {
+                            ...node,
+                            children: databaseChildren,
+                            isLeaf: databaseChildren.length === 0
+                        };
+                    }
+                    return node;
+                });
+            });
+        } catch (error) {
+            console.error(`❌ 为连接 ${connection_id} 加载数据库失败:`, error);
+        }
+    }, [getConnection, loadDatabases, isFavorite]);
 
     // 监听刷新触发器
     useEffect(() => {
