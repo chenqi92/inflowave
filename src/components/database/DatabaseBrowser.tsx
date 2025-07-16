@@ -4,10 +4,21 @@ import {
   Input,
   Button,
   Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   Badge,
-  Dropdown,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Empty,
-  Typography,
+  Spin,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui';
 import {
   Database,
@@ -22,20 +33,32 @@ import {
   Copy,
   BarChart,
   Clock,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useDatabase } from '@/hooks/useDatabase';
 import { useConnection } from '@/hooks/useConnection';
-import type { TreeNodeData, DatabaseInfo } from '@/types';
-import '@/styles/database-management.css';
+import type { DatabaseInfo } from '@/types';
+import type { TreeNode } from '@/components/ui';
+import { cn } from '@/lib/utils';
+
+// 扩展 TreeNode 类型以包含数据库相关属性
+interface DatabaseTreeNode extends TreeNode {
+  database?: string;
+  measurement?: string;
+  field?: string;
+  tag?: string;
+  fieldType?: string;
+  type?: 'database' | 'measurement' | 'fields-group' | 'tags-group' | 'field' | 'tag';
+}
 
 interface DatabaseBrowserProps {
   connectionId?: string;
   selectedKeys?: string[];
   onSelect?: (
     keys: string[],
-    info: { node: TreeNodeData; selected: boolean }
+    info: { node: DatabaseTreeNode; selected: boolean }
   ) => void;
-  onDoubleClick?: (node: TreeNodeData) => void;
+  onDoubleClick?: (node: DatabaseTreeNode) => void;
   className?: string;
 }
 
@@ -51,7 +74,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   const [selectedNodeKeys, setSelectedNodeKeys] = useState<string[]>(
     selectedKeys || []
   );
-  const [contextMenuNode, setContextMenuNode] = useState<TreeNodeData | null>(
+  const [contextMenuNode, setContextMenuNode] = useState<DatabaseTreeNode | null>(
     null
   );
 
@@ -73,7 +96,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   const currentConnectionId = connectionId || activeConnection?.id;
 
   // 构建树形数据
-  const treeData = useMemo(() => {
+  const treeData: DatabaseTreeNode[] = useMemo(() => {
     if (!databases || databases.length === 0) return [];
 
     return databases
@@ -88,13 +111,11 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           <div className='flex items-center justify-between group'>
             <div className='flex items-center gap-2'>
               <Database className='w-4 h-4 text-primary' />
-              <span>{database.name}</span>
+              <span className='text-sm font-medium'>{database.name}</span>
               {database.measurementCount !== undefined && (
-                <Badge
-                  count={database.measurementCount}
-                  size='small'
-                  style={{ backgroundColor: '#f0f0f0', color: '#666' }}
-                />
+                <Badge variant="secondary" className='text-xs'>
+                  {database.measurementCount}
+                </Badge>
               )}
             </div>
             <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
@@ -111,7 +132,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   }, [databases, searchText]);
 
   // 加载子节点
-  const loadData = async (node: TreeNodeData): Promise<void> => {
+  const loadData = async (node: DatabaseTreeNode): Promise<void> => {
     if (!currentConnectionId) return;
 
     const { key, type, database, measurement } = node;
@@ -125,14 +146,12 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
           title: (
             <div className='flex items-center justify-between group'>
               <div className='flex items-center gap-2'>
-                <Table className='w-4 h-4 text-success' />
-                <span>{m.name}</span>
+                <Table className='w-4 h-4 text-green-600' />
+                <span className='text-sm'>{m.name}</span>
                 {m.seriesCount !== undefined && (
-                  <Badge
-                    count={m.seriesCount}
-                    size='small'
-                    style={{ backgroundColor: '#e6f7ff', color: '#1890ff' }}
-                  />
+                  <Badge variant="outline" className='text-xs text-blue-600 border-blue-200'>
+                    {m.seriesCount}
+                  </Badge>
                 )}
               </div>
               <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
@@ -149,11 +168,11 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
               key: `fields:${database}:${m.name}`,
               title: (
                 <div className='flex items-center gap-2'>
-                  <Clock className='text-purple-500' />
-                  <span>字段</span>
+                  <Clock className='w-4 h-4 text-purple-500' />
+                  <span className='text-sm'>字段</span>
                 </div>
               ),
-              icon: <Clock />,
+              icon: <Clock className='w-4 h-4' />,
               children: [],
               isLeaf: false,
               database,
@@ -165,7 +184,7 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
               title: (
                 <div className='flex items-center gap-2'>
                   <Tag className='w-4 h-4 text-orange-500' />
-                  <span>标签</span>
+                  <span className='text-sm'>标签</span>
                 </div>
               ),
               icon: <Tag className='w-4 h-4' />,
@@ -220,20 +239,20 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
         node.children = tags.map(t => ({
           key: `tag:${database}:${measurement}:${t.name}`,
           title: (
-            <div className='flex items-center justify-between group border-0 shadow-none bg-transparent p-0'>
-              <div className='flex items-center gap-2 p-0'>
+            <div className='flex items-center justify-between group'>
+              <div className='flex items-center gap-2'>
                 <Tag className='w-4 h-4 text-orange-500' />
-                <Typography.Text>{t.name}</Typography.Text>
+                <span className='text-sm'>{t.name}</span>
                 {t.valueCount !== undefined && (
                   <Badge
                     variant='secondary'
-                    className='bg-orange-50 text-orange-600'
+                    className='text-xs bg-orange-50 text-orange-600 border-orange-200'
                   >
                     {t.valueCount}
                   </Badge>
                 )}
               </div>
-              <div className='opacity-0 group-hover:opacity-100 transition-opacity p-0'>
+              <div className='opacity-0 group-hover:opacity-100 transition-opacity'>
                 <FieldContextMenu
                   database={database}
                   measurement={measurement}
@@ -259,13 +278,13 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
     switch (type) {
       case 'integer':
       case 'float':
-        return 'bg-primary';
+        return 'bg-blue-500';
       case 'string':
-        return 'bg-success';
+        return 'bg-green-500';
       case 'boolean':
         return 'bg-purple-500';
       default:
-        return 'bg-muted-foreground';
+        return 'bg-gray-400';
     }
   };
 
@@ -281,14 +300,14 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
 
   const handleNodeSelect = (
     selectedKeys: string[],
-    info: { node: TreeNodeData; selected: boolean }
+    info: { node: DatabaseTreeNode; selected: boolean }
   ) => {
     setSelectedNodeKeys(selectedKeys);
     onSelect?.(selectedKeys, info);
   };
 
-  const handleNodeDoubleClick = (node: TreeNodeData) => {
-    onDoubleClick?.(node);
+  const handleNodeDoubleClick = (info: { node: DatabaseTreeNode }) => {
+    onDoubleClick?.(info.node);
   };
 
   // 初始加载
@@ -300,12 +319,14 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
 
   if (!currentConnectionId) {
     return (
-      <div className='flex items-center justify-center h-64 text-muted-foreground'>
-        <div className='text-center'>
-          <Database className='w-4 h-4 text-4xl mb-2' />
-          <div>请先选择一个连接</div>
-        </div>
-      </div>
+      <Card className='h-full'>
+        <CardContent className='flex items-center justify-center h-64'>
+          <div className='text-center space-y-4'>
+            <Database className='w-12 h-12 mx-auto text-muted-foreground' />
+            <p className='text-muted-foreground'>请先选择一个连接</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -327,64 +348,83 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
   }
 
   return (
-    <div className={`h-full flex flex-col database-management ${className}`}>
+    <Card className={cn('h-full flex flex-col', className)}>
       {/* 工具栏 */}
-      <div className='database-browser-toolbar'>
-        <div className='flex gap-2 w-full' size='middle'>
-          <Input
-            placeholder='搜索数据库...'
-            prefix={<Search className='w-4 h-4' />}
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            allowClear
-            className='flex-1'
-            style={{ minWidth: '200px' }}
-          />
-          <Tooltip title='刷新'>
-            <Button
-              icon={<RefreshCw className='w-4 h-4' />}
-              onClick={handleRefresh}
-              disabled={isLoading}
+      <CardHeader className='pb-4'>
+        <div className='flex gap-2 w-full'>
+          <div className='relative flex-1 min-w-[200px]'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+            <Input
+              placeholder='搜索数据库...'
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              className='pl-10'
             />
-          </Tooltip>
-          <Tooltip title='新建数据库'>
-            <Button
-              icon={<Plus className='w-4 h-4' />}
-              onClick={handleAddDatabase}
-              type='primary'
-            />
-          </Tooltip>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>刷新</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleAddDatabase}
+                >
+                  <Plus className='w-4 h-4 mr-2' />
+                  新建数据库
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>新建数据库</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-      </div>
+      </CardHeader>
 
       {/* 树形结构 */}
-      <div className='flex-1 overflow-auto'>
+      <CardContent className='flex-1 overflow-auto p-0'>
         {isLoading && databases.length === 0 ? (
           <div className='flex justify-center items-center h-32'>
-            <Spin size='large' />
+            <Spin className='w-8 h-8' />
           </div>
         ) : treeData.length === 0 ? (
           <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={searchText ? '未找到匹配的数据库' : '暂无数据库'}
+            title={searchText ? '未找到匹配的数据库' : '暂无数据库'}
+            description={searchText ? '请尝试其他搜索关键词' : '点击上方按钮创建新的数据库'}
           />
         ) : (
-          <Tree
-            treeData={treeData}
-            selectedKeys={selectedNodeKeys}
-            expandedKeys={expandedKeys}
-            onSelect={handleNodeSelect}
-            onExpand={keys => setExpandedKeys(keys)}
-            loadData={loadData}
-            showLine
-            showIcon
-            blockNode
-            onDoubleClick={handleNodeDoubleClick}
-            className='p-2'
-          />
+          <div className='p-4'>
+            <Tree
+              treeData={treeData}
+              selectedKeys={selectedNodeKeys}
+              expandedKeys={expandedKeys}
+              onSelect={handleNodeSelect}
+              onExpand={keys => setExpandedKeys(keys)}
+              loadData={loadData}
+              showLine
+              showIcon
+              blockNode
+              onDoubleClick={handleNodeDoubleClick}
+            />
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -392,48 +432,58 @@ export const DatabaseBrowser: React.FC<DatabaseBrowserProps> = ({
 const DatabaseContextMenu: React.FC<{ database: DatabaseInfo }> = ({
   database,
 }) => {
-  const menuItems = [
-    {
-      key: 'browse',
-      label: '浏览数据',
-      icon: <Eye className='w-4 h-4' />,
-      onClick: () => console.log('浏览数据库:', database.name),
-    },
-    {
-      key: 'stats',
-      label: '统计信息',
-      icon: <Info className='w-4 h-4' />,
-      onClick: () => console.log('查看统计:', database.name),
-    },
-    {
-      key: 'copy',
-      label: '复制名称',
-      icon: <Copy className='w-4 h-4' />,
-      onClick: () => navigator.clipboard.writeText(database.name),
-    },
-    {
-      key: 'divider',
-      type: 'divider',
-    },
-    {
-      key: 'delete',
-      label: '删除数据库',
-      icon: <Trash2 className='w-4 h-4' />,
-      danger: true,
-      onClick: () => console.log('删除数据库:', database.name),
-    },
-  ];
+  const handleBrowse = () => {
+    console.log('浏览数据库:', database.name);
+  };
+
+  const handleStats = () => {
+    console.log('查看统计:', database.name);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(database.name);
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
+  };
+
+  const handleDelete = () => {
+    console.log('删除数据库:', database.name);
+  };
 
   return (
-    <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-      <Button
-        type='text'
-        size='small'
-        className='opacity-0 group-hover:opacity-100'
-      >
-        ⋯
-      </Button>
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className='h-6 w-6'
+          onClick={e => e.stopPropagation()}
+        >
+          <MoreHorizontal className='w-4 h-4' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className='w-48'>
+        <DropdownMenuItem onClick={handleBrowse}>
+          <Eye className='w-4 h-4 mr-2' />
+          浏览数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleStats}>
+          <Info className='w-4 h-4 mr-2' />
+          统计信息
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopy}>
+          <Copy className='w-4 h-4 mr-2' />
+          复制名称
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleDelete} className='text-destructive focus:text-destructive'>
+          <Trash2 className='w-4 h-4 mr-2' />
+          删除数据库
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -442,43 +492,57 @@ const MeasurementContextMenu: React.FC<{
   database: string;
   measurement: string;
 }> = ({ database, measurement }) => {
-  const menuItems = [
-    {
-      key: 'preview',
-      label: '预览数据',
-      icon: <Eye className='w-4 h-4' />,
-      onClick: () => console.log('预览数据:', database, measurement),
-    },
-    {
-      key: 'chart',
-      label: '创建图表',
-      icon: <BarChart className='w-4 h-4' />,
-      onClick: () => console.log('创建图表:', database, measurement),
-    },
-    {
-      key: 'copy',
-      label: '复制名称',
-      icon: <Copy className='w-4 h-4' />,
-      onClick: () => navigator.clipboard.writeText(measurement),
-    },
-    {
-      key: 'stats',
-      label: '统计信息',
-      icon: <Info className='w-4 h-4' />,
-      onClick: () => console.log('查看统计:', database, measurement),
-    },
-  ];
+  const handlePreview = () => {
+    console.log('预览数据:', database, measurement);
+  };
+
+  const handleChart = () => {
+    console.log('创建图表:', database, measurement);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(measurement);
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
+  };
+
+  const handleStats = () => {
+    console.log('查看统计:', database, measurement);
+  };
 
   return (
-    <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-      <Button
-        type='text'
-        size='small'
-        className='opacity-0 group-hover:opacity-100'
-      >
-        ⋯
-      </Button>
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className='h-6 w-6'
+          onClick={e => e.stopPropagation()}
+        >
+          <MoreHorizontal className='w-4 h-4' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className='w-48'>
+        <DropdownMenuItem onClick={handlePreview}>
+          <Eye className='w-4 h-4 mr-2' />
+          预览数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleChart}>
+          <BarChart className='w-4 h-4 mr-2' />
+          创建图表
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopy}>
+          <Copy className='w-4 h-4 mr-2' />
+          复制名称
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleStats}>
+          <Info className='w-4 h-4 mr-2' />
+          统计信息
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -489,36 +553,48 @@ const FieldContextMenu: React.FC<{
   field: string;
   fieldType: 'field' | 'tag';
 }> = ({ database, measurement, field, fieldType }) => {
-  const menuItems = [
-    {
-      key: 'select',
-      label: `查询${fieldType === 'field' ? '字段' : '标签'}`,
-      icon: <Eye className='w-4 h-4' />,
-      onClick: () => console.log('查询:', database, measurement, field),
-    },
-    {
-      key: 'copy',
-      label: '复制名称',
-      icon: <Copy className='w-4 h-4' />,
-      onClick: () => navigator.clipboard.writeText(field),
-    },
-    {
-      key: 'info',
-      label: '字段信息',
-      icon: <Info className='w-4 h-4' />,
-      onClick: () => console.log('字段信息:', database, measurement, field),
-    },
-  ];
+  const handleSelect = () => {
+    console.log('查询:', database, measurement, field);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(field);
+    } catch (error) {
+      console.error('复制失败:', error);
+    }
+  };
+
+  const handleInfo = () => {
+    console.log('字段信息:', database, measurement, field);
+  };
 
   return (
-    <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-      <Button
-        type='text'
-        size='small'
-        className='opacity-0 group-hover:opacity-100'
-      >
-        ⋯
-      </Button>
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className='h-6 w-6'
+          onClick={e => e.stopPropagation()}
+        >
+          <MoreHorizontal className='w-4 h-4' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className='w-48'>
+        <DropdownMenuItem onClick={handleSelect}>
+          <Eye className='w-4 h-4 mr-2' />
+          查询{fieldType === 'field' ? '字段' : '标签'}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopy}>
+          <Copy className='w-4 h-4 mr-2' />
+          复制名称
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleInfo}>
+          <Info className='w-4 h-4 mr-2' />
+          字段信息
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
