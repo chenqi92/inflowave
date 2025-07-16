@@ -413,28 +413,43 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
           <FormItem name={['settings', 'theme']} label="主题">
             <Select>
-              <Select.Option value="default">默认</Select.Option>
-              <Select.Option value="dark">深色</Select.Option>
-              <Select.Option value="light">浅色</Select.Option>
+              <SelectTrigger>
+                <SelectValue placeholder="选择主题" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">默认</SelectItem>
+                <SelectItem value="dark">深色</SelectItem>
+                <SelectItem value="light">浅色</SelectItem>
+              </SelectContent>
             </Select>
           </FormItem>
 
           <FormItem name={['settings', 'gridSize']} label="网格列数">
             <Select>
-              <Select.Option value={8}>8 列</Select.Option>
-              <Select.Option value={12}>12 列</Select.Option>
-              <Select.Option value={16}>16 列</Select.Option>
-              <Select.Option value={24}>24 列</Select.Option>
+              <SelectTrigger>
+                <SelectValue placeholder="选择网格列数" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={8}>8 列</SelectItem>
+                <SelectItem value={12}>12 列</SelectItem>
+                <SelectItem value={16}>16 列</SelectItem>
+                <SelectItem value={24}>24 列</SelectItem>
+              </SelectContent>
             </Select>
           </FormItem>
 
           <FormItem name={['settings', 'refreshInterval']} label="刷新间隔（秒）">
             <Select>
-              <Select.Option value={10}>10 秒</Select.Option>
-              <Select.Option value={30}>30 秒</Select.Option>
-              <Select.Option value={60}>1 分钟</Select.Option>
-              <Select.Option value={300}>5 分钟</Select.Option>
-              <Select.Option value={600}>10 分钟</Select.Option>
+              <SelectTrigger>
+                <SelectValue placeholder="选择刷新间隔" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={10}>10 秒</SelectItem>
+                <SelectItem value={30}>30 秒</SelectItem>
+                <SelectItem value={60}>1 分钟</SelectItem>
+                <SelectItem value={300}>5 分钟</SelectItem>
+                <SelectItem value={600}>10 分钟</SelectItem>
+              </SelectContent>
             </Select>
           </FormItem>
         </Form>

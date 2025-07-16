@@ -314,28 +314,34 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 <Database className="w-4 h-4"  /> 数据库管理
               </Title>
               <Select
-                placeholder="选择连接"
                 value={selectedConnection}
                 onValueChange={setSelectedConnection}
-                style={{ width: 200 }}
               >
-                {connections.map(conn => (
-                  <Select.Option key={conn.id} value={conn.id}>
-                    {conn.name}
-                  </Select.Option>
-                ))}
+                <SelectTrigger style={{ width: 200 }}>
+                  <SelectValue placeholder="选择连接" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connections.map(conn => (
+                    <SelectItem key={conn.id} value={conn.id}>
+                      {conn.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               <Select
-                placeholder="选择数据库"
                 value={selectedDatabase}
                 onValueChange={setSelectedDatabase}
-                style={{ width: 200 }}
               >
-                {databases.map(db => (
-                  <Select.Option key={db} value={db}>
-                    {db}
-                  </Select.Option>
-                ))}
+                <SelectTrigger style={{ width: 200 }}>
+                  <SelectValue placeholder="选择数据库" />
+                </SelectTrigger>
+                <SelectContent>
+                  {databases.map(db => (
+                    <SelectItem key={db} value={db}>
+                      {db}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </Col>

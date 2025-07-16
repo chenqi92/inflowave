@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useCallback, useMemo } from 'react';
-import { DataTable, Input, Select, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal, Tooltip } from '@/components/ui';
+import { DataTable, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Button, Alert, Row, Col, Typography, Tag, Form, Modal, Tooltip } from '@/components/ui';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { BulkOutlined } from '@/components/ui';
@@ -9,7 +9,6 @@ import { ImportWizardData, FieldMapping } from '../SmartImportWizard';
 import { createDefaultValidationRules } from '../DataValidationUtils';
 
 const { Text, Title } = Typography;
-const { Option } = Select;
 
 interface FieldMappingStepProps {
   wizardData: ImportWizardData;

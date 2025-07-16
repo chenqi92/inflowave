@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Select, Button, Typography, Row, Col } from '@/components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Typography, Row, Col } from '@/components/ui';
 import { Space } from '@/components/ui';
 
 // TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
-import { TrendingUp, BarChart, PieChart, Settings, Download, RefreshCw } from 'lucide-react';
+import { TrendingUp, BarChart, PieChart, AreaChart, Scatter, Settings, Download, RefreshCw } from 'lucide-react';
 // TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, Maximize
 // You may need to find alternatives or create custom icons
 import * as echarts from 'echarts';
@@ -320,24 +320,27 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Select
                   value={config.type}
                   onValueChange={(value) => updateConfig({ type: value })}
-                  style={{ width: '100%', marginTop: 4 }}
-                  size="small"
                 >
-                  <Select.Option value="line">
-                    <div className="flex gap-2"><TrendingUp className="w-4 h-4"  />折线图</div>
-                  </Select.Option>
-                  <Select.Option value="bar">
-                    <div className="flex gap-2"><BarChart className="w-4 h-4"  />柱状图</div>
-                  </Select.Option>
-                  <Select.Option value="area">
-                    <div className="flex gap-2"><AreaChart className="w-4 h-4"  />面积图</div>
-                  </Select.Option>
-                  <Select.Option value="pie">
-                    <div className="flex gap-2"><PieChart className="w-4 h-4"  />饼图</div>
-                  </Select.Option>
-                  <Select.Option value="scatter">
-                    <div className="flex gap-2"><DotChartOutlined />散点图</div>
-                  </Select.Option>
+                  <SelectTrigger style={{ width: '100%', marginTop: 4 }}>
+                    <SelectValue placeholder="选择图表类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="line">
+                      <div className="flex gap-2"><TrendingUp className="w-4 h-4"  />折线图</div>
+                    </SelectItem>
+                    <SelectItem value="bar">
+                      <div className="flex gap-2"><BarChart className="w-4 h-4"  />柱状图</div>
+                    </SelectItem>
+                    <SelectItem value="area">
+                      <div className="flex gap-2"><AreaChart className="w-4 h-4"  />面积图</div>
+                    </SelectItem>
+                    <SelectItem value="pie">
+                      <div className="flex gap-2"><PieChart className="w-4 h-4"  />饼图</div>
+                    </SelectItem>
+                    <SelectItem value="scatter">
+                      <div className="flex gap-2"><Scatter className="w-4 h-4"  />散点图</div>
+                    </SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </Col>
@@ -347,14 +350,17 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Select
                   value="default"
                   onValueChange={(value) => updateConfig({ colorScheme: colorSchemes[value as keyof typeof colorSchemes] })}
-                  style={{ width: '100%', marginTop: 4 }}
-                  size="small"
                 >
-                  {Object.keys(colorSchemes).map(scheme => (
-                    <Select.Option key={scheme} value={scheme}>
-                      {scheme}
-                    </Select.Option>
-                  ))}
+                  <SelectTrigger style={{ width: '100%', marginTop: 4 }}>
+                    <SelectValue placeholder="选择颜色方案" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(colorSchemes).map(scheme => (
+                      <SelectItem key={scheme} value={scheme}>
+                        {scheme}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
             </Col>

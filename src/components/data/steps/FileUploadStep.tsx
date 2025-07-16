@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Alert, Row, Col, Select, Switch, Form, Typography, Button, Table } from '@/components/ui';
+import { Upload, Alert, Row, Col, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Form, Typography, Button, Table } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import { Space} from '@/components/ui';
 import { Upload as UploadIcon, FileText, Trash2, FileSpreadsheet } from 'lucide-react';
@@ -8,7 +8,6 @@ import { ImportWizardData } from '../SmartImportWizard';
 import { ExcelImportManager } from '../ExcelImportUtils';
 
 const { Text, Title } = Typography;
-const { Option } = Select;
 
 interface FileUploadStepProps {
   wizardData: ImportWizardData;

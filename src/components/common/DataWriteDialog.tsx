@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Select, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
+import { Form, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
@@ -8,7 +8,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
 
 const { Textarea } = Input;
-const { Option } = Select;
 const { Text } = Typography;
 
 interface DataWriteDialogProps {

@@ -1,13 +1,27 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Alert, Select, Typography, Switch, InputNumber, Popconfirm, Tooltip } from '@/components/ui';
+import {
+  Form,
+  Input,
+  Alert,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Typography,
+  Switch,
+  InputNumber,
+  Popconfirm,
+  Tooltip,
+  FormItem
+} from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@/components/ui';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
 
-const { Option } = Select;
 const { Paragraph } = Typography;
 
 interface RetentionPolicyDialogProps {

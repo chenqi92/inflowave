@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Switch, Slider, Select, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert, Tooltip, List, Badge } from '@/components/ui';
+import { Row, Col, Switch, Slider, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography, Button, Radio, Checkbox, InputNumber, Upload, Tag, Alert, Tooltip, List, Badge } from '@/components/ui';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { SkinOutlined, ShareAltOutlined, MoonOutlined, SunOutlined, ExperimentOutlined, DiamondOutlined } from '@/components/ui';
@@ -8,7 +8,6 @@ import { useSettingsStore } from '@/store/settings';
 import { showMessage } from '@/utils/message';
 
 const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
 
 interface AdvancedThemeSettingsProps {
   className?: string;
@@ -488,7 +487,7 @@ export const AdvancedThemeSettings: React.FC<AdvancedThemeSettingsProps> = ({
                       min={10}
                       max={24}
                       value={settings.editor.fontSize}
-                      onValueChange={(value) => updateSettings({ 
+                      onChange={(value) => updateSettings({
                         editor: { ...settings.editor, fontSize: value || 14 }
                       })}
                       style={{ width: '100%' }}

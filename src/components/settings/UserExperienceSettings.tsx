@@ -1,8 +1,28 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, Form, Input, Select, Button, Typography, Table, Row, Col, Tag, Switch, Slider, Radio, Modal, Tooltip } from '@/components/ui';
+import {
+  Tabs,
+  Form,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Button,
+  Typography,
+  Table,
+  Row,
+  Col,
+  Tag,
+  Switch,
+  Slider,
+  Radio,
+  Modal,
+  Tooltip,
+  FormItem
+} from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
 import { LayoutOutlined } from '@/components/ui';
 import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
@@ -301,10 +321,15 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                         name={['notifications', 'position']}
                         label="通知位置">
                         <Select>
-                          <Select.Option value="topRight">右上角</Select.Option>
-                          <Select.Option value="topLeft">左上角</Select.Option>
-                          <Select.Option value="bottomRight">右下角</Select.Option>
-                          <Select.Option value="bottomLeft">左下角</Select.Option>
+                          <SelectTrigger>
+                            <SelectValue placeholder="选择通知位置" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="topRight">右上角</SelectItem>
+                            <SelectItem value="topLeft">左上角</SelectItem>
+                            <SelectItem value="bottomRight">右下角</SelectItem>
+                            <SelectItem value="bottomLeft">左下角</SelectItem>
+                          </SelectContent>
                         </Select>
                       </FormItem>
                     </Col>
@@ -378,9 +403,14 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                         name={['workspace', 'layout']}
                         label="布局模式">
                         <Select>
-                          <Select.Option value="default">默认</Select.Option>
-                          <Select.Option value="compact">紧凑</Select.Option>
-                          <Select.Option value="wide">宽屏</Select.Option>
+                          <SelectTrigger>
+                            <SelectValue placeholder="选择布局模式" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">默认</SelectItem>
+                            <SelectItem value="compact">紧凑</SelectItem>
+                            <SelectItem value="wide">宽屏</SelectItem>
+                          </SelectContent>
                         </Select>
                       </FormItem>
                       

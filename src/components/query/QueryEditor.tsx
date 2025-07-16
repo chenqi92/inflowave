@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Button, Select, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Label } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography, Dropdown, Switch, Tabs, Space, Tooltip, Label } from '@/components/ui';
 // TODO: Replace these Ant Design components: Badge, Drawer
 import { showMessage } from '@/utils/message';
 import { Save, Database, History, Settings, Maximize, Minimize, Plus, X, Copy, Edit, PlayCircle, Paintbrush } from 'lucide-react';
@@ -17,7 +17,6 @@ import type { QueryResult, QueryRequest } from '@/types';
 const invoke = safeTauriInvoke;
 
 const { Text } = Typography;
-const { Option } = Select;
 
 interface QueryEditorProps {
   selectedDatabase: string;

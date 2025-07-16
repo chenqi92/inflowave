@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
-import { Button, Select,  Alert, Progress, Typography, Tag, List } from '@/components/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, Progress, Typography, Tag, List } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 // TODO: Replace these Ant Design components: message, Divider
 import { PlayCircle, Database, RefreshCw, CheckCircle } from 'lucide-react';
@@ -11,7 +11,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 
-const { Option } = Select;
 const { Title, Text } = Typography;
 
 interface DataGeneratorProps {
@@ -394,14 +393,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             <Select
               value={selectedDatabase}
               onValueChange={setSelectedDatabase}
-              style={{ minWidth: 150 }}
-              placeholder="选择数据库"
             >
-              {databases.map(db => (
-                <Select.Option key={db} value={db}>
-                  {db}
-                </Select.Option>
-              ))}
+              <SelectTrigger style={{ minWidth: 150 }}>
+                <SelectValue placeholder="选择数据库" />
+              </SelectTrigger>
+              <SelectContent>
+                {databases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    {db}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="flex gap-2">

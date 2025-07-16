@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
-import { Row, Col, Statistic, Button, Typography, Select, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
+import { Row, Col, Statistic, Button, Typography, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Alert, Tag, Form, Input, InputNumber, Switch, Progress, Modal } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 // TODO: Replace these Ant Design components: Badge, List, Tooltip
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
@@ -295,26 +295,32 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
                 <TrendingUp className="w-4 h-4"  /> 实时监控
               </Title>
               <Select
-                placeholder="选择连接"
                 value={selectedConnection}
-                onValueChange={setSelectedConnection}
-                style={{ width: 200 }}>
-                {connections.map(conn => (
-                  <Select.Option key={conn.id} value={conn.id}>
-                    {conn.name}
-                  </Select.Option>
-                ))}
+                onValueChange={setSelectedConnection}>
+                <SelectTrigger style={{ width: 200 }}>
+                  <SelectValue placeholder="选择连接" />
+                </SelectTrigger>
+                <SelectContent>
+                  {connections.map(conn => (
+                    <SelectItem key={conn.id} value={conn.id}>
+                      {conn.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               <Select
-                placeholder="选择数据库"
                 value={selectedDatabase}
-                onValueChange={setSelectedDatabase}
-                style={{ width: 200 }}>
-                {databases.map(db => (
-                  <Select.Option key={db} value={db}>
-                    {db}
-                  </Select.Option>
-                ))}
+                onValueChange={setSelectedDatabase}>
+                <SelectTrigger style={{ width: 200 }}>
+                  <SelectValue placeholder="选择数据库" />
+                </SelectTrigger>
+                <SelectContent>
+                  {databases.map(db => (
+                    <SelectItem key={db} value={db}>
+                      {db}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </Col>
@@ -508,11 +514,16 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               <FormItem name="condition"
                 label="条件"
                 rules={[{ required: true, message: '请选择条件' }]}>
-                <Select placeholder="选择条件">
-                  <Select.Option value="greater">大于</Select.Option>
-                  <Select.Option value="less">小于</Select.Option>
-                  <Select.Option value="equal">等于</Select.Option>
-                  <Select.Option value="not_equal">不等于</Select.Option>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择条件" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="greater">大于</SelectItem>
+                    <SelectItem value="less">小于</SelectItem>
+                    <SelectItem value="equal">等于</SelectItem>
+                    <SelectItem value="not_equal">不等于</SelectItem>
+                  </SelectContent>
                 </Select>
               </FormItem>
             </Col>
@@ -530,11 +541,16 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
               <FormItem name="severity"
                 label="严重程度"
                 rules={[{ required: true, message: '请选择严重程度' }]}>
-                <Select placeholder="选择严重程度">
-                  <Select.Option value="info">信息</Select.Option>
-                  <Select.Option value="warning">警告</Select.Option>
-                  <Select.Option value="error">错误</Select.Option>
-                  <Select.Option value="critical">严重</Select.Option>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择严重程度" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="info">信息</SelectItem>
+                    <SelectItem value="warning">警告</SelectItem>
+                    <SelectItem value="error">错误</SelectItem>
+                    <SelectItem value="critical">严重</SelectItem>
+                  </SelectContent>
                 </Select>
               </FormItem>
             </Col>

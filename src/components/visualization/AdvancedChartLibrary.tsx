@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {Select, Button, Row, Col, Typography, Alert, Tooltip} from '@/components/ui';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Row, Col, Typography, Alert, Tooltip} from '@/components/ui';
 // TODO: Replace these Ant Design components: Tooltip
 import { Maximize, Download, RefreshCw } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 const { Text } = Typography;
-const { Option } = Select;
 
 // 图表类型定义
 export type ChartType = 'scatter' | 'heatmap' | 'gauge' | 'radar' | 'treemap' | 'sankey' | 'funnel' | 'sunburst' | 'parallel' | 'candlestick';

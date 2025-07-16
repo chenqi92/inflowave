@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Form, Input, Select, Typography, Tag, Row, Col, InputNumber, Dialog, DialogContent, DialogHeader, DialogTitle, List } from '@/components/ui';
+import { Button, Form, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography, Tag, Row, Col, InputNumber, Dialog, DialogContent, DialogHeader, DialogTitle, List } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { Space, Popconfirm, Divider } from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
@@ -8,7 +8,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
 
 const { Textarea } = Input;
-const { Option } = Select;
 const { Text } = Typography;
 
 interface DashboardManagerProps {

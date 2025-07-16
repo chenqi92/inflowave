@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, Table, Collapse, Panel, List, Tooltip, Badge } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, Collapse, Panel, List, Tooltip, Badge } from '@/components/ui';
 // TODO: Replace these Ant Design components: Descriptions, Drawer, Timeline
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
@@ -165,12 +165,15 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   <Select
                     value={database}
                     onValueChange={setDatabase}
-                    placeholder="选择数据库"
-                    style={{ width: '100%' }}
                   >
-                    <Select.Option value="default">默认数据库</Select.Option>
-                    <Select.Option value="analytics">分析数据库</Select.Option>
-                    <Select.Option value="cache">缓存数据库</Select.Option>
+                    <SelectTrigger style={{ width: '100%' }}>
+                      <SelectValue placeholder="选择数据库" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">默认数据库</SelectItem>
+                      <SelectItem value="analytics">分析数据库</SelectItem>
+                      <SelectItem value="cache">缓存数据库</SelectItem>
+                    </SelectContent>
                   </Select>
                 </Col>
                 <Col span={16}>
@@ -770,11 +773,15 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   ...prev,
                   optimizationLevel: value
                 }))}
-                style={{ width: '100%' }}
               >
-                <Select.Option value="conservative">保守</Select.Option>
-                <Select.Option value="balanced">平衡</Select.Option>
-                <Select.Option value="aggressive">激进</Select.Option>
+                <SelectTrigger style={{ width: '100%' }}>
+                  <SelectValue placeholder="选择优化级别" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="conservative">保守</SelectItem>
+                  <SelectItem value="balanced">平衡</SelectItem>
+                  <SelectItem value="aggressive">激进</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -788,12 +795,16 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   ...prev,
                   maxOptimizationTime: value
                 }))}
-                style={{ width: '100%' }}
               >
-                <Select.Option value={1000}>1秒</Select.Option>
-                <Select.Option value={3000}>3秒</Select.Option>
-                <Select.Option value={5000}>5秒</Select.Option>
-                <Select.Option value={10000}>10秒</Select.Option>
+                <SelectTrigger style={{ width: '100%' }}>
+                  <SelectValue placeholder="选择最大优化时间" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={1000}>1秒</SelectItem>
+                  <SelectItem value={3000}>3秒</SelectItem>
+                  <SelectItem value={5000}>5秒</SelectItem>
+                  <SelectItem value={10000}>10秒</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>

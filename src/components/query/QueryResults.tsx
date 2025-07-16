@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { DataTable, Tabs, Button, Typography, Empty, Spin, Tag, Select, Modal } from '@/components/ui';
+import { DataTable, Tabs, Button, Typography, Empty, Spin, Tag, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Modal } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart } from 'lucide-react';
+import { Table as TableIcon, Download, BarChart, Info, TrendingUp, PieChart, AreaChart } from 'lucide-react';
 import { showMessage } from '@/utils/message';
 // 本地类型定义
 interface ColumnType<T = any> {
@@ -229,20 +229,24 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
                   <Select
                     value={chartType}
                     onValueChange={setChartType}
-                    style={{ width: 120 }}
                   >
-                    <Select.Option value="line">
-                      <div className="flex gap-2"><TrendingUp className="w-4 h-4"  />折线图</div>
-                    </Select.Option>
-                    <Select.Option value="bar">
-                      <div className="flex gap-2"><BarChart className="w-4 h-4"  />柱状图</div>
-                    </Select.Option>
-                    <Select.Option value="area">
-                      <div className="flex gap-2"><AreaChart className="w-4 h-4"  />面积图</div>
-                    </Select.Option>
-                    <Select.Option value="pie">
-                      <div className="flex gap-2"><PieChart className="w-4 h-4"  />饼图</div>
-                    </Select.Option>
+                    <SelectTrigger style={{ width: 120 }}>
+                      <SelectValue placeholder="选择图表类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="line">
+                        <div className="flex gap-2"><TrendingUp className="w-4 h-4"  />折线图</div>
+                      </SelectItem>
+                      <SelectItem value="bar">
+                        <div className="flex gap-2"><BarChart className="w-4 h-4"  />柱状图</div>
+                      </SelectItem>
+                      <SelectItem value="area">
+                        <div className="flex gap-2"><AreaChart className="w-4 h-4"  />面积图</div>
+                      </SelectItem>
+                      <SelectItem value="pie">
+                        <div className="flex gap-2"><PieChart className="w-4 h-4"  />饼图</div>
+                      </SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
               </div>
@@ -359,11 +363,15 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
             <Select
               value={exportFormat}
               onValueChange={setExportFormat}
-              style={{ width: '100%', marginTop: 8 }}
             >
-              <Select.Option value="csv">CSV - 逗号分隔值</Select.Option>
-              <Select.Option value="json">JSON - JavaScript 对象表示法</Select.Option>
-              <Select.Option value="excel">Excel - Microsoft Excel 格式</Select.Option>
+              <SelectTrigger style={{ width: '100%', marginTop: 8 }}>
+                <SelectValue placeholder="选择导出格式" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="csv">CSV - 逗号分隔值</SelectItem>
+                <SelectItem value="json">JSON - JavaScript 对象表示法</SelectItem>
+                <SelectItem value="excel">Excel - Microsoft Excel 格式</SelectItem>
+              </SelectContent>
             </Select>
           </div>
           {stats && (

@@ -95,24 +95,29 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               rules={[{ required: true, message: '请选择导出格式' }]}
             >
               <Select>
-                <Select.Option value="csv">
-                  <div className="flex gap-2">
-                    <Table className="w-4 h-4"  />
-                    CSV 格式
-                  </div>
-                </Select.Option>
-                <Select.Option value="json">
-                  <div className="flex gap-2">
-                    <FileText className="w-4 h-4"  />
-                    JSON 格式
-                  </div>
-                </Select.Option>
-                <Select.Option value="excel">
-                  <div className="flex gap-2">
-                    <FileSpreadsheet />
-                    Excel 格式
-                  </div>
-                </Select.Option>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择导出格式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">
+                    <div className="flex gap-2">
+                      <Table className="w-4 h-4"  />
+                      CSV 格式
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="json">
+                    <div className="flex gap-2">
+                      <FileText className="w-4 h-4"  />
+                      JSON 格式
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="excel">
+                    <div className="flex gap-2">
+                      <FileSpreadsheet />
+                      Excel 格式
+                    </div>
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </FormItem>
 
@@ -137,9 +142,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               name="delimiter"
             >
               <Select>
-                <Select.Option value=",">逗号 (,)</Select.Option>
-                <Select.Option value=";">分号 (;)</Select.Option>
-                <Select.Option value="\t">制表符 (\t)</Select.Option>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分隔符" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value=",">逗号 (,)</SelectItem>
+                  <SelectItem value=";">分号 (;)</SelectItem>
+                  <SelectItem value="\t">制表符 (\t)</SelectItem>
+                </SelectContent>
               </Select>
             </FormItem>
           </Form>
