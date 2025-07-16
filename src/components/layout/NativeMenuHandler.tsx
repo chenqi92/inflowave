@@ -60,11 +60,30 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleThemeChange = (themeName: string) => {
     console.log('处理主题切换:', themeName);
 
+    // 处理新的主题名称格式，将其转换为系统使用的格式
+    let actualThemeName = themeName;
+    
+    // 映射从菜单发来的主题名称到系统内部使用的格式
+    const themeMapping: Record<string, string> = {
+      'default-blue': 'default',
+      'natural-green': 'green',
+      'vibrant-red': 'red',
+      'warm-orange': 'orange',
+      'elegant-purple': 'purple',
+      'romantic-rose': 'rose',
+      'bright-yellow': 'yellow',
+      'mysterious-violet': 'violet'
+    };
+
+    if (themeMapping[themeName]) {
+      actualThemeName = themeMapping[themeName];
+    }
+
     // 使用主题提供者的颜色方案切换功能
-    setColorScheme(themeName);
+    setColorScheme(actualThemeName);
 
     // 同时更新设置存储以保持兼容性
-    updateTheme({ primaryColor: themeName });
+    updateTheme({ primaryColor: actualThemeName });
 
     // 显示成功消息
     const themeLabels: Record<string, string> = {
@@ -78,7 +97,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       'violet': '神秘紫罗兰'
     };
 
-    const themeLabel = themeLabels[themeName] || themeName;
+    const themeLabel = themeLabels[actualThemeName] || actualThemeName;
     showMessage.success(`已切换到${themeLabel}主题`);
   };
 

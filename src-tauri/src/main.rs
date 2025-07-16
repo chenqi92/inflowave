@@ -106,6 +106,18 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("format_query", "格式化查询\tCtrl+Alt+L")
         .build()?;
 
+    // 风格设置子菜单
+    let style_submenu = SubmenuBuilder::new(app, "风格设置")
+        .text("theme_default_blue", "默认蓝色")
+        .text("theme_natural_green", "自然绿色")
+        .text("theme_vibrant_red", "活力红色")
+        .text("theme_warm_orange", "温暖橙色")
+        .text("theme_elegant_purple", "优雅紫色")
+        .text("theme_romantic_rose", "浪漫玫瑰")
+        .text("theme_bright_yellow", "明亮黄色")
+        .text("theme_mysterious_violet", "神秘紫罗兰")
+        .build()?;
+
     // 工具菜单
     let tools_menu = SubmenuBuilder::new(app, "工具")
         .text("console", "控制台\tCtrl+`")
@@ -114,14 +126,7 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .separator()
         .text("extensions", "扩展管理")
         .text("theme_settings", "主题设置")
-        .text("theme_default_blue", "风格设置 - 默认蓝色")
-        .text("theme_natural_green", "风格设置 - 自然绿色")
-        .text("theme_vibrant_red", "风格设置 - 活力红色")
-        .text("theme_warm_orange", "风格设置 - 温暖橙色")
-        .text("theme_elegant_purple", "风格设置 - 优雅紫色")
-        .text("theme_romantic_rose", "风格设置 - 浪漫玫瑰")
-        .text("theme_bright_yellow", "风格设置 - 明亮黄色")
-        .text("theme_mysterious_violet", "风格设置 - 神秘紫罗兰")
+        .item(&style_submenu)
         .text("language_settings", "语言设置")
         .separator()
         .text("preferences", "首选项\tCtrl+,")
