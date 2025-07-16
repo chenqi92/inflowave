@@ -31,17 +31,23 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     let unlistenThemeFn: (() => void) | null = null;
 
     const setupListeners = async () => {
+      console.log('🎛️ 设置原生菜单监听器...');
+      
       // 监听菜单动作事件
       unlistenMenuFn = await safeTauriListen<string>('menu-action', (event) => {
+        console.log('📋 收到菜单动作事件:', event);
         const action = event.payload;
         handleMenuAction(action);
       });
 
       // 监听主题切换事件
       unlistenThemeFn = await safeTauriListen<string>('theme-change', (event) => {
+        console.log('🎨 收到主题切换事件:', event);
         const themeName = event.payload;
         handleThemeChange(themeName);
       });
+      
+      console.log('✅ 原生菜单监听器设置完成');
     };
 
     setupListeners();

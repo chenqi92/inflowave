@@ -19,6 +19,7 @@
     "notification:allow-get-pending",
     "notification:allow-remove-active",
     "global-shortcut:default",
-    "clipboard-manager:default"
+    "clipboard-manager:default",
+    "core:menu:default"
   ]
 }

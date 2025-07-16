@@ -154,21 +154,37 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
 
 // 处理菜单事件 - 完整的专业化菜单
 fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
-    let window = app.get_webview_window("main").unwrap();
-
     // 添加调试日志
     log::info!("菜单事件触发: {}", event.id().as_ref());
+    
+    // 获取主窗口
+    let window = match app.get_webview_window("main") {
+        Some(window) => window,
+        None => {
+            log::error!("没有找到'main'窗口");
+            return;
+        }
+    };
 
     match event.id().as_ref() {
         // 文件菜单
         "new_query" => {
-            let _ = window.emit("menu-action", "new_query");
+            log::info!("发送菜单动作: new_query");
+            if let Err(e) = window.emit("menu-action", "new_query") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "open_file" => {
-            let _ = window.emit("menu-action", "open_file");
+            log::info!("发送菜单动作: open_file");
+            if let Err(e) = window.emit("menu-action", "open_file") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "save" => {
-            let _ = window.emit("menu-action", "save");
+            log::info!("发送菜单动作: save");
+            if let Err(e) = window.emit("menu-action", "save") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "save_as" => {
             let _ = window.emit("menu-action", "save_as");
@@ -301,10 +317,16 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
 
         // 软件风格菜单
         "theme_default_blue" => {
-            let _ = window.emit("theme-change", "default-blue");
+            log::info!("发送主题切换事件: default-blue");
+            if let Err(e) = window.emit("theme-change", "default-blue") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_natural_green" => {
-            let _ = window.emit("theme-change", "natural-green");
+            log::info!("发送主题切换事件: natural-green");
+            if let Err(e) = window.emit("theme-change", "natural-green") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_vibrant_red" => {
             let _ = window.emit("theme-change", "vibrant-red");
