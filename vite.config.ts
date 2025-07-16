@@ -15,7 +15,7 @@ export default defineConfig(async () => ({
   clearScreen: false,
   // 2. tauri expects a fixed port, but allow fallback if port is occupied
   server: {
-    port: 1421,
+    port: 1422,
     strictPort: false,
     // 增加服务器超时配置
     hmr: {

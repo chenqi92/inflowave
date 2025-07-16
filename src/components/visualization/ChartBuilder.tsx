@@ -60,14 +60,51 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useVisualizationStore } from '@/store/visualization';
-import type { ChartConfig, QueryResult, FieldInfo } from '@/types';
+import type { QueryResult, FieldInfo } from '@/types';
+
+// ChartBuilder 专用的配置接口
+interface ChartBuilderConfig {
+  id?: string;
+  title: string;
+  type: 'line' | 'bar' | 'scatter' | 'area' | 'pie';
+  xField: string;
+  yField: string;
+  groupBy?: string;
+  aggregation?: 'sum' | 'avg' | 'max' | 'min' | 'count';
+  showLegend?: boolean;
+  showGrid?: boolean;
+  smooth?: boolean;
+  stacked?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  settings?: {
+    showGrid?: boolean;
+    showLegend?: boolean;
+    showTooltip?: boolean;
+    animation?: boolean;
+    smooth?: boolean;
+    stack?: boolean;
+    showDataLabels?: boolean;
+    theme?: string;
+    colors?: string[];
+    opacity?: number;
+  };
+  xAxis?: {
+    field: string;
+    type: 'time' | 'category' | 'value';
+  };
+  yAxis?: {
+    field: string;
+    type: 'value' | 'category';
+  };
+}
 
 interface ChartBuilderProps {
   queryResult?: QueryResult;
   fields?: FieldInfo[];
-  onChartCreate?: (chart: ChartConfig) => void;
-  onChartUpdate?: (chart: ChartConfig) => void;
-  initialChart?: ChartConfig;
+  onChartCreate?: (chart: ChartBuilderConfig) => void;
+  onChartUpdate?: (chart: ChartBuilderConfig) => void;
+  initialChart?: ChartBuilderConfig;
   className?: string;
 }
 
@@ -79,22 +116,24 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   initialChart,
   className,
 }) => {
-  const form = useForm<ChartConfig>({
+  const form = useForm<ChartBuilderConfig>({
     defaultValues: {
       title: initialChart?.title || '',
       type: initialChart?.type || 'line',
-      xField: initialChart?.xAxis?.field || '',
-      yField: initialChart?.yAxis?.field || '',
+      xField: initialChart?.xField || initialChart?.xAxis?.field || '',
+      yField: initialChart?.yField || initialChart?.yAxis?.field || '',
       groupBy: initialChart?.groupBy || '',
       settings: initialChart?.settings || {},
     },
   });
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
-  const [chartConfig, setChartConfig] = useState<Partial<ChartConfig>>(
+  const [chartConfig, setChartConfig] = useState<Partial<ChartBuilderConfig>>(
     initialChart || {
       type: 'line',
       title: '未命名图表',
+      xField: '',
+      yField: '',
       xAxis: { field: '', type: 'time' },
       yAxis: { field: '', type: 'value' },
       settings: {
@@ -136,7 +175,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   // 时间字段选项（用于X轴）
   const timeFieldOptions = useMemo(() => {
     return fields
-      .filter(field => field.type === 'time' || field.name === 'time')
+      .filter(field => field.name.toLowerCase().includes('time') || field.name.toLowerCase().includes('date'))
       .map(field => ({
         label: `${field.name} (${field.type})`,
         value: field.name,
@@ -168,8 +207,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       Object.keys(initialChart).forEach(key => {
         if (key in initialChart) {
           form.setValue(
-            key as keyof ChartConfig,
-            initialChart[key as keyof ChartConfig]
+            key as keyof ChartBuilderConfig,
+            initialChart[key as keyof ChartBuilderConfig]
           );
         }
       });
@@ -195,19 +234,20 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   const handleSaveChart = async () => {
     try {
       const values = form.getValues();
-      const finalConfig: ChartConfig = {
+      const finalConfig: ChartBuilderConfig = {
         ...chartConfig,
         ...values,
         id: chartConfig.id || `chart_${Date.now()}`,
         createdAt: chartConfig.createdAt || new Date(),
         updatedAt: new Date(),
-      } as ChartConfig;
+      } as ChartBuilderConfig;
 
       if (chartConfig.id) {
-        await updateChart(finalConfig);
+        updateChart(chartConfig.id, finalConfig as any);
         onChartUpdate?.(finalConfig);
       } else {
-        await createChart(finalConfig);
+        const chartId = createChart(finalConfig as any);
+        finalConfig.id = chartId;
         onChartCreate?.(finalConfig);
       }
 
@@ -489,18 +529,26 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
   // 生成预览图表数据
   const generatePreviewData = () => {
     if (
-      !queryResult?.data ||
-      !chartConfig.xAxis?.field ||
-      !chartConfig.yAxis?.field
+      !queryResult?.results?.[0]?.series?.[0]?.values ||
+      !chartConfig.xField ||
+      !chartConfig.yField
     ) {
       return [];
     }
 
-    return queryResult.data.slice(0, 10).map((row: any) => ({
-      x: row[chartConfig.xAxis!.field],
-      y: row[chartConfig.yAxis!.field],
-      name: row[chartConfig.xAxis!.field],
-      value: row[chartConfig.yAxis!.field],
+    const series = queryResult.results[0].series![0];
+    const xIndex = series.columns.indexOf(chartConfig.xField);
+    const yIndex = series.columns.indexOf(chartConfig.yField);
+
+    if (xIndex === -1 || yIndex === -1) {
+      return [];
+    }
+
+    return series.values.slice(0, 10).map((row: any) => ({
+      x: row[xIndex],
+      y: row[yIndex],
+      name: row[xIndex],
+      value: row[yIndex],
     }));
   };
 
@@ -525,15 +573,23 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       );
     }
 
-    return (
-      <ChartContainer config={chartConfigForShadcn} className='h-64'>
-        <ResponsiveContainer width='100%' height='100%'>
-          {chartConfig.type === 'line' && (
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray='3 3' />
-              <XAxis dataKey='x' />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
+    // 根据图表类型渲染对应的图表组件
+    const renderChart = () => {
+      const commonProps = {
+        data,
+        children: [
+          <CartesianGrid key="grid" strokeDasharray='3 3' />,
+          <XAxis key="xaxis" dataKey='x' />,
+          <YAxis key="yaxis" />,
+          <ChartTooltip key="tooltip" content={<ChartTooltipContent />} />,
+        ],
+      };
+
+      switch (chartConfig.type) {
+        case 'line':
+          return (
+            <LineChart {...commonProps}>
+              {commonProps.children}
               <Line
                 type='monotone'
                 dataKey='y'
@@ -541,25 +597,21 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
                 strokeWidth={2}
               />
             </LineChart>
-          )}
-          {chartConfig.type === 'bar' && (
-            <RechartsBarChart data={data}>
-              <CartesianGrid strokeDasharray='3 3' />
-              <XAxis dataKey='x' />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
+          );
+        case 'bar':
+          return (
+            <RechartsBarChart {...commonProps}>
+              {commonProps.children}
               <Bar
                 dataKey='y'
                 fill={chartConfig.settings?.colors?.[0] || '#1890ff'}
               />
             </RechartsBarChart>
-          )}
-          {chartConfig.type === 'area' && (
-            <RechartsAreaChart data={data}>
-              <CartesianGrid strokeDasharray='3 3' />
-              <XAxis dataKey='x' />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
+          );
+        case 'area':
+          return (
+            <RechartsAreaChart {...commonProps}>
+              {commonProps.children}
               <Area
                 type='monotone'
                 dataKey='y'
@@ -568,7 +620,26 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
                 fillOpacity={0.6}
               />
             </RechartsAreaChart>
-          )}
+          );
+        default:
+          return (
+            <LineChart {...commonProps}>
+              {commonProps.children}
+              <Line
+                type='monotone'
+                dataKey='y'
+                stroke={chartConfig.settings?.colors?.[0] || '#1890ff'}
+                strokeWidth={2}
+              />
+            </LineChart>
+          );
+      }
+    };
+
+    return (
+      <ChartContainer config={chartConfigForShadcn} className='h-64'>
+        <ResponsiveContainer width='100%' height='100%'>
+          {renderChart()}
         </ResponsiveContainer>
       </ChartContainer>
     );
@@ -633,8 +704,8 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
                 onClick={handleSaveChart}
                 disabled={
                   !chartConfig.title ||
-                  !chartConfig.xAxis?.field ||
-                  !chartConfig.yAxis?.field
+                  !chartConfig.xField ||
+                  !chartConfig.yField
                 }
               >
                 <Save className='w-4 h-4 mr-2' />

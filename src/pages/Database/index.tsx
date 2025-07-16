@@ -46,6 +46,8 @@ import DatabaseContextMenu from '@/components/database/DatabaseContextMenu';
 import TableContextMenu from '@/components/database/TableContextMenu';
 import type { RetentionPolicy } from '@/types';
 import { useNavigate } from 'react-router-dom';
+import { useSmartSql } from '@/hooks/useSmartSql';
+import { toast } from 'sonner';
 
 const { Text } = Typography;
 
@@ -55,13 +57,25 @@ const generateChartQuery = (params: any): string => {
 
   switch (chartType) {
     case 'timeSeries':
-      return `SELECT * FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+      return `SELECT *
+              FROM "${measurement}"
+              WHERE time >= now() - 1h
+              ORDER BY time DESC`;
     case 'fieldDistribution':
-      return `SELECT * FROM "${measurement}" WHERE time >= now() - 24h ORDER BY time DESC LIMIT 1000`;
+      return `SELECT *
+              FROM "${measurement}"
+              WHERE time >= now() - 24h
+              ORDER BY time DESC LIMIT 1000`;
     case 'tagStats':
-      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY *`;
+      return `SELECT COUNT(*)
+              FROM "${measurement}"
+              WHERE time >= now() - 24h
+              GROUP BY *`;
     default:
-      return `SELECT * FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC LIMIT 100`;
+      return `SELECT *
+              FROM "${measurement}"
+              WHERE time >= now() - 1h
+              ORDER BY time DESC LIMIT 100`;
   }
 };
 
@@ -70,13 +84,27 @@ const generateFieldChartQuery = (params: any): string => {
 
   switch (chartType) {
     case 'timeSeries':
-      return `SELECT time, "${field}" FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+      return `SELECT time, "${field}"
+              FROM "${measurement}"
+              WHERE time >= now() - 1h
+              ORDER BY time DESC`;
     case 'histogram':
-      return `SELECT "${field}" FROM "${measurement}" WHERE time >= now() - 24h AND "${field}" IS NOT NULL LIMIT 10000`;
+      return `SELECT "${field}"
+              FROM "${measurement}"
+              WHERE time >= now() - 24h AND "${field}" IS NOT NULL LIMIT 10000`;
     case 'boxplot':
-      return `SELECT MIN("${field}"), MAX("${field}"), MEAN("${field}"), PERCENTILE("${field}", 25), PERCENTILE("${field}", 75) FROM "${measurement}" WHERE time >= now() - 24h`;
+      return `SELECT MIN("${field}"),
+                     MAX("${field}"),
+                     MEAN("${field}"),
+                     PERCENTILE("${field}", 25),
+                     PERCENTILE("${field}", 75)
+              FROM "${measurement}"
+              WHERE time >= now() - 24h`;
     default:
-      return `SELECT time, "${field}" FROM "${measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
+      return `SELECT time, "${field}"
+              FROM "${measurement}"
+              WHERE time >= now() - 1h
+              ORDER BY time DESC`;
   }
 };
 
@@ -85,9 +113,15 @@ const generateTagChartQuery = (params: any): string => {
 
   switch (chartType) {
     case 'distribution':
-      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY "${tagKey}"`;
+      return `SELECT COUNT(*)
+              FROM "${measurement}"
+              WHERE time >= now() - 24h
+              GROUP BY "${tagKey}"`;
     default:
-      return `SELECT COUNT(*) FROM "${measurement}" WHERE time >= now() - 24h GROUP BY "${tagKey}"`;
+      return `SELECT COUNT(*)
+              FROM "${measurement}"
+              WHERE time >= now() - 24h
+              GROUP BY "${tagKey}"`;
   }
 };
 
@@ -103,6 +137,24 @@ interface DatabaseStats {
 const Database: React.FC = () => {
   const { activeConnectionId } = useConnectionStore();
   const navigate = useNavigate();
+  const {
+    generateQuickQuery,
+    executeGeneratedSql,
+    copySqlToClipboard,
+    generateSelectQuery,
+    generateCountQuery,
+    generateShowQuery,
+    generateFieldStatsQuery,
+    generateTimeSeriesQuery,
+    loading: sqlLoading,
+  } = useSmartSql({
+    onSqlGenerated: result => {
+      toast.success(`SQL 已生成: ${result.description}`);
+    },
+    onError: error => {
+      toast.error(`SQL 生成失败: ${error}`);
+    },
+  });
   const [loading, setLoading] = useState(false);
   const [databases, setDatabases] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -460,7 +512,8 @@ const Database: React.FC = () => {
                                 // 跳转到查询页面并执行查看数据的查询
                                 navigate('/query', {
                                   state: {
-                                    query: `SELECT * FROM "${tableName}" LIMIT 100`,
+                                    query: `SELECT *
+                                            FROM "${tableName}" LIMIT 100`,
                                     database: selectedDatabase,
                                   },
                                 });
@@ -681,6 +734,99 @@ const Database: React.FC = () => {
 
             try {
               switch (action) {
+                case 'generateSQL':
+                  // 智能 SQL 生成
+                  try {
+                    let result;
+
+                    switch (params.sqlType) {
+                      case 'select_all':
+                        result = await generateSelectQuery(
+                          params.database,
+                          params.measurement
+                        );
+                        break;
+                      case 'select_fields':
+                        result = await generateSelectQuery(
+                          params.database,
+                          params.measurement,
+                          params.fields
+                        );
+                        break;
+                      case 'count_records':
+                        result = await generateCountQuery(
+                          params.database,
+                          params.measurement
+                        );
+                        break;
+                      case 'time_series':
+                        result = await generateTimeSeriesQuery(
+                          params.database,
+                          params.measurement,
+                          params.time_range
+                        );
+                        break;
+                      case 'aggregation':
+                        result = await generateFieldStatsQuery(
+                          params.fields?.[0] || 'value',
+                          'count',
+                          params.database,
+                          params.measurement
+                        );
+                        break;
+                      case 'show_measurements':
+                        result = await generateShowQuery(
+                          'measurements',
+                          params.database
+                        );
+                        break;
+                      case 'show_tag_keys':
+                        result = await generateShowQuery(
+                          'tag_keys',
+                          params.database,
+                          params.measurement
+                        );
+                        break;
+                      case 'show_field_keys':
+                        result = await generateShowQuery(
+                          'field_keys',
+                          params.database,
+                          params.measurement
+                        );
+                        break;
+                      case 'show_tag_values':
+                        result = await generateShowQuery(
+                          'tag_values',
+                          params.database,
+                          params.measurement,
+                          params.tag
+                        );
+                        break;
+                      default:
+                        throw new Error(`不支持的 SQL 类型: ${params.sqlType}`);
+                    }
+
+                    // 跳转到查询页面并填充生成的 SQL
+                    navigate('/query', {
+                      state: {
+                        query: result.sql,
+                        database: params.database,
+                        description: result.description,
+                      },
+                    });
+                  } catch (error) {
+                    showMessage.error(`SQL 生成失败: ${error}`);
+                  }
+                  break;
+
+                case 'copyToClipboard':
+                  // 复制到剪贴板
+                  try {
+                    await copySqlToClipboard(params.text);
+                  } catch (error) {
+                    showMessage.error(`复制失败: ${error}`);
+                  }
+                  break;
                 case 'showMeasurements':
                   // 已经在当前页面显示
                   showMessage.success('测量列表已在当前页面显示');
@@ -816,7 +962,8 @@ const Database: React.FC = () => {
                 case 'previewData':
                   // 预览测量数据
                   try {
-                    let query = `SELECT * FROM "${params.measurement}"`;
+                    let query = `SELECT *
+                                 FROM "${params.measurement}"`;
 
                     if (params.timeRange) {
                       query += ` WHERE time >= now() - ${params.timeRange}`;
@@ -1020,7 +1167,8 @@ const Database: React.FC = () => {
                 case 'getRecordCount':
                   // 获取记录总数
                   try {
-                    const query = `SELECT COUNT(*) FROM "${params.measurement}"`;
+                    const query = `SELECT COUNT(*)
+                                   FROM "${params.measurement}"`;
                     const result = await safeTauriInvoke('execute_query', {
                       connection_id: activeConnectionId,
                       query,
@@ -1051,7 +1199,8 @@ const Database: React.FC = () => {
                 case 'getTimeRange':
                   // 获取时间范围
                   try {
-                    const query = `SELECT MIN(time), MAX(time) FROM "${params.measurement}"`;
+                    const query = `SELECT MIN(time), MAX(time)
+                                   FROM "${params.measurement}"`;
                     const result = await safeTauriInvoke('execute_query', {
                       connection_id: activeConnectionId,
                       query,
@@ -1100,7 +1249,8 @@ const Database: React.FC = () => {
                       typeof fields[0] === 'string'
                         ? fields[0]
                         : fields[0].fieldKey;
-                    const query = `SELECT MIN("${firstField}"), MAX("${firstField}"), MEAN("${firstField}") FROM "${params.measurement}"`;
+                    const query = `SELECT MIN("${firstField}"), MAX("${firstField}"), MEAN("${firstField}")
+                                   FROM "${params.measurement}"`;
 
                     const result = await safeTauriInvoke('execute_query', {
                       connection_id: activeConnectionId,
@@ -1149,7 +1299,9 @@ const Database: React.FC = () => {
 
                     // 获取第一个标签的分布
                     const firstTagKey = tagKeys[0];
-                    const query = `SELECT COUNT(*) FROM "${params.measurement}" GROUP BY "${firstTagKey}"`;
+                    const query = `SELECT COUNT(*)
+                                   FROM "${params.measurement}"
+                                   GROUP BY "${firstTagKey}"`;
 
                     const result = await safeTauriInvoke('execute_query', {
                       connection_id: activeConnectionId,

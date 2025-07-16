@@ -12,6 +12,7 @@ import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
+import { testBackendConnection } from './utils/connectionTest';
 
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';

@@ -23,6 +23,8 @@ import {
   AreaChart,
 } from 'lucide-react';
 import { showMessage } from '@/utils/message';
+import { useContextMenu } from '@/hooks/useContextMenu';
+import ContextMenu from '@/components/common/ContextMenu';
 // 本地类型定义
 interface ColumnType<T = any> {
   title?: React.ReactNode;
@@ -59,6 +61,49 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     'line'
   );
 
+  // 初始化右键菜单
+  const { 
+    contextMenu, 
+    showContextMenu, 
+    hideContextMenu, 
+    handleContextMenuAction 
+  } = useContextMenu({
+    onSqlGenerated: (sql: string, description: string) => {
+      // 可以在这里将生成的SQL传递给查询编辑器
+      console.log('Generated SQL:', sql, description);
+      showMessage.success(`SQL 已生成: ${description}`);
+    },
+    onActionExecuted: (action: string) => {
+      console.log('Context menu action executed:', action);
+    },
+    onError: (error: string) => {
+      showMessage.error(error);
+    }
+  });
+
+  // 处理表格单元格右键菜单
+  const handleCellRightClick = (event: React.MouseEvent, record: any, column: string, value: any) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const target = {
+      type: 'result-table-cell',
+      record,
+      column,
+      value,
+      isNull: value === null || value === undefined,
+      isNumber: typeof value === 'number',
+      isString: typeof value === 'string',
+      isTimeColumn: column.toLowerCase().includes('time') || column.toLowerCase().includes('timestamp'),
+      tableData: {
+        columns: result?.series?.[0]?.columns || [],
+        totalRows: result?.rowCount || 0
+      }
+    };
+    
+    showContextMenu(event, target);
+  };
+
   // 格式化查询结果为表格数据
   const formatResultForTable = (queryResult: QueryResult) => {
     if (
@@ -77,27 +122,38 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         key: col,
         width: index === 0 ? 200 : 120, // 时间列宽一些
         ellipsis: true,
-        render: (value: any) => {
-          if (value === null || value === undefined) {
-            return <Text type='secondary'>NULL</Text>;
-          }
-          if (typeof value === 'number') {
-            return <Text code>{value.toLocaleString()}</Text>;
-          }
-          if (
-            typeof value === 'string' &&
-            value.includes('T') &&
-            value.includes('Z')
-          ) {
-            // 可能是时间戳
-            try {
-              const date = new Date(value);
-              return <Text code>{date.toLocaleString()}</Text>;
-            } catch {
-              return <Text>{value}</Text>;
+        render: (value: any, record: any) => {
+          const cellContent = (() => {
+            if (value === null || value === undefined) {
+              return <Text type='secondary'>NULL</Text>;
             }
-          }
-          return <Text>{String(value)}</Text>;
+            if (typeof value === 'number') {
+              return <Text code>{value.toLocaleString()}</Text>;
+            }
+            if (
+              typeof value === 'string' &&
+              value.includes('T') &&
+              value.includes('Z')
+            ) {
+              // 可能是时间戳
+              try {
+                const date = new Date(value);
+                return <Text code>{date.toLocaleString()}</Text>;
+              } catch {
+                return <Text>{value}</Text>;
+              }
+            }
+            return <Text>{String(value)}</Text>;
+          })();
+
+          return (
+            <div
+              onContextMenu={(e) => handleCellRightClick(e, record, col, value)}
+              style={{ cursor: 'context-menu' }}
+            >
+              {cellContent}
+            </div>
+          );
         },
       })
     );
@@ -469,6 +525,23 @@ const QueryResults: React.FC<QueryResultsProps> = ({
           )}
         </div>
       </Modal>
+      
+      {/* 右键菜单 */}
+      <ContextMenu
+        open={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        target={contextMenu.target}
+        onClose={hideContextMenu}
+        onAction={handleContextMenuAction}
+        onExecuteQuery={(sql: string, description?: string) => {
+          // 可以在这里将生成的SQL传递给查询编辑器
+          console.log('Generated SQL from context menu:', sql, description);
+          if (description) {
+            showMessage.success(`SQL 已生成: ${description}`);
+          }
+        }}
+      />
     </div>
   );
 };

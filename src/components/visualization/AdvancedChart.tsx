@@ -6,27 +6,30 @@ import {
   SelectTrigger,
   SelectValue,
   Button,
-  Typography,
-  Row,
-  Col,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Label,
+  Slider,
+  Switch,
 } from '@/components/ui';
-
-// TODO: Replace these Ant Design components: Slider, ColorPicker, Switch, InputNumber
 import {
   TrendingUp,
   BarChart,
   PieChart,
   AreaChart,
-  Scatter,
+  Circle,
   Settings,
   Download,
+  Maximize,
+  ChevronDown,
 } from 'lucide-react';
-// TODO: Replace these icons: AreaChartOutlined, DotChartOutlined, Maximize
-// You may need to find alternatives or create custom icons
 import * as echarts from 'echarts';
 import type { QueryResult } from '@/types';
-
-const { Title, Text } = Typography;
 
 interface ChartConfig {
   type: 'line' | 'bar' | 'area' | 'pie' | 'scatter' | 'gauge' | 'heatmap';
@@ -364,94 +367,93 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   };
 
   return (
-    <div
-      title={
-        <div className='flex gap-2'>
-          <TrendingUp className='w-4 h-4' />
-          <span>高级图表</span>
-        </div>
-      }
-      extra={
-        <div className='flex gap-2'>
+    <Card className="w-full" style={{ height: showSettings ? height + 200 : height + 100 }}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="w-4 h-4" />
+          高级图表
+        </CardTitle>
+        <div className="flex items-center gap-2">
           <Button
-            icon={<Settings className='w-4 h-4' />}
+            variant={showSettings ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setShowSettings(!showSettings)}
-            type={showSettings ? 'primary' : 'default'}
-            size='small'
+            className="flex items-center gap-2"
           >
+            <Settings className="w-4 h-4" />
             设置
           </Button>
           <Button
-            icon={<Download className='w-4 h-4' />}
+            variant="outline"
+            size="sm"
             onClick={exportChart}
-            size='small'
+            className="flex items-center gap-2"
           >
+            <Download className="w-4 h-4" />
             导出
           </Button>
           <Button
-            icon={<Maximize className='w-4 h-4' />}
+            variant="outline"
+            size="sm"
             onClick={toggleFullscreen}
-            size='small'
+            className="flex items-center gap-2"
           >
+            <Maximize className="w-4 h-4" />
             全屏
           </Button>
         </div>
-      }
-      style={{ height: showSettings ? height + 200 : height + 100 }}
-    >
-      {showSettings && (
-        <div size='small' style={{ marginBottom: 16 }}>
-          <Row gutter={[16, 16]}>
-            <Col span={6}>
-              <div>
-                <Text strong>图表类型</Text>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Collapsible open={showSettings} onOpenChange={setShowSettings}>
+          <CollapsibleContent className="px-6 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">图表类型</Label>
                 <Select
                   value={config.type}
                   onValueChange={value => updateConfig({ type: value })}
                 >
-                  <SelectTrigger style={{ width: '100%', marginTop: 4 }}>
-                    <SelectValue placeholder='选择图表类型' />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择图表类型" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='line'>
-                      <div className='flex gap-2'>
-                        <TrendingUp className='w-4 h-4' />
+                    <SelectItem value="line">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
                         折线图
                       </div>
                     </SelectItem>
-                    <SelectItem value='bar'>
-                      <div className='flex gap-2'>
-                        <BarChart className='w-4 h-4' />
+                    <SelectItem value="bar">
+                      <div className="flex items-center gap-2">
+                        <BarChart className="w-4 h-4" />
                         柱状图
                       </div>
                     </SelectItem>
-                    <SelectItem value='area'>
-                      <div className='flex gap-2'>
-                        <AreaChart className='w-4 h-4' />
+                    <SelectItem value="area">
+                      <div className="flex items-center gap-2">
+                        <AreaChart className="w-4 h-4" />
                         面积图
                       </div>
                     </SelectItem>
-                    <SelectItem value='pie'>
-                      <div className='flex gap-2'>
-                        <PieChart className='w-4 h-4' />
+                    <SelectItem value="pie">
+                      <div className="flex items-center gap-2">
+                        <PieChart className="w-4 h-4" />
                         饼图
                       </div>
                     </SelectItem>
-                    <SelectItem value='scatter'>
-                      <div className='flex gap-2'>
-                        <Scatter className='w-4 h-4' />
+                    <SelectItem value="scatter">
+                      <div className="flex items-center gap-2">
+                        <Circle className="w-4 h-4" />
                         散点图
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </Col>
-            <Col span={6}>
-              <div>
-                <Text strong>颜色方案</Text>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">颜色方案</Label>
                 <Select
-                  value='default'
+                  value="default"
                   onValueChange={value =>
                     updateConfig({
                       colorScheme:
@@ -459,8 +461,8 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                     })
                   }
                 >
-                  <SelectTrigger style={{ width: '100%', marginTop: 4 }}>
-                    <SelectValue placeholder='选择颜色方案' />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择颜色方案" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.keys(colorSchemes).map(scheme => (
@@ -471,66 +473,65 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-            </Col>
-            <Col span={6}>
-              <div>
-                <Text strong>动画时长</Text>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">动画时长</Label>
                 <Slider
                   min={0}
                   max={3000}
-                  value={config.animationDuration}
-                  onValueChange={value =>
+                  value={[config.animationDuration]}
+                  onValueChange={([value]) =>
                     updateConfig({ animationDuration: value })
                   }
-                  style={{ marginTop: 4 }}
+                  className="w-full"
                 />
               </div>
-            </Col>
-            <Col span={6}>
-              <div className='flex gap-2' direction='vertical' size='small'>
-                <div>
-                  <Switch
-                    checked={config.showLegend}
-                    onValueChange={checked =>
-                      updateConfig({ showLegend: checked })
-                    }
-                    size='small'
-                  />
-                  <Text style={{ marginLeft: 8 }}>显示图例</Text>
-                </div>
-                <div>
-                  <Switch
-                    checked={config.showGrid}
-                    onValueChange={checked =>
-                      updateConfig({ showGrid: checked })
-                    }
-                    size='small'
-                  />
-                  <Text style={{ marginLeft: 8 }}>显示网格</Text>
-                </div>
-                <div>
-                  <Switch
-                    checked={config.smooth}
-                    onValueChange={checked => updateConfig({ smooth: checked })}
-                    size='small'
-                  />
-                  <Text style={{ marginLeft: 8 }}>平滑曲线</Text>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">显示选项</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-legend"
+                      checked={config.showLegend}
+                      onCheckedChange={checked =>
+                        updateConfig({ showLegend: checked })
+                      }
+                    />
+                    <Label htmlFor="show-legend" className="text-sm">显示图例</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-grid"
+                      checked={config.showGrid}
+                      onCheckedChange={checked =>
+                        updateConfig({ showGrid: checked })
+                      }
+                    />
+                    <Label htmlFor="show-grid" className="text-sm">显示网格</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="smooth-curve"
+                      checked={config.smooth}
+                      onCheckedChange={checked => updateConfig({ smooth: checked })}
+                    />
+                    <Label htmlFor="smooth-curve" className="text-sm">平滑曲线</Label>
+                  </div>
                 </div>
               </div>
-            </Col>
-          </Row>
-        </div>
-      )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-      <div
-        ref={chartRef}
-        style={{
-          width: '100%',
-          height: showSettings ? height - 100 : height - 50,
-          minHeight: 300,
-        }}
-      />
-    </div>
+        <div
+          ref={chartRef}
+          className="w-full"
+          style={{
+            height: showSettings ? height - 100 : height - 50,
+            minHeight: 300,
+          }}
+        />
+      </CardContent>
+    </Card>
   );
 };
 

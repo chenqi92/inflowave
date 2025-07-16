@@ -18,6 +18,8 @@ import {
 } from '@/components/ui';
 import { useDialog } from '@/hooks/useDialog';
 import { showMessage } from '@/utils/message';
+import { useContextMenu } from '@/hooks/useContextMenu';
+import ContextMenu from '@/components/common/ContextMenu';
 import {
   Save,
   Database,
@@ -80,6 +82,25 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   const { activeConnectionId } = useConnectionStore();
   const { resolvedTheme } = useTheme();
   const dialog = useDialog();
+  
+  // 初始化右键菜单
+  const { 
+    contextMenu, 
+    showContextMenu, 
+    hideContextMenu, 
+    handleContextMenuAction 
+  } = useContextMenu({
+    onSqlGenerated: (sql: string, description: string) => {
+      updateCurrentTabQuery(sql);
+      showMessage.success(`SQL 已生成: ${description}`);
+    },
+    onActionExecuted: (action: string) => {
+      console.log('Context menu action executed:', action);
+    },
+    onError: (error: string) => {
+      showMessage.error(error);
+    }
+  });
 
   // 处理时间范围的SQL注入
   const injectTimeRangeToQuery = (
@@ -246,6 +267,32 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     // 添加注释/取消注释快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash, () => {
       editor.getAction('editor.action.commentLine')?.run();
+    });
+
+    // 添加右键菜单支持
+    editor.onContextMenu((e) => {
+      e.event.preventDefault();
+      e.event.stopPropagation();
+      
+      const selection = editor.getSelection();
+      const selectedText = selection && !selection.isEmpty() 
+        ? editor.getModel()?.getValueInRange(selection) 
+        : '';
+      
+      const position = editor.getPosition();
+      const currentQuery = editor.getModel()?.getValue() || '';
+      
+      const target = {
+        type: 'query-editor',
+        query: currentQuery,
+        selectedText,
+        position,
+        database: selectedDatabase,
+        hasSelection: Boolean(selectedText?.trim()),
+        canExecute: Boolean(currentQuery.trim() && activeConnectionId && selectedDatabase)
+      };
+      
+      showContextMenu(e.event, target);
     });
 
     // 注册 InfluxQL 语言支持
@@ -890,6 +937,44 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       }
     };
 
+    const handleExecuteQueryEvent = () => {
+      handleExecuteQuery();
+    };
+
+    const handleFormatQueryMenuItem = () => {
+      handleFormatQuery();
+    };
+
+    const handleInsertTemplateEvent = (event: CustomEvent) => {
+      const { template } = event.detail;
+      if (editorInstance && template) {
+        const position = editorInstance.getPosition();
+        if (position) {
+          editorInstance.executeEdits('insert-template', [
+            {
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column,
+              },
+              text: template,
+            },
+          ]);
+        }
+      }
+    };
+
+    const handleToggleCommentEvent = () => {
+      if (editorInstance) {
+        editorInstance.getAction('editor.action.commentLine')?.run();
+      }
+    };
+
+    const handleSaveQueryEvent = () => {
+      handleSaveQuery();
+    };
+
     // 添加事件监听器
     document.addEventListener('open-file-content', handleOpenFileContent);
     document.addEventListener('save-current-query', handleSaveCurrentQuery);
@@ -899,6 +984,11 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     document.addEventListener('show-query-favorites', handleShowQueryFavorites);
     document.addEventListener('show-query-history', handleShowQueryHistory);
     document.addEventListener('execute-selection', handleExecuteSelection);
+    document.addEventListener('execute-query', handleExecuteQueryEvent);
+    document.addEventListener('format-query', handleFormatQueryMenuItem);
+    document.addEventListener('insert-template', handleInsertTemplateEvent);
+    document.addEventListener('toggle-comment', handleToggleCommentEvent);
+    document.addEventListener('save-query', handleSaveQueryEvent);
 
     return () => {
       document.removeEventListener('open-file-content', handleOpenFileContent);
@@ -909,6 +999,11 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       document.removeEventListener('show-query-favorites', handleShowQueryFavorites);
       document.removeEventListener('show-query-history', handleShowQueryHistory);
       document.removeEventListener('execute-selection', handleExecuteSelection);
+      document.removeEventListener('execute-query', handleExecuteQueryEvent);
+      document.removeEventListener('format-query', handleFormatQueryMenuItem);
+      document.removeEventListener('insert-template', handleInsertTemplateEvent);
+      document.removeEventListener('toggle-comment', handleToggleCommentEvent);
+      document.removeEventListener('save-query', handleSaveQueryEvent);
     };
   }, [activeConnectionId, selectedDatabase, getCurrentTab, handleSaveQuery, handleFormatQuery, handleExecuteQuery, editorInstance]);
 
@@ -1259,6 +1354,22 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           ...dialog.dialogState.options,
           onConfirm: dialog.handleConfirm,
           onCancel: dialog.handleCancel,
+        }}
+      />
+      
+      {/* 右键菜单 */}
+      <ContextMenu
+        open={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        target={contextMenu.target}
+        onClose={hideContextMenu}
+        onAction={handleContextMenuAction}
+        onExecuteQuery={(sql: string, description?: string) => {
+          updateCurrentTabQuery(sql);
+          if (description) {
+            showMessage.success(`SQL 已生成: ${description}`);
+          }
         }}
       />
     </div>
