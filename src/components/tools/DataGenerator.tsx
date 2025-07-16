@@ -17,7 +17,7 @@ import {
   Separator
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
-import { PlayCircle, Database, RefreshCw, CheckCircle, Clock, Tag as TagIcon } from 'lucide-react';
+import { PlayCircle, Database, RefreshCw, CheckCircle, Clock, Tag as TagIcon, Square } from 'lucide-react';
 
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -46,6 +46,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState(database);
   const [databases, setDatabases] = useState<string[]>([]);
+  const [isStopping, setIsStopping] = useState(false);
+  const [shouldStop, setShouldStop] = useState(false);
 
   // 预定义的数据生成任务
   const generatorTasks: GeneratorTask[] = [
@@ -268,6 +270,13 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
     }
   };
 
+  // 停止数据生成
+  const stopGeneration = () => {
+    setIsStopping(true);
+    setShouldStop(true);
+    showMessage.info("正在停止数据生成...");
+  };
+
   // 执行数据生成
   const generateData = async () => {
     if (!activeConnectionId) {
@@ -283,65 +292,95 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
     setLoading(true);
     setProgress(0);
     setCompletedTasks([]);
+    setShouldStop(false);
 
     try {
-      for (let i = 0; i < generatorTasks.length; i++) {
+      for (let i = 0; i < generatorTasks.length && !shouldStop; i++) {
         const task = generatorTasks[i];
         setCurrentTask(task.name);
-        
+
+        // 检查是否需要停止
+        if (shouldStop) {
+          showMessage.warning("数据生成已被用户停止");
+          break;
+        }
+
         // 生成数据
         const dataPoints = generateDataPoints(task);
-        
-        // 分批写入数据
-        const batchSize = 100;
+
+        // 分批写入数据 - 增大批次大小以减少HTTP请求
+        const batchSize = 500; // 从100增加到500
         const batches = Math.ceil(dataPoints.length / batchSize);
-        
-        for (let j = 0; j < batches; j++) {
+
+        for (let j = 0; j < batches && !shouldStop; j++) {
+          // 检查是否需要停止
+          if (shouldStop) {
+            showMessage.warning("数据生成已被用户停止");
+            break;
+          }
+
           const batch = dataPoints.slice(j * batchSize, (j + 1) * batchSize);
-          
+
           const request: BatchWriteRequest = {
             connectionId: activeConnectionId,
             database: selectedDatabase,
             points: batch,
             precision: 'ms'};
-          
+
           try {
             const result = await safeTauriInvoke<WriteResult>('write_data_points', { request });
             if (result.success) {
               console.log(`成功写入批次 ${j + 1}/${batches} 到数据库 "${selectedDatabase}", 表: "${task.measurement}", 数据点: ${batch.length}`);
             } else {
               console.error(`写入批次 ${j + 1} 失败:`, result.errors);
+              // 如果有错误但不是全部失败，继续处理
+              if (result.errors.length < batch.length) {
+                showMessage.warning(`批次 ${j + 1} 部分写入失败，继续处理下一批次`);
+              }
             }
           } catch (error) {
             console.error(`写入批次 ${j + 1} 失败:`, error);
+            showMessage.error(`写入批次 ${j + 1} 失败: ${error}`);
             // 继续处理下一批次
           }
-          
+
           // 更新进度
           const batchProgress = ((j + 1) / batches) * (1 / generatorTasks.length);
           const totalProgress = (i / generatorTasks.length) + batchProgress;
           setProgress(Math.round(totalProgress * 100));
+
+          // 添加小延迟以避免过快的请求
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
-        
-        setCompletedTasks(prev => [...prev, task.name]);
-        console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
-        showMessage.success(`数据生成完成: ${task.name} (${task.recordCount} 条记录)`);
+
+        if (!shouldStop) {
+          setCompletedTasks(prev => [...prev, task.name]);
+          console.log(`表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`);
+          showMessage.success(`数据生成完成: ${task.name} (${task.recordCount} 条记录)`);
+        }
       }
-      
-      setProgress(100);
-      setCurrentTask('');
-      showMessage.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
-      
-      // 触发数据源面板刷新
-      setTimeout(() => {
-        dataExplorerRefresh.trigger();
-      }, 1000); // 延迟1秒刷新，确保数据已经写入
-      
+
+      if (!shouldStop) {
+        setProgress(100);
+        setCurrentTask('');
+        showMessage.success(`所有测试数据已生成到数据库 "${selectedDatabase}"！`);
+
+        // 触发数据源面板刷新
+        setTimeout(() => {
+          dataExplorerRefresh.trigger();
+        }, 1000); // 延迟1秒刷新，确保数据已经写入
+      } else {
+        setCurrentTask('');
+        showMessage.info("数据生成已停止");
+      }
+
     } catch (error) {
       console.error('数据生成失败:', error);
       showMessage.error(`数据生成失败: ${error}`);
     } finally {
       setLoading(false);
+      setIsStopping(false);
+      setShouldStop(false);
     }
   };
 
@@ -407,13 +446,24 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={generateData}
-              disabled={loading || !activeConnectionId || !selectedDatabase}
-            >
-              <PlayCircle className="w-4 h-4 mr-2" />
-              生成数据
-            </Button>
+            {!loading ? (
+              <Button
+                onClick={generateData}
+                disabled={!activeConnectionId || !selectedDatabase}
+              >
+                <PlayCircle className="w-4 h-4 mr-2" />
+                生成数据
+              </Button>
+            ) : (
+              <Button
+                onClick={stopGeneration}
+                disabled={isStopping}
+                variant="destructive"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                {isStopping ? '正在停止...' : '停止生成'}
+              </Button>
+            )}
             <Button
               onClick={clearData}
               disabled={loading || !activeConnectionId || !selectedDatabase}

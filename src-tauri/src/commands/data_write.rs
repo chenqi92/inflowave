@@ -72,7 +72,7 @@ pub async fn write_data(
     Ok(result)
 }
 
-/// 批量写入数据点
+/// 批量写入数据点（优化版本 - 一次性写入所有数据点）
 #[tauri::command]
 pub async fn write_data_points(
     connection_service: State<'_, ConnectionService>,
@@ -89,33 +89,19 @@ pub async fn write_data_points(
             format!("获取连接失败: {}", e)
         })?;
 
-    let mut points_written = 0u64;
-    let mut errors = Vec::new();
+    let mut line_protocols = Vec::new();
+    let mut conversion_errors = Vec::new();
 
-    // 将数据点转换为 Line Protocol 格式
+    // 将所有数据点转换为 Line Protocol 格式
     for (index, point) in request.points.iter().enumerate() {
         match convert_data_point_to_line_protocol(point) {
             Ok(line_protocol) => {
-                match client.write_line_protocol(&request.database, &line_protocol).await {
-                    Ok(count) => {
-                        points_written += count as u64;
-                        debug!("成功写入数据点 {}: {} 个点", index + 1, count);
-                    }
-                    Err(e) => {
-                        let error_msg = format!("数据点 {} 写入失败: {}", index + 1, e);
-                        error!("{}", error_msg);
-                        errors.push(WriteError {
-                            point: point.clone(),
-                            error: error_msg,
-                            line: Some(index + 1),
-                        });
-                    }
-                }
+                line_protocols.push(line_protocol);
             }
             Err(e) => {
                 let error_msg = format!("数据点 {} 转换失败: {}", index + 1, e);
                 error!("{}", error_msg);
-                errors.push(WriteError {
+                conversion_errors.push(WriteError {
                     point: point.clone(),
                     error: error_msg,
                     line: Some(index + 1),
@@ -124,13 +110,51 @@ pub async fn write_data_points(
         }
     }
 
+    // 如果有转换错误，返回错误结果
+    if !conversion_errors.is_empty() && line_protocols.is_empty() {
+        let duration = start_time.elapsed().as_millis() as u64;
+        return Ok(WriteResult {
+            success: false,
+            points_written: 0,
+            errors: conversion_errors,
+            duration,
+        });
+    }
+
+    // 将所有 Line Protocol 合并为一个字符串，一次性写入
+    let combined_line_protocol = line_protocols.join("\n");
+    let mut write_errors = conversion_errors;
+    let mut points_written = 0u64;
+
+    match client.write_line_protocol(&request.database, &combined_line_protocol).await {
+        Ok(count) => {
+            points_written = count as u64;
+            debug!("成功批量写入 {} 个数据点", count);
+        }
+        Err(e) => {
+            let error_msg = format!("批量写入失败: {}", e);
+            error!("{}", error_msg);
+
+            // 如果批量写入失败，为所有成功转换的数据点添加写入错误
+            for (index, point) in request.points.iter().enumerate() {
+                if index < line_protocols.len() {
+                    write_errors.push(WriteError {
+                        point: point.clone(),
+                        error: error_msg.clone(),
+                        line: Some(index + 1),
+                    });
+                }
+            }
+        }
+    }
+
     let duration = start_time.elapsed().as_millis() as u64;
-    let success = errors.is_empty();
+    let success = write_errors.is_empty();
 
     let result = WriteResult {
         success,
         points_written,
-        errors,
+        errors: write_errors,
         duration,
     };
 
