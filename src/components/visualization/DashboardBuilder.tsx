@@ -3,7 +3,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-import { Plus, Trash2, Edit, Save, Eye, Copy, Settings, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, Eye, Copy, Settings, GripVertical, LayoutGrid } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useVisualizationStore } from '@/store/visualization';
@@ -294,7 +294,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       <div
         title={
           <div className="flex gap-2">
-            <LayoutOutlined />
+            <LayoutGrid className="w-4 h-4" />
             <span>{isEditMode ? '编辑仪表板' : '预览仪表板'}</span>
             <span className="text-sm text-muted-foreground">
               ({gridItems.length} 个图表)

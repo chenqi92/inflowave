@@ -16,26 +16,26 @@ import {
   Col,
   Tag,
   Switch,
-  Slider,
-  Radio,
-  Modal,
-  Tooltip,
-  FormItem
+  FormItem,
+  RadioGroup,
+  RadioGroupItem,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 
-import { LayoutOutlined } from '@/components/ui';
-import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell } from 'lucide-react';
+import { Settings, Eye, Save, RefreshCw, Edit, Plus, Key, Bell, LayoutGrid } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { 
   UserPreferences, 
-  KeyboardShortcut, 
-  NotificationSettings,
-  AccessibilitySettings,
-  WorkspaceSettings 
+  KeyboardShortcut
 } from '@/types';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface UserExperienceSettingsProps {
   onSettingsChange?: (settings: UserPreferences) => void;
@@ -187,9 +187,8 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
           icon={<Edit className="w-4 h-4"  />}
           onClick={() => {
             setEditingShortcut(record);
-            shortcutForm.setFieldsValue({
-              keys: record.keys.join('+'),
-              enabled: record.enabled});
+            shortcutForm.setValue('keys', record.keys.join('+'));
+            shortcutForm.setValue('enabled', record.enabled);
             setShowShortcutModal(true);
           }}
           size="small">
@@ -356,12 +355,24 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                       <FormItem
                         name={['accessibility', 'fontSize']}
                         label="字体大小">
-                        <Radio.Group>
-                          <Radio value="small">小</Radio>
-                          <Radio value="medium">中</Radio>
-                          <Radio value="large">大</Radio>
-                          <Radio value="extraLarge">特大</Radio>
-                        </Radio.Group>
+                        <RadioGroup defaultValue="medium" className="flex flex-col space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="small" id="small" />
+                            <Label htmlFor="small">小</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="medium" id="medium" />
+                            <Label htmlFor="medium">中</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="large" id="large" />
+                            <Label htmlFor="large">大</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="extraLarge" id="extraLarge" />
+                            <Label htmlFor="extraLarge">特大</Label>
+                          </div>
+                        </RadioGroup>
                       </FormItem>
                       
                       <FormItem
@@ -392,7 +403,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 key: 'workspace',
                 label: (
                   <div className="flex gap-2">
-                    <LayoutOutlined />
+                    <LayoutGrid className="w-4 h-4" />
                     工作区
                   </div>
                 ),
@@ -444,17 +455,17 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
       </div>
 
       {/* 快捷键编辑模态框 */}
-      <Modal
-        title="编辑快捷键"
-        open={showShortcutModal}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowShortcutModal(false);
-            setEditingShortcut(null);
-            shortcutForm.resetFields();
-          }
-        }}
-        width={500}>
+      <Dialog open={showShortcutModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowShortcutModal(false);
+          setEditingShortcut(null);
+          shortcutForm.reset();
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>编辑快捷键</DialogTitle>
+          </DialogHeader>
         {editingShortcut && (
           <Form
             form={shortcutForm}
@@ -467,7 +478,7 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               updateShortcut(updatedShortcut);
               setShowShortcutModal(false);
               setEditingShortcut(null);
-              shortcutForm.resetFields();
+              shortcutForm.reset();
             }}>
             <div style={{ marginBottom: 16 }}>
               <Text strong>{editingShortcut.name}</Text>
@@ -489,7 +500,8 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
             </FormItem>
           </Form>
         )}
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
