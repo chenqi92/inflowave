@@ -252,23 +252,24 @@ const Visualization: React.FC = () => {
   const toolbar = (
     <div className="flex gap-2">
       <Button
-        icon={<RefreshCw className="w-4 h-4"  />}
         onClick={() => loadDatabases()}
         disabled={loading}
+        variant="outline"
       >
+        <RefreshCw className="w-4 h-4 mr-2" />
         刷新
       </Button>
       <Button
-        icon={<Settings className="w-4 h-4"  />}
+        variant="outline"
       >
+        <Settings className="w-4 h-4 mr-2" />
         设置
       </Button>
       <Button
-        type="primary"
-        icon={<Plus className="w-4 h-4"  />}
         onClick={() => setCreateModalVisible(true)}
         disabled={!activeConnectionId}
       >
+        <Plus className="w-4 h-4 mr-2" />
         创建图表
       </Button>
     </div>
@@ -320,18 +321,19 @@ const Visualization: React.FC = () => {
                     extra={
                       <div className="flex gap-2">
                         <Button
-                          type="text"
-                          size="small"
-                          icon={<PlayCircle />}
+                          variant="ghost"
+                          size="sm"
                           onClick={() => refreshChart(chart)}
                           title="刷新数据"
-                        />
+                        >
+                          <PlayCircle className="w-4 h-4" />
+                        </Button>
                         <Button
-                          type="text"
-                          size="small"
-                          danger
+                          variant="ghost"
+                          size="sm"
                           onClick={() => deleteChart(chart.id)}
                           title="删除图表"
+                          className="text-destructive hover:text-destructive"
                         >
                           删除
                         </Button>

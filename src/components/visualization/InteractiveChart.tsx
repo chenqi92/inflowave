@@ -243,38 +243,45 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           {autoRefresh && (
             <Tooltip title={isAutoRefreshing ? '暂停自动刷新' : '开始自动刷新'}>
               <Button
-                size="small"
-                icon={isAutoRefreshing ? <PauseCircle /> : <PlayCircle />}
+                size="sm"
                 onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
-                type={isAutoRefreshing ? 'primary' : 'default'}
-              />
+                variant={isAutoRefreshing ? 'default' : 'outline'}
+              >
+                {isAutoRefreshing ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+              </Button>
             </Tooltip>
           )}
 
           <Tooltip title="重新加载">
             <Button
-              size="small"
-              icon={<RefreshCw className="w-4 h-4"  />}
+              size="sm"
               onClick={() => window.location.reload()}
-            />
+              variant="outline"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </Tooltip>
 
           <Tooltip title="放大">
             <Button
-              size="small"
-              icon={<ZoomIn className="w-4 h-4"  />}
+              size="sm"
               onClick={handleZoomIn}
               disabled={zoomLevel >= 200}
-            />
+              variant="outline"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
           </Tooltip>
 
           <Tooltip title="缩小">
             <Button
-              size="small"
-              icon={<ZoomOutlined />}
+              size="sm"
               onClick={handleZoomOut}
               disabled={zoomLevel <= 50}
-            />
+              variant="outline"
+            >
+              <ZoomOutlined className="w-4 h-4" />
+            </Button>
           </Tooltip>
 
           <Dropdown
@@ -283,7 +290,9 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             placement="bottomRight"
           >
             <Tooltip title="下载">
-              <Button size="small" icon={<Download className="w-4 h-4"  />} />
+              <Button size="sm" variant="outline">
+                <Download className="w-4 h-4" />
+              </Button>
             </Tooltip>
           </Dropdown>
 
@@ -294,17 +303,21 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
               placement="bottomRight"
             >
               <Tooltip title="设置">
-                <Button size="small" icon={<Settings className="w-4 h-4"  />} />
+                <Button size="sm" variant="outline">
+                  <Settings className="w-4 h-4" />
+                </Button>
               </Tooltip>
             </Dropdown>
           )}
 
           <Tooltip title={isFullscreen ? '退出全屏' : '全屏显示'}>
             <Button
-              size="small"
-              icon={isFullscreen ? <Minimize className="w-4 h-4"  /> : <Maximize className="w-4 h-4"  />}
+              size="sm"
               onClick={handleFullscreen}
-            />
+              variant="outline"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </Button>
           </Tooltip>
         </div>
       }

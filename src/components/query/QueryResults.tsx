@@ -301,13 +301,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
               }
               trigger={['click']}
             >
-              <Button icon={<Download className="w-4 h-4"  />} size="small">
+              <Button size="sm">
+                <Download className="w-4 h-4 mr-2" />
                 导出
               </Button>
             </Dropdown>
             <Button
-              icon={<Info className="w-4 h-4"  />}
-              size="small"
+              size="sm"
               onClick={() => {
                 Modal.info({
                   title: '查询结果详情',
@@ -321,6 +321,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({ result, loading = false }) 
                   )});
               }}
             >
+              <Info className="w-4 h-4 mr-2" />
               详情
             </Button>
           </div>

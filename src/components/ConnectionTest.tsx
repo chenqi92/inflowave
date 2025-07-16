@@ -150,11 +150,10 @@ const ConnectionTest: React.FC = () => {
 
                     <FormItem>
                         <Button
-                            type="primary"
-                            htmlType="submit"
+                            type="submit"
                             disabled={loading}
-                            size="large"
-                            block>
+                            size="lg"
+                            className="w-full">
                             {loading ? '测试中...' : '测试连接'}
                         </Button>
                     </FormItem>

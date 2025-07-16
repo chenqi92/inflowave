@@ -407,19 +407,19 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button 
-              icon={<PlayCircle />}
-              type="primary"
+            <Button
               onClick={generateData}
               disabled={loading || !activeConnectionId || !selectedDatabase}
             >
+              <PlayCircle className="w-4 h-4 mr-2" />
               生成数据
             </Button>
-            <Button 
-              icon={<RefreshCw className="w-4 h-4"  />}
+            <Button
               onClick={clearData}
               disabled={loading || !activeConnectionId || !selectedDatabase}
+              variant="outline"
             >
+              <RefreshCw className="w-4 h-4 mr-2" />
               清空数据
             </Button>
           </div>

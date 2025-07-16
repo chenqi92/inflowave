@@ -263,11 +263,11 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                         <Button
-                            icon={<Home className="w-4 h-4"/>}
                             onClick={() => navigate('/')}
-                            type="default"
+                            variant="outline"
                             className="cursor-pointer"
                         >
+                            <Home className="w-4 h-4 mr-2"/>
                             返回主页
                         </Button>
                     </div>

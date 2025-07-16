@@ -161,11 +161,11 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
       {chartTypes.map(type => (
         <Button
           key={type.value}
-          type={chartConfig.type === type.value ? 'primary' : 'default'}
-          icon={type.icon}
+          variant={chartConfig.type === type.value ? 'default' : 'outline'}
           onClick={() => handleFieldChange('type', type.value)}
           className="h-16 flex flex-col items-center justify-center"
         >
+          {type.icon}
           <div className="text-xs mt-1">{type.label}</div>
         </Button>
       ))}
@@ -337,32 +337,39 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
           <div className="flex gap-2">
             <Tooltip title="预览图表">
               <Button
-                icon={<Eye className="w-4 h-4"  />}
                 onClick={handlePreview}
-                type={previewMode ? 'primary' : 'default'}
-              />
+                variant={previewMode ? 'default' : 'outline'}
+                size="icon"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
             </Tooltip>
-            
+
             <Tooltip title="高级设置">
               <Button
-                icon={<Settings className="w-4 h-4"  />}
                 onClick={() => setSettingsVisible(true)}
-              />
+                variant="outline"
+                size="icon"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
             </Tooltip>
 
             <Tooltip title="复制配置">
               <Button
-                icon={<Copy className="w-4 h-4"  />}
                 onClick={handleCopyConfig}
-              />
+                variant="outline"
+                size="icon"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
             </Tooltip>
 
             <Button
-              type="primary"
-              icon={<Save className="w-4 h-4"  />}
               onClick={handleSaveChart}
               disabled={!chartConfig.title || !chartConfig.xAxis?.field || !chartConfig.yAxis?.field}
             >
+              <Save className="w-4 h-4 mr-2" />
               保存图表
             </Button>
           </div>

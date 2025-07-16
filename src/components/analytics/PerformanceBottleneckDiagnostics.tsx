@@ -285,29 +285,32 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
       render: (text: string, record: PerformanceBottleneck) => (
         <div className="flex gap-2">
           <Button
-            size="small"
-            icon={<Eye className="w-4 h-4" />}
+            size="sm"
             onClick={() => {
               setSelectedBottleneck(record);
               setDetailsDrawerVisible(true);
             }}
+            variant="outline"
           >
+            <Eye className="w-4 h-4 mr-2" />
             详情
           </Button>
           {record.status === 'active' && (
             <>
               <Button
-                size="small"
-                icon={<CheckCircle className="w-4 h-4" />}
+                size="sm"
                 onClick={() => markAsResolved(record.id)}
+                variant="outline"
               >
+                <CheckCircle className="w-4 h-4 mr-2" />
                 解决
               </Button>
               <Button
-                size="small"
-                icon={<Minus />}
+                size="sm"
                 onClick={() => ignoreBottleneck(record.id)}
+                variant="outline"
               >
+                <Minus className="w-4 h-4 mr-2" />
                 忽略
               </Button>
             </>

@@ -397,10 +397,12 @@ export const QueryOptimizationVisualization: React.FC<QueryOptimizationVisualiza
               />
               <Tooltip title="刷新分析">
                 <Button
-                  icon={<RefreshCw className="w-4 h-4"  />}
                   onClick={onRefresh}
-                  size="small"
-                />
+                  size="sm"
+                  variant="outline"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
               </Tooltip>
               <Tooltip title="导出报告">
                 <Button

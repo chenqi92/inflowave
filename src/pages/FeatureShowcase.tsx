@@ -272,12 +272,11 @@ const FeatureShowcase: React.FC = () => {
             运行自动化测试以验证所有功能的可用性和集成状态
           </Typography.Text>
           <Button
-            type="primary"
-            size="large"
-            icon={<Zap className="w-4 h-4"  />}
+            size="lg"
             onClick={runTests}
             disabled={testing}
-            style={{ marginBottom: '16px' }}
+            className="mb-4">
+            <Zap className="w-4 h-4 mr-2" />
           >
             {testing ? '测试运行中...' : '运行功能测试'}
           </Button>

@@ -306,22 +306,22 @@ const BrowserModeNotice: React.FC = () => {
         <div style={{ textAlign: 'center' }}>
           <div className="flex gap-2" size="large">
             <Button
-              type="primary"
-              icon={<Monitor />}
-              size="large"
+              size="lg"
               onClick={() => {
                 window.open('https://tauri.app/v1/guides/getting-started/setup/', '_blank');
               }}
             >
+              <Monitor className="w-4 h-4 mr-2" />
               了解 Tauri
             </Button>
             <Button
-              icon={<Code className="w-4 h-4"  />}
-              size="large"
+              size="lg"
+              variant="outline"
               onClick={() => {
                 window.open('https://github.com/chenqi92/inflowave', '_blank');
               }}
             >
+              <Code className="w-4 h-4 mr-2" />
               查看源码
             </Button>
           </div>
