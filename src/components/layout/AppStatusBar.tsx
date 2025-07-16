@@ -3,13 +3,19 @@ import {
   Button,
   Typography,
   Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
   Tooltip,
-  Space,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Separator,
 } from '@/components/ui';
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HddOutlined } from '@/components/ui';
-import { Home, ChevronRight, Wifi, Clock, Globe, Zap } from 'lucide-react';
+import { Home, ChevronRight, Wifi, Clock, Globe, Zap, HardDrive } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useConnectionStore } from '@/store/connection';
 
@@ -63,120 +69,147 @@ const AppStatusBar: React.FC = () => {
       '/settings': '应用设置',
     };
 
-    const items = [
-      {
-        title: (
-          <Button
-            type='text'
-            size='small'
-            icon={<Home className='w-4 h-4' />}
-            onClick={() => navigate('/dashboard')}
-            style={{ padding: '0 4px', height: '20px' }}
-          />
-        ),
-      },
-    ];
-
     const currentPageTitle = pathMap[path] || '未知页面';
-    if (path !== '/' && path !== '/dashboard') {
-      items.push({
-        title: currentPageTitle,
-      });
-    }
 
-    return items;
+    return (
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard')}
+                className="h-6 px-2 text-xs"
+              >
+                <Home className='w-3 h-3 mr-1' />
+                仪表板
+              </Button>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {path !== '/' && path !== '/dashboard' && (
+            <>
+              <BreadcrumbSeparator>
+                <ChevronRight className='w-3 h-3' />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <span className="text-xs text-muted-foreground">{currentPageTitle}</span>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
   };
 
   return (
-    <div className='desktop-status-bar'>
-      <div className='flex items-center justify-between h-full px-4'>
-        {/* 左侧 - 面包屑导航 */}
-        <div className='flex items-center space-x-4'>
-          <Breadcrumb
-            items={generateBreadcrumb()}
-            separator={
-              <ChevronRight className='w-4 h-4' style={{ fontSize: '10px' }} />
-            }
-          />
-        </div>
+    <TooltipProvider>
+      <div className='desktop-status-bar border-b bg-background'>
+        <div className='flex items-center justify-between h-8 px-4'>
+          {/* 左侧 - 面包屑导航 */}
+          <div className='flex items-center'>
+            {generateBreadcrumb()}
+          </div>
 
-        {/* 中间 - 连接信息 */}
-        <div className='flex items-center space-x-4'>
-          {activeConnectionId && currentConnection && currentStatus ? (
-            <Space
-              split={<div className='border-t border my-4' type='vertical' />}
-            >
-              <Tooltip
-                title={`${currentConnection.host}:${currentConnection.port}`}
-              >
-                <div className='flex gap-2'>
-                  <Wifi
-                    className='w-4 h-4'
-                    style={{
-                      color:
-                        currentStatus.status === 'connected'
-                          ? '#52c41a'
-                          : '#ff4d4f',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Text className='text-xs'>{currentConnection.name}</Text>
-                </div>
-              </Tooltip>
-
-              {currentStatus.latency && (
-                <Tooltip title='连接延迟'>
-                  <div className='flex gap-2'>
-                    <Zap className='w-3 h-3' />
-                    <Text className='text-xs'>{currentStatus.latency}ms</Text>
-                  </div>
+          {/* 中间 - 连接信息 */}
+          <div className='flex items-center'>
+            {activeConnectionId && currentConnection && currentStatus ? (
+              <div className="flex items-center gap-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className='flex items-center gap-1'>
+                      <Wifi
+                        className={`w-3 h-3 ${
+                          currentStatus.status === 'connected'
+                            ? 'text-green-500'
+                            : 'text-red-500'
+                        }`}
+                      />
+                      <Text className='text-xs'>{currentConnection.name}</Text>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{`${currentConnection.host}:${currentConnection.port}`}</p>
+                  </TooltipContent>
                 </Tooltip>
-              )}
-            </Space>
-          ) : (
-            <div className='flex gap-2'>
-              <Wifi className='w-3 h-3' style={{ color: '#d9d9d9' }} />
-              <Text className='text-xs' type='secondary'>
-                无活跃连接
-              </Text>
-            </div>
-          )}
-        </div>
 
-        {/* 右侧 - 系统信息 */}
-        <div className='flex items-center space-x-4'>
-          <Space
-            split={<div className='border-t border my-4' type='vertical' />}
-          >
-            {/* 内存使用 */}
-            <Tooltip title='内存使用情况'>
-              <div className='flex gap-2'>
-                <HddOutlined className='text-xs' />
-                <Text className='text-xs'>{getMemoryUsage()}MB</Text>
+                {currentStatus.latency && (
+                  <>
+                    <Separator orientation="vertical" className="h-4" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className='flex items-center gap-1'>
+                          <Zap className='w-3 h-3 text-yellow-500' />
+                          <Text className='text-xs'>{currentStatus.latency}ms</Text>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>连接延迟</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </div>
-            </Tooltip>
-
-            {/* 应用版本 */}
-            <Tooltip title='应用版本'>
-              <div className='flex gap-2'>
-                <Globe className='w-3 h-3' />
-                <Text className='text-xs'>v0.1.0</Text>
-              </div>
-            </Tooltip>
-
-            {/* 当前时间 */}
-            <Tooltip title='当前时间'>
-              <div className='flex gap-2'>
-                <Clock className='w-3 h-3' />
-                <Text className='text-xs'>
-                  {currentTime.format('HH:mm:ss')}
+            ) : (
+              <div className='flex items-center gap-1'>
+                <Wifi className='w-3 h-3 text-muted-foreground' />
+                <Text className='text-xs text-muted-foreground'>
+                  无活跃连接
                 </Text>
               </div>
+            )}
+          </div>
+
+          {/* 右侧 - 系统信息 */}
+          <div className='flex items-center gap-4'>
+            {/* 内存使用 */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className='flex items-center gap-1'>
+                  <HardDrive className='w-3 h-3 text-blue-500' />
+                  <Text className='text-xs'>{getMemoryUsage()}MB</Text>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>内存使用情况</p>
+              </TooltipContent>
             </Tooltip>
-          </Space>
+
+            <Separator orientation="vertical" className="h-4" />
+
+            {/* 应用版本 */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className='flex items-center gap-1'>
+                  <Globe className='w-3 h-3 text-purple-500' />
+                  <Text className='text-xs'>v0.1.0</Text>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>应用版本</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Separator orientation="vertical" className="h-4" />
+
+            {/* 当前时间 */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className='flex items-center gap-1'>
+                  <Clock className='w-3 h-3 text-orange-500' />
+                  <Text className='text-xs'>
+                    {currentTime.format('HH:mm:ss')}
+                  </Text>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>当前时间</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
