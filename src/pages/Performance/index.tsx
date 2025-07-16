@@ -1,17 +1,14 @@
 import React from 'react';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
-import PerformanceMonitor from '@/components/performance/PerformanceMonitor';
-import { useConnectionStore } from '@/store/connection';
+import PerformanceBottleneckDiagnostics from '@/components/analytics/PerformanceBottleneckDiagnostics';
 
 const Performance: React.FC = () => {
-  const { activeConnectionId } = useConnectionStore();
-
   return (
     <DesktopPageWrapper
-      title="性能监控"
-      description="监控系统性能、查询执行情况和资源使用状况"
+      title="性能监控与诊断"
+      description="全面的性能监控、瓶颈诊断和系统分析工具"
     >
-      <PerformanceMonitor connectionId={activeConnectionId} />
+      <PerformanceBottleneckDiagnostics />
     </DesktopPageWrapper>
   );
 };
