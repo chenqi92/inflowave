@@ -24,6 +24,7 @@ export interface AccessibilitySettings {
 export interface WorkspaceSettings {
   layout: string;
   panel_sizes: Record<string, number>;
+  panel_positions: Record<string, number>; // 新增：存储分栏位置和尺寸
   open_tabs: string[];
   pinned_queries: string[];
   recent_files: string[];
@@ -69,6 +70,10 @@ const defaultPreferences: UserPreferences = {
   workspace: {
     layout: 'default',
     panel_sizes: {},
+    panel_positions: {
+      'left-panel': 25,     // 左侧面板默认25%宽度
+      'bottom-panel': 40,   // 底部面板默认40%高度
+    },
     open_tabs: [],
     pinned_queries: [],
     recent_files: [],

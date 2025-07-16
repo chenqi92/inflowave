@@ -53,6 +53,7 @@ import SettingsModal from '@/components/common/SettingsModal';
 import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
 import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { useAppStore } from '@/store/app';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -74,8 +75,15 @@ interface MainToolbarProps {
 const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
   const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
   const { theme, setTheme } = useTheme();
+  const { setTheme: setAppTheme } = useAppStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
+
+  // 同步主题设置函数
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    setAppTheme(newTheme as 'light' | 'dark' | 'auto'); // 转换system为auto
+  };
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
     currentTimeRange ? {
       label: currentTimeRange.label,
@@ -452,17 +460,17 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
                   <span>主题设置</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <DropdownMenuItem onClick={() => handleThemeChange('light')}>
                     <Sun className="w-4 h-4" />
                     <span>浅色模式</span>
                     {theme === 'light' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  <DropdownMenuItem onClick={() => handleThemeChange('dark')}>
                     <Moon className="w-4 h-4" />
                     <span>深色模式</span>
                     {theme === 'dark' && <span className="ml-auto">✓</span>}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                  <DropdownMenuItem onClick={() => handleThemeChange('system')}>
                     <Monitor className="w-4 h-4" />
                     <span>跟随系统</span>
                     {theme === 'system' && <span className="ml-auto">✓</span>}

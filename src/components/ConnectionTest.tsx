@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useConnection } from '@/hooks/useConnection';
 import { Button, Form, Input, InputNumber, Switch, Typography } from '@/components/ui';
 import { showMessage } from '@/utils/message';
-import  from '@/components/ui';
+import { Card } from '@/components/ui';
 
 interface ConnectionConfig {
   id: string;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/utils/cn';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
@@ -7,6 +7,7 @@ import TabEditor from './TabEditor';
 import ResultPanel from './ResultPanel';
 
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { QueryResult } from '@/types';
 
 // 临时导入页面组件用于视图切换
@@ -23,9 +24,27 @@ export interface DataGripStyleLayoutProps {
 }
 
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
-  const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(false);
-  const [currentView, setCurrentView] = useState('query');
+  const { preferences, updateWorkspaceSettings } = useUserPreferences();
+  
+  // 从用户偏好中获取初始状态，如果没有则使用默认值
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => {
+    return preferences?.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false;
+  });
+  const [bottomPanelCollapsed, setBottomPanelCollapsed] = useState(() => {
+    return preferences?.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false;
+  });
+  const [currentView, setCurrentView] = useState(() => {
+    return preferences?.workspace.layout || 'query';
+  });
+  
+  // 面板尺寸状态
+  const [leftPanelSize, setLeftPanelSize] = useState(() => {
+    return preferences?.workspace.panel_positions?.['left-panel'] || 25;
+  });
+  const [bottomPanelSize, setBottomPanelSize] = useState(() => {
+    return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
+  });
+  
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
@@ -48,6 +67,52 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   const refreshDataExplorer = () => {
     setRefreshTrigger(prev => prev + 1);
   };
+
+  // 保存工作区设置到用户偏好
+  const saveWorkspaceSettings = useCallback(async () => {
+    if (!preferences) return;
+    
+    const currentPanelSizes = {
+      ...preferences.workspace.panel_sizes,
+      'left-panel-collapsed': leftPanelCollapsed ? 1 : 0,
+      'bottom-panel-collapsed': bottomPanelCollapsed ? 1 : 0,
+    };
+
+    const currentPanelPositions = {
+      ...preferences.workspace.panel_positions,
+      'left-panel': leftPanelSize,
+      'bottom-panel': bottomPanelSize,
+    };
+
+    const updatedWorkspace = {
+      ...preferences.workspace,
+      layout: currentView,
+      panel_sizes: currentPanelSizes,
+      panel_positions: currentPanelPositions,
+    };
+
+    await updateWorkspaceSettings(updatedWorkspace);
+  }, [preferences, leftPanelCollapsed, bottomPanelCollapsed, currentView, leftPanelSize, bottomPanelSize, updateWorkspaceSettings]);
+
+  // 当偏好设置加载后，更新本地状态
+  useEffect(() => {
+    if (preferences?.workspace) {
+      setLeftPanelCollapsed(preferences.workspace.panel_sizes?.['left-panel-collapsed'] === 1 || false);
+      setBottomPanelCollapsed(preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 || false);
+      setCurrentView(preferences.workspace.layout || 'query');
+      setLeftPanelSize(preferences.workspace.panel_positions?.['left-panel'] || 25);
+      setBottomPanelSize(preferences.workspace.panel_positions?.['bottom-panel'] || 40);
+    }
+  }, [preferences]);
+
+  // 当布局状态改变时自动保存
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveWorkspaceSettings();
+    }, 500); // 防抖，500ms后保存
+
+    return () => clearTimeout(timer);
+  }, [leftPanelCollapsed, bottomPanelCollapsed, currentView, leftPanelSize, bottomPanelSize, saveWorkspaceSettings]);
 
   // 监听全局刷新事件
   useEffect(() => {
@@ -134,7 +199,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           <ResizablePanelGroup direction="vertical">
             {/* 上半部分：编辑器 */}
             <ResizablePanel
-              defaultSize={bottomPanelCollapsed ? 100 : 60}
+              defaultSize={bottomPanelCollapsed ? 100 : (100 - bottomPanelSize)}
               minSize={30}
               className="bg-background overflow-hidden"
             >
@@ -160,9 +225,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
                 <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80" />
 
                 <ResizablePanel
-                  defaultSize={40}
+                  defaultSize={bottomPanelSize}
                   minSize={25}
                   maxSize={70}
+                  onResize={(size) => setBottomPanelSize(size)}
                 >
                   <div className="h-full border-t border-0 shadow-none bg-background overflow-hidden">
                   <ResultPanel
@@ -204,11 +270,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
         <ResizablePanelGroup direction="horizontal">
           {/* 左侧数据库面板 */}
           <ResizablePanel
-            defaultSize={25}
+            defaultSize={leftPanelSize}
             minSize={15}
             maxSize={40}
             collapsible={true}
             collapsedSize={3}
+            onResize={(size) => setLeftPanelSize(size)}
             className={cn(
               "bg-background border-r border-border transition-all duration-200",
               leftPanelCollapsed && "min-w-12"
@@ -237,7 +304,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           <ResizableHandle withHandle className="w-2 bg-border hover:bg-border/80" />
 
           {/* 右侧主要工作区域 */}
-          <ResizablePanel defaultSize={75} minSize={50}>
+          <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
             <main className="h-full bg-background flex flex-col">
               {renderMainContent()}
             </main>
