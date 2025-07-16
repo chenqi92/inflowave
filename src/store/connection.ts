@@ -49,6 +49,9 @@ interface ConnectionState {
   // 连接池方法
   getPoolStats: (id: string) => Promise<void>;
   setPoolStats: (id: string, stats: any) => void;
+  
+  // 状态同步方法
+  syncConnectionStates: () => void;
 }
 
 export const useConnectionStore = create<ConnectionState>()(
@@ -154,9 +157,18 @@ export const useConnectionStore = create<ConnectionState>()(
         }));
       },
       
-      // 检查连接是否已连接
+      // 检查连接是否已连接 - 优先使用connectionStatuses状态
       isConnectionConnected: (id) => {
-        return get().connectedConnectionIds.includes(id);
+        const state = get();
+        const status = state.connectionStatuses[id];
+        
+        // 优先使用connectionStatuses的状态
+        if (status) {
+          return status.status === 'connected';
+        }
+        
+        // 如果没有状态信息，则检查connectedConnectionIds数组
+        return state.connectedConnectionIds.includes(id);
       },
       
       // 获取连接配置
@@ -292,12 +304,14 @@ export const useConnectionStore = create<ConnectionState>()(
         try {
           const statuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
           if (statuses) {
-            // 智能合并状态，保护已连接的连接不被错误地断开
+            // 智能合并状态，保护已连接的连接不被错误地断开，同时同步connectedConnectionIds
             set((state) => {
               const newStatuses = { ...state.connectionStatuses };
+              const newConnectedIds = [...state.connectedConnectionIds];
 
               for (const [connectionId, backendStatus] of Object.entries(statuses)) {
                 const currentStatus = state.connectionStatuses[connectionId];
+                const wasConnected = state.connectedConnectionIds.includes(connectionId);
 
                 // 如果当前状态是已连接，只有在后端明确报告错误或断开时才更新
                 if (currentStatus?.status === 'connected') {
@@ -305,10 +319,20 @@ export const useConnectionStore = create<ConnectionState>()(
                   if (backendStatus.status === 'error' || backendStatus.error) {
                     console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为错误:`, backendStatus.error);
                     newStatuses[connectionId] = backendStatus;
+                    // 从已连接列表中移除
+                    const index = newConnectedIds.indexOf(connectionId);
+                    if (index > -1) {
+                      newConnectedIds.splice(index, 1);
+                    }
                   } else if (backendStatus.status === 'disconnected' && backendStatus.error) {
                     // 只有在有明确错误信息的情况下才认为连接真的断开了
                     console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为断开:`, backendStatus.error);
                     newStatuses[connectionId] = backendStatus;
+                    // 从已连接列表中移除
+                    const index = newConnectedIds.indexOf(connectionId);
+                    if (index > -1) {
+                      newConnectedIds.splice(index, 1);
+                    }
                   } else {
                     // 保持当前的已连接状态，但更新延迟等其他信息
                     newStatuses[connectionId] = {
@@ -316,14 +340,35 @@ export const useConnectionStore = create<ConnectionState>()(
                       latency: backendStatus.latency || currentStatus.latency,
                       lastConnected: backendStatus.lastConnected || currentStatus.lastConnected
                     };
+                    // 确保在已连接列表中
+                    if (!wasConnected) {
+                      newConnectedIds.push(connectionId);
+                    }
                   }
                 } else {
                   // 对于非已连接状态，可以安全地更新
                   newStatuses[connectionId] = backendStatus;
+                  
+                  // 同步connectedConnectionIds
+                  if (backendStatus.status === 'connected') {
+                    // 添加到已连接列表
+                    if (!wasConnected) {
+                      newConnectedIds.push(connectionId);
+                    }
+                  } else {
+                    // 从已连接列表中移除
+                    const index = newConnectedIds.indexOf(connectionId);
+                    if (index > -1) {
+                      newConnectedIds.splice(index, 1);
+                    }
+                  }
                 }
               }
 
-              return { connectionStatuses: newStatuses };
+              return { 
+                connectionStatuses: newStatuses,
+                connectedConnectionIds: newConnectedIds
+              };
             });
           }
         } catch (error) {
@@ -340,6 +385,8 @@ export const useConnectionStore = create<ConnectionState>()(
           if (status) {
             set((state) => {
               const currentStatus = state.connectionStatuses[id];
+              const wasConnected = state.connectedConnectionIds.includes(id);
+              let newConnectedIds = [...state.connectedConnectionIds];
               
               // 应用相同的智能合并逻辑
               let newStatus = status;
@@ -347,9 +394,19 @@ export const useConnectionStore = create<ConnectionState>()(
                 if (status.status === 'error' || status.error) {
                   console.log(`🔄 连接 ${id} 状态从已连接更新为错误:`, status.error);
                   newStatus = status;
+                  // 从已连接列表中移除
+                  const index = newConnectedIds.indexOf(id);
+                  if (index > -1) {
+                    newConnectedIds.splice(index, 1);
+                  }
                 } else if (status.status === 'disconnected' && status.error) {
                   console.log(`🔄 连接 ${id} 状态从已连接更新为断开:`, status.error);
                   newStatus = status;
+                  // 从已连接列表中移除
+                  const index = newConnectedIds.indexOf(id);
+                  if (index > -1) {
+                    newConnectedIds.splice(index, 1);
+                  }
                 } else {
                   // 保持当前的已连接状态，但更新延迟等其他信息
                   newStatus = {
@@ -357,6 +414,27 @@ export const useConnectionStore = create<ConnectionState>()(
                     latency: status.latency || currentStatus.latency,
                     lastConnected: status.lastConnected || currentStatus.lastConnected
                   };
+                  // 确保在已连接列表中
+                  if (!wasConnected) {
+                    newConnectedIds.push(id);
+                  }
+                }
+              } else {
+                // 对于非已连接状态，直接更新
+                newStatus = status;
+                
+                // 同步connectedConnectionIds
+                if (status.status === 'connected') {
+                  // 添加到已连接列表
+                  if (!wasConnected) {
+                    newConnectedIds.push(id);
+                  }
+                } else {
+                  // 从已连接列表中移除
+                  const index = newConnectedIds.indexOf(id);
+                  if (index > -1) {
+                    newConnectedIds.splice(index, 1);
+                  }
                 }
               }
 
@@ -364,13 +442,14 @@ export const useConnectionStore = create<ConnectionState>()(
                 connectionStatuses: {
                   ...state.connectionStatuses,
                   [id]: newStatus
-                }
+                },
+                connectedConnectionIds: newConnectedIds
               };
             });
           }
         } catch (error) {
           console.error(`刷新连接状态失败 (${id}):`, error);
-          // 为单个连接创建错误状态
+          // 为单个连接创建错误状态，并从已连接列表中移除
           set((state) => ({
             connectionStatuses: {
               ...state.connectionStatuses,
@@ -381,7 +460,8 @@ export const useConnectionStore = create<ConnectionState>()(
                 lastConnected: state.connectionStatuses[id]?.lastConnected,
                 latency: undefined
               }
-            }
+            },
+            connectedConnectionIds: state.connectedConnectionIds.filter(connId => connId !== id)
           }));
           throw error;
         }
@@ -426,6 +506,27 @@ export const useConnectionStore = create<ConnectionState>()(
           console.error('同步连接到后端失败:', error);
           throw error;
         }
+      },
+
+      // 同步连接状态 - 确保connectionStatuses和connectedConnectionIds一致
+      syncConnectionStates: () => {
+        set((state) => {
+          const newConnectedIds: string[] = [];
+          
+          // 根据connectionStatuses重新构建connectedConnectionIds
+          Object.entries(state.connectionStatuses).forEach(([id, status]) => {
+            if (status.status === 'connected') {
+              newConnectedIds.push(id);
+            }
+          });
+          
+          console.log(`🔄 同步连接状态: ${newConnectedIds.length} 个连接状态为已连接`);
+          
+          return {
+            ...state,
+            connectedConnectionIds: newConnectedIds
+          };
+        });
       }}),
     {
       name: 'influx-gui-connection-store',
@@ -449,36 +550,42 @@ export const connectionUtils = {
     return status?.status === 'connected';
   },
   
-  // 检查是否有任何已连接的InfluxDB连接
+  // 检查是否有任何已连接的InfluxDB连接 - 优先使用connectionStatuses状态
   hasAnyConnectedInfluxDB: (): boolean => {
     const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore.getState();
     
-    // 方法1：检查是否有任何连接状态为connected的InfluxDB连接
+    // 优先检查connectionStatuses中是否有连接状态为connected的连接
     const hasConnectedByStatus = connections.some(conn => {
       const status = connectionStatuses[conn.id];
       return status?.status === 'connected';
     });
     
-    // 方法2：检查connectedConnectionIds数组
-    const hasConnectedByIds = connectedConnectionIds.length > 0;
+    // 如果connectionStatuses中找到了连接，直接返回true
+    if (hasConnectedByStatus) {
+      return true;
+    }
     
-    // 使用两种方法中的任一种为true即可
-    return hasConnectedByStatus || hasConnectedByIds;
+    // 如果没有找到，检查connectedConnectionIds数组作为备用
+    return connectedConnectionIds.length > 0;
   },
   
-  // 获取所有已连接的InfluxDB连接数量
+  // 获取所有已连接的InfluxDB连接数量 - 优先使用connectionStatuses状态
   getConnectedInfluxDBCount: (): number => {
     const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore.getState();
     
+    // 优先使用connectionStatuses中的状态计数
     const countByStatus = connections.filter(conn => {
       const status = connectionStatuses[conn.id];
       return status?.status === 'connected';
     }).length;
     
-    const countByIds = connectedConnectionIds.length;
+    // 如果connectionStatuses中有连接，直接返回
+    if (countByStatus > 0) {
+      return countByStatus;
+    }
     
-    // 使用两种方法中的较大值
-    return Math.max(countByStatus, countByIds);
+    // 如果没有，使用connectedConnectionIds数组的长度作为备用
+    return connectedConnectionIds.length;
   },
   
   // 获取连接显示名称

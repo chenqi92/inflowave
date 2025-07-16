@@ -148,6 +148,10 @@ const App: React.FC = () => {
                 try {
                     await safeTauriInvoke('initialize_connections');
                     console.log('连接服务初始化成功');
+                    
+                    // 同步连接状态，确保前端状态一致
+                    const { useConnectionStore } = await import('./store/connection');
+                    useConnectionStore.getState().syncConnectionStates();
                 } catch (connError) {
                     console.warn('连接服务初始化失败:', connError);
                 }
