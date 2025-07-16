@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Button, 
-  Separator, 
   Badge,
   DropdownMenu,
   DropdownMenuContent,
@@ -9,33 +8,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   Database,
-  PlayCircle,
-  Square,
-  Save,
   History,
   Settings,
   RefreshCw,
-  FileUp,
-  FileDown,
   Bug,
-  HelpCircle,
-  Link,
-  Unlink,
   BarChart,
   Edit,
   Zap,
-  Wrench,
-  FolderOpen,
-  Plus,
-  Clock,
-  MoreHorizontal
+  Wrench
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -90,85 +71,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   // useGlobalShortcuts();
 
 
-  const handleFileMenuClick = ({ key }: { key: string }) => {
-    switch (key) {
-      case 'new-query':
-        // 创建新查询
-        navigate('/query');
-        break;
-      case 'open':
-        // 打开文件 - 使用浏览器文件选择器
-        try {
-          const fileInput = document.createElement('input');
-          fileInput.type = 'file';
-          fileInput.accept = '.sql,.txt,.json';
-          fileInput.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-              const text = await file.text();
-              // 触发自定义事件，让TabEditor接收文件内容
-              document.dispatchEvent(new CustomEvent('load-file-content', {
-                detail: { content: text, filename: file.name }
-              }));
-              showMessage.success(`已打开文件: ${file.name}`);
-            }
-          };
-          fileInput.click();
-        } catch (error) {
-          showMessage.error('打开文件失败');
-        }
-        break;
-      case 'save':
-        // 保存当前查询 - 触发保存事件
-        document.dispatchEvent(new CustomEvent('save-current-query'));
-        showMessage.info('正在保存当前查询...');
-        break;
-      case 'save-as':
-        // 另存为 - 触发另存为事件
-        document.dispatchEvent(new CustomEvent('save-query-as'));
-        showMessage.info('正在另存为查询...');
-        break;
-      case 'import':
-        // 导入数据
-        navigate('/data-write');
-        break;
-      case 'export':
-        // 导出数据 - 触发导出数据事件
-        document.dispatchEvent(new CustomEvent('show-export-dialog'));
-        showMessage.info('正在打开数据导出...');
-        break;
-      default:
-        console.log('未处理的文件菜单项:', key);
-    }
-  };
 
-  const fileMenuItems = [
-    {
-      key: 'new-query',
-      label: '新建查询',
-      icon: <FolderOpen className="w-4 h-4" />},
-    {
-      key: 'open',
-      label: '打开文件',
-      icon: <FolderOpen className="w-4 h-4" />},
-    {
-      key: 'save',
-      label: '保存',
-      icon: <Save className="w-4 h-4" />},
-    {
-      key: 'save-as',
-      label: '另存为',
-      icon: <Save className="w-4 h-4" />},
-    { key: 'divider-1', type: 'divider' },
-    {
-      key: 'import',
-      label: '导入数据',
-      icon: <FileUp className="w-4 h-4" />},
-    {
-      key: 'export',
-      label: '导出数据',
-      icon: <FileDown className="w-4 h-4" />},
-  ];
 
   const handleToolsMenuClick = ({ key }: { key: string }) => {
     switch (key) {
@@ -225,8 +128,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   };
 
   return (
-    <TooltipProvider>
-      <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
+    <div className="datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent">
         {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* 区域1: 软件名称显示 - 艺术体风格 */}
@@ -246,7 +148,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
           {/* 区域2: 时间范围选择器 - 仅在有连接时显示 */}
           {activeConnection && (
-            <div className="flex items-center gap-2 px-2">
+            <div className="flex items-center gap-2 px-3">
               <TimeRangeSelector
                 value={selectedTimeRange || currentTimeRange}
                 onChange={handleTimeRangeChange}
@@ -257,77 +159,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
 
           <div className="w-px h-6 bg-border mx-3" />
 
-          {/* 区域2: 文件操作 - 统一按钮尺寸 */}
-          <div className="flex items-center gap-1 px-2 py-1 flex-shrink-0">
-            <div className="p-0 flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-              onClick={() => handleFileMenuClick({ key: 'new-query' })}
-              title="新建查询 (Ctrl+N)"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-xs">新建</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-              onClick={() => handleFileMenuClick({ key: 'open' })}
-              title="打开文件 (Ctrl+O)"
-            >
-              <FolderOpen className="w-4 h-4" />
-              <span className="text-xs">打开</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-              onClick={() => handleFileMenuClick({ key: 'save' })}
-              title="保存 (Ctrl+S)"
-            >
-              <Save className="w-4 h-4" />
-              <span className="text-xs">保存</span>
-            </Button>
-
-            {/* 更多文件操作 */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 w-8 p-1 flex items-center justify-center"
-                  title="更多文件操作"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {fileMenuItems.slice(3).map((item) => (
-                  item.type === 'divider' ? (
-                    <div key={item.key} className="border-t my-1" />
-                  ) : (
-                    <DropdownMenuItem
-                      key={item.key}
-                      onClick={() => handleFileMenuClick({ key: item.key })}
-                    >
-                      {item.icon}
-                      <span className="ml-2">{item.label}</span>
-                    </DropdownMenuItem>
-                  )
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            </div>
-          </div>
-
-          <div className="w-px h-6 bg-border mx-3" />
-
           {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
-          <div className="flex items-center gap-1 px-3 py-1 flex-shrink-0">
+          <div className="flex items-center gap-1 px-4 py-1 flex-shrink-0">
             <div className="p-0 flex items-center gap-1">
             <Button
               variant={currentView === 'datasource' ? 'default' : 'ghost'}
@@ -470,7 +303,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
           onClose={() => setSettingsVisible(false)}
         />
       </div>
-    </TooltipProvider>
   );
 };
 
