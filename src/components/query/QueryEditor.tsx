@@ -6,14 +6,27 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Typography,
-  Dropdown,
   Switch,
   Tabs,
-  Tooltip,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  TooltipWrapper as Tooltip,
   Label,
   Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
   CustomDialog,
 } from '@/components/ui';
 import { useDialog } from '@/hooks/useDialog';
@@ -45,8 +58,6 @@ import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
 const invoke = safeTauriInvoke;
-
-const { Text } = Typography;
 
 interface QueryEditorProps {
   selectedDatabase: string;
@@ -1012,89 +1023,87 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
   // 渲染标签页
   const renderTabs = () => {
-    const tabItems = queryTabs.map(tab => ({
-      key: tab.id,
-      label: (
-        <div className='flex items-center gap-1'>
-          <span>{tab.name}</span>
-          {tab.isModified && (
-            <div className='w-1 h-1 bg-primary rounded-full' />
-          )}
-          {queryTabs.length > 1 && (
-            <Button
-              type='text'
-              size='small'
-              icon={<X className='w-4 h-4' />}
-              className='ml-1 opacity-60 hover:opacity-100'
-              onClick={e => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }}
-            />
-          )}
-        </div>
-      ),
-      children: null,
-    }));
-
     return (
-      <Tabs
-        type='editable-add'
-        value={activeTabId}
-        items={tabItems}
-        onValueChange={setActiveTabId}
-        onEdit={(targetKey, action) => {
-          if (action === 'add') {
-            addNewTab();
-          }
-        }}
-        tabBarExtraContent={
-          <div className='flex gap-2'>
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'duplicate',
-                    label: '复制标签页',
-                    icon: <Copy className='w-4 h-4' />,
-                    onClick: () => duplicateTab(activeTabId),
-                  },
-                  {
-                    key: 'rename',
-                    label: '重命名',
-                    icon: <Edit className='w-4 h-4' />,
-                    onClick: async () => {
-                      const newName = await dialog.prompt(
-                        '请输入新名称',
-                        currentTab?.name,
-                        '标签页名称'
-                      );
-                      if (newName && newName.trim()) {
-                        renameTab(activeTabId, newName.trim());
-                      }
-                    },
-                  },
-                  { type: 'divider' },
-                  {
-                    key: 'close-others',
-                    label: '关闭其他标签页',
-                    onClick: () => {
-                      setQueryTabs([currentTab!]);
-                    },
-                  },
-                ],
-              }}
-              trigger={['click']}
-            >
+      <div className="flex items-center justify-between border-b bg-background">
+        <Tabs value={activeTabId} onValueChange={setActiveTabId} className="flex-1">
+          <div className="flex items-center justify-between">
+            <TabsList className="h-auto p-0 bg-transparent">
+              {queryTabs.map(tab => (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="relative flex items-center gap-2 px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm border-b-2 border-transparent data-[state=active]:border-primary rounded-none"
+                >
+                  <span>{tab.name}</span>
+                  {tab.isModified && (
+                    <div className='w-1.5 h-1.5 bg-primary rounded-full' />
+                  )}
+                  {queryTabs.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className='ml-1 h-4 w-4 p-0 opacity-60 hover:opacity-100'
+                      onClick={e => {
+                        e.stopPropagation();
+                        closeTab(tab.id);
+                      }}
+                    >
+                      <X className='w-3 h-3' />
+                    </Button>
+                  )}
+                </TabsTrigger>
+              ))}
               <Button
-                type='text'
-                size='small'
-                icon={<Settings className='w-4 h-4' />}
-              />
-            </Dropdown>
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 ml-2"
+                onClick={addNewTab}
+              >
+                +
+              </Button>
+            </TabsList>
+
+            <div className='flex gap-2 px-4'>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Settings className='w-4 h-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => duplicateTab(activeTabId)}>
+                    <Copy className='w-4 h-4 mr-2' />
+                    复制标签页
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={async () => {
+                    const newName = await dialog.prompt(
+                      '请输入新名称',
+                      currentTab?.name,
+                      '标签页名称'
+                    );
+                    if (newName && newName.trim()) {
+                      renameTab(activeTabId, newName.trim());
+                    }
+                  }}>
+                    <Edit className='w-4 h-4 mr-2' />
+                    重命名
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    setQueryTabs([currentTab!]);
+                  }}>
+                    关闭其他标签页
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        }
-      />
+        </Tabs>
+      </div>
     );
   };
 
@@ -1102,122 +1111,131 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     <div
       className={`h-full flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}
     >
-      <div
-        title={
-          <div className='flex gap-2'>
-            <Database className='w-4 h-4' />
-            <span>查询编辑器</span>
-            {currentTab?.isModified && <Badge color='blue' text='未保存' />}
-          </div>
-        }
-        extra={
-          <div className='flex gap-2'>
-            <Select
-              value={selectedDatabase}
-              onValueChange={onDatabaseChange}
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="选择数据库" />
-              </SelectTrigger>
-              <SelectContent>
-                {databases.map(db => (
-                  <SelectItem key={db} value={db}>
-                    {db}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <Card className="h-full flex flex-col border-0 rounded-none">
+        <CardHeader className="pb-0">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Database className='w-5 h-5' />
+              <span>查询编辑器</span>
+              {currentTab?.isModified && (
+                <Badge variant="secondary" className="text-xs">
+                  未保存
+                </Badge>
+              )}
+            </CardTitle>
 
-            <Tooltip title='查询历史'>
-              <Button
-                size='small'
-                icon={<History className='w-4 h-4' />}
-                onClick={() => setShowHistory(true)}
-              />
-            </Tooltip>
-
-            <Tooltip title='编辑器设置'>
-              <Button
-                size='small'
-                icon={<Settings className='w-4 h-4' />}
-                onClick={() => setShowSettings(true)}
-              />
-            </Tooltip>
-
-            <Tooltip title={isFullscreen ? '退出全屏' : '全屏模式'}>
-              <Button
-                size='small'
-                icon={
-                  isFullscreen ? (
-                    <Minimize className='w-4 h-4' />
-                  ) : (
-                    <Maximize className='w-4 h-4' />
-                  )
-                }
-                onClick={() => setIsFullscreen(!isFullscreen)}
-              />
-            </Tooltip>
-          </div>
-        }
-        styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
-        style={{ height: '100%', border: 'none' }}
-      >
-        <div
-          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-        >
-          {/* 标签页 */}
-          <div className='border-b'>{renderTabs()}</div>
-
-          {/* 工具栏 */}
-          <div
-            style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0' }}
-          >
-            <div className='flex gap-2'>
-              <Button
-                type='primary'
-                icon={<PlayCircle />}
-                onClick={handleExecuteQuery}
-                disabled={
-                  loading ||
-                  !selectedDatabase ||
-                  !activeConnectionId ||
-                  !currentTab?.query.trim()
-                }
-              >
-                执行 (Ctrl+Enter)
-              </Button>
-
-              <Button
-                icon={<Save className='w-4 h-4' />}
-                onClick={handleSaveQuery}
-                disabled={!currentTab?.query.trim()}
-              >
-                保存
-              </Button>
-
-              <Button icon={<Paintbrush />} onClick={handleFormatQuery}>
-                格式化
-              </Button>
-
+            <div className='flex items-center gap-2'>
               <Select
-                onValueChange={handleTemplateSelect}
+                value={selectedDatabase}
+                onValueChange={onDatabaseChange}
               >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="选择模板" />
+                <SelectTrigger className="w-[150px] h-8">
+                  <SelectValue placeholder="选择数据库" />
                 </SelectTrigger>
                 <SelectContent>
-                  {queryTemplates.map(template => (
-                    <SelectItem key={template.value} value={template.value}>
-                      {template.label}
+                  {databases.map(db => (
+                    <SelectItem key={db} value={db}>
+                      {db}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              <Tooltip title='查询历史'>
+                <Button
+                  variant="outline"
+                  size='sm'
+                  className="h-8 w-8 p-0"
+                  onClick={() => setShowHistory(true)}
+                >
+                  <History className='w-4 h-4' />
+                </Button>
+              </Tooltip>
+
+              <Tooltip title='编辑器设置'>
+                <Button
+                  variant="outline"
+                  size='sm'
+                  className="h-8 w-8 p-0"
+                  onClick={() => setShowSettings(true)}
+                >
+                  <Settings className='w-4 h-4' />
+                </Button>
+              </Tooltip>
+
+              <Tooltip title={isFullscreen ? '退出全屏' : '全屏模式'}>
+                <Button
+                  variant="outline"
+                  size='sm'
+                  className="h-8 w-8 p-0"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                >
+                  {isFullscreen ? (
+                    <Minimize className='w-4 h-4' />
+                  ) : (
+                    <Maximize className='w-4 h-4' />
+                  )}
+                </Button>
+              </Tooltip>
             </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 flex flex-col p-0">
+          {/* 标签页 */}
+          {renderTabs()}
+
+          {/* 工具栏 */}
+          <div className="flex items-center gap-2 p-4 border-b bg-muted/30">
+            <Button
+              onClick={handleExecuteQuery}
+              disabled={
+                loading ||
+                !selectedDatabase ||
+                !activeConnectionId ||
+                !currentTab?.query.trim()
+              }
+              className="gap-2"
+            >
+              <PlayCircle className="w-4 h-4" />
+              执行 (Ctrl+Enter)
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleSaveQuery}
+              disabled={!currentTab?.query.trim()}
+              className="gap-2"
+            >
+              <Save className='w-4 h-4' />
+              保存
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleFormatQuery}
+              className="gap-2"
+            >
+              <Paintbrush className="w-4 h-4" />
+              格式化
+            </Button>
+
+            <Select onValueChange={handleTemplateSelect}>
+              <SelectTrigger className="w-[150px] h-9">
+                <SelectValue placeholder="选择模板" />
+              </SelectTrigger>
+              <SelectContent>
+                {queryTemplates.map(template => (
+                  <SelectItem key={template.value} value={template.value}>
+                    {template.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 编辑器 */}
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div className="flex-1 min-h-0">
             <Editor
               height='100%'
               language='influxql'
@@ -1240,110 +1258,118 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               }}
             />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 查询历史抽屉 */}
-      <Sheet
-        title='查询历史'
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-        width={400}
-      >
-        <div className='space-y-2'>
-          {queryTabs
-            .filter(tab => tab.lastExecuted)
-            .sort(
-              (a, b) =>
-                (b.lastExecuted?.getTime() || 0) -
-                (a.lastExecuted?.getTime() || 0)
-            )
-            .map(tab => (
-              <div
-                key={tab.id}
-                size='small'
-                hoverable
-                onClick={() => {
-                  setActiveTabId(tab.id);
-                  setShowHistory(false);
-                }}
-                className='cursor-pointer'
-              >
-                <div className='space-y-1'>
-                  <div className='font-medium'>{tab.name}</div>
-                  <div className='text-xs text-muted-foreground'>
-                    {tab.lastExecuted?.toLocaleString()}
-                  </div>
-                  <div className='text-sm text-muted-foreground truncate'>
-                    {tab.query}
-                  </div>
-                </div>
-              </div>
-            ))}
+      <Sheet open={showHistory} onOpenChange={setShowHistory}>
+        <SheetContent side="right" className="w-[400px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              查询历史
+            </SheetTitle>
+          </SheetHeader>
 
-          {queryTabs.filter(tab => tab.lastExecuted).length === 0 && (
-            <div className='text-center text-muted-foreground py-8'>
-              <History className='w-4 h-4 text-4xl mb-2' />
-              <div>暂无查询历史</div>
-            </div>
-          )}
-        </div>
+          <div className='space-y-2 mt-6'>
+            {queryTabs
+              .filter(tab => tab.lastExecuted)
+              .sort(
+                (a, b) =>
+                  (b.lastExecuted?.getTime() || 0) -
+                  (a.lastExecuted?.getTime() || 0)
+              )
+              .map(tab => (
+                <Card
+                  key={tab.id}
+                  className='cursor-pointer hover:bg-accent transition-colors'
+                  onClick={() => {
+                    setActiveTabId(tab.id);
+                    setShowHistory(false);
+                  }}
+                >
+                  <CardContent className="p-3">
+                    <div className='space-y-1'>
+                      <div className='font-medium text-sm'>{tab.name}</div>
+                      <div className='text-xs text-muted-foreground'>
+                        {tab.lastExecuted?.toLocaleString()}
+                      </div>
+                      <div className='text-sm text-muted-foreground truncate'>
+                        {tab.query}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+            {queryTabs.filter(tab => tab.lastExecuted).length === 0 && (
+              <div className='text-center text-muted-foreground py-8'>
+                <History className='w-12 h-12 mx-auto mb-2 opacity-50' />
+                <div>暂无查询历史</div>
+              </div>
+            )}
+          </div>
+        </SheetContent>
       </Sheet>
 
       {/* 编辑器设置抽屉 */}
-      <Sheet
-        title='编辑器设置'
-        open={showSettings}
-        onClose={() => setShowSettings(false)}
-        width={300}
-      >
-        <div className='space-y-4'>
-          <div>
-            <Label className='block text-sm font-medium mb-2'>字体大小</Label>
-            <Select defaultValue="14">
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="12">12px</SelectItem>
-                <SelectItem value="14">14px</SelectItem>
-                <SelectItem value="16">16px</SelectItem>
-                <SelectItem value="18">18px</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <Sheet open={showSettings} onOpenChange={setShowSettings}>
+        <SheetContent side="right" className="w-[350px]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              编辑器设置
+            </SheetTitle>
+          </SheetHeader>
 
-          <div>
-            <Label className='block text-sm font-medium mb-2'>主题</Label>
-            <Select
-              value={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
-              disabled
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='vs-light'>浅色 (跟随系统)</SelectItem>
-                <SelectItem value='vs-dark'>深色 (跟随系统)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className='space-y-6 mt-6'>
+            <div className="space-y-2">
+              <Label className='text-sm font-medium'>字体大小</Label>
+              <Select defaultValue="14">
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="12">12px</SelectItem>
+                  <SelectItem value="14">14px</SelectItem>
+                  <SelectItem value="16">16px</SelectItem>
+                  <SelectItem value="18">18px</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className='flex items-center justify-between'>
-            <span className='text-sm'>显示小地图</span>
-            <Switch defaultChecked={false} />
-          </div>
+            <div className="space-y-2">
+              <Label className='text-sm font-medium'>主题</Label>
+              <Select
+                value={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+                disabled
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='vs-light'>浅色 (跟随系统)</SelectItem>
+                  <SelectItem value='vs-dark'>深色 (跟随系统)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className='flex items-center justify-between'>
-            <span className='text-sm'>自动换行</span>
-            <Switch defaultChecked={true} />
-          </div>
+            <div className='flex items-center justify-between py-2'>
+              <Label className='text-sm font-medium'>显示小地图</Label>
+              <Switch defaultChecked={false} />
+            </div>
 
-          <div className='flex items-center justify-between'>
-            <span className='text-sm'>显示行号</span>
-            <Switch defaultChecked={true} />
+            <div className='flex items-center justify-between py-2'>
+              <Label className='text-sm font-medium'>自动换行</Label>
+              <Switch defaultChecked={true} />
+            </div>
+
+            <div className='flex items-center justify-between py-2'>
+              <Label className='text-sm font-medium'>显示行号</Label>
+              <Switch defaultChecked={true} />
+            </div>
           </div>
-        </div>
+        </SheetContent>
       </Sheet>
 
       {/* 对话框组件 */}

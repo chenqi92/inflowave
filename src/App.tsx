@@ -111,6 +111,7 @@ const MainLayout: React.FC = () => {
         <Route path='/performance' element={<DataGripStyleLayout />} />
         <Route path='/extensions' element={<DataGripStyleLayout />} />
         <Route path='/dev-tools' element={<DataGripStyleLayout />} />
+        <Route path='/settings' element={<DataGripStyleLayout />} />
 
         {/* 连接管理页面 */}
         <Route path='/connections' element={<DataGripStyleLayout />} />

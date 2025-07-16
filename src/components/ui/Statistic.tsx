@@ -8,7 +8,9 @@ interface StatisticProps {
   precision?: number;
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
+  icon?: React.ReactNode;
   valueStyle?: React.CSSProperties;
+  valueClassName?: string;
   formatter?: (value?: string | number) => React.ReactNode;
 }
 
@@ -21,7 +23,9 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
       precision,
       prefix,
       suffix,
+      icon,
       valueStyle,
+      valueClassName,
       formatter,
       ...props
     },
@@ -41,9 +45,17 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
 
     return (
       <div ref={ref} className={cn('space-y-1', className)} {...props}>
-        {title && <div className='text-sm text-muted-foreground'>{title}</div>}
+        {title && (
+          <div className='text-sm text-muted-foreground flex items-center gap-2'>
+            {icon && <span className='flex-shrink-0'>{icon}</span>}
+            <span>{title}</span>
+          </div>
+        )}
         <div
-          className='text-2xl font-semibold text-foreground flex items-baseline'
+          className={cn(
+            'text-2xl font-semibold text-foreground flex items-baseline',
+            valueClassName
+          )}
           style={valueStyle}
         >
           {prefix && <span className='mr-1'>{prefix}</span>}
