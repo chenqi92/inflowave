@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use log::{debug, info, error};
 
@@ -50,7 +50,7 @@ impl ConfigUtils {
     }
 
     /// 读取 JSON 配置文件
-    pub fn read_json_config<T>(file_path: &PathBuf) -> Result<T>
+    pub fn read_json_config<T>(file_path: &Path) -> Result<T>
     where
         T: for<'de> Deserialize<'de>,
     {
@@ -67,7 +67,7 @@ impl ConfigUtils {
     }
 
     /// 写入 JSON 配置文件
-    pub fn write_json_config<T>(file_path: &PathBuf, config: &T) -> Result<()>
+    pub fn write_json_config<T>(file_path: &Path, config: &T) -> Result<()>
     where
         T: Serialize,
     {
@@ -90,7 +90,7 @@ impl ConfigUtils {
     }
 
     /// 备份配置文件
-    pub fn backup_config_file(file_path: &PathBuf) -> Result<PathBuf> {
+    pub fn backup_config_file(file_path: &Path) -> Result<PathBuf> {
         debug!("备份配置文件: {:?}", file_path);
         
         if !file_path.exists() {
@@ -107,7 +107,7 @@ impl ConfigUtils {
     }
 
     /// 恢复配置文件
-    pub fn restore_config_file(file_path: &PathBuf) -> Result<()> {
+    pub fn restore_config_file(file_path: &Path) -> Result<()> {
         debug!("恢复配置文件: {:?}", file_path);
         
         let backup_path = file_path.with_extension("json.backup");
@@ -124,7 +124,7 @@ impl ConfigUtils {
     }
 
     /// 清理旧的配置文件
-    pub fn cleanup_old_configs(config_dir: &PathBuf, keep_days: u64) -> Result<()> {
+    pub fn cleanup_old_configs(config_dir: &Path, keep_days: u64) -> Result<()> {
         debug!("清理旧配置文件，保留 {} 天", keep_days);
         
         let cutoff_time = std::time::SystemTime::now()
@@ -162,7 +162,7 @@ impl ConfigUtils {
     }
 
     /// 验证配置文件完整性
-    pub fn validate_config_file<T>(file_path: &PathBuf) -> Result<bool>
+    pub fn validate_config_file<T>(file_path: &Path) -> Result<bool>
     where
         T: for<'de> Deserialize<'de>,
     {
@@ -185,7 +185,7 @@ impl ConfigUtils {
     }
 
     /// 获取配置文件大小
-    pub fn get_config_file_size(file_path: &PathBuf) -> Result<u64> {
+    pub fn get_config_file_size(file_path: &Path) -> Result<u64> {
         let metadata = std::fs::metadata(file_path)
             .context("获取文件元数据失败")?;
         
@@ -193,7 +193,7 @@ impl ConfigUtils {
     }
 
     /// 检查配置目录磁盘空间
-    pub fn check_disk_space(_config_dir: &PathBuf) -> Result<(u64, u64)> {
+    pub fn check_disk_space(_config_dir: &Path) -> Result<(u64, u64)> {
         // 简单实现，返回固定值
         // 在实际应用中，可以使用 statvfs 等系统调用获取真实磁盘空间
         Ok((1024 * 1024 * 1024, 512 * 1024 * 1024)) // (总空间, 可用空间)
@@ -207,7 +207,7 @@ pub struct ConfigLock {
 
 impl ConfigLock {
     /// 创建配置锁
-    pub fn new(config_dir: &PathBuf) -> Self {
+    pub fn new(config_dir: &Path) -> Self {
         let lock_file = config_dir.join(".lock");
         Self { lock_file }
     }
@@ -251,7 +251,7 @@ impl Drop for ConfigLock {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
+    use  tempfile::tempdir;
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]

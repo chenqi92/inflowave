@@ -5,6 +5,7 @@ import '@/styles/datagrip.css';
 // 错误处理
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { errorLogger } from '@/utils/errorLogger';
+import { DialogProvider } from '@/components/providers/DialogProvider';
 
 import { safeTauriInvoke, initializeEnvironment } from './utils/tauri';
 import { showMessage } from './utils/message';
@@ -211,11 +212,13 @@ const App: React.FC = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <MainLayout />
-      <ModalAdapter />
-      <Toaster />
-    </ErrorBoundary>
+    <DialogProvider>
+      <ErrorBoundary>
+        <MainLayout />
+        <ModalAdapter />
+        <Toaster />
+      </ErrorBoundary>
+    </DialogProvider>
   );
 };
 

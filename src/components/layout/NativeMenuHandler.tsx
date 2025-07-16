@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { safeTauriListen } from '@/utils/tauri';
+import { safeTauriListen, safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
@@ -107,6 +107,131 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     showMessage.success(`已切换到${themeLabel}主题`);
   };
 
+  // 文件操作处理函数
+  const handleOpenFile = async () => {
+    try {
+      const result = await safeTauriInvoke('open_file_dialog', {
+        title: '打开查询文件',
+        filters: [
+          { name: 'SQL 文件', extensions: ['sql'] },
+          { name: 'Text 文件', extensions: ['txt'] },
+          { name: '所有文件', extensions: ['*'] }
+        ],
+        multiple: false
+      });
+      
+      if (result && result.path) {
+        const content = await safeTauriInvoke('read_file', { path: result.path });
+        // 通过自定义事件传递文件内容到查询编辑器
+        document.dispatchEvent(new CustomEvent('open-file-content', { 
+          detail: { content, filename: result.path } 
+        }));
+        showMessage.success('文件已打开');
+      }
+    } catch (error) {
+      showMessage.error(`打开文件失败: ${error}`);
+    }
+  };
+
+  const handleSaveFile = async () => {
+    // 通过自定义事件触发保存当前查询
+    document.dispatchEvent(new CustomEvent('save-current-query'));
+  };
+
+  const handleSaveAsFile = async () => {
+    // 通过自定义事件触发另存为
+    document.dispatchEvent(new CustomEvent('save-query-as'));
+  };
+
+  // 数据导入导出处理函数
+  const handleImportData = async () => {
+    try {
+      const result = await safeTauriInvoke('open_file_dialog', {
+        title: '导入数据文件',
+        filters: [
+          { name: 'CSV 文件', extensions: ['csv'] },
+          { name: 'JSON 文件', extensions: ['json'] },
+          { name: '所有文件', extensions: ['*'] }
+        ],
+        multiple: false
+      });
+      
+      if (result && result.path) {
+        // 导航到数据导入页面或显示导入对话框
+        document.dispatchEvent(new CustomEvent('import-data-file', { 
+          detail: { path: result.path } 
+        }));
+        showMessage.success('准备导入数据...');
+      }
+    } catch (error) {
+      showMessage.error(`导入数据失败: ${error}`);
+    }
+  };
+
+  const handleExportData = async () => {
+    // 通过自定义事件触发数据导出
+    document.dispatchEvent(new CustomEvent('export-data'));
+  };
+
+  // 查询操作处理函数
+  const handleFormatQuery = () => {
+    document.dispatchEvent(new CustomEvent('format-query'));
+  };
+
+  const handleExplainQuery = () => {
+    document.dispatchEvent(new CustomEvent('explain-query'));
+  };
+
+  const handleQueryFavorites = () => {
+    document.dispatchEvent(new CustomEvent('show-query-favorites'));
+  };
+
+  // 缩放功能处理
+  const handleZoomIn = () => {
+    const currentZoom = parseFloat(document.body.style.zoom || '1');
+    const newZoom = Math.min(currentZoom + 0.1, 2.0);
+    document.body.style.zoom = newZoom.toString();
+    showMessage.success(`已放大至 ${Math.round(newZoom * 100)}%`);
+  };
+
+  const handleZoomOut = () => {
+    const currentZoom = parseFloat(document.body.style.zoom || '1');
+    const newZoom = Math.max(currentZoom - 0.1, 0.5);
+    document.body.style.zoom = newZoom.toString();
+    showMessage.success(`已缩小至 ${Math.round(newZoom * 100)}%`);
+  };
+
+  const handleZoomReset = () => {
+    document.body.style.zoom = '1';
+    showMessage.success('已重置缩放至 100%');
+  };
+
+  // 帮助系统处理函数
+  const handleUserManual = () => {
+    window.open('https://docs.influxdata.com/', '_blank');
+  };
+
+  const handleQuickStart = () => {
+    document.dispatchEvent(new CustomEvent('show-quick-start'));
+  };
+
+  const handleCheckUpdates = async () => {
+    try {
+      const result = await safeTauriInvoke('check_for_updates');
+      if (result.hasUpdate) {
+        showMessage.info(`发现新版本: ${result.version}`);
+      } else {
+        showMessage.success('您使用的是最新版本');
+      }
+    } catch (error) {
+      showMessage.error(`检查更新失败: ${error}`);
+    }
+  };
+
+  const handleReportIssue = () => {
+    window.open('https://github.com/your-repo/issues', '_blank');
+  };
+
   const handleMenuAction = (action: string) => {
     console.log('处理菜单动作:', action);
 
@@ -146,28 +271,23 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'open_file':
-        // TODO: 实现打开文件功能
-        showMessage.info('打开文件功能开发中...');
+        handleOpenFile();
         break;
 
       case 'save':
-        // TODO: 实现保存功能
-        showMessage.info('保存功能开发中...');
+        handleSaveFile();
         break;
 
       case 'save_as':
-        // TODO: 实现另存为功能
-        showMessage.info('另存为功能开发中...');
+        handleSaveAsFile();
         break;
 
       case 'import_data':
-        // TODO: 实现导入数据功能
-        showMessage.info('导入数据功能开发中...');
+        handleImportData();
         break;
 
       case 'export_data':
-        // TODO: 实现导出数据功能
-        showMessage.info('导出数据功能开发中...');
+        handleExportData();
         break;
 
       // 编辑菜单
@@ -204,8 +324,15 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'replace':
-        // TODO: 实现替换功能
-        showMessage.info('替换功能开发中...');
+        // 触发浏览器的替换功能
+        if (document.activeElement && 'focus' in document.activeElement) {
+          const event = new KeyboardEvent('keydown', {
+            key: 'h',
+            ctrlKey: true,
+            bubbles: true,
+          });
+          document.activeElement.dispatchEvent(event);
+        }
         break;
 
       case 'global_search':
@@ -240,18 +367,15 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'zoom_in':
-        // TODO: 实现放大功能
-        showMessage.info('放大功能开发中...');
+        handleZoomIn();
         break;
 
       case 'zoom_out':
-        // TODO: 实现缩小功能
-        showMessage.info('缩小功能开发中...');
+        handleZoomOut();
         break;
 
       case 'zoom_reset':
-        // TODO: 实现重置缩放功能
-        showMessage.info('重置缩放功能开发中...');
+        handleZoomReset();
         break;
 
       // 数据库菜单
@@ -264,7 +388,31 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'test_connection':
       case 'test-connection':
         if (activeConnectionId) {
-          showMessage.info('测试连接功能开发中...');
+          document.dispatchEvent(
+            new CustomEvent('test-connection', { detail: { connectionId: activeConnectionId } })
+          );
+        } else {
+          showMessage.warning('请先选择一个连接');
+        }
+        break;
+
+      case 'edit_connection':
+      case 'edit-connection':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('edit-connection', { detail: { connectionId: activeConnectionId } })
+          );
+        } else {
+          showMessage.warning('请先选择一个连接');
+        }
+        break;
+
+      case 'delete_connection':
+      case 'delete-connection':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('delete-connection', { detail: { connectionId: activeConnectionId } })
+          );
         } else {
           showMessage.warning('请先选择一个连接');
         }
@@ -282,8 +430,41 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'database-info':
+      case 'database_info':
         if (activeConnectionId) {
-          showMessage.info('数据库信息功能开发中...');
+          document.dispatchEvent(
+            new CustomEvent('show-database-info', { detail: { connectionId: activeConnectionId } })
+          );
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
+        break;
+
+      case 'database_stats':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('show-database-stats', { detail: { connectionId: activeConnectionId } })
+          );
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
+        break;
+
+      case 'import_structure':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('import-database-structure', { detail: { connectionId: activeConnectionId } })
+          );
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
+        break;
+
+      case 'export_structure':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('export-database-structure', { detail: { connectionId: activeConnectionId } })
+          );
         } else {
           showMessage.warning('请先建立数据库连接');
         }
@@ -302,6 +483,16 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         }
         break;
 
+      case 'execute_selection':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('execute-selection', { detail: { source: 'menu' } })
+          );
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
+        break;
+
       case 'stop_query':
       case 'stop-query':
         document.dispatchEvent(
@@ -311,13 +502,37 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'query-history':
-        showMessage.info('查询历史功能开发中...');
+        document.dispatchEvent(
+          new CustomEvent('show-query-history', { detail: { source: 'menu' } })
+        );
         break;
 
       case 'save-query':
         document.dispatchEvent(
           new CustomEvent('save-query', { detail: { source: 'menu' } })
         );
+        break;
+
+      case 'query_favorites':
+        handleQueryFavorites();
+        break;
+
+      case 'format_query':
+        handleFormatQuery();
+        break;
+
+      case 'explain_query':
+        handleExplainQuery();
+        break;
+
+      case 'query_plan':
+        if (activeConnectionId) {
+          document.dispatchEvent(
+            new CustomEvent('show-query-plan', { detail: { source: 'menu' } })
+          );
+        } else {
+          showMessage.warning('请先建立数据库连接');
+        }
         break;
 
       // 工具菜单
@@ -327,7 +542,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'console':
-        showMessage.info('控制台功能开发中...');
+        // 打开浏览器开发者工具
+        if (window.chrome && window.chrome.runtime) {
+          // Chrome
+          window.chrome.runtime.sendMessage({action: 'openDevTools'});
+        } else {
+          // 通用方法
+          document.dispatchEvent(new CustomEvent('open-console'));
+        }
         break;
 
       case 'dev_tools':
@@ -336,15 +558,40 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         showMessage.success('切换到开发者工具');
         break;
 
+      case 'query_performance':
+        navigate('/performance');
+        showMessage.success('切换到性能分析');
+        break;
+
+      case 'extensions':
+        navigate('/extensions');
+        showMessage.success('切换到扩展管理');
+        break;
+
+      case 'theme_settings':
+        navigate('/settings');
+        showMessage.success('切换到主题设置');
+        break;
+
+      case 'language_settings':
+        navigate('/settings');
+        showMessage.success('切换到语言设置');
+        break;
+
+      case 'preferences':
+        navigate('/settings');
+        showMessage.success('切换到首选项');
+        break;
+
       // 帮助菜单
       case 'user_manual':
       case 'user-manual':
-        showMessage.info('用户手册开发中...');
+        handleUserManual();
         break;
 
       case 'quick_start':
       case 'quick-start':
-        showMessage.info('快速入门开发中...');
+        handleQuickStart();
         break;
 
       case 'shortcuts_help':
@@ -354,16 +601,30 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'check_updates':
       case 'check-updates':
-        showMessage.info('检查更新功能开发中...');
+        handleCheckUpdates();
         break;
 
       case 'report_issue':
       case 'report-issue':
-        showMessage.info('反馈问题功能开发中...');
+        handleReportIssue();
         break;
 
       case 'about':
         setAboutVisible(true);
+        break;
+
+      case 'sample_queries':
+        document.dispatchEvent(
+          new CustomEvent('show-sample-queries', { detail: { source: 'menu' } })
+        );
+        break;
+
+      case 'api_docs':
+        window.open('https://docs.influxdata.com/influxdb/v1.8/tools/api/', '_blank');
+        break;
+
+      case 'influxdb_docs':
+        window.open('https://docs.influxdata.com/', '_blank');
         break;
 
       // 主题切换菜单

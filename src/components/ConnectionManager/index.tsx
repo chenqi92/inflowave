@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
+import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import type { Column } from '@/components/ui/DataTable';
 import {
   Settings,
@@ -62,6 +63,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   onEditConnection,
   onCreateConnection,
 }) => {
+  const dialog = useGlobalDialog();
   const {
     connections,
     connectionStatuses,
@@ -420,12 +422,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className='text-destructive focus:text-destructive'
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
-                      )
-                    ) {
+                  onClick={async () => {
+                    const confirmed = await dialog.confirm(
+                      `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
+                    );
+                    if (confirmed) {
                       removeConnection(record.id!);
                     }
                   }}

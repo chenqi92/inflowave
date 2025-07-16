@@ -281,3 +281,5 @@ export {
   ChartStyle,
 } from './chart';
 export type { ChartConfig } from './chart';
+
+export { default as CustomDialog } from './CustomDialog';

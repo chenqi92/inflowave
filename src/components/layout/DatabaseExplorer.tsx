@@ -8,9 +8,13 @@ import {
   TabsContent,
   Button,
   Tooltip,
+  TooltipTrigger,
+  TooltipContent,
   Badge,
   Spin,
   Typography,
+  Card,
+  CardContent,
 } from '@/components/ui';
 import {
   Database,
@@ -30,7 +34,6 @@ import {
   Calendar,
   MousePointer,
 } from 'lucide-react';
-import { TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -555,9 +558,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   {isFav && (
                     <Star className='w-3 h-3 text-warning fill-current' />
                   )}
-                  <span className='px-1.5 py-0.5 text-xs bg-orange-100 text-orange-600 rounded flex-shrink-0'>
+                  <Badge variant='secondary' className='bg-orange-100 text-orange-600 text-xs px-1.5 py-0.5 h-auto'>
                     Tag
-                  </span>
+                  </Badge>
                   <span className='text-xs text-muted-foreground flex-shrink-0'>
                     string
                   </span>
@@ -601,9 +604,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   {isFav && (
                     <Star className='w-3 h-3 text-warning fill-current' />
                   )}
-                  <span className='px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded flex-shrink-0'>
+                  <Badge variant='secondary' className='bg-primary/10 text-primary text-xs px-1.5 py-0.5 h-auto'>
                     Field
-                  </span>
+                  </Badge>
                   <span className='text-xs text-muted-foreground flex-shrink-0'>
                     {field.type}
                   </span>
@@ -1394,30 +1397,36 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   if (collapsed) {
     return (
       <div className='h-full flex flex-col items-center py-4 space-y-4'>
-        <Tooltip title='数据库浏览器' placement='right'>
-          <Button
-            type='text'
-            icon={<Database className='w-4 h-4' />}
-            className='w-8 h-8'
-          />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='icon' className='w-8 h-8'>
+              <Database className='w-4 h-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='right'>数据库浏览器</TooltipContent>
         </Tooltip>
-        <Tooltip title='刷新' placement='right'>
-          <Button
-            type='text'
-            icon={<RefreshCw className='w-4 h-4' />}
-            className='w-8 h-8'
-            onClick={refreshTree}
-            disabled={loading}
-          />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-8 h-8'
+              onClick={refreshTree}
+              disabled={loading}
+            >
+              <RefreshCw className='w-4 h-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='right'>刷新</TooltipContent>
         </Tooltip>
       </div>
     );
   }
 
   return (
-    <div className='database-explorer h-full flex flex-col bg-background border-0 shadow-none'>
+    <Card className='database-explorer h-full flex flex-col'>
       {/* 头部：连接状态和操作 */}
-      <div className='p-3 border-b border'>
+      <CardContent className='p-3 border-b'>
         <div className='flex items-center justify-between mb-3'>
           {displayConnectionInfo ? (
             <div className='flex items-center gap-2'>
@@ -1439,7 +1448,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               >
                 <div className='flex items-center gap-1'>
                   <span className='w-2 h-2 rounded-full bg-current'></span>
-                  <span className='text-sm font-medium'>
+                  <Typography.Text className='text-sm font-medium'>
                     {displayConnectionInfo.status.status === 'connected'
                       ? '已连接'
                       : displayConnectionInfo.status.status === 'connecting'
@@ -1447,24 +1456,24 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         : displayConnectionInfo.status.status === 'error'
                           ? '连接错误'
                           : '已断开'}
-                  </span>
+                  </Typography.Text>
                 </div>
               </Badge>
               <div className='flex flex-col'>
-                <span className='text-sm font-medium text-foreground'>
+                <Typography.Text className='text-sm font-medium'>
                   {displayConnectionInfo.connection.name}
-                </span>
-                <span className='text-xs text-muted-foreground'>
+                </Typography.Text>
+                <Typography.Text className='text-xs text-muted-foreground'>
                   {displayConnectionInfo.connection.host}:
                   {displayConnectionInfo.connection.port}
                   {displayConnectionInfo.status.latency &&
                     ` • ${displayConnectionInfo.status.latency}ms`}
-                </span>
+                </Typography.Text>
               </div>
             </div>
           ) : (
             <Badge variant='secondary'>
-              <span className='text-sm font-medium'>未连接</span>
+              <Typography.Text className='text-sm font-medium'>未连接</Typography.Text>
             </Badge>
           )}
           <Tooltip>
@@ -1489,10 +1498,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           onChange={e => setSearchValue(e.target.value)}
           className='text-sm'
         />
-      </div>
+      </CardContent>
 
       {/* 主要内容：标签页 */}
-      <div className='flex-1 overflow-hidden p-0'>
+      <CardContent className='flex-1 overflow-hidden p-0'>
         <Tabs defaultValue='explorer' className='h-full'>
           <TabsList className='ml-3'>
             <TabsTrigger value='explorer' className='flex items-center gap-1'>
@@ -1523,22 +1532,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 className='bg-transparent database-explorer-tree'
               />
             ) : (
-              <div className='text-center text-muted-foreground mt-8 border-0 shadow-none'>
-                <div className='pt-6'>
+              <Card className='text-center text-muted-foreground mt-8'>
+                <CardContent className='pt-6'>
                   <Database className='w-8 h-8 mx-auto mb-2' />
-                  <p>暂无连接</p>
-                  <Typography.Text className='text-sm mt-1'>
+                  <Typography.Text>暂无连接</Typography.Text>
+                  <Typography.Text className='text-sm mt-1 block'>
                     请在连接管理中添加数据库连接
                   </Typography.Text>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
 
           <TabsContent value='favorites' className='px-2 h-full overflow-auto'>
             {/* 收藏过滤器 */}
-            <div className='p-2 border-b border-0 shadow-none'>
-              <div className='flex flex-wrap gap-1 p-0'>
+            <CardContent className='p-2 border-b'>
+              <div className='flex flex-wrap gap-1'>
                 {[
                   { key: 'all', label: '全部', icon: Star },
                   { key: 'connection', label: '连接', icon: Link },
@@ -1561,18 +1570,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     >
                       <IconComponent className='w-3 h-3' />
                       {label}
-                      <span className='bg-background/20 px-1 rounded'>
+                      <Badge variant='secondary' className='bg-background/20 text-xs px-1 h-auto ml-1'>
                         {count}
-                      </span>
+                      </Badge>
                     </Button>
                   );
                 })}
               </div>
-            </div>
+            </CardContent>
 
             {/* 收藏列表 */}
-            <div className='p-2 border-0 shadow-none'>
-              <div className='p-0'>
+            <CardContent className='p-2'>
+              <div>
                 {(() => {
                   const filteredFavorites =
                     favoritesFilter === 'all'
@@ -1585,17 +1594,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                   if (filteredFavorites.length === 0) {
                     return (
-                      <div className='text-center text-muted-foreground py-8'>
-                        <Star className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                        <p className='text-sm'>
-                          {favoritesFilter === 'all'
-                            ? '暂无收藏项'
-                            : `暂无${favoritesFilter}类型的收藏`}
-                        </p>
-                        <p className='text-xs mt-1'>
-                          右键数据源树节点可添加收藏
-                        </p>
-                      </div>
+                      <Card className='text-center text-muted-foreground py-8'>
+                        <CardContent>
+                          <Star className='w-8 h-8 mx-auto mb-2 opacity-50' />
+                          <Typography.Text className='text-sm block'>
+                            {favoritesFilter === 'all'
+                              ? '暂无收藏项'
+                              : `暂无${favoritesFilter}类型的收藏`}
+                          </Typography.Text>
+                          <Typography.Text className='text-xs mt-1 block'>
+                            右键数据源树节点可添加收藏
+                          </Typography.Text>
+                        </CardContent>
+                      </Card>
                     );
                   }
 
@@ -1624,73 +1635,78 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         );
 
                         return (
-                          <div
+                          <Card
                             key={favorite.id}
-                            className='group p-2 rounded-lg border bg-background hover:bg-muted/50 transition-colors cursor-pointer'
+                            className='group cursor-pointer hover:bg-muted/50 transition-colors'
                             onClick={() => {
                               markAsAccessed(favorite.id);
                               // 这里可以添加导航到收藏项的逻辑
                               showMessage.info(`访问收藏: ${favorite.name}`);
                             }}
                           >
-                            <div className='flex items-start gap-2'>
-                              <IconComponent
-                                className={`w-4 h-4 mt-0.5 ${colorClass} flex-shrink-0`}
-                              />
-                              <div className='flex-1 min-w-0'>
-                                <div className='flex items-center gap-2'>
-                                  <span className='font-medium text-sm truncate'>
-                                    {favorite.name}
-                                  </span>
-                                  <span
-                                    className={`px-1.5 py-0.5 text-xs rounded ${colorClass} bg-current/10`}
-                                  >
-                                    {favorite.type}
-                                  </span>
-                                </div>
-                                {favorite.description && (
-                                  <p className='text-xs text-muted-foreground truncate mt-1'>
-                                    {favorite.description}
-                                  </p>
-                                )}
-                                <div className='flex items-center gap-3 mt-1 text-xs text-muted-foreground'>
-                                  <span className='flex items-center gap-1'>
-                                    <Calendar className='w-3 h-3' />
-                                    {new Date(
-                                      favorite.createdAt
-                                    ).toLocaleDateString()}
-                                  </span>
-                                  {favorite.accessCount > 0 && (
-                                    <span className='flex items-center gap-1'>
-                                      <MousePointer className='w-3 h-3' />
-                                      {favorite.accessCount}次
-                                    </span>
+                            <CardContent className='p-2'>
+                              <div className='flex items-start gap-2'>
+                                <IconComponent
+                                  className={`w-4 h-4 mt-0.5 ${colorClass} flex-shrink-0`}
+                                />
+                                <div className='flex-1 min-w-0'>
+                                  <div className='flex items-center gap-2'>
+                                    <Typography.Text className='font-medium text-sm truncate'>
+                                      {favorite.name}
+                                    </Typography.Text>
+                                    <Badge
+                                      variant='secondary'
+                                      className={`text-xs px-1.5 py-0.5 h-auto ${colorClass} bg-current/10`}
+                                    >
+                                      {favorite.type}
+                                    </Badge>
+                                  </div>
+                                  {favorite.description && (
+                                    <Typography.Text className='text-xs text-muted-foreground truncate mt-1 block'>
+                                      {favorite.description}
+                                    </Typography.Text>
                                   )}
+                                  <div className='flex items-center gap-3 mt-1 text-xs text-muted-foreground'>
+                                    <span className='flex items-center gap-1'>
+                                      <Calendar className='w-3 h-3' />
+                                      {new Date(
+                                        favorite.createdAt
+                                      ).toLocaleDateString()}
+                                    </span>
+                                    {favorite.accessCount > 0 && (
+                                      <span className='flex items-center gap-1'>
+                                        <MousePointer className='w-3 h-3' />
+                                        {favorite.accessCount}次
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    removeFavorite(favorite.id);
+                                    showMessage.success('已移除收藏');
+                                  }}
+                                  className='opacity-0 group-hover:opacity-100 p-1 h-auto hover:bg-destructive/10 hover:text-destructive transition-all'
+                                >
+                                  <Trash2 className='w-3 h-3' />
+                                </Button>
                               </div>
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  removeFavorite(favorite.id);
-                                  showMessage.success('已移除收藏');
-                                }}
-                                className='opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all'
-                              >
-                                <Trash2 className='w-3 h-3' />
-                              </button>
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         );
                       })}
                     </div>
                   );
                 })()}
               </div>
-            </div>
+            </CardContent>
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -18,8 +18,10 @@ import {
   SelectValue,
   Switch,
   Separator,
+  CustomDialog,
   Label,
 } from '@/components/ui';
+import { useDialog } from '@/hooks/useDialog';
 import { showMessage } from '@/utils/message';
 import {
   Save,
@@ -54,6 +56,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
+  const dialog = useDialog();
   const [loading, setLoading] = useState(false);
   const form = useForm();
   const [userGuideVisible, setUserGuideVisible] = useState(false);
@@ -523,12 +526,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <Button
                   variant='destructive'
                   size='sm'
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？'
-                      )
-                    ) {
+                  onClick={async () => {
+                    const confirmed = await dialog.confirm(
+                      '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？'
+                    );
+                    if (confirmed) {
                       clearConnectionsWithConfirm();
                     }
                   }}
@@ -548,12 +550,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <Button
                   variant='destructive'
                   size='sm'
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？'
-                      )
-                    ) {
+                  onClick={async () => {
+                    const confirmed = await dialog.confirm(
+                      '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？'
+                    );
+                    if (confirmed) {
                       clearAllData();
                     }
                   }}
@@ -813,6 +814,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       <UserGuideModal
         isOpen={userGuideVisible}
         onClose={() => setUserGuideVisible(false)}
+      />
+
+      {/* 对话框组件 */}
+      <CustomDialog
+        isOpen={dialog.isOpen}
+        onClose={dialog.hideDialog}
+        options={{
+          ...dialog.dialogState.options,
+          onConfirm: dialog.handleConfirm,
+          onCancel: dialog.handleCancel,
+        }}
       />
     </>
   );

@@ -32,6 +32,9 @@ aes-gcm = "0.10"
 rand = "0.8"
 sysinfo = "0.29"
 
+[dev-dependencies]
+tempfile = "3.8"
+
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]

@@ -12,9 +12,11 @@ import {
   Text,
   CodeBlock,
   Space,
+  CustomDialog,
 } from '@/components/ui';
 import { Bug, RefreshCw, FileText, AlertTriangle, Copy } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
+import { showMessage } from '@/utils/message';
 
 interface Props {
   children: ReactNode;
@@ -27,6 +29,11 @@ interface State {
   error: Error | null;
   errorInfo: ErrorInfo | null;
   errorId: string | null;
+  dialogState: {
+    isOpen: boolean;
+    message: string;
+    type: 'info' | 'error';
+  };
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -37,6 +44,11 @@ class ErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
       errorId: null,
+      dialogState: {
+        isOpen: false,
+        message: '',
+        type: 'info',
+      },
     };
   }
 
@@ -68,6 +80,26 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('Component Stack:', errorInfo.componentStack);
     console.groupEnd();
   }
+
+  showDialog = (message: string, type: 'info' | 'error' = 'info') => {
+    this.setState({
+      dialogState: {
+        isOpen: true,
+        message,
+        type,
+      },
+    });
+  };
+
+  hideDialog = () => {
+    this.setState({
+      dialogState: {
+        isOpen: false,
+        message: '',
+        type: 'info',
+      },
+    });
+  };
 
   handleReload = () => {
     window.location.reload();
@@ -123,7 +155,7 @@ class ErrorBoundary extends Component<Props, State> {
             path: result.path,
             content: reportContent,
           });
-          alert(`错误报告已保存到: ${result.path}`);
+          this.showDialog(`错误报告已保存到: ${result.path}`, 'info');
           return; // 成功保存，直接返回
         } else {
           console.log('用户取消了文件保存对话框');
@@ -148,7 +180,7 @@ class ErrorBoundary extends Component<Props, State> {
           const writable = await fileHandle.createWritable();
           await writable.write(reportContent);
           await writable.close();
-          alert(`错误报告已保存到: ${fileHandle.name}`);
+          this.showDialog(`错误报告已保存到: ${fileHandle.name}`, 'info');
           return; // 成功保存，直接返回
         }
       } catch (browserError) {
@@ -166,7 +198,7 @@ class ErrorBoundary extends Component<Props, State> {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        alert(`错误报告已下载: ${fileName}`);
+        this.showDialog(`错误报告已下载: ${fileName}`, 'info');
       } catch (downloadError) {
         console.error('下载失败:', downloadError);
         throw downloadError;
@@ -179,7 +211,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     } catch (err) {
       console.error('无法保存错误报告:', err);
-      alert('保存错误报告失败，请查看控制台获取详细信息');
+      this.showDialog('保存错误报告失败，请查看控制台获取详细信息', 'error');
     }
   };
 
@@ -405,7 +437,21 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return (
+      <>
+        {this.props.children}
+        <CustomDialog
+          isOpen={this.state.dialogState.isOpen}
+          onClose={this.hideDialog}
+          options={{
+            message: this.state.dialogState.message,
+            type: this.state.dialogState.type,
+            confirmText: '确定',
+            onConfirm: this.hideDialog,
+          }}
+        />
+      </>
+    );
   }
 }
 

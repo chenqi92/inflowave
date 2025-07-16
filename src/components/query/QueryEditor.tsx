@@ -2,14 +2,21 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Button,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Typography,
   Dropdown,
   Switch,
   Tabs,
   Tooltip,
   Label,
+  Sheet,
+  Badge,
+  CustomDialog,
 } from '@/components/ui';
-// TODO: Replace these Ant Design components: Badge, Drawer
+import { useDialog } from '@/hooks/useDialog';
 import { showMessage } from '@/utils/message';
 import {
   Save,
@@ -72,6 +79,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 }) => {
   const { activeConnectionId } = useConnectionStore();
   const { resolvedTheme } = useTheme();
+  const dialog = useDialog();
 
   // 处理时间范围的SQL注入
   const injectTimeRangeToQuery = (
@@ -794,6 +802,116 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     updateCurrentTabQuery(template);
   };
 
+  // 菜单事件监听器
+  useEffect(() => {
+    const handleOpenFileContent = (event: CustomEvent) => {
+      const { content, filename } = event.detail;
+      // 创建新标签页加载文件内容
+      const newTab: QueryTab = {
+        id: `file_${Date.now()}`,
+        name: filename.split('/').pop() || '未知文件',
+        query: content,
+        database: selectedDatabase,
+        isModified: false,
+      };
+      setQueryTabs(prev => [...prev, newTab]);
+      setActiveTabId(newTab.id);
+    };
+
+    const handleSaveCurrentQuery = async () => {
+      await handleSaveQuery();
+    };
+
+    const handleSaveQueryAs = async () => {
+      const currentTab = getCurrentTab();
+      if (!currentTab?.query.trim()) {
+        showMessage.warning('请输入查询语句');
+        return;
+      }
+
+      try {
+        const result = await safeTauriInvoke('save_file_dialog', {
+          title: '保存查询文件',
+          filters: [
+            { name: 'SQL 文件', extensions: ['sql'] },
+            { name: 'Text 文件', extensions: ['txt'] }
+          ],
+          defaultFilename: `${currentTab.name}.sql`
+        });
+
+        if (result && result.path) {
+          await safeTauriInvoke('write_file', {
+            path: result.path,
+            content: currentTab.query
+          });
+          showMessage.success('查询已保存到文件');
+        }
+      } catch (error) {
+        showMessage.error(`保存文件失败: ${error}`);
+      }
+    };
+
+    const handleFormatQueryEvent = () => {
+      handleFormatQuery();
+    };
+
+    const handleExplainQueryEvent = () => {
+      if (!activeConnectionId) {
+        showMessage.warning('请先建立数据库连接');
+        return;
+      }
+      
+      const currentTab = getCurrentTab();
+      if (!currentTab?.query.trim()) {
+        showMessage.warning('请输入查询语句');
+        return;
+      }
+
+      // 这里可以调用实际的查询解释功能
+      showMessage.info('查询解释功能开发中...');
+    };
+
+    const handleShowQueryFavorites = () => {
+      showMessage.info('查询收藏夹功能开发中...');
+    };
+
+    const handleShowQueryHistory = () => {
+      setShowHistory(true);
+    };
+
+    const handleExecuteSelection = () => {
+      if (!editorInstance) return;
+      
+      const selection = editorInstance.getSelection();
+      if (selection && !selection.isEmpty()) {
+        handleExecuteQuery();
+      } else {
+        showMessage.info('请先选择要执行的查询文本');
+      }
+    };
+
+    // 添加事件监听器
+    document.addEventListener('open-file-content', handleOpenFileContent);
+    document.addEventListener('save-current-query', handleSaveCurrentQuery);
+    document.addEventListener('save-query-as', handleSaveQueryAs);
+    document.addEventListener('format-query', handleFormatQueryEvent);
+    document.addEventListener('explain-query', handleExplainQueryEvent);
+    document.addEventListener('show-query-favorites', handleShowQueryFavorites);
+    document.addEventListener('show-query-history', handleShowQueryHistory);
+    document.addEventListener('execute-selection', handleExecuteSelection);
+
+    return () => {
+      document.removeEventListener('open-file-content', handleOpenFileContent);
+      document.removeEventListener('save-current-query', handleSaveCurrentQuery);
+      document.removeEventListener('save-query-as', handleSaveQueryAs);
+      document.removeEventListener('format-query', handleFormatQueryEvent);
+      document.removeEventListener('explain-query', handleExplainQueryEvent);
+      document.removeEventListener('show-query-favorites', handleShowQueryFavorites);
+      document.removeEventListener('show-query-history', handleShowQueryHistory);
+      document.removeEventListener('execute-selection', handleExecuteSelection);
+    };
+  }, [activeConnectionId, selectedDatabase, getCurrentTab, handleSaveQuery, handleFormatQuery, handleExecuteQuery, editorInstance]);
+
   // 当前标签页
   const currentTab = getCurrentTab();
 
@@ -850,8 +968,12 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                     key: 'rename',
                     label: '重命名',
                     icon: <Edit className='w-4 h-4' />,
-                    onClick: () => {
-                      const newName = prompt('请输入新名称', currentTab?.name);
+                    onClick: async () => {
+                      const newName = await dialog.prompt(
+                        '请输入新名称',
+                        currentTab?.name,
+                        '标签页名称'
+                      );
                       if (newName && newName.trim()) {
                         renameTab(activeTabId, newName.trim());
                       }
@@ -896,17 +1018,19 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         extra={
           <div className='flex gap-2'>
             <Select
-              placeholder='选择数据库'
               value={selectedDatabase}
               onValueChange={onDatabaseChange}
-              style={{ width: 150 }}
-              size='small'
             >
-              {databases.map(db => (
-                <Option key={db} value={db}>
-                  {db}
-                </Option>
-              ))}
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="选择数据库" />
+              </SelectTrigger>
+              <SelectContent>
+                {databases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    {db}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
 
             <Tooltip title='查询历史'>
@@ -981,17 +1105,18 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               </Button>
 
               <Select
-                placeholder='选择模板'
-                style={{ width: 150 }}
-                size='small'
                 onValueChange={handleTemplateSelect}
-                allowClear
               >
-                {queryTemplates.map(template => (
-                  <Option key={template.value} value={template.value}>
-                    {template.label}
-                  </Option>
-                ))}
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="选择模板" />
+                </SelectTrigger>
+                <SelectContent>
+                  {queryTemplates.map(template => (
+                    <SelectItem key={template.value} value={template.value}>
+                      {template.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -1080,11 +1205,16 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         <div className='space-y-4'>
           <div>
             <Label className='block text-sm font-medium mb-2'>字体大小</Label>
-            <Select defaultValue={14} style={{ width: '100%' }}>
-              <Option value={12}>12px</Option>
-              <Option value={14}>14px</Option>
-              <Option value={16}>16px</Option>
-              <Option value={18}>18px</Option>
+            <Select defaultValue="14">
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="12">12px</SelectItem>
+                <SelectItem value="14">14px</SelectItem>
+                <SelectItem value="16">16px</SelectItem>
+                <SelectItem value="18">18px</SelectItem>
+              </SelectContent>
             </Select>
           </div>
 
@@ -1093,10 +1223,14 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Select
               value={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               disabled
-              style={{ width: '100%' }}
             >
-              <Option value='vs-light'>浅色 (跟随系统)</Option>
-              <Option value='vs-dark'>深色 (跟随系统)</Option>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='vs-light'>浅色 (跟随系统)</SelectItem>
+                <SelectItem value='vs-dark'>深色 (跟随系统)</SelectItem>
+              </SelectContent>
             </Select>
           </div>
 
@@ -1116,6 +1250,17 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           </div>
         </div>
       </Sheet>
+
+      {/* 对话框组件 */}
+      <CustomDialog
+        isOpen={dialog.isOpen}
+        onClose={dialog.hideDialog}
+        options={{
+          ...dialog.dialogState.options,
+          onConfirm: dialog.handleConfirm,
+          onCancel: dialog.handleCancel,
+        }}
+      />
     </div>
   );
 };
