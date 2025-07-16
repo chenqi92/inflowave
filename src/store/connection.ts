@@ -304,69 +304,19 @@ export const useConnectionStore = create<ConnectionState>()(
         try {
           const statuses = await safeTauriInvoke<Record<string, ConnectionStatus>>('get_all_connection_statuses');
           if (statuses) {
-            // 智能合并状态，保护已连接的连接不被错误地断开，同时同步connectedConnectionIds
+            // 简化状态更新逻辑，直接使用后端状态
             set((state) => {
-              const newStatuses = { ...state.connectionStatuses };
-              const newConnectedIds = [...state.connectedConnectionIds];
-
-              for (const [connectionId, backendStatus] of Object.entries(statuses)) {
-                const currentStatus = state.connectionStatuses[connectionId];
-                const wasConnected = state.connectedConnectionIds.includes(connectionId);
-
-                // 如果当前状态是已连接，只有在后端明确报告错误或断开时才更新
-                if (currentStatus?.status === 'connected') {
-                  // 只有在后端状态是 error 或者有错误信息时才更新
-                  if (backendStatus.status === 'error' || backendStatus.error) {
-                    console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为错误:`, backendStatus.error);
-                    newStatuses[connectionId] = backendStatus;
-                    // 从已连接列表中移除
-                    const index = newConnectedIds.indexOf(connectionId);
-                    if (index > -1) {
-                      newConnectedIds.splice(index, 1);
-                    }
-                  } else if (backendStatus.status === 'disconnected' && backendStatus.error) {
-                    // 只有在有明确错误信息的情况下才认为连接真的断开了
-                    console.log(`🔄 连接 ${ connectionId } 状态从已连接更新为断开:`, backendStatus.error);
-                    newStatuses[connectionId] = backendStatus;
-                    // 从已连接列表中移除
-                    const index = newConnectedIds.indexOf(connectionId);
-                    if (index > -1) {
-                      newConnectedIds.splice(index, 1);
-                    }
-                  } else {
-                    // 保持当前的已连接状态，但更新延迟等其他信息
-                    newStatuses[connectionId] = {
-                      ...currentStatus,
-                      latency: backendStatus.latency || currentStatus.latency,
-                      lastConnected: backendStatus.lastConnected || currentStatus.lastConnected
-                    };
-                    // 确保在已连接列表中
-                    if (!wasConnected) {
-                      newConnectedIds.push(connectionId);
-                    }
-                  }
-                } else {
-                  // 对于非已连接状态，可以安全地更新
-                  newStatuses[connectionId] = backendStatus;
-                  
-                  // 同步connectedConnectionIds
-                  if (backendStatus.status === 'connected') {
-                    // 添加到已连接列表
-                    if (!wasConnected) {
-                      newConnectedIds.push(connectionId);
-                    }
-                  } else {
-                    // 从已连接列表中移除
-                    const index = newConnectedIds.indexOf(connectionId);
-                    if (index > -1) {
-                      newConnectedIds.splice(index, 1);
-                    }
-                  }
+              const newConnectedIds: string[] = [];
+              
+              // 直接使用后端状态，并同步connectedConnectionIds
+              Object.entries(statuses).forEach(([connectionId, status]) => {
+                if (status.status === 'connected') {
+                  newConnectedIds.push(connectionId);
                 }
-              }
-
+              });
+              
               return { 
-                connectionStatuses: newStatuses,
+                connectionStatuses: statuses,
                 connectedConnectionIds: newConnectedIds
               };
             });
@@ -384,64 +334,26 @@ export const useConnectionStore = create<ConnectionState>()(
           const status = await safeTauriInvoke<ConnectionStatus>('get_connection_status', { connectionId: id });
           if (status) {
             set((state) => {
-              const currentStatus = state.connectionStatuses[id];
-              const wasConnected = state.connectedConnectionIds.includes(id);
-              let newConnectedIds = [...state.connectedConnectionIds];
+              const newConnectedIds = [...state.connectedConnectionIds];
               
-              // 应用相同的智能合并逻辑
-              let newStatus = status;
-              if (currentStatus?.status === 'connected') {
-                if (status.status === 'error' || status.error) {
-                  console.log(`🔄 连接 ${id} 状态从已连接更新为错误:`, status.error);
-                  newStatus = status;
-                  // 从已连接列表中移除
-                  const index = newConnectedIds.indexOf(id);
-                  if (index > -1) {
-                    newConnectedIds.splice(index, 1);
-                  }
-                } else if (status.status === 'disconnected' && status.error) {
-                  console.log(`🔄 连接 ${id} 状态从已连接更新为断开:`, status.error);
-                  newStatus = status;
-                  // 从已连接列表中移除
-                  const index = newConnectedIds.indexOf(id);
-                  if (index > -1) {
-                    newConnectedIds.splice(index, 1);
-                  }
-                } else {
-                  // 保持当前的已连接状态，但更新延迟等其他信息
-                  newStatus = {
-                    ...currentStatus,
-                    latency: status.latency || currentStatus.latency,
-                    lastConnected: status.lastConnected || currentStatus.lastConnected
-                  };
-                  // 确保在已连接列表中
-                  if (!wasConnected) {
-                    newConnectedIds.push(id);
-                  }
+              // 简化逻辑，直接使用后端状态
+              if (status.status === 'connected') {
+                // 添加到已连接列表（如果不存在）
+                if (!newConnectedIds.includes(id)) {
+                  newConnectedIds.push(id);
                 }
               } else {
-                // 对于非已连接状态，直接更新
-                newStatus = status;
-                
-                // 同步connectedConnectionIds
-                if (status.status === 'connected') {
-                  // 添加到已连接列表
-                  if (!wasConnected) {
-                    newConnectedIds.push(id);
-                  }
-                } else {
-                  // 从已连接列表中移除
-                  const index = newConnectedIds.indexOf(id);
-                  if (index > -1) {
-                    newConnectedIds.splice(index, 1);
-                  }
+                // 从已连接列表中移除
+                const index = newConnectedIds.indexOf(id);
+                if (index > -1) {
+                  newConnectedIds.splice(index, 1);
                 }
               }
 
               return {
                 connectionStatuses: {
                   ...state.connectionStatuses,
-                  [id]: newStatus
+                  [id]: status
                 },
                 connectedConnectionIds: newConnectedIds
               };

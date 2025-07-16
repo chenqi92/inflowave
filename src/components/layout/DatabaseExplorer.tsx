@@ -358,7 +358,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     </div>
                 ),
                 key: `connection-${connection.id}`,
-                icon: <Link className="w-4 h-4 text-primary"/>,
+                icon: isConnected ? <Database className="w-4 h-4 text-success"/> : <Link className="w-4 h-4 text-muted-foreground"/>,
                 children: []
             };
 

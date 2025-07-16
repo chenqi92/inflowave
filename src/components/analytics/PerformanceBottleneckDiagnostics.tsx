@@ -164,9 +164,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<PerformanceBottleneckDia
     }
   }, [autoRefresh, refreshInterval, getBottlenecks]);
 
-  useEffect(() => {
-    getBottlenecks();
-  }, [getBottlenecks]);
+  // 暂时禁用自动加载以避免Tauri命令错误
+  // useEffect(() => {
+  //   getBottlenecks();
+  // }, [getBottlenecks]);
 
   // 获取严重程度颜色
   const getSeverityVariant = (severity: string) => {
