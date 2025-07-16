@@ -3,21 +3,32 @@ import React, { useState } from 'react';
 import {
   Button,
   Form,
+  FormField,
   FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
   Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Typography,
-} from '@/components/ui';
-import { Dialog } from '@/components/ui';
-import {
+  Text,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Textarea,
 } from '@/components/ui';
 import {
   Plus,
@@ -99,7 +110,21 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   const { createDashboard, updateDashboard, getCharts } =
     useVisualizationStore();
-  const form = useForm();
+
+  const form = useForm({
+    defaultValues: {
+      name: currentDashboard.name || '新仪表板',
+      description: currentDashboard.description || '',
+      settings: {
+        theme: currentDashboard.settings?.theme || 'default',
+        gridSize: currentDashboard.settings?.gridSize || 12,
+        refreshInterval: currentDashboard.settings?.refreshInterval || 30,
+        autoRefresh: currentDashboard.settings?.autoRefresh || false,
+        showHeader: currentDashboard.settings?.showHeader || true,
+        showGrid: currentDashboard.settings?.showGrid || true,
+      },
+    },
+  });
 
   // 网格布局配置
   const gridConfig = {
@@ -158,9 +183,8 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     setDraggedItem(null);
   };
 
-  const handleSaveDashboard = async () => {
+  const handleSaveDashboard = form.handleSubmit(async (values) => {
     try {
-      const values = await form.validateFields();
       const dashboardData: Dashboard = {
         ...currentDashboard,
         ...values,
@@ -180,7 +204,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     } catch (error) {
       console.error('保存仪表板失败:', error);
     }
-  };
+  });
 
   const handlePreviewDashboard = () => {
     const previewData: Dashboard = {
@@ -264,7 +288,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           <div className='w-full h-full flex items-center justify-center'>
             <div className='flex flex-col items-center justify-center text-muted-foreground'>
               <div className='text-2xl mb-2'>📊</div>
-              <Typography.Text className='text-sm'>暂无数据</Typography.Text>
+              <Text className='text-sm'>暂无数据</Text>
             </div>
           </div>
         )}
@@ -317,9 +341,9 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         {gridItems.length === 0 ? (
           <div className='flex flex-col items-center justify-center h-64 text-muted-foreground'>
             <div className='text-4xl mb-4'>📊</div>
-            <Typography.Text className='text-center'>
+            <Text className='text-center'>
               暂无图表，点击添加图表开始构建仪表板
-            </Typography.Text>
+            </Text>
           </div>
         ) : (
           <div
@@ -347,62 +371,76 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
-      <div
-        title={
-          <div className='flex gap-2'>
-            <LayoutGrid className='w-4 h-4' />
+      <Card className='flex-shrink-0'>
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
+          <CardTitle className='flex items-center gap-2'>
+            <LayoutGrid className='w-5 h-5' />
             <span>{isEditMode ? '编辑仪表板' : '预览仪表板'}</span>
-            <span className='text-sm text-muted-foreground'>
+            <span className='text-sm text-muted-foreground font-normal'>
               ({gridItems.length} 个图表)
             </span>
-          </div>
-        }
-        extra={
+          </CardTitle>
+
           <div className='flex gap-2'>
             {isEditMode ? (
               <>
                 <Button
-                  icon={<Plus className='w-4 h-4' />}
+                  variant='outline'
                   onClick={() => setShowChartModal(true)}
                   disabled={charts.length === 0}
+                  className='gap-2'
                 >
+                  <Plus className='w-4 h-4' />
                   添加图表
                 </Button>
 
-                <Tooltip title='仪表板设置'>
-                  <Button
-                    icon={<Settings className='w-4 h-4' />}
-                    onClick={() => setShowSettingsModal(true)}
-                  />
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant='outline'
+                        size='icon'
+                        onClick={() => setShowSettingsModal(true)}
+                      >
+                        <Settings className='w-4 h-4' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>仪表板设置</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
                 <Button
-                  icon={<Eye className='w-4 h-4' />}
+                  variant='outline'
                   onClick={handlePreviewDashboard}
+                  className='gap-2'
                 >
+                  <Eye className='w-4 h-4' />
                   预览
                 </Button>
 
                 <Button
-                  type='primary'
-                  icon={<Save className='w-4 h-4' />}
                   onClick={handleSaveDashboard}
+                  className='gap-2'
                 >
+                  <Save className='w-4 h-4' />
                   保存仪表板
                 </Button>
               </>
             ) : (
               <Button
-                icon={<Edit className='w-4 h-4' />}
+                variant='outline'
                 onClick={() => setIsEditMode(true)}
+                className='gap-2'
               >
+                <Edit className='w-4 h-4' />
                 编辑模式
               </Button>
             )}
           </div>
-        }
-        className='flex-shrink-0'
-      >
+        </CardHeader>
+      </Card>
+
+      <div className='flex-1 p-4'>
         <DndContext onDragEnd={handleDragEnd}>
           <SortableContext
             items={gridItems.map(item => item.id)}
@@ -418,114 +456,171 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       </div>
 
       {/* 添加图表模态框 */}
-      <Dialog
-        title='添加图表'
-        open={showChartModal}
-        onOpenChange={open => !open && (() => setShowChartModal(false))()}
-        footer={null}
-        width={800}
-      >
-        <div className='space-y-4'>
-          <div className='text-sm text-muted-foreground mb-4'>
-            选择一个已创建的图表添加到仪表板
-          </div>
+      <Dialog open={showChartModal} onOpenChange={setShowChartModal}>
+        <DialogContent className='max-w-4xl'>
+          <DialogHeader>
+            <DialogTitle>添加图表</DialogTitle>
+          </DialogHeader>
 
-          {charts.length === 0 ? (
-            <div className='flex flex-col items-center justify-center py-8 text-muted-foreground'>
-              <div className='text-2xl mb-2'>📈</div>
-              <Typography.Text className='text-sm'>
-                暂无可用图表，请先创建图表
-              </Typography.Text>
-            </div>
-          ) : (
-            <div className='grid grid-cols-2 gap-4'>
-              {charts.map(chart => (
-                <div
-                  key={chart.id}
-                  onClick={() => handleAddChart(chart.id)}
-                  className='cursor-pointer hover:border-blue-500 hover:shadow-md transition-all'
-                >
-                  <div className='p-4 text-center'>
-                    <div className='font-medium'>{chart.title}</div>
-                    <div className='text-xs text-muted-foreground mt-1'>
-                      {chart.type} · {chart.xAxis?.field} / {chart.yAxis?.field}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          <div className='space-y-4'>
+            <Text className='text-sm text-muted-foreground'>
+              选择一个已创建的图表添加到仪表板
+            </Text>
+
+            {charts.length === 0 ? (
+              <div className='flex flex-col items-center justify-center py-8 text-muted-foreground'>
+                <div className='text-2xl mb-2'>📈</div>
+                <Text className='text-sm'>
+                  暂无可用图表，请先创建图表
+                </Text>
+              </div>
+            ) : (
+              <div className='grid grid-cols-2 gap-4'>
+                {charts.map(chart => (
+                  <Card
+                    key={chart.id}
+                    onClick={() => handleAddChart(chart.id)}
+                    className='cursor-pointer hover:border-primary hover:shadow-md transition-all'
+                  >
+                    <CardContent className='p-4 text-center'>
+                      <div className='font-medium'>{chart.title}</div>
+                      <Text className='text-xs text-muted-foreground mt-1'>
+                        {chart.type} · {chart.xAxis?.field} / {chart.yAxis?.field}
+                      </Text>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
       </Dialog>
 
       {/* 仪表板设置模态框 */}
-      <Dialog
-        title='仪表板设置'
-        open={showSettingsModal}
-        onOpenChange={open => {
-          if (!open) {
-            setShowSettingsModal(false);
-          }
-        }}
-      >
-        <Form form={form} layout='vertical' initialValues={currentDashboard}>
-          <FormItem
-            name='name'
-            label='仪表板名称'
-            rules={[{ required: true, message: '请输入仪表板名称' }]}
-          >
-            <Input placeholder='输入仪表板名称' />
-          </FormItem>
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className='max-w-lg'>
+          <DialogHeader>
+            <DialogTitle>仪表板设置</DialogTitle>
+          </DialogHeader>
 
-          <FormItem name='description' label='描述'>
-            <Textarea rows={3} placeholder='输入仪表板描述' />
-          </FormItem>
+          <Form {...form}>
+            <form onSubmit={handleSaveDashboard} className='space-y-4'>
+              <FormField
+                control={form.control}
+                name='name'
+                rules={{ required: '请输入仪表板名称' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>仪表板名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder='输入仪表板名称' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name={['settings', 'theme']} label='主题'>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder='选择主题' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='default'>默认</SelectItem>
-                <SelectItem value='dark'>深色</SelectItem>
-                <SelectItem value='light'>浅色</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>描述</FormLabel>
+                    <FormControl>
+                      <Textarea rows={3} placeholder='输入仪表板描述' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name={['settings', 'gridSize']} label='网格列数'>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder='选择网格列数' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={8}>8 列</SelectItem>
-                <SelectItem value={12}>12 列</SelectItem>
-                <SelectItem value={16}>16 列</SelectItem>
-                <SelectItem value={24}>24 列</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
+              <FormField
+                control={form.control}
+                name='settings.theme'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>主题</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='选择主题' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value='default'>默认</SelectItem>
+                        <SelectItem value='dark'>深色</SelectItem>
+                        <SelectItem value='light'>浅色</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem
-            name={['settings', 'refreshInterval']}
-            label='刷新间隔（秒）'
-          >
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder='选择刷新间隔' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={10}>10 秒</SelectItem>
-                <SelectItem value={30}>30 秒</SelectItem>
-                <SelectItem value={60}>1 分钟</SelectItem>
-                <SelectItem value={300}>5 分钟</SelectItem>
-                <SelectItem value={600}>10 分钟</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormItem>
-        </Form>
+              <FormField
+                control={form.control}
+                name='settings.gridSize'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>网格列数</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='选择网格列数' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value='8'>8 列</SelectItem>
+                        <SelectItem value='12'>12 列</SelectItem>
+                        <SelectItem value='16'>16 列</SelectItem>
+                        <SelectItem value='24'>24 列</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='settings.refreshInterval'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>刷新间隔（秒）</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='选择刷新间隔' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value='10'>10 秒</SelectItem>
+                        <SelectItem value='30'>30 秒</SelectItem>
+                        <SelectItem value='60'>1 分钟</SelectItem>
+                        <SelectItem value='300'>5 分钟</SelectItem>
+                        <SelectItem value='600'>10 分钟</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => setShowSettingsModal(false)}
+                >
+                  取消
+                </Button>
+                <Button type='submit'>
+                  保存设置
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
       </Dialog>
     </div>
   );
