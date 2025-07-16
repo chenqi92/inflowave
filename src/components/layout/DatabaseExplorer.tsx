@@ -818,9 +818,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     // 连接操作完成后，loading状态应该为false
                     updateConnectionNodeDisplay(connection_id, false);
                     
-                    // 如果连接成功，为该连接加载数据库节点
+                    // 根据连接状态处理数据库节点
                     if (isConnectionConnected(connection_id)) {
+                        // 如果连接成功，为该连接加载数据库节点
                         await addDatabaseNodesToConnection(connection_id);
+                    } else {
+                        // 如果连接断开，清理该连接的数据库子节点
+                        clearDatabaseNodesForConnection(connection_id);
                     }
                     
                     // 清除定时器引用
@@ -1142,24 +1146,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             setTreeData(prevData => {
                 return prevData.map(node => {
                     if (node.key === `connection-${connection_id}`) {
-                        // 构建数据库子节点
-                        const databaseChildren: DataNode[] = databases.map(databaseName => ({
-                            title: (
-                                <div className="flex items-center gap-2">
-                                    <Database className="w-3 h-3 text-primary"/>
-                                    <span className="flex-1">{databaseName}</span>
-                                    {isFavorite(`${connection_id}-${databaseName}`) && 
-                                        <Star className="w-3 h-3 text-warning fill-current"/>}
-                                </div>
-                            ),
-                            key: `database-${connection_id}-${databaseName}`,
-                            children: [{
-                                title: '加载中...',
-                                key: `loading-${connection_id}-${databaseName}`,
-                                isLeaf: true,
-                                selectable: false
-                            }]
-                        }));
+                        // 构建数据库子节点 - 保持与buildCompleteTreeData一致的结构
+                        const databaseChildren: DataNode[] = databases.map(databaseName => {
+                            const dbPath = `${connection_id}/${databaseName}`;
+                            const isFav = isFavorite(dbPath);
+                            return {
+                                title: (
+                                    <span className="flex items-center gap-1">
+                                        {databaseName}
+                                        {isFav && <Star className="w-3 h-3 text-warning fill-current"/>}
+                                    </span>
+                                ),
+                                key: `database-${connection_id}-${databaseName}`,
+                                icon: <Database className="w-4 h-4 text-purple-600"/>,
+                                isLeaf: false,
+                                children: [], // 空数组表示有子节点但未加载，与buildCompleteTreeData保持一致
+                            };
+                        });
 
                         return {
                             ...node,
@@ -1174,6 +1177,44 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.error(`❌ 为连接 ${connection_id} 加载数据库失败:`, error);
         }
     }, [getConnection, loadDatabases, isFavorite]);
+
+    // 清理特定连接的数据库子节点
+    const clearDatabaseNodesForConnection = useCallback((connection_id: string) => {
+        console.log(`🧹 清理连接 ${connection_id} 的数据库子节点`);
+        
+        setTreeData(prevData => {
+            return prevData.map(node => {
+                if (node.key === `connection-${connection_id}`) {
+                    return {
+                        ...node,
+                        children: [],
+                        isLeaf: false
+                    };
+                }
+                return node;
+            });
+        });
+        
+        // 清理该连接相关的展开状态
+        setExpandedKeys(prev => {
+            const filtered = prev.filter(key => 
+                !key.startsWith(`database-${connection_id}`) && 
+                !key.startsWith(`table-${connection_id}`)
+            );
+            return filtered;
+        });
+        
+        // 清理该连接相关的加载状态
+        setLoadingNodes(prev => {
+            const newSet = new Set(prev);
+            Array.from(newSet).forEach(key => {
+                if (key.startsWith(`database-${connection_id}`) || key.startsWith(`table-${connection_id}`)) {
+                    newSet.delete(key);
+                }
+            });
+            return newSet;
+        });
+    }, []);
 
     // 监听刷新触发器
     useEffect(() => {
