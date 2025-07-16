@@ -1,7 +1,7 @@
 ﻿import React, {useState} from 'react';
 import {useForm} from 'react-hook-form';
 import {useConnection} from '@/hooks/useConnection';
-import {Button, Form, FormItem, Input, InputNumber, Switch, Typography} from '@/components/ui';
+import {Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, InputNumber, Switch, Typography} from '@/components/ui';
 import {showNotification} from '@/utils/message';
 
 interface ConnectionConfig {
@@ -94,59 +94,143 @@ const ConnectionTest: React.FC = () => {
     return (
         <div className="p-6 max-w-2xl mx-auto">
             <div title="InfluxDB 连接测试" className="mb-6">
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleTest}
-                    initialValues={{
-                        host: 'localhost',
-                        port: 8086,
-                        ssl: false,
-                        timeout: 30
-                    }}>
-                    <FormItem
-                        label="连接名称"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleTest)} className="space-y-6">
+                    <FormField
+                        control={form.control}
                         name="name"
-                        rules={[{required: true, message: '请输入连接名称'}]}>
-                        <Input placeholder="例如: 本地 InfluxDB"/>
-                    </FormItem>
+                        rules={{ required: '请输入连接名称' }}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>连接名称</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="例如: 本地 InfluxDB" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem
-                        label="主机地址"
+                    <FormField
+                        control={form.control}
                         name="host"
-                        rules={[{required: true, message: '请输入主机地址'}]}>
-                        <Input placeholder="localhost 或 IP 地址"/>
-                    </FormItem>
+                        rules={{ required: '请输入主机地址' }}
+                        defaultValue="localhost"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>主机地址</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="localhost 或 IP 地址" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem
-                        label="端口"
+                    <FormField
+                        control={form.control}
                         name="port"
-                        rules={[{required: true, message: '请输入端口号'}]}>
-                        <InputNumber min={1} max={65535} style={{width: '100%'}}/>
-                    </FormItem>
+                        rules={{ required: '请输入端口号' }}
+                        defaultValue={8086}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>端口</FormLabel>
+                                <FormControl>
+                                    <InputNumber
+                                        min={1}
+                                        max={65535}
+                                        className="w-full"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem label="用户名" name="username">
-                        <Input placeholder="可选"/>
-                    </FormItem>
+                    <FormField
+                        control={form.control}
+                        name="username"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>用户名</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="可选" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem label="密码" name="password">
-                        <Input.Password placeholder="可选"/>
-                    </FormItem>
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>密码</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="可选" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem label="数据库" name="database">
-                        <Input placeholder="可选，默认连接后选择"/>
-                    </FormItem>
+                    <FormField
+                        control={form.control}
+                        name="database"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>数据库</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="可选，默认连接后选择" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem label="使用 SSL" name="ssl" valuePropName="checked">
-                        <Switch/>
-                    </FormItem>
+                    <FormField
+                        control={form.control}
+                        name="ssl"
+                        defaultValue={false}
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">使用 SSL</FormLabel>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
 
-                    <FormItem
-                        label="超时时间 (秒)"
+                    <FormField
+                        control={form.control}
                         name="timeout"
-                        rules={[{required: true, message: '请输入超时时间'}]}>
-                        <InputNumber min={1} max={300} style={{width: '100%'}}/>
-                    </FormItem>
+                        rules={{ required: '请输入超时时间' }}
+                        defaultValue={30}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>超时时间 (秒)</FormLabel>
+                                <FormControl>
+                                    <InputNumber
+                                        min={1}
+                                        max={300}
+                                        className="w-full"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
                     <FormItem>
                         <Button
@@ -157,6 +241,7 @@ const ConnectionTest: React.FC = () => {
                             {loading ? '测试中...' : '测试连接'}
                         </Button>
                     </FormItem>
+                    </form>
                 </Form>
             </div>
 

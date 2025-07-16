@@ -41,14 +41,13 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
   }, [open, queryResult, defaultFilename, form]);
 
   // 执行导出
-  const handleExport = async () => {
+  const handleExport = async (values: ExportOptions) => {
     if (!queryResult) {
       showMessage.error("没有可导出的查询结果");
       return;
     }
 
     try {
-      const values = form.getValues();
       setLoading(true);
 
       const options: ExportOptions = {
@@ -88,70 +87,105 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
             style={{ marginBottom: 16 }}
           />
 
-          <Form form={form} layout="vertical">
-            <FormItem
-              label="导出格式"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleExport)} className="space-y-6">
+            <FormField
+              control={form.control}
               name="format"
-              rules={[{ required: true, message: '请选择导出格式' }]}
-            >
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择导出格式" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="csv">
-                    <div className="flex gap-2">
-                      <Table className="w-4 h-4"  />
-                      CSV 格式
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="json">
-                    <div className="flex gap-2">
-                      <FileText className="w-4 h-4"  />
-                      JSON 格式
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="excel">
-                    <div className="flex gap-2">
-                      <FileSpreadsheet />
-                      Excel 格式
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
+              rules={{ required: '请选择导出格式' }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>导出格式</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择导出格式" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="csv">
+                        <div className="flex gap-2">
+                          <Table className="w-4 h-4" />
+                          CSV 格式
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="json">
+                        <div className="flex gap-2">
+                          <FileText className="w-4 h-4" />
+                          JSON 格式
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="excel">
+                        <div className="flex gap-2">
+                          <FileSpreadsheet className="w-4 h-4" />
+                          Excel 格式
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <FormItem
-              label="文件名"
+            <FormField
+              control={form.control}
               name="filename"
-              rules={[{ required: true, message: '请输入文件名' }]}
-            >
-              <Input placeholder="请输入文件名（不含扩展名）" />
-            </FormItem>
+              rules={{ required: '请输入文件名' }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>文件名</FormLabel>
+                  <FormControl>
+                    <Input placeholder="请输入文件名（不含扩展名）" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <FormItem
-              label="包含表头"
+            <FormField
+              control={form.control}
               name="includeHeaders"
-              valuePropName="checked"
-            >
-              <Switch />
-            </FormItem>
+              defaultValue={true}
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">包含表头</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-            <FormItem
-              label="分隔符"
+            <FormField
+              control={form.control}
               name="delimiter"
-            >
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择分隔符" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value=",">逗号 (,)</SelectItem>
-                  <SelectItem value=";">分号 (;)</SelectItem>
-                  <SelectItem value="\t">制表符 (\t)</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormItem>
+              defaultValue=","
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>分隔符</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择分隔符" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value=",">逗号 (,)</SelectItem>
+                      <SelectItem value=";">分号 (;)</SelectItem>
+                      <SelectItem value="\t">制表符 (\t)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            </form>
           </Form>
 
           <Alert

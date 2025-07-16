@@ -14,7 +14,11 @@ import {
   InputNumber,
   Popconfirm,
   Tooltip,
-  FormItem
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@/components/ui';
@@ -57,15 +61,14 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   useEffect(() => {
     if (visible) {
       if (mode === 'edit' && policy) {
-        form.setFieldsValue({
+        form.reset({
           name: policy.name,
           duration: policy.duration,
           shardDuration: policy.shardGroupDuration,
           replicaN: policy.replicaN,
           default: policy.default});
       } else {
-        form.resetFields();
-        form.setFieldsValue({
+        form.reset({
           duration: '30d',
           shardDuration: '1h',
           replicaN: 1,
@@ -75,9 +78,8 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   }, [visible, mode, policy, form]);
 
   // 提交表单
-  const handleSubmit = async () => {
+  const handleSubmit = async (values: RetentionPolicyForm) => {
     try {
-      const values = await form.validateFields();
       setLoading(true);
 
       const config = {
@@ -188,109 +190,155 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         />
 
         {/* 表单 */}
-        <Form
-          form={form}
-          layout="vertical"
-          requiredMark={false}
-        >
-          <FormItem
-            label="策略名称"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
             name="name"
-            rules={[
-              { required: true, message: '请输入策略名称' },
-              { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '策略名称只能包含字母、数字和下划线，且不能以数字开头' },
-            ]}
-          >
-            <Input
-              placeholder="请输入策略名称"
-              disabled={mode === 'edit'}
-            />
-          </FormItem>
+            rules={{
+              required: '请输入策略名称',
+              pattern: {
+                value: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+                message: '策略名称只能包含字母、数字和下划线，且不能以数字开头'
+              }
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>策略名称</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="请输入策略名称"
+                    disabled={mode === 'edit'}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem
-            label={
-              <div className="flex gap-2">
-                保留时间
-                <Tooltip title="数据在数据库中保留的时间，超过此时间的数据将被自动删除">
-                  <HelpCircle className="w-4 h-4"  />
-                </Tooltip>
-              </div>
-            }
+          <FormField
+            control={form.control}
             name="duration"
-            rules={[{ required: true, message: '请选择保留时间' }]}
-          >
-            <Select
-              placeholder="选择保留时间"
-              showSearch
-              allowClear
-              mode="combobox"
-            >
-              {durationOptions.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
-          </FormItem>
+            rules={{ required: '请选择保留时间' }}
+            defaultValue="30d"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  <div className="flex gap-2">
+                    保留时间
+                    <Tooltip title="数据在数据库中保留的时间，超过此时间的数据将被自动删除">
+                      <HelpCircle className="w-4 h-4" />
+                    </Tooltip>
+                  </div>
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择保留时间" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {durationOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem
-            label={
-              <div className="flex gap-2">
-                分片组持续时间
-                <Tooltip title="每个分片组覆盖的时间范围，影响查询性能和存储效率">
-                  <HelpCircle className="w-4 h-4"  />
-                </Tooltip>
-              </div>
-            }
+          <FormField
+            control={form.control}
             name="shardDuration"
-          >
-            <Select
-              placeholder="选择分片组持续时间"
-              showSearch
-              allowClear
-              mode="combobox"
-            >
-              {shardDurationOptions.map(option => (
-                <Option key={option.value} value={option.value}>
-                  {option.label}
-                </Option>
-              ))}
-            </Select>
-          </FormItem>
+            defaultValue="1h"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  <div className="flex gap-2">
+                    分片组持续时间
+                    <Tooltip title="每个分片组覆盖的时间范围，影响查询性能和存储效率">
+                      <HelpCircle className="w-4 h-4" />
+                    </Tooltip>
+                  </div>
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择分片组持续时间" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {shardDurationOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem
-            label={
-              <div className="flex gap-2">
-                副本数
-                <Tooltip title="数据副本的数量，用于高可用性部署">
-                  <HelpCircle className="w-4 h-4"  />
-                </Tooltip>
-              </div>
-            }
+          <FormField
+            control={form.control}
             name="replicaN"
-          >
-            <InputNumber
-              min={1}
-              max={10}
-              placeholder="副本数"
-              style={{ width: '100%' }}
-            />
-          </FormItem>
+            defaultValue={1}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  <div className="flex gap-2">
+                    副本数
+                    <Tooltip title="数据副本的数量，用于高可用性部署">
+                      <HelpCircle className="w-4 h-4" />
+                    </Tooltip>
+                  </div>
+                </FormLabel>
+                <FormControl>
+                  <InputNumber
+                    min={1}
+                    max={10}
+                    placeholder="副本数"
+                    className="w-full"
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem
-            label={
-              <div className="flex gap-2">
-                设为默认策略
-                <Tooltip title="将此策略设为数据库的默认保留策略">
-                  <HelpCircle className="w-4 h-4"  />
-                </Tooltip>
-              </div>
-            }
+          <FormField
+            control={form.control}
             name="default"
-            valuePropName="checked"
-          >
-            <Switch />
-          </FormItem>
+            defaultValue={false}
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    <div className="flex gap-2">
+                      设为默认策略
+                      <Tooltip title="将此策略设为数据库的默认保留策略">
+                        <HelpCircle className="w-4 h-4" />
+                      </Tooltip>
+                    </div>
+                  </FormLabel>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          </form>
         </Form>
 
         {/* 格式说明 */}
@@ -336,7 +384,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         <Button
           variant="default"
           disabled={loading}
-          onClick={handleSubmit}
+          onClick={form.handleSubmit(handleSubmit)}
         >
           {mode === 'create' ? '创建' : '保存'}
         </Button>

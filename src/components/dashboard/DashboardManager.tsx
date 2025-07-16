@@ -1,13 +1,13 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button, Form, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography, Tag, Row, Col, InputNumber, Dialog, DialogContent, DialogHeader, DialogTitle, List } from '@/components/ui';
+import { Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Typography, Tag, Row, Col, InputNumber, Dialog, DialogContent, DialogHeader, DialogTitle, List } from '@/components/ui';
 import { showMessage } from '@/utils/message';
-import { Space, Popconfirm, Divider } from '@/components/ui';
+import { Space, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
 
-const { Textarea } = Input;
+import { Textarea } from '@/components/ui';
 const { Text } = Typography;
 
 interface DashboardManagerProps {
@@ -237,143 +237,381 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       </div>
 
       {/* 创建仪表板对话框 */}
-      <Modal
-        title="创建仪表板"
-        open={createModalVisible}
-        onOpenChange={(open) => {
+      <Dialog open={createModalVisible} onOpenChange={(open) => {
           if (!open) {
             setCreateModalVisible(false);
             form.reset();
           }
         }}>
-        <Form form={form} layout="vertical" onFinish={createDashboard}>
-          <FormItem name="name"
-            label="仪表板名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}>
-            <Input placeholder="输入仪表板名称" />
-          </FormItem>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>创建仪表板</DialogTitle>
+          </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(createDashboard)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="name"
+            rules={{ required: '请输入仪表板名称' }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>仪表板名称</FormLabel>
+                <FormControl>
+                  <Input placeholder="输入仪表板名称" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem name="description" label="描述">
-            <Textarea rows={3} placeholder="输入仪表板描述（可选）" />
-          </FormItem>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>描述</FormLabel>
+                <FormControl>
+                  <Textarea rows={3} placeholder="输入仪表板描述（可选）" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="border-t border my-4">布局设置</div>
+          <div className="border-t border-gray-200 my-4 pt-4">
+            <h4 className="text-sm font-medium mb-4">布局设置</h4>
+          </div>
 
           <Row gutter={16}>
             <Col span={8}>
-              <FormItem name="columns" label="列数" initialValue={12}>
-                <InputNumber min={1} max={24} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="columns"
+                defaultValue={12}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>列数</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={1}
+                        max={24}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={8}>
-              <FormItem name="rows" label="行数" initialValue={8}>
-                <InputNumber min={1} max={20} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="rows"
+                defaultValue={8}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>行数</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={1}
+                        max={20}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={8}>
-              <FormItem name="gap" label="间距" initialValue={16}>
-                <InputNumber min={0} max={50} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="gap"
+                defaultValue={16}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>间距</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={0}
+                        max={50}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
-          <div className="border-t border my-4">时间和刷新设置</div>
+          <div className="border-t border-gray-200 my-4 pt-4">
+            <h4 className="text-sm font-medium mb-4">时间和刷新设置</h4>
+          </div>
 
           <Row gutter={16}>
             <Col span={12}>
-              <FormItem name="timeStart" label="开始时间" initialValue="now() - 1h">
-                <Input placeholder="now() - 1h" />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="timeStart"
+                defaultValue="now() - 1h"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>开始时间</FormLabel>
+                    <FormControl>
+                      <Input placeholder="now() - 1h" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={12}>
-              <FormItem name="timeEnd" label="结束时间" initialValue="now()">
-                <Input placeholder="now()" />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="timeEnd"
+                defaultValue="now()"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>结束时间</FormLabel>
+                    <FormControl>
+                      <Input placeholder="now()" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
-          <FormItem name="refreshInterval" label="刷新间隔 (毫秒)" initialValue={30000}>
-            <Select>
-              <Option value={5000}>5 秒</Option>
-              <Option value={10000}>10 秒</Option>
-              <Option value={30000}>30 秒</Option>
-              <Option value={60000}>1 分钟</Option>
-              <Option value={300000}>5 分钟</Option>
-              <Option value={600000}>10 分钟</Option>
-            </Select>
-          </FormItem>
+          <FormField
+            control={form.control}
+            name="refreshInterval"
+            defaultValue={30000}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>刷新间隔 (毫秒)</FormLabel>
+                <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="5000">5 秒</SelectItem>
+                    <SelectItem value="10000">10 秒</SelectItem>
+                    <SelectItem value="30000">30 秒</SelectItem>
+                    <SelectItem value="60000">1 分钟</SelectItem>
+                    <SelectItem value="300000">5 分钟</SelectItem>
+                    <SelectItem value="600000">10 分钟</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter>
+            <Button type="submit" disabled={loading}>
+              {loading ? '创建中...' : '创建仪表板'}
+            </Button>
+          </DialogFooter>
+          </form>
         </Form>
-      </Modal>
+        </DialogContent>
+      </Dialog>
 
       {/* 编辑仪表板对话框 */}
-      <Modal
-        title="编辑仪表板"
-        open={editModalVisible}
-        onOpenChange={(open) => {
+      <Dialog open={editModalVisible} onOpenChange={(open) => {
           if (!open) {
             setEditModalVisible(false);
             setSelectedDashboard(null);
             form.reset();
           }
         }}>
-        <Form form={form} layout="vertical" onFinish={updateDashboard}>
-          <FormItem name="name"
-            label="仪表板名称"
-            rules={[{ required: true, message: '请输入仪表板名称' }]}>
-            <Input placeholder="输入仪表板名称" />
-          </FormItem>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>编辑仪表板</DialogTitle>
+          </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(updateDashboard)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="name"
+            rules={{ required: '请输入仪表板名称' }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>仪表板名称</FormLabel>
+                <FormControl>
+                  <Input placeholder="输入仪表板名称" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <FormItem name="description" label="描述">
-            <Textarea rows={3} placeholder="输入仪表板描述（可选）" />
-          </FormItem>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>描述</FormLabel>
+                <FormControl>
+                  <Textarea rows={3} placeholder="输入仪表板描述（可选）" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div className="border-t border my-4">布局设置</div>
+          <div className="border-t border-gray-200 my-4 pt-4">
+            <h4 className="text-sm font-medium mb-4">布局设置</h4>
+          </div>
 
           <Row gutter={16}>
             <Col span={8}>
-              <FormItem name="columns" label="列数">
-                <InputNumber min={1} max={24} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="columns"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>列数</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={1}
+                        max={24}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={8}>
-              <FormItem name="rows" label="行数">
-                <InputNumber min={1} max={20} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="rows"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>行数</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={1}
+                        max={20}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={8}>
-              <FormItem name="gap" label="间距">
-                <InputNumber min={0} max={50} style={{ width: '100%' }} />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="gap"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>间距</FormLabel>
+                    <FormControl>
+                      <InputNumber
+                        min={0}
+                        max={50}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
-          <div className="border-t border my-4">时间和刷新设置</div>
+          <div className="border-t border-gray-200 my-4 pt-4">
+            <h4 className="text-sm font-medium mb-4">时间和刷新设置</h4>
+          </div>
 
           <Row gutter={16}>
             <Col span={12}>
-              <FormItem name="timeStart" label="开始时间">
-                <Input placeholder="now() - 1h" />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="timeStart"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>开始时间</FormLabel>
+                    <FormControl>
+                      <Input placeholder="now() - 1h" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={12}>
-              <FormItem name="timeEnd" label="结束时间">
-                <Input placeholder="now()" />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="timeEnd"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>结束时间</FormLabel>
+                    <FormControl>
+                      <Input placeholder="now()" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
-          <FormItem name="refreshInterval" label="刷新间隔 (毫秒)">
-            <Select>
-              <Option value={5000}>5 秒</Option>
-              <Option value={10000}>10 秒</Option>
-              <Option value={30000}>30 秒</Option>
-              <Option value={60000}>1 分钟</Option>
-              <Option value={300000}>5 分钟</Option>
-              <Option value={600000}>10 分钟</Option>
-            </Select>
-          </FormItem>
+          <FormField
+            control={form.control}
+            name="refreshInterval"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>刷新间隔 (毫秒)</FormLabel>
+                <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="5000">5 秒</SelectItem>
+                    <SelectItem value="10000">10 秒</SelectItem>
+                    <SelectItem value="30000">30 秒</SelectItem>
+                    <SelectItem value="60000">1 分钟</SelectItem>
+                    <SelectItem value="300000">5 分钟</SelectItem>
+                    <SelectItem value="600000">10 分钟</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter>
+            <Button type="submit" disabled={loading}>
+              {loading ? '更新中...' : '更新仪表板'}
+            </Button>
+          </DialogFooter>
+          </form>
         </Form>
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

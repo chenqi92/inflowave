@@ -16,7 +16,12 @@ import {
   Col,
   Tag,
   Switch,
+  FormField,
   FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
   RadioGroup,
   RadioGroupItem,
   Label,
@@ -220,22 +225,15 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               重置默认
             </Button>
             <Button
-              type="primary"
-              icon={<Save className="w-4 h-4"  />}
-              onClick={() => form.submit()}
+              onClick={form.handleSubmit(savePreferences)}
               disabled={loading}>
+              <Save className="w-4 h-4 mr-2" />
               保存设置
             </Button>
           </div>
         }>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={savePreferences}
-          initialValues={{
-            notifications: preferences.notifications,
-            accessibility: preferences.accessibility,
-            workspace: preferences.workspace}}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(savePreferences)} className="space-y-8">
           <Tabs
             items={[
               {
@@ -273,64 +271,138 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <FormItem
-                        name={['notifications', 'enabled']}
-                        label="启用通知"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['notifications', 'queryCompletion']}
-                        label="查询完成通知"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['notifications', 'connectionStatus']}
-                        label="连接状态通知"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['notifications', 'systemAlerts']}
-                        label="系统警报通知"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="notifications.enabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">启用通知</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="notifications.queryCompletion"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">查询完成通知</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="notifications.connectionStatus"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">连接状态通知</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="notifications.systemAlerts"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">系统警报通知</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                     <Col span={12}>
-                      <FormItem
-                        name={['notifications', 'sound']}
-                        label="声音提醒"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['notifications', 'desktop']}
-                        label="桌面通知"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['notifications', 'position']}
-                        label="通知位置">
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="选择通知位置" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="topRight">右上角</SelectItem>
-                            <SelectItem value="topLeft">左上角</SelectItem>
-                            <SelectItem value="bottomRight">右下角</SelectItem>
-                            <SelectItem value="bottomLeft">左下角</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="notifications.sound"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">声音提醒</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="notifications.desktop"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">桌面通知</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="notifications.position"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>通知位置</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="选择通知位置" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="topRight">右上角</SelectItem>
+                                <SelectItem value="topLeft">左上角</SelectItem>
+                                <SelectItem value="bottomRight">右下角</SelectItem>
+                                <SelectItem value="bottomLeft">左下角</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                   </Row>
                 )},
@@ -345,57 +417,113 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <FormItem
-                        name={['accessibility', 'highContrast']}
-                        label="高对比度模式"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['accessibility', 'fontSize']}
-                        label="字体大小">
-                        <RadioGroup defaultValue="medium" className="flex flex-col space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="small" id="small" />
-                            <Label htmlFor="small">小</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="medium" id="medium" />
-                            <Label htmlFor="medium">中</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="large" id="large" />
-                            <Label htmlFor="large">大</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="extraLarge" id="extraLarge" />
-                            <Label htmlFor="extraLarge">特大</Label>
-                          </div>
-                        </RadioGroup>
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['accessibility', 'reducedMotion']}
-                        label="减少动画效果"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="accessibility.highContrast"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">高对比度模式</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="accessibility.fontSize"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel>字体大小</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-2"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="small" id="small" />
+                                  <Label htmlFor="small">小</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="medium" id="medium" />
+                                  <Label htmlFor="medium">中</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="large" id="large" />
+                                  <Label htmlFor="large">大</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="extraLarge" id="extraLarge" />
+                                  <Label htmlFor="extraLarge">特大</Label>
+                                </div>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="accessibility.reducedMotion"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">减少动画效果</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                     <Col span={12}>
-                      <FormItem
-                        name={['accessibility', 'screenReader']}
-                        label="屏幕阅读器支持"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['accessibility', 'keyboardNavigation']}
-                        label="键盘导航增强"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="accessibility.screenReader"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">屏幕阅读器支持</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="accessibility.keyboardNavigation"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">键盘导航增强</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                   </Row>
                 )},
@@ -410,47 +538,89 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
                 children: (
                   <Row gutter={[24, 16]}>
                     <Col span={12}>
-                      <FormItem
-                        name={['workspace', 'layout']}
-                        label="布局模式">
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="选择布局模式" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">默认</SelectItem>
-                            <SelectItem value="compact">紧凑</SelectItem>
-                            <SelectItem value="wide">宽屏</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['workspace', 'openTabs']}
-                        label="启动时恢复标签页"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="workspace.layout"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>布局模式</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="选择布局模式" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="default">默认</SelectItem>
+                                <SelectItem value="compact">紧凑</SelectItem>
+                                <SelectItem value="wide">宽屏</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="workspace.openTabs"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">启动时恢复标签页</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                     <Col span={12}>
-                      <FormItem
-                        name={['workspace', 'pinnedQueries']}
-                        label="固定常用查询"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
-                      
-                      <FormItem
-                        name={['workspace', 'recentFiles']}
-                        label="显示最近文件"
-                        valuePropName="checked">
-                        <Switch />
-                      </FormItem>
+                      <FormField
+                        control={form.control}
+                        name="workspace.pinnedQueries"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">固定常用查询</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="workspace.recentFiles"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">显示最近文件</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </Col>
                   </Row>
                 )},
             ]}
           />
+          </form>
         </Form>
       </div>
 
@@ -467,10 +637,8 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
             <DialogTitle>编辑快捷键</DialogTitle>
           </DialogHeader>
         {editingShortcut && (
-          <Form
-            form={shortcutForm}
-            layout="vertical"
-            onFinish={(values) => {
+          <Form {...shortcutForm}>
+            <form onSubmit={shortcutForm.handleSubmit((values) => {
               const updatedShortcut: KeyboardShortcut = {
                 ...editingShortcut,
                 keys: values.keys.split('+').map((k: string) => k.trim()),
@@ -479,25 +647,48 @@ const UserExperienceSettings: React.FC<UserExperienceSettingsProps> = ({
               setShowShortcutModal(false);
               setEditingShortcut(null);
               shortcutForm.reset();
-            }}>
+            })} className="space-y-8">
             <div style={{ marginBottom: 16 }}>
               <Text strong>{editingShortcut.name}</Text>
               <br />
               <Text type="secondary">{editingShortcut.description}</Text>
             </div>
             
-            <FormItem name="keys"
-              label="快捷键组合"
-              rules={[{ required: true, message: '请输入快捷键组合' }]}
-              extra="使用 + 号分隔多个按键，例如: Ctrl+Shift+P">
-              <Input placeholder="例如: Ctrl+Enter" />
-            </FormItem>
-            
-            <FormItem name="enabled"
-              label="启用此快捷键"
-              valuePropName="checked">
-              <Switch />
-            </FormItem>
+            <FormField
+              control={shortcutForm.control}
+              name="keys"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>快捷键组合</FormLabel>
+                  <FormControl>
+                    <Input placeholder="例如: Ctrl+Enter" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    使用 + 号分隔多个按键，例如: Ctrl+Shift+P
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={shortcutForm.control}
+              name="enabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">启用此快捷键</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            </form>
           </Form>
         )}
         </DialogContent>

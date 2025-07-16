@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Form, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Button, Alert, Typography, Tabs, TabsList, TabsTrigger, TabsContent, Row, Col, Upload } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { Check, Eye, Inbox } from 'lucide-react';
@@ -78,7 +78,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   // 验证数据格式
   const validateData = async () => {
     try {
-      const values = await form.validateFields(['data', 'format', 'measurement']);
+      const values = form.getValues();
       if (!values.data?.trim()) {
         showMessage.warning("请输入数据内容" );
         return;
@@ -106,7 +106,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   // 预览转换结果
   const previewConversion = async () => {
     try {
-      const values = await form.validateFields(['data', 'format', 'measurement']);
+      const values = form.getValues();
       if (!values.data?.trim()) {
         showMessage.warning("请输入数据内容" );
         return;
@@ -132,9 +132,8 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   };
 
   // 写入数据
-  const writeData = async () => {
+  const handleSubmit = async (values: any) => {
     try {
-      const values = await form.validateFields();
       setLoading(true);
       setWriteResult(null);
 
@@ -176,7 +175,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      form.setFieldValue('data', content);
+      form.setValue('data', content);
 
       // 根据文件扩展名自动设置格式
       const fileName = file.name.toLowerCase();
@@ -237,51 +236,106 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
             写入数据
           </Button>,
         ]}>
-        <Form form={form} layout="vertical">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {/* 基本配置 */}
           <Row gutter={16}>
             <Col span={12}>
-              <FormItem name="connectionId"
-                label="连接"
-                rules={[{ required: true, message: '请选择连接' }]}>
-                <Select placeholder="选择连接" onValueChange={handleConnectionChange}>
-                  {connections.map(conn => (
-                    <Option key={conn.id} value={conn.id}>{conn.name}</Option>
-                  ))}
-                </Select>
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="connectionId"
+                rules={{ required: '请选择连接' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>连接</FormLabel>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      handleConnectionChange(value);
+                    }} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择连接" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {connections.map(conn => (
+                          <SelectItem key={conn.id} value={conn.id}>{conn.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={12}>
-              <FormItem name="database"
-                label="数据库"
-                rules={[{ required: true, message: '请选择数据库' }]}>
-                <Select placeholder="选择数据库">
-                  {databases.map(db => (
-                    <Option key={db} value={db}>{db}</Option>
-                  ))}
-                </Select>
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="database"
+                rules={{ required: '请选择数据库' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>数据库</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择数据库" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {databases.map(db => (
+                          <SelectItem key={db} value={db}>{db}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <FormItem name="measurement"
-                label="测量名"
-                rules={[{ required: true, message: '请输入测量名' }]}>
-                <Input placeholder="输入测量名" />
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="measurement"
+                rules={{ required: '请输入测量名' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>测量名</FormLabel>
+                    <FormControl>
+                      <Input placeholder="输入测量名" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
             <Col span={12}>
-              <FormItem name="format"
-                label="数据格式"
-                rules={[{ required: true, message: '请选择数据格式' }]}>
-                <Select>
-                  <Option value="line-protocol">Line Protocol</Option>
-                  <Option value="csv">CSV</Option>
-                  <Option value="json">JSON</Option>
-                </Select>
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="format"
+                rules={{ required: '请选择数据格式' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>数据格式</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择数据格式" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="line-protocol">Line Protocol</SelectItem>
+                        <SelectItem value="csv">CSV</SelectItem>
+                        <SelectItem value="json">JSON</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </Col>
           </Row>
 
@@ -293,29 +347,35 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
             </TabsList>
 
             <TabsContent value="manual">
-              <FormItem name="data"
-                label={
-                  <div className="flex gap-2">
-                    <span>数据内容</span>
-                    <Button size="small" disabled={validating} onClick={validateData}>
-                      <Check className="w-4 h-4"  /> 验证格式
-                    </Button>
-                    <Button size="small" disabled={previewing} onClick={previewConversion}>
-                      <Eye className="w-4 h-4"  /> 预览转换
-                    </Button>
-                  </div>
-                }
-                rules={[{ required: true, message: '请输入数据内容' }]}>
-                <FormItem noStyle shouldUpdate={(prev, curr) => prev.format !== curr.format}>
-                  {({ getFieldValue }) => (
-                    <Textarea
-                      rows={12}
-                      placeholder={getDataPlaceholder(getFieldValue('format'))}
-                      style={{ fontFamily: 'monospace', fontSize: 13 }}
-                    />
-                  )}
-                </FormItem>
-              </FormItem>
+              <FormField
+                control={form.control}
+                name="data"
+                rules={{ required: '请输入数据内容' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className="flex gap-2">
+                        <span>数据内容</span>
+                        <Button size="sm" disabled={validating} onClick={validateData}>
+                          <Check className="w-4 h-4 mr-2" /> 验证格式
+                        </Button>
+                        <Button size="sm" disabled={previewing} onClick={previewConversion}>
+                          <Eye className="w-4 h-4 mr-2" /> 预览转换
+                        </Button>
+                      </div>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={12}
+                        placeholder={getDataPlaceholder(form.watch('format'))}
+                        className="font-mono text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </TabsContent>
 
             <TabsContent value="upload">
@@ -335,42 +395,102 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
           </Tabs>
 
           {/* 高级选项 */}
-          <FormItem label="高级选项">
+          <div className="border-t border-gray-200 my-6 pt-6">
+            <h4 className="text-sm font-medium mb-4">高级选项</h4>
             <Row gutter={16}>
               <Col span={6}>
-                <FormItem name={['options', 'precision']} label="时间精度">
-                  <Select>
-                    <Option value="ns">纳秒 (ns)</Option>
-                    <Option value="u">微秒 (u)</Option>
-                    <Option value="ms">毫秒 (ms)</Option>
-                    <Option value="s">秒 (s)</Option>
-                    <Option value="m">分钟 (m)</Option>
-                    <Option value="h">小时 (h)</Option>
-                  </Select>
-                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="options.precision"
+                  defaultValue="ns"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>时间精度</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="ns">纳秒 (ns)</SelectItem>
+                          <SelectItem value="u">微秒 (u)</SelectItem>
+                          <SelectItem value="ms">毫秒 (ms)</SelectItem>
+                          <SelectItem value="s">秒 (s)</SelectItem>
+                          <SelectItem value="m">分钟 (m)</SelectItem>
+                          <SelectItem value="h">小时 (h)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </Col>
               <Col span={6}>
-                <FormItem name={['options', 'batchSize']} label="批次大小">
-                  <Input type="number" min={100} max={10000} />
-                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="options.batchSize"
+                  defaultValue={1000}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>批次大小</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={100}
+                          max={10000}
+                          value={field.value}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </Col>
               <Col span={6}>
-                <FormItem name={['options', 'retentionPolicy']} label="保留策略">
-                  <Input placeholder="默认" />
-                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="options.retentionPolicy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>保留策略</FormLabel>
+                      <FormControl>
+                        <Input placeholder="默认" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </Col>
               <Col span={6}>
-                <FormItem name={['options', 'consistency']} label="一致性级别">
-                  <Select>
-                    <Option value="one">One</Option>
-                    <Option value="quorum">Quorum</Option>
-                    <Option value="all">All</Option>
-                    <Option value="any">Any</Option>
-                  </Select>
-                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="options.consistency"
+                  defaultValue="one"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>一致性级别</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="one">One</SelectItem>
+                          <SelectItem value="quorum">Quorum</SelectItem>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="any">Any</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </Col>
             </Row>
-          </FormItem>
+          </div>
 
           {/* 写入结果 */}
           {writeResult && (
@@ -397,6 +517,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
               style={{ marginTop: 16 }}
             />
           )}
+          </form>
         </Form>
       </Dialog>
 
