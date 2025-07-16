@@ -1,5 +1,5 @@
 ﻿import { safeTauriInvoke } from '@/utils/tauri';
-import  from '@/components/ui';
+import { toast } from '@/components/ui';
 
 import type { QueryResult } from '@/types';
 

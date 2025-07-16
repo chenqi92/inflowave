@@ -1,6 +1,5 @@
 import { QueryAnalysis } from '../analyzer/QueryAnalyzer';
 import { QueryContext, OptimizationTechnique } from '../index';
-import { safeTauriInvoke } from '@/utils/tauri';
 
 export interface MLModel {
   id: string;

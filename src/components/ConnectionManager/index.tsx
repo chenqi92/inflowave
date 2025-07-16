@@ -199,18 +199,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         };
 
         const statusConfig = {
-            connected: {variant: 'default', text: '已连接', className: 'bg-success/10 text-success border-success/20'},
-            disconnected: {
-                variant: 'secondary',
-                text: '已断开',
-                className: 'bg-muted text-muted-foreground border-border'
-            },
-            connecting: {variant: 'default', text: '连接中', className: 'bg-warning/10 text-warning border-warning/20'},
-            error: {
-                variant: 'destructive',
-                text: '错误',
-                className: 'bg-destructive/10 text-destructive border-destructive/20'
-            }
+            connected: {variant: 'success', text: '已连接'},
+            disconnected: {variant: 'secondary', text: '已断开'},
+            connecting: {variant: 'warning', text: '连接中'},
+            error: {variant: 'destructive', text: '错误'}
         };
 
         const config = statusConfig[actualStatus.status] || statusConfig.disconnected;
@@ -232,7 +224,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         return (
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Badge variant={config.variant as any} className={config.className}>
+                    <Badge variant={config.variant as any} className="text-xs">
                         {config.text}
                     </Badge>
                 </TooltipTrigger>
@@ -262,9 +254,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 return (
                     <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full ${
-                            connectionStatuses[record.id!]?.status === 'connected' ? 'bg-green-500' :
-                                connectionStatuses[record.id!]?.status === 'error' ? 'bg-red-500' :
-                                    connectionStatuses[record.id!]?.status === 'connecting' ? 'bg-yellow-500' : 'bg-gray-300'
+                            connectionStatuses[record.id!]?.status === 'connected' ? 'bg-success' :
+                                connectionStatuses[record.id!]?.status === 'error' ? 'bg-destructive' :
+                                    connectionStatuses[record.id!]?.status === 'connecting' ? 'bg-warning' : 'bg-muted-foreground'
                         }`}/>
                         <div className="min-w-0 flex-1">
                             <div className="font-medium text-foreground truncate flex items-center gap-2">
@@ -274,7 +266,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                             <div className="text-sm text-muted-foreground truncate">{record.host}:{record.port}</div>
                         </div>
                         {activeConnectionId === record.id && (
-                            <Badge className="ml-2 flex-shrink-0 bg-blue-100 text-blue-700 border-blue-200">活跃</Badge>
+                            <Badge variant="default" className="ml-2 flex-shrink-0">活跃</Badge>
                         )}
                     </div>
                 );
@@ -292,7 +284,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                     </div>
                     <div className="text-sm">
                         <span className="text-muted-foreground">SSL：</span>
-                        <span className={record.ssl ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                        <span className={record.ssl ? 'text-success font-medium' : 'text-muted-foreground'}>
               {record.ssl ? '已启用' : '未启用'}
             </span>
                     </div>
@@ -344,11 +336,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 return (
                     <div className="flex items-center space-x-2">
                         <Button
-                            variant={isConnected ? 'outline' : 'default'}
+                            variant={isConnected ? 'destructive' : 'default'}
                             size="sm"
                             disabled={isLoading}
                             onClick={() => handleConnectionToggle(record.id!)}
-                            className={isConnected ? 'text-red-600 hover:text-red-700 hover:border-red-300' : 'bg-green-600 hover:bg-green-700 text-white'}
                         >
                             {isLoading ? (
                                 <RefreshCw className="w-4 h-4 mr-1 animate-spin"/>
@@ -387,7 +378,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                                     连接池统计
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600"
+                                    className="text-destructive focus:text-destructive"
                                     onClick={() => {
                                         if (window.confirm(`确定要删除连接 "${record.name}" 吗？此操作无法撤销。`)) {
                                             removeConnection(record.id!);
@@ -424,7 +415,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                                 variant="default"
                                 onClick={() => onCreateConnection?.()}
                                 size="sm"
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
                             >
                                 <Plus className="w-4 h-4 mr-1"/>
                                 新建连接
@@ -441,10 +431,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                                 刷新状态
                             </Button>
                             <Button
-                                variant={monitoringActive ? 'destructive' : 'default'}
+                                variant={monitoringActive ? 'destructive' : 'secondary'}
                                 onClick={handleMonitoringToggle}
                                 size="sm"
-                                className={monitoringActive ? 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200' : 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200'}
                             >
                                 {monitoringActive ? (
                                     <>
@@ -470,30 +459,30 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                             </div>
                         </div>
                         <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-                            <Wifi className="w-4 h-4 text-green-600"/>
+                            <Wifi className="w-4 h-4 text-success"/>
                             <div className="text-sm">
                                 <p className="text-muted-foreground">已连接</p>
-                                <p className="font-semibold text-green-600">
+                                <p className="font-semibold text-success">
                                     {Object.values(connectionStatuses).filter(s => s.status === 'connected').length}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
                             <div
-                                className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}/>
+                                className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`}/>
                             <div className="text-sm">
                                 <p className="text-muted-foreground">监控状态</p>
-                                <p className={`font-semibold ${monitoringActive ? 'text-green-600' : 'text-gray-600'}`}>
+                                <p className={`font-semibold ${monitoringActive ? 'text-success' : 'text-muted-foreground'}`}>
                                     {monitoringActive ? '运行中' : '已停止'}
                                 </p>
                                 {monitoringActive && (
-                                    <p className="text-xs text-green-500">自动检查连接状态</p>
+                                    <p className="text-xs text-success">自动检查连接状态</p>
                                 )}
                             </div>
                         </div>
                         <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-                            <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center">
-                                <span className="text-xs text-blue-600 font-medium">{monitoringInterval}</span>
+                            <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center">
+                                <span className="text-xs text-primary font-medium">{monitoringInterval}</span>
                             </div>
                             <div className="text-sm">
                                 <p className="text-muted-foreground">监控间隔</p>
@@ -547,7 +536,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                                 <div>
                                     <div className="p-4">
                                         <div className="text-sm text-muted-foreground">活跃连接数</div>
-                                        <div className="text-2xl font-bold text-green-600">
+                                        <div className="text-2xl font-bold text-success">
                                             {poolStats[selectedConnectionId].active_connections}
                                         </div>
                                     </div>
