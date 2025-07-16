@@ -1,26 +1,35 @@
-import { useForm } from 'react-hook-form';
 import React, { useState, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
 import {
-  Row,
-  Col,
-  Statistic,
   Button,
-  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Alert,
-  Tag,
+  Badge,
   Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
   InputNumber,
   Switch,
-  Modal,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Textarea,
+  TooltipProvider,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-// TODO: Replace these Ant Design components: Badge, List, Tooltip
 import {
   Settings,
   TrendingUp,
@@ -31,13 +40,14 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Activity,
+  Database,
+  Clock,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import AdvancedChart from '../visualization/AdvancedChart';
 import type { QueryResult } from '@/types';
-
-const { Title, Text } = Typography;
 
 interface AlertRule {
   id: string;
@@ -146,10 +156,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
       if (!rule.enabled) return;
 
       const result = data[rule.query];
-      if (!result || !result.series || result.series.length === 0) return;
+      if (!result || !result.results || result.results.length === 0) return;
 
-      const series = result.series[0];
-      if (!series.values || series.values.length === 0) return;
+      const series = result.results[0]?.series?.[0];
+      if (!series || !series.values || series.values.length === 0) return;
 
       const value = Number(series.values[0][1]) || 0; // 假设第二列是值
       let triggered = false;
@@ -273,10 +283,10 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   // 获取最新指标值
   const getLatestMetric = (query: string) => {
     const result = realTimeData[query];
-    if (!result || !result.series || result.series.length === 0) return null;
+    if (!result || !result.results || result.results.length === 0) return null;
 
-    const series = result.series[0];
-    if (!series.values || series.values.length === 0) return null;
+    const series = result.results[0]?.series?.[0];
+    if (!series || !series.values || series.values.length === 0) return null;
 
     return Number(series.values[0][1]) || 0;
   };
@@ -285,15 +295,15 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'red';
+        return 'text-red-600';
       case 'error':
-        return 'volcano';
+        return 'text-red-500';
       case 'warning':
-        return 'orange';
+        return 'text-orange-500';
       case 'info':
-        return 'blue';
+        return 'text-blue-500';
       default:
-        return 'default';
+        return 'text-gray-500';
     }
   };
 
@@ -342,320 +352,401 @@ const RealTimeMonitor: React.FC<RealTimeMonitorProps> = ({
   const alertStats = getAlertStats();
 
   return (
-    <div className='h-full flex flex-col'>
-      <div className='flex-1 overflow-y-auto space-y-4 pr-2'>
-        {/* 控制面板 */}
-        <div style={{ marginBottom: 16 }}>
-          <Row justify='space-between' align='middle'>
-            <Col>
-              <div className='flex gap-2'>
-                <Title level={4} style={{ margin: 0 }}>
-                  <TrendingUp className='w-4 h-4' /> 实时监控
-                </Title>
-                <Select
-                  value={selectedConnection}
-                  onValueChange={setSelectedConnection}
-                >
-                  <SelectTrigger style={{ width: 200 }}>
-                    <SelectValue placeholder='选择连接' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {connections.map(conn => (
-                      <SelectItem key={conn.id} value={conn.id}>
-                        {conn.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedDatabase}
-                  onValueChange={setSelectedDatabase}
-                >
-                  <SelectTrigger style={{ width: 200 }}>
-                    <SelectValue placeholder='选择数据库' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {databases.map(db => (
-                      <SelectItem key={db} value={db}>
-                        {db}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </Col>
-            <Col>
-              <div className='flex gap-2'>
-                <Text>刷新间隔:</Text>
-                <InputNumber
-                  min={1}
-                  max={300}
-                  value={refreshInterval}
-                  onValueChange={value => setRefreshInterval(value || 5)}
-                  addonAfter='秒'
-                  style={{ width: 100 }}
-                />
-                <Button
-                  type={isMonitoring ? 'danger' : 'primary'}
-                  icon={isMonitoring ? <PauseCircle /> : <PlayCircle />}
-                  onClick={toggleMonitoring}
-                  disabled={!selectedConnection || !selectedDatabase}
-                >
-                  {isMonitoring ? '停止监控' : '开始监控'}
-                </Button>
-                <Button
-                  icon={<Settings className='w-4 h-4' />}
-                  onClick={() => {
-                    setEditingAlert(null);
-                    form.resetFields();
-                    setShowAlertModal(true);
-                  }}
-                >
-                  告警设置
-                </Button>
-              </div>
-            </Col>
-          </Row>
-        </div>
-
-        {/* 告警统计 */}
-        {alertStats.total > 0 && (
-          <Alert
-            message={`当前有 ${alertStats.total} 个未确认告警`}
-            description={
-              <div className='flex gap-2'>
-                {alertStats.critical > 0 && (
-                  <Tag color='red'>严重: {alertStats.critical}</Tag>
-                )}
-                {alertStats.error > 0 && (
-                  <Tag color='volcano'>错误: {alertStats.error}</Tag>
-                )}
-                {alertStats.warning > 0 && (
-                  <Tag color='orange'>警告: {alertStats.warning}</Tag>
-                )}
-                {alertStats.info > 0 && (
-                  <Tag color='blue'>信息: {alertStats.info}</Tag>
-                )}
-              </div>
-            }
-            type='warning'
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
-
-        {/* 实时指标 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          {monitoringQueries.map((query, index) => {
-            const value = getLatestMetric(query);
-            const queryName = query.includes('cpu')
-              ? 'CPU使用率'
-              : query.includes('memory')
-                ? '内存使用率'
-                : query.includes('errors')
-                  ? '错误数量'
-                  : `指标${index + 1}`;
-
-            return (
-              <Col span={8} key={query}>
-                <div>
-                  <Statistic
-                    title={queryName}
-                    value={value || 0}
-                    suffix={query.includes('usage') ? '%' : ''}
-                    prefix={
-                      <Badge status={isMonitoring ? 'processing' : 'default'} />
-                    }
-                    valueStyle={{
-                      color:
-                        value && value > 80
-                          ? '#cf1322'
-                          : value && value > 60
-                            ? '#fa8c16'
-                            : '#3f8600',
-                    }}
-                  />
-                </div>
-              </Col>
-            );
-          })}
-        </Row>
-
-        {/* 实时图表 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-          {Object.entries(realTimeData).map(([query, data]) => (
-            <Col span={12} key={query}>
-              <AdvancedChart
-                data={data}
-                height={300}
-                initialConfig={{
-                  type: 'line',
-                  title: query.includes('cpu')
-                    ? 'CPU使用率趋势'
-                    : query.includes('memory')
-                      ? '内存使用率趋势'
-                      : query.includes('errors')
-                        ? '错误数量趋势'
-                        : '实时数据',
-                  showDataZoom: false,
-                  animation: false,
-                }}
-              />
-            </Col>
-          ))}
-        </Row>
-
-        {/* 告警事件列表 */}
-        <div
-          title={
-            <div className='flex gap-2'>
-              <Bell className='w-4 h-4' />
-              <span>告警事件</span>
-              <Badge count={alertStats.total} />
-            </div>
-          }
-        >
-          <List
-            dataSource={alertEvents.slice(0, 20)}
-            renderItem={alert => (
-              <List.Item
-                actions={[
-                  !alert.acknowledged && (
-                    <Button
-                      type='link'
-                      onClick={() => acknowledgeAlert(alert.id)}
-                      size='small'
+    <TooltipProvider>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          {/* 控制面板 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    实时监控
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={selectedConnection}
+                      onValueChange={setSelectedConnection}
                     >
-                      确认
-                    </Button>
-                  ),
-                ].filter(Boolean)}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div style={{ color: getSeverityColor(alert.severity) }}>
-                      {getSeverityIcon(alert.severity)}
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="选择连接" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {connections.map(conn => (
+                          <SelectItem key={conn.id} value={conn.id}>
+                            {conn.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selectedDatabase}
+                      onValueChange={setSelectedDatabase}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="选择数据库" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {databases.map(db => (
+                          <SelectItem key={db} value={db}>
+                            {db}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">刷新间隔:</span>
+                    <InputNumber
+                      min={1}
+                      max={300}
+                      value={refreshInterval}
+                      onValueChange={value => setRefreshInterval(value || 5)}
+                      className="w-20"
+                    />
+                    <span className="text-sm">秒</span>
+                  </div>
+                  <Button
+                    variant={isMonitoring ? 'destructive' : 'default'}
+                    onClick={toggleMonitoring}
+                    disabled={!selectedConnection || !selectedDatabase}
+                    className="flex items-center gap-2"
+                  >
+                    {isMonitoring ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                    {isMonitoring ? '停止监控' : '开始监控'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingAlert(null);
+                      form.reset();
+                      setShowAlertModal(true);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" />
+                    告警设置
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* 告警统计 */}
+          {alertStats.total > 0 && (
+            <Alert className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <div>
+                <div className="font-medium">
+                  当前有 {alertStats.total} 个未确认告警
+                </div>
+                <div className="flex gap-2 mt-2">
+                  {alertStats.critical > 0 && (
+                    <Badge variant="destructive">严重: {alertStats.critical}</Badge>
+                  )}
+                  {alertStats.error > 0 && (
+                    <Badge variant="destructive">错误: {alertStats.error}</Badge>
+                  )}
+                  {alertStats.warning > 0 && (
+                    <Badge variant="secondary">警告: {alertStats.warning}</Badge>
+                  )}
+                  {alertStats.info > 0 && (
+                    <Badge variant="outline">信息: {alertStats.info}</Badge>
+                  )}
+                </div>
+              </div>
+            </Alert>
+          )}
+
+          {/* 实时指标 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {monitoringQueries.map((query, index) => {
+              const value = getLatestMetric(query);
+              const queryName = query.includes('cpu')
+                ? 'CPU使用率'
+                : query.includes('memory')
+                  ? '内存使用率'
+                  : query.includes('errors')
+                    ? '错误数量'
+                    : `指标${index + 1}`;
+
+              const getValueColor = (val: number | null) => {
+                if (!val) return 'text-muted-foreground';
+                if (val > 80) return 'text-red-600';
+                if (val > 60) return 'text-orange-600';
+                return 'text-green-600';
+              };
+
+              return (
+                <Card key={query}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {queryName}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-2xl font-bold ${getValueColor(value)}`}>
+                            {value || 0}
+                            {query.includes('usage') ? '%' : ''}
+                          </span>
+                          <div className="flex items-center">
+                            <Activity className={`w-4 h-4 ${isMonitoring ? 'text-green-500 animate-pulse' : 'text-gray-400'}`} />
+                          </div>
+                        </div>
+                      </div>
+                      <Database className="w-8 h-8 text-muted-foreground" />
                     </div>
-                  }
-                  title={
-                    <div className='flex gap-2'>
-                      <span>{alert.ruleName}</span>
-                      <Tag color={getSeverityColor(alert.severity)}>
-                        {alert.severity.toUpperCase()}
-                      </Tag>
-                      {alert.acknowledged && <Tag color='green'>已确认</Tag>}
-                    </div>
-                  }
-                  description={
-                    <div>
-                      <Text>{alert.message}</Text>
-                      <br />
-                      <Text type='secondary' style={{ fontSize: '12px' }}>
-                        {alert.timestamp.toLocaleString()}
-                      </Text>
-                    </div>
-                  }
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* 实时图表 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            {Object.entries(realTimeData).map(([query, data]) => (
+              <Card key={query}>
+                <AdvancedChart
+                  data={data}
+                  height={300}
+                  initialConfig={{
+                    type: 'line',
+                    title: query.includes('cpu')
+                      ? 'CPU使用率趋势'
+                      : query.includes('memory')
+                        ? '内存使用率趋势'
+                        : query.includes('errors')
+                          ? '错误数量趋势'
+                          : '实时数据',
+                    showDataZoom: false,
+                    animation: false,
+                  }}
                 />
-              </List.Item>
-            )}
-            locale={{ emptyText: '暂无告警事件' }}
-          />
-        </div>
+              </Card>
+            ))}
+          </div>
 
-        {/* 告警规则设置模态框 */}
-        <Modal
-          title={editingAlert ? '编辑告警规则' : '新建告警规则'}
-          open={showAlertModal}
-          onOpenChange={open => {
-            if (!open) {
-              setShowAlertModal(false);
-              setEditingAlert(null);
-              form.resetFields();
-            }
-          }}
-          width={600}
-        >
-          <Form form={form} layout='vertical' onFinish={saveAlertRule}>
-            <FormItem
-              name='name'
-              label='规则名称'
-              rules={[{ required: true, message: '请输入规则名称' }]}
-            >
-              <Input placeholder='输入告警规则名称' />
-            </FormItem>
+          {/* 告警事件列表 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                告警事件
+                {alertStats.total > 0 && (
+                  <Badge variant="destructive">{alertStats.total}</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {alertEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  暂无告警事件
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {alertEvents.slice(0, 20).map(alert => (
+                    <div
+                      key={alert.id}
+                      className="flex items-start justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-1 ${getSeverityColor(alert.severity)}`}>
+                          {getSeverityIcon(alert.severity)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{alert.ruleName}</span>
+                            <Badge
+                              variant={alert.severity === 'critical' || alert.severity === 'error' ? 'destructive' : 'secondary'}
+                            >
+                              {alert.severity.toUpperCase()}
+                            </Badge>
+                            {alert.acknowledged && (
+                              <Badge variant="outline">已确认</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            {alert.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {alert.timestamp.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      {!alert.acknowledged && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => acknowledgeAlert(alert.id)}
+                        >
+                          确认
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            <FormItem
-              name='query'
-              label='监控查询'
-              rules={[{ required: true, message: '请输入查询语句' }]}
-            >
-              <Textarea
-                rows={3}
-                placeholder='输入 InfluxQL 查询语句'
-                style={{ fontFamily: 'monospace' }}
-              />
-            </FormItem>
-
-            <Row gutter={16}>
-              <Col span={8}>
-                <FormItem
-                  name='condition'
-                  label='条件'
-                  rules={[{ required: true, message: '请选择条件' }]}
-                >
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder='选择条件' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='greater'>大于</SelectItem>
-                      <SelectItem value='less'>小于</SelectItem>
-                      <SelectItem value='equal'>等于</SelectItem>
-                      <SelectItem value='not_equal'>不等于</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              </Col>
-              <Col span={8}>
-                <FormItem
-                  name='threshold'
-                  label='阈值'
-                  rules={[{ required: true, message: '请输入阈值' }]}
-                >
-                  <InputNumber
-                    placeholder='输入阈值'
-                    style={{ width: '100%' }}
+          {/* 告警规则设置模态框 */}
+          <Dialog open={showAlertModal} onOpenChange={setShowAlertModal}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingAlert ? '编辑告警规则' : '新建告警规则'}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(saveAlertRule)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    rules={{ required: '请输入规则名称' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>规则名称</FormLabel>
+                        <FormControl>
+                          <Input placeholder="输入告警规则名称" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormItem>
-              </Col>
-              <Col span={8}>
-                <FormItem
-                  name='severity'
-                  label='严重程度'
-                  rules={[{ required: true, message: '请选择严重程度' }]}
-                >
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder='选择严重程度' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='info'>信息</SelectItem>
-                      <SelectItem value='warning'>警告</SelectItem>
-                      <SelectItem value='error'>错误</SelectItem>
-                      <SelectItem value='critical'>严重</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              </Col>
-            </Row>
 
-            <FormItem name='enabled' valuePropName='checked' label='启用规则'>
-              <Switch />
-            </FormItem>
-          </Form>
-        </Modal>
+                  <FormField
+                    control={form.control}
+                    name="query"
+                    rules={{ required: '请输入查询语句' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>监控查询</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            rows={3}
+                            placeholder="输入 InfluxQL 查询语句"
+                            className="font-mono"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="condition"
+                      rules={{ required: '请选择条件' }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>条件</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="选择条件" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="greater">大于</SelectItem>
+                              <SelectItem value="less">小于</SelectItem>
+                              <SelectItem value="equal">等于</SelectItem>
+                              <SelectItem value="not_equal">不等于</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="threshold"
+                      rules={{ required: '请输入阈值' }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>阈值</FormLabel>
+                          <FormControl>
+                            <InputNumber
+                              placeholder="输入阈值"
+                              className="w-full"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="severity"
+                      rules={{ required: '请选择严重程度' }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>严重程度</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="选择严重程度" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="info">信息</SelectItem>
+                              <SelectItem value="warning">警告</SelectItem>
+                              <SelectItem value="error">错误</SelectItem>
+                              <SelectItem value="critical">严重</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="enabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">启用规则</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAlertModal(false)}
+                    >
+                      取消
+                    </Button>
+                    <Button type="submit">
+                      {editingAlert ? '更新' : '创建'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
