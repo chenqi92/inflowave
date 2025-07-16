@@ -1,13 +1,32 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Progress, Typography } from '@/components/ui';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import {
+  Tabs,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Button,
+  Form,
+  FormItem,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Badge,
+  Alert,
+  Progress,
+  Typography,
+  Row, Col, Statistic
+} from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-// AlertDialog components not available in current UI library
-// Using Dialog and Modal components instead
 import { Database, Plus, Edit, Trash2, Settings, Info, RefreshCw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
-import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
+import { useDatabase } from '@/hooks/useDatabase';
 import { showMessage } from '@/utils/message';
 import type { RetentionPolicy, RetentionPolicyConfig, DatabaseStorageInfo } from '@/types';
 
@@ -21,77 +40,35 @@ interface DatabaseManagerProps {
 const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   connectionId,
   database}) => {
-  const { connections, activeConnectionId, addConnection, getConnection } = useConnectionStore();
-  const [loading, setLoading] = useState(false);
+  const { connections, activeConnectionId } = useConnectionStore();
   const [selectedConnection, setSelectedConnection] = useState(connectionId || activeConnectionId || '');
   const [selectedDatabase, setSelectedDatabase] = useState(database || '');
-  const [databases, setDatabases] = useState<string[]>([]);
   const [retentionPolicies, setRetentionPolicies] = useState<RetentionPolicy[]>([]);
   const [storageInfo, setStorageInfo] = useState<DatabaseStorageInfo | null>(null);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<RetentionPolicy | null>(null);
   const form = useForm();
 
-  // 加载数据库列表
+  // 使用 useDatabase hook
+  const {
+    databases: databaseList,
+    isLoading: loading,
+    error,
+    fetchDatabases,
+    addDatabase,
+    deleteDatabase,
+    refreshDatabaseStructure
+  } = useDatabase(selectedConnection);
+
+  // 加载数据库列表 - 使用 hook 提供的方法
   const loadDatabases = async () => {
     if (!selectedConnection) return;
+    await fetchDatabases(selectedConnection);
 
-    try {
-      // 首先验证连接是否在后端存在
-      const backendConnections = await safeTauriInvoke<any[]>('get_connections');
-      const backendConnection = backendConnections?.find((c: any) => c.id === selectedConnection);
-      
-      if (!backendConnection) {
-        console.warn(`⚠️ 连接 ${selectedConnection} 在后端不存在，尝试重新创建...`);
-        
-        // 从前端获取连接配置
-        const connection = connections.find(c => c.id === selectedConnection);
-        if (connection) {
-          try {
-            // 重新创建连接到后端
-            const connectionWithTimestamp = {
-              ...connection,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            const newConnectionId = await safeTauriInvoke<string>('create_connection', { config: connectionWithTimestamp });
-            console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
-            
-            // 如果ID发生变化，需要同步到前端存储
-            if (newConnectionId !== selectedConnection) {
-              const newConnection = { ...connection, id: newConnectionId };
-              addConnection(newConnection);
-              showMessage.warning('连接配置已重新同步，请刷新页面或重新选择连接');
-              return;
-            }
-          } catch (createError) {
-            console.error(`❌ 重新创建连接失败:`, createError);
-            showMessage.error(`连接 ${selectedConnection} 不存在且重新创建失败`);
-            return;
-          }
-        } else {
-          console.error(`❌ 前端也没有找到连接 ${selectedConnection} 的配置`);
-          showMessage.error(`连接配置不存在: ${selectedConnection}`);
-          return;
-        }
-      }
-
-      const dbList = await safeTauriInvoke<string[]>('get_databases', {
-        connectionId: selectedConnection});
-      setDatabases(dbList || []);
-      if (dbList && dbList.length > 0 && !selectedDatabase) {
-        setSelectedDatabase(dbList[0]);
-      }
-    } catch (error) {
-      console.error(`❌ 加载数据库列表失败:`, error);
-      
-      // 如果是连接不存在的错误，显示更友好的消息
-      const errorStr = String(error);
-      if (errorStr.includes('连接') && errorStr.includes('不存在')) {
-        showMessage.error(`连接不存在，请检查连接配置: ${selectedConnection}`);
-      } else {
-        showMessage.error(`加载数据库列表失败: ${error}`);
-      }
+    // 如果没有选中数据库且有数据库列表，选择第一个
+    const dbList = databaseList;
+    if (dbList && dbList.length > 0 && !selectedDatabase) {
+      setSelectedDatabase(dbList[0].name);
     }
   };
 
@@ -336,9 +313,9 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   <SelectValue placeholder="选择数据库" />
                 </SelectTrigger>
                 <SelectContent>
-                  {databases.map(db => (
-                    <SelectItem key={db} value={db}>
-                      {db}
+                  {databaseList.map(db => (
+                    <SelectItem key={db.name} value={db.name}>
+                      {db.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

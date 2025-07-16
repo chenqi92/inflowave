@@ -1,5 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Input, Typography, Row, Col, Spin, Alert, Progress, Tag, Statistic, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, Collapse, Panel, List, Tooltip, Badge } from '@/components/ui';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Button,
+  Input,
+  Typography,
+  Row,
+  Col,
+  Spin,
+  Alert,
+  Progress,
+  Tag,
+  Statistic,
+  Switch,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  Collapse,
+  Panel,
+  List,
+  Tooltip,
+  Badge,
+  Descriptions,
+  Timeline
+} from '@/components/ui';
 // TODO: Replace these Ant Design components: Descriptions, Drawer, Timeline
 import { Space, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 
@@ -9,6 +38,7 @@ import { useConnectionStore } from '@/store/connection';
 import { intelligentQueryEngine, type QueryOptimizationResult, type QueryContext } from '@/services/intelligentQuery';
 import { showMessage } from '@/utils/message';
 import CodeEditor from '@/components/common/CodeEditor';
+import {Modal} from "@utils/modalAdapter.tsx";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
