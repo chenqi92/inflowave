@@ -1,10 +1,24 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { Button, Tooltip, Dropdown, Switch } from '@/components/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Switch,
+  TooltipWrapper as Tooltip,
+  TooltipProvider,
+} from '@/components/ui';
 import {
   Maximize,
   Minimize,
   Download,
   ZoomIn,
+  ZoomOut,
   RefreshCw,
   Settings,
   PlayCircle,
@@ -13,7 +27,31 @@ import {
 import * as echarts from 'echarts';
 import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
-import type { ChartConfig, QueryResult } from '@/types';
+import type { QueryResult } from '@/types';
+
+// 定义图表配置接口
+interface ChartConfig {
+  type: 'line' | 'bar' | 'area' | 'pie' | 'scatter';
+  title: string;
+  xAxis: {
+    field: string;
+    type?: 'category' | 'value' | 'time';
+  };
+  yAxis: {
+    field: string;
+    type?: 'value' | 'category';
+  };
+  settings?: {
+    theme?: string;
+    showGrid?: boolean;
+    showLegend?: boolean;
+    showTooltip?: boolean;
+    animation?: boolean;
+    smooth?: boolean;
+    showDataLabels?: boolean;
+    colors?: string[];
+  };
+}
 
 interface InteractiveChartProps {
   config: ChartConfig;
@@ -72,7 +110,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       onDataPointClick?.(params);
     });
 
-    chartInstance.current.on('legendselectchanged', params => {
+    chartInstance.current.on('legendselectchanged', (params: any) => {
       onLegendClick?.(params.name);
       setSelectedSeries(
         Object.keys(params.selected).filter(key => params.selected[key])
@@ -131,47 +169,45 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     chartInstance.current?.resize();
   };
 
-  const handleDownload = () => {
+  const handleDownloadPNG = () => {
     if (!chartInstance.current) return;
-
-    const downloadMenu = [
-      {
-        key: 'png',
-        label: 'PNG 图片',
-        onClick: () => {
-          const url = chartInstance.current!.getDataURL({
-            type: 'png',
-            pixelRatio: 2,
-            backgroundColor: '#fff',
-          });
-          downloadFile(url, `${config.title || 'chart'}.png`);
-        },
-      },
-      {
-        key: 'svg',
-        label: 'SVG 矢量图',
-        onClick: () => {
-          const url = chartInstance.current!.getDataURL({
-            type: 'svg',
-          });
-          downloadFile(url, `${config.title || 'chart'}.svg`);
-        },
-      },
-      {
-        key: 'json',
-        label: 'JSON 数据',
-        onClick: () => {
-          const dataBlob = new Blob([JSON.stringify(data, null, 2)], {
-            type: 'application/json',
-          });
-          const url = URL.createObjectURL(dataBlob);
-          downloadFile(url, `${config.title || 'chart'}-data.json`);
-        },
-      },
-    ];
-
-    return downloadMenu;
+    const url = chartInstance.current.getDataURL({
+      type: 'png',
+      pixelRatio: 2,
+      backgroundColor: '#fff',
+    });
+    downloadFile(url, `${config.title || 'chart'}.png`);
   };
+
+  const handleDownloadSVG = () => {
+    if (!chartInstance.current) return;
+    const url = chartInstance.current.getDataURL({
+      type: 'svg',
+    });
+    downloadFile(url, `${config.title || 'chart'}.svg`);
+  };
+
+  const handleDownloadJSON = () => {
+    const dataBlob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(dataBlob);
+    downloadFile(url, `${config.title || 'chart'}-data.json`);
+  };
+
+  const renderDownloadMenu = () => (
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem onClick={handleDownloadPNG}>
+        PNG 图片
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={handleDownloadSVG}>
+        SVG 矢量图
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={handleDownloadJSON}>
+        JSON 数据
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
 
   const downloadFile = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -197,192 +233,176 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     updateChart(newConfig);
   };
 
-  const settingsMenu = [
-    {
-      key: 'grid',
-      label: (
-        <div className='flex items-center justify-between w-32'>
-          <span>显示网格</span>
-          <Switch
-            size='small'
-            checked={config.settings?.showGrid}
-            onValueChange={checked => handleSettingsChange('showGrid', checked)}
-          />
-        </div>
-      ),
-    },
-    {
-      key: 'legend',
-      label: (
-        <div className='flex items-center justify-between w-32'>
-          <span>显示图例</span>
-          <Switch
-            size='small'
-            checked={config.settings?.showLegend}
-            onValueChange={checked =>
-              handleSettingsChange('showLegend', checked)
-            }
-          />
-        </div>
-      ),
-    },
-    {
-      key: 'tooltip',
-      label: (
-        <div className='flex items-center justify-between w-32'>
-          <span>显示提示</span>
-          <Switch
-            size='small'
-            checked={config.settings?.showTooltip}
-            onValueChange={checked =>
-              handleSettingsChange('showTooltip', checked)
-            }
-          />
-        </div>
-      ),
-    },
-    {
-      key: 'animation',
-      label: (
-        <div className='flex items-center justify-between w-32'>
-          <span>启用动画</span>
-          <Switch
-            size='small'
-            checked={config.settings?.animation}
-            onValueChange={checked =>
-              handleSettingsChange('animation', checked)
-            }
-          />
-        </div>
-      ),
-    },
-  ];
+  const renderSettingsMenu = () => (
+    <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuItem className="flex items-center justify-between p-3">
+        <span>显示网格</span>
+        <Switch
+          checked={config.settings?.showGrid}
+          onCheckedChange={checked => handleSettingsChange('showGrid', checked)}
+        />
+      </DropdownMenuItem>
+      <DropdownMenuItem className="flex items-center justify-between p-3">
+        <span>显示图例</span>
+        <Switch
+          checked={config.settings?.showLegend}
+          onCheckedChange={checked =>
+            handleSettingsChange('showLegend', checked)
+          }
+        />
+      </DropdownMenuItem>
+      <DropdownMenuItem className="flex items-center justify-between p-3">
+        <span>显示提示</span>
+        <Switch
+          checked={config.settings?.showTooltip}
+          onCheckedChange={checked =>
+            handleSettingsChange('showTooltip', checked)
+          }
+        />
+      </DropdownMenuItem>
+      <DropdownMenuItem className="flex items-center justify-between p-3">
+        <span>启用动画</span>
+        <Switch
+          checked={config.settings?.animation}
+          onCheckedChange={checked =>
+            handleSettingsChange('animation', checked)
+          }
+        />
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
 
   return (
-    <div
-      title={
-        <div className='flex gap-2'>
-          <span>{config.title}</span>
-          {selectedSeries.length > 0 && (
-            <span className='text-sm text-muted-foreground'>
-              ({selectedSeries.length} 个系列已选择)
-            </span>
-          )}
-        </div>
-      }
-      extra={
-        <div className='flex gap-2'>
-          {autoRefresh && (
-            <Tooltip title={isAutoRefreshing ? '暂停自动刷新' : '开始自动刷新'}>
+    <TooltipProvider>
+      <Card
+        className={`transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 m-0' : ''} ${className}`}
+        style={{
+          height: isFullscreen ? '100vh' : height,
+        }}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <span>{config.title}</span>
+            {selectedSeries.length > 0 && (
+              <span className="text-sm text-muted-foreground font-normal">
+                ({selectedSeries.length} 个系列已选择)
+              </span>
+            )}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {autoRefresh && (
+              <Tooltip title={isAutoRefreshing ? '暂停自动刷新' : '开始自动刷新'}>
+                <Button
+                  size="sm"
+                  onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
+                  variant={isAutoRefreshing ? 'default' : 'outline'}
+                >
+                  {isAutoRefreshing ? (
+                    <PauseCircle className="w-4 h-4" />
+                  ) : (
+                    <PlayCircle className="w-4 h-4" />
+                  )}
+                </Button>
+              </Tooltip>
+            )}
+
+            <Tooltip title="重新加载">
               <Button
-                size='sm'
-                onClick={() => setIsAutoRefreshing(!isAutoRefreshing)}
-                variant={isAutoRefreshing ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => window.location.reload()}
+                variant="outline"
               >
-                {isAutoRefreshing ? (
-                  <PauseCircle className='w-4 h-4' />
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="放大">
+              <Button
+                size="sm"
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 200}
+                variant="outline"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="缩小">
+              <Button
+                size="sm"
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 50}
+                variant="outline"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+            </Tooltip>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Tooltip title="下载">
+                  <Button size="sm" variant="outline">
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </Tooltip>
+              </DropdownMenuTrigger>
+              {renderDownloadMenu()}
+            </DropdownMenu>
+
+            {allowEdit && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Tooltip title="设置">
+                    <Button size="sm" variant="outline">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </Tooltip>
+                </DropdownMenuTrigger>
+                {renderSettingsMenu()}
+              </DropdownMenu>
+            )}
+
+            <Tooltip title={isFullscreen ? '退出全屏' : '全屏显示'}>
+              <Button size="sm" onClick={handleFullscreen} variant="outline">
+                {isFullscreen ? (
+                  <Minimize className="w-4 h-4" />
                 ) : (
-                  <PlayCircle className='w-4 h-4' />
+                  <Maximize className="w-4 h-4" />
                 )}
               </Button>
             </Tooltip>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div
+            ref={chartRef}
+            className="w-full h-full"
+            style={{
+              transform: `scale(${zoomLevel / 100})`,
+              transformOrigin: 'top left',
+            }}
+          />
+
+          {zoomLevel !== 100 && (
+            <div className="absolute bottom-2 right-2 bg-background/90 border rounded px-2 py-1 text-xs text-muted-foreground">
+              {zoomLevel}%
+            </div>
           )}
-
-          <Tooltip title='重新加载'>
-            <Button
-              size='sm'
-              onClick={() => window.location.reload()}
-              variant='outline'
-            >
-              <RefreshCw className='w-4 h-4' />
-            </Button>
-          </Tooltip>
-
-          <Tooltip title='放大'>
-            <Button
-              size='sm'
-              onClick={handleZoomIn}
-              disabled={zoomLevel >= 200}
-              variant='outline'
-            >
-              <ZoomIn className='w-4 h-4' />
-            </Button>
-          </Tooltip>
-
-          <Tooltip title='缩小'>
-            <Button
-              size='sm'
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 50}
-              variant='outline'
-            >
-              <ZoomOutlined className='w-4 h-4' />
-            </Button>
-          </Tooltip>
-
-          <Dropdown
-            menu={{ items: handleDownload() }}
-            trigger={['click']}
-            placement='bottomRight'
-          >
-            <Tooltip title='下载'>
-              <Button size='sm' variant='outline'>
-                <Download className='w-4 h-4' />
-              </Button>
-            </Tooltip>
-          </Dropdown>
-
-          {allowEdit && (
-            <Dropdown
-              menu={{ items: settingsMenu }}
-              trigger={['click']}
-              placement='bottomRight'
-            >
-              <Tooltip title='设置'>
-                <Button size='sm' variant='outline'>
-                  <Settings className='w-4 h-4' />
-                </Button>
-              </Tooltip>
-            </Dropdown>
-          )}
-
-          <Tooltip title={isFullscreen ? '退出全屏' : '全屏显示'}>
-            <Button size='sm' onClick={handleFullscreen} variant='outline'>
-              {isFullscreen ? (
-                <Minimize className='w-4 h-4' />
-              ) : (
-                <Maximize className='w-4 h-4' />
-              )}
-            </Button>
-          </Tooltip>
-        </div>
-      }
-      className={`transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 m-0' : ''} ${className}`}
-      style={{
-        height: isFullscreen ? '100vh' : height,
-      }}
-    >
-      <div
-        ref={chartRef}
-        className='w-full h-full'
-        style={{
-          transform: `scale(${zoomLevel / 100})`,
-          transformOrigin: 'top left',
-        }}
-      />
-
-      {zoomLevel !== 100 && (
-        <div className='absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-xs text-muted-foreground'>
-          {zoomLevel}%
-        </div>
-      )}
-    </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };
 
 // 生成 ECharts 配置
 function generateChartOption(config: ChartConfig, data: QueryResult): any {
   const { type, xAxis, yAxis, settings } = config;
+
+  // 获取第一个系列的数据
+  const series = data.results?.[0]?.series?.[0];
+  if (!series) {
+    return {};
+  }
 
   // 基础配置
   const baseOption = {
@@ -434,6 +454,14 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
     ],
   };
 
+  // 获取列索引
+  const xAxisIndex = series.columns.indexOf(xAxis.field);
+  const yAxisIndex = series.columns.indexOf(yAxis.field);
+
+  if (xAxisIndex === -1 || yAxisIndex === -1) {
+    return baseOption;
+  }
+
   // 根据图表类型生成特定配置
   switch (type) {
     case 'line':
@@ -441,7 +469,7 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         ...baseOption,
         xAxis: {
           type: 'category',
-          data: data.data?.map(row => row[xAxis.field]),
+          data: series.values?.map(row => row[xAxisIndex]),
           boundaryGap: false,
         },
         yAxis: {
@@ -452,7 +480,7 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
           {
             name: yAxis.field,
             type: 'line',
-            data: data.data?.map(row => row[yAxis.field]),
+            data: series.values?.map(row => row[yAxisIndex]),
             smooth: settings?.smooth || false,
             areaStyle: type === 'area' ? { opacity: 0.3 } : undefined,
             label: {
@@ -467,7 +495,7 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         ...baseOption,
         xAxis: {
           type: 'category',
-          data: data.data?.map(row => row[xAxis.field]),
+          data: series.values?.map(row => row[xAxisIndex]),
         },
         yAxis: {
           type: 'value',
@@ -477,7 +505,7 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
           {
             name: yAxis.field,
             type: 'bar',
-            data: data.data?.map(row => row[yAxis.field]),
+            data: series.values?.map(row => row[yAxisIndex]),
             label: {
               show: settings?.showDataLabels || false,
             },
@@ -493,9 +521,9 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
             name: config.title,
             type: 'pie',
             radius: '50%',
-            data: data.data?.map(row => ({
-              name: row[xAxis.field],
-              value: row[yAxis.field],
+            data: series.values?.map(row => ({
+              name: row[xAxisIndex],
+              value: row[yAxisIndex],
             })),
             emphasis: {
               itemStyle: {
@@ -526,7 +554,7 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
           {
             name: `${xAxis.field} vs ${yAxis.field}`,
             type: 'scatter',
-            data: data.data?.map(row => [row[xAxis.field], row[yAxis.field]]),
+            data: series.values?.map(row => [row[xAxisIndex], row[yAxisIndex]]),
             symbolSize: 8,
             label: {
               show: settings?.showDataLabels || false,
