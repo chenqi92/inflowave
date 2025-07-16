@@ -8,7 +8,9 @@ import * as monaco from 'monaco-editor';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
-import { smartAutoCompleteEngine } from '@/utils/smartAutoComplete';
+import { influxDBSmartCompleteEngine } from '@/utils/influxdbSmartComplete';
+import { influxqlValidator } from '@/utils/influxqlValidator';
+import { influxqlFormatter } from '@/utils/influxqlFormatter';
 import type { QueryResult, QueryRequest } from '@/types';
 
 // Fix for invoke function
@@ -177,8 +179,31 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       handleSaveQuery();
     });
 
+    // 添加格式化快捷键
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+      handleFormatQuery();
+    });
+
+    // 添加智能建议快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+      editor.getAction('editor.action.triggerSuggest')?.run();
+    });
+
+    // 添加查询执行快捷键 (F5)
+    editor.addCommand(monaco.KeyCode.F5, () => {
+      handleExecuteQuery();
+    });
+
+    // 添加注释/取消注释快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash, () => {
+      editor.getAction('editor.action.commentLine')?.run();
+    });
+
     // 注册 InfluxQL 语言支持
     registerInfluxQLLanguage();
+    
+    // 添加实时语法验证
+    enableRealTimeValidation(editor);
   };
 
   // 获取当前活动标签页
@@ -243,6 +268,121 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     ));
   };
 
+  // 启用实时语法验证
+  const enableRealTimeValidation = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    let validationTimeout: NodeJS.Timeout;
+    
+    // 监听内容变化
+    const disposable = editor.onDidChangeModelContent(() => {
+      // 使用防抖避免过于频繁的验证
+      clearTimeout(validationTimeout);
+      validationTimeout = setTimeout(() => {
+        validateQuery(editor);
+      }, 500);
+    });
+
+    // 立即验证当前内容
+    validateQuery(editor);
+    
+    return disposable;
+  };
+
+  // 验证查询
+  const validateQuery = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    const model = editor.getModel();
+    if (!model) return;
+
+    const query = model.getValue();
+    const validation = influxqlValidator.validate(query);
+    
+    // 清除之前的标记
+    monaco.editor.setModelMarkers(model, 'influxql', []);
+    
+    // 添加新的标记
+    const markers: monaco.editor.IMarkerData[] = [
+      ...validation.errors.map(error => ({
+        startLineNumber: error.line,
+        startColumn: error.column,
+        endLineNumber: error.endLine,
+        endColumn: error.endColumn,
+        message: error.message,
+        severity: monaco.MarkerSeverity.Error,
+        code: error.code,
+        tags: [monaco.MarkerTag.Unnecessary]
+      })),
+      ...validation.warnings.map(warning => ({
+        startLineNumber: warning.line,
+        startColumn: warning.column,
+        endLineNumber: warning.endLine,
+        endColumn: warning.endColumn,
+        message: warning.message,
+        severity: monaco.MarkerSeverity.Warning,
+        code: warning.code
+      })),
+      ...validation.suggestions.map(suggestion => ({
+        startLineNumber: suggestion.line,
+        startColumn: suggestion.column,
+        endLineNumber: suggestion.endLine,
+        endColumn: suggestion.endColumn,
+        message: suggestion.message,
+        severity: monaco.MarkerSeverity.Info,
+        code: suggestion.code
+      }))
+    ];
+
+    monaco.editor.setModelMarkers(model, 'influxql', markers);
+    
+    // 注册快速修复提供程序
+    registerQuickFixProvider(validation);
+  };
+
+  // 注册快速修复提供程序
+  const registerQuickFixProvider = (validation: any) => {
+    const disposables: monaco.IDisposable[] = [];
+    
+    // 为每个有快速修复的错误注册代码操作提供程序
+    const allIssues = [...validation.errors, ...validation.warnings, ...validation.suggestions];
+    const issuesWithFixes = allIssues.filter(issue => issue.quickFix);
+    
+    if (issuesWithFixes.length > 0) {
+      const provider = monaco.languages.registerCodeActionProvider('influxql', {
+        provideCodeActions: (model, range, context) => {
+          const actions: monaco.languages.CodeAction[] = [];
+          
+          context.markers.forEach(marker => {
+            const issue = issuesWithFixes.find(i => i.code === marker.code);
+            if (issue?.quickFix) {
+              actions.push({
+                title: issue.quickFix.title,
+                kind: 'quickfix',
+                edit: {
+                  edits: [{
+                    resource: model.uri,
+                    edit: {
+                      range: {
+                        startLineNumber: marker.startLineNumber,
+                        startColumn: marker.startColumn,
+                        endLineNumber: marker.endLineNumber,
+                        endColumn: marker.endColumn
+                      },
+                      text: issue.quickFix.newText
+                    }
+                  }]
+                }
+              });
+            }
+          });
+          
+          return { actions, dispose: () => {} };
+        }
+      });
+      
+      disposables.push(provider);
+    }
+    
+    return disposables;
+  };
+
   // 注册 InfluxQL 语言
   const registerInfluxQLLanguage = () => {
     // 检查是否已经注册过
@@ -297,8 +437,8 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         const offset = model.getOffsetAt(position);
 
         try {
-          // 使用新的智能自动补全引擎
-          const smartSuggestions = await smartAutoCompleteEngine.generateSuggestions(
+          // 使用全面的 InfluxDB 智能自动补全引擎
+          const smartSuggestions = await influxDBSmartCompleteEngine.generateSuggestions(
             activeConnectionId,
             selectedDatabase,
             fullText,
@@ -336,6 +476,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               case 'value':
                 kind = monaco.languages.CompletionItemKind.Value;
                 break;
+              case 'constant':
+                kind = monaco.languages.CompletionItemKind.Constant;
+                break;
               default:
                 kind = monaco.languages.CompletionItemKind.Text;
             }
@@ -346,16 +489,24 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               insertText: item.insertText,
               insertTextRules: item.snippet ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
               range,
-              documentation: item.documentation || item.description,
+              documentation: {
+                value: item.documentation,
+                isTrusted: true
+              },
               detail: item.description,
               sortText: `${1000 - item.priority}_${item.label}`, // 使用优先级排序
-              preselect: item.priority > 90 // 高优先级项目预选
+              preselect: item.priority > 95, // 最高优先级项目预选
+              tags: item.category ? [1] : undefined, // 添加分类标签
+              command: item.snippet ? {
+                id: 'editor.action.triggerSuggest',
+                title: 'Trigger Suggest'
+              } : undefined
             };
           });
 
           return { suggestions };
         } catch (error) {
-          console.error('Failed to get smart autocomplete suggestions:', error);
+          console.error('Failed to get InfluxDB smart autocomplete suggestions:', error);
           return { suggestions: [] };
         }
       },
@@ -366,7 +517,9 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
   // 更新数据库结构缓存
   useEffect(() => {
     if (activeConnectionId && selectedDatabase) {
-      smartAutoCompleteEngine.updateDatabaseCache(activeConnectionId, selectedDatabase);
+      // 使用新的智能补全引擎，它会自动缓存数据库结构
+      influxDBSmartCompleteEngine.generateSuggestions(activeConnectionId, selectedDatabase, '', 0)
+        .catch(error => console.warn('Failed to initialize database cache:', error));
     }
   }, [activeConnectionId, selectedDatabase]);
 
@@ -465,8 +618,47 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
 
   // 格式化查询
   const handleFormatQuery = () => {
-    if (editorInstance) {
-      editorInstance.getAction('editor.action.formatDocument')?.run();
+    if (!editorInstance) return;
+
+    const model = editorInstance.getModel();
+    if (!model) return;
+
+    const selection = editorInstance.getSelection();
+    const hasSelection = selection && !selection.isEmpty();
+
+    try {
+      if (hasSelection) {
+        // 格式化选中的部分
+        const selectedText = model.getValueInRange(selection);
+        const formatted = influxqlFormatter.format(selectedText);
+        
+        editorInstance.executeEdits('format', [{
+          range: selection,
+          text: formatted
+        }]);
+      } else {
+        // 格式化整个查询
+        const fullText = model.getValue();
+        const formatted = influxqlFormatter.format(fullText);
+        
+        // 保存光标位置
+        const cursorPosition = editorInstance.getPosition();
+        
+        editorInstance.executeEdits('format', [{
+          range: model.getFullModelRange(),
+          text: formatted
+        }]);
+        
+        // 恢复光标位置（大致）
+        if (cursorPosition) {
+          editorInstance.setPosition(cursorPosition);
+        }
+      }
+      
+      showMessage.success('查询已格式化');
+    } catch (error) {
+      showMessage.error(`格式化失败: ${error}`);
+      console.error('Format error:', error);
     }
   };
 
