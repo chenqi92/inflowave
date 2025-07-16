@@ -453,31 +453,14 @@ export const connectionUtils = {
   hasAnyConnectedInfluxDB: (): boolean => {
     const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore.getState();
     
-    // 调试信息
-    console.log('hasAnyConnectedInfluxDB 检查:', {
-      connectionsCount: connections.length,
-      connectionStatusesCount: Object.keys(connectionStatuses).length,
-      connectedConnectionIdsCount: connectedConnectionIds.length,
-      connectedConnectionIds,
-      connectionStatuses
-    });
-    
     // 方法1：检查是否有任何连接状态为connected的InfluxDB连接
     const hasConnectedByStatus = connections.some(conn => {
       const status = connectionStatuses[conn.id];
-      const isConnected = status?.status === 'connected';
-      console.log(`连接 ${conn.name} (${conn.id}): 状态=${status?.status}, 是否已连接=${isConnected}`);
-      return isConnected;
+      return status?.status === 'connected';
     });
     
     // 方法2：检查connectedConnectionIds数组
     const hasConnectedByIds = connectedConnectionIds.length > 0;
-    
-    console.log('连接检查结果:', {
-      hasConnectedByStatus,
-      hasConnectedByIds,
-      finalResult: hasConnectedByStatus || hasConnectedByIds
-    });
     
     // 使用两种方法中的任一种为true即可
     return hasConnectedByStatus || hasConnectedByIds;

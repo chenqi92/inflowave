@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Button, 
   Separator, 
@@ -76,19 +76,15 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
   );
   const activeConnection = activeConnectionId ? connections.find(c => c.id === activeConnectionId) : null;
   
-  // 检查是否有任何已连接的InfluxDB连接
-  const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
-  const connectedInfluxDBCount = connectionUtils.getConnectedInfluxDBCount();
-  
-  // 调试信息
-  console.log('MainToolbar - 连接状态调试:', {
-    hasAnyConnectedInfluxDB,
-    connectedInfluxDBCount,
-    activeConnectionId,
-    connectionStatuses: Object.keys(connectionStatuses).length,
-    connections: connections.length,
-    connectedConnectionIds: connectedConnectionIds.length
-  });
+  // 缓存连接状态检查，避免每次渲染都重新计算
+  const connectionStatus = useMemo(() => {
+    const hasConnected = connectionUtils.hasAnyConnectedInfluxDB();
+    const count = connectionUtils.getConnectedInfluxDBCount();
+    return { hasConnected, count };
+  }, [connectionStatuses, connectedConnectionIds, connections]);
+
+  const hasAnyConnectedInfluxDB = connectionStatus.hasConnected;
+  const connectedInfluxDBCount = connectionStatus.count;
   
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();
