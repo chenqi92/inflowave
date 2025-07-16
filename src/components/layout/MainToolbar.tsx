@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { Button, Separator, Badge } from '@/components/ui';
-import {
+import { 
+  Button, 
+  Separator, 
+  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui';
 import {
   Tooltip,
@@ -33,7 +39,12 @@ import {
   FolderOpen,
   Plus,
   Clock,
-  MoreHorizontal
+  MoreHorizontal,
+  Sun,
+  Moon,
+  Monitor,
+  Globe,
+  User
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -41,7 +52,7 @@ import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
 import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
 import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -62,6 +73,7 @@ interface MainToolbarProps {
 
 const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = 'query', currentTimeRange, onTimeRangeChange }) => {
   const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
@@ -196,10 +208,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         // 开发者工具
         navigate('/dev-tools');
         break;
-      case 'preferences':
-        // 首选项 - 与设置不同，可以打开不同的对话框或页面
-        navigate('/settings?tab=preferences');
-        break;
       default:
         console.log('未处理的工具菜单项:', key);
     }
@@ -218,11 +226,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
       key: 'dev-tools',
       label: '开发者工具',
       icon: <Wrench className="w-4 h-4" />},
-    { key: 'divider-2', type: 'divider' },
-    {
-      key: 'preferences',
-      label: '首选项',
-      icon: <Settings className="w-4 h-4" />},
   ];
 
   const handleTimeRangeChange = (range: TimeRange) => {
@@ -428,25 +431,66 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             <span className="text-xs">刷新</span>
           </Button>
 
-          {/* 主题切换按钮 */}
-          <ThemeToggle 
-            variant="ghost"
-            size="sm"
-            showLabel={true}
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-          />
-
-          {/* 设置按钮 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
-            onClick={() => setSettingsVisible(true)}
-            title="应用设置"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="text-xs">设置</span>
-          </Button>
+          {/* 样式和设置菜单 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 w-14 p-1 flex flex-col items-center justify-center gap-1"
+                title="样式设置"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="text-xs">样式</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {/* 主题设置子菜单 */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Sun className="w-4 h-4" />
+                  <span>主题设置</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun className="w-4 h-4" />
+                    <span>浅色模式</span>
+                    {theme === 'light' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon className="w-4 h-4" />
+                    <span>深色模式</span>
+                    {theme === 'dark' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Monitor className="w-4 h-4" />
+                    <span>跟随系统</span>
+                    {theme === 'system' && <span className="ml-auto">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              
+              <DropdownMenuSeparator />
+              
+              {/* 应用设置 */}
+              <DropdownMenuItem onClick={() => setSettingsVisible(true)}>
+                <Settings className="w-4 h-4" />
+                <span>应用设置</span>
+              </DropdownMenuItem>
+              
+              {/* 语言设置 */}
+              <DropdownMenuItem onClick={() => showMessage.info('语言设置将在后续版本提供')}>
+                <Globe className="w-4 h-4" />
+                <span>语言设置</span>
+              </DropdownMenuItem>
+              
+              {/* 偏好设置 */}
+              <DropdownMenuItem onClick={() => navigate('/settings?tab=preferences')}>
+                <User className="w-4 h-4" />
+                <span>偏好设置</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* 工具菜单 */}
           <DropdownMenu>
@@ -463,17 +507,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {toolsMenuItems.map((item) => (
-                item.type === 'divider' ? (
-                  <div key={item.key} className="border-t my-1" />
-                ) : (
-                  <DropdownMenuItem
-                    key={item.key}
-                    onClick={() => handleToolsMenuClick({ key: item.key })}
-                  >
-                    {item.icon}
-                    <span className="ml-2">{item.label}</span>
-                  </DropdownMenuItem>
-                )
+                <DropdownMenuItem
+                  key={item.key}
+                  onClick={() => handleToolsMenuClick({ key: item.key })}
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.label}</span>
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
