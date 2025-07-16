@@ -4,14 +4,40 @@ import {
   Button,
   Input,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Form,
+  FormField,
   FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
   Textarea,
   List,
+  ListItem,
+  ListItemMeta,
   Empty,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Text,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Popconfirm,
+  Separator,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-import { Tooltip } from '@/components/ui';
 import {
   Trash2,
   Edit,
@@ -20,11 +46,11 @@ import {
   Save,
   PlayCircle,
   Tag,
+  Book,
+  Search,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { SavedQuery } from '@/types';
-
-// Removed Typography and Input destructuring - using direct components
 
 interface SavedQueriesProps {
   onQuerySelect?: (query: string, database?: string) => void;
@@ -54,7 +80,16 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   const [filterTag, setFilterTag] = useState<string>('');
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const form = useForm<SavedQueryFormData>();
+
+  const form = useForm<SavedQueryFormData>({
+    defaultValues: {
+      name: '',
+      description: '',
+      query: '',
+      database: '',
+      tags: [],
+    },
+  });
 
   // 加载保存的查询
   const loadSavedQueries = async () => {
@@ -89,7 +124,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       await safeTauriInvoke('save_query', { query: newQuery });
       await loadSavedQueries();
       setShowCreateModal(false);
-      form.resetFields();
+      form.reset();
       showMessage.success('查询已保存');
     } catch (error) {
       showNotification.error({
@@ -117,7 +152,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       await safeTauriInvoke('update_saved_query', { query: updatedQuery });
       await loadSavedQueries();
       setEditingQuery(null);
-      form.resetFields();
+      form.reset();
       showMessage.success('查询已更新');
     } catch (error) {
       showNotification.error({
@@ -144,7 +179,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   // 编辑查询
   const handleEditQuery = (query: SavedQuery) => {
     setEditingQuery(query);
-    form.setFieldsValue({
+    form.reset({
       name: query.name,
       description: query.description,
       query: query.query,
@@ -157,7 +192,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   const handleCancelEdit = () => {
     setEditingQuery(null);
     setShowCreateModal(false);
-    form.resetFields();
+    form.reset();
   };
 
   // 过滤查询
@@ -196,224 +231,319 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
   }, [visible]);
 
   const renderQueryItem = (query: SavedQuery) => (
-    <List.Item
-      key={query.id}
-      actions={[
-        <Tooltip title='执行查询'>
-          <Button
-            type='text'
-            icon={<PlayCircle />}
-            onClick={() => onQuerySelect?.(query.query, query.database)}
-          />
-        </Tooltip>,
-        <Tooltip title='编辑'>
-          <Button
-            type='text'
-            icon={<Edit className='w-4 h-4' />}
-            onClick={() => handleEditQuery(query)}
-          />
-        </Tooltip>,
-        <Tooltip title='删除'>
-          <Popconfirm
-            title='确定删除这个查询吗？'
-            onConfirm={() => handleDeleteQuery(query.id)}
-          >
-            <Button type='text' icon={<Trash2 className='w-4 h-4' />} danger />
-          </Popconfirm>
-        </Tooltip>,
-      ]}
-    >
-      <List.Item.Meta
-        title={
-          <div className='flex gap-2'>
-            <Text strong>{query.name}</Text>
-            {query.database && (
-              <Tag color='blue' icon={<Database className='w-4 h-4' />}>
-                {query.database}
-              </Tag>
-            )}
-            {query.tags?.map(tag => (
-              <Tag key={tag} color='default' icon={<Tag className='w-4 h-4' />}>
-                {tag}
-              </Tag>
-            ))}
-          </div>
-        }
-        description={
-          <div>
+    <Card key={query.id} className='mb-4'>
+      <CardHeader className='pb-3'>
+        <div className='flex items-start justify-between'>
+          <div className='flex-1'>
+            <div className='flex items-center gap-2 mb-2'>
+              <Text className='font-semibold text-lg'>{query.name}</Text>
+              {query.database && (
+                <Badge variant='secondary' className='gap-1'>
+                  <Database className='w-3 h-3' />
+                  {query.database}
+                </Badge>
+              )}
+              {query.tags?.map(tag => (
+                <Badge key={tag} variant='outline' className='gap-1'>
+                  <Tag className='w-3 h-3' />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
             {query.description && (
-              <Text
-                type='secondary'
-                style={{ fontSize: '12px', display: 'block', marginBottom: 4 }}
-              >
+              <Text className='text-sm text-muted-foreground block mb-2'>
                 {query.description}
               </Text>
             )}
-            <Paragraph
-              ellipsis={{ rows: 3, expandable: true }}
-              style={{ margin: 0, fontSize: '12px', fontFamily: 'monospace' }}
+          </div>
+          <div className='flex gap-2'>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => onQuerySelect?.(query.query, query.database)}
+                  >
+                    <PlayCircle className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>执行查询</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => handleEditQuery(query)}
+                  >
+                    <Edit className='w-4 h-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>编辑</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Popconfirm
+              title='确定删除这个查询吗？'
+              onConfirm={() => handleDeleteQuery(query.id)}
             >
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                    >
+                      <Trash2 className='w-4 h-4 text-destructive' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>删除</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </Popconfirm>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className='pt-0'>
+        <div className='space-y-2'>
+          <div className='bg-muted p-3 rounded-md'>
+            <Text className='text-xs font-mono whitespace-pre-wrap break-all'>
               {query.query}
-            </Paragraph>
-            <Text type='secondary' style={{ fontSize: '11px' }}>
-              创建于 {new Date(query.createdAt).toLocaleString()}
-              {query.updatedAt && query.updatedAt !== query.createdAt && (
-                <span>
-                  {' '}
-                  • 更新于 {new Date(query.updatedAt).toLocaleString()}
-                </span>
-              )}
             </Text>
           </div>
-        }
-      />
-    </List.Item>
+          <Text className='text-xs text-muted-foreground'>
+            创建于 {new Date(query.createdAt).toLocaleString()}
+            {query.updatedAt && query.updatedAt !== query.createdAt && (
+              <span>
+                {' '}
+                • 更新于 {new Date(query.updatedAt).toLocaleString()}
+              </span>
+            )}
+          </Text>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   const queryForm = (
-    <Form
-      form={form}
-      layout='vertical'
-      onFinish={editingQuery ? handleUpdateQuery : handleCreateQuery}
-    >
-      <FormItem
-        name='name'
-        label='查询名称'
-        rules={[{ required: true, message: '请输入查询名称' }]}
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(editingQuery ? handleUpdateQuery : handleCreateQuery)}
+        className='space-y-4'
       >
-        <Input placeholder='输入查询名称' />
-      </FormItem>
-
-      <FormItem name='description' label='描述'>
-        <Textarea placeholder='输入查询描述（可选）' rows={2} />
-      </FormItem>
-
-      <FormItem
-        name='query'
-        label='查询语句'
-        rules={[{ required: true, message: '请输入查询语句' }]}
-      >
-        <Textarea
-          placeholder='输入 InfluxQL 查询语句'
-          rows={6}
-          style={{ fontFamily: 'monospace' }}
+        <FormField
+          control={form.control}
+          name='name'
+          rules={{ required: '请输入查询名称' }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>查询名称</FormLabel>
+              <FormControl>
+                <Input placeholder='输入查询名称' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </FormItem>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <FormItem name='database' label='数据库'>
-            <Select placeholder='选择数据库（可选）' allowClear>
-              {allDatabases.map(db => (
-                <Option key={db} value={db}>
-                  {db}
-                </Option>
-              ))}
-            </Select>
-          </FormItem>
-        </Col>
-        <Col span={12}>
-          <FormItem name='tags' label='标签'>
-            <Select
-              mode='tags'
-              placeholder='添加标签（可选）'
-              style={{ width: '100%' }}
-            >
-              {allTags.map(tag => (
-                <Option key={tag} value={tag}>
-                  {tag}
-                </Option>
-              ))}
-            </Select>
-          </FormItem>
-        </Col>
-      </Row>
+        <FormField
+          control={form.control}
+          name='description'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>描述</FormLabel>
+              <FormControl>
+                <Textarea placeholder='输入查询描述（可选）' rows={2} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      <FormItem style={{ marginBottom: 0, textAlign: 'right' }}>
-        <div className='flex gap-2'>
-          <Button onClick={handleCancelEdit}>取消</Button>
-          <Button
-            type='primary'
-            htmlType='submit'
-            icon={<Save className='w-4 h-4' />}
-          >
+        <FormField
+          control={form.control}
+          name='query'
+          rules={{ required: '请输入查询语句' }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>查询语句</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder='输入 InfluxQL 查询语句'
+                  rows={6}
+                  className='font-mono'
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className='grid grid-cols-2 gap-4'>
+          <FormField
+            control={form.control}
+            name='database'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>数据库</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='选择数据库（可选）' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {allDatabases.map(db => (
+                      <SelectItem key={db} value={db}>
+                        {db}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='tags'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>标签</FormLabel>
+                <Select
+                  onValueChange={(value) => {
+                    const currentTags = field.value || [];
+                    if (!currentTags.includes(value)) {
+                      field.onChange([...currentTags, value]);
+                    }
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder='添加标签（可选）' />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {allTags.map(tag => (
+                      <SelectItem key={tag} value={tag}>
+                        {tag}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {field.value && field.value.length > 0 && (
+                  <div className='flex flex-wrap gap-1 mt-2'>
+                    {field.value.map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant='secondary'
+                        className='cursor-pointer'
+                        onClick={() => {
+                          field.onChange(field.value.filter((t: string) => t !== tag));
+                        }}
+                      >
+                        {tag} ×
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <DialogFooter>
+          <Button type='button' variant='outline' onClick={handleCancelEdit}>
+            取消
+          </Button>
+          <Button type='submit' className='gap-2'>
+            <Save className='w-4 h-4' />
             {editingQuery ? '更新' : '保存'}
           </Button>
-        </div>
-      </FormItem>
+        </DialogFooter>
+      </form>
     </Form>
   );
 
   const content = (
-    <div style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
+    <div className='h-[600px] flex flex-col'>
       {/* 工具栏 */}
-      <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
-        <Row gutter={[8, 8]}>
-          <Col span={8}>
-            <Search
-              placeholder='搜索查询...'
-              value={searchText}
-              onValueChange={e => setSearchText(e.target.value)}
-              allowClear
-            />
-          </Col>
-          <Col span={5}>
-            <Select
-              placeholder='筛选数据库'
-              value={filterDatabase}
-              onValueChange={setFilterDatabase}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              {allDatabases.map(db => (
-                <Option key={db} value={db}>
-                  {db}
-                </Option>
-              ))}
+      <div className='p-4 border-b bg-background'>
+        <div className='grid grid-cols-12 gap-2'>
+          <div className='col-span-4'>
+            <div className='relative'>
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+              <Input
+                placeholder='搜索查询...'
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                className='pl-10'
+              />
+            </div>
+          </div>
+          <div className='col-span-3'>
+            <Select value={filterDatabase} onValueChange={setFilterDatabase}>
+              <SelectTrigger>
+                <SelectValue placeholder='筛选数据库' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=''>全部数据库</SelectItem>
+                {allDatabases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    {db}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </Col>
-          <Col span={5}>
-            <Select
-              placeholder='筛选标签'
-              value={filterTag}
-              onValueChange={setFilterTag}
-              allowClear
-              style={{ width: '100%' }}
-            >
-              {allTags.map(tag => (
-                <Option key={tag} value={tag}>
-                  {tag}
-                </Option>
-              ))}
+          </div>
+          <div className='col-span-3'>
+            <Select value={filterTag} onValueChange={setFilterTag}>
+              <SelectTrigger>
+                <SelectValue placeholder='筛选标签' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=''>全部标签</SelectItem>
+                {allTags.map(tag => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </Col>
-          <Col span={6} style={{ textAlign: 'right' }}>
+          </div>
+          <div className='col-span-2 flex justify-end'>
             <Button
-              type='primary'
-              icon={<Plus className='w-4 h-4' />}
               onClick={() => setShowCreateModal(true)}
+              className='gap-2'
             >
+              <Plus className='w-4 h-4' />
               新建查询
             </Button>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </div>
 
       {/* 查询列表 */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <List
-          disabled={loading}
-          dataSource={filteredQueries}
-          renderItem={renderQueryItem}
-          locale={{
-            emptyText: (
-              <Empty
-                description='暂无保存的查询'
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            ),
-          }}
-        />
+      <div className='flex-1 overflow-auto p-4'>
+        {loading ? (
+          <div className='flex justify-center py-8'>
+            <Text>加载中...</Text>
+          </div>
+        ) : filteredQueries.length === 0 ? (
+          <Empty
+            description='暂无保存的查询'
+            className='py-8'
+          />
+        ) : (
+          <div className='space-y-4'>
+            {filteredQueries.map(renderQueryItem)}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -422,60 +552,49 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
     <>
       {/* 主内容 */}
       {visible && onClose ? (
-        <Modal
-          title={
-            <div className='flex gap-2'>
-              <Book className='w-4 h-4' />
-              <span>保存的查询</span>
-            </div>
-          }
-          open={visible}
-          onOpenChange={open => {
-            if (!open) onClose();
-          }}
-          footer={null}
-          width={1000}
-          style={{ top: 20 }}
-        >
-          {content}
-        </Modal>
+        <Dialog open={visible} onOpenChange={onClose}>
+          <DialogContent className='max-w-6xl max-h-[90vh]'>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <Book className='w-5 h-5' />
+                保存的查询
+              </DialogTitle>
+            </DialogHeader>
+            {content}
+          </DialogContent>
+        </Dialog>
       ) : (
-        <div
-          title={
-            <div className='flex gap-2'>
-              <Book className='w-4 h-4' />
-              <span>保存的查询</span>
-            </div>
-          }
-          style={{ height: '100%' }}
-          styles={{ body: { padding: 0, height: 'calc(100% - 57px)' } }}
-        >
-          {content}
-        </div>
+        <Card className='h-full'>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <Book className='w-5 h-5' />
+              保存的查询
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='p-0 h-[calc(100%-80px)]'>
+            {content}
+          </CardContent>
+        </Card>
       )}
 
       {/* 创建/编辑查询模态框 */}
-      <Modal
-        title={
-          <div className='flex gap-2'>
-            {editingQuery ? (
-              <Edit className='w-4 h-4' />
-            ) : (
-              <Plus className='w-4 h-4' />
-            )}
-            <span>{editingQuery ? '编辑查询' : '新建查询'}</span>
-          </div>
-        }
-        open={showCreateModal || !!editingQuery}
-        onOpenChange={open => {
-          if (!open) handleCancelEdit();
-        }}
-        footer={null}
-        width={800}
-        destroyOnClose
-      >
-        {queryForm}
-      </Modal>
+      <Dialog open={showCreateModal || !!editingQuery} onOpenChange={(open) => {
+        if (!open) handleCancelEdit();
+      }}>
+        <DialogContent className='max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle className='flex items-center gap-2'>
+              {editingQuery ? (
+                <Edit className='w-5 h-5' />
+              ) : (
+                <Plus className='w-5 h-5' />
+              )}
+              {editingQuery ? '编辑查询' : '新建查询'}
+            </DialogTitle>
+          </DialogHeader>
+          {queryForm}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
