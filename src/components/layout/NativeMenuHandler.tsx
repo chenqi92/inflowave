@@ -322,8 +322,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         showMessage.info('控制台功能开发中...');
         break;
 
+      case 'dev_tools':
       case 'dev-tools':
-        document.dispatchEvent(new CustomEvent('toggle-dev-tools'));
+        navigate('/dev-tools');
+        showMessage.success('切换到开发者工具');
         break;
 
       // 帮助菜单

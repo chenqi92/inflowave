@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Space, Header } from '@/components/ui';
+import { Button, Text, Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Header } from '@/components/ui';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { Database, Settings, Lightbulb, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Database, Settings, Globe, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useAppStore } from '@store/app';
 import { useConnectionStore } from '@store/connection';
 
@@ -9,7 +9,6 @@ const AppHeader: React.FC = () => {
   const {
     sidebarCollapsed,
     setSidebarCollapsed,
-    setTheme,
     setLanguage} = useAppStore();
 
   const { activeConnectionId, connectionStatuses } = useConnectionStore();

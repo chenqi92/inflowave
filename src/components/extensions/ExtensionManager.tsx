@@ -1,9 +1,43 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger, Button, Form, FormField, FormItem, FormLabel, FormControl, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Badge, Alert, Switch, Separator, Textarea } from '@/components/ui';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Button,
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Badge,
+  Alert,
+  Switch,
+  Separator,
+  Textarea,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Typography,
+  Empty
+} from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
-import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube } from 'lucide-react';
+import { Settings, Trash2, Plus, PlayCircle, PauseCircle, Package, Zap, Webhook, Bot, TestTube, ExternalLink } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Plugin, APIIntegration, WebhookConfig, AutomationRule } from '@/types';
 
@@ -23,9 +57,31 @@ const ExtensionManager: React.FC = () => {
   const [automationModalOpen, setAutomationModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
 
-  const apiForm = useForm();
-  const webhookForm = useForm();
-  const automationForm = useForm();
+  const apiForm = useForm({
+    defaultValues: {
+      name: '',
+      type: '',
+      endpoint: '',
+      authType: 'none'
+    }
+  });
+
+  const webhookForm = useForm({
+    defaultValues: {
+      name: '',
+      url: '',
+      events: [],
+      secret: ''
+    }
+  });
+
+  const automationForm = useForm({
+    defaultValues: {
+      name: '',
+      description: '',
+      triggerType: ''
+    }
+  });
 
   // 加载数据
   const loadPlugins = async () => {
@@ -203,7 +259,7 @@ const ExtensionManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="extension-manager">
+    <div className="p-6 space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="plugins" className="flex items-center gap-2">
@@ -225,275 +281,472 @@ const ExtensionManager: React.FC = () => {
         </TabsList>
 
         <TabsContent value="plugins">
-          <div
-            title="已安装的插件"
-            extra={
-              <Button type="primary" icon={<Plus className="w-4 h-4"  />}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>已安装的插件</CardTitle>
+              <Button className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
                 安装插件
               </Button>
-            }>
-            <List
-              dataSource={plugins}
-              locale={{ emptyText: '暂无已安装的插件' }}
-              renderItem={(plugin) => (
-                <List.Item
-                  actions={[
-                    <Switch
-                      checked={plugin.enabled}
-                      onValueChange={(checked) => togglePlugin(plugin.id, checked)}
-                    />,
-                    <Button
-                      type="text"
-                      danger
-                      icon={<Trash2 className="w-4 h-4"  />}
-                      onClick={() => uninstallPlugin(plugin.id)}>
-                      卸载
-                    </Button>,
-                  ]}>
-                  <List.Item.Meta
-                    title={
-                      <div className="flex gap-2">
-                        {plugin.name}
-                        <Tag color="blue">v{plugin.version}</Tag>
-                        <Tag color={plugin.enabled ? 'green' : 'red'}>
-                          {plugin.enabled ? '已启用' : '已禁用'}
-                        </Tag>
+            </CardHeader>
+            <CardContent>
+              {plugins.length === 0 ? (
+                <Empty description="暂无已安装的插件" />
+              ) : (
+                <div className="space-y-4">
+                  {plugins.map((plugin) => (
+                    <Card key={plugin.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Typography.Text className="font-medium">{plugin.name}</Typography.Text>
+                            <Badge variant="secondary">v{plugin.version}</Badge>
+                            <Badge variant={plugin.enabled ? "default" : "destructive"}>
+                              {plugin.enabled ? '已启用' : '已禁用'}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <Typography.Text className="text-muted-foreground">
+                              {plugin.description}
+                            </Typography.Text>
+                            <Typography.Text className="text-xs text-muted-foreground">
+                              作者: {plugin.author}
+                            </Typography.Text>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Switch
+                            checked={plugin.enabled}
+                            onCheckedChange={(checked) => togglePlugin(plugin.id, checked)}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => uninstallPlugin(plugin.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            卸载
+                          </Button>
+                        </div>
                       </div>
-                    }
-                    description={
-                      <div>
-                        <Text type="secondary">{plugin.description}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          作者: {plugin.author}
-                        </Text>
-                      </div>
-                    }
-                  />
-                </List.Item>
+                    </Card>
+                  ))}
+                </div>
               )}
-            />
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="api">
-          <div
-            title="API 集成"
-            extra={
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>API 集成</CardTitle>
               <Button
-                type="primary"
-                icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setApiModalOpen(true)}>
+                className="flex items-center gap-2"
+                onClick={() => setApiModalOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
                 新建集成
               </Button>
-            }>
-            <List
-              dataSource={apiIntegrations}
-              locale={{ emptyText: '暂无API集成' }}
-              renderItem={(integration) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      type="text"
-                      icon={<ExperimentOutlined />}
-                      onClick={() => testApiIntegration(integration)}
-                      disabled={loading}>
-                      测试
-                    </Button>,
-                    <Switch checked={integration.enabled} />,
-                  ]}>
-                  <List.Item.Meta
-                    title={
-                      <div className="flex gap-2">
-                        {integration.name}
-                        <Tag color="blue">{integration.integration_type}</Tag>
+            </CardHeader>
+            <CardContent>
+              {apiIntegrations.length === 0 ? (
+                <Empty description="暂无API集成" />
+              ) : (
+                <div className="space-y-4">
+                  {apiIntegrations.map((integration) => (
+                    <Card key={integration.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Typography.Text className="font-medium">{integration.name}</Typography.Text>
+                            <Badge variant="secondary">{integration.integration_type}</Badge>
+                          </div>
+                          <Typography.Text className="text-muted-foreground">
+                            {integration.endpoint}
+                          </Typography.Text>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => testApiIntegration(integration)}
+                            disabled={loading}
+                          >
+                            <TestTube className="w-4 h-4 mr-1" />
+                            测试
+                          </Button>
+                          <Switch checked={integration.enabled} onCheckedChange={(checked) => {/* TODO: 实现切换功能 */}} />
+                        </div>
                       </div>
-                    }
-                    description={integration.endpoint}
-                  />
-                </List.Item>
+                    </Card>
+                  ))}
+                </div>
               )}
-            />
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="webhooks">
-          <div
-            title="Webhook 配置"
-            extra={
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>Webhook 配置</CardTitle>
               <Button
-                type="primary"
-                icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setWebhookModalOpen(true)}>
+                className="flex items-center gap-2"
+                onClick={() => setWebhookModalOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
                 新建 Webhook
               </Button>
-            }>
-            <List
-              dataSource={webhooks}
-              locale={{ emptyText: '暂无Webhook配置' }}
-              renderItem={(webhook) => (
-                <List.Item
-                  actions={[
-                    <Switch checked={webhook.enabled} />,
-                  ]}>
-                  <List.Item.Meta
-                    title={webhook.name}
-                    description={
-                      <div>
-                        <Text type="secondary">{webhook.url}</Text>
-                        <br />
-                        <div className="flex gap-2" size="small">
-                          {webhook.events.map(event => (
-                            <Tag key={event} size="small">{event}</Tag>
-                          ))}
+            </CardHeader>
+            <CardContent>
+              {webhooks.length === 0 ? (
+                <Empty description="暂无Webhook配置" />
+              ) : (
+                <div className="space-y-4">
+                  {webhooks.map((webhook) => (
+                    <Card key={webhook.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="mb-2">
+                            <Typography.Text className="font-medium">{webhook.name}</Typography.Text>
+                          </div>
+                          <div className="space-y-2">
+                            <Typography.Text className="text-muted-foreground">
+                              {webhook.url}
+                            </Typography.Text>
+                            <div className="flex gap-2 flex-wrap">
+                              {webhook.events.map(event => (
+                                <Badge key={event} variant="outline" className="text-xs">
+                                  {event}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Switch checked={webhook.enabled} onCheckedChange={(checked) => {/* TODO: 实现切换功能 */}} />
                         </div>
                       </div>
-                    }
-                  />
-                </List.Item>
+                    </Card>
+                  ))}
+                </div>
               )}
-            />
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="automation">
-          <div
-            title="自动化规则"
-            extra={
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle>自动化规则</CardTitle>
               <Button
-                type="primary"
-                icon={<Plus className="w-4 h-4"  />}
-                onClick={() => setAutomationModalOpen(true)}>
+                className="flex items-center gap-2"
+                onClick={() => setAutomationModalOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
                 新建规则
               </Button>
-            }>
-            <List
-              dataSource={automationRules}
-              locale={{ emptyText: '暂无自动化规则' }}
-              renderItem={(rule) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      type="text"
-                      icon={<PlayCircle />}
-                      onClick={() => executeAutomationRule(rule.id)}>
-                      执行
-                    </Button>,
-                    <Switch checked={rule.enabled} />,
-                  ]}>
-                  <List.Item.Meta
-                    title={
-                      <div className="flex gap-2">
-                        {rule.name}
-                        <Tag color="green">执行 {rule.executionCount} 次</Tag>
+            </CardHeader>
+            <CardContent>
+              {automationRules.length === 0 ? (
+                <Empty description="暂无自动化规则" />
+              ) : (
+                <div className="space-y-4">
+                  {automationRules.map((rule) => (
+                    <Card key={rule.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Typography.Text className="font-medium">{rule.name}</Typography.Text>
+                            <Badge variant="secondary">执行 {rule.execution_count} 次</Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <Typography.Text className="text-muted-foreground">
+                              {rule.description}
+                            </Typography.Text>
+                            <Typography.Text className="text-xs text-muted-foreground">
+                              触发器: {rule.trigger.trigger_type}
+                            </Typography.Text>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => executeAutomationRule(rule.id)}
+                          >
+                            <PlayCircle className="w-4 h-4 mr-1" />
+                            执行
+                          </Button>
+                          <Switch checked={rule.enabled} onCheckedChange={(checked) => {/* TODO: 实现切换功能 */}} />
+                        </div>
                       </div>
-                    }
-                    description={
-                      <div>
-                        <Text type="secondary">{rule.description}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          触发器: {rule.trigger.trigger_type}
-                        </Text>
-                      </div>
-                    }
-                  />
-                </List.Item>
+                    </Card>
+                  ))}
+                </div>
               )}
-            />
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
       {/* API 集成创建对话框 */}
-      <Modal
-        title="创建 API 集成"
-        open={apiModalVisible}
-        onOpenChange={(open) => !open && (() => setApiModalVisible(false))()}
-        width={600}>
-        <Form form={form} layout="vertical" onFinish={createApiIntegration}>
-          <FormItem name="name" label="集成名称" rules={[{ required: true }]}>
-            <Input placeholder="输入集成名称" />
-          </FormItem>
+      <Dialog open={apiModalOpen} onOpenChange={setApiModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>创建 API 集成</DialogTitle>
+          </DialogHeader>
+          <Form {...apiForm}>
+            <form onSubmit={apiForm.handleSubmit(createApiIntegration)} className="space-y-4">
+              <FormField
+                control={apiForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>集成名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="输入集成名称" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="type" label="集成类型" rules={[{ required: true }]}>
-            <Select>
-              <Option value="rest">REST API</Option>
-              <Option value="graphql">GraphQL</Option>
-              <Option value="webhook">Webhook</Option>
-            </Select>
-          </FormItem>
+              <FormField
+                control={apiForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>集成类型</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择集成类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rest">REST API</SelectItem>
+                          <SelectItem value="graphql">GraphQL</SelectItem>
+                          <SelectItem value="webhook">Webhook</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="endpoint" label="API 端点" rules={[{ required: true }]}>
-            <Input placeholder="https://api.example.com" />
-          </FormItem>
+              <FormField
+                control={apiForm.control}
+                name="endpoint"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>API 端点</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://api.example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="authType" label="认证类型">
-            <Select>
-              <Option value="none">无认证</Option>
-              <Option value="basic">Basic Auth</Option>
-              <Option value="bearer">Bearer Token</Option>
-              <Option value="apikey">API Key</Option>
-            </Select>
-          </FormItem>
-        </Form>
-      </Modal>
+              <FormField
+                control={apiForm.control}
+                name="authType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>认证类型</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择认证类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">无认证</SelectItem>
+                          <SelectItem value="basic">Basic Auth</SelectItem>
+                          <SelectItem value="bearer">Bearer Token</SelectItem>
+                          <SelectItem value="apikey">API Key</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setApiModalOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">
+                  创建
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* Webhook 创建对话框 */}
-      <Modal
-        title="创建 Webhook"
-        open={webhookModalVisible}
-        onOpenChange={(open) => !open && (() => setWebhookModalVisible(false))()}
-        width={600}>
-        <Form form={form} layout="vertical" onFinish={createWebhook}>
-          <FormItem name="name" label="Webhook 名称" rules={[{ required: true }]}>
-            <Input placeholder="输入 Webhook 名称" />
-          </FormItem>
+      <Dialog open={webhookModalOpen} onOpenChange={setWebhookModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>创建 Webhook</DialogTitle>
+          </DialogHeader>
+          <Form {...webhookForm}>
+            <form onSubmit={webhookForm.handleSubmit(createWebhook)} className="space-y-4">
+              <FormField
+                control={webhookForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Webhook 名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="输入 Webhook 名称" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="url" label="Webhook URL" rules={[{ required: true }]}>
-            <Input placeholder="https://hooks.example.com/webhook" />
-          </FormItem>
+              <FormField
+                control={webhookForm.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Webhook URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://hooks.example.com/webhook" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="events" label="监听事件">
-            <Select mode="multiple" placeholder="选择要监听的事件">
-              <Option value="query_completed">查询完成</Option>
-              <Option value="connection_status">连接状态变化</Option>
-              <Option value="export_completed">导出完成</Option>
-              <Option value="alert_triggered">警报触发</Option>
-            </Select>
-          </FormItem>
+              <FormField
+                control={webhookForm.control}
+                name="events"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>监听事件</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择要监听的事件" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="query_completed">查询完成</SelectItem>
+                          <SelectItem value="connection_status">连接状态变化</SelectItem>
+                          <SelectItem value="export_completed">导出完成</SelectItem>
+                          <SelectItem value="alert_triggered">警报触发</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="secret" label="密钥（可选）">
-            <Input.Password placeholder="用于签名验证的密钥" />
-          </FormItem>
-        </Form>
-      </Modal>
+              <FormField
+                control={webhookForm.control}
+                name="secret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>密钥（可选）</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="用于签名验证的密钥" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setWebhookModalOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">
+                  创建
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* 自动化规则创建对话框 */}
-      <Modal
-        title="创建自动化规则"
-        open={automationModalVisible}
-        onOpenChange={(open) => !open && (() => setAutomationModalVisible(false))()}
-        width={700}>
-        <Form form={form} layout="vertical" onFinish={createAutomationRule}>
-          <FormItem name="name" label="规则名称" rules={[{ required: true }]}>
-            <Input placeholder="输入规则名称" />
-          </FormItem>
+      <Dialog open={automationModalOpen} onOpenChange={setAutomationModalOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>创建自动化规则</DialogTitle>
+          </DialogHeader>
+          <Form {...automationForm}>
+            <form onSubmit={automationForm.handleSubmit(createAutomationRule)} className="space-y-4">
+              <FormField
+                control={automationForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>规则名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="输入规则名称" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="description" label="规则描述">
-            <Textarea rows={2} placeholder="描述这个自动化规则的用途" />
-          </FormItem>
+              <FormField
+                control={automationForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>规则描述</FormLabel>
+                    <FormControl>
+                      <Textarea rows={2} placeholder="描述这个自动化规则的用途" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormItem name="triggerType" label="触发器类型" rules={[{ required: true }]}>
-            <Select>
-              <Option value="schedule">定时触发</Option>
-              <Option value="event">事件触发</Option>
-              <Option value="threshold">阈值触发</Option>
-              <Option value="manual">手动触发</Option>
-            </Select>
-          </FormItem>
-        </Form>
-      </Modal>
+              <FormField
+                control={automationForm.control}
+                name="triggerType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>触发器类型</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择触发器类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="schedule">定时触发</SelectItem>
+                          <SelectItem value="event">事件触发</SelectItem>
+                          <SelectItem value="threshold">阈值触发</SelectItem>
+                          <SelectItem value="manual">手动触发</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setAutomationModalOpen(false)}>
+                  取消
+                </Button>
+                <Button type="submit">
+                  创建
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

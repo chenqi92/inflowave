@@ -56,8 +56,8 @@ const MainLayout: React.FC = () => {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // 检查是否为需要特殊处理的页面（连接管理等）
-    const isSpecialPage = ['/connections', '/debug', '/typography-test', '/ui-test', '/user-guide-test'].includes(location.pathname);
+    // 检查是否为需要特殊处理的页面（调试页面等）
+    const isSpecialPage = ['/debug', '/typography-test', '/ui-test', '/user-guide-test'].includes(location.pathname);
 
     if (isSpecialPage) {
         return (

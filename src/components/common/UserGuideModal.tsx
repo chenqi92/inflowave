@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Checkbox, Progress } from '@/components/ui';
-import { ChevronLeft, ChevronRight, X, BookOpen, Home, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Home, Menu } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useNoticeStore } from '@/store/notice';
 import { loadAllDocuments } from '@/utils/documentLoader';

@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
   Form,
   FormControl,
   FormDescription,
@@ -19,9 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
   Button,
-  Input,
   Switch,
-  Slider,
   Badge} from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import {
@@ -29,10 +22,7 @@ import {
   Edit,
   Bell,
   Layout,
-  Volume2,
-  Monitor,
   Keyboard,
-  Palette,
   Eye,
   RefreshCw
 } from 'lucide-react';

@@ -655,10 +655,29 @@ export interface Plugin {
 export interface APIIntegration {
   id: string;
   name: string;
-  type: 'rest' | 'graphql' | 'webhook';
+  integration_type: 'rest' | 'graphql' | 'webhook';
   endpoint: string;
   enabled: boolean;
-  config: Record<string, unknown>;
+  authentication: {
+    auth_type: 'none' | 'basic' | 'bearer' | 'apikey';
+    credentials: Record<string, unknown>;
+  };
+  headers: Record<string, string>;
+}
+
+export interface WebhookConfig {
+  id: string;
+  name: string;
+  url: string;
+  events: string[];
+  headers: Record<string, string>;
+  secret?: string;
+  enabled: boolean;
+  retry_policy: {
+    max_retries: number;
+    backoff_multiplier: number;
+    max_backoff_time: number;
+  };
 }
 
 
@@ -669,15 +688,13 @@ export interface AutomationRule {
   description: string;
   enabled: boolean;
   trigger: {
-    type: 'schedule' | 'event' | 'condition';
+    trigger_type: 'schedule' | 'event' | 'threshold' | 'manual';
     config: Record<string, unknown>;
   };
-  actions: {
-    type: 'query' | 'notification' | 'webhook' | 'export';
-    config: Record<string, unknown>;
-  }[];
-  executionCount: number;
-  lastExecuted?: Date;
+  conditions: Record<string, unknown>[];
+  actions: Record<string, unknown>[];
+  execution_count: number;
+  last_executed?: Date;
 }
 
 export interface WidgetConfig {

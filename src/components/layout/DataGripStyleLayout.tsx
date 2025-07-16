@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle, Layout, Header, Button } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
@@ -27,11 +27,13 @@ export interface DataGripStyleLayoutProps {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) => {
   const { preferences, updateWorkspaceSettings } = useUserPreferences();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // 路径到视图的映射
   const getViewFromPath = (pathname: string): string => {
     if (pathname === '/connections') return 'datasource';
     if (pathname === '/database') return 'database';
+    if (pathname === '/query') return 'query';
     if (pathname === '/visualization') return 'visualization';
     if (pathname === '/performance') return 'performance';
     if (pathname === '/dev-tools') return 'dev-tools';
@@ -112,10 +114,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
   // 监听路径变化，自动切换视图
   useEffect(() => {
     const newView = getViewFromPath(location.pathname);
-    if (newView !== currentView) {
+
+    // 只有当视图真的不同时才更新，避免不必要的重渲染
+    if (currentView !== newView) {
       setCurrentView(newView);
     }
-  }, [location.pathname, currentView]);
+  }, [location.pathname]);
 
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {
@@ -170,8 +174,28 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
     }
   };
 
-  // 根据当前视图渲染主要内容
-  const renderMainContent = () => {
+  // 处理视图变化 - 特殊处理开发者工具
+  const handleViewChange = useCallback((newView: string) => {
+    // 如果当前在开发者工具页面，并且要切换到其他视图，需要同时导航
+    if (currentView === 'dev-tools' && newView !== 'dev-tools') {
+      setCurrentView(newView);
+      // 根据视图导航到对应路径
+      const pathMap: Record<string, string> = {
+        'datasource': '/connections',
+        'query': '/query',
+        'visualization': '/visualization',
+        'performance': '/performance'
+      };
+      if (pathMap[newView]) {
+        navigate(pathMap[newView]);
+      }
+    } else {
+      setCurrentView(newView);
+    }
+  }, [currentView, navigate]);
+
+  // 根据当前视图渲染主要内容 - 使用 useMemo 优化性能
+  const mainContent = useMemo(() => {
     switch (currentView) {
       case 'datasource':
         return (
@@ -277,7 +301,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           </ResizablePanelGroup>
         );
     }
-  };
+  }, [currentView, bottomPanelCollapsed, bottomPanelSize, queryResult, queryResults, executedQueries, executionTime, currentTimeRange]);
 
   return (
     <Layout className="h-screen bg-background flex flex-col overflow-hidden">
@@ -285,7 +309,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
       <Header className="h-12 px-4 bg-background flex items-center flex-shrink-0">
         <MainToolbar
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={handleViewChange}
           currentTimeRange={currentTimeRange}
           onTimeRangeChange={setCurrentTimeRange}
         />
@@ -332,7 +356,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({ children }) =
           {/* 右侧主要工作区域 */}
           <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
             <main className="h-full bg-background flex flex-col">
-              {renderMainContent()}
+              <div key={currentView} className="h-full transition-all duration-200 ease-in-out">
+                {mainContent}
+              </div>
             </main>
           </ResizablePanel>
         </ResizablePanelGroup>

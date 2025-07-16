@@ -1,4 +1,3 @@
-import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
 import {
   Button,
@@ -487,7 +486,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
                 </div>
                 <div className="flex items-center gap-2">
                   {completedTasks.includes(task.name) ? (
-                    <Badge variant="default" className="bg-green-100 text-green-800">
+                    <Badge variant="default" className="bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-800">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       已完成
                     </Badge>
@@ -533,7 +532,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({ database = 'test_db' }) =
         <div>
           <div className="font-medium mb-2">数据生成说明</div>
           <div className="space-y-1 text-sm text-muted-foreground">
-            <p>• 将在数据库 <code className="bg-muted px-1 rounded">{selectedDatabase || '未选择'}</code> 中创建 {generatorTasks.length} 张测试数据表</p>
+            <p>• 将在数据库 <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{selectedDatabase || '未选择'}</code> 中创建 {generatorTasks.length} 张测试数据表</p>
             <p>• 总共将生成约 {generatorTasks.reduce((sum, task) => sum + task.recordCount, 0)} 条测试记录</p>
             <p>• 数据时间戳将分布在指定的时间范围内</p>
             <p>• 所有数值都是随机生成的模拟数据</p>

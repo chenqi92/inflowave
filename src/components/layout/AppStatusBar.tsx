@@ -53,6 +53,7 @@ const AppStatusBar: React.FC = () => {
       '/data-write': '数据写入',
       '/performance': '性能监控',
       '/extensions': '扩展管理',
+      '/dev-tools': '开发者工具',
       '/settings': '应用设置'};
 
     const items = [

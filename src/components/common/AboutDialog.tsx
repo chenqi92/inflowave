@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, Tag, Space, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
+import { Text, Tag, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from '@/components/ui';
 import { Link } from 'react-router-dom';
 
 import { Database, Info, Bug, Heart, Rocket, Users, Wrench, Github } from 'lucide-react';

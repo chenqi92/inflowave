@@ -94,8 +94,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({ onViewChange, currentView = '
         }
         break;
       case 'dev-tools':
-        // 开发者工具
+        // 开发者工具 - 特殊处理：先导航再更新视图状态
         navigate('/dev-tools');
+        setTimeout(() => onViewChange?.('dev-tools'), 100);
         break;
       default:
         console.log('未处理的工具菜单项:', key);
