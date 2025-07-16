@@ -490,6 +490,7 @@ async fn main() {
 
             // Data write operations
             write_data,
+            write_data_points,
             validate_data_format,
             preview_data_conversion,
 

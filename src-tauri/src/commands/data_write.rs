@@ -1,4 +1,4 @@
-use crate::models::{DataWriteRequest, DataWriteResult, DataFormat};
+use crate::models::{DataWriteRequest, DataWriteResult, DataFormat, BatchWriteRequest, WriteResult, WriteError, DataPoint};
 use crate::services::ConnectionService;
 use tauri::State;
 use log::{debug, error, info};
@@ -69,6 +69,73 @@ pub async fn write_data(
     };
 
     info!("数据写入完成: {} 个数据点，耗时 {}ms", points_written, duration);
+    Ok(result)
+}
+
+/// 批量写入数据点
+#[tauri::command]
+pub async fn write_data_points(
+    connection_service: State<'_, ConnectionService>,
+    request: BatchWriteRequest,
+) -> Result<WriteResult, String> {
+    debug!("处理批量数据写入命令: {} -> {}, {} 个数据点",
+           request.connection_id, request.database, request.points.len());
+
+    let start_time = Instant::now();
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&request.connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    let mut points_written = 0u64;
+    let mut errors = Vec::new();
+
+    // 将数据点转换为 Line Protocol 格式
+    for (index, point) in request.points.iter().enumerate() {
+        match convert_data_point_to_line_protocol(point) {
+            Ok(line_protocol) => {
+                match client.write_line_protocol(&request.database, &line_protocol).await {
+                    Ok(count) => {
+                        points_written += count as u64;
+                        debug!("成功写入数据点 {}: {} 个点", index + 1, count);
+                    }
+                    Err(e) => {
+                        let error_msg = format!("数据点 {} 写入失败: {}", index + 1, e);
+                        error!("{}", error_msg);
+                        errors.push(WriteError {
+                            point: point.clone(),
+                            error: error_msg,
+                            line: Some(index + 1),
+                        });
+                    }
+                }
+            }
+            Err(e) => {
+                let error_msg = format!("数据点 {} 转换失败: {}", index + 1, e);
+                error!("{}", error_msg);
+                errors.push(WriteError {
+                    point: point.clone(),
+                    error: error_msg,
+                    line: Some(index + 1),
+                });
+            }
+        }
+    }
+
+    let duration = start_time.elapsed().as_millis() as u64;
+    let success = errors.is_empty();
+
+    let result = WriteResult {
+        success,
+        points_written,
+        errors,
+        duration,
+    };
+
+    info!("批量数据写入完成: {} 个数据点，{} 个错误，耗时 {}ms",
+          points_written, result.errors.len(), duration);
     Ok(result)
 }
 
@@ -289,4 +356,53 @@ fn validate_json_format(data: &str) -> Result<bool, String> {
     serde_json::from_str::<serde_json::Value>(data)
         .map_err(|e| format!("JSON 格式错误: {}", e))?;
     Ok(true)
+}
+
+/// 将 DataPoint 转换为 Line Protocol 格式
+fn convert_data_point_to_line_protocol(point: &DataPoint) -> Result<String, String> {
+    let mut line_protocol = point.measurement.clone();
+
+    // 添加标签
+    if !point.tags.is_empty() {
+        let tags: Vec<String> = point.tags.iter()
+            .map(|(k, v)| format!("{}={}", k, v))
+            .collect();
+        line_protocol.push(',');
+        line_protocol.push_str(&tags.join(","));
+    }
+
+    // 添加字段
+    if point.fields.is_empty() {
+        return Err("数据点必须包含至少一个字段".to_string());
+    }
+
+    let fields: Vec<String> = point.fields.iter()
+        .map(|(k, v)| {
+            match v {
+                serde_json::Value::Number(n) => {
+                    if n.is_f64() {
+                        format!("{}={}", k, n.as_f64().unwrap())
+                    } else if n.is_i64() {
+                        format!("{}={}i", k, n.as_i64().unwrap())
+                    } else {
+                        format!("{}={}", k, n)
+                    }
+                }
+                serde_json::Value::String(s) => format!("{}=\"{}\"", k, s),
+                serde_json::Value::Bool(b) => format!("{}={}", k, b),
+                _ => format!("{}=\"{}\"", k, v.to_string()),
+            }
+        })
+        .collect();
+
+    line_protocol.push(' ');
+    line_protocol.push_str(&fields.join(","));
+
+    // 添加时间戳
+    if let Some(timestamp) = &point.timestamp {
+        line_protocol.push(' ');
+        line_protocol.push_str(&timestamp.timestamp_nanos_opt().unwrap_or(0).to_string());
+    }
+
+    Ok(line_protocol)
 }

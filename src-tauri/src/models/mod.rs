@@ -46,6 +46,40 @@ pub struct DataWriteResult {
     pub duration: u64,
 }
 
+// 批量数据写入相关模型
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BatchWriteRequest {
+    #[serde(alias = "connectionId")]
+    pub connection_id: String,
+    pub database: String,
+    pub points: Vec<DataPoint>,
+    pub precision: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DataPoint {
+    pub measurement: String,
+    pub tags: std::collections::HashMap<String, String>,
+    pub fields: std::collections::HashMap<String, serde_json::Value>,
+    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WriteResult {
+    pub success: bool,
+    #[serde(alias = "pointsWritten")]
+    pub points_written: u64,
+    pub errors: Vec<WriteError>,
+    pub duration: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WriteError {
+    pub point: DataPoint,
+    pub error: String,
+    pub line: Option<usize>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QueryHistoryItem {
     pub id: String,
