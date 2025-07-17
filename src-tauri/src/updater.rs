@@ -325,6 +325,57 @@ pub async fn update_updater_settings(
     Ok(())
 }
 
+/// 读取发布说明文件
+#[command]
+pub async fn read_release_notes_file(path: String) -> Result<String, String> {
+    let full_path = if path.starts_with("docs/") {
+        // 相对于项目根目录的路径
+        std::env::current_dir()
+            .map_err(|e| format!("Failed to get current directory: {}", e))?
+            .join(&path)
+    } else {
+        std::path::PathBuf::from(&path)
+    };
+
+    tokio::fs::read_to_string(&full_path)
+        .await
+        .map_err(|e| format!("Failed to read file {}: {}", path, e))
+}
+
+/// 列出发布说明文件
+#[command]
+pub async fn list_release_notes_files() -> Result<Vec<String>, String> {
+    let notes_dir = std::env::current_dir()
+        .map_err(|e| format!("Failed to get current directory: {}", e))?
+        .join("docs/release-notes");
+
+    if !notes_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut files = Vec::new();
+    let mut entries = tokio::fs::read_dir(&notes_dir)
+        .await
+        .map_err(|e| format!("Failed to read directory: {}", e))?;
+
+    while let Some(entry) = entries.next_entry()
+        .await
+        .map_err(|e| format!("Failed to read directory entry: {}", e))? {
+        
+        let path = entry.path();
+        if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
+            if let Some(file_name) = path.file_name() {
+                if let Some(file_name_str) = file_name.to_str() {
+                    files.push(file_name_str.to_string());
+                }
+            }
+        }
+    }
+
+    files.sort();
+    Ok(files)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

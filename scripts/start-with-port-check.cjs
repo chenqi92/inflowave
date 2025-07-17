@@ -82,6 +82,51 @@ function updateViteConfig(port) {
 }
 
 /**
+ * 清理占用指定端口的进程
+ */
+function killPortProcess(port) {
+    try {
+        const command = process.platform === 'win32' 
+            ? `netstat -ano | findstr :${port}`
+            : `lsof -ti:${port}`;
+            
+        const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+        
+        if (result.trim()) {
+            console.log(`🔧 发现端口 ${port} 被占用，正在清理...`);
+            
+            if (process.platform === 'win32') {
+                // Windows: 解析netstat输出并杀死进程
+                const lines = result.trim().split('\n');
+                for (const line of lines) {
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length >= 5) {
+                        const pid = parts[4];
+                        execSync(`taskkill /F /PID ${pid}`, { stdio: 'pipe' });
+                    }
+                }
+            } else {
+                // Unix/Linux/macOS: 直接杀死进程
+                const pids = result.trim().split('\n');
+                for (const pid of pids) {
+                    if (pid.trim()) {
+                        execSync(`kill -9 ${pid.trim()}`, { stdio: 'pipe' });
+                    }
+                }
+            }
+            
+            console.log(`✅ 已清理端口 ${port} 上的进程`);
+            
+            // 等待一下确保端口释放
+            return new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    } catch (error) {
+        // 忽略错误，可能端口没有被占用
+        console.log(`ℹ️  端口 ${port} 未被占用或清理失败`);
+    }
+}
+
+/**
  * 启动应用
  */
 async function startApp() {
@@ -92,14 +137,25 @@ async function startApp() {
         let port = defaultPort;
         
         if (!(await isPortAvailable(defaultPort))) {
-            console.log(`⚠️  默认端口 ${defaultPort} 被占用，正在查找可用端口...`);
-            port = await findAvailablePort();
-            console.log(`✅ 找到可用端口: ${port}`);
+            console.log(`⚠️  默认端口 ${defaultPort} 被占用`);
             
-            // 更新 Tauri 配置
-            updateTauriConfig(port);
-            // 更新 Vite 配置
-            updateViteConfig(port);
+            // 尝试清理端口
+            await killPortProcess(defaultPort);
+            
+            // 再次检查端口是否可用
+            if (await isPortAvailable(defaultPort)) {
+                console.log(`✅ 默认端口 ${defaultPort} 已清理并可用`);
+                port = defaultPort;
+            } else {
+                console.log(`⚠️  清理失败，正在查找可用端口...`);
+                port = await findAvailablePort();
+                console.log(`✅ 找到可用端口: ${port}`);
+                
+                // 更新 Tauri 配置
+                updateTauriConfig(port);
+                // 更新 Vite 配置
+                updateViteConfig(port);
+            }
         } else {
             console.log(`✅ 默认端口 ${defaultPort} 可用`);
         }
@@ -111,12 +167,12 @@ async function startApp() {
         let command;
         
         if (args.includes('--dev') || args.includes('dev')) {
-            command = `npm run tauri:dev`;
+            command = `npm run copy-docs && tauri dev`;
         } else if (args.includes('--build') || args.includes('build')) {
-            command = `npm run tauri:build`;
+            command = `npm run copy-docs && tauri build`;
         } else {
             // 默认开发模式
-            command = `npm run tauri:dev`;
+            command = `npm run copy-docs && tauri dev`;
         }
         
         // 启动应用，传递端口信息给 Vite

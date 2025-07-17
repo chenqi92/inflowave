@@ -731,6 +731,8 @@ async fn main() {
             skip_version,
             get_updater_settings,
             update_updater_settings,
+            read_release_notes_file,
+            list_release_notes_files,
         ])
         .setup(|app| {
             info!("Application setup started");

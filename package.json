@@ -10,7 +10,8 @@
     "build-check": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "tauri:dev": "npm run copy-docs && tauri dev",
+    "tauri:dev": "node scripts/start-with-port-check.cjs --dev",
+    "tauri:dev:direct": "npm run copy-docs && tauri dev",
     "tauri:dev:safe": "node scripts/start-with-port-check.cjs --dev",
     "tauri:dev:server": "ENABLE_EMBEDDED_SERVER=true npm run tauri:dev:safe",
     "tauri:build": "npm run copy-docs && tauri build",
@@ -43,7 +44,13 @@
     "fix-all": "node scripts/fix-code-quality.js",
     "clean-imports": "eslint . --ext ts,tsx --fix",
     "check-unused": "eslint . --ext ts,tsx",
-    "prepare": "node scripts/prepare.js"
+    "prepare": "node scripts/prepare.js",
+    "version:check": "node scripts/sync-version.cjs check",
+    "version:sync": "node scripts/sync-version.cjs sync",
+    "version:bump": "node scripts/sync-version.cjs bump",
+    "version:bump:patch": "node scripts/sync-version.cjs bump patch --tag",
+    "version:bump:minor": "node scripts/sync-version.cjs bump minor --tag",
+    "version:bump:major": "node scripts/sync-version.cjs bump major --tag"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

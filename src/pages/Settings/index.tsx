@@ -50,6 +50,7 @@ import {
   ChevronLeft,
   Home,
   Bell,
+  Download,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useAppStore } from '@/store/app';
@@ -58,6 +59,7 @@ import { useNavigate } from 'react-router-dom';
 import UserPreferences from '@/components/settings/UserPreferences';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserGuideModal from '@/components/common/UserGuideModal';
+import { UpdateSettings } from '@/components/updater/UpdateSettings';
 import { useNoticeStore } from '@/store/notice';
 import { isBrowserEnvironment } from '@/utils/tauri';
 import { toast } from 'sonner';
@@ -295,7 +297,7 @@ const Settings: React.FC = () => {
       <div className='settings-content p-6 max-w-6xl mx-auto'>
         <div className='space-y-6'>
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="general" className="flex items-center gap-2">
                 <SettingsIcon className='w-4 h-4' />
                 <span>常规设置</span>
@@ -303,6 +305,10 @@ const Settings: React.FC = () => {
               <TabsTrigger value="data" className="flex items-center gap-2">
                 <Database className='w-4 h-4' />
                 <span>数据管理</span>
+              </TabsTrigger>
+              <TabsTrigger value="updates" className="flex items-center gap-2">
+                <Download className='w-4 h-4' />
+                <span>更新设置</span>
               </TabsTrigger>
               <TabsTrigger value="about" className="flex items-center gap-2">
                 <Info className='w-4 h-4' />
@@ -598,6 +604,10 @@ const Settings: React.FC = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="updates" className="mt-6">
+              <UpdateSettings />
             </TabsContent>
 
             <TabsContent value="about" className="mt-6">

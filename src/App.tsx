@@ -14,6 +14,10 @@ import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 
+// 更新组件
+import { UpdateNotification } from './components/updater/UpdateNotification';
+import { useUpdater } from './hooks/useUpdater';
+
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
 import UserGuideTest from './components/test/UserGuideTest';
@@ -31,6 +35,14 @@ const MainLayout: React.FC = () => {
   const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
   const [userGuideVisible, setUserGuideVisible] = useState(false);
   const { browserModeNoticeDismissed } = useNoticeStore();
+  
+  // 更新功能
+  const {
+    updateInfo,
+    showNotification: showUpdateNotification,
+    hideNotification,
+    skipVersion,
+  } = useUpdater();
 
   // 检查是否显示用户指引
   useEffect(() => {
@@ -121,6 +133,13 @@ const MainLayout: React.FC = () => {
       <UserGuideModal
         isOpen={userGuideVisible}
         onClose={() => setUserGuideVisible(false)}
+      />
+
+      {/* 更新通知 */}
+      <UpdateNotification
+        open={showUpdateNotification}
+        updateInfo={updateInfo}
+        onOpenChange={hideNotification}
       />
     </>
   );
