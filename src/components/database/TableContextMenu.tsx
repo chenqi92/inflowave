@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Modal } from '@/utils/modalAdapter';
+import { dialog } from '@/utils/dialog';
 
 interface TableContextMenuProps {
   children: React.ReactNode;
@@ -73,22 +73,18 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             });
 
             // 显示结构信息
-            Modal.info({
+            await dialog.info({
               title: `表结构 - ${tableName}`,
-              width: 800,
-              closable: true,
-              keyboard: true,
-              maskClosable: true,
               content: (
-                <div>
-                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto'>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>
+                    表结构详细信息：
+                  </p>
+                  <pre className='bg-muted/50 p-4 rounded-md max-h-96 overflow-auto text-xs font-mono border'>
                     {JSON.stringify(structure, null, 2)}
                   </pre>
                 </div>
               ),
-              onOk: () => {
-                // 确保能正常关闭
-              },
             });
             showMessage.success(`已获取表 ${tableName} 的结构信息`);
           } catch (error) {
@@ -106,22 +102,18 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
             });
 
             // 显示插入模板
-            Modal.info({
+            await dialog.info({
               title: `插入数据模板 - ${tableName}`,
-              width: 800,
-              closable: true,
-              keyboard: true,
-              maskClosable: true,
               content: (
-                <div>
-                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap'>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>
+                    插入数据模板：
+                  </p>
+                  <pre className='bg-muted/50 p-4 rounded-md max-h-96 overflow-auto whitespace-pre-wrap text-xs font-mono border'>
                     {template}
                   </pre>
                 </div>
               ),
-              onOk: () => {
-                // 确保能正常关闭
-              },
             });
             showMessage.success(`已生成表 ${tableName} 的插入模板`);
           } catch (error) {
@@ -170,18 +162,18 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
           // 导出表数据
           try {
             // 显示导出选项对话框
-            Modal.confirm({
+            const confirmed = await dialog.confirm({
               title: `导出表数据 - ${tableName}`,
-              okText: '确认',
+              confirmText: '确认',
               cancelText: '取消',
-              closable: true,
-              keyboard: true,
-              maskClosable: true,
               content: (
-                <div>
-                  <p>选择导出格式和选项：</p>
-                  <div className='mt-4'>
+                <div className='space-y-4'>
+                  <p className='text-sm text-muted-foreground'>
+                    选择导出格式和选项：
+                  </p>
+                  <div className='flex gap-2'>
                     <Button
+                      size='sm'
                       onClick={async () => {
                         try {
                           // 使用默认文件路径，避免动态导入问题
@@ -202,11 +194,12 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                           showMessage.error(`导出CSV失败: ${error}`);
                         }
                       }}
-                      className='mr-2'
                     >
                       导出为 CSV
                     </Button>
                     <Button
+                      size='sm'
+                      variant='outline'
                       onClick={async () => {
                         try {
                           // 使用默认文件路径，避免动态导入问题
@@ -233,13 +226,11 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
                   </div>
                 </div>
               ),
-              onOk() {
-                // 对话框确认后的操作
-              },
-              onCancel() {
-                // 明确处理取消操作
-              },
             });
+
+            if (confirmed) {
+              showMessage.info('请选择上方的导出格式按钮');
+            }
           } catch (error) {
             showMessage.error(`导出数据失败: ${error}`);
           }
