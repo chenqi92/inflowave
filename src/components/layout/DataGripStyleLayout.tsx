@@ -435,7 +435,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
               leftPanelCollapsed && 'min-w-12'
             )}
           >
-            <div className='h-full relative'>
+            <div className='h-full'>
               <DatabaseExplorer
                 collapsed={leftPanelCollapsed}
                 refreshTrigger={refreshTrigger}
@@ -443,15 +443,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 onCreateDataBrowserTab={handleCreateDataBrowserTab}
                 currentTimeRange={currentTimeRange}
               />
-              {/* 折叠按钮 */}
-              <Button
-                variant='ghost'
-                size='sm'
-                className='absolute bottom-4 left-4 p-1 bg-muted hover:bg-muted/80 rounded z-10 h-8 w-8'
-                onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-              >
-                {leftPanelCollapsed ? '→' : '←'}
-              </Button>
             </div>
           </ResizablePanel>
 

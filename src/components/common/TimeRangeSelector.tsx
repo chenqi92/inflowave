@@ -8,12 +8,9 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from '@/components/ui';
 import {
     Tooltip,
@@ -98,7 +95,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     const [selectedRange, setSelectedRange] = useState<TimeRange>(
         value || TIME_RANGES[0] // 默认选择不限制时间
     );
-    const [showCustomDialog, setShowCustomDialog] = useState(false);
+    const [showCustomPopover, setShowCustomPopover] = useState(false);
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
     const [customLabel, setCustomLabel] = useState('');
@@ -116,9 +113,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     };
 
     const handleCustomRange = () => {
-        setShowCustomDialog(true);
+        setShowCustomPopover(true);
         // 预填充当前时间范围的值
-        if (selectedRange) {
+        if (selectedRange && selectedRange.value === 'custom') {
             setCustomStart(selectedRange.start);
             setCustomEnd(selectedRange.end);
             setCustomLabel(selectedRange.label);
@@ -150,12 +147,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
         setSelectedRange(customRange);
         onChange?.(customRange);
-        setShowCustomDialog(false);
+        setShowCustomPopover(false);
         showMessage.success('自定义时间范围已设置');
     };
 
     const handleCustomCancel = () => {
-        setShowCustomDialog(false);
+        setShowCustomPopover(false);
         // 重置表单
         setCustomStart('');
         setCustomEnd('');
@@ -164,7 +161,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
     return (
         <TooltipProvider>
-            <div className={`flex items-center ${className}`}>
+            <div className={`flex items-center gap-2 ${className}`}>
                 <DropdownMenu>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -222,20 +219,22 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* 自定义时间范围对话框 */}
-                <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
-                    <DialogContent className='sm:max-w-[525px]'>
-                        <DialogHeader>
-                            <DialogTitle>自定义时间范围</DialogTitle>
-                            <DialogDescription>
-                                设置自定义的时间范围。支持 InfluxQL 时间表达式，如 'now() -
-                                1h'、'2024-01-01T00:00:00Z' 等。
-                            </DialogDescription>
-                        </DialogHeader>
+                {/* 自定义时间范围弹出框 */}
+                <Popover open={showCustomPopover} onOpenChange={setShowCustomPopover}>
+                    <PopoverTrigger asChild>
+                        <Button style={{ display: 'none' }} />
+                    </PopoverTrigger>
+                    <PopoverContent className='w-96 p-4' align='start' side='bottom'>
+                        <div className='mb-3'>
+                            <h4 className='text-sm font-medium mb-1'>自定义时间范围</h4>
+                            <p className='text-xs text-muted-foreground'>
+                                支持 InfluxQL 时间表达式，如 'now() - 1h'、'2024-01-01T00:00:00Z' 等。
+                            </p>
+                        </div>
 
-                        <div className='grid gap-4 py-4'>
-                            <div className='grid grid-cols-4 items-center gap-4'>
-                                <Label htmlFor='custom-label' className='text-right'>
+                        <div className='space-y-3'>
+                            <div className='grid grid-cols-4 items-center gap-2'>
+                                <Label htmlFor='custom-label' className='text-sm'>
                                     标签
                                 </Label>
                                 <Input
@@ -243,12 +242,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     value={customLabel}
                                     onChange={e => setCustomLabel(e.target.value)}
                                     placeholder='例如：自定义时间'
-                                    className='col-span-3'
+                                    className='col-span-3 h-8'
+                                    size='sm'
                                 />
                             </div>
 
-                            <div className='grid grid-cols-4 items-center gap-4'>
-                                <Label htmlFor='custom-start' className='text-right'>
+                            <div className='grid grid-cols-4 items-center gap-2'>
+                                <Label htmlFor='custom-start' className='text-sm'>
                                     开始时间
                                 </Label>
                                 <Input
@@ -256,12 +256,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     value={customStart}
                                     onChange={e => setCustomStart(e.target.value)}
                                     placeholder='例如：now() - 2h'
-                                    className='col-span-3'
+                                    className='col-span-3 h-8'
+                                    size='sm'
                                 />
                             </div>
 
-                            <div className='grid grid-cols-4 items-center gap-4'>
-                                <Label htmlFor='custom-end' className='text-right'>
+                            <div className='grid grid-cols-4 items-center gap-2'>
+                                <Label htmlFor='custom-end' className='text-sm'>
                                     结束时间
                                 </Label>
                                 <Input
@@ -269,19 +270,20 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     value={customEnd}
                                     onChange={e => setCustomEnd(e.target.value)}
                                     placeholder='例如：now()'
-                                    className='col-span-3'
+                                    className='col-span-3 h-8'
+                                    size='sm'
                                 />
                             </div>
                         </div>
 
-                        <DialogFooter>
-                            <Button variant='outline' onClick={handleCustomCancel}>
+                        <div className='flex justify-end gap-2 mt-4'>
+                            <Button variant='outline' size='sm' onClick={handleCustomCancel}>
                                 取消
                             </Button>
-                            <Button onClick={handleCustomSubmit}>确定</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                            <Button size='sm' onClick={handleCustomSubmit}>确定</Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
         </TooltipProvider>
     );

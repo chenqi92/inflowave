@@ -302,7 +302,7 @@ pub async fn get_updater_settings(app_handle: AppHandle) -> Result<HashMap<Strin
 pub async fn update_updater_settings(
     app_handle: AppHandle, 
     settings: HashMap<String, serde_json::Value>
-) -> Result<(), String> {
+) -> Result<HashMap<String, serde_json::Value>, String> {
     let config_dir = app_handle
         .path()
         .app_config_dir()
@@ -322,7 +322,8 @@ pub async fn update_updater_settings(
         .await
         .map_err(|e| format!("Failed to write settings: {}", e))?;
 
-    Ok(())
+    // 返回保存的设置
+    Ok(settings)
 }
 
 /// 读取发布说明文件

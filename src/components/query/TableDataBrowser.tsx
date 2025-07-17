@@ -29,7 +29,6 @@ import {
 } from '@/components/ui';
 import {
     RefreshCw,
-    Search,
     Filter,
     Download,
     ChevronLeft,
@@ -74,6 +73,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [filters, setFilters] = useState<ColumnFilter[]>([]);
     const [sortColumn, setSortColumn] = useState<string>('');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [searchText, setSearchText] = useState<string>('');
 
     // 生成查询语句
     const generateQuery = useCallback(() => {
@@ -85,12 +85,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 搜索条件
         if (searchText.trim()) {
-            // 对所有字符串类型的列进行搜索
-            const searchCondition = columns
-                .map(col => `"${col}" =~ /.*${searchText.trim()}.*/`)
-                .join(' OR ');
-            if (searchCondition) {
-                whereConditions.push(`(${searchCondition})`);
+            const searchConditions = columns.filter(col => col !== 'time').map(col => 
+                `\"${col}\" =~ /.*${searchText.trim()}.*/`
+            );
+            if (searchConditions.length > 0) {
+                whereConditions.push(`(${searchConditions.join(' OR ')})`);
             }
         }
 
@@ -348,8 +347,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                         size="sm"
                                         onClick={loadData}
                                         disabled={loading}
+                                        className="h-8 px-2"
                                     >
-                                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}/>
+                                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`}/>
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>刷新数据</TooltipContent>
@@ -361,8 +361,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                         size="sm"
                                         onClick={exportData}
                                         disabled={data.length === 0}
+                                        className="h-8 px-2"
                                     >
-                                        <Download className="w-4 h-4"/>
+                                        <Download className="w-3 h-3"/>
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>导出数据</TooltipContent>
@@ -371,42 +372,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     </div>
                 </CardHeader>
 
-                {/* 搜索和过滤栏 */}
+                {/* 过滤栏 */}
                 <CardContent className="pt-0 pb-3">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2 flex-1">
-                            <Search className="w-4 h-4 text-muted-foreground"/>
-                            <Input
-                                placeholder="搜索数据..."
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleSearch();
-                                    }
-                                }}
-                                className="flex-1"
-                            />
-                            <Button onClick={handleSearch} disabled={loading}>
-                                搜索
-                            </Button>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">每页:</span>
-                            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                                <SelectTrigger className="w-20">
-                                    <SelectValue/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="100">100</SelectItem>
-                                    <SelectItem value="500">500</SelectItem>
-                                    <SelectItem value="1000">1000</SelectItem>
-                                    <SelectItem value="2000">2000</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
 
                     {/* 过滤器显示 */}
                     {filters.length > 0 && (
@@ -430,7 +397,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             </Card>
 
             {/* 数据表格 */}
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-auto">
                 {loading ? (
                     <div className="flex items-center justify-center h-32">
                         <Spin/>
@@ -496,6 +464,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         <span>没有找到数据</span>
                     </div>
                 )}
+                </div>
             </div>
 
             {/* 底部分页 */}
@@ -511,26 +480,45 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage <= 1 || loading}
-                            >
-                                <ChevronLeft className="w-4 h-4"/>
-                                上一页
-                            </Button>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">每页:</span>
+                                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                                    <SelectTrigger className="w-16 h-8">
+                                        <SelectValue/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="100">100</SelectItem>
+                                        <SelectItem value="500">500</SelectItem>
+                                        <SelectItem value="1000">1000</SelectItem>
+                                        <SelectItem value="2000">2000</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage >= totalPages || loading}
-                            >
-                                下一页
-                                <ChevronRight className="w-4 h-4"/>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage <= 1 || loading}
+                                    className="h-8 px-3"
+                                >
+                                    <ChevronLeft className="w-3 h-3"/>
+                                    上一页
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage >= totalPages || loading}
+                                    className="h-8 px-3"
+                                >
+                                    下一页
+                                    <ChevronRight className="w-3 h-3"/>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>

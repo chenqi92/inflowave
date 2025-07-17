@@ -44,6 +44,7 @@ interface TreeProps {
     info: { checked: boolean; node: TreeNode }
   ) => void;
   onDoubleClick?: (info: { node: TreeNode }) => void;
+  onRightClick?: (info: { node: TreeNode }) => void;
   showIcon?: boolean;
   showLine?: boolean | { showLeafIcon?: boolean };
   blockNode?: boolean;
@@ -68,6 +69,7 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       onSelect,
       onCheck,
       onDoubleClick,
+      onRightClick,
       showIcon = false,
       showLine = false,
       blockNode = false,
@@ -244,6 +246,10 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
               className='flex-1 text-sm'
               onClick={() => handleSelect(node.key, node)}
               onDoubleClick={() => onDoubleClick?.({ node })}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                onRightClick?.({ node });
+              }}
             >
               {node.title}
             </span>
