@@ -671,6 +671,23 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       setShowExportDialog(true);
     };
 
+    // 创建数据浏览标签
+    const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
+      const newTab: EditorTab = {
+        id: Date.now().toString(),
+        title: `📊 ${tableName}`,
+        content: '', // 数据浏览不需要content
+        type: 'data-browser',
+        modified: false,
+        connectionId,
+        database,
+        tableName,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+    };
+
     // 暴露方法给父组件
     useImperativeHandle(
       ref,
@@ -798,22 +815,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       setActiveKey(newTab.id);
     };
 
-    // 创建数据浏览标签
-    const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
-      const newTab: EditorTab = {
-        id: Date.now().toString(),
-        title: `📊 ${tableName}`,
-        content: '', // 数据浏览不需要content
-        type: 'data-browser',
-        modified: false,
-        connectionId,
-        database,
-        tableName,
-      };
 
-      setTabs([...tabs, newTab]);
-      setActiveKey(newTab.id);
-    };
 
     // 处理tab分离
     const handleTabDetach = (tabId: string) => {
