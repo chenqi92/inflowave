@@ -43,7 +43,7 @@ import {
   Info,
   FileDown,
   FileUp,
-  Settings,
+  Settings as SettingsIcon,
   Database,
   User,
   Bug,
@@ -297,7 +297,7 @@ const Settings: React.FC = () => {
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="general" className="flex items-center gap-2">
-                <Settings className='w-4 h-4' />
+                <SettingsIcon className='w-4 h-4' />
                 <span>常规设置</span>
               </TabsTrigger>
               <TabsTrigger value="data" className="flex items-center gap-2">
