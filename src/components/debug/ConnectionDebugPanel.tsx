@@ -33,7 +33,7 @@ const ConnectionDebugPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
 
-  const { connections, connectionStatuses, activeconnection_id } =
+  const { connections, connectionStatuses, activeConnectionId } =
     useConnectionStore();
 
   // 自动刷新调试信息

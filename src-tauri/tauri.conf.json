@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.kkape.inflowave",
   "build": {
-    "beforeDevCommand": "",
+    "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
     "devUrl": "http://localhost:1422",
     "frontendDist": "../dist"
