@@ -97,3 +97,35 @@ camel_case_command!(
         manager.find_available_port().map_err(|e| e.to_string())
     }
 );
+
+camel_case_command!(
+    pub async fn ensure_frontend_port_available() -> Result<u16, String> {
+        let manager = get_port_manager();
+        let manager = manager.read().unwrap();
+        
+        // 检查默认端口是否可用
+        if manager.is_port_available(1422) {
+            match manager.allocate_port("frontend") {
+                Ok(_) => Ok(1422),
+                Err(e) => Err(e.to_string())
+            }
+        } else {
+            // 如果默认端口不可用，分配新端口
+            match manager.allocate_port("frontend") {
+                Ok(port) => {
+                    log::warn!("默认端口 1422 被占用，已分配新端口: {}", port);
+                    Ok(port)
+                }
+                Err(e) => Err(e.to_string())
+            }
+        }
+    }
+);
+
+camel_case_command!(
+    pub async fn get_frontend_port() -> Result<Option<u16>, String> {
+        let manager = get_port_manager();
+        let manager = manager.read().unwrap();
+        Ok(manager.get_service_port("frontend"))
+    }
+);

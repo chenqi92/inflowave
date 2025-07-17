@@ -47,8 +47,8 @@ export class PortDiscoveryService {
       
       this.listeners.push(unlisten);
       
-      // 为前端服务分配端口
-      const port = await this.allocatePort('frontend-dev-server');
+      // 确保前端端口可用
+      const port = await this.ensureFrontendPortAvailable();
       this.currentPort = port;
       
       console.log(`Port discovery service initialized. Current port: ${this.currentPort}`);
@@ -69,6 +69,34 @@ export class PortDiscoveryService {
     } catch (error) {
       console.error(`Failed to allocate port for service ${serviceName}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * 确保前端端口可用
+   */
+  async ensureFrontendPortAvailable(): Promise<number> {
+    try {
+      const port = await invoke<number>('ensure_frontend_port_available');
+      console.log(`Frontend port ensured: ${port}`);
+      this.currentPort = port;
+      return port;
+    } catch (error) {
+      console.error('Failed to ensure frontend port availability:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取前端端口
+   */
+  async getFrontendPort(): Promise<number | null> {
+    try {
+      const port = await invoke<number | null>('get_frontend_port');
+      return port;
+    } catch (error) {
+      console.error('Failed to get frontend port:', error);
+      return null;
     }
   }
 

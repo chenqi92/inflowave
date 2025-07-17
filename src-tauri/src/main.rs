@@ -9,7 +9,7 @@ mod utils;
 mod config;
 
 use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}};
-use log::info;
+use log::{info, warn, error};
 
 // Tauri commands
 use commands::connection::*;
@@ -27,6 +27,7 @@ use commands::user_experience::*;
 use commands::extensions::*;
 use commands::optimization_history::*;
 use commands::port_manager::*;
+use commands::embedded_server::*;
 
 // Services
 use services::ConnectionService;
@@ -413,6 +414,102 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     }
 }
 
+/// 设置嵌入式服务器（如果需要）
+async fn setup_embedded_server_if_needed(app_handle: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use services::embedded_server::{init_embedded_server, start_embedded_server, ServerConfig};
+    
+    // 从配置或环境变量中读取是否需要嵌入式服务器
+    let enable_embedded_server = std::env::var("ENABLE_EMBEDDED_SERVER")
+        .unwrap_or_else(|_| "false".to_string())
+        .parse::<bool>()
+        .unwrap_or(false);
+    
+    if !enable_embedded_server {
+        info!("嵌入式服务器已禁用");
+        return Ok(());
+    }
+    
+    info!("正在设置嵌入式服务器...");
+    
+    let config = ServerConfig {
+        enabled: true,
+        preferred_port: 1422,
+        port_range: (1422, 1500),
+        auto_start: true,
+        features: vec!["debug".to_string(), "proxy".to_string()],
+    };
+    
+    // 初始化嵌入式服务器
+    init_embedded_server(config)?;
+    
+    // 启动服务器
+    match start_embedded_server().await {
+        Ok(port) => {
+            info!("嵌入式服务器已启动，端口: {}", port);
+            
+            // 通知前端服务器已启动
+            if let Err(e) = app_handle.emit("embedded-server-started", port) {
+                warn!("通知前端嵌入式服务器启动失败: {}", e);
+            }
+        }
+        Err(e) => {
+            warn!("嵌入式服务器启动失败: {}", e);
+        }
+    }
+    
+    Ok(())
+}
+
+/// 处理启动时的端口冲突
+async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use services::port_manager::get_port_manager;
+    
+    info!("检查启动时端口冲突...");
+    
+    let manager = get_port_manager();
+    let manager = manager.read().unwrap();
+    
+    // 检查默认端口 1422 是否可用
+    if manager.is_port_available(1422) {
+        // 为前端服务分配默认端口
+        match manager.allocate_port("frontend") {
+            Ok(port) => {
+                info!("前端服务使用默认端口: {}", port);
+            }
+            Err(e) => {
+                warn!("无法分配默认端口，尝试查找其他可用端口: {}", e);
+                // 分配其他可用端口
+                match manager.find_available_port() {
+                    Ok(port) => {
+                        warn!("端口冲突已解决，前端将使用端口: {} 而不是默认的 1422", port);
+                    }
+                    Err(e) => {
+                        error!("无法找到可用端口: {}", e);
+                        return Err(format!("端口分配失败: {}", e).into());
+                    }
+                }
+            }
+        }
+    } else {
+        warn!("默认端口 1422 被占用，正在查找可用端口...");
+        // 查找并分配可用端口
+        match manager.allocate_port("frontend") {
+            Ok(port) => {
+                warn!("端口冲突已解决，前端将使用端口: {} 而不是默认的 1422", port);
+            }
+            Err(e) => {
+                error!("无法为前端服务分配端口: {}", e);
+                return Err(format!("端口分配失败: {}", e).into());
+            }
+        }
+    }
+    
+    // 启动健康检查
+    manager.start_health_check_loop("frontend".to_string());
+    
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize logger
@@ -614,6 +711,16 @@ async fn main() {
             check_port_conflicts,
             get_port_stats,
             find_available_port,
+            ensure_frontend_port_available,
+            get_frontend_port,
+
+            // Embedded server
+            init_embedded_server_cmd,
+            start_embedded_server_cmd,
+            stop_embedded_server_cmd,
+            restart_embedded_server_cmd,
+            get_embedded_server_status,
+            is_embedded_server_running,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -674,6 +781,24 @@ async fn main() {
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {
                 log::error!("Failed to initialize config: {}", e);
+            }
+
+            // Initialize port manager and handle port conflicts
+            if let Err(e) = services::port_manager::init_port_manager(app.handle().clone()) {
+                error!("Failed to initialize port manager: {}", e);
+            } else {
+                // 检查并处理端口冲突
+                let app_handle = app.handle().clone();
+                tokio::spawn(async move {
+                    if let Err(e) = handle_port_conflicts_at_startup().await {
+                        error!("处理启动时端口冲突失败: {}", e);
+                    }
+                    
+                    // 初始化嵌入式服务器（如果需要）
+                    if let Err(e) = setup_embedded_server_if_needed(app_handle).await {
+                        error!("设置嵌入式服务器失败: {}", e);
+                    }
+                });
             }
 
             info!("Application setup completed");
