@@ -90,6 +90,8 @@ export interface TauriCommandMap {
   // 文件操作命令
   'save_file_dialog': FileDialogResult;
   'write_file': void;
+  'write_binary_file': void;
+  'get_downloads_dir': string;
   'get_file_info': FileInfo;
 
   // 数据操作命令

@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
+import { quickExport } from '@/utils/nativeExport';
 import type { QueryResult } from '@/types';
 
 interface ResultPanelProps {
@@ -160,83 +161,53 @@ const ResultPanel: React.FC<ResultPanelProps> = ({
   };
 
   // 导出为 CSV 格式
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!queryResult || tableData.length === 0) {
-      showMessage.success('没有可导出的数据');
+      showMessage.warning('没有可导出的数据');
       return;
     }
 
-    const columns = resultColumns.map(col => col.title as string);
-    const csvContent = [
-      columns.join(','),
-      ...tableData.map(row =>
-        columns
-          .map(col => {
-            const value = row[col];
-            // 处理包含逗号、引号或换行符的值
-            if (
-              typeof value === 'string' &&
-              (value.includes(',') ||
-                value.includes('"') ||
-                value.includes('\n'))
-            ) {
-              return `"${value.replace(/"/g, '""')}"`;
-            }
-            return value || '';
-          })
-          .join(',')
-      ),
-    ].join('\n');
-
-    downloadFile(csvContent, 'query-result.csv', 'text/csv');
-    showMessage.success('CSV 文件导出成功');
+    try {
+      const filePath = await quickExport(queryResult, 'csv', 'query-result');
+      showMessage.success('CSV 文件导出成功');
+    } catch (error) {
+      console.error('CSV导出失败:', error);
+      showMessage.error('CSV 文件导出失败');
+    }
   };
 
   // 导出为 JSON 格式
-  const exportToJSON = () => {
+  const exportToJSON = async () => {
     if (!queryResult || tableData.length === 0) {
-      showMessage.success('没有可导出的数据');
+      showMessage.warning('没有可导出的数据');
       return;
     }
 
-    const jsonContent = JSON.stringify(tableData, null, 2);
-    downloadFile(jsonContent, 'query-result.json', 'application/json');
-    showMessage.success('JSON 文件导出成功');
+    try {
+      const filePath = await quickExport(queryResult, 'json', 'query-result');
+      showMessage.success('JSON 文件导出成功');
+    } catch (error) {
+      console.error('JSON导出失败:', error);
+      showMessage.error('JSON 文件导出失败');
+    }
   };
 
-  // 导出为 Excel 格式 (实际上是 TSV，可以被 Excel 打开)
-  const exportToExcel = () => {
+  // 导出为 Excel 格式
+  const exportToExcel = async () => {
     if (!queryResult || tableData.length === 0) {
-      showMessage.success('没有可导出的数据');
+      showMessage.warning('没有可导出的数据');
       return;
     }
 
-    const columns = resultColumns.map(col => col.title as string);
-    const tsvContent = [
-      columns.join('\t'),
-      ...tableData.map(row => columns.map(col => row[col] || '').join('\t')),
-    ].join('\n');
-
-    downloadFile(tsvContent, 'query-result.xlsx', 'application/vnd.ms-excel');
-    showMessage.success('Excel 文件导出成功');
+    try {
+      const filePath = await quickExport(queryResult, 'excel', 'query-result');
+      showMessage.success('Excel 文件导出成功');
+    } catch (error) {
+      console.error('Excel导出失败:', error);
+      showMessage.error('Excel 文件导出失败');
+    }
   };
 
-  // 下载文件的通用函数
-  const downloadFile = (
-    content: string,
-    filename: string,
-    mimeType: string
-  ) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   // 清空结果
   const handleClearResult = () => {

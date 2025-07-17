@@ -35,6 +35,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type { DataExportResult, Connection, QueryResult } from '@/types';
 
 interface DataExportDialogProps {
@@ -119,20 +120,33 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
     const { format, filename, options } = values;
 
     try {
-      // 简化的导出逻辑 - 模拟导出过程
-      console.log('导出查询结果:', { queryResult, format, filename, options });
+      // 使用原生导出功能
+      const success = await exportWithNativeDialog(queryResult, {
+        format: format as 'csv' | 'json' | 'excel' | 'xlsx',
+        includeHeaders: options.includeHeaders,
+        delimiter: options.delimiter,
+        defaultFilename: filename
+      });
 
-      // 模拟导出延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      return {
-        success: true,
-        message: '导出成功',
-        filePath: `${filename}.${format}`,
-        recordCount: queryResult.data?.length || 0,
-        fileSize: 0,
-        duration: 1000,
-      };
+      if (success) {
+        return {
+          success: true,
+          message: '导出成功',
+          filePath: `${filename}.${format}`,
+          recordCount: queryResult.data?.length || 0,
+          fileSize: 0,
+          duration: 1000,
+        };
+      } else {
+        return {
+          success: false,
+          message: '用户取消导出',
+          filePath: '',
+          recordCount: 0,
+          fileSize: 0,
+          duration: 0,
+        };
+      }
     } catch (error) {
       return {
         success: false,

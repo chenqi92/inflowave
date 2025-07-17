@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
+import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
 
 interface TableDataBrowserProps {
@@ -282,34 +283,41 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     };
 
     // 导出数据
-    const exportData = () => {
+    const exportData = async () => {
         if (data.length === 0) {
             showMessage.warning('没有可导出的数据');
             return;
         }
 
-        const csvContent = [
-            columns.join(','),
-            ...data.map(row =>
-                columns.map(col => {
-                    const value = row[col];
-                    if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-                        return `"${value.replace(/"/g, '""')}"`;
-                    }
-                    return value || '';
-                }).join(',')
-            )
-        ].join('\n');
+        try {
+            // 构造符合 QueryResult 格式的数据
+            const queryResult: QueryResult = {
+                results: [{
+                    series: [{
+                        name: tableName,
+                        columns: columns,
+                        values: data.map(row => columns.map(col => row[col]))
+                    }]
+                }],
+                data: data, // 保持兼容性
+                execution_time: 0
+            };
 
-        const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${tableName}_data.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
+            // 使用原生导出对话框
+            const success = await exportWithNativeDialog(queryResult, {
+                format: 'csv',
+                includeHeaders: true,
+                delimiter: ',',
+                defaultFilename: `${tableName}_data`
+            });
 
-        showMessage.success('数据导出成功');
+            if (success) {
+                showMessage.success('数据导出成功');
+            }
+        } catch (error) {
+            console.error('导出数据失败:', error);
+            showMessage.error('导出数据失败');
+        }
     };
 
     // 计算分页信息

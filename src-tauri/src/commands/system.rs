@@ -333,3 +333,61 @@ pub async fn write_file(path: String, content: String) -> Result<(), String> {
         }
     }
 }
+
+/// 写入二进制文件 (base64 编码)
+#[tauri::command]
+pub async fn write_binary_file(path: String, data: String) -> Result<(), String> {
+    debug!("写入二进制文件: {}", path);
+    
+    // 解码 base64 数据
+    use base64::{Engine as _, engine::general_purpose};
+    let binary_data = general_purpose::STANDARD.decode(&data).map_err(|e| {
+        error!("Base64 解码失败: {}", e);
+        format!("数据格式错误: {}", e)
+    })?;
+    
+    // 确保目录存在
+    if let Some(parent) = Path::new(&path).parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                error!("创建目录失败: {}: {}", parent.display(), e);
+                format!("创建目录失败: {}", e)
+            })?;
+        }
+    }
+    
+    match std::fs::write(&path, binary_data) {
+        Ok(_) => {
+            info!("成功写入二进制文件: {}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("写入二进制文件失败: {}: {}", path, e);
+            Err(format!("写入文件失败: {}", e))
+        }
+    }
+}
+
+/// 获取用户下载目录
+#[tauri::command]
+pub async fn get_downloads_dir() -> Result<String, String> {
+    debug!("获取下载目录");
+    
+    match dirs::download_dir() {
+        Some(dir) => {
+            let path = dir.to_string_lossy().to_string();
+            info!("下载目录: {}", path);
+            Ok(path)
+        }
+        None => {
+            let fallback = dirs::home_dir()
+                .map(|p| p.join("Downloads"))
+                .or_else(|| dirs::desktop_dir())
+                .unwrap_or_else(|| std::path::PathBuf::from("."));
+            
+            let path = fallback.to_string_lossy().to_string();
+            info!("使用备用下载目录: {}", path);
+            Ok(path)
+        }
+    }
+}

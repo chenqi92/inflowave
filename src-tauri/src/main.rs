@@ -598,6 +598,8 @@ async fn main() {
             save_file_dialog,
             read_file,
             write_file,
+            write_binary_file,
+            get_downloads_dir,
 
             // Data write operations
             write_data,
