@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Server, ServerOff, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { embeddedServerService, type ServerConfig } from '@/services/embeddedServer';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
+import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
 
 export interface EmbeddedServerStatusProps {
