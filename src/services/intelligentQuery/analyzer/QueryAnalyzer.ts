@@ -158,8 +158,8 @@ export interface ResourceUtilization {
 }
 
 export interface TimeRange {
-  start: Date;
-  end: Date;
+  start: string;
+  end: string;
 }
 
 /**

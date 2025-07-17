@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { Modal } from '@/utils/modalAdapter';
+import { dialog } from '@/utils/dialog';
 
 interface DatabaseContextMenuProps {
   children: React.ReactNode;
@@ -57,22 +57,18 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             );
 
             // 显示创建模板
-            Modal.info({
+            await dialog.info({
               title: `创建 Measurement - ${databaseName}`,
-              width: 800,
-              closable: true,
-              keyboard: true,
-              maskClosable: true,
               content: (
-                <div>
-                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto whitespace-pre-wrap'>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>
+                    创建 Measurement 模板：
+                  </p>
+                  <pre className='bg-muted/50 p-4 rounded-md max-h-96 overflow-auto whitespace-pre-wrap text-xs font-mono border'>
                     {template}
                   </pre>
                 </div>
               ),
-              onOk: () => {
-                // 确保能正常关闭
-              },
             });
             showMessage.success(
               `已生成数据库 ${databaseName} 的 measurement 创建模板`
@@ -105,22 +101,18 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
             });
 
             // 显示数据库信息
-            Modal.info({
+            await dialog.info({
               title: `数据库信息 - ${databaseName}`,
-              width: 800,
-              closable: true,
-              keyboard: true,
-              maskClosable: true,
               content: (
-                <div>
-                  <pre className='bg-muted p-4 rounded max-h-96 overflow-auto'>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>
+                    数据库详细信息：
+                  </p>
+                  <pre className='bg-muted/50 p-4 rounded-md max-h-96 overflow-auto text-xs font-mono border'>
                     {JSON.stringify(info, null, 2)}
                   </pre>
                 </div>
               ),
-              onOk: () => {
-                // 确保能正常关闭
-              },
             });
             showMessage.success(`已获取数据库 ${databaseName} 的详细信息`);
           } catch (error) {

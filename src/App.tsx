@@ -22,7 +22,7 @@ import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
 // UI 组件导入
 import { Text, Spin, Layout, Content, Toaster } from '@/components/ui';
-import { ModalAdapter } from '@/utils/modalAdapter';
+import { DialogManager } from '@/utils/dialog';
 
 // 主布局组件
 const MainLayout: React.FC = () => {
@@ -222,7 +222,7 @@ const App: React.FC = () => {
     <DialogProvider>
       <ErrorBoundary>
         <MainLayout />
-        <ModalAdapter />
+        <DialogManager />
         <Toaster />
       </ErrorBoundary>
     </DialogProvider>

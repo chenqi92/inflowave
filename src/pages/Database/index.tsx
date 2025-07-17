@@ -52,7 +52,7 @@ import {
   Edit,
   AlertCircle,
 } from 'lucide-react';
-import { Modal } from '@/utils/modalAdapter';
+import { dialog } from '@/utils/dialog';
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';

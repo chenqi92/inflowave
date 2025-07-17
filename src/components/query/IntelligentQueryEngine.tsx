@@ -75,7 +75,7 @@ import {
 import { showMessage } from '@/utils/message';
 import Editor from '@monaco-editor/react';
 import { useTheme } from '@/components/providers/ThemeProvider';
-import { Modal } from '@utils/modalAdapter.tsx';
+import { dialog } from '@/utils/dialog';
 
 const { Text, Paragraph } = Typography;
 
@@ -779,22 +779,35 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  Modal.info({
+                  dialog.info({
                     title: '智能查询优化引擎',
                     content: (
-                      <div>
-                        <p>智能查询优化引擎提供以下功能：</p>
-                        <ul>
-                          <li>🚀 智能查询优化</li>
-                          <li>📊 性能预测分析</li>
-                          <li>🔄 智能路由分配</li>
-                          <li>💾 自适应缓存</li>
-                          <li>📈 实时性能监控</li>
-                          <li>🎯 个性化建议</li>
+                      <div className='space-y-3'>
+                        <p className='text-sm text-muted-foreground'>
+                          智能查询优化引擎提供以下功能：
+                        </p>
+                        <ul className='space-y-1 text-sm'>
+                          <li className='flex items-center gap-2'>
+                            <span>🚀</span> 智能查询优化
+                          </li>
+                          <li className='flex items-center gap-2'>
+                            <span>📊</span> 性能预测分析
+                          </li>
+                          <li className='flex items-center gap-2'>
+                            <span>🔄</span> 智能路由分配
+                          </li>
+                          <li className='flex items-center gap-2'>
+                            <span>💾</span> 自适应缓存
+                          </li>
+                          <li className='flex items-center gap-2'>
+                            <span>📈</span> 实时性能监控
+                          </li>
+                          <li className='flex items-center gap-2'>
+                            <span>🎯</span> 个性化建议
+                          </li>
                         </ul>
                       </div>
                     ),
-                    width: 800,
                   });
                 }}
                 className="flex items-center gap-2"
