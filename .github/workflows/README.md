@@ -1,143 +1,123 @@
-# GitHub Actions 工作流说明
+# GitHub Actions Workflows 说明
 
-本目录包含了项目的 GitHub Actions 自动化工作流配置。
+## 📋 Workflow 列表
 
-## 📋 工作流列表
+### 1. `build.yml` - 单版本构建（默认）
+**自动触发**：推送标签时自动运行
+- ✅ **推送 `v*` 标签时自动构建**
+- ✅ **默认构建标准版（纯 Tauri 模式）**
+- ✅ **可手动选择服务器模式**
+- ✅ **包含 PR 测试**
 
-### 🚀 `release.yml` - 自动发布工作流
+### 2. `dual-build.yml` - 双版本构建（手动）
+**手动触发**：需要手动运行
+- 🔧 **仅手动触发**
+- 🔧 **同时构建两个版本**
+- 🔧 **可选择是否创建 Release**
 
-**触发条件**:
+## 🚀 使用方式
 
-- 当 `package.json` 文件发生变化并推送到 `main` 或 `master` 分支时
-- 手动触发 (`workflow_dispatch`)
+### 常规发布（推荐）
+1. 创建并推送标签：
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+2. 自动构建**标准版**并发布到 GitHub Releases
 
-**功能**:
+### 手动构建双版本
+1. 进入 GitHub 仓库
+2. 点击 **Actions** 标签
+3. 选择 **"Dual Mode Build"**
+4. 点击 **"Run workflow"**
+5. 填写参数：
+   - **Tag name**: `v1.0.0`
+   - **Create GitHub release**: `true` (是否创建发布)
 
-1. **版本检查** - 读取 package.json 中的版本并检查对应的 Git tag 是否已存在
-2. **创建标签** - 如果版本不存在，自动创建 Git tag
-3. **多平台构建** - 并行构建 Windows、macOS、Linux 版本
-4. **自动发布** - 创建 GitHub Release 并上传安装包
+### 手动构建单版本（服务器模式）
+1. 进入 GitHub 仓库
+2. 点击 **Actions** 标签
+3. 选择 **"Build and Release (Single Mode)"**
+4. 点击 **"Run workflow"**
+5. 选择 **Enable embedded server mode**: `true`
 
-**构建产物**:
+## 📦 构建结果
 
-- **Windows**: `.msi` 安装程序
-- **macOS**: `.dmg` 磁盘映像 (Universal Binary)
-- **Linux**: `.deb` 和 `.AppImage` 包
+### 标准版构建
+```
+Release: InfloWave v1.0.0 (Standard)
+├── InfloWave_1.0.0_x64.msi           # Windows
+├── InfloWave_1.0.0_universal.dmg     # macOS
+└── inflowave_1.0.0_amd64.deb         # Linux
+```
 
-### 🧪 `test-release.yml` - 测试工作流
+### 双版本构建
+```
+Release 1: InfloWave v1.0.0 (Standard)
+├── InfloWave_1.0.0_x64.msi
+├── InfloWave_1.0.0_universal.dmg
+└── inflowave_1.0.0_amd64.deb
 
-**触发条件**:
-
-- 手动触发，用于测试发布流程
-
-**功能**:
-
-- 测试版本读取和标签检查逻辑
-- 验证构建环境配置
-- 检查项目结构完整性
-
-### 🔨 `build.yml` - 构建工作流 (已存在)
-
-**触发条件**:
-
-- 推送标签时 (`v*`)
-- Pull Request 到 main 分支
-- 手动触发
-
-**功能**:
-
-- 基础的构建和测试流程
-
-## 🔧 使用方法
-
-### 自动发布新版本
-
-1. **更新版本号**:
-
-   ```powershell
-   # Windows
-   .\scripts\update-version.ps1 -Version "1.0.1"
-
-   # Linux/macOS
-   ./scripts/update-version.sh 1.0.1
-   ```
-
-2. **提交并推送**:
-
-   ```bash
-   git add .
-   git commit -m "chore: bump version to 1.0.1"
-   git push origin main
-   ```
-
-3. **自动化流程**:
-   - GitHub Actions 检测到 package.json 文件变化
-   - 自动创建 `v1.0.1` 标签
-   - 并行构建所有平台的安装包
-   - 创建 GitHub Release 并上传文件
-
-### 测试发布流程
-
-1. 访问 GitHub 仓库的 **Actions** 标签页
-2. 选择 **Test Release Workflow**
-3. 点击 **Run workflow**
-4. 输入测试版本号（如 `1.0.0-test`）
-5. 运行测试以验证配置
-
-### 手动触发发布
-
-1. 访问 GitHub 仓库的 **Actions** 标签页
-2. 选择 **Auto Release**
-3. 点击 **Run workflow**
-4. 选择分支并运行
+Release 2: InfloWave v1.0.0 (Server Mode)
+├── InfloWave_1.0.0-server_x64.msi
+├── InfloWave_1.0.0-server_universal.dmg
+└── inflowave_1.0.0-server_amd64.deb
+```
 
 ## ⚙️ 配置说明
 
-### 环境要求
+### 默认行为
+- **推送标签** → 自动构建标准版
+- **Pull Request** → 运行测试（不发布）
+- **手动触发** → 可选择构建模式
 
-工作流会自动安装以下依赖：
+### 构建模式对比
 
-- **Node.js**: LTS 版本
-- **Rust**: 最新稳定版
-- **系统依赖**: 各平台构建所需的系统库
+| 特性 | 标准版 | 服务器版 |
+|------|--------|----------|
+| 端口使用 | 无 | 1422-1500 |
+| 通信方式 | IPC | IPC + HTTP |
+| 性能 | 最优 | 良好 |
+| 安全性 | 最高 | 高 |
+| 体积 | 最小 | 稍大 |
+| API 支持 | 无 | ✅ |
+| 调试工具 | 基础 | 增强 |
 
-### 权限配置
+## 🎯 推荐策略
 
-确保仓库设置中启用了以下权限：
+### 面向普通用户
+- 使用默认的自动构建（标准版）
+- 简单、安全、无端口问题
 
-- **Actions**: 读写权限
-- **Contents**: 读写权限 (用于创建 release)
-- **Metadata**: 读权限
+### 面向开发者/高级用户
+- 需要时手动触发双版本构建
+- 提供选择余地
 
-### 密钥配置
+### 企业/特殊需求
+- 修改 `build.yml` 中的默认环境变量
+- 或创建自定义 workflow
 
-工作流使用 `GITHUB_TOKEN`，这是 GitHub 自动提供的，无需额外配置。
+## 🔄 修改默认行为
 
-## 🐛 故障排除
+### 改为默认构建服务器版
+编辑 `build.yml` 第 82 行：
+```yaml
+ENABLE_EMBEDDED_SERVER: true  # 改为 true
+```
 
-### 常见问题
+### 启用自动双版本构建
+编辑 `dual-build.yml` 第 3-4 行：
+```yaml
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+```
 
-1. **构建失败**:
-   - 检查 Actions 日志中的错误信息
-   - 确认代码可以在本地正常构建
-   - 验证依赖项配置是否正确
+## ✅ 当前配置总结
 
-2. **版本冲突**:
-   - 确认版本号未被使用过
-   - 检查是否存在同名的 Git tag
-   - 删除冲突的 tag 后重新运行
-
-3. **权限错误**:
-   - 检查仓库的 Actions 权限设置
-   - 确认 GITHUB_TOKEN 有足够权限
-
-### 调试方法
-
-1. **查看日志**: 在 Actions 页面查看详细的构建日志
-2. **本地测试**: 使用相同的命令在本地环境测试
-3. **测试工作流**: 使用 `test-release.yml` 验证配置
-
-## 📚 相关文档
-
-- [发布指南](../../RELEASE_GUIDE.md) - 详细的版本发布流程
-- [Tauri 文档](https://tauri.app/v1/guides/building/) - Tauri 构建指南
+- ✅ **默认安全**：自动构建标准版，无端口冲突
+- ✅ **灵活选择**：需要时可手动构建服务器版
+- ✅ **双版本可选**：高级用户可构建两个版本
+- ✅ **测试完整**：包含端口冲突测试

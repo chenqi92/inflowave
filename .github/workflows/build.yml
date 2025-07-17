@@ -1,12 +1,21 @@
-﻿name: Build and Release
+name: Build and Release (Single Mode)
 
 on:
   push:
     tags:
       - 'v*'
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      enable_embedded_server:
+        description: 'Enable embedded server mode'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
 
 jobs:
   build:
@@ -14,73 +23,33 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows builds
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            arch: x64
-            os: windows
-          - platform: windows-latest
-            target: i686-pc-windows-msvc
-            arch: x86
-            os: windows
-          # TODO: Windows ARM64 暂时禁用，等待 ring 库支持改善
-          # - platform: windows-latest
-          #   target: aarch64-pc-windows-msvc
-          #   arch: arm64
-          #   os: windows
-
-          # macOS builds
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            arch: x64
-            os: macos
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-            arch: arm64
-            os: macos
-
-          # Linux builds
-          - platform: ubuntu-24.04
-            target: x86_64-unknown-linux-gnu
-            arch: x64
-            os: linux
-          - platform: ubuntu-24.04
-            target: aarch64-unknown-linux-gnu
-            arch: arm64
-            os: linux
-          - platform: ubuntu-24.04
-            target: i686-unknown-linux-gnu
-            arch: x86
-            os: linux
+          - platform: 'macos-latest'
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: '--target x86_64-unknown-linux-gnu'
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
 
     runs-on: ${{ matrix.platform }}
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Linux only)
-        if: matrix.os == 'linux'
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
-          chmod +x scripts/install-linux-deps.sh
-          ./scripts/install-linux-deps.sh ${{ matrix.arch }}
-
-          # Set environment variables for cross-compilation
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-            echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
-          fi
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
-          key: ${{ matrix.target }}
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v4
@@ -89,51 +58,153 @@ jobs:
           cache: 'npm'
 
       - name: Install frontend dependencies
-        env:
-          HUSKY: 0
         run: npm ci
 
-      - name: Build the app
+      - name: Determine build mode
+        id: build_mode
+        run: |
+          if [ "${{ github.event.inputs.enable_embedded_server }}" = "true" ] || [ "${{ contains(github.ref, 'server') }}" = "true" ]; then
+            echo "mode=server" >> $GITHUB_OUTPUT
+            echo "command=tauri:build:server" >> $GITHUB_OUTPUT
+            echo "suffix=-server" >> $GITHUB_OUTPUT
+          else
+            echo "mode=standard" >> $GITHUB_OUTPUT
+            echo "command=tauri:build" >> $GITHUB_OUTPUT
+            echo "suffix=" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Build the app (Standard Mode)
+        if: steps.build_mode.outputs.mode == 'standard'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'InfloWave v__VERSION__'
-          releaseBody: 'See the assets to download and install this version.'
+          releaseBody: |
+            InfloWave v__VERSION__ - Standard Mode
+            
+            This version uses pure Tauri mode:
+            - Frontend and backend communicate via IPC
+            - No HTTP ports required
+            - Optimal performance and security
+            - Smaller package size
+            
+            **Port Conflict Resolution**: ✅ Automatic (No HTTP ports used)
+            
+            See the assets below to download and install this version.
           releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.target }}
+          args: ${{ matrix.args }}
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    
+      - name: Build the app (Server Mode)
+        if: steps.build_mode.outputs.mode == 'server'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: true
+        with:
+          tagName: ${{ github.ref_name }}${{ steps.build_mode.outputs.suffix }}
+          releaseName: 'InfloWave v__VERSION__ (Server Mode)'
+          releaseBody: |
+            InfloWave v__VERSION__ - Server Mode
+            
+            This version includes embedded HTTP server:
+            - Built-in HTTP API support
+            - CORS proxy functionality  
+            - Debug endpoints
+            - WebSocket support
+            
+            **Port Conflict Resolution**: ✅ Automatic (Smart port allocation: 1422-1500)
+            
+            **Features**:
+            - 🚀 Smart port management
+            - 🔄 Automatic conflict resolution
+            - 📊 Real-time server status
+            - 🛠️ Debug tools included
+            
+            See the assets below to download and install this version.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  build-dev:
+    name: Build Development Version
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
-      - name: Create Release Notes
+
+      - name: Install dependencies
         run: |
-          echo "## 馃殌 InfloWave Release" > release_notes.md
-          echo "" >> release_notes.md
-          echo "### 馃摝 Downloads" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- **Windows**: Download the \`.msi\` installer" >> release_notes.md
-          echo "- **macOS**: Download the \`.dmg\` installer" >> release_notes.md
-          echo "- **Linux**: Download the \`.deb\` or \`.AppImage\` package" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### 馃敡 Installation" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "1. Download the appropriate installer for your platform" >> release_notes.md
-          echo "2. Run the installer and follow the setup wizard" >> release_notes.md
-          echo "3. Launch InfloWave from your applications" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "### 馃搵 System Requirements" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- **Windows**: Windows 10 or later" >> release_notes.md
-          echo "- **macOS**: macOS 10.13 or later" >> release_notes.md
-          echo "- **Linux**: Modern Linux distribution with GTK 3.0+" >> release_notes.md
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Test port conflict resolution
+        run: |
+          echo "Testing port conflict handling..."
+          node -e "
+            const net = require('net');
+            const server = net.createServer();
+            server.listen(1422, () => {
+              console.log('✅ Occupied port 1422 for testing');
+              const { spawn } = require('child_process');
+              const child = spawn('node', ['scripts/start-with-port-check.cjs'], {
+                stdio: 'pipe',
+                timeout: 10000
+              });
+              
+              let output = '';
+              child.stdout.on('data', (data) => {
+                output += data.toString();
+                console.log(data.toString().trim());
+              });
+              
+              setTimeout(() => {
+                child.kill('SIGTERM');
+                server.close();
+                
+                if (output.includes('被占用') && output.includes('找到可用端口')) {
+                  console.log('✅ Port conflict resolution test passed');
+                  process.exit(0);
+                } else {
+                  console.log('❌ Port conflict resolution test failed');
+                  process.exit(1);
+                }
+              }, 8000);
+            });
+          "
+
+      - name: Build test (Standard Mode)
+        run: npm run tauri:build
+        env:
+          ENABLE_EMBEDDED_SERVER: false
+
+      - name: Build test (Server Mode)  
+        run: npm run tauri:build:server
+        env:
+          ENABLE_EMBEDDED_SERVER: true

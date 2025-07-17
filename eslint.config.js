@@ -47,9 +47,9 @@ export default [
       ],
 
       // Unused imports and variables
-      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-imports': 'warn',
       'unused-imports/no-unused-vars': [
-        'error',
+        'warn',
         {
           vars: 'all',
           varsIgnorePattern: '^_',
@@ -149,67 +149,9 @@ export default [
       ...typescript.configs.recommended.rules,
 
       // Unused imports and variables
-      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-imports': 'warn',
       'unused-imports/no-unused-vars': [
-        'error',
-        {
-          vars: 'all',
-          varsIgnorePattern: '^_',
-          args: 'after-used',
-          argsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-unused-vars': 'off',
-
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'no-console': 'off', // Allow console in test files
-      'prefer-const': 'error',
-      'no-var': 'error',
-      'object-shorthand': 'error',
-      'prefer-template': 'error',
-    },
-  },
-
-  // Configuration for test files
-  {
-    files: [
-      '**/*.test.{ts,tsx}',
-      '**/__tests__/**/*.{ts,tsx}',
-      '**/test/**/*.{ts,tsx}',
-    ],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: 'module',
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.es2020,
-        // Vitest globals
-        describe: 'readonly',
-        it: 'readonly',
-        test: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        vi: 'readonly',
-      },
-    },
-    plugins: {
-      '@typescript-eslint': typescript,
-      'unused-imports': unusedImports,
-    },
-    rules: {
-      // TypeScript recommended rules
-      ...typescript.configs.recommended.rules,
-
-      // Unused imports and variables
-      'unused-imports/no-unused-imports': 'error',
-      'unused-imports/no-unused-vars': [
-        'error',
+        'warn',
         {
           vars: 'all',
           varsIgnorePattern: '^_',

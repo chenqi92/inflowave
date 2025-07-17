@@ -1,0 +1,136 @@
+name: Dual Mode Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (e.g., v1.0.0)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build-standard:
+    name: Build Standard Mode
+    strategy:
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: '--target x86_64-unknown-linux-gnu'
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+        with:
+          tagName: ${{ inputs.tag_name }}
+          releaseName: 'InfloWave ${{ inputs.tag_name }} (Standard)'
+          releaseBody: |
+            ## InfloWave v__VERSION__ - Standard Mode
+            
+            **🚀 Pure Tauri Mode - Recommended for most users**
+            
+            ✅ **No port conflicts** - Uses IPC communication  
+            ✅ **Optimal performance** - Direct native communication  
+            ✅ **Enhanced security** - No network exposure  
+            ✅ **Smaller size** - Minimal dependencies  
+            
+            Perfect for standalone desktop usage.
+          releaseDraft: ${{ inputs.create_release }}
+          prerelease: false
+          includeRelease: ${{ inputs.create_release }}
+          args: ${{ matrix.args }}
+
+  build-server:
+    name: Build Server Mode
+    strategy:
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: '--target x86_64-unknown-linux-gnu'
+          - platform: 'windows-latest'
+            args: '--target x86_64-pc-windows-msvc'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: true
+        with:
+          tagName: ${{ inputs.tag_name }}-server
+          releaseName: 'InfloWave ${{ inputs.tag_name }} (Server Mode)'
+          releaseBody: |
+            ## InfloWave v__VERSION__ - Server Mode
+            
+            **🌐 Enhanced Edition with HTTP Server**
+            
+            ✅ **Smart port management** - Auto-resolves conflicts (1422-1500)  
+            ✅ **HTTP API support** - RESTful endpoints  
+            ✅ **CORS proxy** - Cross-origin requests  
+            ✅ **Debug tools** - Development utilities  
+            ✅ **WebSocket support** - Real-time communication  
+            
+            Ideal for advanced users and integrations.
+          releaseDraft: ${{ inputs.create_release }}
+          prerelease: false
+          includeRelease: ${{ inputs.create_release }}
+          args: ${{ matrix.args }}
