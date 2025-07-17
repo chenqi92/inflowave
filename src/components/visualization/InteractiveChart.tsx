@@ -27,31 +27,7 @@ import {
 import * as echarts from 'echarts';
 import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
-import type { QueryResult } from '@/types';
-
-// 定义图表配置接口
-interface ChartConfig {
-  type: 'line' | 'bar' | 'area' | 'pie' | 'scatter';
-  title: string;
-  xAxis: {
-    field: string;
-    type?: 'category' | 'value' | 'time';
-  };
-  yAxis: {
-    field: string;
-    type?: 'value' | 'category';
-  };
-  settings?: {
-    theme?: string;
-    showGrid?: boolean;
-    showLegend?: boolean;
-    showTooltip?: boolean;
-    animation?: boolean;
-    smooth?: boolean;
-    showDataLabels?: boolean;
-    colors?: string[];
-  };
-}
+import type { QueryResult, ChartConfig } from '@/types';
 
 interface InteractiveChartProps {
   config: ChartConfig;
@@ -455,8 +431,8 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
   };
 
   // 获取列索引
-  const xAxisIndex = series.columns.indexOf(xAxis.field);
-  const yAxisIndex = series.columns.indexOf(yAxis.field);
+  const xAxisIndex = series.columns.indexOf(xAxis?.field || '');
+  const yAxisIndex = series.columns.indexOf(yAxis?.field || '');
 
   if (xAxisIndex === -1 || yAxisIndex === -1) {
     return baseOption;
@@ -474,12 +450,12 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         },
         yAxis: {
           type: 'value',
-          name: yAxis.field,
+          name: yAxis?.field || 'Value',
         },
         series: [
           {
-            name: yAxis.field,
-            type: 'line',
+            name: yAxis?.field || 'Value',
+            type: type === 'area' ? 'line' : 'line',
             data: series.values?.map(row => row[yAxisIndex]),
             smooth: settings?.smooth || false,
             areaStyle: type === 'area' ? { opacity: 0.3 } : undefined,
@@ -499,11 +475,11 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         },
         yAxis: {
           type: 'value',
-          name: yAxis.field,
+          name: yAxis?.field || 'Value',
         },
         series: [
           {
-            name: yAxis.field,
+            name: yAxis?.field || 'Value',
             type: 'bar',
             data: series.values?.map(row => row[yAxisIndex]),
             label: {
@@ -544,15 +520,15 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         ...baseOption,
         xAxis: {
           type: 'value',
-          name: xAxis.field,
+          name: xAxis?.field || 'X',
         },
         yAxis: {
           type: 'value',
-          name: yAxis.field,
+          name: yAxis?.field || 'Y',
         },
         series: [
           {
-            name: `${xAxis.field} vs ${yAxis.field}`,
+            name: `${xAxis?.field || 'X'} vs ${yAxis?.field || 'Y'}`,
             type: 'scatter',
             data: series.values?.map(row => [row[xAxisIndex], row[yAxisIndex]]),
             symbolSize: 8,

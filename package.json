@@ -46,6 +46,7 @@
     "prepare": "node scripts/prepare.js"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
     "@hookform/resolvers": "^5.1.1",
     "@influxdata/influxdb-client": "^1.35.0",
     "@monaco-editor/react": "^4.6.0",

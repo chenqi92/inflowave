@@ -1,5 +1,5 @@
-import { useForm } from 'react-hook-form';
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   Button,
   Form,
@@ -54,7 +54,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useVisualizationStore } from '@/store/visualization';
 import { InteractiveChart } from './InteractiveChart';
-import type { Dashboard, ChartConfig, QueryResult } from '@/types';
+import type { Dashboard, ChartConfig, QueryResult, GridItem } from '@/types';
 
 interface DashboardBuilderProps {
   dashboard?: Dashboard;
@@ -65,15 +65,6 @@ interface DashboardBuilderProps {
   className?: string;
 }
 
-interface GridItem {
-  id: string;
-  chartId: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   dashboard,
   onSave,
@@ -82,8 +73,11 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   chartData = {},
   className,
 }) => {
-  const [currentDashboard, setCurrentDashboard] = useState<Partial<Dashboard>>(
-    dashboard || {
+  const [currentDashboard, setCurrentDashboard] = useState<Dashboard>(() => {
+    if (dashboard) {
+      return dashboard;
+    }
+    return {
       id: '',
       name: '新仪表板',
       description: '',
@@ -96,32 +90,39 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         showGrid: true,
         gridSize: 12,
       },
-    }
-  );
+    };
+  });
 
-  const [gridItems, setGridItems] = useState<GridItem[]>(
-    dashboard?.layout || []
-  );
+  const [gridItems, setGridItems] = useState<GridItem[]>(() => {
+    return dashboard?.layout || [];
+  });
   const [selectedChart, setSelectedChart] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(true);
   const [showChartModal, setShowChartModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [draggedItem, setDraggedItem] = useState<GridItem | null>(null);
 
-  const { createDashboard, updateDashboard, getCharts } =
-    useVisualizationStore();
+  const { createDashboard, updateDashboard } = useVisualizationStore();
+
+  // 清理selectedChart状态
+  React.useEffect(() => {
+    if (selectedChart) {
+      // TODO: 实现图表编辑逻辑
+      // console.log('当前选中的图表:', selectedChart);
+    }
+  }, [selectedChart]);
 
   const form = useForm({
     defaultValues: {
-      name: currentDashboard.name || '新仪表板',
+      name: currentDashboard.name,
       description: currentDashboard.description || '',
       settings: {
         theme: currentDashboard.settings?.theme || 'default',
         gridSize: currentDashboard.settings?.gridSize || 12,
         refreshInterval: currentDashboard.settings?.refreshInterval || 30,
         autoRefresh: currentDashboard.settings?.autoRefresh || false,
-        showHeader: currentDashboard.settings?.showHeader || true,
-        showGrid: currentDashboard.settings?.showGrid || true,
+        showHeader: currentDashboard.settings?.showHeader !== false,
+        showGrid: currentDashboard.settings?.showGrid !== false,
       },
     },
   });
@@ -151,17 +152,18 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     setGridItems(gridItems.filter(item => item.id !== itemId));
   };
 
-  const handleResizeChart = (itemId: string, w: number, h: number) => {
-    setGridItems(
-      gridItems.map(item => (item.id === itemId ? { ...item, w, h } : item))
-    );
-  };
+  // 这些函数暂时保留，可能在未来的拖拽调整功能中使用
+  // const handleResizeChart = (itemId: string, w: number, h: number) => {
+  //   setGridItems(
+  //     gridItems.map(item => (item.id === itemId ? { ...item, w, h } : item))
+  //   );
+  // };
 
-  const handleMoveChart = (itemId: string, x: number, y: number) => {
-    setGridItems(
-      gridItems.map(item => (item.id === itemId ? { ...item, x, y } : item))
-    );
-  };
+  // const handleMoveChart = (itemId: string, x: number, y: number) => {
+  //   setGridItems(
+  //     gridItems.map(item => (item.id === itemId ? { ...item, x, y } : item))
+  //   );
+  // };
 
   const getNextAvailablePosition = () => {
     if (gridItems.length === 0) return { x: 0, y: 0 };
@@ -187,16 +189,36 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     try {
       const dashboardData: Dashboard = {
         ...currentDashboard,
-        ...values,
-        id: currentDashboard.id || `dashboard_${Date.now()}`,
+        name: values.name,
+        description: values.description,
         layout: gridItems,
+        settings: {
+          ...currentDashboard.settings,
+          ...values.settings,
+        },
         updatedAt: new Date(),
-      } as Dashboard;
+      };
+
+      // 确保有ID
+      if (!dashboardData.id) {
+        dashboardData.id = `dashboard_${Date.now()}`;
+        dashboardData.createdAt = new Date();
+      }
 
       if (currentDashboard.id) {
-        await updateDashboard(dashboardData);
+        updateDashboard(currentDashboard.id, {
+          name: dashboardData.name,
+          description: dashboardData.description,
+          layout: dashboardData.layout,
+          settings: dashboardData.settings,
+        });
       } else {
-        await createDashboard(dashboardData);
+        createDashboard({
+          name: dashboardData.name,
+          description: dashboardData.description || '',
+          layout: dashboardData.layout,
+          settings: dashboardData.settings,
+        });
       }
 
       setCurrentDashboard(dashboardData);
@@ -210,7 +232,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     const previewData: Dashboard = {
       ...currentDashboard,
       layout: gridItems,
-    } as Dashboard;
+    };
 
     onPreview?.(previewData);
     setIsEditMode(false);
@@ -242,7 +264,11 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                     <Button
                       size='sm'
                       variant='ghost'
-                      onClick={() => setSelectedChart(chart.id)}
+                      onClick={() => {
+                        setSelectedChart(chart.id);
+                        // TODO: 实现图表编辑功能
+                        // console.log('编辑图表:', chart.id);
+                      }}
                     >
                       <Edit className='w-4 h-4' />
                     </Button>
@@ -302,6 +328,13 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         id: item.id,
         data: item,
       });
+
+    // 当开始拖拽时设置draggedItem
+    React.useEffect(() => {
+      if (isDragging) {
+        setDraggedItem(item);
+      }
+    }, [isDragging, item]);
 
     const style = {
       transform: transform

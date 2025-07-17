@@ -190,18 +190,30 @@ export interface ImportError {
 
 // 图表相关类型
 export interface ChartConfig {
-  type: 'line' | 'bar' | 'scatter' | 'area';
+  id: string;
+  type: 'line' | 'bar' | 'scatter' | 'area' | 'pie';
   title: string;
-  xAxis: AxisConfig;
-  yAxis: AxisConfig;
-  series: SeriesConfig[];
-  legend: LegendConfig;
-  tooltip: TooltipConfig;
+  xAxis?: AxisConfig;
+  yAxis?: AxisConfig;
+  series?: SeriesConfig[];
+  legend?: LegendConfig;
+  tooltip?: TooltipConfig;
+  settings?: {
+    theme?: string;
+    showGrid?: boolean;
+    showLegend?: boolean;
+    showTooltip?: boolean;
+    animation?: boolean;
+    smooth?: boolean;
+    showDataLabels?: boolean;
+    colors?: string[];
+  };
 }
 
 export interface AxisConfig {
-  name: string;
-  type: 'category' | 'value' | 'time';
+  name?: string;
+  field?: string;
+  type?: 'category' | 'value' | 'time';
   min?: number | string;
   max?: number | string;
   interval?: number;
@@ -536,14 +548,31 @@ export interface DashboardWidget {
   lastUpdated?: Date;
 }
 
+export interface GridItem {
+  id: string;
+  chartId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface Dashboard {
   id: string;
   name: string;
   description?: string;
-  widgets: DashboardWidget[];
-  layout?: Record<string, unknown>[];
-  createdAt: Date;
-  updatedAt: Date;
+  widgets?: DashboardWidget[];
+  layout?: GridItem[];
+  settings?: {
+    theme?: string;
+    refreshInterval?: number;
+    autoRefresh?: boolean;
+    showHeader?: boolean;
+    showGrid?: boolean;
+    gridSize?: number;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // 性能监控相关类型
