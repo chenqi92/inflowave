@@ -1,9 +1,9 @@
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import {resolve} from 'path';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
+export default defineConfig({
     plugins: [react()],
 
     // 静态资源配置
@@ -49,19 +49,15 @@ export default defineConfig(() => ({
     // 构建配置
     build: {
         // Tauri supports es2021
-        target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
+        target: process.env.TAURI_PLATFORM === 'windows' ? 'chrome105' : 'safari13',
         // don't minify for debug builds
-        minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
+        minify: process.env.TAURI_DEBUG === 'true' ? false : 'esbuild',
         // produce sourcemaps for debug builds
-        sourcemap: !!process.env.TAURI_DEBUG,
-        // 增加构建超时时间
-        timeout: 300000, // 5 minutes
+        sourcemap: process.env.TAURI_DEBUG === 'true',
         // 优化构建性能
         chunkSizeWarningLimit: 1000,
         // 分包策略
         rollupOptions: {
-            // 增加 Rollup 超时时间
-            maxParallelFileOps: 5,
             output: {
                 manualChunks: {
                     vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -83,18 +79,6 @@ export default defineConfig(() => ({
         postcss: './postcss.config.js',
     },
 
-    // 测试配置
-    test: {
-        globals: true,
-        environment: 'jsdom',
-        setupFiles: ['./src/test/setup.ts'],
-        css: true,
-        coverage: {
-            provider: 'v8',
-            reporter: ['text', 'json', 'html'],
-        },
-    },
-
     // 环境变量配置
     envPrefix: ['VITE_', 'TAURI_'],
 
@@ -114,4 +98,4 @@ export default defineConfig(() => ({
         ],
         force: true, // 强制重新构建依赖
     },
-}));
+});
