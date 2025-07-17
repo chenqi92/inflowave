@@ -188,13 +188,22 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
             }
         }
         "save_as" => {
-            let _ = window.emit("menu-action", "save_as");
+            log::info!("发送菜单动作: save_as");
+            if let Err(e) = window.emit("menu-action", "save_as") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "import_data" => {
-            let _ = window.emit("menu-action", "import_data");
+            log::info!("发送菜单动作: import_data");
+            if let Err(e) = window.emit("menu-action", "import_data") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "export_data" => {
-            let _ = window.emit("menu-action", "export_data");
+            log::info!("发送菜单动作: export_data");
+            if let Err(e) = window.emit("menu-action", "export_data") {
+                log::error!("发送菜单事件失败: {}", e);
+            }
         }
         "quit" => {
             std::process::exit(0);

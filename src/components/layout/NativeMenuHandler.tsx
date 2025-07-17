@@ -233,12 +233,17 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   };
 
   const handleMenuAction = (action: string) => {
-    console.log('处理菜单动作:', action);
+    console.log('🎯 处理菜单动作:', action);
+    
+    // 添加动作处理状态跟踪
+    let handled = false;
 
     // 导航动作
     if (action.startsWith('navigate:')) {
       const path = action.replace('navigate:', '');
+      console.log('🧭 导航到:', path);
       navigate(path);
+      handled = true;
       return;
     }
 
@@ -268,26 +273,32 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         } else {
           showMessage.warning('请先建立数据库连接');
         }
+        handled = true;
         break;
 
       case 'open_file':
         handleOpenFile();
+        handled = true;
         break;
 
       case 'save':
         handleSaveFile();
+        handled = true;
         break;
 
       case 'save_as':
         handleSaveAsFile();
+        handled = true;
         break;
 
       case 'import_data':
         handleImportData();
+        handled = true;
         break;
 
       case 'export_data':
         handleExportData();
+        handled = true;
         break;
 
       // 编辑菜单
@@ -501,12 +512,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         showMessage.info('已停止查询');
         break;
 
+      case 'query_history':
       case 'query-history':
         document.dispatchEvent(
           new CustomEvent('show-query-history', { detail: { source: 'menu' } })
         );
         break;
 
+      case 'save_query':
       case 'save-query':
         document.dispatchEvent(
           new CustomEvent('save-query', { detail: { source: 'menu' } })
@@ -658,10 +671,18 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         if (action.startsWith('theme-')) {
           const themeName = action.replace('theme-', '');
           handleThemeChange(themeName);
+          handled = true;
           return;
         }
-        console.log('未处理的菜单动作:', action);
         break;
+    }
+    
+    // 记录未处理的动作
+    if (!handled) {
+      console.warn('⚠️ 未处理的菜单动作:', action);
+      showMessage.warning(`菜单功能 "${action}" 暂未实现`);
+    } else {
+      console.log('✅ 菜单动作处理完成:', action);
     }
   };
 
