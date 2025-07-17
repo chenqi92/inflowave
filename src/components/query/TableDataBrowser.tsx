@@ -24,7 +24,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Spinner,
+  Spin,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/components/ui';
 import {
   RefreshCw,
@@ -328,25 +331,31 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Tooltip content="刷新数据">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadData}
-                  disabled={loading}
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadData}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>刷新数据</TooltipContent>
               </Tooltip>
-              <Tooltip content="导出数据">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportData}
-                  disabled={data.length === 0}
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportData}
+                    disabled={data.length === 0}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>导出数据</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -361,7 +370,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 placeholder="搜索数据..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                onPressEnter={handleSearch}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
                 className="flex-1"
               />
               <Button onClick={handleSearch} disabled={loading}>
@@ -410,7 +423,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <Spinner className="w-6 h-6" />
+            <Spin />
             <span className="ml-2">加载中...</span>
           </div>
         ) : data.length > 0 ? (

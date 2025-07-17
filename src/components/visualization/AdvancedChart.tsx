@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Select,
   SelectContent,
@@ -12,7 +12,6 @@ import {
   CardTitle,
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
   Label,
   Slider,
   Switch,
@@ -26,10 +25,9 @@ import {
   Settings,
   Download,
   Maximize,
-  ChevronDown,
 } from 'lucide-react';
 import * as echarts from 'echarts';
-import type { QueryResult } from '@/types';
+import type { QueryResult, Series } from '@/types';
 
 interface ChartConfig {
   type: 'line' | 'bar' | 'area' | 'pie' | 'scatter' | 'gauge' | 'heatmap';
@@ -107,22 +105,28 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   };
 
   // 处理图表数据
-  const processChartData = () => {
-    if (!data || !data.series || data.series.length === 0) {
+  const processChartData = useCallback(() => {
+    if (!data || !data.results || data.results.length === 0) {
       return null;
     }
 
-    const series = data.series[0];
+    // 获取第一个结果的第一个系列
+    const firstResult = data.results[0];
+    if (!firstResult.series || firstResult.series.length === 0) {
+      return null;
+    }
+
+    const series: Series = firstResult.series[0];
     const timeColumn = series.columns.find(
-      col =>
+      (col: string) =>
         col.toLowerCase().includes('time') ||
         col.toLowerCase().includes('timestamp')
     );
 
     const valueColumns = series.columns.filter(
-      col =>
+      (col: string) =>
         col !== timeColumn &&
-        series.values.some(row => {
+        series.values.some((row: (string | number | boolean | null)[]) => {
           const value = row[series.columns.indexOf(col)];
           return typeof value === 'number' || !isNaN(Number(value));
         })
@@ -130,7 +134,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
 
     if (valueColumns.length === 0) return null;
 
-    const xAxisData = series.values.map(row => {
+    const xAxisData = series.values.map((row: (string | number | boolean | null)[]) => {
       const timeValue = timeColumn
         ? row[series.columns.indexOf(timeColumn)]
         : row[0];
@@ -138,47 +142,97 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         try {
           return new Date(timeValue).toLocaleString();
         } catch {
-          return timeValue;
+          return String(timeValue);
         }
       }
-      return timeValue;
+      // Convert null/undefined to string to satisfy ECharts type requirements
+      return timeValue === null || timeValue === undefined ? '' : String(timeValue);
     });
 
-    const seriesData = valueColumns.map((col, index) => {
+    const seriesData = valueColumns.map((col: string, index: number) => {
       const colIndex = series.columns.indexOf(col);
-      const values = series.values.map(row => {
+      const values = series.values.map((row: (string | number | boolean | null)[]) => {
         const value = row[colIndex];
         return typeof value === 'number' ? value : Number(value) || 0;
       });
 
-      return {
+      // 根据图表类型创建不同的系列配置
+      const baseConfig = {
         name: col,
-        type: config.type === 'area' ? 'line' : config.type,
-        data:
-          config.type === 'pie'
-            ? values.map((value, i) => ({ name: xAxisData[i], value }))
-            : values,
-        smooth:
-          config.smooth && (config.type === 'line' || config.type === 'area'),
-        areaStyle: config.type === 'area' ? {} : undefined,
-        stack: config.stack ? 'total' : undefined,
         itemStyle: {
           color: config.colorScheme[index % config.colorScheme.length],
         },
-        lineStyle:
-          config.type === 'line'
-            ? {
-                width: 2,
-              }
-            : undefined,
       };
+
+      // 根据不同图表类型返回相应的配置
+      switch (config.type) {
+        case 'line':
+          return {
+            ...baseConfig,
+            type: 'line' as const,
+            data: values,
+            smooth: config.smooth,
+            lineStyle: { width: 2 },
+            stack: config.stack ? 'total' : undefined,
+          };
+        case 'area':
+          return {
+            ...baseConfig,
+            type: 'line' as const,
+            data: values,
+            smooth: config.smooth,
+            areaStyle: {},
+            stack: config.stack ? 'total' : undefined,
+          };
+        case 'bar':
+          return {
+            ...baseConfig,
+            type: 'bar' as const,
+            data: values,
+            stack: config.stack ? 'total' : undefined,
+          };
+        case 'pie':
+          return {
+            ...baseConfig,
+            type: 'pie' as const,
+            data: values.map((value: number, i: number) => ({
+              name: String(xAxisData[i]),
+              value
+            })),
+            radius: '50%',
+          };
+        case 'scatter':
+          return {
+            ...baseConfig,
+            type: 'scatter' as const,
+            data: values,
+          };
+        case 'gauge':
+          return {
+            ...baseConfig,
+            type: 'gauge' as const,
+            data: [{ value: values[values.length - 1] || 0, name: col }],
+          };
+        case 'heatmap':
+          return {
+            ...baseConfig,
+            type: 'heatmap' as const,
+            data: values.map((value: number, i: number) => [i, 0, value]),
+          };
+        default:
+          return {
+            ...baseConfig,
+            type: 'line' as const,
+            data: values,
+          };
+      }
     });
 
     return { xAxisData, seriesData };
-  };
+  }, [data, config]);
 
   // 更新图表
-  const updateChart = () => {
+  const updateChart = useCallback(() => {
     if (!chartRef.current || !chartInstance.current) return;
 
     const chartData = processChartData();
@@ -215,7 +269,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
           }
         : undefined,
       grid:
-        config.showGrid && config.type !== 'pie'
+        config.showGrid && config.type !== 'pie' && config.type !== 'gauge'
           ? {
               left: '3%',
               right: '4%',
@@ -226,11 +280,11 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
             }
           : undefined,
       xAxis:
-        config.type !== 'pie'
+        config.type !== 'pie' && config.type !== 'gauge'
           ? {
               type: 'category',
               boundaryGap: config.type === 'bar',
-              data: xAxisData,
+              data: xAxisData as string[],
               axisLabel: {
                 rotate: xAxisData.length > 10 ? 45 : 0,
                 interval: Math.max(0, Math.floor(xAxisData.length / 20)),
@@ -238,7 +292,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
             }
           : undefined,
       yAxis:
-        config.type !== 'pie'
+        config.type !== 'pie' && config.type !== 'gauge'
           ? {
               type: 'value',
               splitLine: {
@@ -247,7 +301,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
             }
           : undefined,
       dataZoom:
-        config.showDataZoom && config.type !== 'pie'
+        config.showDataZoom && config.type !== 'pie' && config.type !== 'gauge'
           ? [
               {
                 type: 'inside',
@@ -270,20 +324,18 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
               },
             ]
           : undefined,
-      series: seriesData,
+      series: seriesData as any,
       animation: config.animation,
       animationDuration: config.animationDuration,
       backgroundColor: 'transparent',
     };
 
-    // 特殊处理饼图
-    if (config.type === 'pie') {
+    // 特殊处理饼图 - 添加额外的样式配置
+    if (config.type === 'pie' && seriesData.length > 0) {
+      const pieData = seriesData[0] as any;
       option.series = [
         {
-          name: seriesData[0]?.name || 'Data',
-          type: 'pie',
-          radius: '50%',
-          data: seriesData[0]?.data || [],
+          ...pieData,
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
@@ -300,7 +352,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     }
 
     chartInstance.current.setOption(option, true);
-  };
+  }, [processChartData, config]);
 
   // 初始化图表
   useEffect(() => {
@@ -321,7 +373,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [data, config]);
+  }, [data, config, updateChart]);
 
   // 清理图表实例
   useEffect(() => {
@@ -411,7 +463,9 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Label className="text-sm font-medium">图表类型</Label>
                 <Select
                   value={config.type}
-                  onValueChange={value => updateConfig({ type: value })}
+                  onValueChange={(value: string) => updateConfig({
+                    type: value as 'line' | 'bar' | 'area' | 'pie' | 'scatter' | 'gauge' | 'heatmap'
+                  })}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="选择图表类型" />
@@ -454,7 +508,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                 <Label className="text-sm font-medium">颜色方案</Label>
                 <Select
                   value="default"
-                  onValueChange={value =>
+                  onValueChange={(value: string) =>
                     updateConfig({
                       colorScheme:
                         colorSchemes[value as keyof typeof colorSchemes],
@@ -479,8 +533,8 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                   min={0}
                   max={3000}
                   value={[config.animationDuration]}
-                  onValueChange={([value]) =>
-                    updateConfig({ animationDuration: value })
+                  onValueChange={(values: number[]) =>
+                    updateConfig({ animationDuration: values[0] })
                   }
                   className="w-full"
                 />
@@ -492,7 +546,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                     <Switch
                       id="show-legend"
                       checked={config.showLegend}
-                      onCheckedChange={checked =>
+                      onCheckedChange={(checked: boolean) =>
                         updateConfig({ showLegend: checked })
                       }
                     />
@@ -502,7 +556,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                     <Switch
                       id="show-grid"
                       checked={config.showGrid}
-                      onCheckedChange={checked =>
+                      onCheckedChange={(checked: boolean) =>
                         updateConfig({ showGrid: checked })
                       }
                     />
@@ -512,7 +566,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
                     <Switch
                       id="smooth-curve"
                       checked={config.smooth}
-                      onCheckedChange={checked => updateConfig({ smooth: checked })}
+                      onCheckedChange={(checked: boolean) => updateConfig({ smooth: checked })}
                     />
                     <Label htmlFor="smooth-curve" className="text-sm">平滑曲线</Label>
                   </div>

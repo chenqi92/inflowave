@@ -81,7 +81,6 @@ case 'get_database_info':
 ## 相关文件
 
 - `src/utils/tauri.ts` - 主要修复文件
-- `src/components/database/DatabaseBrowser.tsx` - 可能受影响的组件
 - `src/pages/Database/index.tsx` - 数据库页面组件
 - `src/components/database/DatabaseManager.tsx` - 数据库管理组件
 

@@ -45,7 +45,7 @@ interface MainToolbarProps {
 
 const MainToolbar: React.FC<MainToolbarProps> = ({
   onViewChange,
-  currentView = 'query',
+  currentView = 'datasource', // 软件启动时默认选中数据源按钮
   currentTimeRange,
   onTimeRangeChange,
 }) => {

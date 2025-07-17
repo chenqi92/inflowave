@@ -45,18 +45,40 @@ impl InfluxClient {
 
         debug!("测试连接: {}:{}", self.config.host, self.config.port);
 
-        // 执行简单的查询来测试连接
+        // 首先检查端口是否可达
+        let url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        // 先进行HTTP健康检查
+        match self.http_client.get(&format!("{}/ping", url)).send().await {
+            Ok(response) => {
+                debug!("HTTP ping响应状态: {}", response.status());
+                if !response.status().is_success() {
+                    return Err(anyhow::anyhow!("服务器响应错误: {}", response.status()));
+                }
+            }
+            Err(e) => {
+                error!("HTTP ping失败: {}", e);
+                return Err(anyhow::anyhow!("无法连接到服务器: {}", e));
+            }
+        }
+
+        // 执行简单的查询来测试InfluxDB连接
         let query = influxdb::ReadQuery::new("SHOW DATABASES");
 
         match self.client.query(query).await {
-            Ok(_) => {
+            Ok(result) => {
                 let latency = start.elapsed().as_millis() as u64;
-                info!("连接测试成功，延迟: {}ms", latency);
+                info!("InfluxDB连接测试成功，延迟: {}ms", latency);
+                debug!("查询结果: {:?}", result);
                 Ok(latency)
             }
             Err(e) => {
-                error!("连接测试失败: {}", e);
-                Err(anyhow::anyhow!("连接测试失败: {}", e))
+                error!("InfluxDB查询测试失败: {}", e);
+                Err(anyhow::anyhow!("InfluxDB连接测试失败: {}", e))
             }
         }
     }

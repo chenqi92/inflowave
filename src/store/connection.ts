@@ -52,12 +52,13 @@ interface ConnectionState {
 
   // 状态同步方法
   syncConnectionStates: () => void;
+  initializeConnectionStates: () => void;
 }
 
 export const useConnectionStore = create<ConnectionState>()(
   persist(
     (set, get) => ({
-      // 初始状态
+      // 初始状态 - 软件启动时所有连接都应该为断开状态
       connections: [],
       connectionStatuses: {},
       connectedConnectionIds: [],
@@ -336,30 +337,31 @@ export const useConnectionStore = create<ConnectionState>()(
         }
       },
 
-      // 刷新所有连接状态
+      // 刷新所有连接状态 - 获取后端实际状态但启动时强制断开
       refreshAllStatuses: async () => {
         try {
-          const statuses = await safeTauriInvoke<
-            Record<string, ConnectionStatus>
-          >('get_all_connection_statuses');
-          if (statuses) {
-            // 简化状态更新逻辑，直接使用后端状态
-            set(state => {
-              const newConnectedIds: string[] = [];
+          const connections = get().connections;
 
-              // 直接使用后端状态，并同步connectedConnectionIds
-              Object.entries(statuses).forEach(([connectionId, status]) => {
-                if (status.status === 'connected') {
-                  newConnectedIds.push(connectionId);
-                }
-              });
+          // 为所有连接创建断开状态
+          const disconnectedStatuses: Record<string, ConnectionStatus> = {};
+          connections.forEach(conn => {
+            disconnectedStatuses[conn.id] = {
+              id: conn.id,
+              status: 'disconnected',
+              error: undefined,
+              latency: undefined,
+              lastConnected: undefined,
+            };
+          });
 
-              return {
-                connectionStatuses: statuses,
-                connectedConnectionIds: newConnectedIds,
-              };
-            });
-          }
+          set(state => {
+            return {
+              connectionStatuses: disconnectedStatuses,
+              connectedConnectionIds: [], // 启动时清空已连接列表
+            };
+          });
+
+          console.log('✅ 连接状态已重置为断开状态');
         } catch (error) {
           console.error('刷新连接状态失败:', error);
           throw error;
@@ -495,13 +497,41 @@ export const useConnectionStore = create<ConnectionState>()(
           };
         });
       },
+
+      // 初始化连接状态 - 应用启动时调用
+      initializeConnectionStates: () => {
+        set(state => {
+          const disconnectedStatuses: Record<string, ConnectionStatus> = {};
+
+          // 为所有连接创建断开状态
+          state.connections.forEach(conn => {
+            disconnectedStatuses[conn.id] = {
+              id: conn.id,
+              status: 'disconnected',
+              error: undefined,
+              latency: undefined,
+              lastConnected: undefined,
+            };
+          });
+
+          console.log('🔄 初始化连接状态: 所有连接设置为断开状态');
+
+          return {
+            ...state,
+            connectionStatuses: disconnectedStatuses,
+            connectedConnectionIds: [],
+            activeConnectionId: null,
+          };
+        });
+      },
     }),
     {
       name: 'influx-gui-connection-store',
       partialize: state => ({
         connections: state.connections,
-        connectedConnectionIds: state.connectedConnectionIds,
-        activeConnectionId: state.activeConnectionId,
+        // 不持久化连接状态，每次启动都应该是断开状态
+        // connectedConnectionIds: state.connectedConnectionIds,
+        // activeConnectionId: state.activeConnectionId,
       }),
     }
   )

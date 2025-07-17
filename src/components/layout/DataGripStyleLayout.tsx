@@ -71,10 +71,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     );
   });
   const [currentView, setCurrentView] = useState(() => {
-    // 优先使用路径映射的视图，其次是用户偏好，最后是默认值
+    // 优先使用路径映射的视图，其次是用户偏好，最后默认为数据源视图
     return getViewFromPath(location.pathname) !== 'query'
       ? getViewFromPath(location.pathname)
-      : preferences?.workspace.layout || 'query';
+      : preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
   });
 
   // 面板尺寸状态
@@ -167,7 +167,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       );
       // 只有在非特殊路径时才使用偏好设置的布局
       if (getViewFromPath(location.pathname) === 'query') {
-        setCurrentView(preferences.workspace.layout || 'query');
+        setCurrentView(preferences.workspace.layout || 'datasource'); // 默认为数据源视图
       }
       setLeftPanelSize(
         preferences.workspace.panel_positions?.['left-panel'] || 25

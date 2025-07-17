@@ -12,6 +12,7 @@ import { showMessage } from './utils/message';
 import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
+import { useConnectionStore } from './store/connection';
 
 // 页面组件
 import ConnectionDebug from './components/debug/ConnectionDebug';
@@ -152,6 +153,11 @@ const App: React.FC = () => {
         try {
           await safeTauriInvoke<void>('initialize_connections');
           console.log('连接服务初始化成功');
+
+          // 初始化前端连接状态，确保所有连接都为断开状态
+          const { initializeConnectionStates } = useConnectionStore.getState();
+          initializeConnectionStates();
+          console.log('前端连接状态初始化完成');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
         }

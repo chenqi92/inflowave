@@ -119,65 +119,23 @@ const Connections: React.FC = () => {
         await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (connectionList) {
-        // 批量获取所有连接状态，避免单个请求导致的状态不一致
-        try {
-          const allStatuses = await safeTauriInvoke<
-            Record<string, ConnectionStatus>
-          >('get_all_connection_statuses');
-
-          // 为每个连接设置状态
-          for (const conn of connectionList) {
-            const status = allStatuses[conn.id!];
-            if (status) {
-              setConnectionStatus(conn.id!, status);
-            } else {
-              // 如果后端没有状态，创建一个默认的断开状态
-              const defaultStatus: ConnectionStatus = {
-                id: conn.id!,
-                status: 'disconnected' as const,
-                error: undefined,
-                lastConnected: undefined,
-                latency: undefined,
-              };
-              setConnectionStatus(conn.id!, defaultStatus);
-            }
-          }
-        } catch (statusError) {
-          console.warn('批量获取连接状态失败，使用单个请求:', statusError);
-
-          // 如果批量获取失败，回退到单个请求
-          for (const conn of connectionList) {
-            try {
-              const status = await safeTauriInvoke<ConnectionStatus>(
-                'get_connection_status',
-                {
-                  connectionId: conn.id,
-                }
-              );
-              if (status) {
-                setConnectionStatus(conn.id!, status);
-              } else {
-                const defaultStatus: ConnectionStatus = {
-                  id: conn.id!,
-                  status: 'disconnected' as const,
-                  error: undefined,
-                  lastConnected: undefined,
-                  latency: undefined,
-                };
-                setConnectionStatus(conn.id!, defaultStatus);
-              }
-            } catch (error) {
-              const errorStatus: ConnectionStatus = {
-                id: conn.id!,
-                status: 'disconnected' as const,
-                error: String(error),
-                lastConnected: undefined,
-                latency: undefined,
-              };
-              setConnectionStatus(conn.id!, errorStatus);
-            }
-          }
+        // 启动时强制所有连接为断开状态，确保前后端状态一致
+        for (const conn of connectionList) {
+          // 创建默认的断开状态
+          const defaultStatus: ConnectionStatus = {
+            id: conn.id!,
+            status: 'disconnected' as const,
+            error: undefined,
+            lastConnected: undefined,
+            latency: undefined,
+          };
+          setConnectionStatus(conn.id!, defaultStatus);
         }
+
+        // 确保connectedConnectionIds也被清空
+        const { syncConnectionStates } = useConnectionStore.getState();
+        syncConnectionStates();
+
       }
     } catch (error) {
       showMessage.error(`加载连接列表失败: ${error}`);
