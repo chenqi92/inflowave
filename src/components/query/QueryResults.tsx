@@ -33,6 +33,7 @@ import {
   ScrollArea,
   showMessage,
 } from '@/components/ui';
+import type { Column } from '@/components/ui';
 import {
   Download,
   BarChart,
@@ -45,19 +46,7 @@ import {
 } from 'lucide-react';
 import { useContextMenu } from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
-// 本地类型定义
-interface ColumnType<T = Record<string, unknown>> {
-  title?: React.ReactNode;
-  dataIndex?: string;
-  key?: string;
-  render?: (value: unknown, record: T, index: number) => React.ReactNode;
-  width?: number | string;
-  align?: 'left' | 'center' | 'right';
-  sorter?: boolean | ((a: T, b: T) => number);
-  filters?: Array<{ text: string; value: unknown }>;
-  onFilter?: (value: unknown, record: T) => boolean;
-  ellipsis?: boolean;
-}
+// 使用shadcn/ui DataTable的Column类型
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
@@ -114,7 +103,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
       isString: typeof value === 'string',
       isTimeColumn: column.toLowerCase().includes('time') || column.toLowerCase().includes('timestamp'),
       tableData: {
-        columns: result?.series?.[0]?.columns || [],
+        columns: result?.results?.[0]?.series?.[0]?.columns || [],
         totalRows: result?.rowCount || 0
       }
     };
@@ -126,14 +115,16 @@ const QueryResults: React.FC<QueryResultsProps> = ({
   const formatResultForTable = (queryResult: QueryResult) => {
     if (
       !queryResult ||
-      !queryResult.series ||
-      queryResult.series.length === 0
+      !queryResult.results ||
+      queryResult.results.length === 0 ||
+      !queryResult.results[0].series ||
+      queryResult.results[0].series.length === 0
     ) {
       return { columns: [], dataSource: [] };
     }
 
-    const series = queryResult.series[0];
-    const columns: ColumnType<Record<string, unknown>>[] = series.columns.map(
+    const series = queryResult.results[0].series[0];
+    const columns: Column[] = series.columns.map(
       (col: string, index: number) => ({
         title: col,
         dataIndex: col,
@@ -141,7 +132,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         width: index === 0 ? 200 : 120, // 时间列宽一些
         ellipsis: true,
         align: 'left' as const,
-        render: (value: unknown, record: Record<string, unknown>) => {
+        render: (value: any, record: any, _index: number) => {
           const cellContent = (() => {
             if (value === null || value === undefined) {
               return <Text className="text-muted-foreground">NULL</Text>;
@@ -190,19 +181,19 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
   // 获取结果统计信息
   const getResultStats = (queryResult: QueryResult) => {
-    if (!queryResult || !queryResult.series) {
+    if (!queryResult || !queryResult.results || !queryResult.results[0]?.series) {
       return null;
     }
 
     const totalRows = queryResult.rowCount || 0;
-    const seriesCount = queryResult.series.length;
+    const seriesCount = queryResult.results[0].series.length;
     const executionTime = queryResult.executionTime || 0;
 
     return {
       totalRows,
       seriesCount,
       executionTime,
-      columns: queryResult.series[0]?.columns?.length || 0,
+      columns: queryResult.results[0].series[0]?.columns?.length || 0,
     };
   };
 
@@ -229,13 +220,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
   const isChartable = (queryResult: QueryResult) => {
     if (
       !queryResult ||
-      !queryResult.series ||
-      queryResult.series.length === 0
+      !queryResult.results ||
+      !queryResult.results[0]?.series ||
+      queryResult.results[0].series.length === 0
     ) {
       return false;
     }
 
-    const series = queryResult.series[0];
+    const series = queryResult.results[0].series[0];
     return series.columns.length >= 2 && series.values.length > 0;
   };
 
@@ -243,7 +235,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
   const prepareChartData = (queryResult: QueryResult) => {
     if (!isChartable(queryResult)) return null;
 
-    const series = queryResult.series[0];
+    const series = queryResult.results[0].series[0];
     const timeColumn = series.columns.find(
       col =>
         col.toLowerCase().includes('time') ||
