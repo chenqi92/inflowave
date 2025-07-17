@@ -142,7 +142,7 @@ class ErrorBoundary extends Component<Props, State> {
       try {
         const { safeTauriInvoke } = await import('@/utils/tauri');
 
-        const result = await safeTauriInvoke('save_file_dialog', {
+        const result = await safeTauriInvoke<{ path?: string }>('save_file_dialog', {
           defaultPath: fileName,
           filters: [
             { name: 'JSON Files', extensions: ['json'] },
@@ -151,7 +151,7 @@ class ErrorBoundary extends Component<Props, State> {
         });
 
         if (result?.path) {
-          await safeTauriInvoke('write_file', {
+          await safeTauriInvoke<void>('write_file', {
             path: result.path,
             content: reportContent,
           });

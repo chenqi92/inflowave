@@ -243,7 +243,7 @@ export class FeatureTester {
 
     // 测试慢查询分析
     await this.runTest(suite, '慢查询分析', async () => {
-      void (await safeTauriInvoke('get_slow_query_analysis', {
+      void (await safeTauriInvoke<any>('get_slow_query_analysis', {
         connectionId: 'test-connection',
       }));
       return '慢查询分析功能正常';
@@ -251,7 +251,7 @@ export class FeatureTester {
 
     // 测试系统资源监控
     await this.runTest(suite, '系统资源监控', async () => {
-      void (await safeTauriInvoke('get_system_resources', {
+      void (await safeTauriInvoke<any>('get_system_resources', {
         connectionId: 'test-connection',
       }));
       return '系统资源监控功能正常';
@@ -316,19 +316,19 @@ export class FeatureTester {
 
     // 测试插件系统
     await this.runTest(suite, '插件系统', async () => {
-      void (await safeTauriInvoke('get_installed_plugins'));
+      void (await safeTauriInvoke<any>('get_installed_plugins'));
       return '插件系统功能正常';
     });
 
     // 测试API集成
     await this.runTest(suite, 'API集成', async () => {
-      void (await safeTauriInvoke('get_api_integrations'));
+      void (await safeTauriInvoke<any>('get_api_integrations'));
       return 'API集成功能正常';
     });
 
     // 测试自动化规则
     await this.runTest(suite, '自动化规则', async () => {
-      void (await safeTauriInvoke('get_automation_rules'));
+      void (await safeTauriInvoke<any>('get_automation_rules'));
       return '自动化规则功能正常';
     });
 

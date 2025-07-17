@@ -283,7 +283,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
       query += ` ORDER BY ${params.orderBy}`;
     }
     
-    const result = await safeTauriInvoke('execute_query', {
+    const result = await safeTauriInvoke<any>('execute_query', {
       connection_id: activeConnectionId,
       query,
     });
@@ -358,7 +358,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
     if (!activeConnectionId) throw new Error('请先建立连接');
     
     const query = `SHOW SERIES FROM "${params.measurement}"`;
-    const result = await safeTauriInvoke('execute_query', {
+    const result = await safeTauriInvoke<any>('execute_query', {
       connection_id: activeConnectionId,
       query,
     });

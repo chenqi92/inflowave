@@ -270,7 +270,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       };
 
       // 调用后端导入接口
-      await safeTauriInvoke('import_data', importRequest);
+      await safeTauriInvoke<void>('import_data', importRequest);
 
       showMessage.success('数据导入成功');
       setCurrentStep(2);

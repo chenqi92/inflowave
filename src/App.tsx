@@ -142,7 +142,7 @@ const App: React.FC = () => {
 
         // 尝试获取应用配置信息
         try {
-          await safeTauriInvoke('get_app_config');
+          await safeTauriInvoke<any>('get_app_config');
           console.log('应用配置加载成功');
         } catch (configError) {
           console.warn('应用配置加载失败，使用默认配置:', configError);
@@ -150,7 +150,7 @@ const App: React.FC = () => {
 
         // 尝试初始化连接服务
         try {
-          await safeTauriInvoke('initialize_connections');
+          await safeTauriInvoke<void>('initialize_connections');
           console.log('连接服务初始化成功');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);

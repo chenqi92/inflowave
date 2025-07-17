@@ -226,7 +226,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
       }));
 
       try {
-        const result = await safeTauriInvoke('execute_query', {
+        const result = await safeTauriInvoke<any>('execute_query', {
           connectionId,
           database,
           query,

@@ -15,23 +15,25 @@ import {
   SelectValue,
   Button,
   Alert,
-  Typography,
+  AlertDescription,
+  AlertTitle,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-  Row,
-  Col,
   Upload,
+  Textarea,
+  Text,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
-import { Dialog } from '@/components/ui';
-import { Check, Eye, Inbox } from 'lucide-react';
+import { Check, Eye, Inbox, CheckCircle, AlertCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
-
-const { Textarea } = Input;
-const { Text } = Typography;
 
 interface DataWriteDialogProps {
   visible: boolean;
@@ -50,7 +52,21 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   currentDatabase,
   onSuccess,
 }) => {
-  const form = useForm();
+  const form = useForm({
+    defaultValues: {
+      connectionId: '',
+      database: '',
+      measurement: '',
+      format: 'line-protocol',
+      data: '',
+      options: {
+        precision: 'ms',
+        batchSize: 1000,
+        retentionPolicy: '',
+        consistency: 'one',
+      },
+    },
+  });
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -63,7 +79,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   // 初始化表单
   useEffect(() => {
     if (visible) {
-      form.setFieldsValue({
+      form.reset({
         connectionId: currentConnection || '',
         database: currentDatabase || '',
         measurement: '',
@@ -99,7 +115,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
 
   // 监听连接变化
   const handleConnectionChange = (connectionId: string) => {
-    form.setFieldValue('connectionId', connectionId);
+    form.setValue('connectionId', connectionId);
     loadDatabases(connectionId);
   };
 
@@ -113,7 +129,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       }
 
       setValidating(true);
-      const isValid = await safeTauriInvoke('validate_data_format', {
+      const isValid = await safeTauriInvoke<boolean>('validate_data_format', {
         data: values.data,
         format: values.format,
         measurement: values.measurement,
@@ -142,12 +158,12 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       }
 
       setPreviewing(true);
-      const preview = (await safeTauriInvoke('preview_data_conversion', {
+      const preview = await safeTauriInvoke<string>('preview_data_conversion', {
         data: values.data,
         format: values.format,
         measurement: values.measurement,
         limit: 10,
-      })) as string;
+      });
 
       setPreviewData(preview);
       setShowPreview(true);
@@ -176,9 +192,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         options: values.options,
       };
 
-      const result = (await safeTauriInvoke('write_data', {
+      const result = await safeTauriInvoke<DataWriteResult>('write_data', {
         request: writeConfig,
-      })) as DataWriteResult;
+      });
       setWriteResult(result);
 
       if (result.success) {
@@ -214,11 +230,11 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       // 根据文件扩展名自动设置格式
       const fileName = file.name.toLowerCase();
       if (fileName.endsWith('.csv')) {
-        form.setFieldValue('format', 'csv');
+        form.setValue('format', 'csv');
       } else if (fileName.endsWith('.json')) {
-        form.setFieldValue('format', 'json');
+        form.setValue('format', 'json');
       } else {
-        form.setFieldValue('format', 'line-protocol');
+        form.setValue('format', 'line-protocol');
       }
 
       showMessage.success('文件内容已加载');
@@ -242,7 +258,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   };
 
   const canWrite = () => {
-    const values = form.getFieldsValue();
+    const values = form.getValues();
     return (
       values.connectionId &&
       values.database &&
@@ -254,34 +270,19 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
 
   return (
     <>
-      <Dialog
-        title='数据写入'
-        open={visible}
-        onOpenChange={open => !open && onClose()}
-        width={800}
-        footer={[
-          <Button key='cancel' onClick={onClose}>
-            取消
-          </Button>,
-          <Button
-            key='write'
-            type='primary'
-            disabled={loading}
-            disabled={!canWrite()}
-            onClick={writeData}
-          >
-            写入数据
-          </Button>,
-        ]}
-      >
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className='space-y-6'
-          >
-            {/* 基本配置 */}
-            <Row gutter={16}>
-              <Col span={12}>
+      <Dialog open={visible} onOpenChange={open => !open && onClose()}>
+        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>数据写入</DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className='space-y-6'
+            >
+              {/* 基本配置 */}
+              <div className='grid grid-cols-2 gap-4'>
                 <FormField
                   control={form.control}
                   name='connectionId'
@@ -313,8 +314,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                     </FormItem>
                   )}
                 />
-              </Col>
-              <Col span={12}>
+
                 <FormField
                   control={form.control}
                   name='database'
@@ -343,11 +343,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                     </FormItem>
                   )}
                 />
-              </Col>
-            </Row>
+              </div>
 
-            <Row gutter={16}>
-              <Col span={12}>
+              <div className='grid grid-cols-2 gap-4'>
                 <FormField
                   control={form.control}
                   name='measurement'
@@ -362,8 +360,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                     </FormItem>
                   )}
                 />
-              </Col>
-              <Col span={12}>
+
                 <FormField
                   control={form.control}
                   name='format'
@@ -392,90 +389,91 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                     </FormItem>
                   )}
                 />
-              </Col>
-            </Row>
+              </div>
 
-            {/* 数据输入 */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className='grid w-full grid-cols-2'>
-                <TabsTrigger value='manual'>手动输入</TabsTrigger>
-                <TabsTrigger value='upload'>文件上传</TabsTrigger>
-              </TabsList>
+              {/* 数据输入 */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className='grid w-full grid-cols-2'>
+                  <TabsTrigger value='manual'>手动输入</TabsTrigger>
+                  <TabsTrigger value='upload'>文件上传</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value='manual'>
-                <FormField
-                  control={form.control}
-                  name='data'
-                  rules={{ required: '请输入数据内容' }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <div className='flex gap-2'>
-                          <span>数据内容</span>
-                          <Button
-                            size='sm'
-                            disabled={validating}
-                            onClick={validateData}
-                          >
-                            <Check className='w-4 h-4 mr-2' /> 验证格式
-                          </Button>
-                          <Button
-                            size='sm'
-                            disabled={previewing}
-                            onClick={previewConversion}
-                          >
-                            <Eye className='w-4 h-4 mr-2' /> 预览转换
-                          </Button>
-                        </div>
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={12}
-                          placeholder={getDataPlaceholder(form.watch('format'))}
-                          className='font-mono text-sm'
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
+                <TabsContent value='manual' className='mt-4'>
+                  <FormField
+                    control={form.control}
+                    name='data'
+                    rules={{ required: '请输入数据内容' }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          <div className='flex gap-2 items-center mb-2'>
+                            <span>数据内容</span>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='outline'
+                              disabled={validating}
+                              onClick={validateData}
+                            >
+                              <Check className='w-4 h-4 mr-2' /> 验证格式
+                            </Button>
+                            <Button
+                              type='button'
+                              size='sm'
+                              variant='outline'
+                              disabled={previewing}
+                              onClick={previewConversion}
+                            >
+                              <Eye className='w-4 h-4 mr-2' /> 预览转换
+                            </Button>
+                          </div>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            rows={12}
+                            placeholder={getDataPlaceholder(form.watch('format'))}
+                            className='font-mono text-sm'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
 
-              <TabsContent value='upload'>
-                <Upload.Dragger
-                  beforeUpload={handleFileUpload}
-                  accept='.csv,.json,.txt'
-                  showUploadList={false}
-                >
-                  <div className='flex flex-col items-center space-y-2'>
-                    <Inbox className='w-8 h-8 text-gray-400' />
-                    <Typography.Text className='text-muted-foreground'>
-                      点击或拖拽文件到此区域上传
-                    </Typography.Text>
-                    <p className='text-sm text-muted-foreground'>
-                      支持 CSV、JSON、TXT 格式文件，文件大小不超过 10MB
-                    </p>
-                  </div>
-                </Upload.Dragger>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value='upload' className='mt-4'>
+                  <Upload.Dragger
+                    beforeUpload={handleFileUpload}
+                    accept='.csv,.json,.txt'
+                    showUploadList={false}
+                  >
+                    <div className='flex flex-col items-center space-y-2 p-8'>
+                      <Inbox className='w-8 h-8 text-muted-foreground' />
+                      <Text className='text-muted-foreground'>
+                        点击或拖拽文件到此区域上传
+                      </Text>
+                      <Text className='text-sm text-muted-foreground'>
+                        支持 CSV、JSON、TXT 格式文件，文件大小不超过 10MB
+                      </Text>
+                    </div>
+                  </Upload.Dragger>
+                </TabsContent>
+              </Tabs>
 
-            {/* 高级选项 */}
-            <div className='border-t border-gray-200 my-6 pt-6'>
-              <h4 className='text-sm font-medium mb-4'>高级选项</h4>
-              <Row gutter={16}>
-                <Col span={6}>
+              {/* 高级选项 */}
+              <div className='border-t pt-6'>
+                <h4 className='text-sm font-medium mb-4'>高级选项</h4>
+                <div className='grid grid-cols-4 gap-4'>
                   <FormField
                     control={form.control}
                     name='options.precision'
-                    defaultValue='ns'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>时间精度</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          defaultValue={field.value || 'ms'}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -495,12 +493,10 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={6}>
+
                   <FormField
                     control={form.control}
                     name='options.batchSize'
-                    defaultValue={1000}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>批次大小</FormLabel>
@@ -509,7 +505,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                             type='number'
                             min={100}
                             max={10000}
-                            value={field.value}
+                            value={field.value || 1000}
                             onChange={e =>
                               field.onChange(Number(e.target.value))
                             }
@@ -519,8 +515,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={6}>
+
                   <FormField
                     control={form.control}
                     name='options.retentionPolicy'
@@ -534,18 +529,16 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-                <Col span={6}>
+
                   <FormField
                     control={form.control}
                     name='options.consistency'
-                    defaultValue='one'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>一致性级别</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          defaultValue={field.value || 'one'}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -563,60 +556,86 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                       </FormItem>
                     )}
                   />
-                </Col>
-              </Row>
-            </div>
+                </div>
+              </div>
 
-            {/* 写入结果 */}
-            {writeResult && (
-              <Alert
-                type={writeResult.success ? 'success' : 'error'}
-                message={writeResult.message}
-                description={
-                  <div>
-                    <p>写入数据点: {writeResult.pointsWritten}</p>
-                    <p>耗时: {writeResult.duration}ms</p>
-                    {writeResult.errors && writeResult.errors.length > 0 && (
-                      <div>
-                        <p>错误信息:</p>
-                        <ul>
-                          {writeResult.errors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                }
-                showIcon
-                style={{ marginTop: 16 }}
-              />
-            )}
-          </form>
-        </Form>
+              {/* 写入结果 */}
+              {writeResult && (
+                <Alert
+                  variant={writeResult.success ? 'default' : 'destructive'}
+                  className='mt-4'
+                >
+                  {writeResult.success ? (
+                    <CheckCircle className='h-4 w-4' />
+                  ) : (
+                    <AlertCircle className='h-4 w-4' />
+                  )}
+                  <AlertTitle>
+                    {writeResult.success ? '写入成功' : '写入失败'}
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className='space-y-1'>
+                      <p>{writeResult.message}</p>
+                      <p>写入数据点: {writeResult.pointsWritten}</p>
+                      <p>耗时: {writeResult.duration}ms</p>
+                      {writeResult.errors && writeResult.errors.length > 0 && (
+                        <div>
+                          <p className='font-medium'>错误信息:</p>
+                          <ul className='list-disc list-inside space-y-1'>
+                            {writeResult.errors.map((error, index) => (
+                              <li key={index} className='text-sm'>
+                                {error}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </form>
+          </Form>
+
+          <DialogFooter className='flex gap-2'>
+            <Button variant='outline' onClick={onClose}>
+              取消
+            </Button>
+            <Button
+              variant='default'
+              disabled={loading || !canWrite()}
+              onClick={form.handleSubmit(handleSubmit)}
+              loading={loading}
+            >
+              写入数据
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
 
       {/* 预览对话框 */}
-      <Dialog
-        title='转换预览'
-        open={showPreview}
-        onOpenChange={open => !open && (() => setShowPreview(false))()}
-        footer={[
-          <Button key='close' onClick={() => setShowPreview(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={600}
-      >
-        <div>
-          <Text strong>Line Protocol 格式预览 (前10行):</Text>
-          <Textarea
-            value={previewData}
-            rows={15}
-            readOnly
-            style={{ marginTop: 8, fontFamily: 'monospace', fontSize: 13 }}
-          />
-        </div>
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className='max-w-3xl'>
+          <DialogHeader>
+            <DialogTitle>转换预览</DialogTitle>
+          </DialogHeader>
+
+          <div className='space-y-4'>
+            <Text className='font-medium'>Line Protocol 格式预览 (前10行):</Text>
+            <Textarea
+              value={previewData}
+              rows={15}
+              readOnly
+              className='font-mono text-sm'
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setShowPreview(false)}>
+              关闭
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </>
   );

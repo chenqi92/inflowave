@@ -525,7 +525,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const openFile = async () => {
       try {
         // 使用 Tauri 的文件对话框
-        const result = await safeTauriInvoke('open_file_dialog', {
+        const result = await safeTauriInvoke<{ path?: string }>('open_file_dialog', {
           filters: [
             { name: 'SQL Files', extensions: ['sql'] },
             { name: 'Text Files', extensions: ['txt'] },
@@ -535,7 +535,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
         if (result?.path) {
           // 读取文件内容
-          const content = await safeTauriInvoke('read_file', {
+          const content = await safeTauriInvoke<string>('read_file', {
             path: result.path,
           });
 

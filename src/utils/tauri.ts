@@ -2,6 +2,8 @@
  * Tauri 环境检测和兼容性工具
  */
 
+import type { TauriCommandMap, SafeTauriInvoke, SafeTauriInvokeGeneric } from '@/types/tauri';
+
 // 扩展 Window 接口以包含 Tauri 特定的属性
 declare global {
   interface Window {
@@ -19,8 +21,8 @@ export const isBrowserEnvironment = (): boolean => {
   return typeof window !== 'undefined' && window.__TAURI__ === undefined;
 };
 
-// 安全的 Tauri API 调用包装器 - 严格类型版本
-export const safeTauriInvoke = async <T = any>(
+// 类型安全的 Tauri API 调用包装器 - 使用命令映射
+export const safeTauriInvoke: SafeTauriInvoke & SafeTauriInvokeGeneric = async <T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T> => {

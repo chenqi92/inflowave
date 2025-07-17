@@ -8,19 +8,19 @@ export const testBackendConnection = async () => {
   
   try {
     // 测试基础系统信息
-    const systemInfo = await safeTauriInvoke('get_system_info');
+    const systemInfo = await safeTauriInvoke<any>('get_system_info');
     console.log('✅ 系统信息获取成功:', systemInfo);
-    
+
     // 测试健康检查
-    const healthStatus = await safeTauriInvoke('health_check');
+    const healthStatus = await safeTauriInvoke<any>('health_check');
     console.log('✅ 健康检查成功:', healthStatus);
-    
+
     // 测试连接管理
-    const connections = await safeTauriInvoke('get_connections');
+    const connections = await safeTauriInvoke<any>('get_connections');
     console.log('✅ 连接列表获取成功:', connections);
-    
+
     // 测试应用配置
-    const appConfig = await safeTauriInvoke('get_app_config');
+    const appConfig = await safeTauriInvoke<any>('get_app_config');
     console.log('✅ 应用配置获取成功:', appConfig);
     
     return {
@@ -48,7 +48,7 @@ export const testSpecificCommand = async (command: string, args?: any) => {
   console.log(`🔍 测试命令: ${command}`, args);
   
   try {
-    const result = await safeTauriInvoke(command, args);
+    const result = await safeTauriInvoke<any>(command, args);
     console.log(`✅ 命令 ${command} 执行成功:`, result);
     return { success: true, result };
   } catch (error) {
