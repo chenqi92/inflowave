@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { appWindow } from '@tauri-apps/api/window';
 import { showMessage } from '@/utils/message';
 
@@ -126,7 +126,7 @@ export const useTabDragDrop = () => {
       const windowLabel = `detached-tab-${tab.id}-${Date.now()}`;
       
       // 创建新的分离窗口
-      const detachedWindow = await invoke<string>('create_detached_window', {
+      const detachedWindow = await safeTauriInvoke<string>('create_detached_window', {
         label: windowLabel,
         title: `📋 ${tab.title}`,
         x: Math.max(0, x - 200),
@@ -166,7 +166,7 @@ export const useTabDragDrop = () => {
     const detachedWindow = detachedWindows.find(w => w.tabId === tab.id);
     if (detachedWindow) {
       // 关闭分离的窗口
-      invoke('close_detached_window', { label: detachedWindow.windowLabel })
+      safeTauriInvoke('close_detached_window', { label: detachedWindow.windowLabel })
         .then(() => {
           setDetachedWindows(prev => prev.filter(w => w.id !== detachedWindow.id));
           // 通知主组件重新添加tab
@@ -217,7 +217,7 @@ export const useTabDragDrop = () => {
   const closeDetachedWindow = useCallback((windowId: string) => {
     const detachedWindow = detachedWindows.find(w => w.id === windowId);
     if (detachedWindow) {
-      invoke('close_detached_window', { label: detachedWindow.windowLabel })
+      safeTauriInvoke('close_detached_window', { label: detachedWindow.windowLabel })
         .then(() => {
           setDetachedWindows(prev => prev.filter(w => w.id !== windowId));
         })
@@ -233,7 +233,7 @@ export const useTabDragDrop = () => {
       // 关闭所有分离的窗口
       for (const window of detachedWindows) {
         try {
-          await invoke('close_detached_window', { label: window.windowLabel });
+          await safeTauriInvoke('close_detached_window', { label: window.windowLabel });
         } catch (error) {
           console.error('关闭分离窗口失败:', error);
         }

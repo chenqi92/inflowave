@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { appWindow } from '@tauri-apps/api/window';
-import { invoke } from '@tauri-apps/api/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface DetachedTab {
   id: string;
@@ -87,7 +87,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       // 同步修改的内容
       const updatedTab = { ...tab, content, modified };
       // 这里可以通过IPC通知主窗口更新tab内容
-      invoke('sync_tab_content', { tabId: tab.id, content });
+      safeTauriInvoke('sync_tab_content', { tabId: tab.id, content });
     }
     
     onReattach?.();
@@ -131,7 +131,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         event.preventDefault();
         // 保存逻辑
         if (modified) {
-          invoke('save_tab_content', { tabId: tab.id, content });
+          safeTauriInvoke('save_tab_content', { tabId: tab.id, content });
           setModified(false);
         }
       }

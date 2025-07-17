@@ -39,7 +39,7 @@ import {
   Info,
   AlertCircle,
 } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryResult } from '@/types';
 
@@ -147,7 +147,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const fetchTableSchema = useCallback(async () => {
     try {
       const schemaQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
-      const result = await invoke<QueryResult>('execute_influxql_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_influxql_query', {
         connectionId,
         database,
         query: schemaQuery,
@@ -167,7 +167,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const fetchTotalCount = useCallback(async () => {
     try {
       const countQuery = `SELECT COUNT(*) FROM "${tableName}"`;
-      const result = await invoke<QueryResult>('execute_influxql_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_influxql_query', {
         connectionId,
         database,
         query: countQuery,
@@ -190,7 +190,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const query = generateQuery();
       console.log('执行查询:', query);
       
-      const result = await invoke<QueryResult>('execute_influxql_query', {
+      const result = await safeTauriInvoke<QueryResult>('execute_influxql_query', {
         connectionId,
         database,
         query,
