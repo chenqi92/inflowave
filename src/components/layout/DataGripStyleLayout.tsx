@@ -18,7 +18,7 @@ import {
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditor from './TabEditor';
-import ResultPanel from './ResultPanel';
+import EnhancedResultPanel from './EnhancedResultPanel';
 
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -363,10 +363,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                   onResize={size => setBottomPanelSize(size)}
                 >
                   <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
-                    <ResultPanel
+                    <EnhancedResultPanel
                       collapsed={bottomPanelCollapsed}
                       queryResult={queryResult}
-                      queryResults={queryResults}
                       executedQueries={executedQueries}
                       executionTime={executionTime}
                       onClearResult={() => {
