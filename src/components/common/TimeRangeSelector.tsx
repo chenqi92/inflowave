@@ -105,7 +105,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         if (value && value !== selectedRange) {
             setSelectedRange(value);
         }
-    }, [value]);
+    }, [value, selectedRange]);
 
     const handleRangeSelect = (range: TimeRange) => {
         setSelectedRange(range);
@@ -243,7 +243,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     onChange={e => setCustomLabel(e.target.value)}
                                     placeholder='例如：自定义时间'
                                     className='col-span-3 h-8'
-                                    size='sm'
                                 />
                             </div>
 
@@ -257,7 +256,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     onChange={e => setCustomStart(e.target.value)}
                                     placeholder='例如：now() - 2h'
                                     className='col-span-3 h-8'
-                                    size='sm'
                                 />
                             </div>
 
@@ -271,7 +269,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                     onChange={e => setCustomEnd(e.target.value)}
                                     placeholder='例如：now()'
                                     className='col-span-3 h-8'
-                                    size='sm'
                                 />
                             </div>
                         </div>

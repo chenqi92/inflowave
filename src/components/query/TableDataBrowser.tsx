@@ -86,7 +86,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         // 搜索条件
         if (searchText.trim()) {
             const searchConditions = columns.filter(col => col !== 'time').map(col => 
-                `\"${col}\" =~ /.*${searchText.trim()}.*/`
+                `"${col}" =~ /.*${searchText.trim()}.*/`
             );
             if (searchConditions.length > 0) {
                 whereConditions.push(`(${searchConditions.join(' OR ')})`);
@@ -327,9 +327,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const endIndex = Math.min(currentPage * pageSize, totalCount);
 
     return (
-        <div className="h-full flex flex-col bg-background">
+        <div className="h-full flex flex-col bg-background overflow-hidden">
             {/* 头部工具栏 */}
-            <Card className="flex-shrink-0 border-0 border-b rounded-none">
+            <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
                 <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -373,10 +373,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 </CardHeader>
 
                 {/* 过滤栏 */}
-                <CardContent className="pt-0 pb-3">
-
-                    {/* 过滤器显示 */}
-                    {filters.length > 0 && (
+                {filters.length > 0 && (
+                    <CardContent className="pt-0 pb-3">
                         <div className="flex flex-wrap gap-2">
                             {filters.map((filter, index) => (
                                 <Badge key={index} variant="secondary" className="text-xs">
@@ -392,13 +390,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                 </Badge>
                             ))}
                         </div>
-                    )}
-                </CardContent>
+                    </CardContent>
+                )}
             </Card>
 
             {/* 数据表格 */}
-            <div className="flex-1 overflow-hidden">
-                <div className="h-full overflow-auto">
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <div className="h-full overflow-auto border rounded-md">
                 {loading ? (
                     <div className="flex items-center justify-center h-32">
                         <Spin/>
@@ -406,12 +404,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     </div>
                 ) : data.length > 0 ? (
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background z-10">
                             <TableRow>
                                 {columns.map((column) => (
                                     <TableHead
                                         key={column}
-                                        className="cursor-pointer hover:bg-muted/50"
+                                        className="cursor-pointer hover:bg-muted/50 border-b"
                                         onClick={() => handleSort(column)}
                                     >
                                         <div className="flex items-center gap-1">

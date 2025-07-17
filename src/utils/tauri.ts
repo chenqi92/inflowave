@@ -62,14 +62,11 @@ export async function safeTauriInvoke<T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T> {
-  console.log(`🚀 API 调用: ${command}`, { args });
 
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');
     const result = await invoke<T>(command, args);
-    console.log(`✅ Tauri API 返回结果 (${command}):`, result);
-
     // 对于 void 命令，允许 null/undefined 返回值
     if (VOID_COMMANDS.has(command)) {
       // 对于 void 命令，返回 undefined 作为成功标志
@@ -94,13 +91,11 @@ export const safeTauriInvokeOptional = async <T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T | null> => {
-  console.log(`🚀 API 调用 (可选): ${command}`, { args });
 
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');
     const result = await invoke<T>(command, args);
-    console.log(`✅ Tauri API 返回结果 (${command}):`, result);
     return result;
   } catch (error) {
     console.error(`❌ Tauri invoke error for command "${command}":`, error);
@@ -114,13 +109,11 @@ export const safeTauriInvokeVoid = async (
   command: string,
   args?: Record<string, any>
 ): Promise<void> => {
-  console.log(`🚀 API 调用 (void): ${command}`, { args });
 
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');
     const result = await invoke(command, args);
-    console.log(`✅ Tauri API 返回结果 (${command}):`, result);
     // 对于 void 命令，不检查返回值
     return;
   } catch (error) {
@@ -188,8 +181,6 @@ export const showEnvironmentWarning = () => {
 // 初始化环境检测
 export const initializeEnvironment = () => {
   const envInfo = getEnvironmentInfo();
-
-  console.log('🔍 环境信息:', envInfo);
 
   if (envInfo.isBrowser) {
     showEnvironmentWarning();
