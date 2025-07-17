@@ -7,6 +7,7 @@ mod models;
 mod services;
 mod utils;
 mod config;
+mod updater;
 
 use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}};
 use log::{info, warn, error};
@@ -28,6 +29,9 @@ use commands::extensions::*;
 use commands::optimization_history::*;
 use commands::port_manager::*;
 use commands::embedded_server::*;
+
+// Updater commands
+use updater::*;
 
 // Services
 use services::ConnectionService;
@@ -721,6 +725,12 @@ async fn main() {
             restart_embedded_server_cmd,
             get_embedded_server_status,
             is_embedded_server_running,
+
+            // Updater commands
+            check_for_app_updates,
+            skip_version,
+            get_updater_settings,
+            update_updater_settings,
         ])
         .setup(|app| {
             info!("Application setup started");
