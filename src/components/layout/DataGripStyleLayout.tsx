@@ -32,6 +32,7 @@ import ConnectionsPage from '../../pages/Connections';
 import DevTools from '../../pages/DevTools';
 import Extensions from '../../pages/Extensions';
 import Settings from '../../pages/Settings';
+import QueryHistory from '../query/QueryHistory';
 
 export interface DataGripStyleLayoutProps {
   children?: React.ReactNode;
@@ -91,6 +92,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [executedQueries, setExecutedQueries] = useState<string[]>([]);
   const [executionTime, setExecutionTime] = useState<number>(0);
   const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
+  const [showQueryHistory, setShowQueryHistory] = useState(false);
   const [currentTimeRange, setCurrentTimeRange] = useState<{
     label: string;
     value: string;
@@ -153,7 +155,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (currentView !== newView) {
       setCurrentView(newView);
     }
-  }, [location.pathname]);
+
+    // 处理查询历史URL参数
+    if (location.pathname === '/query' && location.search.includes('showHistory=true')) {
+      setCurrentView('query');
+      // 设置标志显示查询历史
+      setShowQueryHistory(true);
+    }
+  }, [location.pathname, location.search]);
 
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {
@@ -340,29 +349,45 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       case 'query':
       default:
         return (
-          <ResizablePanelGroup direction='vertical'>
-            {/* 上半部分：编辑器 */}
-            <ResizablePanel
-              defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
-              minSize={30}
-              className='bg-background overflow-hidden'
-            >
-              <TabEditor
-                onQueryResult={setQueryResult}
-                onBatchQueryResults={(results, queries, executionTime) => {
-                  setQueryResults(results);
-                  setExecutedQueries(queries);
-                  setExecutionTime(executionTime);
-                  // 如果只有一个结果，也设置 queryResult 以保持兼容性
-                  if (results.length === 1) {
-                    setQueryResult(results[0]);
+          <div className='h-full'>
+            {/* 查询历史模态框 */}
+            {showQueryHistory && (
+              <QueryHistory
+                visible={showQueryHistory}
+                onClose={() => setShowQueryHistory(false)}
+                onQuerySelect={(query, database) => {
+                  // 执行选中的查询
+                  if (tabEditorRef.current?.executeQueryWithContent) {
+                    tabEditorRef.current.executeQueryWithContent(query, database || '');
                   }
+                  setShowQueryHistory(false);
                 }}
-                onActiveTabTypeChange={setActiveTabType}
-                currentTimeRange={currentTimeRange}
-                ref={tabEditorRef}
               />
-            </ResizablePanel>
+            )}
+            
+            <ResizablePanelGroup direction='vertical'>
+              {/* 上半部分：编辑器 */}
+              <ResizablePanel
+                defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
+                minSize={30}
+                className='bg-background overflow-hidden'
+              >
+                <TabEditor
+                  onQueryResult={setQueryResult}
+                  onBatchQueryResults={(results, queries, executionTime) => {
+                    setQueryResults(results);
+                    setExecutedQueries(queries);
+                    setExecutionTime(executionTime);
+                    // 如果只有一个结果，也设置 queryResult 以保持兼容性
+                    if (results.length === 1) {
+                      setQueryResult(results[0]);
+                    }
+                  }}
+                  onActiveTabTypeChange={setActiveTabType}
+                  currentTimeRange={currentTimeRange}
+                  ref={tabEditorRef}
+                />
+              </ResizablePanel>
 
             {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
             {!bottomPanelCollapsed && activeTabType === 'query' && (
@@ -396,6 +421,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
               </>
             )}
           </ResizablePanelGroup>
+          </div>
         );
     }
   }, [
@@ -408,6 +434,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     executedQueries,
     executionTime,
     currentTimeRange,
+    showQueryHistory,
   ]);
 
   return (

@@ -143,16 +143,16 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           </div>
         </div>
 
-        {/* 区域2: 时间范围选择器 - 仅在有连接时显示 */}
-        {activeConnection && (
-          <div className='flex items-center gap-2 px-3'>
+        {/* 区域2: 时间范围选择器 - 固定位置，没有连接时保持空白 */}
+        <div className='flex items-center gap-2 px-3 w-48'>
+          {activeConnection && (
             <TimeRangeSelector
               value={selectedTimeRange || currentTimeRange}
               onChange={handleTimeRangeChange}
               className='ml-1'
             />
-          </div>
-        )}
+          )}
+        </div>
 
         <div className='w-px h-6 bg-border mx-3' />
 
