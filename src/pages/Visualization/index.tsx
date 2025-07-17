@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import {
   Row,
   Col,
@@ -12,7 +12,12 @@ import {
   Input,
   Textarea,
   Alert,
+  AlertDescription,
   Spin,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import {
@@ -47,7 +52,15 @@ interface ChartConfig {
   query: string;
   database: string;
   refreshInterval?: number;
-  options?: any;
+  options?: Record<string, unknown>;
+}
+
+interface CreateChartFormData {
+  title: string;
+  type: 'line' | 'bar' | 'pie' | 'area';
+  query: string;
+  database: string;
+  refreshInterval?: number;
 }
 
 const Visualization: React.FC = () => {
@@ -56,7 +69,7 @@ const Visualization: React.FC = () => {
   const [databases, setDatabases] = useState<string[]>([]);
   const [charts, setCharts] = useState<ChartConfig[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const form = useForm();
+  const form = useForm<CreateChartFormData>();
 
   // 加载数据库列表
   const loadDatabases = useCallback(async () => {
@@ -97,11 +110,16 @@ const Visualization: React.FC = () => {
     result: QueryResult,
     chartConfig: ChartConfig
   ) => {
-    if (!result.series || result.series.length === 0) {
+    if (!result.results || result.results.length === 0) {
       return null;
     }
 
-    const series = result.series[0];
+    const firstResult = result.results[0];
+    if (!firstResult.series || firstResult.series.length === 0) {
+      return null;
+    }
+
+    const series = firstResult.series[0];
     const timeIndex = series.columns.findIndex(col =>
       col.toLowerCase().includes('time')
     );
@@ -131,7 +149,10 @@ const Visualization: React.FC = () => {
             type: 'category',
             data: series.values.map(row => {
               const timeValue = timeIndex >= 0 ? row[timeIndex] : row[0];
-              return new Date(timeValue).toLocaleTimeString();
+              if (timeValue === null || timeValue === undefined) {
+                return '';
+              }
+              return new Date(timeValue as string | number).toLocaleTimeString();
             }),
           },
           yAxis: {
@@ -171,7 +192,10 @@ const Visualization: React.FC = () => {
             type: 'category',
             data: series.values.map(row => {
               const timeValue = timeIndex >= 0 ? row[timeIndex] : row[0];
-              return new Date(timeValue).toLocaleTimeString();
+              if (timeValue === null || timeValue === undefined) {
+                return '';
+              }
+              return new Date(timeValue as string | number).toLocaleTimeString();
             }),
           },
           yAxis: {
@@ -240,7 +264,7 @@ const Visualization: React.FC = () => {
   };
 
   // 创建新图表
-  const createChart = async (values: any) => {
+  const createChart: SubmitHandler<CreateChartFormData> = async (values) => {
     // 验证必填字段
     if (!values.title || !values.type || !values.query || !values.database) {
       showMessage.error('请填写所有必填字段');
@@ -339,18 +363,22 @@ const Visualization: React.FC = () => {
         description='创建图表和仪表板来可视化您的时序数据'
         toolbar={toolbar}
       >
-        <Alert
-          message='请先连接到 InfluxDB'
-          description='在连接管理页面选择一个连接并激活后，才能创建数据可视化。'
-          type='warning'
-          showIcon
-          icon={<AlertCircle />}
-          action={
-            <Button size='small' type='primary'>
-              去连接
-            </Button>
-          }
-        />
+        <Alert className='border-yellow-200 bg-yellow-50'>
+          <AlertCircle className='h-4 w-4 text-yellow-600' />
+          <div className='ml-2'>
+            <h4 className='text-sm font-medium text-yellow-800'>
+              请先连接到 InfluxDB
+            </h4>
+            <AlertDescription className='text-sm text-yellow-700'>
+              在连接管理页面选择一个连接并激活后，才能创建数据可视化。
+            </AlertDescription>
+            <div className='mt-2'>
+              <Button size='sm' variant='outline' className='text-yellow-800 border-yellow-300 hover:bg-yellow-100'>
+                去连接
+              </Button>
+            </div>
+          </div>
+        </Alert>
       </DesktopPageWrapper>
     );
   }
@@ -369,10 +397,11 @@ const Visualization: React.FC = () => {
             <Row gutter={[16, 16]}>
               {charts.map(chart => (
                 <Col xs={24} lg={12} xl={8} key={chart.id}>
-                  <div
-                    size='small'
-                    title={chart.title}
-                    extra={
+                  <Card>
+                    <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                      <CardTitle className='text-sm font-medium'>
+                        {chart.title}
+                      </CardTitle>
                       <div className='flex gap-2'>
                         <Button
                           variant='ghost'
@@ -392,20 +421,21 @@ const Visualization: React.FC = () => {
                           删除
                         </Button>
                       </div>
-                    }
-                  >
-                    {chart.options ? (
-                      <ReactECharts
-                        option={chart.options}
-                        style={{ height: '280px' }}
-                        opts={{ renderer: 'canvas' }}
-                      />
-                    ) : (
-                      <div className='flex items-center justify-center h-64'>
-                        <Spin tip='加载图表数据...' />
-                      </div>
-                    )}
-                  </div>
+                    </CardHeader>
+                    <CardContent>
+                      {chart.options ? (
+                        <ReactECharts
+                          option={chart.options}
+                          style={{ height: '280px' }}
+                          opts={{ renderer: 'canvas' }}
+                        />
+                      ) : (
+                        <div className='flex items-center justify-center h-64'>
+                          <Spin tip='加载图表数据...' />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </Col>
               ))}
             </Row>
@@ -439,7 +469,7 @@ const Visualization: React.FC = () => {
               />
               {form.formState.errors.title && (
                 <p className='text-sm text-destructive'>
-                  {form.formState.errors.title.message}
+                  {String(form.formState.errors.title.message || '请输入图表标题')}
                 </p>
               )}
             </div>
@@ -479,7 +509,7 @@ const Visualization: React.FC = () => {
               </Select>
               {form.formState.errors.type && (
                 <p className='text-sm text-destructive'>
-                  {form.formState.errors.type.message}
+                  {String(form.formState.errors.type.message || '请选择图表类型')}
                 </p>
               )}
             </div>
@@ -500,7 +530,7 @@ const Visualization: React.FC = () => {
               </Select>
               {form.formState.errors.database && (
                 <p className='text-sm text-destructive'>
-                  {form.formState.errors.database.message}
+                  {String(form.formState.errors.database.message || '请选择数据库')}
                 </p>
               )}
             </div>
@@ -514,7 +544,7 @@ const Visualization: React.FC = () => {
               />
               {form.formState.errors.query && (
                 <p className='text-sm text-destructive'>
-                  {form.formState.errors.query.message}
+                  {String(form.formState.errors.query.message || '请输入查询语句')}
                 </p>
               )}
             </div>

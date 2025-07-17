@@ -136,7 +136,6 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   const handleAddChart = (chartId: string) => {
     const newItem: GridItem = {
-      id: `item_${Date.now()}`,
       chartId,
       x: 0,
       y: getNextAvailablePosition().y,
@@ -148,20 +147,20 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     setShowChartModal(false);
   };
 
-  const handleRemoveChart = (itemId: string) => {
-    setGridItems(gridItems.filter(item => item.id !== itemId));
+  const handleRemoveChart = (chartId: string) => {
+    setGridItems(gridItems.filter(item => item.chartId !== chartId));
   };
 
   // 这些函数暂时保留，可能在未来的拖拽调整功能中使用
-  // const handleResizeChart = (itemId: string, w: number, h: number) => {
+  // const handleResizeChart = (chartId: string, w: number, h: number) => {
   //   setGridItems(
-  //     gridItems.map(item => (item.id === itemId ? { ...item, w, h } : item))
+  //     gridItems.map(item => (item.chartId === chartId ? { ...item, w, h } : item))
   //   );
   // };
 
-  // const handleMoveChart = (itemId: string, x: number, y: number) => {
+  // const handleMoveChart = (chartId: string, x: number, y: number) => {
   //   setGridItems(
-  //     gridItems.map(item => (item.id === itemId ? { ...item, x, y } : item))
+  //     gridItems.map(item => (item.chartId === chartId ? { ...item, x, y } : item))
   //   );
   // };
 
@@ -176,8 +175,8 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = gridItems.findIndex(item => item.id === active.id);
-      const newIndex = gridItems.findIndex(item => item.id === over.id);
+      const oldIndex = gridItems.findIndex(item => item.chartId === active.id);
+      const newIndex = gridItems.findIndex(item => item.chartId === over.id);
 
       setGridItems(arrayMove(gridItems, oldIndex, newIndex));
     }
@@ -216,8 +215,9 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
         createDashboard({
           name: dashboardData.name,
           description: dashboardData.description || '',
-          layout: dashboardData.layout,
+          layout: dashboardData.layout || [],
           settings: dashboardData.settings,
+          widgets: dashboardData.widgets || [],
         });
       }
 
@@ -285,7 +285,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                     <Button
                       size='sm'
                       variant='ghost'
-                      onClick={() => handleRemoveChart(item.id)}
+                      onClick={() => handleRemoveChart(item.chartId)}
                     >
                       <Trash2 className='w-4 h-4 text-destructive' />
                     </Button>
@@ -325,7 +325,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   const DraggableGridItem: React.FC<{ item: GridItem }> = ({ item }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
       useDraggable({
-        id: item.id,
+        id: item.chartId,
         data: item,
       });
 
@@ -385,7 +385,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           >
             {gridItems.map(item => (
               <div
-                key={item.id}
+                key={item.chartId}
                 className='grid-item'
                 style={{
                   gridColumn: `span ${item.w}`,
@@ -476,7 +476,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       <div className='flex-1 p-4'>
         <DndContext onDragEnd={handleDragEnd}>
           <SortableContext
-            items={gridItems.map(item => item.id)}
+            items={gridItems.map(item => item.chartId)}
             strategy={verticalListSortingStrategy}
           >
             <DroppableGrid />

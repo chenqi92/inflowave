@@ -109,22 +109,8 @@ export interface ChartConfiguration {
   }>;
 }
 
-export interface Dashboard {
-  id: string;
-  name: string;
-  description?: string;
-  charts: ChartConfiguration[];
-  layout: Array<{
-    chartId: string;
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  }>;
-  refreshInterval?: number; // 秒，0 表示不自动刷新
-  createdAt: Date;
-  updatedAt: Date;
-}
+// 导入统一的Dashboard类型定义
+import type { Dashboard, GridItem } from '@/types';
 
 interface VisualizationState {
   // 图表配置
@@ -460,12 +446,8 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === dashboardId
               ? {
                   ...dashboard,
-                  charts: [
-                    ...dashboard.charts.filter(c => c.id !== chartId),
-                    get().getChart(chartId)!,
-                  ].filter(Boolean),
                   layout: [
-                    ...dashboard.layout.filter(l => l.chartId !== chartId),
+                    ...(dashboard.layout || []).filter(l => l.chartId !== chartId),
                     { chartId, ...layout },
                   ],
                   updatedAt: new Date(),
@@ -481,8 +463,7 @@ export const useVisualizationStore = create<VisualizationState>()(
             dashboard.id === dashboardId
               ? {
                   ...dashboard,
-                  charts: dashboard.charts.filter(c => c.id !== chartId),
-                  layout: dashboard.layout.filter(l => l.chartId !== chartId),
+                  layout: (dashboard.layout || []).filter(l => l.chartId !== chartId),
                   updatedAt: new Date(),
                 }
               : dashboard
@@ -502,9 +483,11 @@ export const useVisualizationStore = create<VisualizationState>()(
 
       // 实时更新
       enableRealTime: chartId => {
-        set(state => ({
-          realTimeCharts: new Set([...state.realTimeCharts, chartId]),
-        }));
+        set(state => {
+          const newRealTimeCharts = new Set(state.realTimeCharts);
+          newRealTimeCharts.add(chartId);
+          return { realTimeCharts: newRealTimeCharts };
+        });
       },
 
       disableRealTime: chartId => {
@@ -525,9 +508,14 @@ export const useVisualizationStore = create<VisualizationState>()(
       },
 
       addTheme: theme => {
-        set(state => ({
-          availableThemes: [...new Set([...state.availableThemes, theme])],
-        }));
+        set(state => {
+          if (!state.availableThemes.includes(theme)) {
+            return {
+              availableThemes: [...state.availableThemes, theme],
+            };
+          }
+          return state;
+        });
       },
 
       // 错误处理

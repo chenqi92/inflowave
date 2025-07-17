@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger,
   Button,
-  Typography,
+  Text,
   Empty,
   Spin,
   Badge,
@@ -61,8 +61,6 @@ interface ColumnType<T = Record<string, unknown>> {
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
-
-const { Text } = Typography;
 
 interface QueryResultsProps {
   result?: QueryResult | null;
@@ -504,7 +502,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
           <div className="space-y-4">
             <div>
-              <Typography.Text className="font-medium">导出格式:</Typography.Text>
+              <Text className="font-medium">导出格式:</Text>
               <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as 'csv' | 'json' | 'excel')}>
                 <SelectTrigger className="w-full mt-2">
                   <SelectValue placeholder='选择导出格式' />
@@ -518,9 +516,9 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             </div>
             {stats && (
               <div>
-                <Typography.Text className="text-muted-foreground">
+                <Text className="text-muted-foreground">
                   将导出 {stats.totalRows} 行 × {stats.columns} 列数据
-                </Typography.Text>
+                </Text>
               </div>
             )}
           </div>

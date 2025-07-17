@@ -21,36 +21,41 @@ export const convertToCSV = (
   const lines: string[] = [];
 
   for (const resultItem of result.results) {
-    // 添加标题行
-    if (options.includeHeaders && resultItem.columns) {
-      lines.push(resultItem.columns.join(delimiter));
-    }
+    // 处理series数据
+    if (resultItem.series) {
+      for (const series of resultItem.series) {
+        // 添加标题行
+        if (options.includeHeaders && series.columns) {
+          lines.push(series.columns.join(delimiter));
+        }
 
-    // 添加数据行
-    if (resultItem.rows) {
-      for (const row of resultItem.rows) {
-        const csvRow = row
-          .map((value: any) => {
-            if (value === null || value === undefined) {
-              return '';
-            }
-            const stringValue = String(value);
-            if (
-              stringValue.includes(delimiter) ||
-              stringValue.includes('"') ||
-              stringValue.includes('\n')
-            ) {
-              return `"${stringValue.replace(/"/g, '""')}"`;
-            }
-            return stringValue;
-          })
-          .join(delimiter);
-        lines.push(csvRow);
+        // 添加数据行
+        if (series.values) {
+          for (const row of series.values) {
+            const csvRow = row
+              .map((value: unknown) => {
+                if (value === null || value === undefined) {
+                  return '';
+                }
+                const stringValue = String(value);
+                if (
+                  stringValue.includes(delimiter) ||
+                  stringValue.includes('"') ||
+                  stringValue.includes('\n')
+                ) {
+                  return `"${stringValue.replace(/"/g, '""')}"`;
+                }
+                return stringValue;
+              })
+              .join(delimiter);
+            lines.push(csvRow);
+          }
+        }
+
+        // 添加空行分隔不同的series
+        lines.push('');
       }
     }
-
-    // 添加空行分隔不同的结果
-    lines.push('');
   }
 
   return lines.join('\n');
@@ -61,23 +66,27 @@ export const convertToJSON = (
   result: QueryResult,
   _options: ExportOptions
 ): string => {
-  const data: any[] = [];
+  const data: Record<string, unknown>[] = [];
 
   if (!result.results || result.results.length === 0) {
     return JSON.stringify(data, null, 2);
   }
 
   for (const resultItem of result.results) {
-    if (resultItem.rows && resultItem.columns) {
-      for (const row of resultItem.rows) {
-        const rowObj: any = {};
+    if (resultItem.series) {
+      for (const series of resultItem.series) {
+        if (series.values && series.columns) {
+          for (const row of series.values) {
+            const rowObj: Record<string, unknown> = {};
 
-        // 添加列数据
-        resultItem.columns.forEach((column, index) => {
-          rowObj[column] = row[index];
-        });
+            // 添加列数据
+            series.columns.forEach((column, index) => {
+              rowObj[column] = row[index];
+            });
 
-        data.push(rowObj);
+            data.push(rowObj);
+          }
+        }
       }
     }
   }
@@ -97,22 +106,28 @@ export const convertToExcel = (
     const worksheet = XLSX.utils.aoa_to_sheet([['No Data']]);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
   } else {
-    result.results.forEach((resultItem, index) => {
-      const data: any[][] = [];
+    let sheetIndex = 1;
+    result.results.forEach((resultItem) => {
+      if (resultItem.series) {
+        resultItem.series.forEach((series) => {
+          const data: unknown[][] = [];
 
-      // 添加标题行
-      if (options.includeHeaders && resultItem.columns) {
-        data.push(resultItem.columns);
+          // 添加标题行
+          if (options.includeHeaders && series.columns) {
+            data.push(series.columns);
+          }
+
+          // 添加数据行
+          if (series.values) {
+            data.push(...series.values);
+          }
+
+          const worksheet = XLSX.utils.aoa_to_sheet(data);
+          const sheetName = series.name || `Sheet${sheetIndex}`;
+          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+          sheetIndex++;
+        });
       }
-
-      // 添加数据行
-      if (resultItem.rows) {
-        data.push(...resultItem.rows);
-      }
-
-      const worksheet = XLSX.utils.aoa_to_sheet(data);
-      const sheetName = `Sheet${index + 1}`;
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
     });
   }
 
@@ -233,16 +248,20 @@ export const getExportStats = (
 
   if (result.results && result.results.length > 0) {
     for (const resultItem of result.results) {
-      if (resultItem.rows) {
-        totalRows += resultItem.rows.length;
-        if (resultItem.columns) {
-          totalColumns = Math.max(totalColumns, resultItem.columns.length);
-        }
+      if (resultItem.series) {
+        for (const series of resultItem.series) {
+          if (series.values) {
+            totalRows += series.values.length;
+            if (series.columns) {
+              totalColumns = Math.max(totalColumns, series.columns.length);
+            }
 
-        // 估算数据大小（字节）
-        for (const row of resultItem.rows) {
-          for (const col of row) {
-            dataSize += String(col || '').length;
+            // 估算数据大小（字节）
+            for (const row of series.values) {
+              for (const col of row) {
+                dataSize += String(col || '').length;
+              }
+            }
           }
         }
       }
@@ -280,27 +299,34 @@ export const validateExportData = (
 
   // 检查每个结果的数据完整性
   result.results.forEach((resultItem, index) => {
-    if (!resultItem.columns || resultItem.columns.length === 0) {
-      warnings.push(`结果 ${index + 1} 缺少列定义`);
+    if (!resultItem.series || resultItem.series.length === 0) {
+      warnings.push(`结果 ${index + 1} 没有series数据`);
+      return;
     }
 
-    if (!resultItem.rows || resultItem.rows.length === 0) {
-      warnings.push(`结果 ${index + 1} 没有数据行`);
-    }
-
-    // 检查数据一致性
-    if (resultItem.columns && resultItem.rows) {
-      const columnCount = resultItem.columns.length;
-      const inconsistentRows = resultItem.rows.filter(
-        (row: any[]) => row.length !== columnCount
-      );
-
-      if (inconsistentRows.length > 0) {
-        warnings.push(
-          `结果 ${index + 1} 有 ${inconsistentRows.length} 行数据列数不一致`
-        );
+    resultItem.series.forEach((series, seriesIndex) => {
+      if (!series.columns || series.columns.length === 0) {
+        warnings.push(`结果 ${index + 1} series ${seriesIndex + 1} 缺少列定义`);
       }
-    }
+
+      if (!series.values || series.values.length === 0) {
+        warnings.push(`结果 ${index + 1} series ${seriesIndex + 1} 没有数据行`);
+      }
+
+      // 检查数据一致性
+      if (series.columns && series.values) {
+        const columnCount = series.columns.length;
+        const inconsistentRows = series.values.filter(
+          (row: unknown[]) => row.length !== columnCount
+        );
+
+        if (inconsistentRows.length > 0) {
+          warnings.push(
+            `结果 ${index + 1} series ${seriesIndex + 1} 有 ${inconsistentRows.length} 行数据列数不一致`
+          );
+        }
+      }
+    });
   });
 
   return {

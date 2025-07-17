@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography } from '@/components/ui';
-
-import { HddOutlined } from '@/components/ui';
-import { Database, Wifi, Clock } from 'lucide-react';
+import { Footer, Text, Separator } from '@/components/ui';
+import { Database, Wifi, Clock, HardDrive } from 'lucide-react';
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';
-
-const { Footer } = Layout;
-const { Text } = Typography;
 
 const AppFooter: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(dayjs());
@@ -35,36 +30,30 @@ const AppFooter: React.FC = () => {
 
   return (
     <Footer className='app-footer'>
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between px-2 py-1'>
         {/* 左侧 - 应用信息 */}
-        <div
-          className='flex gap-2'
-          split={<div className='border-t border my-4' type='vertical' />}
-        >
-          <Text className='text-xs'>InfluxDB GUI Manager v0.1.0</Text>
+        <div className='flex items-center gap-4'>
+          <Text className='text-xs text-muted-foreground'>InfluxDB GUI Manager v0.1.0</Text>
 
-          <div className='flex gap-2'>
-            <HddOutlined />
-            <Text className='text-xs'>内存: {getMemoryUsage()}MB</Text>
+          <Separator orientation="vertical" className="h-4" />
+
+          <div className='flex items-center gap-2'>
+            <HardDrive className='w-4 h-4 text-muted-foreground' />
+            <Text className='text-xs text-muted-foreground'>内存: {getMemoryUsage()}MB</Text>
           </div>
         </div>
 
         {/* 中间 - 连接状态 */}
-        <div
-          className='flex gap-2'
-          split={<div className='border-t border my-4' type='vertical' />}
-        >
+        <div className='flex items-center gap-4'>
           {activeConnectionId && currentStatus ? (
             <>
-              <div className='flex gap-2'>
+              <div className='flex items-center gap-2'>
                 <Wifi
-                  className='w-4 h-4'
-                  style={{
-                    color:
-                      currentStatus.status === 'connected'
-                        ? '#52c41a'
-                        : '#ff4d4f',
-                  }}
+                  className={`w-4 h-4 ${
+                    currentStatus.status === 'connected'
+                      ? 'text-green-500'
+                      : 'text-red-500'
+                  }`}
                 />
                 <Text className='text-xs'>
                   {currentStatus.status === 'connected' ? '已连接' : '未连接'}
@@ -72,18 +61,21 @@ const AppFooter: React.FC = () => {
               </div>
 
               {currentStatus.latency && (
-                <div className='flex gap-2'>
-                  <Database className='w-4 h-4' />
-                  <Text className='text-xs'>
-                    延迟: {currentStatus.latency}ms
-                  </Text>
-                </div>
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className='flex items-center gap-2'>
+                    <Database className='w-4 h-4 text-muted-foreground' />
+                    <Text className='text-xs text-muted-foreground'>
+                      延迟: {currentStatus.latency}ms
+                    </Text>
+                  </div>
+                </>
               )}
             </>
           ) : (
-            <div className='flex gap-2'>
-              <Wifi className='w-4 h-4' style={{ color: '#d9d9d9' }} />
-              <Text className='text-xs' type='secondary'>
+            <div className='flex items-center gap-2'>
+              <Wifi className='w-4 h-4 text-muted-foreground' />
+              <Text className='text-xs text-muted-foreground'>
                 无活跃连接
               </Text>
             </div>
@@ -91,9 +83,9 @@ const AppFooter: React.FC = () => {
         </div>
 
         {/* 右侧 - 时间 */}
-        <div className='flex gap-2'>
-          <Clock className='w-4 h-4' />
-          <Text className='text-xs'>
+        <div className='flex items-center gap-2'>
+          <Clock className='w-4 h-4 text-muted-foreground' />
+          <Text className='text-xs text-muted-foreground'>
             {currentTime.format('YYYY-MM-DD HH:mm:ss')}
           </Text>
         </div>

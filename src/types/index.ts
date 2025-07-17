@@ -549,7 +549,6 @@ export interface DashboardWidget {
 }
 
 export interface GridItem {
-  id: string;
   chartId: string;
   x: number;
   y: number;
