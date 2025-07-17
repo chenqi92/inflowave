@@ -2,19 +2,38 @@
 import { useForm } from 'react-hook-form';
 import {
   Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
   Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Button,
-  Title,
   Text,
-  Paragraph,
-  Row,
-  Col,
   Alert,
+  AlertDescription,
   Tabs,
-  InputNumber,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Input,
   Switch,
   Separator,
-  FormItem,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import {
@@ -41,7 +60,7 @@ import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
 import { isBrowserEnvironment } from '@/utils/tauri';
-import { Modal } from '@/utils/modalAdapter';
+import { toast } from 'sonner';
 import type { AppConfig } from '@/types';
 
 const Settings: React.FC = () => {
@@ -202,38 +221,36 @@ const Settings: React.FC = () => {
 
   // 清除所有数据
   const clearAllData = () => {
-    Modal.confirm({
-      title: '确认重置所有设置',
-      content:
-        '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？',
-      okText: '确认重置',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        clearConnections();
-        resetConfig();
-        setTimeout(() => {
-          const latestConfig = useAppStore.getState().config;
-          form.reset(latestConfig);
-        }, 0);
-        showMessage.success('所有数据已清除');
+    toast.error('确认重置所有设置', {
+      description: '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？',
+      action: {
+        label: '确认重置',
+        onClick: () => {
+          clearConnections();
+          resetConfig();
+          setTimeout(() => {
+            const latestConfig = useAppStore.getState().config;
+            form.reset(latestConfig);
+          }, 0);
+          showMessage.success('所有数据已清除');
+        },
       },
+      duration: 10000,
     });
   };
 
   // 清除连接配置（带确认）
   const clearConnectionsWithConfirm = () => {
-    Modal.confirm({
-      title: '确认清除连接配置',
-      content:
-        '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？',
-      okText: '确认清除',
-      cancelText: '取消',
-      okType: 'danger',
-      onOk: () => {
-        clearConnections();
-        showMessage.success('连接配置已清除');
+    toast.error('确认清除连接配置', {
+      description: '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？',
+      action: {
+        label: '确认清除',
+        onClick: () => {
+          clearConnections();
+          showMessage.success('连接配置已清除');
+        },
       },
+      duration: 10000,
     });
   };
 
@@ -253,10 +270,10 @@ const Settings: React.FC = () => {
               <ChevronLeft className='w-4 h-4' />
             </Button>
             <div>
-              <Title level={2} className='mb-0'>
+              <h1 className='text-2xl font-bold mb-1'>
                 应用设置
-              </Title>
-              <Text type='secondary' className='text-sm'>
+              </h1>
+              <Text className='text-sm text-muted-foreground'>
                 配置应用程序的行为和外观，个性化您的使用体验
               </Text>
             </div>
@@ -277,469 +294,456 @@ const Settings: React.FC = () => {
       {/* 设置内容 */}
       <div className='settings-content p-6 max-w-6xl mx-auto'>
         <div className='space-y-6'>
-          <Tabs
-            size='lg'
-            type='card'
-            className='settings-tabs flex items-center space-x-2'
-            items={[
-              {
-                key: 'general',
-                label: (
-                  <span>
-                    <Settings className='w-4 h-4' />
-                    <span>常规设置</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg'>
-                    <div className='shadow-sm border-0'>
-                      <div className='mb-6'>
-                        <Title level={4} className='mb-2 text-gray-800'>
-                          基础配置
-                        </Title>
-                        <Text type='secondary' className='text-base'>
-                          设置应用程序的基本行为和外观
-                        </Text>
-                      </div>
-                      <Form
-                        form={form}
-                        layout='vertical'
-                        onFinish={saveSettings}
-                        initialValues={stableConfig}
-                      >
-                        <Row gutter={24}>
-                          <Col span={12}>
-                            <FormItem
-                              label='主题'
-                              name='theme'
-                              tooltip='选择应用程序的外观主题'
-                            >
-                              <Select>
-                                <Option value='light'>浅色主题</Option>
-                                <Option value='dark'>深色主题</Option>
-                                <Option value='auto'>跟随系统</Option>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className='w-4 h-4' />
+                <span>常规设置</span>
+              </TabsTrigger>
+              <TabsTrigger value="data" className="flex items-center gap-2">
+                <Database className='w-4 h-4' />
+                <span>数据管理</span>
+              </TabsTrigger>
+              <TabsTrigger value="about" className="flex items-center gap-2">
+                <Info className='w-4 h-4' />
+                <span>关于</span>
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-2">
+                <User className='w-4 h-4' />
+                <span>用户偏好</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className='w-4 h-4' />
+                <span>通知设置</span>
+              </TabsTrigger>
+              <TabsTrigger value="developer" className="flex items-center gap-2">
+                <Bug className='w-4 h-4' />
+                <span>开发者工具</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>基础配置</CardTitle>
+                  <Text className='text-muted-foreground'>
+                    设置应用程序的基本行为和外观
+                  </Text>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="theme"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>主题</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="选择应用程序的外观主题" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="light">浅色主题</SelectItem>
+                                  <SelectItem value="dark">深色主题</SelectItem>
+                                  <SelectItem value="auto">跟随系统</SelectItem>
+                                </SelectContent>
                               </Select>
+                              <FormMessage />
                             </FormItem>
-                          </Col>
-                          <Col span={12}>
-                            <FormItem
-                              label='语言'
-                              name='language'
-                              tooltip='选择应用程序的显示语言'
-                            >
-                              <Select>
-                                <Option value='zh-CN'>简体中文</Option>
-                                <Option value='en-US'>English</Option>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="language"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>语言</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="选择应用程序的显示语言" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="zh-CN">简体中文</SelectItem>
+                                  <SelectItem value="en-US">English</SelectItem>
+                                </SelectContent>
                               </Select>
+                              <FormMessage />
                             </FormItem>
-                          </Col>
-                        </Row>
-
-                        <Row gutter={24}>
-                          <Col span={12}>
-                            <FormItem
-                              label='查询超时时间 (毫秒)'
-                              name='queryTimeout'
-                              tooltip='查询执行的最大等待时间'
-                            >
-                              <InputNumber
-                                min={1000}
-                                max={300000}
-                                step={1000}
-                                style={{ width: '100%' }}
-                              />
-                            </FormItem>
-                          </Col>
-                          <Col span={12}>
-                            <FormItem
-                              label='最大查询结果数'
-                              name='maxQueryResults'
-                              tooltip='单次查询返回的最大行数'
-                            >
-                              <InputNumber
-                                min={100}
-                                max={100000}
-                                step={100}
-                                style={{ width: '100%' }}
-                              />
-                            </FormItem>
-                          </Col>
-                        </Row>
-
-                        <Row gutter={24}>
-                          <Col span={12}>
-                            <FormItem
-                              label='自动保存'
-                              name='autoSave'
-                              valuePropName='checked'
-                              tooltip='自动保存查询和配置'
-                            >
-                              <Switch />
-                            </FormItem>
-                          </Col>
-                          <Col span={12}>
-                            <FormItem
-                              label='自动连接'
-                              name='autoConnect'
-                              valuePropName='checked'
-                              tooltip='启动时自动连接到上次使用的数据库'
-                            >
-                              <Switch />
-                            </FormItem>
-                          </Col>
-                        </Row>
-
-                        <Row gutter={24}>
-                          <Col span={12}>
-                            <FormItem
-                              label='日志级别'
-                              name='logLevel'
-                              tooltip='设置应用程序的日志详细程度'
-                            >
-                              <Select>
-                                <Option value='debug'>调试 (Debug)</Option>
-                                <Option value='info'>信息 (Info)</Option>
-                                <Option value='warn'>警告 (Warn)</Option>
-                                <Option value='error'>错误 (Error)</Option>
-                              </Select>
-                            </FormItem>
-                          </Col>
-                        </Row>
-
-                        <Separator />
-
-                        <div className='pt-4 border-t border'>
-                          <FormItem className='mb-0'>
-                            <div className='flex gap-2' size='middle'>
-                              <Button
-                                variant='default'
-                                htmlType='submit'
-                                disabled={loading}
-                                icon={<Save className='w-4 h-4' />}
-                                size='lg'
-                                className='cursor-pointer'
-                              >
-                                保存设置
-                              </Button>
-                              <Button
-                                icon={<RefreshCw className='w-4 h-4' />}
-                                onClick={handleResetSettings}
-                                size='lg'
-                                className='cursor-pointer'
-                              >
-                                重置为默认
-                              </Button>
-                            </div>
-                          </FormItem>
-                        </div>
-                      </Form>
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                key: 'data',
-                label: (
-                  <span className='flex items-center space-x-2'>
-                    <Database className='w-4 h-4' />
-                    <span>数据管理</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg space-y-6'>
-                    <div title='导入/导出' className='shadow-sm border-0'>
-                      <div className='mb-4'>
-                        <Title level={5} className='mb-2 text-gray-800'>
-                          数据备份与恢复
-                        </Title>
-                        <Paragraph className='text-muted-foreground'>
-                          您可以导出当前的应用设置和连接配置，或从文件中导入设置。
-                        </Paragraph>
-                      </div>
-
-                      <div className='flex gap-2' size='lg'>
-                        <Button
-                          icon={<FileDown className='w-4 h-4' />}
-                          onClick={exportSettings}
-                          size='lg'
-                          type='dashed'
-                          className='cursor-pointer'
-                        >
-                          导出设置
-                        </Button>
-                        <Button
-                          icon={<FileUp className='w-4 h-4' />}
-                          onClick={importSettings}
-                          size='lg'
-                          type='dashed'
-                          className='cursor-pointer'
-                        >
-                          导入设置
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div
-                      title='数据清理'
-                      className='border-destructive shadow-sm border-0 bg-destructive/10'
-                    >
-                      <div className='mb-4'>
-                        <Title level={5} className='mb-2 text-destructive'>
-                          危险操作区域
-                        </Title>
-                        <Alert
-                          message='危险操作'
-                          description='以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。'
-                          type='warning'
-                          showIcon
-                          className='mb-4'
+                          )}
                         />
                       </div>
 
-                      <div
-                        className='flex gap-2'
-                        direction='vertical'
-                        style={{ width: '100%' }}
-                      >
-                        <div>
-                          <Text strong>清除所有连接配置</Text>
-                          <br />
-                          <Text type='secondary'>
-                            删除所有保存的数据库连接配置
-                          </Text>
-                          <br />
-                          <Button
-                            danger
-                            icon={<Trash2 className='w-4 h-4' />}
-                            onClick={clearConnectionsWithConfirm}
-                            className='mt-2 cursor-pointer'
-                            size='lg'
-                          >
-                            清除连接配置
-                          </Button>
-                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="queryTimeout"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>查询超时时间 (毫秒)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1000}
+                                  max={300000}
+                                  step={1000}
+                                  placeholder="查询执行的最大等待时间"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                        <Separator />
-
-                        <div>
-                          <Text strong>重置所有设置</Text>
-                          <br />
-                          <Text type='secondary'>
-                            将所有设置恢复为默认值，并清除所有用户数据
-                          </Text>
-                          <br />
-                          <Button
-                            danger
-                            icon={<Trash2 className='w-4 h-4' />}
-                            onClick={clearAllData}
-                            className='mt-2 cursor-pointer'
-                            size='lg'
-                          >
-                            重置所有设置
-                          </Button>
-                        </div>
+                        <FormField
+                          control={form.control}
+                          name="maxQueryResults"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>最大查询结果数</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={100}
+                                  max={100000}
+                                  step={100}
+                                  placeholder="单次查询返回的最大行数"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                key: 'about',
-                label: (
-                  <span className='flex items-center space-x-2'>
-                    <Info className='w-4 h-4' />
-                    <span>关于</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg'>
-                    <div title='关于 InfloWave' className='shadow-sm border-0'>
-                      <Row gutter={24}>
-                        <Col span={12}>
-                          <div className='space-y-4'>
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                版本信息
-                              </Text>
-                              <br />
-                              <Text className='text-base'>v0.1.0-alpha</Text>
-                            </div>
 
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                构建时间
-                              </Text>
-                              <br />
-                              <Text className='text-base'>
-                                {new Date().toLocaleDateString()}
-                              </Text>
-                            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="autoSave"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">自动保存</FormLabel>
+                                <Text className="text-sm text-muted-foreground">
+                                  自动保存查询和配置
+                                </Text>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
 
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                技术栈
-                              </Text>
-                              <br />
-                              <Text className='text-base'>
-                                React + TypeScript + Rust + Tauri
-                              </Text>
-                            </div>
-                          </div>
-                        </Col>
+                        <FormField
+                          control={form.control}
+                          name="autoConnect"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">自动连接</FormLabel>
+                                <Text className="text-sm text-muted-foreground">
+                                  启动时自动连接到上次使用的数据库
+                                </Text>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                        <Col span={12}>
-                          <div className='space-y-4'>
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                支持的 InfluxDB 版本
-                              </Text>
-                              <br />
-                              <Text className='text-base'>InfluxDB 1.x</Text>
-                            </div>
-
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                开源协议
-                              </Text>
-                              <br />
-                              <Text className='text-base'>MIT License</Text>
-                            </div>
-
-                            <div>
-                              <Text strong className='text-lg text-gray-800'>
-                                项目地址
-                              </Text>
-                              <br />
-                              <Text className='text-base text-primary hover:text-blue-800 cursor-pointer'>
-                                GitHub Repository
-                              </Text>
-                            </div>
-                          </div>
-                        </Col>
-                      </Row>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="logLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>日志级别</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="设置应用程序的日志详细程度" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="debug">调试 (Debug)</SelectItem>
+                                  <SelectItem value="info">信息 (Info)</SelectItem>
+                                  <SelectItem value="warn">警告 (Warn)</SelectItem>
+                                  <SelectItem value="error">错误 (Error)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       <Separator />
 
-                      <Alert
-                        message='功能特性'
-                        description={
-                          <ul className='mt-2 space-y-1'>
-                            <li>• 现代化的用户界面设计</li>
-                            <li>• 安全的连接管理和密码加密</li>
-                            <li>• 强大的查询编辑器和结果展示</li>
-                            <li>• 灵活的数据可视化功能</li>
-                            <li>• 便捷的数据写入和导入工具</li>
-                            <li>• 跨平台支持 (Windows, macOS, Linux)</li>
-                          </ul>
-                        }
-                        type='info'
-                        showIcon
-                        icon={<Info className='w-4 h-4' />}
-                      />
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                key: 'preferences',
-                label: (
-                  <span className='flex items-center space-x-2'>
-                    <User className='w-4 h-4' />
-                    <span>用户偏好</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg'>
-                    <UserPreferences />
-                  </div>
-                ),
-              },
-              {
-                key: 'notifications',
-                label: (
-                  <span className='flex items-center space-x-2'>
-                    <Bell className='w-4 h-4' />
-                    <span>通知设置</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg space-y-6'>
-                    <div title='浏览器模式提醒' className='shadow-sm border-0'>
-                      <div className='mb-4'>
-                        <Title level={4} className='mb-2 text-gray-800'>
-                          预览模式说明
-                        </Title>
-                        <Text type='secondary'>
-                          管理在浏览器环境中运行时显示的功能说明提醒。
-                        </Text>
+                      <div className='flex gap-2 pt-4'>
+                        <Button
+                          type="submit"
+                          disabled={loading}
+                          className='cursor-pointer'
+                        >
+                          <Save className='w-4 h-4 mr-2' />
+                          保存设置
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleResetSettings}
+                          className='cursor-pointer'
+                        >
+                          <RefreshCw className='w-4 h-4 mr-2' />
+                          重置为默认
+                        </Button>
                       </div>
-
-                      <div
-                        className='flex gap-2'
-                        direction='vertical'
-                        style={{ width: '100%' }}
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="data" className="mt-6">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>数据备份与恢复</CardTitle>
+                    <Text className='text-muted-foreground'>
+                      您可以导出当前的应用设置和连接配置，或从文件中导入设置。
+                    </Text>
+                  </CardHeader>
+                  <CardContent>
+                    <div className='flex gap-2'>
+                      <Button
+                        variant="outline"
+                        onClick={exportSettings}
+                        className='cursor-pointer'
                       >
-                        <Alert
-                          message='用户指引设置'
-                          description='您可以重新查看用户指引，或者重置启动时的指引显示设置。'
-                          type='info'
-                          showIcon
-                          style={{ marginBottom: '16px' }}
-                        />
-
-                        <div className='flex gap-2'>
-                          <Button
-                            variant='default'
-                            icon={<Info className='w-4 h-4' />}
-                            onClick={() => setUserGuideVisible(true)}
-                            className='cursor-pointer'
-                          >
-                            查看用户指引
-                          </Button>
-                          <Button
-                            icon={<RefreshCw className='w-4 h-4' />}
-                            onClick={() => {
-                              resetNoticeSettings();
-                              showMessage.success(
-                                '提醒设置已重置，下次启动时会再次显示用户指引'
-                              );
-                            }}
-                            className='cursor-pointer'
-                          >
-                            重置提醒设置
-                          </Button>
-                        </div>
-                      </div>
+                        <FileDown className='w-4 h-4 mr-2' />
+                        导出设置
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={importSettings}
+                        className='cursor-pointer'
+                      >
+                        <FileUp className='w-4 h-4 mr-2' />
+                        导入设置
+                      </Button>
                     </div>
-                  </div>
-                ),
-              },
-              {
-                key: 'developer',
-                label: (
-                  <span className='flex items-center space-x-2'>
-                    <Bug className='w-4 h-4' />
-                    <span>开发者工具</span>
-                  </span>
-                ),
-                children: (
-                  <div className='bg-muted/50 p-6 rounded-lg space-y-6'>
-                    <div title='错误日志查看器' className='shadow-sm border-0'>
-                      <div className='mb-4'>
-                        <Title level={4} className='mb-2 text-gray-800'>
-                          应用错误日志
-                        </Title>
-                        <Text type='secondary'>
-                          查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
+                  </CardContent>
+                </Card>
+
+                <Card className="border-destructive bg-destructive/5">
+                  <CardHeader>
+                    <CardTitle className="text-destructive">危险操作区域</CardTitle>
+                    <Alert className="border-yellow-200 bg-yellow-50">
+                      <AlertDescription className="text-yellow-800">
+                        以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。
+                      </AlertDescription>
+                    </Alert>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                      <div>
+                        <Text className="font-semibold">清除所有连接配置</Text>
+                        <Text className="text-sm text-muted-foreground">
+                          删除所有保存的数据库连接配置
                         </Text>
                       </div>
-                      <ErrorLogViewer />
+                      <Button
+                        variant="destructive"
+                        onClick={clearConnectionsWithConfirm}
+                        className='cursor-pointer'
+                      >
+                        <Trash2 className='w-4 h-4 mr-2' />
+                        清除连接配置
+                      </Button>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <div>
+                        <Text className="font-semibold">重置所有设置</Text>
+                        <Text className="text-sm text-muted-foreground">
+                          将所有设置恢复为默认值，并清除所有用户数据
+                        </Text>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        onClick={clearAllData}
+                        className='cursor-pointer'
+                      >
+                        <Trash2 className='w-4 h-4 mr-2' />
+                        重置所有设置
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="about" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>关于 InfloWave</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className='space-y-4'>
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          版本信息
+                        </Text>
+                        <Text className='text-base text-muted-foreground'>v0.1.0-alpha</Text>
+                      </div>
+
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          构建时间
+                        </Text>
+                        <Text className='text-base text-muted-foreground'>
+                          {new Date().toLocaleDateString()}
+                        </Text>
+                      </div>
+
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          技术栈
+                        </Text>
+                        <Text className='text-base text-muted-foreground'>
+                          React + TypeScript + Rust + Tauri
+                        </Text>
+                      </div>
+                    </div>
+
+                    <div className='space-y-4'>
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          支持的 InfluxDB 版本
+                        </Text>
+                        <Text className='text-base text-muted-foreground'>InfluxDB 1.x</Text>
+                      </div>
+
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          开源协议
+                        </Text>
+                        <Text className='text-base text-muted-foreground'>MIT License</Text>
+                      </div>
+
+                      <div>
+                        <Text className='font-semibold text-lg'>
+                          项目地址
+                        </Text>
+                        <Text className='text-base text-primary hover:text-blue-800 cursor-pointer'>
+                          GitHub Repository
+                        </Text>
+                      </div>
                     </div>
                   </div>
-                ),
-              },
-            ]}
-          />
+
+                  <Separator className="my-6" />
+
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <Info className='w-4 h-4 text-blue-600' />
+                    <AlertDescription className="text-blue-800">
+                      <div className="font-medium mb-2">功能特性</div>
+                      <ul className='space-y-1'>
+                        <li>• 现代化的用户界面设计</li>
+                        <li>• 安全的连接管理和密码加密</li>
+                        <li>• 强大的查询编辑器和结果展示</li>
+                        <li>• 灵活的数据可视化功能</li>
+                        <li>• 便捷的数据写入和导入工具</li>
+                        <li>• 跨平台支持 (Windows, macOS, Linux)</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="preferences" className="mt-6">
+              <Card>
+                <CardContent>
+                  <UserPreferences />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="notifications" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>预览模式说明</CardTitle>
+                  <Text className='text-muted-foreground'>
+                    管理在浏览器环境中运行时显示的功能说明提醒。
+                  </Text>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <Info className='w-4 h-4 text-blue-600' />
+                    <AlertDescription className="text-blue-800">
+                      <div className="font-medium mb-2">用户指引设置</div>
+                      <div>您可以重新查看用户指引，或者重置启动时的指引显示设置。</div>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className='flex gap-2'>
+                    <Button
+                      onClick={() => setUserGuideVisible(true)}
+                      className='cursor-pointer'
+                    >
+                      <Info className='w-4 h-4 mr-2' />
+                      查看用户指引
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        resetNoticeSettings();
+                        showMessage.success(
+                          '提醒设置已重置，下次启动时会再次显示用户指引'
+                        );
+                      }}
+                      className='cursor-pointer'
+                    >
+                      <RefreshCw className='w-4 h-4 mr-2' />
+                      重置提醒设置
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="developer" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>应用错误日志</CardTitle>
+                  <Text className='text-muted-foreground'>
+                    查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
+                  </Text>
+                </CardHeader>
+                <CardContent>
+                  <ErrorLogViewer />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* 用户指引弹框 */}

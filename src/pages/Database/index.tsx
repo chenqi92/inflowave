@@ -3,26 +3,43 @@ import { useForm } from 'react-hook-form';
 import {
   DataTable,
   Button,
-  Tag,
+  Badge,
   Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
   Input,
-  Spin,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Statistic,
-  Row,
-  Col,
   Alert,
-  Popconfirm,
+  AlertDescription,
   Tooltip,
+  TooltipContent,
   TooltipProvider,
-  Descriptions,
-  DescriptionsItem,
+  TooltipTrigger,
   Dialog,
-  Typography,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import {
@@ -48,8 +65,6 @@ import type { RetentionPolicy } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { useSmartSql } from '@/hooks/useSmartSql';
 import { toast } from 'sonner';
-
-const { Text } = Typography;
 
 // 生成图表查询的辅助函数
 const generateChartQuery = (params: any): string => {
@@ -345,18 +360,18 @@ const Database: React.FC = () => {
   if (!activeConnectionId) {
     return (
       <div className='p-6'>
-        <Alert
-          message='请先连接到 InfluxDB'
-          description='在连接管理页面选择一个连接并激活后，才能管理数据库。'
-          type='warning'
-          showIcon
-          icon={<AlertCircle />}
-          action={
-            <Button size='small' type='primary'>
-              去连接
-            </Button>
-          }
-        />
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            <div className="space-y-2">
+              <div className="font-medium">请先连接到 InfluxDB</div>
+              <div>在连接管理页面选择一个连接并激活后，才能管理数据库。</div>
+              <Button size="sm" className="mt-2">
+                去连接
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -367,26 +382,26 @@ const Database: React.FC = () => {
         {/* 页面标题和操作 */}
         <div className='flex items-center justify-between mb-6'>
           <div>
-            <Typography variant='h2' className='text-2xl font-bold mb-1'>
+            <h1 className='text-2xl font-bold mb-1'>
               数据库管理
-            </Typography>
+            </h1>
             <p className='text-muted-foreground'>
               管理 InfluxDB 数据库、测量和保留策略
             </p>
           </div>
           <div className='flex gap-2'>
             <Button
-              icon={<RefreshCw className='w-4 h-4' />}
+              variant="outline"
               onClick={loadDatabases}
               disabled={loading}
             >
+              <RefreshCw className='w-4 h-4 mr-2' />
               刷新
             </Button>
             <Button
-              type='primary'
-              icon={<Plus className='w-4 h-4' />}
               onClick={() => setCreateModalVisible(true)}
             >
+              <Plus className='w-4 h-4 mr-2' />
               创建数据库
             </Button>
           </div>
@@ -395,9 +410,9 @@ const Database: React.FC = () => {
         {/* 数据库选择器 */}
         <div className='mb-6'>
           <div className='flex items-center gap-4'>
-            <Typography.Text className='font-semibold text-base'>
+            <Text className='font-semibold text-base'>
               选择数据库:
-            </Typography.Text>
+            </Text>
             <Select
               value={selectedDatabase}
               onValueChange={setSelectedDatabase}
@@ -430,18 +445,31 @@ const Database: React.FC = () => {
               </SelectContent>
             </Select>
             {selectedDatabase && (
-              <Popconfirm
-                title='确定要删除这个数据库吗？'
-                description='删除后数据将无法恢复！'
-                onConfirm={() => deleteDatabase(selectedDatabase)}
-                okText='确定'
-                cancelText='取消'
-                okType='danger'
-              >
-                <Button danger icon={<Trash2 className='w-4 h-4' />}>
-                  删除数据库
-                </Button>
-              </Popconfirm>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className='w-4 h-4 mr-2' />
+                    删除数据库
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>确定要删除这个数据库吗？</DialogTitle>
+                    <DialogDescription>
+                      删除后数据将无法恢复！
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline">取消</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteDatabase(selectedDatabase)}
+                    >
+                      确定删除
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </div>
@@ -450,161 +478,177 @@ const Database: React.FC = () => {
           <>
             {/* 数据库统计信息 */}
             {databaseStats && (
-              <div className='mb-6'>
-                <div>
-                  <h3>数据库统计</h3>
-                </div>
-                <div>
-                  <Row gutter={16}>
-                    <Col span={6}>
-                      <Statistic
-                        title='测量数量'
-                        value={databaseStats.measurementCount}
-                        prefix={<BarChart className='w-4 h-4' />}
-                      />
-                    </Col>
-                    <Col span={6}>
-                      <Statistic
-                        title='序列数量'
-                        value={databaseStats.seriesCount}
-                      />
-                    </Col>
-                    <Col span={6}>
-                      <Statistic
-                        title='数据点数量'
-                        value={databaseStats.pointCount}
-                      />
-                    </Col>
-                    <Col span={6}>
-                      <Statistic
-                        title='磁盘使用'
-                        value={databaseStats.diskSize}
-                        suffix='MB'
-                      />
-                    </Col>
-                  </Row>
-                </div>
-              </div>
+              <Card className='mb-6'>
+                <CardHeader>
+                  <CardTitle>数据库统计</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <BarChart className='w-4 h-4 text-muted-foreground' />
+                        <Text className="text-sm text-muted-foreground">测量数量</Text>
+                      </div>
+                      <div className="text-2xl font-bold">{databaseStats.measurementCount}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Text className="text-sm text-muted-foreground">序列数量</Text>
+                      <div className="text-2xl font-bold">{databaseStats.seriesCount}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Text className="text-sm text-muted-foreground">数据点数量</Text>
+                      <div className="text-2xl font-bold">{databaseStats.pointCount}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <Text className="text-sm text-muted-foreground">磁盘使用</Text>
+                      <div className="text-2xl font-bold">{databaseStats.diskSize} MB</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* 测量列表 */}
-            <div className='mb-6'>
-              <div>
-                <h3>测量列表</h3>
-              </div>
-              <div>
-                <Spin spinning={loading}>
-                  <DataTable
-                    dataSource={measurements?.map(m => ({ name: m })) || []}
-                    columns={[
-                      {
-                        title: '测量名称',
-                        dataIndex: 'name',
-                        key: 'name',
-                        render: (name: string) => (
-                          <TableContextMenu
-                            tableName={name}
-                            databaseName={selectedDatabase}
-                            onAction={(action, tableName) => {
-                              console.log('表操作:', action, tableName);
-                              // 根据操作类型执行相应的处理
-                              if (action === 'view_data') {
-                                // 跳转到查询页面并执行查看数据的查询
-                                navigate('/query', {
-                                  state: {
-                                    query: `SELECT *
-                                            FROM "${tableName}" LIMIT 100`,
-                                    database: selectedDatabase,
-                                  },
-                                });
-                              } else if (action === 'refresh_table') {
-                                loadDatabaseDetails(selectedDatabase);
-                              }
+            <Card className='mb-6'>
+              <CardHeader>
+                <CardTitle>测量列表</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                    <Text>加载中...</Text>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>测量名称</TableHead>
+                        <TableHead className="w-[180px]">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {measurements?.length ? (
+                        measurements.map((name) => (
+                          <TableRow
+                            key={name}
+                            onContextMenu={(event) => {
+                              event.preventDefault();
+                              setContextMenu({
+                                visible: true,
+                                x: event.clientX,
+                                y: event.clientY,
+                                target: {
+                                  type: 'measurement',
+                                  name: name,
+                                  database: selectedDatabase,
+                                },
+                              });
                             }}
                           >
-                            <div className='flex gap-2'>
-                              <BarChart className='w-4 h-4' />
-                              <Typography.Text className='font-semibold'>
-                                {name}
-                              </Typography.Text>
-                            </div>
-                          </TableContextMenu>
-                        ),
-                      },
-                      {
-                        title: '操作',
-                        key: 'actions',
-                        width: 180,
-                        render: (_, record: { name: string }) => (
-                          <div className='flex gap-2'>
-                            <Tooltip title='查看详情'>
-                              <Button
-                                type='text'
-                                icon={<Info className='w-4 h-4' />}
-                                onClick={() =>
-                                  showMessage.success(
-                                    '查看测量详情功能开发中...'
-                                  )
-                                }
-                              />
-                            </Tooltip>
-                            <Popconfirm
-                              title='确定要删除这个测量吗？'
-                              onConfirm={() =>
-                                showMessage.success('删除测量功能开发中...')
-                              }
-                              okText='确定'
-                              cancelText='取消'
-                            >
-                              <Tooltip title='删除'>
-                                <Button
-                                  type='text'
-                                  danger
-                                  icon={<Trash2 className='w-4 h-4' />}
-                                />
-                              </Tooltip>
-                            </Popconfirm>
-                          </div>
-                        ),
-                      },
-                    ]}
-                    rowKey='name'
-                    pagination={{
-                      pageSize: 10,
-                      showSizeChanger: true,
-                      showTotal: total => `共 ${total} 个测量`,
-                    }}
-                    locale={{
-                      emptyText: '暂无测量数据',
-                    }}
-                    onRow={record => ({
-                      onContextMenu: event => {
-                        event.preventDefault();
-                        setContextMenu({
-                          visible: true,
-                          x: event.clientX,
-                          y: event.clientY,
-                          target: {
-                            type: 'measurement',
-                            name: record.name,
-                            database: selectedDatabase,
-                          },
-                        });
-                      },
-                    })}
-                  />
-                </Spin>
-              </div>
-            </div>
+                            <TableCell>
+                              <TableContextMenu
+                                tableName={name}
+                                databaseName={selectedDatabase}
+                                onAction={(action, tableName) => {
+                                  console.log('表操作:', action, tableName);
+                                  // 根据操作类型执行相应的处理
+                                  if (action === 'view_data') {
+                                    // 跳转到查询页面并执行查看数据的查询
+                                    navigate('/query', {
+                                      state: {
+                                        query: `SELECT *
+                                                FROM "${tableName}" LIMIT 100`,
+                                        database: selectedDatabase,
+                                      },
+                                    });
+                                  } else if (action === 'refresh_table') {
+                                    loadDatabaseDetails(selectedDatabase);
+                                  }
+                                }}
+                              >
+                                <div className='flex gap-2 items-center'>
+                                  <BarChart className='w-4 h-4' />
+                                  <Text className='font-semibold'>
+                                    {name}
+                                  </Text>
+                                </div>
+                              </TableContextMenu>
+                            </TableCell>
+                            <TableCell>
+                              <div className='flex gap-2'>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          showMessage.success(
+                                            '查看测量详情功能开发中...'
+                                          )
+                                        }
+                                      >
+                                        <Info className='w-4 h-4' />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>查看详情</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                          >
+                                            <Trash2 className='w-4 h-4 text-destructive' />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>删除</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>确定要删除这个测量吗？</DialogTitle>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                      <Button variant="outline">取消</Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => showMessage.success('删除测量功能开发中...')}
+                                      >
+                                        确定删除
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center py-8">
+                            <Text className="text-muted-foreground">暂无测量数据</Text>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
 
             {/* 保留策略 */}
-            <div>
-              <div>
+            <Card>
+              <CardHeader>
                 <div className='flex items-center justify-between'>
-                  <h3>保留策略</h3>
+                  <CardTitle>保留策略</CardTitle>
                   <Button
-                    type='primary'
-                    icon={<Plus className='w-4 h-4' />}
                     onClick={() =>
                       setRetentionPolicyDialog({
                         visible: true,
@@ -613,114 +657,138 @@ const Database: React.FC = () => {
                       })
                     }
                   >
+                    <Plus className='w-4 h-4 mr-2' />
                     创建策略
                   </Button>
                 </div>
-              </div>
-              <div>
-                <Spin spinning={loading}>
-                  <Table
-                    dataSource={
-                      Array.isArray(retentionPolicies) ? retentionPolicies : []
-                    }
-                    columns={[
-                      {
-                        title: '策略名称',
-                        dataIndex: 'name',
-                        key: 'name',
-                        render: (name: string, record: RetentionPolicy) => (
-                          <div className='flex gap-2'>
-                            <Typography.Text className='font-semibold'>
-                              {name}
-                            </Typography.Text>
-                            {record.default && <Tag color='blue'>默认</Tag>}
-                          </div>
-                        ),
-                      },
-                      {
-                        title: '保留时间',
-                        dataIndex: 'duration',
-                        key: 'duration',
-                      },
-                      {
-                        title: '分片组时间',
-                        dataIndex: 'shardGroupDuration',
-                        key: 'shardGroupDuration',
-                      },
-                      {
-                        title: '副本数',
-                        dataIndex: 'replicaN',
-                        key: 'replicaN',
-                      },
-                      {
-                        title: '操作',
-                        key: 'actions',
-                        width: 120,
-                        render: (_, record: RetentionPolicy) => (
-                          <div className='flex gap-2'>
-                            <Tooltip title='编辑'>
-                              <Button
-                                type='text'
-                                icon={<Edit className='w-4 h-4' />}
-                                onClick={() =>
-                                  setRetentionPolicyDialog({
-                                    visible: true,
-                                    mode: 'edit',
-                                    policy: record,
-                                  })
-                                }
-                              />
-                            </Tooltip>
-                            {!record.default && (
-                              <Popconfirm
-                                title='确定要删除这个保留策略吗？'
-                                description='删除后数据将无法恢复！'
-                                onConfirm={async () => {
-                                  try {
-                                    await safeTauriInvoke(
-                                      'drop_retention_policy',
-                                      {
-                                        connection_id: activeConnectionId,
-                                        database: selectedDatabase,
-                                        policyName: record.name,
-                                      }
-                                    );
-                                    showMessage.success(
-                                      `保留策略 "${record.name}" 删除成功`
-                                    );
-                                    loadDatabaseDetails(selectedDatabase);
-                                  } catch (error) {
-                                    showMessage.error(
-                                      `删除保留策略失败: ${error}`
-                                    );
-                                  }
-                                }}
-                                okText='确定'
-                                cancelText='取消'
-                                okType='danger'
-                              >
-                                <Tooltip title='删除'>
-                                  <Button
-                                    type='text'
-                                    danger
-                                    icon={<Trash2 className='w-4 h-4' />}
-                                  />
-                                </Tooltip>
-                              </Popconfirm>
-                            )}
-                          </div>
-                        ),
-                      },
-                    ]}
-                    rowKey='name'
-                    pagination={false}
-                    locale={{
-                      emptyText: '暂无保留策略',
-                    }}
-                  />
-                </Spin>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                    <Text>加载中...</Text>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>策略名称</TableHead>
+                        <TableHead>保留时间</TableHead>
+                        <TableHead>分片组时间</TableHead>
+                        <TableHead>副本数</TableHead>
+                        <TableHead className="w-[120px]">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {retentionPolicies?.length ? (
+                        retentionPolicies.map((record) => (
+                          <TableRow key={record.name}>
+                            <TableCell>
+                              <div className='flex gap-2 items-center'>
+                                <Text className='font-semibold'>
+                                  {record.name}
+                                </Text>
+                                {record.default && (
+                                  <Badge variant="secondary">默认</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>{record.duration}</TableCell>
+                            <TableCell>{record.shardGroupDuration}</TableCell>
+                            <TableCell>{record.replicaN}</TableCell>
+                            <TableCell>
+                              <div className='flex gap-2'>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          setRetentionPolicyDialog({
+                                            visible: true,
+                                            mode: 'edit',
+                                            policy: record,
+                                          })
+                                        }
+                                      >
+                                        <Edit className='w-4 h-4' />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>编辑</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                                {!record.default && (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                            >
+                                              <Trash2 className='w-4 h-4 text-destructive' />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>删除</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>确定要删除这个保留策略吗？</DialogTitle>
+                                        <DialogDescription>
+                                          删除后数据将无法恢复！
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <DialogFooter>
+                                        <Button variant="outline">取消</Button>
+                                        <Button
+                                          variant="destructive"
+                                          onClick={async () => {
+                                            try {
+                                              await safeTauriInvoke(
+                                                'drop_retention_policy',
+                                                {
+                                                  connection_id: activeConnectionId,
+                                                  database: selectedDatabase,
+                                                  policyName: record.name,
+                                                }
+                                              );
+                                              showMessage.success(
+                                                `保留策略 "${record.name}" 删除成功`
+                                              );
+                                              loadDatabaseDetails(selectedDatabase);
+                                            } catch (error) {
+                                              showMessage.error(
+                                                `删除保留策略失败: ${error}`
+                                              );
+                                            }
+                                          }}
+                                        >
+                                          确定删除
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            <Text className="text-muted-foreground">暂无保留策略</Text>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </>
         )}
 
@@ -839,75 +907,20 @@ const Database: React.FC = () => {
 
                 case 'showDatabaseInfo':
                   // 显示数据库详细信息对话框
-                  Modal.info({
-                    title: `数据库信息 - ${params.database}`,
-                    width: 600,
-                    content: (
-                      <div className='space-y-4'>
-                        <Descriptions column={1} bordered size='small'>
-                          <DescriptionsItem label='数据库名称'>
-                            {params.database}
-                          </DescriptionsItem>
-                          <DescriptionsItem label='测量数量'>
-                            {measurements.length}
-                          </DescriptionsItem>
-                          <DescriptionsItem label='保留策略数量'>
-                            {retentionPolicies.length}
-                          </DescriptionsItem>
-                          {databaseStats && (
-                            <>
-                              <DescriptionsItem label='序列数量'>
-                                {databaseStats.seriesCount}
-                              </DescriptionsItem>
-                              <DescriptionsItem label='数据点数量'>
-                                {databaseStats.pointCount}
-                              </DescriptionsItem>
-                              <DescriptionsItem label='磁盘使用'>
-                                {databaseStats.diskSize} MB
-                              </DescriptionsItem>
-                            </>
-                          )}
-                        </Descriptions>
-                      </div>
-                    ),
+                  toast.info(`数据库信息 - ${params.database}`, {
+                    description: `测量数量: ${measurements.length}, 保留策略数量: ${retentionPolicies.length}${
+                      databaseStats ? `, 序列数量: ${databaseStats.seriesCount}, 数据点数量: ${databaseStats.pointCount}, 磁盘使用: ${databaseStats.diskSize} MB` : ''
+                    }`,
+                    duration: 5000,
                   });
                   break;
 
                 case 'showDatabaseStats':
                   // 显示数据库统计信息
                   if (databaseStats) {
-                    Modal.info({
-                      title: `数据库统计 - ${params.database}`,
-                      width: 700,
-                      content: (
-                        <Row gutter={16}>
-                          <Col span={12}>
-                            <Statistic
-                              title='测量数量'
-                              value={databaseStats.measurementCount}
-                            />
-                          </Col>
-                          <Col span={12}>
-                            <Statistic
-                              title='序列数量'
-                              value={databaseStats.seriesCount}
-                            />
-                          </Col>
-                          <Col span={12}>
-                            <Statistic
-                              title='数据点数量'
-                              value={databaseStats.pointCount}
-                            />
-                          </Col>
-                          <Col span={12}>
-                            <Statistic
-                              title='磁盘使用'
-                              value={databaseStats.diskSize}
-                              suffix='MB'
-                            />
-                          </Col>
-                        </Row>
-                      ),
+                    toast.info(`数据库统计 - ${params.database}`, {
+                      description: `测量数量: ${databaseStats.measurementCount}, 序列数量: ${databaseStats.seriesCount}, 数据点数量: ${databaseStats.pointCount}, 磁盘使用: ${databaseStats.diskSize} MB`,
+                      duration: 5000,
                     });
                   } else {
                     showMessage.success('正在加载数据库统计信息...');
@@ -943,19 +956,14 @@ const Database: React.FC = () => {
                   break;
 
                 case 'deleteDatabase':
-                  Modal.confirm({
-                    title: '确认删除数据库',
-                    content: `确定要删除数据库 "${params.database}" 吗？此操作不可撤销！`,
-                    okText: '删除',
-                    okType: 'danger',
-                    cancelText: '取消',
-                    closable: true,
-                    keyboard: true,
-                    maskClosable: true,
-                    onOk: () => deleteDatabase(params.database),
-                    onCancel: () => {
-                      // 明确处理取消操作
+                  // 使用 toast 确认删除
+                  toast.error(`确认删除数据库 "${params.database}"`, {
+                    description: '此操作不可撤销！',
+                    action: {
+                      label: '删除',
+                      onClick: () => deleteDatabase(params.database),
                     },
+                    duration: 10000,
                   });
                   break;
 
@@ -982,23 +990,19 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    // 在新窗口或对话框中显示结果
-                    Modal.info({
-                      title: `数据预览 - ${params.measurement}`,
-                      width: 1000,
-                      content: (
-                        <div>
-                          <span className='text-muted-foreground'>
-                            查询: {query}
-                          </span>
-                          <div className='mt-4'>
-                            {/* 这里可以添加一个简单的表格来显示结果 */}
-                            <pre className='bg-muted p-4 rounded max-h-96 overflow-auto'>
-                              {JSON.stringify(result, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ),
+                    // 使用 toast 显示预览结果
+                    toast.info(`数据预览 - ${params.measurement}`, {
+                      description: `查询: ${query}`,
+                      duration: 5000,
+                    });
+
+                    // 跳转到查询页面显示完整结果
+                    navigate('/query', {
+                      state: {
+                        query,
+                        database: selectedDatabase,
+                        description: `数据预览 - ${params.measurement}`,
+                      },
                     });
                   } catch (error) {
                     showMessage.error(`数据预览失败: ${error}`);
@@ -1014,33 +1018,14 @@ const Database: React.FC = () => {
                       measurement: params.measurement,
                     });
 
-                    Modal.info({
-                      title: `字段信息 - ${params.measurement}`,
-                      width: 600,
-                      content: (
-                        <div>
-                          <Text strong>字段列表:</Text>
-                          <ul className='mt-2'>
-                            {Array.isArray(fields) ? (
-                              fields.map((field: any, index: number) => (
-                                <li key={index} className='py-1'>
-                                  <Text code>{field.fieldKey || field}</Text>
-                                  {field.fieldType && (
-                                    <Text type='secondary'>
-                                      {' '}
-                                      ({field.fieldType})
-                                    </Text>
-                                  )}
-                                </li>
-                              ))
-                            ) : (
-                              <li>
-                                <Text type='secondary'>无字段信息</Text>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      ),
+                    // 使用 toast 显示字段信息
+                    const fieldList = Array.isArray(fields)
+                      ? fields.map((field: any) => field.fieldKey || field).join(', ')
+                      : '无字段信息';
+
+                    toast.info(`字段信息 - ${params.measurement}`, {
+                      description: `字段列表: ${fieldList}`,
+                      duration: 5000,
                     });
                   } catch (error) {
                     showMessage.error(`获取字段信息失败: ${error}`);
@@ -1056,27 +1041,14 @@ const Database: React.FC = () => {
                       measurement: params.measurement,
                     });
 
-                    Modal.info({
-                      title: `标签键 - ${params.measurement}`,
-                      width: 500,
-                      content: (
-                        <div>
-                          <Text strong>标签键列表:</Text>
-                          <ul className='mt-2'>
-                            {Array.isArray(tagKeys) ? (
-                              tagKeys.map((tagKey: string, index: number) => (
-                                <li key={index} className='py-1'>
-                                  <Text code>{tagKey}</Text>
-                                </li>
-                              ))
-                            ) : (
-                              <li>
-                                <Text type='secondary'>无标签键</Text>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      ),
+                    // 使用 toast 显示标签键信息
+                    const tagKeyList = Array.isArray(tagKeys)
+                      ? tagKeys.join(', ')
+                      : '无标签键';
+
+                    toast.info(`标签键 - ${params.measurement}`, {
+                      description: `标签键列表: ${tagKeyList}`,
+                      duration: 5000,
                     });
                   } catch (error) {
                     showMessage.error(`获取标签键失败: ${error}`);
@@ -1105,29 +1077,14 @@ const Database: React.FC = () => {
                       tagKey: tagKeys[0],
                     });
 
-                    Modal.info({
-                      title: `标签值 - ${params.measurement}`,
-                      width: 600,
-                      content: (
-                        <div>
-                          <Text strong>标签键 "{tagKeys[0]}" 的值:</Text>
-                          <ul className='mt-2 max-h-64 overflow-auto'>
-                            {Array.isArray(tagValues) ? (
-                              tagValues.map(
-                                (tagValue: string, index: number) => (
-                                  <li key={index} className='py-1'>
-                                    <Text code>{tagValue}</Text>
-                                  </li>
-                                )
-                              )
-                            ) : (
-                              <li>
-                                <Text type='secondary'>无标签值</Text>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      ),
+                    // 使用 toast 显示标签值信息
+                    const tagValueList = Array.isArray(tagValues)
+                      ? tagValues.slice(0, 5).join(', ') + (tagValues.length > 5 ? '...' : '')
+                      : '无标签值';
+
+                    toast.info(`标签值 - ${params.measurement}`, {
+                      description: `标签键 "${tagKeys[0]}" 的值: ${tagValueList}`,
+                      duration: 5000,
                     });
                   } catch (error) {
                     showMessage.error(`获取标签值失败: ${error}`);
@@ -1143,22 +1100,16 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    Modal.info({
-                      title: `序列信息 - ${params.measurement}`,
-                      width: 800,
-                      content: (
-                        <div>
-                          <span className='text-muted-foreground'>
-                            查询: {query}
-                          </span>
-                          <div className='mt-4'>
-                            <pre className='bg-muted p-4 rounded max-h-96 overflow-auto'>
-                              {JSON.stringify(result, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ),
+                    // 跳转到查询页面显示序列信息
+                    navigate('/query', {
+                      state: {
+                        query,
+                        database: selectedDatabase,
+                        description: `序列信息 - ${params.measurement}`,
+                      },
                     });
+
+                    toast.success('正在跳转到查询页面显示序列信息...');
                   } catch (error) {
                     showMessage.error(`获取序列信息失败: ${error}`);
                   }
@@ -1174,22 +1125,10 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    Modal.info({
-                      title: `记录统计 - ${params.measurement}`,
-                      content: (
-                        <div>
-                          <Statistic
-                            title='总记录数'
-                            value={result.rowCount || 0}
-                            prefix={<DatabaseIcon className='w-4 h-4' />}
-                          />
-                          <div className='mt-4'>
-                            <span className='text-muted-foreground'>
-                              查询: {query}
-                            </span>
-                          </div>
-                        </div>
-                      ),
+                    // 使用 toast 显示记录统计
+                    toast.info(`记录统计 - ${params.measurement}`, {
+                      description: `总记录数: ${result.rowCount || 0}`,
+                      duration: 5000,
                     });
                   } catch (error) {
                     showMessage.error(`获取记录数失败: ${error}`);
@@ -1206,25 +1145,16 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    Modal.info({
-                      title: `时间范围 - ${params.measurement}`,
-                      content: (
-                        <div>
-                          <Descriptions column={1} bordered>
-                            <DescriptionsItem label='查询'>
-                              <code className='bg-muted px-1 rounded'>
-                                {query}
-                              </code>
-                            </DescriptionsItem>
-                            <DescriptionsItem label='结果'>
-                              <pre className='bg-muted p-2 rounded'>
-                                {JSON.stringify(result, null, 2)}
-                              </pre>
-                            </DescriptionsItem>
-                          </Descriptions>
-                        </div>
-                      ),
+                    // 跳转到查询页面显示时间范围
+                    navigate('/query', {
+                      state: {
+                        query,
+                        database: selectedDatabase,
+                        description: `时间范围 - ${params.measurement}`,
+                      },
                     });
+
+                    toast.success('正在跳转到查询页面显示时间范围...');
                   } catch (error) {
                     showMessage.error(`获取时间范围失败: ${error}`);
                   }
@@ -1257,27 +1187,16 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    Modal.info({
-                      title: `字段统计 - ${params.measurement}`,
-                      width: 600,
-                      content: (
-                        <div>
-                          <Alert
-                            message={`字段 "${firstField}" 的统计信息`}
-                            type='info'
-                            className='mb-4'
-                          />
-                          <span className='text-muted-foreground'>
-                            查询: {query}
-                          </span>
-                          <div className='mt-4'>
-                            <pre className='bg-muted p-4 rounded'>
-                              {JSON.stringify(result, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ),
+                    // 跳转到查询页面显示字段统计
+                    navigate('/query', {
+                      state: {
+                        query,
+                        database: selectedDatabase,
+                        description: `字段统计 - ${params.measurement} (${firstField})`,
+                      },
                     });
+
+                    toast.success(`正在跳转到查询页面显示字段 "${firstField}" 的统计信息...`);
                   } catch (error) {
                     showMessage.error(`获取字段统计失败: ${error}`);
                   }
@@ -1308,27 +1227,16 @@ const Database: React.FC = () => {
                       query,
                     });
 
-                    Modal.info({
-                      title: `标签分布 - ${params.measurement}`,
-                      width: 700,
-                      content: (
-                        <div>
-                          <Alert
-                            message={`标签 "${firstTagKey}" 的分布统计`}
-                            type='info'
-                            className='mb-4'
-                          />
-                          <span className='text-muted-foreground'>
-                            查询: {query}
-                          </span>
-                          <div className='mt-4'>
-                            <pre className='bg-muted p-4 rounded max-h-64 overflow-auto'>
-                              {JSON.stringify(result, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ),
+                    // 跳转到查询页面显示标签分布
+                    navigate('/query', {
+                      state: {
+                        query,
+                        database: selectedDatabase,
+                        description: `标签分布 - ${params.measurement} (${firstTagKey})`,
+                      },
                     });
+
+                    toast.success(`正在跳转到查询页面显示标签 "${firstTagKey}" 的分布统计...`);
                   } catch (error) {
                     showMessage.error(`获取标签分布失败: ${error}`);
                   }
@@ -1423,17 +1331,55 @@ const Database: React.FC = () => {
         }, [contextMenu, activeConnectionId, selectedDatabase])}
 
         {/* 创建数据库模态框 */}
-        <Dialog
-          title='创建数据库'
-          open={createModalVisible}
-          onClose={() => {
-            setCreateModalVisible(false);
-            form.reset();
-          }}
-          width={500}
-          footer={
-            <div className='flex justify-end gap-3'>
+        <Dialog open={createModalVisible} onOpenChange={setCreateModalVisible}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>创建数据库</DialogTitle>
+              <DialogDescription>
+                创建一个新的 InfluxDB 数据库
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(createDatabase)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  rules={{
+                    required: '请输入数据库名称',
+                    pattern: {
+                      value: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+                      message: '数据库名称只能包含字母、数字和下划线，且不能以数字开头',
+                    },
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>数据库名称</FormLabel>
+                      <FormControl>
+                        <Input placeholder="请输入数据库名称" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="retentionPolicy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>默认保留策略</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: autogen" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </form>
+            </Form>
+            <DialogFooter>
               <Button
+                variant="outline"
                 onClick={() => {
                   setCreateModalVisible(false);
                   form.reset();
@@ -1441,39 +1387,11 @@ const Database: React.FC = () => {
               >
                 取消
               </Button>
-              <Button
-                variant='default'
-                onClick={() => form.handleSubmit(createDatabase)()}
-              >
+              <Button onClick={() => form.handleSubmit(createDatabase)()}>
                 创建
               </Button>
-            </div>
-          }
-        >
-          <Form form={form} layout='vertical' onFinish={createDatabase}>
-            <FormItem
-              label='数据库名称'
-              name='name'
-              rules={[
-                { required: true, message: '请输入数据库名称' },
-                {
-                  pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
-                  message:
-                    '数据库名称只能包含字母、数字和下划线，且不能以数字开头',
-                },
-              ]}
-            >
-              <Input placeholder='请输入数据库名称' />
-            </FormItem>
-
-            <FormItem
-              label='默认保留策略'
-              name='retentionPolicy'
-              tooltip='可选，如果不指定将使用系统默认策略'
-            >
-              <Input placeholder='例如: autogen' />
-            </FormItem>
-          </Form>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
 
         {/* 保留策略管理对话框 */}
@@ -1497,20 +1415,24 @@ const Database: React.FC = () => {
 
         {/* 删除测量确认对话框 */}
         {deleteMeasurementParams && (
-          <Popconfirm
-            title='确认删除测量'
-            description={`确定要删除测量 "${deleteMeasurementParams.measurement}" 吗？此操作将删除所有相关数据！`}
-            open={!!deleteMeasurementParams}
-            onConfirm={deleteMeasurement}
-            onOpenChange={open =>
-              !open && (() => setDeleteMeasurementParams(null))()
-            }
-            okText='删除'
-            cancelText='取消'
-            okType='danger'
-          >
-            <div />
-          </Popconfirm>
+          <Dialog open={!!deleteMeasurementParams} onOpenChange={(open) => !open && setDeleteMeasurementParams(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>确认删除测量</DialogTitle>
+                <DialogDescription>
+                  确定要删除测量 "{deleteMeasurementParams.measurement}" 吗？此操作将删除所有相关数据！
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteMeasurementParams(null)}>
+                  取消
+                </Button>
+                <Button variant="destructive" onClick={deleteMeasurement}>
+                  删除
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </TooltipProvider>

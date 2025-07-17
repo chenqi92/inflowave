@@ -337,7 +337,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     if (!activeConnectionId) return;
 
     try {
-      await safeTauriInvoke('perform_health_check', {
+      await safeTauriInvoke<void>('perform_health_check', {
         connectionId: activeConnectionId,
       });
       await getBottlenecks(); // 重新加载数据
@@ -354,10 +354,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
     try {
       const [metricsResult, slowQueryResult] = await Promise.all([
-        safeTauriInvoke('get_performance_metrics', {
+        safeTauriInvoke<any>('get_performance_metrics', {
           connectionId: activeConnectionId,
         }),
-        safeTauriInvoke('get_slow_query_analysis', {
+        safeTauriInvoke<any>('get_slow_query_analysis', {
           connectionId: activeConnectionId,
         }),
       ]);

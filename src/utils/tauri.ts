@@ -19,12 +19,38 @@ export const isBrowserEnvironment = (): boolean => {
   return typeof window !== 'undefined' && window.__TAURI__ === undefined;
 };
 
-// 安全的 Tauri API 调用包装器
+// 安全的 Tauri API 调用包装器 - 严格类型版本
 export const safeTauriInvoke = async <T = any>(
   command: string,
   args?: Record<string, any>
-): Promise<T | null> => {
+): Promise<T> => {
   console.log(`🚀 API 调用: ${command}`, { args });
+
+  try {
+    // 直接尝试调用 Tauri API，不进行环境检测
+    const { invoke } = await import('@tauri-apps/api/core');
+    const result = await invoke<T>(command, args);
+    console.log(`✅ Tauri API 返回结果 (${command}):`, result);
+
+    // 确保返回值不为 null 或 undefined
+    if (result === null || result === undefined) {
+      throw new Error(`Command "${command}" returned null or undefined`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Tauri invoke error for command "${command}":`, error);
+    // 只有在 Tauri API 调用失败时才抛出错误，不再使用模拟数据
+    throw error;
+  }
+};
+
+// 可选的 Tauri API 调用包装器 - 允许返回 null
+export const safeTauriInvokeOptional = async <T = any>(
+  command: string,
+  args?: Record<string, any>
+): Promise<T | null> => {
+  console.log(`🚀 API 调用 (可选): ${command}`, { args });
 
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
@@ -34,8 +60,8 @@ export const safeTauriInvoke = async <T = any>(
     return result;
   } catch (error) {
     console.error(`❌ Tauri invoke error for command "${command}":`, error);
-    // 只有在 Tauri API 调用失败时才抛出错误，不再使用模拟数据
-    throw error;
+    // 对于可选调用，返回 null 而不是抛出错误
+    return null;
   }
 };
 

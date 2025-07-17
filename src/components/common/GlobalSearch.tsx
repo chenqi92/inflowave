@@ -6,10 +6,9 @@ import {
   DialogTitle,
   Input,
   Text,
-  Tag,
-  Empty,
-  Spin,
+  Badge,
   Separator,
+  ScrollArea,
 } from '@/components/ui';
 import {
   Search,
@@ -79,23 +78,23 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
     }
   };
 
-  // 搜索结果颜色映射
-  const getTagColor = (type: string) => {
+  // 搜索结果徽章变体映射
+  const getBadgeVariant = (type: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (type) {
       case 'database':
-        return 'blue';
+        return 'default';
       case 'measurement':
-        return 'green';
+        return 'secondary';
       case 'field':
-        return 'orange';
+        return 'outline';
       case 'query':
-        return 'purple';
+        return 'default';
       case 'connection':
-        return 'cyan';
+        return 'secondary';
       case 'setting':
-        return 'gray';
+        return 'outline';
       case 'command':
-        return 'red';
+        return 'destructive';
       default:
         return 'default';
     }
@@ -267,109 +266,103 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
         </DialogHeader>
         <div className='global-search'>
           {/* 搜索输入框 */}
-          <div style={{ padding: '16px 16px 0 16px' }}>
-            <Input
-              ref={inputRef}
-              size='large'
-              placeholder='搜索数据库、测量、查询、设置...'
-              prefix={<Search className='w-4 h-4' />}
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              style={{ border: 'none', boxShadow: 'none' }}
-            />
+          <div className="p-4 pb-0">
+            <div className="relative">
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground' />
+              <Input
+                ref={inputRef}
+                placeholder='搜索数据库、测量、查询、设置...'
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="pl-10 border-none shadow-none text-lg"
+              />
+            </div>
           </div>
 
-          <Separator style={{ margin: '12px 0' }} />
+          <Separator className="my-3" />
 
           {/* 搜索结果 */}
-          <div style={{ maxHeight: 400, overflow: 'auto' }}>
+          <ScrollArea className="max-h-[400px]">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <Spin />
+              <div className="text-center py-10">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             ) : results.length > 0 ? (
-              <List
-                dataSource={results}
-                renderItem={(item, index) => (
-                  <List.Item
-                    style={{
-                      padding: '12px 16px',
-                      cursor: 'pointer',
-                      backgroundColor:
-                        index === selectedIndex ? '#f5f5f5' : 'transparent',
-                    }}
+              <div className="space-y-1">
+                {results.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-start gap-3 p-3 mx-2 rounded-md cursor-pointer transition-colors ${
+                      index === selectedIndex
+                        ? 'bg-accent text-accent-foreground'
+                        : 'hover:bg-accent/50'
+                    }`}
                     onClick={() => handleSelectResult(item)}
                     onMouseEnter={() => setSelectedIndex(index)}
                   >
-                    <List.Item.Meta
-                      avatar={getIcon(item.type)}
-                      title={
-                        <div className='flex items-center gap-2'>
-                          <span>{item.title}</span>
-                          <Tag color={getTagColor(item.type)}>
-                            {item.category}
-                          </Tag>
-                        </div>
-                      }
-                      description={
-                        <div>
-                          {item.description && (
-                            <Text type='secondary' style={{ fontSize: 12 }}>
-                              {item.description}
-                            </Text>
-                          )}
-                          {item.metadata && (
-                            <div style={{ marginTop: 4 }}>
-                              {Object.entries(item.metadata).map(
-                                ([key, value]) => (
-                                  <Tag key={key} style={{ fontSize: 10 }}>
-                                    {key}: {value}
-                                  </Tag>
-                                )
-                              )}
-                            </div>
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getIcon(item.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className='flex items-center gap-2 mb-1'>
+                        <span className="font-medium truncate">{item.title}</span>
+                        <Badge variant={getBadgeVariant(item.type)} className="text-xs">
+                          {item.category}
+                        </Badge>
+                      </div>
+                      {item.description && (
+                        <Text className='text-sm text-muted-foreground mb-1'>
+                          {item.description}
+                        </Text>
+                      )}
+                      {item.metadata && (
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(item.metadata).map(
+                            ([key, value]) => (
+                              <Badge key={key} variant="outline" className="text-xs">
+                                {key}: {value}
+                              </Badge>
+                            )
                           )}
                         </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : searchText ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description='未找到相关结果'
-                />
+              <div className="text-center py-10">
+                <div className="text-muted-foreground">
+                  <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-sm">未找到相关结果</div>
+                </div>
               </div>
             ) : (
-              <div style={{ padding: '20px 16px' }}>
-                <Text type='secondary'>
+              <div className="p-5">
+                <Text className='text-muted-foreground mb-4 block'>
                   输入关键词搜索数据库、测量、查询、设置等内容
                 </Text>
-                <div style={{ marginTop: 16 }}>
-                  <Text type='secondary' style={{ fontSize: 12 }}>
+                <div className="space-y-2">
+                  <Text className='text-xs text-muted-foreground font-medium'>
                     快捷键提示:
                   </Text>
-                  <div style={{ marginTop: 8 }}>
-                    <div className='flex flex-col gap-1'>
-                      <Text type='secondary' style={{ fontSize: 11 }}>
-                        ↑↓ 选择结果 | Enter 确认 | Esc 关闭
-                      </Text>
-                    </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>↑↓ 选择结果</div>
+                    <div>Enter 确认</div>
+                    <div>Esc 关闭</div>
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </ScrollArea>
 
           {/* 底部提示 */}
           {results.length > 0 && (
             <>
-              <Separator style={{ margin: '8px 0' }} />
-              <div style={{ padding: '8px 16px', textAlign: 'center' }}>
-                <Text type='secondary' style={{ fontSize: 11 }}>
+              <Separator className="my-2" />
+              <div className="px-4 py-2 text-center">
+                <Text className='text-xs text-muted-foreground'>
                   找到 {results.length} 个结果
                 </Text>
               </div>
