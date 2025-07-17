@@ -19,12 +19,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+} from '@/components/ui';
+import { Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
+import { Progress } from '@/components/ui';
+import { Alert, AlertDescription } from '@/components/ui';
+import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
 
 export interface ConnectionStatusProps {

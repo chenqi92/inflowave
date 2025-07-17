@@ -6,8 +6,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/Dialog';
-import { Button } from '@/components/ui/Button';
+} from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 interface ModalConfig {
