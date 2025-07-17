@@ -51,6 +51,7 @@ interface MenuProps {
     icon?: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
+    type?: 'divider' | 'group';
   }>;
 }
 
@@ -719,8 +720,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 监听菜单事件
     useEffect(() => {
-      const handleLoadFileContent = (event: CustomEvent) => {
-        const { content, filename } = event.detail;
+      const handleLoadFileContent = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { content, filename } = customEvent.detail;
 
         // 创建新标签页
         const newTab: EditorTab = {
@@ -751,8 +753,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         importData();
       };
 
-      const handleExecuteQuery = (event: CustomEvent) => {
-        const { source } = event.detail || {};
+      const handleExecuteQuery = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        const { source } = customEvent.detail || {};
         console.log('📥 收到执行查询事件，来源:', source);
         executeQuery();
       };
@@ -763,50 +766,23 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       };
 
       // 添加事件监听
-      document.addEventListener(
-        'load-file-content',
-        handleLoadFileContent as EventListener
-      );
+      document.addEventListener('load-file-content', handleLoadFileContent);
       document.addEventListener('save-current-query', handleSaveCurrentQuery);
       document.addEventListener('save-query-as', handleSaveQueryAs);
       document.addEventListener('show-export-dialog', handleShowExportDialog);
       document.addEventListener('show-import-dialog', handleShowImportDialog);
-      document.addEventListener(
-        'execute-query',
-        handleExecuteQuery as EventListener
-      );
-      document.addEventListener(
-        'refresh-database-tree',
-        handleRefreshDatabaseTree
-      );
+      document.addEventListener('execute-query', handleExecuteQuery);
+      document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
 
       // 清理事件监听
       return () => {
-        document.removeEventListener(
-          'load-file-content',
-          handleLoadFileContent as EventListener
-        );
-        document.removeEventListener(
-          'save-current-query',
-          handleSaveCurrentQuery
-        );
+        document.removeEventListener('load-file-content', handleLoadFileContent);
+        document.removeEventListener('save-current-query', handleSaveCurrentQuery);
         document.removeEventListener('save-query-as', handleSaveQueryAs);
-        document.removeEventListener(
-          'show-export-dialog',
-          handleShowExportDialog
-        );
-        document.removeEventListener(
-          'show-import-dialog',
-          handleShowImportDialog
-        );
-        document.removeEventListener(
-          'execute-query',
-          handleExecuteQuery as EventListener
-        );
-        document.removeEventListener(
-          'refresh-database-tree',
-          handleRefreshDatabaseTree
-        );
+        document.removeEventListener('show-export-dialog', handleShowExportDialog);
+        document.removeEventListener('show-import-dialog', handleShowImportDialog);
+        document.removeEventListener('execute-query', handleExecuteQuery);
+        document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
       };
     }, [activeConnectionId, selectedDatabase, tabs, activeKey]);
 
@@ -1325,7 +1301,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         // 增加更多提示配置
         quickSuggestionsDelay: 50, // 减少延迟到50ms
         suggestSelection: 'first', // 默认选择第一个建议
-        wordBasedSuggestions: true, // 基于单词的建议
+        wordBasedSuggestions: 'currentDocument', // 基于单词的建议
         // 自动触发提示的字符
         autoIndent: 'full',
         // 更敏感的提示设置
@@ -1422,7 +1398,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         label: '另存为',
         icon: <Save className='w-4 h-4' />,
       },
-      { type: 'divider' },
+      {
+        key: 'divider-1',
+        label: '',
+        type: 'divider',
+      },
       {
         key: 'close',
         label: '关闭',
@@ -1676,21 +1656,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   // 增加更多智能提示配置
                   quickSuggestionsDelay: 50,
                   suggestSelection: 'first',
-                  wordBasedSuggestions: true,
-                  // 启用更多提示触发字符
-                  triggerCharacters: [
-                    '.',
-                    '"',
-                    "'",
-                    '(',
-                    ' ',
-                    '=',
-                    '<',
-                    '>',
-                    '!',
-                    'FROM',
-                    'from',
-                  ],
+                  wordBasedSuggestions: 'currentDocument',
                 }}
               />
               )
@@ -1734,7 +1700,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             open={showExportDialog}
             onClose={() => setShowExportDialog(false)}
             connections={connections}
-            currentConnection={activeConnectionId}
+            currentConnection={activeConnectionId || undefined}
             currentDatabase={selectedDatabase}
             query={currentTab?.content}
             onSuccess={result => {
