@@ -105,7 +105,7 @@ export {
   useFormField,
 } from './Form';
 
-export { Label } from './Label';
+export { Label } from './label';
 
 export {
   NavigationMenu,

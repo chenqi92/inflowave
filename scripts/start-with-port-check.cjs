@@ -65,10 +65,10 @@ function updateTauriConfig(port) {
  */
 function updateViteConfig(port) {
     const configPath = path.join(__dirname, '..', 'vite.config.ts');
-    
+
     try {
         let config = fs.readFileSync(configPath, 'utf8');
-        
+
         // 使用正则表达式替换端口配置
         const portRegex = /port:\s*\d+/;
         if (portRegex.test(config)) {
@@ -132,40 +132,17 @@ function killPortProcess(port) {
 async function startApp() {
     try {
         console.log('🔍 检查端口可用性...');
-        
+
         const defaultPort = 1422;
-        let port = defaultPort;
-        
-        if (!(await isPortAvailable(defaultPort))) {
-            console.log(`⚠️  默认端口 ${defaultPort} 被占用`);
-            
-            // 尝试清理端口
-            await killPortProcess(defaultPort);
-            
-            // 再次检查端口是否可用
-            if (await isPortAvailable(defaultPort)) {
-                console.log(`✅ 默认端口 ${defaultPort} 已清理并可用`);
-                port = defaultPort;
-            } else {
-                console.log(`⚠️  清理失败，正在查找可用端口...`);
-                port = await findAvailablePort();
-                console.log(`✅ 找到可用端口: ${port}`);
-                
-                // 更新 Tauri 配置
-                updateTauriConfig(port);
-                // 更新 Vite 配置
-                updateViteConfig(port);
-            }
-        } else {
-            console.log(`✅ 默认端口 ${defaultPort} 可用`);
-        }
-        
-        console.log(`🚀 启动应用，使用端口: ${port}`);
-        
+
+        // 简化逻辑：让 Vite 自己处理端口冲突
+        // 我们只需要在启动后检测实际使用的端口并更新 Tauri 配置
+        console.log(`🚀 启动应用，首选端口: ${defaultPort}`);
+
         // 根据传入的参数决定启动模式
         const args = process.argv.slice(2);
         let command;
-        
+
         if (args.includes('--dev') || args.includes('dev')) {
             command = `npm run copy-docs && tauri dev`;
         } else if (args.includes('--build') || args.includes('build')) {
@@ -174,18 +151,18 @@ async function startApp() {
             // 默认开发模式
             command = `npm run copy-docs && tauri dev`;
         }
-        
-        // 启动应用，传递端口信息给 Vite
-        execSync(command, { 
+
+        // 启动应用，让 Vite 自己处理端口
+        execSync(command, {
             stdio: 'inherit',
-            env: { 
-                ...process.env, 
-                PORT: port.toString(),
-                VITE_PORT: port.toString(),
-                VITE_DEV_SERVER_PORT: port.toString()
+            env: {
+                ...process.env,
+                PORT: defaultPort.toString(),
+                VITE_PORT: defaultPort.toString(),
+                VITE_DEV_SERVER_PORT: defaultPort.toString()
             }
         });
-        
+
     } catch (error) {
         console.error('❌ 启动失败:', error.message);
         process.exit(1);
