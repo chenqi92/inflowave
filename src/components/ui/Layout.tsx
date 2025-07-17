@@ -137,4 +137,3 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
 Footer.displayName = 'Footer';
 
 export { Layout, Header, Sider, Content, Footer };
-export type { LayoutProps, HeaderProps, SiderProps, ContentProps, FooterProps };
