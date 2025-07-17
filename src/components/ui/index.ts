@@ -61,16 +61,6 @@ export {
 
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
 
-export {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from './Breadcrumb';
-
 export { Checkbox } from './Checkbox';
 
 export {
@@ -105,7 +95,7 @@ export {
   useFormField,
 } from './Form';
 
-export { Label } from './label';
+export { Label } from './Label';
 
 export {
   NavigationMenu,

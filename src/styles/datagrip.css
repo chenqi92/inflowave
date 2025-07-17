@@ -21,7 +21,7 @@
 }
 
 .database-explorer-tree .tree-node-content:hover {
-  background: #f1f8ff;
+  background: hsl(var(--accent));
 }
 
 .database-explorer-tree .tree-icon {
@@ -53,18 +53,19 @@
 /* 编辑器标签页样式 */
 .editor-tabs .tabs-nav {
   margin: 0;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e1e4e8;
+  background: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
 }
 
 .editor-tabs .tab-item {
-  border: 1px solid #e1e4e8;
+  border: 1px solid hsl(var(--border));
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   margin-right: 2px;
-  background: #ffffff;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   padding: 6px 12px;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -75,12 +76,12 @@
 }
 
 .editor-tabs .tab-item:hover {
-  background: #f6f8fa;
+  background: hsl(var(--accent));
 }
 
 .editor-tabs .tab-item.active {
-  background: #ffffff;
-  border-color: #1890ff;
+  background: hsl(var(--background));
+  border-color: hsl(var(--primary));
   position: relative;
   z-index: 1;
 }
@@ -92,7 +93,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: #ffffff;
+  background: hsl(var(--background));
 }
 
 .editor-tabs .tab-close {
@@ -133,20 +134,22 @@
 
 /* 工具栏样式 */
 .datagrip-toolbar {
-  border-bottom: 1px solid #e1e4e8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
   padding: 8px 16px;
   display: flex;
   align-items: center;
   gap: 8px;
+  background-color: hsl(var(--background));
 }
 
 .datagrip-toolbar .btn {
-  border: 1px solid #d0d7de;
+  border: 1px solid hsl(var(--border));
   border-radius: 4px;
   font-weight: 500;
   transition: all 0.2s ease;
-  background: #fff;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   padding: 6px 12px;
   cursor: pointer;
   display: flex;
@@ -155,19 +158,21 @@
 }
 
 .datagrip-toolbar .btn:hover {
-  border-color: #1890ff;
-  box-shadow: 0 1px 3px rgba(24, 144, 255, 0.2);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 1px 3px hsl(var(--primary) / 0.2);
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .datagrip-toolbar .btn-primary {
-  background: linear-gradient(to bottom, #0366d6, #0366d6);
-  border-color: #0366d6;
-  color: #fff;
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .datagrip-toolbar .btn-primary:hover {
-  background: linear-gradient(to bottom, #0366d6, #044d8d);
-  border-color: #044d8d;
+  background: hsl(var(--primary) / 0.9);
+  border-color: hsl(var(--primary) / 0.9);
 }
 
 /* 数据库浏览器样式 */
@@ -202,12 +207,12 @@
 }
 
 .database-explorer .tree .tree-node-content:hover {
-  background: #f1f8ff;
+  background: hsl(var(--accent));
 }
 
 .database-explorer .tree .tree-node-selected .tree-node-content {
-  background: #0366d6;
-  color: white;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .database-explorer .tree .tree-switcher {
@@ -439,70 +444,4 @@
   font-size: 13px;
 }
 
-/* 深色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .editor-tabs .tabs-nav {
-    background: #2d3748;
-    border-bottom-color: #4a5568;
-  }
-
-  .editor-tabs .tab-item {
-    background: #1a202c;
-    border-color: #4a5568;
-    color: #e2e8f0;
-  }
-
-  .editor-tabs .tab-item.active {
-    background: #2d3748;
-    border-color: #63b3ed;
-  }
-
-  .datagrip-toolbar {
-    background: linear-gradient(to bottom, #2d3748, #1a202c);
-    border-bottom-color: #4a5568;
-  }
-
-  .datagrip-toolbar .btn {
-    background: #374151;
-    border-color: #4a5568;
-    color: #e2e8f0;
-  }
-
-  .database-explorer {
-    background: #1a202c;
-    border-right-color: #4a5568;
-  }
-
-  .result-panel {
-    background: #2d3748;
-    border-top-color: #4a5568;
-  }
-
-  .result-panel .tabs-nav {
-    background: #1a202c;
-    border-bottom-color: #4a5568;
-  }
-
-  .result-table {
-    background: #374151;
-  }
-
-  .result-table thead tr th {
-    background: #1f2937;
-    color: #e2e8f0;
-    border-bottom-color: #4a5568;
-  }
-
-  .result-table tbody tr td {
-    color: #d1d5db;
-    border-bottom-color: #4a5568;
-  }
-
-  .result-table tbody tr:nth-child(even) {
-    background: #1f2937;
-  }
-
-  .result-table tbody tr:hover td {
-    background: #4b5563;
-  }
-}
+/* 深色主题支持已通过CSS变量自动处理 */

@@ -90,6 +90,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
   const [executedQueries, setExecutedQueries] = useState<string[]>([]);
   const [executionTime, setExecutionTime] = useState<number>(0);
+  const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
   const [currentTimeRange, setCurrentTimeRange] = useState<{
     label: string;
     value: string;
@@ -342,7 +343,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           <ResizablePanelGroup direction='vertical'>
             {/* 上半部分：编辑器 */}
             <ResizablePanel
-              defaultSize={bottomPanelCollapsed ? 100 : 100 - bottomPanelSize}
+              defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
               minSize={30}
               className='bg-background overflow-hidden'
             >
@@ -357,13 +358,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     setQueryResult(results[0]);
                   }
                 }}
+                onActiveTabTypeChange={setActiveTabType}
                 currentTimeRange={currentTimeRange}
                 ref={tabEditorRef}
               />
             </ResizablePanel>
 
-            {/* 分割线和下半部分：结果面板 */}
-            {!bottomPanelCollapsed && (
+            {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
+            {!bottomPanelCollapsed && activeTabType === 'query' && (
               <>
                 <ResizableHandle
                   withHandle
@@ -400,6 +402,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     currentView,
     bottomPanelCollapsed,
     bottomPanelSize,
+    activeTabType,
     queryResult,
     queryResults,
     executedQueries,

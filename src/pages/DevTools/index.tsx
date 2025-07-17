@@ -1,9 +1,10 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
-import { Database, Bug, Wrench } from 'lucide-react';
+import { Database, Bug, Wrench, Terminal } from 'lucide-react';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 import DataGenerator from '@/components/tools/DataGenerator';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
+import DebugConsole from '@/components/debug/DebugConsole';
 
 const DevTools: React.FC = () => {
   return (
@@ -19,7 +20,7 @@ const DevTools: React.FC = () => {
     >
       <div className='h-full'>
         <Tabs defaultValue='data-generator' className='h-full flex flex-col'>
-          <TabsList className='grid w-full grid-cols-2'>
+          <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger
               value='data-generator'
               className='flex items-center gap-2'
@@ -30,6 +31,10 @@ const DevTools: React.FC = () => {
             <TabsTrigger value='error-logs' className='flex items-center gap-2'>
               <Bug className='w-4 h-4' />
               错误日志
+            </TabsTrigger>
+            <TabsTrigger value='debug-console' className='flex items-center gap-2'>
+              <Terminal className='w-4 h-4' />
+              调试控制台
             </TabsTrigger>
           </TabsList>
 
@@ -48,6 +53,15 @@ const DevTools: React.FC = () => {
           >
             <div className='h-full overflow-y-auto'>
               <ErrorLogViewer />
+            </div>
+          </TabsContent>
+
+          <TabsContent
+            value='debug-console'
+            className='flex-1 mt-4 overflow-hidden'
+          >
+            <div className='h-full overflow-y-auto'>
+              <DebugConsole />
             </div>
           </TabsContent>
         </Tabs>

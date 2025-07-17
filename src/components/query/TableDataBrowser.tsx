@@ -1,11 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
     Card,
     CardContent,
     CardHeader,
@@ -327,7 +321,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const endIndex = Math.min(currentPage * pageSize, totalCount);
 
     return (
-        <div className="h-full flex flex-col bg-background overflow-hidden">
+        <div className="h-full flex flex-col bg-background">
             {/* 头部工具栏 */}
             <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
                 <CardHeader className="pb-3">
@@ -395,132 +389,135 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             </Card>
 
             {/* 数据表格 */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-                <div className="h-full overflow-auto border rounded-md">
-                {loading ? (
-                    <div className="flex items-center justify-center h-32">
-                        <Spin/>
-                        <span className="ml-2">加载中...</span>
-                    </div>
-                ) : data.length > 0 ? (
-                    <Table>
-                        <TableHeader className="sticky top-0 bg-background z-10">
-                            <TableRow>
-                                {columns.map((column) => (
-                                    <TableHead
-                                        key={column}
-                                        className="cursor-pointer hover:bg-muted/50 border-b"
-                                        onClick={() => handleSort(column)}
-                                    >
-                                        <div className="flex items-center gap-1">
-                                            <span>{column}</span>
-                                            {sortColumn === column && (
-                                                <span className="text-xs">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                                            )}
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-4 w-4 p-0 ml-1"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <Filter className="w-3 h-3"/>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => addFilter(column)}>
-                                                        添加过滤器
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.map((row, index) => (
-                                <TableRow key={row._id || index}>
-                                    {columns.map((column) => (
-                                        <TableCell key={column} className="text-xs font-mono">
-                                            {column === 'time'
-                                                ? new Date(row[column]).toLocaleString()
-                                                : String(row[column] || '-')
-                                            }
-                                        </TableCell>
+            <div className="flex-1 min-h-0 p-4">
+                <div className="h-full border rounded-md overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-32">
+                            <Spin/>
+                            <span className="ml-2">加载中...</span>
+                        </div>
+                    ) : data.length > 0 ? (
+                        <div className="h-full overflow-auto desktop-page-scroll-container">
+                            <table className="w-full caption-bottom text-sm">
+                                <thead className="sticky top-0 bg-background z-10 border-b">
+                                    <tr className="border-b transition-colors hover:bg-muted/50">
+                                        {columns.map((column) => (
+                                            <th
+                                                key={column}
+                                                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50"
+                                                onClick={() => handleSort(column)}
+                                            >
+                                                <div className="flex items-center gap-1">
+                                                    <span>{column}</span>
+                                                    {sortColumn === column && (
+                                                        <span className="text-xs">
+                                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-4 w-4 p-0 ml-1"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <Filter className="w-3 h-3"/>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuItem onClick={() => addFilter(column)}>
+                                                                添加过滤器
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="[&_tr:last-child]:border-0">
+                                    {data.map((row, index) => (
+                                        <tr
+                                            key={row._id || index}
+                                            className="border-b transition-colors hover:bg-muted/50"
+                                        >
+                                            {columns.map((column) => (
+                                                <td key={column} className="p-4 align-middle text-xs font-mono">
+                                                    {column === 'time'
+                                                        ? new Date(row[column]).toLocaleString()
+                                                        : String(row[column] || '-')
+                                                    }
+                                                </td>
+                                            ))}
+                                        </tr>
                                     ))}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <div className="flex items-center justify-center h-32 text-muted-foreground">
-                        <Database className="w-8 h-8 mr-2"/>
-                        <span>没有找到数据</span>
-                    </div>
-                )}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center h-32 text-muted-foreground">
+                            <Database className="w-8 h-8 mr-2"/>
+                            <span>没有找到数据</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* 底部分页 */}
-            <Card className="flex-shrink-0 border-0 border-t rounded-none">
-                <CardContent className="py-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>
-                显示 {startIndex}-{endIndex} 条，共 {totalCount.toLocaleString()} 条
-              </span>
-                            <span>
-                第 {currentPage} 页，共 {totalPages} 页
-              </span>
+            <div className="flex-shrink-0 border-t bg-background px-4 py-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>
+                            显示 {startIndex}-{endIndex} 条，共 {totalCount.toLocaleString()} 条
+                        </span>
+                        <span>
+                            第 {currentPage} 页，共 {totalPages} 页
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">每页:</span>
+                            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                                <SelectTrigger className="w-16 h-8">
+                                    <SelectValue/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="100">100</SelectItem>
+                                    <SelectItem value="500">500</SelectItem>
+                                    <SelectItem value="1000">1000</SelectItem>
+                                    <SelectItem value="2000">2000</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">每页:</span>
-                                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                                    <SelectTrigger className="w-16 h-8">
-                                        <SelectValue/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="100">100</SelectItem>
-                                        <SelectItem value="500">500</SelectItem>
-                                        <SelectItem value="1000">1000</SelectItem>
-                                        <SelectItem value="2000">2000</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage <= 1 || loading}
+                                className="h-8 px-3"
+                            >
+                                <ChevronLeft className="w-3 h-3"/>
+                                上一页
+                            </Button>
 
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage <= 1 || loading}
-                                    className="h-8 px-3"
-                                >
-                                    <ChevronLeft className="w-3 h-3"/>
-                                    上一页
-                                </Button>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage >= totalPages || loading}
-                                    className="h-8 px-3"
-                                >
-                                    下一页
-                                    <ChevronRight className="w-3 h-3"/>
-                                </Button>
-                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage >= totalPages || loading}
+                                className="h-8 px-3"
+                            >
+                                下一页
+                                <ChevronRight className="w-3 h-3"/>
+                            </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 };

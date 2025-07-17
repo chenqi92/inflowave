@@ -91,23 +91,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         navigate('/query?showHistory=true');
         showMessage.info('正在打开查询历史...');
         break;
-      case 'console':
-        // 控制台 - 打开浏览器控制台
-        if (typeof window !== 'undefined' && window.console) {
-          showMessage.info('请查看浏览器控制台（F12）');
-          // 可以执行一些日志输出来引导用户
-          console.log(
-            '%c=== InfloWave Debug Console ===%c',
-            'color: #2196F3; font-size: 16px; font-weight: bold;',
-            'color: normal;'
-          );
-          console.log('当前时间:', new Date().toLocaleString());
-          console.log('应用版本: v0.1.0');
-          console.log('活跃连接:', activeConnectionId || '无');
-        } else {
-          showMessage.warning('控制台不可用');
-        }
-        break;
       case 'dev-tools':
         // 开发者工具 - 特殊处理：先导航再更新视图状态
         navigate('/dev-tools');
@@ -123,11 +106,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
       key: 'query-history',
       label: '查询历史',
       icon: <History className='w-4 h-4' />,
-    },
-    {
-      key: 'console',
-      label: '控制台',
-      icon: <Bug className='w-4 h-4' />,
     },
     {
       key: 'dev-tools',

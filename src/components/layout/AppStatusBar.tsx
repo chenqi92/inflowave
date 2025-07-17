@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Button,
   Typography,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -14,16 +8,13 @@ import {
   Separator,
 } from '@/components/ui';
 
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, ChevronRight, Wifi, Clock, Globe, Zap, HardDrive } from 'lucide-react';
+import { Wifi, Clock, Globe, Zap, HardDrive } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useConnectionStore } from '@/store/connection';
 
 const { Text } = Typography;
 
 const AppStatusBar: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(dayjs());
   const { activeConnectionId, connectionStatuses, connections } =
     useConnectionStore();
@@ -52,63 +43,13 @@ const AppStatusBar: React.FC = () => {
     return Math.floor(Math.random() * 100) + 50; // MB
   };
 
-  // 生成面包屑导航
-  const generateBreadcrumb = () => {
-    const path = location.pathname;
-    const pathMap: Record<string, string> = {
-      '/': '仪表板',
-      '/dashboard': '仪表板',
-      '/connections': '连接管理',
-      '/database': '数据库管理',
-      '/query': '数据查询',
-      '/visualization': '数据可视化',
-      '/data-write': '数据写入',
-      '/performance': '性能监控',
-      '/extensions': '扩展管理',
-      '/dev-tools': '开发者工具',
-      '/settings': '应用设置',
-    };
-
-    const currentPageTitle = pathMap[path] || '未知页面';
-
-    return (
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-                className="h-6 px-2 text-xs"
-              >
-                <Home className='w-3 h-3 mr-1' />
-                仪表板
-              </Button>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {path !== '/' && path !== '/dashboard' && (
-            <>
-              <BreadcrumbSeparator>
-                <ChevronRight className='w-3 h-3' />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <span className="text-xs text-muted-foreground">{currentPageTitle}</span>
-              </BreadcrumbItem>
-            </>
-          )}
-        </BreadcrumbList>
-      </Breadcrumb>
-    );
-  };
 
   return (
     <TooltipProvider>
       <div className='desktop-status-bar border-b bg-background'>
         <div className='flex items-center justify-between h-8 px-4'>
-          {/* 左侧 - 面包屑导航 */}
+          {/* 左侧 - 空白 */}
           <div className='flex items-center'>
-            {generateBreadcrumb()}
           </div>
 
           {/* 中间 - 连接信息 */}

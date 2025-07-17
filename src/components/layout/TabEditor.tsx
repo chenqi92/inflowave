@@ -74,6 +74,7 @@ interface TabEditorProps {
     queries: string[],
     executionTime: number
   ) => void;
+  onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser') => void;
   currentTimeRange?: {
     label: string;
     value: string;
@@ -88,7 +89,7 @@ interface TabEditorRef {
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
-  ({ onQueryResult, onBatchQueryResults, currentTimeRange }, ref) => {
+  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, currentTimeRange }, ref) => {
     const { activeConnectionId, connections } = useConnectionStore();
     const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
     const { resolvedTheme } = useTheme();
@@ -707,6 +708,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         setSelectedDatabase('');
       }
     }, [activeConnectionId]);
+
+    // 监听当前活动标签类型变化
+    useEffect(() => {
+      const currentTab = tabs.find(tab => tab.id === activeKey);
+      if (currentTab && onActiveTabTypeChange) {
+        onActiveTabTypeChange(currentTab.type);
+      }
+    }, [activeKey, tabs, onActiveTabTypeChange]);
 
     // 监听菜单事件
     useEffect(() => {
@@ -1624,7 +1633,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           </div>
 
           {/* 编辑器内容 */}
-          <div className='flex-1 p-0'>
+          <div className='flex-1 min-h-0 overflow-hidden'>
             {currentTab ? (
               currentTab.type === 'data-browser' ? (
                 <TableDataBrowser
