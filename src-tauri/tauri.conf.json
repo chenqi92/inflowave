@@ -24,9 +24,14 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "Light",
+        "theme": null,
         "maximized": false,
-        "visible": true
+        "visible": true,
+        "titleBarStyle": "Transparent",
+        "hiddenTitle": false,
+        "acceptFirstMouse": true,
+        "tabbingIdentifier": "main",
+        "shadow": true
       }
     ],
     "security": {
@@ -74,8 +79,11 @@
     },
     "macOS": {
       "frameworks": [],
-      "minimumSystemVersion": "10.13",
-      "exceptionDomain": ""
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "providerShortName": null,
+      "entitlements": null
     },
     "linux": {
       "deb": {

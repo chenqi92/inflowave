@@ -60,8 +60,31 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Consolas', 'Monaco', 'monospace'],
+        sans: [
+          // macOS系统字体
+          '-apple-system',
+          'BlinkMacSystemFont',
+          // 其他平台的系统字体
+          'system-ui',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+          // Inter作为备用
+          'Inter',
+        ],
+        mono: [
+          // macOS系统等宽字体
+          'SF Mono',
+          'Monaco',
+          'Consolas',
+          'Liberation Mono',
+          'Courier New',
+          'monospace',
+          // JetBrains Mono作为备用
+          'JetBrains Mono',
+        ],
       },
       keyframes: {
         'accordion-down': {

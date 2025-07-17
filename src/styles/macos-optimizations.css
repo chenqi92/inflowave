@@ -1,0 +1,215 @@
+/* macOS 特定优化样式 */
+
+/* CSS 变量定义 */
+:root {
+  /* macOS 系统颜色 */
+  --macos-blue: #007AFF;
+  --macos-gray: #8E8E93;
+  --macos-light-gray: #F2F2F7;
+  --macos-dark-gray: #1C1C1E;
+  
+  /* 动态调整的间距 */
+  --macos-spacing-xs: 4px;
+  --macos-spacing-sm: 8px;
+  --macos-spacing-md: 16px;
+  --macos-spacing-lg: 24px;
+  --macos-spacing-xl: 32px;
+}
+
+/* 检测macOS系统 */
+@supports (-webkit-appearance: none) {
+  /* 字体渲染优化 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 文本渲染优化 */
+  * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-feature-settings: "kern" 1;
+    font-feature-settings: "kern" 1;
+  }
+
+  /* 滚动条样式 - macOS风格 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* 深色模式下的滚动条 */
+  @media (prefers-color-scheme: dark) {
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  /* 按钮和表单元素优化 */
+  button, input, select, textarea {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* 焦点样式优化 */
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid rgba(0, 122, 255, 0.5);
+    outline-offset: 2px;
+  }
+
+  /* 图标缩放优化 */
+  .lucide-icon,
+  svg[class*='lucide'],
+  .toolbar-button svg,
+  .toolbar-button-vertical svg {
+    transform: scale(0.875);
+    transition: transform 0.2s ease;
+  }
+
+  /* 圆角优化 - 更符合macOS设计 */
+  .rounded-lg {
+    border-radius: 8px;
+  }
+
+  .rounded-md {
+    border-radius: 6px;
+  }
+
+  .rounded-sm {
+    border-radius: 4px;
+  }
+
+  /* 阴影优化 */
+  .shadow-lg {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 表格优化 */
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  /* 输入框优化 */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  textarea {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* 代码和等宽字体优化 */
+  code, pre, .font-mono {
+    font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* 标题字体优化 */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* 小字体优化 */
+  .text-xs {
+    font-size: 11px;
+  }
+
+  .text-sm {
+    font-size: 12px;
+  }
+
+  /* 按钮字体优化 */
+  button {
+    font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* 菜单和下拉框优化 */
+  .dropdown-menu,
+  .select-content {
+    backdrop-filter: blur(20px);
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dropdown-menu,
+    .select-content {
+      background-color: rgba(30, 30, 30, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  /* 工具栏按钮优化 */
+  .toolbar-button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .toolbar-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .toolbar-button {
+      background-color: rgba(30, 30, 30, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .toolbar-button:hover {
+      background-color: rgba(30, 30, 30, 0.8);
+    }
+  }
+}
+
+/* 高DPI屏幕优化 */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  /* 文本渲染优化 */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  /* 细线条优化 */
+  .border {
+    border-width: 0.5px;
+  }
+
+  /* 图标优化 */
+  .lucide-icon,
+  svg[class*='lucide'] {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}

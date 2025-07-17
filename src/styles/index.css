@@ -3,6 +3,8 @@
 @import 'tailwindcss/utilities';
 /* Modal 优化样式 */
 @import './modal-optimization.css';
+/* macOS 优化样式 */
+@import './macos-optimizations.css';
 
 /* 查询页面优化样式 */
 @layer components {
