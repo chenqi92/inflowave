@@ -234,6 +234,20 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }
   };
 
+  // 处理创建数据浏览tab事件
+  const handleCreateDataBrowserTab = (
+    connectionId: string,
+    database: string,
+    tableName: string
+  ) => {
+    // 切换到查询视图
+    setCurrentView('query');
+    // 使用TabEditor的引用来创建数据浏览tab
+    if (tabEditorRef.current?.createDataBrowserTab) {
+      tabEditorRef.current.createDataBrowserTab(connectionId, database, tableName);
+    }
+  };
+
   // 处理视图变化 - 特殊处理开发者工具
   const handleViewChange = useCallback(
     (newView: string) => {
@@ -426,6 +440,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 collapsed={leftPanelCollapsed}
                 refreshTrigger={refreshTrigger}
                 onTableDoubleClick={handleTableDoubleClick}
+                onCreateDataBrowserTab={handleCreateDataBrowserTab}
                 currentTimeRange={currentTimeRange}
               />
               {/* 折叠按钮 */}

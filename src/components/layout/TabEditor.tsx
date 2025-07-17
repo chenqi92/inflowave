@@ -39,6 +39,9 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
+import TableDataBrowser from '@/components/query/TableDataBrowser';
+import SimpleDragOverlay from '@/components/common/SimpleDragOverlay';
+import useSimpleTabDrag from '@/hooks/useSimpleTabDrag';
 import type { QueryResult, QueryRequest } from '@/types';
 
 interface MenuProps {
@@ -55,9 +58,13 @@ interface EditorTab {
   id: string;
   title: string;
   content: string;
-  type: 'query' | 'table' | 'database';
+  type: 'query' | 'table' | 'database' | 'data-browser';
   modified: boolean;
   filePath?: string;
+  // 数据浏览相关属性
+  connectionId?: string;
+  database?: string;
+  tableName?: string;
 }
 
 interface TabEditorProps {
@@ -77,6 +84,7 @@ interface TabEditorProps {
 
 interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
+  createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
@@ -102,6 +110,20 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showImportDialog, setShowImportDialog] = useState(false);
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+
+    // 拖拽功能
+    const {
+      isDragging,
+      draggedTab,
+      dropZoneActive,
+      handleTabDragStart,
+      handleTabDrag,
+      handleTabDragEnd,
+      handleTabDrop,
+      handleTabDragOver,
+      handleTabMove,
+      showTabInPopup,
+    } = useSimpleTabDrag();
 
     // 处理时间范围的SQL注入
     const injectTimeRangeToQuery = (
@@ -654,8 +676,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       ref,
       () => ({
         executeQueryWithContent,
+        createDataBrowserTab,
       }),
-      [executeQueryWithContent]
+      [executeQueryWithContent, createDataBrowserTab]
     );
 
     // 组件加载时加载数据库列表
@@ -773,6 +796,70 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       setTabs([...tabs, newTab]);
       setActiveKey(newTab.id);
+    };
+
+    // 创建数据浏览标签
+    const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
+      const newTab: EditorTab = {
+        id: Date.now().toString(),
+        title: `📊 ${tableName}`,
+        content: '', // 数据浏览不需要content
+        type: 'data-browser',
+        modified: false,
+        connectionId,
+        database,
+        tableName,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+    };
+
+    // 处理tab分离
+    const handleTabDetach = (tabId: string) => {
+      const tab = tabs.find(t => t.id === tabId);
+      if (tab) {
+        // 从tabs中移除
+        setTabs(prev => prev.filter(t => t.id !== tabId));
+        
+        // 如果关闭的是当前活动tab，切换到其他tab
+        if (activeKey === tabId) {
+          const remainingTabs = tabs.filter(t => t.id !== tabId);
+          if (remainingTabs.length > 0) {
+            setActiveKey(remainingTabs[0].id);
+          } else {
+            // 如果没有剩余tab，创建一个新的
+            createNewTab('query');
+          }
+        }
+      }
+    };
+
+    // 处理tab重新附加
+    const handleTabReattach = (detachedTab: any) => {
+      const newTab: EditorTab = {
+        id: detachedTab.id,
+        title: detachedTab.title,
+        content: detachedTab.content,
+        type: detachedTab.type,
+        modified: detachedTab.modified || false,
+        connectionId: detachedTab.connectionId,
+        database: detachedTab.database,
+        tableName: detachedTab.tableName,
+      };
+
+      setTabs(prev => [...prev, newTab]);
+      setActiveKey(newTab.id);
+    };
+
+    // 处理tab在tab栏内的移动
+    const handleTabMoveInBar = (fromIndex: number, toIndex: number) => {
+      setTabs(prev => {
+        const newTabs = [...prev];
+        const [movedTab] = newTabs.splice(fromIndex, 1);
+        newTabs.splice(toIndex, 0, movedTab);
+        return newTabs;
+      });
     };
 
     // 关闭标签
@@ -1371,16 +1458,37 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           <div className='flex items-center justify-between border-b border min-h-[48px] p-0'>
             {/* 左侧标签区域 - 支持滚动 */}
             <div className='flex-1 flex items-center min-w-0'>
-              <div className='flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'>
+              <div 
+                className='flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'
+                onDrop={(e) => handleTabDrop(e, handleTabReattach)}
+                onDragOver={handleTabDragOver}
+              >
                 {tabs.map(tab => (
                   <div
                     key={tab.id}
-                    className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 flex-shrink-0 min-w-[120px] max-w-[180px] ${
+                    draggable
+                    className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 flex-shrink-0 min-w-[120px] max-w-[180px] transition-all duration-200 ${
                       activeKey === tab.id
                         ? 'bg-background border-b-2 border-primary'
                         : 'bg-muted/50'
-                    }`}
+                    } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''}`}
                     onClick={() => setActiveKey(tab.id)}
+                    onDragStart={(e) => handleTabDragStart(e, {
+                      id: tab.id,
+                      title: tab.title,
+                      content: tab.content,
+                      type: tab.type,
+                      connectionId: tab.connectionId,
+                      database: tab.database,
+                      tableName: tab.tableName,
+                    })}
+                    onDrag={handleTabDrag}
+                    onDragEnd={(e) => handleTabDragEnd(e, (tabId, action) => {
+                      if (action === 'detach') {
+                        // 在简化版中，不真正移除tab，只是演示
+                        showMessage.info(`Tab "${tab.title}" 分离操作（演示）`);
+                      }
+                    })}
                   >
                     {tab.type === 'query' && (
                       <FileText className='w-4 h-4 flex-shrink-0' />
@@ -1390,6 +1498,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     )}
                     {tab.type === 'database' && (
                       <Database className='w-4 h-4 flex-shrink-0' />
+                    )}
+                    {tab.type === 'data-browser' && (
+                      <Table className='w-4 h-4 flex-shrink-0 text-blue-600' />
                     )}
                     <span className='text-sm truncate flex-1'>{tab.title}</span>
                     {tab.modified && (
@@ -1410,32 +1521,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     </Button>
                   </div>
                 ))}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      className='ml-2 flex-shrink-0'
-                      title='新建'
-                    >
-                      <Plus className='w-4 h-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='start'>
-                    <DropdownMenuItem onClick={() => createNewTab('query')}>
-                      <FileText className='w-4 h-4 mr-2' />
-                      SQL 查询
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => createNewTab('table')}>
-                      <Table className='w-4 h-4 mr-2' />
-                      表设计器
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => createNewTab('database')}>
-                      <Database className='w-4 h-4 mr-2' />
-                      数据库设计器
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='ml-2 flex-shrink-0'
+                  title='新建SQL查询'
+                  onClick={() => createNewTab('query')}
+                >
+                  <Plus className='w-4 h-4' />
+                </Button>
               </div>
             </div>
 
@@ -1530,19 +1624,26 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           {/* 编辑器内容 */}
           <div className='flex-1 p-0'>
             {currentTab ? (
-              <Editor
-                height='100%'
-                language='influxql'
-                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
-                value={currentTab.content}
-                onChange={handleEditorChange}
-                onMount={handleEditorDidMount}
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  roundedSelection: false,
+              currentTab.type === 'data-browser' ? (
+                <TableDataBrowser
+                  connectionId={currentTab.connectionId!}
+                  database={currentTab.database!}
+                  tableName={currentTab.tableName!}
+                />
+              ) : (
+                <Editor
+                  height='100%'
+                  language='influxql'
+                  theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+                  value={currentTab.content}
+                  onChange={handleEditorChange}
+                  onMount={handleEditorDidMount}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    roundedSelection: false,
                   scrollbar: {
                     vertical: 'auto',
                     horizontal: 'auto',
@@ -1581,6 +1682,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   ],
                 }}
               />
+              )
             ) : (
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
                 <div className='text-center'>
@@ -1629,6 +1731,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               setShowExportDialog(false);
             }}
           />
+
+          {/* 拖拽提示覆盖层 */}
+          <SimpleDragOverlay active={dropZoneActive} />
         </div>
       </TooltipProvider>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Tabs,
   TabsList,
@@ -81,11 +81,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('executor');
   const [visualizationType, setVisualizationType] = useState<'line' | 'bar' | 'pie'>('line');
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const chartRef = useRef<any>(null);
 
-  // 自动切换到数据预览标签页当有查询结果时
+  // 自动切换到数据标签页当有查询结果时
   useEffect(() => {
     if (queryResult) {
-      setActiveTab('preview');
+      setActiveTab('data');
     }
   }, [queryResult]);
 
@@ -98,19 +101,67 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     
     if (!columns || !values) return null;
 
+    let data = values.map((row, index) => {
+      const record: Record<string, any> = { _id: index };
+      columns.forEach((col, colIndex) => {
+        record[col] = row[colIndex];
+      });
+      return record;
+    });
+
+    // 排序逻辑
+    if (sortColumn) {
+      data = [...data].sort((a, b) => {
+        let aVal = a[sortColumn];
+        let bVal = b[sortColumn];
+
+        // 处理null和undefined
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return sortDirection === 'asc' ? 1 : -1;
+        if (bVal == null) return sortDirection === 'asc' ? -1 : 1;
+
+        // 时间字段特殊处理
+        if (sortColumn === 'time') {
+          aVal = new Date(aVal).getTime();
+          bVal = new Date(bVal).getTime();
+        }
+        
+        // 数字比较
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        
+        // 字符串比较
+        const aStr = String(aVal).toLowerCase();
+        const bStr = String(bVal).toLowerCase();
+        
+        if (sortDirection === 'asc') {
+          return aStr.localeCompare(bStr);
+        } else {
+          return bStr.localeCompare(aStr);
+        }
+      });
+    }
+
     return {
       columns,
       values,
       rowCount: values.length,
-      data: values.map((row, index) => {
-        const record: Record<string, any> = { _id: index };
-        columns.forEach((col, colIndex) => {
-          record[col] = row[colIndex];
-        });
-        return record;
-      })
+      data
     };
-  }, [queryResult]);
+  }, [queryResult, sortColumn, sortDirection]);
+
+  // 处理列排序
+  const handleColumnSort = (column: string) => {
+    if (sortColumn === column) {
+      // 切换排序方向
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // 新列，默认升序
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
 
   // 计算字段统计信息
   const fieldStatistics = useMemo((): FieldStatistics[] => {
@@ -218,44 +269,254 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     const timeColumn = fieldStatistics.find(stat => stat.dataType === 'datetime')?.fieldName;
     const numericColumns = fieldStatistics.filter(stat => stat.dataType === 'number').map(stat => stat.fieldName);
 
-    if (!timeColumn || numericColumns.length === 0) {
-      // 简单柱状图
+    if (!timeColumn && numericColumns.length > 0) {
+      // 数值型数据图表
       const categories = parsedData.data.slice(0, 10).map((_, index) => `行 ${index + 1}`);
-      const firstNumericCol = numericColumns[0] || parsedData.columns[1];
+      const firstNumericCol = numericColumns[0];
       const values = parsedData.data.slice(0, 10).map(row => row[firstNumericCol] || 0);
 
+      if (visualizationType === 'pie') {
+        // 饼图配置
+        return {
+          title: { text: `${firstNumericCol} 分布`, left: 'center' },
+          tooltip: { 
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'
+          },
+          legend: {
+            type: 'scroll',
+            orient: 'vertical',
+            right: 10,
+            top: 20,
+            bottom: 20
+          },
+          series: [{
+            name: firstNumericCol,
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: ['40%', '50%'],
+            data: categories.map((cat, index) => ({ 
+              name: cat, 
+              value: Math.abs(values[index]) || 1
+            })),
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            },
+            label: {
+              show: true,
+              formatter: '{b}: {d}%'
+            }
+          }]
+        };
+      } else if (visualizationType === 'bar') {
+        // 柱状图配置
+        return {
+          title: { text: `${firstNumericCol} 数据分布`, left: 'center' },
+          tooltip: { 
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' }
+          },
+          grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+          },
+          xAxis: { 
+            type: 'category', 
+            data: categories,
+            axisTick: { alignWithLabel: true }
+          },
+          yAxis: { 
+            type: 'value',
+            name: firstNumericCol
+          },
+          series: [{
+            name: firstNumericCol,
+            type: 'bar',
+            data: values,
+            itemStyle: {
+              color: new Proxy({}, {
+                get: function(target, prop) {
+                  const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+                  return colors[parseInt(prop) % colors.length];
+                }
+              })
+            },
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }]
+        };
+      } else {
+        // 折线图配置
+        return {
+          title: { text: `${firstNumericCol} 趋势`, left: 'center' },
+          tooltip: { trigger: 'axis' },
+          grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+          },
+          xAxis: { 
+            type: 'category', 
+            data: categories,
+            boundaryGap: false
+          },
+          yAxis: { 
+            type: 'value',
+            name: firstNumericCol
+          },
+          series: [{
+            name: firstNumericCol,
+            type: 'line',
+            data: values,
+            smooth: true,
+            itemStyle: { color: '#5470c6' },
+            areaStyle: { opacity: 0.3 }
+          }]
+        };
+      }
+    }
+
+    if (timeColumn && numericColumns.length > 0) {
+      // 时序图表
+      const seriesData = numericColumns.slice(0, 3).map((column, index) => {
+        const colors = ['#5470c6', '#91cc75', '#fac858'];
+        return {
+          name: column,
+          type: visualizationType === 'pie' ? 'line' : visualizationType, // 时序数据不支持饼图
+          data: parsedData.data.map(row => [row[timeColumn], row[column]]),
+          smooth: visualizationType === 'line',
+          itemStyle: { color: colors[index] },
+          ...(visualizationType === 'line' ? { areaStyle: { opacity: 0.2 } } : {})
+        };
+      });
+
       return {
-        title: { text: '数据预览', left: 'center' },
-        tooltip: { trigger: 'axis' },
-        xAxis: { type: 'category', data: categories },
-        yAxis: { type: 'value' },
-        series: [{
-          name: firstNumericCol,
-          type: visualizationType === 'pie' ? 'pie' : visualizationType,
-          data: visualizationType === 'pie' 
-            ? categories.map((cat, index) => ({ name: cat, value: values[index] }))
-            : values
+        title: { text: '时序数据趋势', left: 'center' },
+        tooltip: { 
+          trigger: 'axis',
+          axisPointer: { type: 'cross' }
+        },
+        legend: { 
+          top: 30,
+          type: 'scroll'
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: { 
+          type: 'time',
+          name: timeColumn
+        },
+        yAxis: { 
+          type: 'value',
+          name: '数值'
+        },
+        series: seriesData,
+        dataZoom: [{
+          type: 'inside',
+          start: 0,
+          end: 100
+        }, {
+          start: 0,
+          end: 100,
+          handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23.1h6.6V24.4z M13.3,19.6H6.7v-1.2h6.6V19.6z',
+          handleSize: '80%',
+          handleStyle: {
+            color: '#fff',
+            shadowBlur: 3,
+            shadowColor: 'rgba(0, 0, 0, 0.6)',
+            shadowOffsetX: 2,
+            shadowOffsetY: 2
+          }
         }]
       };
     }
 
-    // 时序图表
-    const timeData = parsedData.data.map(row => row[timeColumn]);
-    const seriesData = numericColumns.slice(0, 3).map(column => ({
-      name: column,
-      type: 'line',
-      data: parsedData.data.map(row => [row[timeColumn], row[column]])
-    }));
-
-    return {
-      title: { text: '时序数据趋势', left: 'center' },
-      tooltip: { trigger: 'axis' },
-      legend: { top: 30 },
-      xAxis: { type: 'time' },
-      yAxis: { type: 'value' },
-      series: seriesData
-    };
+    // 无可视化数据
+    return null;
   }, [parsedData, fieldStatistics, visualizationType]);
+
+  // 导出图表功能
+  const handleExportChart = useCallback((format: 'png' | 'svg' | 'pdf' = 'png') => {
+    if (!chartRef.current) {
+      console.error('图表实例未找到');
+      return;
+    }
+
+    try {
+      const chartInstance = chartRef.current.getEchartsInstance();
+      if (!chartInstance) {
+        console.error('ECharts实例未找到');
+        return;
+      }
+
+      let dataURL: string;
+      let fileName: string;
+      
+      switch (format) {
+        case 'svg':
+          dataURL = chartInstance.renderToSVGString();
+          fileName = `chart_${new Date().getTime()}.svg`;
+          // 创建SVG Blob并下载
+          const svgBlob = new Blob([dataURL], { type: 'image/svg+xml' });
+          const svgUrl = URL.createObjectURL(svgBlob);
+          const svgLink = document.createElement('a');
+          svgLink.href = svgUrl;
+          svgLink.download = fileName;
+          document.body.appendChild(svgLink);
+          svgLink.click();
+          document.body.removeChild(svgLink);
+          URL.revokeObjectURL(svgUrl);
+          break;
+          
+        case 'pdf':
+          // PDF导出需要额外的库支持，这里先使用PNG替代
+          dataURL = chartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          fileName = `chart_${new Date().getTime()}.png`;
+          break;
+          
+        default: // png
+          dataURL = chartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          fileName = `chart_${new Date().getTime()}.png`;
+      }
+
+      if (format !== 'svg') {
+        // 对于PNG和PDF，使用dataURL下载
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      console.log(`图表已导出为 ${format.toUpperCase()} 格式`);
+    } catch (error) {
+      console.error('导出图表失败:', error);
+    }
+  }, []);
 
   if (collapsed) {
     return (
@@ -269,18 +530,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     <div className="h-full bg-background">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <TabsList className="inline-flex h-8 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-auto">
+          <TabsTrigger value="data" className="flex items-center gap-1 px-3 py-1 text-xs">
+            <Database className="w-3 h-3" />
+            数据
+            {parsedData && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1">
+                {parsedData.rowCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="statistics" className="flex items-center gap-1 px-3 py-1 text-xs">
+            <Info className="w-3 h-3" />
+            字段统计
+            {fieldStatistics.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1">
+                {fieldStatistics.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="executor" className="flex items-center gap-1 px-3 py-1 text-xs">
             <Play className="w-3 h-3" />
             执行器
           </TabsTrigger>
           <TabsTrigger value="preview" className="flex items-center gap-1 px-3 py-1 text-xs">
             <Eye className="w-3 h-3" />
-            数据预览
-            {parsedData && (
-              <Badge variant="secondary" className="ml-1 text-xs px-1">
-                {parsedData.rowCount}
-              </Badge>
-            )}
+            数据样本
           </TabsTrigger>
           <TabsTrigger value="visualization" className="flex items-center gap-1 px-3 py-1 text-xs">
             <BarChart3 className="w-3 h-3" />
@@ -296,6 +570,227 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* 数据标签页 - 默认显示所有查询结果 */}
+        <TabsContent value="data" className="flex-1 overflow-hidden mt-0">
+          {parsedData ? (
+            <div className="h-full flex flex-col">
+              {/* 数据表格头部 */}
+              <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    <span className="text-sm font-medium">查询结果</span>
+                    <Badge variant="outline" className="text-xs">
+                      {parsedData.rowCount} 行
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <Download className="w-3 h-3 mr-1" />
+                      导出
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs" onClick={onClearResult}>
+                      清空
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 可滚动的数据表格 */}
+              <div className="flex-1 overflow-auto relative">
+                <div className="min-w-full">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        {parsedData.columns.map((column, index) => (
+                          <TableHead
+                            key={index}
+                            className={`px-3 py-2 text-left font-medium cursor-pointer hover:bg-muted/50 transition-colors ${
+                              sortColumn === column ? 'bg-muted/50 text-foreground' : 'text-muted-foreground'
+                            }`}
+                            onClick={() => handleColumnSort(column)}
+                          >
+                            <div className="flex items-center gap-1 select-none">
+                              <span className="text-xs">{column}</span>
+                              <span className="text-xs opacity-60">
+                                {sortColumn === column ? (
+                                  sortDirection === 'asc' ? '↑' : '↓'
+                                ) : '↕️'}
+                              </span>
+                            </div>
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedData.data.map((row, rowIndex) => (
+                        <TableRow
+                          key={rowIndex}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          {parsedData.columns.map((column, colIndex) => (
+                            <TableCell
+                              key={colIndex}
+                              className="px-3 py-2 font-mono text-xs"
+                              style={{ maxWidth: '200px' }}
+                            >
+                              <div 
+                                className="truncate" 
+                                title={String(row[column] || '')}
+                                style={{ 
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {column === 'time' && row[column]
+                                  ? new Date(row[column]).toLocaleString()
+                                  : String(row[column] || '-')
+                                }
+                              </div>
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* 底部状态栏 */}
+              <div className="flex-shrink-0 bg-muted/30 border-t px-4 py-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>共 {parsedData.rowCount} 行数据</span>
+                  <span>执行时间: {executionTime}ms</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <Database className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">请执行查询以查看数据</p>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* 字段统计标签页 */}
+        <TabsContent value="statistics" className="flex-1 overflow-hidden mt-0">
+          {parsedData ? (
+            <div className="h-full flex flex-col">
+              {/* 字段统计头部 */}
+              <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    <span className="text-sm font-medium">字段统计信息</span>
+                    <Badge variant="outline" className="text-xs">
+                      {fieldStatistics.length} 个字段
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <Download className="w-3 h-3 mr-1" />
+                      导出统计
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 可滚动的统计表格 */}
+              <div className="flex-1 overflow-auto relative">
+                <div className="min-w-full">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        <TableHead className="px-3 py-2 text-xs font-medium">字段名</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">数据类型</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">空值数量</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">唯一值数量</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">最小值</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">最大值</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">平均值</TableHead>
+                        <TableHead className="px-3 py-2 text-xs font-medium">中位数</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fieldStatistics.map((stat, index) => (
+                        <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+                          <TableCell className="px-3 py-2 font-mono text-xs font-medium">
+                            {stat.fieldName}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                stat.dataType === 'number' ? 'border-blue-200 text-blue-700' :
+                                stat.dataType === 'datetime' ? 'border-green-200 text-green-700' :
+                                stat.dataType === 'boolean' ? 'border-purple-200 text-purple-700' :
+                                'border-gray-200 text-gray-700'
+                              }`}
+                            >
+                              {stat.dataType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono">{stat.nullCount}</span>
+                              {stat.nullCount > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {((stat.nullCount / parsedData.rowCount) * 100).toFixed(1)}%
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs font-mono">
+                            {stat.uniqueCount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs font-mono">
+                            {stat.dataType === 'number' && stat.min !== undefined ? (
+                              typeof stat.min === 'number' ? stat.min.toFixed(2) : stat.min
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs font-mono">
+                            {stat.dataType === 'number' && stat.max !== undefined ? (
+                              typeof stat.max === 'number' ? stat.max.toFixed(2) : stat.max
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs font-mono">
+                            {stat.dataType === 'number' && stat.mean !== undefined ? 
+                              stat.mean.toFixed(3) : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-xs font-mono">
+                            {stat.dataType === 'number' && stat.median !== undefined ? 
+                              stat.median.toFixed(3) : '-'
+                            }
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* 底部状态栏 */}
+              <div className="flex-shrink-0 bg-muted/30 border-t px-4 py-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>共 {fieldStatistics.length} 个字段</span>
+                  <span>数据总行数: {parsedData.rowCount.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <Info className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">请执行查询以查看字段统计</p>
+              </div>
+            </div>
+          )}
+        </TabsContent>
 
         {/* 查询执行器标签页 */}
         <TabsContent value="executor" className="flex-1 p-4 space-y-4 mt-0">
@@ -392,95 +887,87 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           </div>
         </TabsContent>
 
-        {/* 数据预览标签页 */}
-        <TabsContent value="preview" className="flex-1 p-4 space-y-4 mt-0">
+        {/* 数据样本标签页 */}
+        <TabsContent value="preview" className="flex-1 overflow-hidden mt-0">
           {parsedData ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-              {/* 字段统计 */}
-              <Card className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Info className="w-4 h-4" />
-                    字段统计
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">字段名</TableHead>
-                        <TableHead className="text-xs">类型</TableHead>
-                        <TableHead className="text-xs">空值</TableHead>
-                        <TableHead className="text-xs">唯一值</TableHead>
-                        <TableHead className="text-xs">范围</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fieldStatistics.map((stat, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="text-xs font-mono">{stat.fieldName}</TableCell>
-                          <TableCell className="text-xs">
-                            <Badge variant="outline" className="text-xs">{stat.dataType}</Badge>
-                          </TableCell>
-                          <TableCell className="text-xs">{stat.nullCount}</TableCell>
-                          <TableCell className="text-xs">{stat.uniqueCount}</TableCell>
-                          <TableCell className="text-xs">
-                            {stat.dataType === 'number' && stat.min !== undefined && stat.max !== undefined ? (
-                              <span className="font-mono">
-                                {typeof stat.min === 'number' ? stat.min.toFixed(2) : stat.min} ~ {typeof stat.max === 'number' ? stat.max.toFixed(2) : stat.max}
-                              </span>
-                            ) : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              {/* 数据样本 */}
-              <Card className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-4 h-4" />
-                      数据样本 (前10行)
-                    </div>
+            <div className="h-full flex flex-col">
+              {/* 数据样本头部 */}
+              <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <span className="text-sm font-medium">数据样本</span>
+                    <Badge variant="outline" className="text-xs">
+                      前 10 行
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" className="text-xs">
                       <Download className="w-3 h-3 mr-1" />
-                      导出
+                      导出样本
                     </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-auto">
+                  </div>
+                </div>
+              </div>
+
+              {/* 可滚动的数据样本表格 */}
+              <div className="flex-1 overflow-auto relative">
+                <div className="min-w-full">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         {parsedData.columns.map((column, index) => (
-                          <TableHead key={index} className="text-xs">{column}</TableHead>
+                          <TableHead key={index} className="px-3 py-2 text-xs font-medium">
+                            {column}
+                          </TableHead>
                         ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {parsedData.data.slice(0, 10).map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
+                        <TableRow key={rowIndex} className="hover:bg-muted/30 transition-colors">
                           {parsedData.columns.map((column, colIndex) => (
-                            <TableCell key={colIndex} className="text-xs font-mono">
-                              {String(row[column] || '-')}
+                            <TableCell 
+                              key={colIndex} 
+                              className="px-3 py-2 font-mono text-xs"
+                              style={{ maxWidth: '200px' }}
+                            >
+                              <div 
+                                className="truncate" 
+                                title={String(row[column] || '')}
+                                style={{ 
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {column === 'time' && row[column]
+                                  ? new Date(row[column]).toLocaleString()
+                                  : String(row[column] || '-')
+                                }
+                              </div>
                             </TableCell>
                           ))}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+
+              {/* 底部状态栏 */}
+              <div className="flex-shrink-0 bg-muted/30 border-t px-4 py-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>显示前 10 行数据样本</span>
+                  <span>总数据: {parsedData.rowCount.toLocaleString()} 行</span>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="h-full flex items-center justify-center">
               <div className="text-center text-muted-foreground">
-                <Database className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">请执行查询以预览数据</p>
+                <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">请执行查询以预览数据样本</p>
               </div>
             </div>
           )}
@@ -514,14 +1001,35 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <Download className="w-3 h-3 mr-1" />
-                    导出图表
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <Download className="w-3 h-3 mr-1" />
+                        导出图表
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleExportChart('png')}>
+                        <Download className="w-3 h-3 mr-2" />导出为 PNG
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportChart('svg')}>
+                        <Download className="w-3 h-3 mr-2" />导出为 SVG
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportChart('pdf')}>
+                        <Download className="w-3 h-3 mr-2" />导出为 PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
               <div className="flex-1 bg-white rounded border">
-                <EChartsReact option={chartOption} style={{ height: '100%' }} />
+                <EChartsReact 
+                  ref={chartRef}
+                  option={chartOption} 
+                  style={{ height: '100%' }} 
+                  notMerge={true}
+                  lazyUpdate={true}
+                />
               </div>
             </div>
           ) : (

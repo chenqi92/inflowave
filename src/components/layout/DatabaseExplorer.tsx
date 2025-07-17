@@ -68,7 +68,8 @@ interface MenuProps {
 interface DatabaseExplorerProps {
   collapsed?: boolean;
   refreshTrigger?: number; // 用于触发刷新
-  onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调
+  onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调（保留兼容性）
+  onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void; // 创建数据浏览tab回调
   currentTimeRange?: {
     label: string;
     value: string;
@@ -92,6 +93,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   collapsed = false,
   refreshTrigger,
   onTableDoubleClick,
+  onCreateDataBrowserTab,
   currentTimeRange,
 }) => {
   const {
@@ -951,18 +953,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const connectionId = key.replace('connection-', '');
       handleConnectionToggle(connectionId);
     } else if (key.startsWith('table-')) {
-      // 表节点被双击，自动生成查询
+      // 表节点被双击，创建数据浏览tab
       const parts = key.split('-');
       if (parts.length >= 4) {
         const connectionId = parts[1];
         const database = parts[2];
         const table = parts.slice(3).join('-'); // 处理表名包含连字符的情况
 
-        // 生成带时间筛选的查询
-        const query = generateQueryWithTimeFilter(table);
-
-        // 调用回调函数执行查询
-        if (onTableDoubleClick) {
+        // 优先使用新的数据浏览回调
+        if (onCreateDataBrowserTab) {
+          onCreateDataBrowserTab(connectionId, database, table);
+          showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
+        } else if (onTableDoubleClick) {
+          // 保留原有逻辑以便兼容
+          const query = generateQueryWithTimeFilter(table);
           onTableDoubleClick(database, table, query);
           const timeDesc = currentTimeRange
             ? currentTimeRange.label
@@ -972,6 +976,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           );
         } else {
           // 如果没有回调，复制查询到剪贴板
+          const query = generateQueryWithTimeFilter(table);
           navigator.clipboard
             .writeText(query)
             .then(() => {
@@ -983,6 +988,82 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
       }
     }
+  };
+
+  // 处理右键菜单
+  const handleRightClick = (info: any) => {
+    const { node } = info;
+    const key = node.key as string;
+
+    // 阻止默认的浏览器右键菜单
+    info.event.preventDefault();
+
+    // 根据节点类型显示不同的右键菜单
+    if (key.startsWith('table-')) {
+      // 表节点右键菜单
+      const parts = key.split('-');
+      if (parts.length >= 4) {
+        const connectionId = parts[1];
+        const database = parts[2];
+        const table = parts.slice(3).join('-');
+        
+        showTableContextMenu(info.event, { connectionId, database, table });
+      }
+    } else if (key.startsWith('database-')) {
+      // 数据库节点右键菜单
+      const parts = key.split('-');
+      if (parts.length >= 3) {
+        const connectionId = parts[1];
+        const database = parts[2];
+        
+        showDatabaseContextMenu(info.event, { connectionId, database });
+      }
+    }
+  };
+
+  // 显示表的右键菜单
+  const showTableContextMenu = (event: React.MouseEvent, tableInfo: { connectionId: string; database: string; table: string }) => {
+    // 这里可以使用一个上下文菜单组件，暂时用简单的处理
+    // 你可以使用 Ant Design 的 Dropdown 或自定义上下文菜单组件
+    console.log('表右键菜单:', tableInfo);
+    
+    // 暂时使用 confirm 来模拟菜单选择
+    const choice = window.confirm('选择操作:\n确定: 打开表设计器\n取消: 查看表数据');
+    if (choice) {
+      // 打开表设计器 - 这里需要回调到 TabEditor
+      openTableDesigner(tableInfo);
+    } else {
+      // 查看表数据 - 使用现有的双击逻辑
+      const query = generateQueryWithTimeFilter(tableInfo.table);
+      if (onTableDoubleClick) {
+        onTableDoubleClick(tableInfo.database, tableInfo.table, query);
+      }
+    }
+  };
+
+  // 显示数据库的右键菜单
+  const showDatabaseContextMenu = (event: React.MouseEvent, dbInfo: { connectionId: string; database: string }) => {
+    console.log('数据库右键菜单:', dbInfo);
+    
+    // 暂时使用 alert 来模拟
+    if (window.confirm('是否打开数据库设计器?')) {
+      openDatabaseDesigner(dbInfo);
+    }
+  };
+
+  // 打开表设计器
+  const openTableDesigner = (tableInfo: { connectionId: string; database: string; table: string }) => {
+    // 这里需要通知 TabEditor 创建表设计器 tab
+    // 暂时使用 console.log
+    console.log('打开表设计器:', tableInfo);
+    showMessage.info(`表设计器功能开发中: ${tableInfo.table}`);
+  };
+
+  // 打开数据库设计器
+  const openDatabaseDesigner = (dbInfo: { connectionId: string; database: string }) => {
+    // 这里需要通知 TabEditor 创建数据库设计器 tab
+    console.log('打开数据库设计器:', dbInfo);
+    showMessage.info(`数据库设计器功能开发中: ${dbInfo.database}`);
   };
 
   // 处理节点选择
@@ -1533,6 +1614,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 onExpand={handleExpand}
                 onSelect={handleSelect}
                 onDoubleClick={handleDoubleClick}
+                onRightClick={handleRightClick}
                 className='bg-transparent database-explorer-tree'
               />
             ) : (
