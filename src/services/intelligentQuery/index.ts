@@ -1,4 +1,4 @@
-import { QueryOptimizer } from './optimizer/QueryOptimizer';
+import {OptimizedQuery, QueryOptimizer} from './optimizer/QueryOptimizer';
 import { QueryAnalyzer } from './analyzer/QueryAnalyzer';
 import { IntelligentCache } from './cache/IntelligentCache';
 import QueryRouter from './router/QueryRouter';
@@ -186,7 +186,7 @@ export class IntelligentQueryEngine {
     // 3. 优化查询
     const optimizedQuery = await this.optimizer.optimize(
       query,
-      analysis,
+      <QueryAnalysis>analysis,
       context
     );
 
@@ -206,14 +206,14 @@ export class IntelligentQueryEngine {
     // 6. 生成执行计划
     const executionPlan = await this.generateExecutionPlan(
       optimizedQuery,
-      analysis,
+      <QueryAnalysis>analysis,
       context
     );
 
     // 7. 生成建议
     const recommendations = await this.generateRecommendations(
       query,
-      analysis,
+      <QueryAnalysis>analysis,
       context
     );
 
@@ -236,13 +236,15 @@ export class IntelligentQueryEngine {
     });
 
     // 9. 记录优化历史
-    await this.history.recordOptimization(
-      connectionId,
-      database,
-      query,
-      result,
-      context
-    );
+    if (context) {
+      await this.history.recordOptimization(
+          connectionId,
+          database,
+          query,
+          result,
+          context
+      );
+    }
 
     return result;
   }
@@ -336,7 +338,7 @@ export class IntelligentQueryEngine {
       const analysis = await this.analyzer.analyzeQuery(slowQuery.query);
       const queryRecommendations = await this.generateRecommendations(
         slowQuery.query,
-        analysis
+        <QueryAnalysis>analysis
       );
       recommendations.push(...queryRecommendations);
     }
@@ -461,9 +463,9 @@ export class IntelligentQueryEngine {
    * 生成执行计划
    */
   private async generateExecutionPlan(
-    query: string,
-    analysis: QueryAnalysis,
-    context?: QueryContext
+      query: OptimizedQuery,
+      analysis: QueryAnalysis,
+      context?: QueryContext | undefined
   ): Promise<ExecutionPlan> {
     const steps = await this.optimizer.generateSteps(query, analysis);
     const parallelization = this.optimizer.analyzeParallelization(steps);

@@ -229,8 +229,8 @@ export class QueryOptimizer {
    * 生成执行步骤
    */
   async generateSteps(
-    query: string,
-    analysis: QueryAnalysis
+      query: OptimizedQuery,
+      analysis: QueryAnalysis
   ): Promise<ExecutionStep[]> {
     const steps: ExecutionStep[] = [];
     let stepId = 0;
