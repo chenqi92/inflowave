@@ -79,6 +79,73 @@ interface PerformanceBottleneckDiagnosticsProps {
   className?: string;
 }
 
+interface SlowQuery {
+  query: string;
+  duration: number;
+  frequency: number;
+  lastExecuted: Date;
+  avgDuration: number;
+  minDuration: number;
+  maxDuration: number;
+  database: string;
+  user: string;
+}
+
+interface LockWait {
+  type: string;
+  table: string;
+  duration: number;
+  waitingQueries: string[];
+  blockingQuery: string;
+  timestamp: Date;
+}
+
+interface Recommendation {
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  title: string;
+  description: string;
+  impact: string;
+  implementation: string;
+}
+
+interface PerformanceMetricsResult {
+  queryExecutionTime: Array<{ timestamp: string; value: number }>;
+  writeLatency: Array<{ timestamp: string; value: number }>;
+  memoryUsage: Array<{ timestamp: string; value: number }>;
+  cpuUsage: Array<{ timestamp: string; value: number }>;
+  diskIO: {
+    readBytes: number;
+    writeBytes: number;
+    readOps: number;
+    writeOps: number;
+  };
+  networkIO: {
+    bytesIn: number;
+    bytesOut: number;
+    packetsIn: number;
+    packetsOut: number;
+  };
+  storageAnalysis: {
+    totalSize: number;
+    compressionRatio: number;
+    retentionPolicyEffectiveness: number;
+    recommendations: string[];
+  };
+}
+
+interface SlowQueryAnalysisResult {
+  queries: Array<{
+    query: string;
+    executionTime: number;
+    timestamp: string;
+  }>;
+}
+
+interface TableRowData {
+  original: PerformanceBottleneck;
+}
+
 export const PerformanceBottleneckDiagnostics: React.FC<
   PerformanceBottleneckDiagnosticsProps
 > = ({ className }) => {
@@ -109,42 +176,96 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   >('all');
   const [searchText, setSearchText] = useState('');
   const [systemMetrics, setSystemMetrics] = useState<{
-    cpuUsage: number;
-    memoryUsage: number;
-    diskIo: number;
-    networkIo: number;
+    cpu: { timestamp: Date; usage: number }[];
+    memory: { timestamp: Date; usage: number; available: number }[];
+    disk: {
+      timestamp: Date;
+      readIops: number;
+      writeIops: number;
+      readThroughput: number;
+      writeThroughput: number;
+    }[];
+    network: {
+      timestamp: Date;
+      bytesIn: number;
+      bytesOut: number;
+      packetsIn: number;
+      packetsOut: number;
+    }[];
+    connections: {
+      timestamp: Date;
+      active: number;
+      idle: number;
+      total: number;
+    }[];
+    queries: {
+      timestamp: Date;
+      executing: number;
+      queued: number;
+      completed: number;
+      failed: number;
+    }[];
   } | null>(null);
   const [slowQueries, setSlowQueries] = useState<{
-    queries: Array<{
+    queries: {
       query: string;
-      executionTime: number;
-      timestamp: Date;
-    }>;
+      duration: number;
+      frequency: number;
+      lastExecuted: Date;
+      avgDuration: number;
+      minDuration: number;
+      maxDuration: number;
+      database: string;
+      user: string;
+    }[];
+    total: number;
   } | null>(null);
   const [lockWaits, setLockWaits] = useState<{
-    locks: Array<{
+    locks: {
       type: string;
+      table: string;
       duration: number;
-      blockedBy: string;
-    }>;
+      waitingQueries: string[];
+      blockingQuery: string;
+      timestamp: Date;
+    }[];
+    summary: {
+      totalLocks: number;
+      avgWaitTime: number;
+      maxWaitTime: number;
+      mostBlockedTable: string;
+      recommendations: string[];
+    };
   } | null>(null);
   const [performanceReport, setPerformanceReport] = useState<{
     summary: {
       overallScore: number;
+      period: { start: Date; end: Date };
+      totalQueries: number;
       avgQueryTime: number;
       errorRate: number;
       throughput: number;
     };
-    recommendations: Array<{
-      priority: string;
+    bottlenecks: PerformanceBottleneck[];
+    recommendations: {
+      category: string;
+      priority: 'low' | 'medium' | 'high' | 'critical';
       title: string;
       description: string;
-    }>;
+      impact: string;
+      implementation: string;
+    }[];
     metrics: {
       cpu: number;
       memory: number;
       disk: number;
       network: number;
+      database: number;
+    };
+    trends: {
+      queryPerformance: { timestamp: Date; value: number }[];
+      systemLoad: { timestamp: Date; value: number }[];
+      errorRate: { timestamp: Date; value: number }[];
     };
   } | null>(null);
 
@@ -192,6 +313,49 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     connectionCount: 100,
   });
 
+  // 获取基础性能指标
+  const getBasicMetrics = useCallback(async () => {
+    if (!activeConnectionId) return;
+
+    try {
+      const [metricsResult, _slowQueryResult] = await Promise.all([
+        safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics', {
+          connectionId: activeConnectionId,
+        }),
+        safeTauriInvoke<SlowQueryAnalysisResult>('get_slow_query_analysis', {
+          connectionId: activeConnectionId,
+        }),
+      ]);
+
+      setBasicMetrics({
+        queryExecutionTime: metricsResult.queryExecutionTime || [],
+        writeLatency: metricsResult.writeLatency || [],
+        memoryUsage: metricsResult.memoryUsage || [],
+        cpuUsage: metricsResult.cpuUsage || [],
+        diskIO: metricsResult.diskIO || {
+          readBytes: 0,
+          writeBytes: 0,
+          readOps: 0,
+          writeOps: 0,
+        },
+        networkIO: metricsResult.networkIO || {
+          bytesIn: 0,
+          bytesOut: 0,
+          packetsIn: 0,
+          packetsOut: 0,
+        },
+        storageAnalysis: metricsResult.storageAnalysis || {
+          totalSize: 0,
+          compressionRatio: 1.0,
+          retentionPolicyEffectiveness: 0,
+          recommendations: [],
+        },
+      });
+    } catch (error) {
+      console.error('获取基础性能指标失败:', error);
+    }
+  }, [activeConnectionId]);
+
   // 获取性能瓶颈数据
   const getBottlenecks = useCallback(async () => {
     if (!activeConnectionId) return;
@@ -210,7 +374,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         systemMetricsData,
         slowQueriesData,
         lockWaitsData,
-        connectionPoolData,
+        _connectionPoolData,
         performanceReportData,
       ] = await Promise.all([
         PerformanceBottleneckService.detectPerformanceBottlenecks(
@@ -253,7 +417,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, timeRange]);
+  }, [activeConnectionId, timeRange, getBasicMetrics]);
 
   // 自动刷新
   useEffect(() => {
@@ -348,49 +512,6 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   };
 
-  // 获取基础性能指标
-  const getBasicMetrics = useCallback(async () => {
-    if (!activeConnectionId) return;
-
-    try {
-      const [metricsResult, slowQueryResult] = await Promise.all([
-        safeTauriInvoke<any>('get_performance_metrics', {
-          connectionId: activeConnectionId,
-        }),
-        safeTauriInvoke<any>('get_slow_query_analysis', {
-          connectionId: activeConnectionId,
-        }),
-      ]);
-
-      setBasicMetrics({
-        queryExecutionTime: metricsResult.queryExecutionTime || [],
-        writeLatency: metricsResult.writeLatency || [],
-        memoryUsage: metricsResult.memoryUsage || [],
-        cpuUsage: metricsResult.cpuUsage || [],
-        diskIO: metricsResult.diskIO || {
-          readBytes: 0,
-          writeBytes: 0,
-          readOps: 0,
-          writeOps: 0,
-        },
-        networkIO: metricsResult.networkIO || {
-          bytesIn: 0,
-          bytesOut: 0,
-          packetsIn: 0,
-          packetsOut: 0,
-        },
-        storageAnalysis: metricsResult.storageAnalysis || {
-          totalSize: 0,
-          compressionRatio: 1.0,
-          retentionPolicyEffectiveness: 0,
-          recommendations: [],
-        },
-      });
-    } catch (error) {
-      console.error('获取基础性能指标失败:', error);
-    }
-  }, [activeConnectionId]);
-
   // 过滤瓶颈数据
   const filteredBottlenecks = bottlenecks.filter(bottleneck => {
     if (severityFilter !== 'all' && bottleneck.severity !== severityFilter)
@@ -436,7 +557,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     {
       accessorKey: 'type',
       header: '类型',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getTypeIcon(row.original.type)}
           <Text>{row.original.type}</Text>
@@ -446,7 +567,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     {
       accessorKey: 'severity',
       header: '严重程度',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getSeverityIcon(row.original.severity)}
           <Badge variant={getSeverityVariant(row.original.severity)}>
@@ -458,14 +579,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     {
       accessorKey: 'title',
       header: '标题',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <Text className='font-semibold'>{row.original.title}</Text>
       ),
     },
     {
       accessorKey: 'description',
       header: '描述',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <Text className='line-clamp-2 max-w-[300px]'>
           {row.original.description}
         </Text>
@@ -474,17 +595,17 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     {
       accessorKey: 'duration',
       header: '持续时间',
-      cell: ({ row }: any) => formatTime(row.original.duration),
+      cell: ({ row }: { row: TableRowData }) => formatTime(row.original.duration),
     },
     {
       accessorKey: 'frequency',
       header: '频率',
-      cell: ({ row }: any) => `${row.original.frequency}次`,
+      cell: ({ row }: { row: TableRowData }) => `${row.original.frequency}次`,
     },
     {
       accessorKey: 'status',
       header: '状态',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getStatusIcon(row.original.status)}
           <Text>
@@ -500,13 +621,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     {
       accessorKey: 'detectedAt',
       header: '检测时间',
-      cell: ({ row }: any) =>
+      cell: ({ row }: { row: TableRowData }) =>
         dayjs(row.original.detectedAt).format('MM-DD HH:mm'),
     },
     {
       id: 'actions',
       header: '操作',
-      cell: ({ row }: any) => (
+      cell: ({ row }: { row: TableRowData }) => (
         <div className='flex gap-1'>
           <Button
             size='sm'
@@ -649,7 +770,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 </Select>
               </div>
               <div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as 'all' | 'query' | 'connection' | 'memory' | 'disk' | 'network' | 'cpu' | 'lock')}>
                   <SelectTrigger>
                     <SelectValue placeholder='类型' />
                   </SelectTrigger>
@@ -666,7 +787,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 </Select>
               </div>
               <div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'resolved' | 'ignored')}>
                   <SelectTrigger>
                     <SelectValue placeholder='状态' />
                   </SelectTrigger>
@@ -873,7 +994,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {slowQueries.queries.map((query: any, index: number) => (
+                  {slowQueries.queries.map((query: SlowQuery, index: number) => (
                     <TableRow key={index}>
                       <TableCell>
                         <Text className='font-mono text-sm line-clamp-2 max-w-[300px]'>
@@ -951,7 +1072,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lockWaits.locks.map((lock: any, index: number) => (
+                  {lockWaits.locks.map((lock: LockWait, index: number) => (
                     <TableRow key={`${lock.table}-${lock.type}-${index}`}>
                       <TableCell>
                         <Badge
@@ -1263,7 +1384,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <div className='space-y-3'>
                 {recommendations
                   .slice(0, 5)
-                  .map((recommendation: any, index: number) => (
+                  .map((recommendation: Recommendation, index: number) => (
                     <div
                       key={index}
                       className='flex items-start gap-3 p-3 bg-muted/20 rounded'

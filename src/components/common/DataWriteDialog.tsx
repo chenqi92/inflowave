@@ -178,7 +178,19 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   };
 
   // 写入数据
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: {
+    connectionId: string;
+    database: string;
+    measurement: string;
+    format: string;
+    data: string;
+    options: {
+      precision: string;
+      batchSize: number;
+      retentionPolicy: string;
+      consistency: string;
+    };
+  }) => {
     try {
       setLoading(true);
       setWriteResult(null);
