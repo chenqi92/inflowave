@@ -128,6 +128,11 @@ export class MLOptimizer {
     context?: QueryContext
   ): Promise<MLPrediction> {
     try {
+      // 验证输入
+      if (!query || query.trim() === '') {
+        throw new Error('Empty query provided');
+      }
+
       // 1. 特征提取
       const features = await this.featureExtractor.extract(
         query,

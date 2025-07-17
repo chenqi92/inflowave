@@ -192,13 +192,13 @@ export class IntelligentQueryEngine {
 
     // 4. 预测性能
     const performanceMetrics = await this.predictor.predict(
-      optimizedQuery,
+      optimizedQuery.query,
       context
     );
 
     // 5. 确定路由策略
     const routingStrategy = await this.router.determineRouting(
-      optimizedQuery,
+      optimizedQuery.query,
       connectionId,
       context
     );

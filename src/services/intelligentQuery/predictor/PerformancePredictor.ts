@@ -11,6 +11,7 @@ export interface PerformancePrediction {
   estimatedCpuUsage: number;
   estimatedIoOperations: number;
   estimatedNetworkTraffic: number;
+  estimatedGain: number;
   confidence: number;
   bottlenecks: PredictedBottleneck[];
   recommendations: PerformanceRecommendation[];
@@ -152,6 +153,11 @@ export class PerformancePredictor {
     }
 
     try {
+      // 验证查询
+      if (!query || query.trim() === '' || query.includes('INVALID')) {
+        throw new Error('Invalid query provided');
+      }
+
       // 提取查询特征
       const queryFeatures = await this.extractQueryFeatures(query);
 
@@ -194,6 +200,7 @@ export class PerformancePredictor {
         estimatedCpuUsage: prediction.cpuUsage,
         estimatedIoOperations: prediction.ioOperations,
         estimatedNetworkTraffic: prediction.networkTraffic,
+        estimatedGain: prediction.gain || 0,
         confidence: prediction.confidence,
         bottlenecks,
         recommendations,
@@ -1010,6 +1017,7 @@ export class PerformancePredictor {
       estimatedCpuUsage: 50,
       estimatedIoOperations: 100,
       estimatedNetworkTraffic: 1024,
+      estimatedGain: 0,
       confidence: 0.5,
       bottlenecks: [],
       recommendations: [

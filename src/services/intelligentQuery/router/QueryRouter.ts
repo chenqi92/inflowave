@@ -684,7 +684,7 @@ export class QueryRouter {
     routingTime: number
   ): void {
     const entry: RoutingHistoryEntry = {
-      query: query.substring(0, 200), // 限制查询长度
+      query: (typeof query === 'string' ? query : String(query)).substring(0, 200), // 限制查询长度
       strategy,
       candidate: candidate
         ? {
