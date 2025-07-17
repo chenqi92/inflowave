@@ -4,35 +4,33 @@ import {
   Form,
   Input,
   Alert,
+  AlertDescription,
+  AlertTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Typography,
   Switch,
   InputNumber,
   Popconfirm,
-  Tooltip,
+  TooltipWrapper,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from '@/components/ui';
-import { showNotification } from '@/utils/message';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   Button,
+  Paragraph,
 } from '@/components/ui';
+import { showNotification } from '@/utils/message';
 import { Info, HelpCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { RetentionPolicy } from '@/types';
-
-const { Paragraph } = Typography;
 
 interface RetentionPolicyDialogProps {
   visible: boolean;
@@ -195,12 +193,13 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         </DialogHeader>
         <div className='space-y-6'>
           {/* 说明信息 */}
-          <Alert
-            message='保留策略说明'
-            description='保留策略定义了数据在 InfluxDB 中的存储时间和分片策略。删除默认策略可能会影响数据写入。'
-            type='info'
-            showIcon
-          />
+          <Alert>
+            <Info className='h-4 w-4' />
+            <AlertTitle>保留策略说明</AlertTitle>
+            <AlertDescription>
+              保留策略定义了数据在 InfluxDB 中的存储时间和分片策略。删除默认策略可能会影响数据写入。
+            </AlertDescription>
+          </Alert>
 
           {/* 表单 */}
           <Form {...form}>
@@ -242,11 +241,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      <div className='flex gap-2'>
+                      <div className='flex gap-2 items-center'>
                         保留时间
-                        <Tooltip title='数据在数据库中保留的时间，超过此时间的数据将被自动删除'>
-                          <HelpCircle className='w-4 h-4' />
-                        </Tooltip>
+                        <TooltipWrapper title='数据在数据库中保留的时间，超过此时间的数据将被自动删除'>
+                          <HelpCircle className='w-4 h-4 text-muted-foreground cursor-help' />
+                        </TooltipWrapper>
                       </div>
                     </FormLabel>
                     <Select
@@ -278,11 +277,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      <div className='flex gap-2'>
+                      <div className='flex gap-2 items-center'>
                         分片组持续时间
-                        <Tooltip title='每个分片组覆盖的时间范围，影响查询性能和存储效率'>
-                          <HelpCircle className='w-4 h-4' />
-                        </Tooltip>
+                        <TooltipWrapper title='每个分片组覆盖的时间范围，影响查询性能和存储效率'>
+                          <HelpCircle className='w-4 h-4 text-muted-foreground cursor-help' />
+                        </TooltipWrapper>
                       </div>
                     </FormLabel>
                     <Select
@@ -314,11 +313,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      <div className='flex gap-2'>
+                      <div className='flex gap-2 items-center'>
                         副本数
-                        <Tooltip title='数据副本的数量，用于高可用性部署'>
-                          <HelpCircle className='w-4 h-4' />
-                        </Tooltip>
+                        <TooltipWrapper title='数据副本的数量，用于高可用性部署'>
+                          <HelpCircle className='w-4 h-4 text-muted-foreground cursor-help' />
+                        </TooltipWrapper>
                       </div>
                     </FormLabel>
                     <FormControl>
@@ -344,11 +343,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                   <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-base'>
-                        <div className='flex gap-2'>
+                        <div className='flex gap-2 items-center'>
                           设为默认策略
-                          <Tooltip title='将此策略设为数据库的默认保留策略'>
-                            <HelpCircle className='w-4 h-4' />
-                          </Tooltip>
+                          <TooltipWrapper title='将此策略设为数据库的默认保留策略'>
+                            <HelpCircle className='w-4 h-4 text-muted-foreground cursor-help' />
+                          </TooltipWrapper>
                         </div>
                       </FormLabel>
                     </div>
@@ -365,10 +364,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
           </Form>
 
           {/* 格式说明 */}
-          <Alert
-            message='时间格式说明'
-            description={
-              <div>
+          <Alert>
+            <Info className='h-4 w-4' />
+            <AlertTitle>时间格式说明</AlertTitle>
+            <AlertDescription>
+              <div className='space-y-2'>
                 <Paragraph>
                   <strong>持续时间格式:</strong> 支持
                   ns(纳秒)、us(微秒)、ms(毫秒)、s(秒)、m(分钟)、h(小时)、d(天)、w(周)
@@ -378,10 +378,8 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                   (永久保留)
                 </Paragraph>
               </div>
-            }
-            type='info'
-            showIcon
-          />
+            </AlertDescription>
+          </Alert>
         </div>
 
         {/* Footer */}

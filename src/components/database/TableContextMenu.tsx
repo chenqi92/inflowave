@@ -336,6 +336,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'data_group',
@@ -362,6 +364,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'copy_group',
@@ -382,6 +386,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'import_export_group',
@@ -402,6 +408,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'other_group',
@@ -422,6 +430,8 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'danger_group',

@@ -215,6 +215,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'query_group',
@@ -229,6 +231,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'copy_group',
@@ -249,6 +253,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'import_export_group',
@@ -263,6 +269,8 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     },
     {
       type: 'divider',
+      key: '',
+      label: undefined
     },
     {
       key: 'danger_group',
