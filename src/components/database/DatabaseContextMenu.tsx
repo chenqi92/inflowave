@@ -1,8 +1,14 @@
 import React from 'react';
-import { Dropdown } from '@/components/ui';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
-import type { MenuProps } from '@/components/ui';
 import {
   Plus,
   RefreshCw,
@@ -188,112 +194,68 @@ const DatabaseContextMenu: React.FC<DatabaseContextMenuProps> = ({
     }
   };
 
-  // 菜单项配置
-  const menuItems: MenuProps['items'] = [
-    {
-      key: 'structure_group',
-      label: '结构操作',
-      type: 'group',
-    },
-    {
-      key: 'create_measurement',
-      icon: <Plus className='w-4 h-4' />,
-      label: '创建 Measurement',
-      onClick: () => handleMenuClick('create_measurement'),
-    },
-    {
-      key: 'refresh_database',
-      icon: <RefreshCw className='w-4 h-4' />,
-      label: '刷新数据库',
-      onClick: () => handleMenuClick('refresh_database'),
-    },
-    {
-      key: 'database_info',
-      icon: <Info className='w-4 h-4' />,
-      label: '数据库信息',
-      onClick: () => handleMenuClick('database_info'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'query_group',
-      label: '查询操作',
-      type: 'group',
-    },
-    {
-      key: 'show_measurements',
-      icon: <Table className='w-4 h-4' />,
-      label: '显示 Measurements',
-      onClick: () => handleMenuClick('show_measurements'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'copy_group',
-      label: '复制操作',
-      type: 'group',
-    },
-    {
-      key: 'copy_name',
-      icon: <Copy className='w-4 h-4' />,
-      label: '复制数据库名',
-      onClick: () => handleMenuClick('copy_name'),
-    },
-    {
-      key: 'copy_use_statement',
-      icon: <FileText className='w-4 h-4' />,
-      label: '复制 USE 语句',
-      onClick: () => handleMenuClick('copy_use_statement'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'import_export_group',
-      label: '导入导出',
-      type: 'group',
-    },
-    {
-      key: 'export_database',
-      icon: <FileDown className='w-4 h-4' />,
-      label: '导出数据库',
-      onClick: () => handleMenuClick('export_database'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'danger_group',
-      label: '危险操作',
-      type: 'group',
-    },
-    {
-      key: 'drop_database',
-      icon: <Trash2 className='w-4 h-4' />,
-      label: '删除数据库',
-      onClick: () => handleMenuClick('drop_database'),
-      danger: true,
-    },
-  ];
-
   return (
-    <Dropdown
-      menu={{ items: menuItems }}
-      trigger={['contextMenu']}
-      placement='bottomLeft'
-    >
-      {children}
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild onContextMenu={(e) => e.preventDefault()}>
+        <div onContextMenu={(e) => e.preventDefault()}>
+          {children}
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        <DropdownMenuLabel>结构操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('create_measurement')}>
+          <Plus className='w-4 h-4 mr-2' />
+          创建 Measurement
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('refresh_database')}>
+          <RefreshCw className='w-4 h-4 mr-2' />
+          刷新数据库
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('database_info')}>
+          <Info className='w-4 h-4 mr-2' />
+          数据库信息
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>查询操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('show_measurements')}>
+          <Table className='w-4 h-4 mr-2' />
+          显示 Measurements
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>复制操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('copy_name')}>
+          <Copy className='w-4 h-4 mr-2' />
+          复制数据库名
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('copy_use_statement')}>
+          <FileText className='w-4 h-4 mr-2' />
+          复制 USE 语句
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>导入导出</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('export_database')}>
+          <FileDown className='w-4 h-4 mr-2' />
+          导出数据库
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>危险操作</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => handleMenuClick('drop_database')}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className='w-4 h-4 mr-2' />
+          删除数据库
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

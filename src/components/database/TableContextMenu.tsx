@@ -1,8 +1,15 @@
 ﻿import React from 'react';
-import { Button, Dropdown } from '@/components/ui';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
-import type { MenuProps } from '@/components/ui';
 import {
   Table,
   Eye,
@@ -309,152 +316,92 @@ const TableContextMenu: React.FC<TableContextMenuProps> = ({
     }
   };
 
-  // 菜单项配置
-  const menuItems: MenuProps['items'] = [
-    {
-      key: 'query_group',
-      label: '查询操作',
-      type: 'group',
-    },
-    {
-      key: 'view_data',
-      icon: <Eye className='w-4 h-4' />,
-      label: '查看数据',
-      onClick: () => handleMenuClick('view_data'),
-    },
-    {
-      key: 'view_structure',
-      icon: <Table className='w-4 h-4' />,
-      label: '查看结构',
-      onClick: () => handleMenuClick('view_structure'),
-    },
-    {
-      key: 'table_info',
-      icon: <Info className='w-4 h-4' />,
-      label: '表信息',
-      onClick: () => handleMenuClick('table_info'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'data_group',
-      label: '数据操作',
-      type: 'group',
-    },
-    {
-      key: 'insert_data',
-      icon: <Edit className='w-4 h-4' />,
-      label: '插入数据',
-      onClick: () => handleMenuClick('insert_data'),
-    },
-    {
-      key: 'update_data',
-      icon: <Edit className='w-4 h-4' />,
-      label: '更新数据',
-      onClick: () => handleMenuClick('update_data'),
-    },
-    {
-      key: 'delete_data',
-      icon: <Trash2 className='w-4 h-4' />,
-      label: '删除数据',
-      onClick: () => handleMenuClick('delete_data'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'copy_group',
-      label: '复制操作',
-      type: 'group',
-    },
-    {
-      key: 'copy_name',
-      icon: <Copy className='w-4 h-4' />,
-      label: '复制表名',
-      onClick: () => handleMenuClick('copy_name'),
-    },
-    {
-      key: 'copy_select',
-      icon: <FileText className='w-4 h-4' />,
-      label: '复制 SELECT 语句',
-      onClick: () => handleMenuClick('copy_select'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'import_export_group',
-      label: '导入导出',
-      type: 'group',
-    },
-    {
-      key: 'export_data',
-      icon: <FileDown className='w-4 h-4' />,
-      label: '导出数据',
-      onClick: () => handleMenuClick('export_data'),
-    },
-    {
-      key: 'import_data',
-      icon: <FileUp className='w-4 h-4' />,
-      label: '导入数据',
-      onClick: () => handleMenuClick('import_data'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'other_group',
-      label: '其他操作',
-      type: 'group',
-    },
-    {
-      key: 'visualize_data',
-      icon: <BarChart className='w-4 h-4' />,
-      label: '数据可视化',
-      onClick: () => handleMenuClick('visualize_data'),
-    },
-    {
-      key: 'refresh_table',
-      icon: <RefreshCw className='w-4 h-4' />,
-      label: '刷新表',
-      onClick: () => handleMenuClick('refresh_table'),
-    },
-    {
-      type: 'divider',
-      key: '',
-      label: undefined
-    },
-    {
-      key: 'danger_group',
-      label: '危险操作',
-      type: 'group',
-    },
-    {
-      key: 'drop_table',
-      icon: <Trash2 className='w-4 h-4' />,
-      label: '删除表',
-      onClick: () => handleMenuClick('drop_table'),
-      danger: true,
-    },
-  ];
-
   return (
-    <Dropdown
-      menu={{ items: menuItems }}
-      trigger={['contextMenu']}
-      placement='bottomLeft'
-    >
-      {children}
-    </Dropdown>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild onContextMenu={(e) => e.preventDefault()}>
+        <div onContextMenu={(e) => e.preventDefault()}>
+          {children}
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        <DropdownMenuLabel>查询操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('view_data')}>
+          <Eye className='w-4 h-4 mr-2' />
+          查看数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('view_structure')}>
+          <Table className='w-4 h-4 mr-2' />
+          查看结构
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('table_info')}>
+          <Info className='w-4 h-4 mr-2' />
+          表信息
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>数据操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('insert_data')}>
+          <Edit className='w-4 h-4 mr-2' />
+          插入数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('update_data')}>
+          <Edit className='w-4 h-4 mr-2' />
+          更新数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('delete_data')}>
+          <Trash2 className='w-4 h-4 mr-2' />
+          删除数据
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>复制操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('copy_name')}>
+          <Copy className='w-4 h-4 mr-2' />
+          复制表名
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('copy_select')}>
+          <FileText className='w-4 h-4 mr-2' />
+          复制 SELECT 语句
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>导入导出</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('export_data')}>
+          <FileDown className='w-4 h-4 mr-2' />
+          导出数据
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('import_data')}>
+          <FileUp className='w-4 h-4 mr-2' />
+          导入数据
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>其他操作</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => handleMenuClick('visualize_data')}>
+          <BarChart className='w-4 h-4 mr-2' />
+          数据可视化
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMenuClick('refresh_table')}>
+          <RefreshCw className='w-4 h-4 mr-2' />
+          刷新表
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>危险操作</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => handleMenuClick('drop_table')}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className='w-4 h-4 mr-2' />
+          删除表
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
