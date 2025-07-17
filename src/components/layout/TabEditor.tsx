@@ -675,7 +675,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
       const newTab: EditorTab = {
         id: Date.now().toString(),
-        title: `📊 ${tableName}`,
+        title: `${tableName}`,
         content: '', // 数据浏览不需要content
         type: 'data-browser',
         modified: false,

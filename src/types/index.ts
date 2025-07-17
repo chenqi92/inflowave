@@ -101,6 +101,9 @@ export interface QueryResult {
   executionTime?: number;
   rowCount?: number;
   error?: string;
+  // Compatibility fields from Rust backend
+  data?: (string | number | boolean | null)[][];
+  columns?: string[];
 }
 
 export interface Series {

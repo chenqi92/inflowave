@@ -81,7 +81,7 @@
   svg[class*='lucide'],
   .toolbar-button svg,
   .toolbar-button-vertical svg {
-    transform: scale(0.875);
+    transform: scale(1.0);
     transition: transform 0.2s ease;
   }
 
@@ -206,10 +206,23 @@
     border-width: 0.5px;
   }
 
-  /* 图标优化 */
-  .lucide-icon,
-  svg[class*='lucide'] {
-    width: 14px !important;
-    height: 14px !important;
+  /* 图标优化 - 针对不同大小的图标进行优化 */
+  
+  /* 小图标 (w-4 h-4) */
+  .w-4.h-4 {
+    width: 17px !important;
+    height: 17px !important;
+  }
+  
+  /* 中等图标 (w-5 h-5) */
+  .w-5.h-5 {
+    width: 21px !important;
+    height: 21px !important;
+  }
+  
+  /* 大图标 (w-6 h-6) */
+  .w-6.h-6 {
+    width: 25px !important;
+    height: 25px !important;
   }
 }
