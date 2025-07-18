@@ -189,10 +189,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     };
 
     const statusConfig = {
-      connected: { variant: 'success', text: '测试成功' },
+      connected: { variant: 'success', text: '连接正常' },
       disconnected: { variant: 'secondary', text: '未测试' },
       connecting: { variant: 'warning', text: '测试中' },
-      error: { variant: 'destructive', text: '测试失败' },
+      error: { variant: 'destructive', text: '连接失败' },
     };
 
     const config =
@@ -201,15 +201,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     // 构建tooltip内容
     let tooltipContent = '';
     if (actualStatus.error) {
-      tooltipContent = `测试失败: ${actualStatus.error}`;
+      tooltipContent = `连接失败: ${actualStatus.error}`;
     } else if (actualStatus.latency && actualStatus.status === 'connected') {
-      tooltipContent = `连接测试成功，延迟: ${actualStatus.latency}ms`;
+      tooltipContent = `InfluxDB连接正常，延迟: ${actualStatus.latency}ms`;
     } else if (actualStatus.status === 'connecting') {
-      tooltipContent = '正在测试连接...';
+      tooltipContent = '正在测试InfluxDB连接...';
     } else if (actualStatus.status === 'connected') {
-      tooltipContent = '连接测试成功';
+      tooltipContent = 'InfluxDB连接正常，可以正常使用';
     } else {
-      tooltipContent = '尚未进行连接测试';
+      tooltipContent = '尚未测试InfluxDB连接状态';
     }
 
     return (
@@ -326,11 +326,16 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       key: 'poolStats',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
-        const isConnected = status?.status === 'connected';
+        const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
+        const isTestFailed = status?.status === 'error' || (status?.status === 'connected' && status?.error);
         const stats = poolStats[record.id!];
         
-        if (!isConnected) {
-          return <span className='text-muted-foreground text-sm'>未连接</span>;
+        if (isTestFailed) {
+          return <span className='text-destructive text-sm'>连接失败，无法获取</span>;
+        }
+        
+        if (!isTestSuccessful) {
+          return <span className='text-muted-foreground text-sm'>未测试</span>;
         }
         
         if (!stats) {
