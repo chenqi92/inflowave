@@ -13,6 +13,7 @@ import {
   TooltipWrapper as Tooltip,
   TooltipProvider,
 } from '@/components/ui';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import {
   Maximize,
   Minimize,
@@ -60,6 +61,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(autoRefresh);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
+  const { resolvedTheme } = useTheme();
 
   const { updateChart } = useVisualizationStore();
 
@@ -75,7 +77,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     // 创建图表实例
     chartInstance.current = echarts.init(
       chartRef.current,
-      config.settings?.theme || 'default'
+      resolvedTheme === 'dark' ? 'dark' : 'light'
     );
 
     // 设置图表选项
@@ -104,7 +106,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       window.removeEventListener('resize', handleResize);
       chartInstance.current?.dispose();
     };
-  }, []);
+  }, [resolvedTheme]);
 
   // 更新图表选项
   useEffect(() => {

@@ -16,6 +16,7 @@ import {
   Slider,
   Switch,
 } from '@/components/ui';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import {
   TrendingUp,
   BarChart,
@@ -60,10 +61,11 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const { resolvedTheme } = useTheme();
   const [config, setConfig] = useState<ChartConfig>({
     type: 'line',
     title: '数据图表',
-    theme: 'light',
+    theme: resolvedTheme === 'dark' ? 'dark' : 'light',
     showLegend: true,
     showGrid: true,
     showTooltip: true,
@@ -359,7 +361,10 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     if (!chartRef.current) return;
 
     if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current, config.theme);
+      chartInstance.current = echarts.init(
+        chartRef.current, 
+        resolvedTheme === 'dark' ? 'dark' : 'light'
+      );
     }
 
     updateChart();
@@ -373,7 +378,19 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [data, config, updateChart]);
+  }, [data, config, updateChart, resolvedTheme]);
+
+  // 监听主题变化，重新初始化图表和更新配置
+  useEffect(() => {
+    const newTheme = resolvedTheme === 'dark' ? 'dark' : 'light';
+    if (config.theme !== newTheme) {
+      setConfig(prev => ({ ...prev, theme: newTheme }));
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+        chartInstance.current = null;
+      }
+    }
+  }, [resolvedTheme, config.theme]);
 
   // 清理图表实例
   useEffect(() => {
