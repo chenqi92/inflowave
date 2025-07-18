@@ -6,6 +6,17 @@
   overflow: hidden;
 }
 
+/* 确保标题区域与关闭按钮不重叠 */
+.user-guide-modal [data-radix-dialog-content] [data-radix-dialog-title] {
+  padding-right: 2rem;
+}
+
+/* 给页码指示器足够的空间 */
+.user-guide-modal .page-indicator {
+  margin-right: 0.5rem;
+  min-width: fit-content;
+}
+
 .user-guide-content {
   /* 内容区域样式 */
   word-wrap: break-word;

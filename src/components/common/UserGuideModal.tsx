@@ -95,25 +95,25 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className='max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col user-guide-modal'>
-                <DialogHeader className='px-6 py-4 border-b border-border flex-shrink-0'>
+                <DialogHeader className='px-6 py-4 pr-12 border-b border-border flex-shrink-0'>
                     <DialogTitle className='flex items-center justify-between'>
-                        <div className='flex items-center gap-3'>
+                        <div className='flex items-center gap-3 flex-1 min-w-0'>
                             <Button
                                 variant='ghost'
                                 size='sm'
                                 onClick={() => setShowSidebar(!showSidebar)}
-                                className='md:hidden'
+                                className='md:hidden flex-shrink-0'
                             >
                                 <Menu className='w-4 h-4'/>
                             </Button>
-                            <BookOpen className='w-6 h-6 text-primary'/>
+                            <BookOpen className='w-6 h-6 text-primary flex-shrink-0'/>
                             <span className='truncate'>
                 {currentDoc?.title || 'InfloWave 用户指引'}
               </span>
                         </div>
-                        <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                        <div className='flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0 ml-4 page-indicator'>
                             {documents.length > 0 && (
-                                <span>
+                                <span className='whitespace-nowrap'>
                   {currentIndex + 1} / {documents.length}
                 </span>
                             )}
