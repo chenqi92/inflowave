@@ -21,31 +21,27 @@
 - **macOS**: Intel (x64), Apple Silicon (ARM64), Universal
 - **Linux**: x64, ARM64, x86
 
-### 2. 完整自动发布流程 (`auto-release.yml`)
-
-**触发条件**：
-- 推送到 `main` 或 `master` 分支时，如果以下文件有变化：
-  - `package.json`
-  - `src-tauri/tauri.conf.json`
-  - `src-tauri/Cargo.toml`
-- 手动触发
-
-**额外功能**：
-- 版本一致性检查和自动同步
-- 更详细的发布说明
-- 构建后的通知摘要
-
-### 3. 传统构建流程 (`build.yml`)
+### 2. 传统构建流程 (`build.yml`)
 
 **触发条件**：
 - 推送 git 标签 (`v*`)
 - Pull Request 到 `main` 或 `master`
 - 手动触发
 
-### 4. 双模式构建流程 (`dual-build.yml`)
+**特点**：
+- 支持传统标签触发构建
+- 包含 PR 测试和开发版本构建
+- 兼容旧的发布流程
+
+### 3. 双模式构建流程 (`dual-build.yml`)
 
 **触发条件**：
 - 仅手动触发
+
+**特点**：
+- 手动指定版本标签
+- 同时构建标准模式和服务器模式
+- 灵活的手动发布选项
 
 ## 🚀 如何使用
 
