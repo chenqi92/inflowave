@@ -18,7 +18,7 @@ import {
   Minimize2,
   X,
 } from 'lucide-react';
-import { appWindow } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 interface DetachedTab {
@@ -58,14 +58,16 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   // 处理窗口控制
   const handleMinimize = async () => {
-    await appWindow.minimize();
+    const window = getCurrentWindow();
+    await window.minimize();
   };
 
   const handleToggleMaximize = async () => {
+    const window = getCurrentWindow();
     if (isMaximized) {
-      await appWindow.unmaximize();
+      await window.unmaximize();
     } else {
-      await appWindow.maximize();
+      await window.maximize();
     }
     setIsMaximized(!isMaximized);
   };
@@ -78,7 +80,8 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
     }
     
     onClose?.();
-    await appWindow.close();
+    const currentWindow = getCurrentWindow();
+    await currentWindow.close();
   };
 
   const handleReattach = () => {
@@ -111,9 +114,10 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   // 监听窗口状态变化
   useEffect(() => {
     const setupWindowListeners = async () => {
+      const window = getCurrentWindow();
       // 监听窗口最大化状态变化
-      const unlistenResize = await appWindow.onResized(() => {
-        appWindow.isMaximized().then(setIsMaximized);
+      const unlistenResize = await window.onResized(() => {
+        window.isMaximized().then(setIsMaximized);
       });
 
       return unlistenResize;

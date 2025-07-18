@@ -76,7 +76,7 @@ const ConnectionDebugPanel: React.FC = () => {
           conn => conn != null
         ),
         connectionStatuses: connectionStatuses || {},
-        activeConnectionId,
+        activeconnection_id: activeConnectionId,
         backendDebugInfo,
       };
 
