@@ -428,7 +428,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         ) : (
           <Link className='w-4 h-4 text-muted-foreground' />
         ),
-        children: [],
+        // 只有连接状态才设置children数组，未连接状态不设置（这样就不会显示收缩按钮）
+        ...(isConnected ? { children: [] } : { isLeaf: true }),
       };
 
       // 为已连接的连接加载数据库
@@ -1345,7 +1346,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             });
 
             const isConnected = isConnectionConnected(connection_id);
-            return {
+            
+            // 构建更新后的节点，确保收缩按钮的正确显示
+            const updatedNode = {
               ...node,
               title: (
                 <div className='flex items-center gap-2'>
@@ -1366,7 +1369,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               ) : (
                 <Link className='w-4 h-4 text-muted-foreground' />
               ),
+              // 根据连接状态决定是否显示收缩按钮
+              ...(isConnected ? { children: node.children || [] } : { isLeaf: true }),
             };
+            
+            // 如果从连接状态变为未连接状态，移除 children 属性
+            if (!isConnected && updatedNode.children) {
+              const { children, ...nodeWithoutChildren } = updatedNode;
+              return nodeWithoutChildren;
+            }
+            
+            return updatedNode;
           }
           // 其他节点保持不变
           return node;
@@ -1499,10 +1512,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       setTreeData(prevData => {
         return prevData.map(node => {
           if (node.key === `connection-${connection_id}`) {
+            const { children, isLeaf, ...nodeWithoutChildren } = node;
             return {
-              ...node,
-              children: [],
-              isLeaf: false,
+              ...nodeWithoutChildren,
+              // 断开连接后，移除 children 属性并设置为叶子节点，这样就不会显示收缩按钮
+              isLeaf: true,
             };
           }
           return node;
