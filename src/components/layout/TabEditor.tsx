@@ -88,6 +88,7 @@ interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
   createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
   createNewTab: (type?: 'query' | 'table' | 'database') => void;
+  createQueryTabWithDatabase: (database: string, query?: string) => void;
   setSelectedDatabase: (database: string) => void;
 }
 
@@ -706,6 +707,25 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       setActiveKey(newTab.id);
     };
 
+    // 创建带数据库选择的查询标签页
+    const createQueryTabWithDatabase = (database: string, query?: string) => {
+      const newTab: EditorTab = {
+        id: Date.now().toString(),
+        title: `查询-${tabs.length + 1}`,
+        content: query || 'SELECT * FROM ',
+        type: 'query',
+        modified: false,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+
+      // 立即设置数据库选择
+      setSelectedDatabase(database);
+
+      console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
+    };
+
     // 暴露方法给父组件
     useImperativeHandle(
       ref,
@@ -713,9 +733,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         executeQueryWithContent,
         createDataBrowserTab,
         createNewTab,
+        createQueryTabWithDatabase,
         setSelectedDatabase,
       }),
-      [executeQueryWithContent, createDataBrowserTab, createNewTab, setSelectedDatabase]
+      [executeQueryWithContent, createDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
     );
 
     // 组件加载时加载数据库列表

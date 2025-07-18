@@ -107,6 +107,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     executeQueryWithContent?: (query: string, database: string) => void;
     createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
     createNewTab?: (type?: 'query' | 'table' | 'database') => void;
+    createQueryTabWithDatabase?: (database: string, query?: string) => void;
     setSelectedDatabase?: (database: string) => void;
   } | null>(null);
 
@@ -268,20 +269,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 如果有查询内容，使用 executeQueryWithContent 方法
     if (query && database && tabEditorRef.current?.executeQueryWithContent) {
       tabEditorRef.current.executeQueryWithContent(query, database);
+    } else if (database && tabEditorRef.current?.createQueryTabWithDatabase) {
+      // 使用新的方法创建带数据库选择的查询标签页
+      tabEditorRef.current.createQueryTabWithDatabase(database, query);
     } else {
       // 否则创建新的空查询标签页
       if (tabEditorRef.current?.createNewTab) {
         tabEditorRef.current.createNewTab('query');
-
-        // 如果指定了数据库，设置选中的数据库
-        if (database && tabEditorRef.current?.setSelectedDatabase) {
-          // 延迟设置数据库，确保标签页已创建
-          setTimeout(() => {
-            if (tabEditorRef.current?.setSelectedDatabase) {
-              tabEditorRef.current.setSelectedDatabase(database);
-            }
-          }, 100);
-        }
       }
     }
   };
