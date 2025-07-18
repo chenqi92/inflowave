@@ -242,19 +242,28 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       key: 'name',
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
+        const status = connectionStatuses[record.id!];
+
+        // 确定状态点的颜色
+        const getStatusColor = () => {
+          if (!status) return 'bg-muted-foreground';
+
+          switch (status.status) {
+            case 'connected':
+              // 只有在没有错误时才显示绿色
+              return status.error ? 'bg-destructive' : 'bg-success';
+            case 'error':
+              return 'bg-destructive';
+            case 'connecting':
+              return 'bg-warning animate-pulse';
+            default:
+              return 'bg-muted-foreground';
+          }
+        };
+
         return (
           <div className='flex items-center space-x-3'>
-            <div
-              className={`w-2 h-2 rounded-full ${
-                connectionStatuses[record.id!]?.status === 'connected'
-                  ? 'bg-success'
-                  : connectionStatuses[record.id!]?.status === 'error'
-                    ? 'bg-destructive'
-                    : connectionStatuses[record.id!]?.status === 'connecting'
-                      ? 'bg-warning'
-                      : 'bg-muted-foreground'
-              }`}
-            />
+            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
             <div className='min-w-0 flex-1'>
               <div className='font-medium text-foreground truncate flex items-center gap-2'>
                 {name}
@@ -326,18 +335,22 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       key: 'poolStats',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
-        const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
-        const isTestFailed = status?.status === 'error' || (status?.status === 'connected' && status?.error);
+        const isTestFailed = status?.status === 'error';
+        const isTestSuccessful = status?.status === 'connected' && !status?.error;
         const stats = poolStats[record.id!];
-        
+
+        // 如果测试失败，显示失败信息
         if (isTestFailed) {
           return <span className='text-destructive text-sm'>连接失败，无法获取</span>;
         }
-        
+
+        // 如果未测试或测试中，显示相应状态
         if (!isTestSuccessful) {
-          return <span className='text-muted-foreground text-sm'>未测试</span>;
+          const statusText = status?.status === 'connecting' ? '测试中...' : '未测试';
+          return <span className='text-muted-foreground text-sm'>{statusText}</span>;
         }
-        
+
+        // 测试成功但没有统计数据时，显示查看按钮
         if (!stats) {
           return (
             <Button
@@ -483,23 +496,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               >
                 <RefreshCw className='w-4 h-4 mr-1' />
                 刷新状态
-              </Button>
-              <Button
-                variant={monitoringActive ? 'destructive' : 'secondary'}
-                onClick={handleMonitoringToggle}
-                size='sm'
-              >
-                {monitoringActive ? (
-                  <>
-                    <PauseCircle className='w-4 h-4 mr-1' />
-                    停止监控
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className='w-4 h-4 mr-1' />
-                    启动监控
-                  </>
-                )}
               </Button>
             </div>
           </div>

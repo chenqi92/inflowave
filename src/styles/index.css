@@ -951,13 +951,31 @@ pre,
   text-align: center;
 }
 
-.connection-manager .data-table thead tr th {
-  background: #fafafa;
-  font-weight: 600;
+/* 连接表格优化样式 */
+.connection-table {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.connection-manager .data-table tbody tr:hover td {
-  background: #f5f5f5;
+.connection-table thead tr th {
+  background: hsl(var(--muted) / 0.8);
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  border-bottom: 2px solid hsl(var(--border));
+}
+
+.connection-table tbody tr {
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.connection-table tbody tr:hover {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.connection-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 /* 确保表格正常显示 */
@@ -1087,4 +1105,30 @@ pre,
 .dark .hljs {
   background: #2d3748;
   color: #e2e8f0;
+}
+
+/* 暗色主题下的连接管理器样式 */
+.dark .connection-manager .card {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .connection-table {
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.dark .connection-table thead tr th {
+  background: hsl(var(--muted) / 0.5);
+  color: hsl(var(--foreground));
+  border-bottom-color: hsl(var(--border));
+}
+
+.dark .connection-table tbody tr {
+  border-bottom-color: hsl(var(--border));
+}
+
+.dark .connection-table tbody tr:hover {
+  background: hsl(var(--muted) / 0.2);
 }

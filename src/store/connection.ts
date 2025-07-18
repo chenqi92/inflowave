@@ -325,31 +325,49 @@ export const useConnectionStore = create<ConnectionState>()(
               ...state.connectionStatuses,
               [id]: {
                 ...state.connectionStatuses[id],
+                id,
                 status: 'connecting',
                 error: undefined,
-              },
-            },
-          }));
-
-          // 调用后端测试连接API
-          const result = await safeTauriInvoke<boolean>('test_connection', { connectionId: id });
-          console.log(`✅ 测试连接结果: ${id} - ${result}`);
-
-          // 更新状态为测试结果，但不影响实际连接状态
-          set(state => ({
-            connectionStatuses: {
-              ...state.connectionStatuses,
-              [id]: {
-                id,
-                status: result ? 'connected' : 'disconnected',
-                lastConnected: result ? new Date() : state.connectionStatuses[id]?.lastConnected,
-                error: result ? undefined : '连接测试失败',
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
                 latency: undefined,
               },
             },
           }));
 
-          return result;
+          // 调用后端测试连接API - 使用新的返回类型
+          const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string}>('test_connection', { connectionId: id });
+          console.log(`✅ 测试连接结果: ${id}`, result);
+
+          // 更新状态为测试结果，但不影响实际连接状态
+          if (result.success) {
+            set(state => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                [id]: {
+                  id,
+                  status: 'connected' as const,
+                  lastConnected: new Date(),
+                  error: undefined,
+                  latency: result.latency,
+                },
+              },
+            }));
+          } else {
+            set(state => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                [id]: {
+                  id,
+                  status: 'error' as const,
+                  error: result.error || '连接测试失败',
+                  lastConnected: state.connectionStatuses[id]?.lastConnected,
+                  latency: undefined,
+                },
+              },
+            }));
+          }
+
+          return result.success;
         } catch (error) {
           console.error(`❌ 测试连接失败 (${id}):`, error);
           // 更新状态为错误

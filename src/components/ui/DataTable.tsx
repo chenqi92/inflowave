@@ -111,14 +111,14 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         >
           <Table
             className={cn(
-              'w-full table-fixed', // 改为table-fixed以更好地控制列宽
+              'w-full table-fixed border-collapse', // 改为table-fixed以更好地控制列宽
               size === 'small' && 'text-xs',
               size === 'large' && 'text-base',
               bordered && 'border border-border'
             )}
           >
             <TableHeader>
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 {columns.map(column => (
                   <TableHead
                     key={column.key}
@@ -128,7 +128,8 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                     }}
                     className={cn(
                       column.ellipsis && 'truncate',
-                      bordered && 'border-r border-border last:border-r-0'
+                      bordered && 'border-r border-border last:border-r-0',
+                      'sticky top-0 z-10' // 让表头固定在顶部
                     )}
                   >
                     {column.title}
@@ -141,6 +142,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                 <TableRow
                   key={getRowKey(record, index)}
                   className={cn(
+                    'transition-colors duration-150',
                     getRowClassName(record, index),
                     bordered && 'border-b border-border'
                   )}
@@ -152,6 +154,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
                         textAlign: column.align || 'left',
                       }}
                       className={cn(
+                        'py-3', // 增加垂直内边距
                         column.ellipsis && 'truncate',
                         bordered && 'border-r border-border last:border-r-0'
                       )}
