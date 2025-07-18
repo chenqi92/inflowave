@@ -21,11 +21,11 @@ import {
   Edit,
   Eye,
   Wifi,
-  Unlink,
   PlayCircle,
   PauseCircle,
   RefreshCw,
   Plus,
+  CheckCircle,
 } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
@@ -68,6 +68,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     poolStats,
     connectToDatabase,
     disconnectFromDatabase,
+    testConnection,
     startMonitoring,
     stopMonitoring,
     refreshAllStatuses,
@@ -105,10 +106,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   //   refreshAllStatuses();
   // }, []); // 禁用自动刷新以减少网络请求
 
-  // 处理连接操作
-  const handleConnectionToggle = useCallback(
+  // 处理测试连接操作
+  const handleTestConnection = useCallback(
     async (connectionId: string) => {
-      // 设置单个连接的loading状态，而不是整个表格
+      // 设置单个连接的loading状态
       setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
 
       try {
@@ -119,36 +120,18 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           return;
         }
 
-        const status = connectionStatuses[connectionId];
-        if (status?.status === 'connected') {
-          await disconnectFromDatabase(connectionId);
-          showMessage.success('连接已断开');
-          // 只刷新当前连接的状态
-          await refreshConnectionStatus(connectionId);
+        console.log(`🧪 测试连接: ${connection.name}`);
+        const result = await testConnection(connectionId);
+        
+        if (result) {
+          showMessage.success(`连接测试成功: ${connection.name}`);
         } else {
-          try {
-            await connectToDatabase(connectionId);
-            showMessage.success('连接成功');
-            onConnectionSelect?.(connectionId);
-            // 只刷新当前连接的状态
-            await refreshConnectionStatus(connectionId);
-          } catch (connectError) {
-            // 连接失败时记录详细错误信息并刷新状态以显示错误
-            console.error('连接失败:', connectError);
-            const errorMessage = String(connectError).replace('Error: ', '');
-            showMessage.error(`连接失败: ${errorMessage}`);
-            // 刷新单个连接状态以确保错误信息正确显示
-            try {
-              await refreshConnectionStatus(connectionId);
-            } catch (refreshError) {
-              console.warn('刷新连接状态失败:', refreshError);
-            }
-          }
+          showMessage.error(`连接测试失败: ${connection.name}`);
         }
       } catch (error) {
-        console.error('连接操作失败:', error);
+        console.error('测试连接失败:', error);
         const errorMessage = String(error).replace('Error: ', '');
-        showMessage.error(`连接操作失败: ${errorMessage}`);
+        showMessage.error(`测试连接失败: ${errorMessage}`);
       } finally {
         // 清除单个连接的loading状态
         setConnectionLoadingStates(prev => {
@@ -158,14 +141,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         });
       }
     },
-    [
-      connections,
-      connectionStatuses,
-      connectToDatabase,
-      disconnectFromDatabase,
-      onConnectionSelect,
-      refreshConnectionStatus,
-    ]
+    [connections, testConnection]
   );
 
   // 处理监控切换
@@ -203,7 +179,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
   // 获取状态标签
   const getStatusTag = (status?: ConnectionStatus) => {
-    // 如果没有状态信息，显示默认的断开状态而不是"未知"
+    // 如果没有状态信息，显示默认的未测试状态
     const actualStatus = status || {
       id: '',
       status: 'disconnected' as const,
@@ -213,10 +189,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     };
 
     const statusConfig = {
-      connected: { variant: 'success', text: '已连接' },
-      disconnected: { variant: 'secondary', text: '已断开' },
-      connecting: { variant: 'warning', text: '连接中' },
-      error: { variant: 'destructive', text: '错误' },
+      connected: { variant: 'success', text: '测试成功' },
+      disconnected: { variant: 'secondary', text: '未测试' },
+      connecting: { variant: 'warning', text: '测试中' },
+      error: { variant: 'destructive', text: '测试失败' },
     };
 
     const config =
@@ -225,15 +201,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     // 构建tooltip内容
     let tooltipContent = '';
     if (actualStatus.error) {
-      tooltipContent = `错误详情: ${actualStatus.error}`;
+      tooltipContent = `测试失败: ${actualStatus.error}`;
     } else if (actualStatus.latency && actualStatus.status === 'connected') {
-      tooltipContent = `连接正常，延迟: ${actualStatus.latency}ms`;
+      tooltipContent = `连接测试成功，延迟: ${actualStatus.latency}ms`;
     } else if (actualStatus.status === 'connecting') {
-      tooltipContent = '正在尝试连接到数据库...';
+      tooltipContent = '正在测试连接...';
     } else if (actualStatus.status === 'connected') {
-      tooltipContent = '连接正常';
+      tooltipContent = '连接测试成功';
     } else {
-      tooltipContent = '连接已断开';
+      tooltipContent = '尚未进行连接测试';
     }
 
     return (
@@ -248,7 +224,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             <p className='text-sm'>{tooltipContent}</p>
             {actualStatus.lastConnected && (
               <p className='text-xs text-muted-foreground mt-1'>
-                最后连接:{' '}
+                最后测试:{' '}
                 {new Date(actualStatus.lastConnected).toLocaleString()}
               </p>
             )}
@@ -393,9 +369,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '最后连接',
-      dataIndex: 'lastConnected',
-      key: 'lastConnected',
+      title: '最后测试',
+      dataIndex: 'lastTested',
+      key: 'lastTested',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -403,7 +379,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             {new Date(status.lastConnected).toLocaleString()}
           </div>
         ) : (
-          <span className='text-muted-foreground'>从未连接</span>
+          <span className='text-muted-foreground'>从未测试</span>
         );
       },
     },
@@ -413,25 +389,25 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       key: 'actions',
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
-        const isConnected = status?.status === 'connected';
         const isLoading = connectionLoadingStates.get(record.id!);
+        const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
 
         return (
           <div className='flex items-center space-x-2'>
             <Button
-              variant={isConnected ? 'destructive' : 'default'}
+              variant={isTestSuccessful ? 'secondary' : 'default'}
               size='sm'
               disabled={isLoading}
-              onClick={() => handleConnectionToggle(record.id!)}
+              onClick={() => handleTestConnection(record.id!)}
             >
               {isLoading ? (
                 <RefreshCw className='w-4 h-4 mr-1 animate-spin' />
-              ) : isConnected ? (
-                <Unlink className='w-4 h-4 mr-1' />
+              ) : isTestSuccessful ? (
+                <CheckCircle className='w-4 h-4 mr-1' />
               ) : (
                 <Wifi className='w-4 h-4 mr-1' />
               )}
-              {isLoading ? '处理中...' : isConnected ? '断开' : '连接'}
+              {isLoading ? '测试中...' : '测试连接'}
             </Button>
 
             <Button
@@ -584,7 +560,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             rowKey='id'
             loading={false}
             scroll={{
-              x: 'max-content',
               y: 'calc(100vh - 400px)',
             }}
             size='middle'

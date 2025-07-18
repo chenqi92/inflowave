@@ -94,13 +94,13 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
     return (
       <div
         ref={ref}
-        className={cn('relative w-full', className)}
+        className={cn('relative w-full h-full', className)}
         style={style}
         {...props}
       >
         <div
           className={cn(
-            'w-full',
+            'w-full h-full',
             scroll?.x && 'overflow-x-auto',
             scroll?.y && 'overflow-y-auto'
           )}
@@ -111,7 +111,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         >
           <Table
             className={cn(
-              'w-full table-auto min-w-full',
+              'w-full table-fixed', // 改为table-fixed以更好地控制列宽
               size === 'small' && 'text-xs',
               size === 'large' && 'text-base',
               bordered && 'border border-border'

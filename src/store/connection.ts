@@ -39,6 +39,7 @@ interface ConnectionState {
   // 连接管理方法
   connectToDatabase: (id: string) => Promise<void>;
   disconnectFromDatabase: (id: string) => Promise<void>;
+  testConnection: (id: string) => Promise<boolean>;
 
   // 监控方法
   startMonitoring: (intervalSeconds?: number) => Promise<void>;
@@ -311,6 +312,60 @@ export const useConnectionStore = create<ConnectionState>()(
             },
           }));
           throw error;
+        }
+      },
+
+      // 测试连接 - 只检测连通性，不影响实际连接状态
+      testConnection: async (id: string) => {
+        console.log(`🧪 开始测试连接: ${id}`);
+        try {
+          // 暂时更新状态为测试中
+          set(state => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                ...state.connectionStatuses[id],
+                status: 'connecting',
+                error: undefined,
+              },
+            },
+          }));
+
+          // 调用后端测试连接API
+          const result = await safeTauriInvoke<boolean>('test_connection', { connectionId: id });
+          console.log(`✅ 测试连接结果: ${id} - ${result}`);
+
+          // 更新状态为测试结果，但不影响实际连接状态
+          set(state => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                id,
+                status: result ? 'connected' : 'disconnected',
+                lastConnected: result ? new Date() : state.connectionStatuses[id]?.lastConnected,
+                error: result ? undefined : '连接测试失败',
+                latency: undefined,
+              },
+            },
+          }));
+
+          return result;
+        } catch (error) {
+          console.error(`❌ 测试连接失败 (${id}):`, error);
+          // 更新状态为错误
+          set(state => ({
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: {
+                id,
+                status: 'error' as const,
+                error: String(error),
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined,
+              },
+            },
+          }));
+          return false;
         }
       },
 

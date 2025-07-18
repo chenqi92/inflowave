@@ -7,40 +7,65 @@
 /* 确保表格占满容器宽度 */
 .connection-table table {
   width: 100% !important;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
+/* 移除原有的hover样式，使用shadcn的原生hover */
 .connection-table tbody tr:hover td {
-  background-color: #f8fafc !important;
+  background-color: transparent !important;
 }
 
 .connection-table tbody tr.bg-blue-50 td {
-  background-color: #eff6ff !important;
-  border-color: #bfdbfe !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 .connection-table tbody tr.bg-blue-50:hover td {
-  background-color: #dbeafe !important;
+  background-color: transparent !important;
 }
 
-/* 表格单元格内容截断 */
+/* 表格单元格内容优化 */
 .connection-table td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 0;
 }
 
-/* 第一列（连接名称）允许更多空间 */
-.connection-table td:first-child {
-  max-width: 300px;
+/* 列宽分配 */
+.connection-table th:nth-child(1), /* 连接名称 */
+.connection-table td:nth-child(1) {
+  width: 25%;
+  min-width: 200px;
 }
 
-/* 最后一列（操作）固定宽度 */
-.connection-table td:last-child {
-  width: 120px;
-  max-width: 120px;
-  white-space: nowrap;
+.connection-table th:nth-child(2), /* 连接信息 */
+.connection-table td:nth-child(2) {
+  width: 15%;
+  min-width: 150px;
+}
+
+.connection-table th:nth-child(3), /* 状态 */
+.connection-table td:nth-child(3) {
+  width: 10%;
+  min-width: 100px;
+}
+
+.connection-table th:nth-child(4), /* 连接池统计 */
+.connection-table td:nth-child(4) {
+  width: 20%;
+  min-width: 160px;
+}
+
+.connection-table th:nth-child(5), /* 最后测试 */
+.connection-table td:nth-child(5) {
+  width: 15%;
+  min-width: 140px;
+}
+
+.connection-table th:nth-child(6), /* 操作 */
+.connection-table td:nth-child(6) {
+  width: 15%;
+  min-width: 240px;
 }
 
 /* 确保按钮在操作列中对齐 */
@@ -83,6 +108,32 @@
   .connection-table td:nth-child(2) {
     display: none;
   }
+  
+  /* 重新分配列宽 */
+  .connection-table th:nth-child(1),
+  .connection-table td:nth-child(1) {
+    width: 30%;
+  }
+  
+  .connection-table th:nth-child(3),
+  .connection-table td:nth-child(3) {
+    width: 12%;
+  }
+  
+  .connection-table th:nth-child(4),
+  .connection-table td:nth-child(4) {
+    width: 25%;
+  }
+  
+  .connection-table th:nth-child(5),
+  .connection-table td:nth-child(5) {
+    width: 18%;
+  }
+  
+  .connection-table th:nth-child(6),
+  .connection-table td:nth-child(6) {
+    width: 15%;
+  }
 }
 
 @media (max-width: 1200px) {
@@ -90,6 +141,27 @@
   .connection-table th:nth-child(4),
   .connection-table td:nth-child(4) {
     display: none;
+  }
+  
+  /* 重新分配列宽 */
+  .connection-table th:nth-child(1),
+  .connection-table td:nth-child(1) {
+    width: 40%;
+  }
+  
+  .connection-table th:nth-child(3),
+  .connection-table td:nth-child(3) {
+    width: 15%;
+  }
+  
+  .connection-table th:nth-child(5),
+  .connection-table td:nth-child(5) {
+    width: 25%;
+  }
+  
+  .connection-table th:nth-child(6),
+  .connection-table td:nth-child(6) {
+    width: 20%;
   }
 }
 
@@ -110,10 +182,26 @@
     height: 24px;
   }
 
-  /* 在小屏幕上隐藏最后连接时间列 */
+  /* 在小屏幕上隐藏最后测试时间列 */
   .connection-table th:nth-child(5),
   .connection-table td:nth-child(5) {
     display: none;
+  }
+  
+  /* 重新分配列宽 */
+  .connection-table th:nth-child(1),
+  .connection-table td:nth-child(1) {
+    width: 50%;
+  }
+  
+  .connection-table th:nth-child(3),
+  .connection-table td:nth-child(3) {
+    width: 20%;
+  }
+  
+  .connection-table th:nth-child(6),
+  .connection-table td:nth-child(6) {
+    width: 30%;
   }
 }
 
