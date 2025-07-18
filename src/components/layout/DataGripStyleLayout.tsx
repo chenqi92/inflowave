@@ -382,19 +382,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return (
           <div className='h-full'>
             {/* 查询历史模态框 */}
-            {showQueryHistory && (
-              <QueryHistory
-                visible={showQueryHistory}
-                onClose={() => setShowQueryHistory(false)}
-                onQuerySelect={(query, database) => {
-                  // 执行选中的查询
-                  if (tabEditorRef.current?.executeQueryWithContent) {
-                    tabEditorRef.current.executeQueryWithContent(query, database || '');
-                  }
-                  setShowQueryHistory(false);
-                }}
-              />
-            )}
+            <QueryHistory
+              visible={showQueryHistory}
+              onClose={() => setShowQueryHistory(false)}
+              onQuerySelect={(query, database) => {
+                // 执行选中的查询
+                if (tabEditorRef.current?.executeQueryWithContent) {
+                  tabEditorRef.current.executeQueryWithContent(query, database || '');
+                }
+                setShowQueryHistory(false);
+              }}
+            />
             
             <ResizablePanelGroup direction='vertical'>
               {/* 上半部分：编辑器 */}

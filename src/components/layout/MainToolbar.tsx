@@ -95,7 +95,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         // 延迟打开查询历史，确保组件已经渲染
         setTimeout(() => {
           onOpenQueryHistory?.();
-        }, 100);
+        }, 200);
         showMessage.info('正在打开查询历史...');
         break;
       case 'dev-tools':

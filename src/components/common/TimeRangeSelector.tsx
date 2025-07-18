@@ -1,16 +1,23 @@
 import React, {useState} from 'react';
-import {Button, Input, Label} from '@/components/ui';
+import {
+    Button,
+    Input,
+    Label,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DatePicker
+} from '@/components/ui';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
-} from '@/components/ui';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
 } from '@/components/ui';
 import {
     Tooltip,
@@ -20,6 +27,7 @@ import {
 } from '@/components/ui';
 import {Clock, Calendar, ChevronDown} from 'lucide-react';
 import {showMessage} from '@/utils/message';
+import dayjs from 'dayjs';
 
 export interface TimeRange {
     label: string;
@@ -95,10 +103,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     const [selectedRange, setSelectedRange] = useState<TimeRange>(
         value || TIME_RANGES[0] // 默认选择不限制时间
     );
-    const [showCustomPopover, setShowCustomPopover] = useState(false);
-    const [customStart, setCustomStart] = useState('');
-    const [customEnd, setCustomEnd] = useState('');
-    const [customLabel, setCustomLabel] = useState('');
+    const [showCustomDialog, setShowCustomDialog] = useState(false);
+    const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
+    const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
 
     // 当外部传入的value发生变化时，更新内部状态
     React.useEffect(() => {
@@ -113,50 +120,103 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     };
 
     const handleCustomRange = () => {
-        setShowCustomPopover(true);
+        setShowCustomDialog(true);
         // 预填充当前时间范围的值
         if (selectedRange && selectedRange.value === 'custom') {
-            setCustomStart(selectedRange.start);
-            setCustomEnd(selectedRange.end);
-            setCustomLabel(selectedRange.label);
+            // 尝试解析现有的自定义时间范围
+            const now = new Date();
+            setCustomEndDate(now);
+            setCustomStartDate(new Date(now.getTime() - 60 * 60 * 1000)); // 默认1小时前
         } else {
-            // 默认值
-            setCustomStart('now() - 1h');
-            setCustomEnd('now()');
-            setCustomLabel('自定义时间范围');
+            // 默认值：最近1小时
+            const now = new Date();
+            setCustomEndDate(now);
+            setCustomStartDate(new Date(now.getTime() - 60 * 60 * 1000));
         }
     };
 
+    // 格式化日期为InfluxQL时间表达式
+    const formatDateToInfluxQL = (date: Date): string => {
+        return dayjs(date).format('YYYY-MM-DDTHH:mm:ss[Z]');
+    };
+
+    // 生成时间范围标签
+    const generateTimeRangeLabel = (startDate: Date, endDate: Date): string => {
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
+
+        // 如果是今天的时间范围，显示更友好的格式
+        const now = dayjs();
+        if (end.isSame(now, 'day') && start.isSame(now, 'day')) {
+            return `${start.format('HH:mm')} - ${end.format('HH:mm')}`;
+        }
+
+        // 如果跨天，显示完整日期时间
+        if (!start.isSame(end, 'day')) {
+            return `${start.format('MM-DD HH:mm')} - ${end.format('MM-DD HH:mm')}`;
+        }
+
+        return `${start.format('YYYY-MM-DD HH:mm')} - ${end.format('HH:mm')}`;
+    };
+
     const handleCustomSubmit = () => {
-        if (!customStart.trim() || !customEnd.trim()) {
-            showMessage.error('请填写开始时间和结束时间');
+        if (!customStartDate || !customEndDate) {
+            showMessage.error('请选择开始时间和结束时间');
             return;
         }
 
-        if (!customLabel.trim()) {
-            showMessage.error('请填写时间范围标签');
+        if (customStartDate >= customEndDate) {
+            showMessage.error('开始时间必须早于结束时间');
             return;
         }
 
         const customRange: TimeRange = {
-            label: customLabel,
+            label: generateTimeRangeLabel(customStartDate, customEndDate),
             value: 'custom',
-            start: customStart,
-            end: customEnd,
+            start: formatDateToInfluxQL(customStartDate),
+            end: formatDateToInfluxQL(customEndDate),
         };
 
         setSelectedRange(customRange);
         onChange?.(customRange);
-        setShowCustomPopover(false);
+        setShowCustomDialog(false);
         showMessage.success('自定义时间范围已设置');
     };
 
     const handleCustomCancel = () => {
-        setShowCustomPopover(false);
+        setShowCustomDialog(false);
         // 重置表单
-        setCustomStart('');
-        setCustomEnd('');
-        setCustomLabel('');
+        setCustomStartDate(null);
+        setCustomEndDate(null);
+    };
+
+    // 生成详细的Tooltip内容
+    const getTooltipContent = () => {
+        if (selectedRange.value === 'none') {
+            return (
+                <div className="space-y-1">
+                    <div className="font-medium">🕐 时间范围筛选</div>
+                    <div className="text-xs">当前：不限制时间范围</div>
+                    <div className="text-xs text-muted-foreground">所有数据都会被查询，不进行时间筛选</div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-1">
+                <div className="font-medium">🕐 时间范围筛选</div>
+                <div className="text-xs">当前：{selectedRange.label}</div>
+                <div className="text-xs text-muted-foreground">
+                    所有数据查询都会自动应用此时间范围筛选
+                </div>
+                <div className="text-xs text-muted-foreground border-t pt-1 mt-1">
+                    开始：{selectedRange.start}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                    结束：{selectedRange.end}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -169,25 +229,40 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                 <Button
                                     variant='outline'
                                     size='sm'
-                                    className='h-8 min-w-24 gap-1'
+                                    className={`
+                                        h-8 min-w-24 gap-1 relative
+                                        ${selectedRange.value !== 'none'
+                                            ? 'border-red-500 bg-red-50 hover:bg-red-100 text-red-700 shadow-sm'
+                                            : 'hover:bg-accent hover:text-accent-foreground'
+                                        }
+                                        transition-all duration-200
+                                    `}
                                     disabled={disabled}
                                 >
-                                    <Clock className='w-3 h-3'/>
-                                    <span className='text-xs'>{selectedRange.label}</span>
-                                    <ChevronDown className='w-3 h-3'/>
+                                    {/* 红色强调指示器 */}
+                                    {selectedRange.value !== 'none' && (
+                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                    )}
+                                    <Clock className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
+                                    <span className='text-xs font-medium'>{selectedRange.label}</span>
+                                    <ChevronDown className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
                                 </Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            {selectedRange.value === 'none'
-                                ? '不限制时间范围'
-                                : `时间范围: ${selectedRange.start} 到 ${selectedRange.end}`}
+                        <TooltipContent className="max-w-xs">
+                            {getTooltipContent()}
                         </TooltipContent>
                     </Tooltip>
 
-                    <DropdownMenuContent align='start' className='w-48'>
-                        <div className='px-2 py-1 text-xs font-medium text-muted-foreground border-b'>
-                            快速选择
+                    <DropdownMenuContent align='start' className='w-56'>
+                        <div className='px-3 py-2 text-xs font-medium text-muted-foreground border-b bg-muted/50'>
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-3 h-3" />
+                                时间范围筛选
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                                选择后所有查询都会应用此筛选
+                            </div>
                         </div>
 
                         {TIME_RANGES.map(range => (
@@ -195,14 +270,27 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                 key={range.value}
                                 onClick={() => handleRangeSelect(range)}
                                 className={`
-                  flex items-center gap-2 text-sm
-                  ${selectedRange.value === range.value ? 'bg-blue-50 text-primary' : ''}
-                `}
+                                    flex items-center gap-2 text-sm py-2 px-3
+                                    ${selectedRange.value === range.value
+                                        ? (range.value === 'none'
+                                            ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-500'
+                                            : 'bg-red-50 text-red-700 border-l-2 border-red-500'
+                                        )
+                                        : 'hover:bg-accent'
+                                    }
+                                    transition-colors duration-150
+                                `}
                             >
-                                <Clock className='w-3 h-3'/>
-                                <span>{range.label}</span>
+                                <Clock className={`w-3 h-3 ${
+                                    selectedRange.value === range.value
+                                        ? (range.value === 'none' ? 'text-blue-600' : 'text-red-600')
+                                        : 'text-muted-foreground'
+                                }`}/>
+                                <span className="flex-1">{range.label}</span>
                                 {selectedRange.value === range.value && (
-                                    <div className='w-2 h-2 bg-primary rounded-full ml-auto'/>
+                                    <div className={`w-2 h-2 rounded-full ml-auto ${
+                                        range.value === 'none' ? 'bg-blue-500' : 'bg-red-500'
+                                    }`}/>
                                 )}
                             </DropdownMenuItem>
                         ))}
@@ -211,75 +299,81 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                         <DropdownMenuItem
                             onClick={handleCustomRange}
-                            className='flex items-center gap-2 text-sm'
+                            className='flex items-center gap-2 text-sm py-2 px-3 hover:bg-accent transition-colors duration-150'
                         >
-                            <Calendar className='w-3 h-3'/>
-                            <span>自定义时间范围...</span>
+                            <Calendar className='w-3 h-3 text-muted-foreground'/>
+                            <span className="flex-1">自定义时间范围...</span>
+                            <div className="text-xs text-muted-foreground">⚙️</div>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* 自定义时间范围弹出框 */}
-                {showCustomPopover && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                        <div className="bg-background border rounded-lg shadow-lg w-96 p-4 max-h-[80vh] overflow-y-auto">
-                        <div className='mb-3'>
-                            <h4 className='text-sm font-medium mb-1'>自定义时间范围</h4>
-                            <p className='text-xs text-muted-foreground'>
-                                支持 InfluxQL 时间表达式，如 'now() - 1h'、'2024-01-01T00:00:00Z' 等。
-                            </p>
-                        </div>
+                {/* 自定义时间范围对话框 */}
+                <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>自定义时间范围</DialogTitle>
+                            <DialogDescription>
+                                选择查询数据的时间范围，系统将自动转换为InfluxQL时间表达式。
+                            </DialogDescription>
+                        </DialogHeader>
 
-                        <div className='space-y-3'>
-                            <div className='grid grid-cols-4 items-center gap-2'>
-                                <Label htmlFor='custom-label' className='text-sm'>
-                                    标签
-                                </Label>
-                                <Input
-                                    id='custom-label'
-                                    value={customLabel}
-                                    onChange={e => setCustomLabel(e.target.value)}
-                                    placeholder='例如：自定义时间'
-                                    className='col-span-3 h-8'
-                                />
-                            </div>
-
-                            <div className='grid grid-cols-4 items-center gap-2'>
-                                <Label htmlFor='custom-start' className='text-sm'>
+                        <div className='space-y-4 py-4'>
+                            <div className='grid grid-cols-4 items-center gap-4'>
+                                <Label htmlFor='custom-start-date' className='text-right text-sm font-medium'>
                                     开始时间
                                 </Label>
-                                <Input
-                                    id='custom-start'
-                                    value={customStart}
-                                    onChange={e => setCustomStart(e.target.value)}
-                                    placeholder='例如：now() - 2h'
-                                    className='col-span-3 h-8'
-                                />
+                                <div className='col-span-3'>
+                                    <DatePicker
+                                        value={customStartDate}
+                                        onChange={(date) => setCustomStartDate(date)}
+                                        placeholder='选择开始时间'
+                                        showTime={true}
+                                        format='YYYY-MM-DD HH:mm:ss'
+                                        className='w-full'
+                                    />
+                                </div>
                             </div>
 
-                            <div className='grid grid-cols-4 items-center gap-2'>
-                                <Label htmlFor='custom-end' className='text-sm'>
+                            <div className='grid grid-cols-4 items-center gap-4'>
+                                <Label htmlFor='custom-end-date' className='text-right text-sm font-medium'>
                                     结束时间
                                 </Label>
-                                <Input
-                                    id='custom-end'
-                                    value={customEnd}
-                                    onChange={e => setCustomEnd(e.target.value)}
-                                    placeholder='例如：now()'
-                                    className='col-span-3 h-8'
-                                />
+                                <div className='col-span-3'>
+                                    <DatePicker
+                                        value={customEndDate}
+                                        onChange={(date) => setCustomEndDate(date)}
+                                        placeholder='选择结束时间'
+                                        showTime={true}
+                                        format='YYYY-MM-DD HH:mm:ss'
+                                        className='w-full'
+                                    />
+                                </div>
                             </div>
+
+                            {/* 预览时间范围 */}
+                            {customStartDate && customEndDate && (
+                                <div className='grid grid-cols-4 items-center gap-4'>
+                                    <Label className='text-right text-sm font-medium text-muted-foreground'>
+                                        预览
+                                    </Label>
+                                    <div className='col-span-3 text-sm text-muted-foreground bg-muted p-2 rounded'>
+                                        {generateTimeRangeLabel(customStartDate, customEndDate)}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                            <div className='flex justify-end gap-2 mt-4'>
-                                <Button variant='outline' size='sm' onClick={handleCustomCancel}>
-                                    取消
-                                </Button>
-                                <Button size='sm' onClick={handleCustomSubmit}>确定</Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                        <DialogFooter>
+                            <Button variant='outline' onClick={handleCustomCancel}>
+                                取消
+                            </Button>
+                            <Button onClick={handleCustomSubmit}>
+                                确定
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </TooltipProvider>
     );

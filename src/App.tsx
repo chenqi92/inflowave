@@ -15,7 +15,7 @@ import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 
 // 更新组件
-import { UpdateNotification } from './components/updater/UpdateNotification';
+import { UpdateNotification } from '@components/updater';
 import { useUpdater } from './hooks/useUpdater';
 
 // 页面组件

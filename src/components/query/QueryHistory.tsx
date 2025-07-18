@@ -672,7 +672,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     </Dialog>
   );
 
-  if (visible && onClose) {
+  if (onClose) {
     return (
       <TooltipProvider>
         <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
