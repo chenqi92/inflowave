@@ -820,25 +820,22 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
             {/* 键盘快捷键 */}
             <div>
-              <div className='flex items-center gap-3 mb-4'>
-                <Keyboard className='w-6 h-6 text-blue-600' />
-                <div>
-                  <h2 className='text-2xl font-bold'>键盘快捷键</h2>
-                  <p className='text-muted-foreground'>自定义快捷键设置</p>
+              <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                  <Keyboard className='w-6 h-6 text-blue-600' />
+                  <div>
+                    <h2 className='text-2xl font-bold'>键盘快捷键</h2>
+                    <p className='text-muted-foreground'>自定义快捷键设置</p>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className='text-sm text-muted-foreground'>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={loadDefaultShortcuts}
-                    className='ml-4'
-                  >
-                    重置为默认
-                  </Button>
-                </p>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={loadDefaultShortcuts}
+                >
+                  重置为默认
+                </Button>
               </div>
               <div>
                 <div className='space-y-6'>

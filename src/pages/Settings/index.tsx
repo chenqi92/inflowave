@@ -47,6 +47,7 @@ import {
   Download,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { open } from '@tauri-apps/plugin-shell';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -213,6 +214,24 @@ const Settings: React.FC = () => {
       },
       duration: 10000,
     });
+  };
+
+  // 打开GitHub项目地址
+  const openGitHubRepository = async () => {
+    try {
+      if (isBrowserEnvironment()) {
+        // 在浏览器环境中使用 window.open
+        window.open('https://github.com/your-username/inflowave', '_blank');
+        showMessage.success('正在打开GitHub项目页面');
+      } else {
+        // 在桌面环境中使用 Tauri 的 shell 插件
+        await open('https://github.com/your-username/inflowave');
+        showMessage.success('正在打开GitHub项目页面');
+      }
+    } catch (error) {
+      console.error('打开GitHub页面失败:', error);
+      showMessage.error('打开GitHub页面失败');
+    }
   };
 
   return (
@@ -622,7 +641,10 @@ const Settings: React.FC = () => {
                         <Text className='font-semibold text-lg'>
                           项目地址
                         </Text>
-                        <Text className='text-base text-primary hover:text-blue-800 cursor-pointer'>
+                        <Text 
+                          className='text-base text-primary hover:text-blue-800 cursor-pointer underline'
+                          onClick={openGitHubRepository}
+                        >
                           GitHub Repository
                         </Text>
                       </div>

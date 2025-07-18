@@ -13,6 +13,7 @@ import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
+import { useUserPreferences } from './hooks/useUserPreferences';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -145,6 +146,7 @@ const MainLayout: React.FC = () => {
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const { preferences } = useUserPreferences();
 
   // 初始化应用
   useEffect(() => {
@@ -235,12 +237,31 @@ const App: React.FC = () => {
     );
   }
 
+  // 获取通知位置设置，如果没有设置则使用默认值
+  const getToasterPosition = () => {
+    if (!preferences?.notifications?.position) {
+      return 'bottom-right'; // 默认位置
+    }
+    
+    // 转换用户偏好中的位置值为 Sonner 支持的格式
+    const positionMap: Record<string, string> = {
+      'topLeft': 'top-left',
+      'topCenter': 'top-center',
+      'topRight': 'top-right',
+      'bottomLeft': 'bottom-left',
+      'bottomCenter': 'bottom-center',
+      'bottomRight': 'bottom-right',
+    };
+    
+    return positionMap[preferences.notifications.position] || 'bottom-right';
+  };
+
   return (
     <DialogProvider>
       <ErrorBoundary>
         <MainLayout />
         <DialogManager />
-        <Toaster />
+        <Toaster position={getToasterPosition() as any} />
       </ErrorBoundary>
     </DialogProvider>
   );

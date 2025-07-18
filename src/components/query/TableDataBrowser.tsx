@@ -58,6 +58,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                            }) => {
     // 状态管理
     const [data, setData] = useState<DataRow[]>([]);
+    const [rawData, setRawData] = useState<DataRow[]>([]); // 存储原始数据用于客户端排序
     const [columns, setColumns] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
@@ -119,11 +120,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             query += ` WHERE ${whereConditions.join(' AND ')}`;
         }
 
-        // 添加排序
-        if (sortColumn) {
-            query += ` ORDER BY "${sortColumn}" ${sortDirection.toUpperCase()}`;
+        // 添加排序 - InfluxDB只支持按时间排序
+        if (sortColumn === 'time') {
+            query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
         } else {
-            // 默认按时间排序
+            // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
             query += ` ORDER BY time DESC`;
         }
 
@@ -177,6 +178,36 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [connectionId, database, tableName]);
 
+    // 客户端排序函数
+    const sortDataClientSide = useCallback((dataToSort: DataRow[], column: string, direction: 'asc' | 'desc') => {
+        return [...dataToSort].sort((a, b) => {
+            let aVal = a[column];
+            let bVal = b[column];
+
+            // 处理时间列
+            if (column === 'time') {
+                aVal = new Date(aVal).getTime();
+                bVal = new Date(bVal).getTime();
+            } else {
+                // 尝试转换为数字进行比较
+                const aNum = parseFloat(String(aVal));
+                const bNum = parseFloat(String(bVal));
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    aVal = aNum;
+                    bVal = bNum;
+                } else {
+                    // 字符串比较
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+            }
+
+            if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, []);
+
     // 加载数据
     const loadData = useCallback(async () => {
         if (columns.length === 0) return;
@@ -207,9 +238,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         return record;
                     });
 
-                    setData(formattedData);
+                    // 存储原始数据
+                    setRawData(formattedData);
+
+                    // 应用客户端排序（如果需要）
+                    if (sortColumn && sortColumn !== 'time') {
+                        const sortedData = sortDataClientSide(formattedData, sortColumn, sortDirection);
+                        setData(sortedData);
+                    } else {
+                        setData(formattedData);
+                    }
                 }
             } else {
+                setRawData([]);
                 setData([]);
             }
         } catch (error) {
@@ -233,6 +274,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [columns, loadData, fetchTotalCount]);
 
+    // 处理时间列排序变化
+    useEffect(() => {
+        if (sortColumn === 'time' && columns.length > 0) {
+            loadData();
+        }
+    }, [sortColumn, sortDirection, loadData, columns.length]);
+
     // 处理页面变化
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -252,13 +300,23 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 处理排序
     const handleSort = (column: string) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('desc');
-        }
+        const newDirection = sortColumn === column ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'desc';
+
+        setSortColumn(column);
+        setSortDirection(newDirection);
         setCurrentPage(1);
+
+        // 如果是时间列，重新查询数据（服务器端排序）
+        if (column === 'time') {
+            // 时间列排序会触发 loadData 通过 useEffect
+            return;
+        }
+
+        // 非时间列使用客户端排序
+        if (rawData.length > 0) {
+            const sortedData = sortDataClientSide(rawData, column, newDirection);
+            setData(sortedData);
+        }
     };
 
     // 添加过滤器
@@ -408,6 +466,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                             >
                                                 <div className="flex items-center gap-1">
                                                     <span>{column}</span>
+                                                    {column !== 'time' && (
+                                                        <span className="text-xs text-muted-foreground/60" title="客户端排序">
+                                                            ⚡
+                                                        </span>
+                                                    )}
                                                     {sortColumn === column && (
                                                         <span className="text-xs">
                                                             {sortDirection === 'asc' ? '↑' : '↓'}
