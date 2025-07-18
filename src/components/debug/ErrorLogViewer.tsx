@@ -27,6 +27,7 @@ import {
   CollapsibleTrigger,
   ScrollArea,
 } from '@/components/ui';
+import { saveTextFile } from '@/utils/nativeDownload';
 import { showMessage } from '@/utils/message';
 import {
   RefreshCw,
@@ -210,16 +211,18 @@ const ErrorLogViewer: React.FC = () => {
   const exportLogs = async () => {
     try {
       const logContent = await FileOperations.readFile('logs/error.log');
-      const blob = new Blob([logContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `error-logs-${new Date().toISOString().split('T')[0]}.log`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      showMessage.success('日志已导出');
+      const success = await saveTextFile(logContent, {
+        filename: `error-logs-${new Date().toISOString().split('T')[0]}.log`,
+        filters: [
+          { name: '日志文件', extensions: ['log'] },
+          { name: '文本文件', extensions: ['txt'] },
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      });
+      
+      if (success) {
+        showMessage.success('日志已导出');
+      }
     } catch (error) {
       showMessage.error('导出日志失败');
     }

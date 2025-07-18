@@ -54,6 +54,7 @@ import {
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';
+import { saveJsonFile } from '@/utils/nativeDownload';
 import { useConnectionStore } from '@/store/connection';
 import ContextMenu from '@/components/common/ContextMenu';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
@@ -936,18 +937,17 @@ const Database: React.FC = () => {
                       exportTime: new Date().toISOString(),
                     };
 
-                    const dataStr = JSON.stringify(structure, null, 2);
-                    const dataBlob = new Blob([dataStr], {
-                      type: 'application/json',
+                    const success = await saveJsonFile(structure, {
+                      filename: `${params.database}_structure.json`,
+                      filters: [
+                        { name: '数据库结构文件', extensions: ['json'] },
+                        { name: '所有文件', extensions: ['*'] }
+                      ]
                     });
-                    const url = URL.createObjectURL(dataBlob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `${params.database}_structure.json`;
-                    link.click();
-                    URL.revokeObjectURL(url);
 
-                    showMessage.success('数据库结构导出成功');
+                    if (success) {
+                      showMessage.success('数据库结构导出成功');
+                    }
                   } catch (error) {
                     showMessage.error(`导出失败: ${error}`);
                   }

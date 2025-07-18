@@ -28,6 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
+import { saveJsonFile } from '@/utils/nativeDownload';
 import { showMessage, showNotification } from '@/utils/message';
 import {
   Save,
@@ -139,23 +140,16 @@ const Settings: React.FC = () => {
         version: '1.0.0',
       };
 
-      if (isBrowserEnvironment()) {
-        // 浏览器环境：下载为JSON文件
-        const blob = new Blob([JSON.stringify(settings, null, 2)], {
-          type: 'application/json',
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showMessage.success('设置已导出到下载文件夹');
-      } else {
-        // Tauri 环境：调用原生文件保存对话框
-        await safeTauriInvoke('export_settings', { settings });
+      // 使用原生文件保存对话框
+      const success = await saveJsonFile(settings, {
+        filename: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
+        filters: [
+          { name: '配置文件', extensions: ['json'] },
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      });
+      
+      if (success) {
         showMessage.success('设置已导出');
       }
     } catch (error) {
@@ -170,40 +164,12 @@ const Settings: React.FC = () => {
   // 导入设置
   const importSettings = async () => {
     try {
-      if (isBrowserEnvironment()) {
-        // 浏览器环境：使用文件输入
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async e => {
-          const file = (e.target as HTMLInputElement).files?.[0];
-          if (file) {
-            try {
-              const text = await file.text();
-              const settings = JSON.parse(text);
-
-              if (settings.appConfig) {
-                setConfig(settings.appConfig);
-                form.reset(settings.appConfig);
-                showMessage.success('设置已导入');
-              } else {
-                showMessage.error('无效的设置文件格式');
-              }
-            } catch (parseError) {
-              console.error('解析设置文件失败:', parseError);
-              showMessage.error('设置文件格式错误');
-            }
-          }
-        };
-        input.click();
-      } else {
-        // Tauri 环境：调用原生文件选择对话框
-        const settings = await safeTauriInvoke('import_settings');
-        if (settings) {
-          setConfig(settings.appConfig);
-          form.reset(settings.appConfig);
-          showMessage.success('设置已导入');
-        }
+      // 使用原生文件选择对话框
+      const settings = await safeTauriInvoke('import_settings');
+      if (settings) {
+        setConfig(settings.appConfig);
+        form.reset(settings.appConfig);
+        showMessage.success('设置已导入');
       }
     } catch (error) {
       console.error('导入设置失败:', error);
