@@ -1,0 +1,349 @@
+name: Auto Release on Version Change
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'package.json'
+      - 'src-tauri/tauri.conf.json'
+      - 'src-tauri/Cargo.toml'
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force create release even if version unchanged'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+jobs:
+  # 检查版本变化的工作
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      has_changed: ${{ steps.version.outputs.has_changed }}
+      prev_version: ${{ steps.version.outputs.prev_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check version changes
+        id: version
+        run: |
+          # 获取当前版本
+          current_version=$(node -p "require('./package.json').version")
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+          echo "version=$current_version" >> $GITHUB_OUTPUT
+          
+          # 检查是否有版本标签
+          if git tag -l | grep -q "v$current_version"; then
+            echo "Tag v$current_version already exists"
+            
+            # 获取上一个版本
+            prev_version=$(git tag -l "v*" | sort -V | tail -n 1 | sed 's/^v//')
+            echo "prev_version=$prev_version" >> $GITHUB_OUTPUT
+            
+            if [ "${{ github.event.inputs.force_release }}" = "true" ]; then
+              echo "Force release enabled"
+              echo "has_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "Version unchanged and force_release not enabled"
+              echo "has_changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "New version detected: $current_version"
+            
+            # 获取上一个版本标签
+            prev_version=$(git tag -l "v*" | sort -V | tail -n 1 | sed 's/^v//' || echo "0.0.0")
+            echo "prev_version=$prev_version" >> $GITHUB_OUTPUT
+            
+            echo "has_changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run version consistency check
+        run: |
+          echo "🔍 Running version consistency check..."
+          npm run version:check
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ Version consistency check failed"
+            echo "🔄 Attempting to sync versions..."
+            npm run version:sync
+            
+            # 如果版本同步后有变化，提交更改
+            if [ -n "$(git status --porcelain)" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git add -A
+              git commit -m "chore: sync version across all configuration files"
+              git push
+            fi
+          fi
+
+  # 全平台构建工作
+  build-all-platforms:
+    needs: check-version
+    if: needs.check-version.outputs.has_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows 构建
+          - platform: 'windows-latest'
+            target: 'x86_64-pc-windows-msvc'
+            arch: 'x64'
+            os: 'windows'
+          - platform: 'windows-latest'
+            target: 'i686-pc-windows-msvc'
+            arch: 'x86'
+            os: 'windows'
+          
+          # macOS 构建
+          - platform: 'macos-latest'
+            target: 'x86_64-apple-darwin'
+            arch: 'x64'
+            os: 'macos'
+          - platform: 'macos-latest'
+            target: 'aarch64-apple-darwin'
+            arch: 'arm64'
+            os: 'macos'
+          - platform: 'macos-latest'
+            target: 'universal-apple-darwin'
+            arch: 'universal'
+            os: 'macos'
+          
+          # Linux 构建
+          - platform: 'ubuntu-22.04'
+            target: 'x86_64-unknown-linux-gnu'
+            arch: 'x64'
+            os: 'linux'
+          - platform: 'ubuntu-22.04'
+            target: 'aarch64-unknown-linux-gnu'
+            arch: 'arm64'
+            os: 'linux'
+          - platform: 'ubuntu-22.04'
+            target: 'i686-unknown-linux-gnu'
+            arch: 'x86'
+            os: 'linux'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install additional dependencies for cross-compilation (Linux ARM64)
+        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+
+      - name: Install additional dependencies for cross-compilation (Linux x86)
+        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'x86'
+        run: |
+          sudo apt-get install -y gcc-multilib g++-multilib
+          sudo apt-get install -y libwebkit2gtk-4.1-dev:i386 libgtk-3-dev:i386 || true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Setup additional macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Standard Mode
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+        with:
+          tagName: v${{ needs.check-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.check-version.outputs.version }}'
+          releaseBody: |
+            ## 🚀 InfloWave v${{ needs.check-version.outputs.version }}
+            
+            ### 📋 更新内容
+            
+            版本从 `${{ needs.check-version.outputs.prev_version }}` 更新到 `${{ needs.check-version.outputs.version }}`
+            
+            ### 📦 下载说明
+            
+            #### 🖥️ **Standard Mode (推荐)**
+            - **Windows**: `InfloWave_*_x64-setup.exe` (64位) / `InfloWave_*_x86-setup.exe` (32位)
+            - **macOS**: `InfloWave_*_universal.dmg` (通用版本，支持 Intel 和 Apple Silicon)
+            - **Linux**: `inflowave_*_amd64.deb` / `inflowave_*_amd64.AppImage` (64位)
+            
+            #### 🌐 **Server Mode (高级功能)**
+            - 包含内置 HTTP 服务器
+            - 支持 API 集成和调试工具
+            - 文件名包含 `-server` 后缀
+            
+            ### ✨ 功能特点
+            
+            **Standard Mode**:
+            - ✅ 零端口冲突 - 使用 IPC 通信
+            - ✅ 最佳性能 - 原生通信
+            - ✅ 增强安全性 - 无网络暴露
+            - ✅ 更小体积 - 最小依赖
+            
+            **Server Mode**:
+            - ✅ 智能端口管理 - 自动解决冲突 (1422-1500)
+            - ✅ HTTP API 支持 - RESTful 接口
+            - ✅ CORS 代理 - 跨域请求支持
+            - ✅ 调试工具 - 开发实用程序
+            - ✅ WebSocket 支持 - 实时通信
+            
+            ### 🎯 平台支持
+            
+            | 平台 | 架构 | 状态 |
+            |------|------|------|
+            | Windows | x64, x86 | ✅ |
+            | macOS | Intel, Apple Silicon, Universal | ✅ |
+            | Linux | x64, ARM64, x86 | ✅ |
+            
+            ---
+            
+            **安装提示**: 
+            - Windows 用户建议下载 `x64` 版本
+            - macOS 用户建议下载 `universal` 版本
+            - Linux 用户可选择 `.deb` 或 `.AppImage` 格式
+            
+            如遇到问题请查看 [故障排除指南](https://github.com/chenqi92/inflowave/blob/main/docs/troubleshooting.md) 或提交 [Issue](https://github.com/chenqi92/inflowave/issues)。
+          releaseDraft: false
+          prerelease: false
+          includeRelease: true
+          includeUpdaterJson: true
+          args: --target ${{ matrix.target }}
+
+      - name: Build Server Mode
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: true
+        with:
+          tagName: v${{ needs.check-version.outputs.version }}-server
+          releaseName: 'InfloWave v${{ needs.check-version.outputs.version }} (Server Mode)'
+          releaseBody: |
+            ## 🌐 InfloWave v${{ needs.check-version.outputs.version }} - Server Mode
+            
+            ### 增强版本 - 包含 HTTP 服务器
+            
+            此版本包含完整的 HTTP 服务器功能，适合需要 API 集成和高级功能的用户。
+            
+            ### 🚀 服务器模式特性
+            
+            - **🔌 智能端口管理**: 自动检测和解决端口冲突 (1422-1500)
+            - **🌐 HTTP API**: 完整的 RESTful API 支持
+            - **🔄 CORS 代理**: 跨域请求代理功能
+            - **🛠️ 调试工具**: 内置开发调试工具
+            - **📡 WebSocket**: 实时双向通信支持
+            - **📊 实时监控**: 服务器状态实时监控
+            
+            ### 💡 使用场景
+            
+            - 需要通过 HTTP API 集成其他系统
+            - 需要跨域数据访问
+            - 开发和调试 InfluxDB 应用
+            - 需要 WebSocket 实时数据推送
+            
+            ### 📥 下载文件
+            
+            服务器模式的安装包文件名包含 `-server` 后缀，请根据您的平台选择：
+            
+            | 平台 | 推荐版本 | 文件名模式 |
+            |------|----------|------------|
+            | Windows | 64位 | `*-server*_x64-setup.exe` |
+            | macOS | 通用版 | `*-server*_universal.dmg` |
+            | Linux | 64位 | `*-server*_amd64.deb` |
+            
+            ---
+            
+            **📌 注意**: 服务器模式会占用网络端口，请确保防火墙设置允许应用访问网络。
+          releaseDraft: false
+          prerelease: false
+          includeRelease: true
+          includeUpdaterJson: true
+          args: --target ${{ matrix.target }}
+
+  # 创建版本标签
+  create-version-tag:
+    needs: [check-version, build-all-platforms]
+    if: needs.check-version.outputs.has_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create and push version tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # 创建版本标签
+          git tag -a "v${{ needs.check-version.outputs.version }}" -m "Release v${{ needs.check-version.outputs.version }}"
+          
+          # 推送标签
+          git push origin "v${{ needs.check-version.outputs.version }}"
+          
+          echo "✅ Created and pushed tag: v${{ needs.check-version.outputs.version }}"
+
+  # 发布后通知
+  post-release:
+    needs: [check-version, build-all-platforms, create-version-tag]
+    if: needs.check-version.outputs.has_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Summary
+        run: |
+          echo "🎉 Release v${{ needs.check-version.outputs.version }} created successfully!"
+          echo ""
+          echo "📦 Built for platforms:"
+          echo "  - Windows (x64, x86)"
+          echo "  - macOS (Intel, Apple Silicon, Universal)"
+          echo "  - Linux (x64, ARM64, x86)"
+          echo ""
+          echo "🚀 Available modes:"
+          echo "  - Standard Mode (Pure Tauri)"
+          echo "  - Server Mode (HTTP Server included)"
+          echo ""
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.version }}"

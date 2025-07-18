@@ -1,0 +1,192 @@
+name: Version-based Release
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
+jobs:
+  # 版本检测工作
+  detect-version:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      tag_exists: ${{ steps.check.outputs.tag_exists }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if version should trigger release
+        id: check
+        run: |
+          # 获取当前版本
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # 检查标签是否存在
+          if git tag -l | grep -q "^v$VERSION$"; then
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Tag v$VERSION already exists, skipping release"
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "✅ New version v$VERSION detected, will create release"
+          fi
+
+  # 全平台全架构构建
+  build-release:
+    needs: detect-version
+    if: needs.detect-version.outputs.should_release == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - platform: 'windows-latest'
+            target: 'x86_64-pc-windows-msvc'
+            arch: 'x64'
+            rust_target: 'x86_64-pc-windows-msvc'
+          - platform: 'windows-latest'
+            target: 'i686-pc-windows-msvc'
+            arch: 'x86'
+            rust_target: 'i686-pc-windows-msvc'
+          
+          # macOS
+          - platform: 'macos-latest'
+            target: 'universal-apple-darwin'
+            arch: 'universal'
+            rust_target: 'universal-apple-darwin'
+          - platform: 'macos-latest'
+            target: 'x86_64-apple-darwin'
+            arch: 'x64'
+            rust_target: 'x86_64-apple-darwin'
+          - platform: 'macos-latest'
+            target: 'aarch64-apple-darwin'
+            arch: 'arm64'
+            rust_target: 'aarch64-apple-darwin'
+          
+          # Linux
+          - platform: 'ubuntu-22.04'
+            target: 'x86_64-unknown-linux-gnu'
+            arch: 'x64'
+            rust_target: 'x86_64-unknown-linux-gnu'
+          - platform: 'ubuntu-22.04'
+            target: 'aarch64-unknown-linux-gnu'
+            arch: 'arm64'
+            rust_target: 'aarch64-unknown-linux-gnu'
+          - platform: 'ubuntu-22.04'
+            target: 'i686-unknown-linux-gnu'
+            arch: 'x86'
+            rust_target: 'i686-unknown-linux-gnu'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install cross-compilation dependencies (Linux ARM64)
+        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'arm64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
+      - name: Install cross-compilation dependencies (Linux x86)
+        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'x86'
+        run: |
+          sudo apt-get install -y gcc-multilib g++-multilib
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Setup additional macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Standard Mode
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+          releaseBody: |
+            ## 🚀 InfloWave v${{ needs.detect-version.outputs.version }}
+            
+            自动构建发布 - 支持全平台全架构
+            
+            ### 📦 Standard Mode (推荐)
+            - ✅ 零端口冲突 - IPC 通信
+            - ✅ 最佳性能 - 原生通信  
+            - ✅ 增强安全性 - 无网络暴露
+            - ✅ 更小体积 - 最小依赖
+            
+            ### 🎯 平台支持
+            | 平台 | 架构 | 状态 |
+            |------|------|------|
+            | Windows | x64, x86 | ✅ |
+            | macOS | Intel, Apple Silicon, Universal | ✅ |
+            | Linux | x64, ARM64, x86 | ✅ |
+            
+            ### 📥 下载建议
+            - **Windows**: 选择 `x64` 版本
+            - **macOS**: 选择 `universal` 版本  
+            - **Linux**: 选择 `.deb` 或 `.AppImage`
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }}
+
+      - name: Build Server Mode
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: true
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}-server
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }} (Server Mode)'
+          releaseBody: |
+            ## 🌐 InfloWave v${{ needs.detect-version.outputs.version }} - Server Mode
+            
+            ### 增强版本 - 包含 HTTP 服务器
+            
+            - 🔌 智能端口管理 (1422-1500)
+            - 🌐 HTTP API 支持
+            - 🔄 CORS 代理功能
+            - 🛠️ 调试工具
+            - 📡 WebSocket 支持
+            
+            文件名包含 `-server` 后缀，请根据平台选择对应版本。
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }}
