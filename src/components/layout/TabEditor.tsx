@@ -46,6 +46,7 @@ import TableDataBrowser from '@/components/query/TableDataBrowser';
 import SimpleDragOverlay from '@/components/common/SimpleDragOverlay';
 import useSimpleTabDrag from '@/hooks/useSimpleTabDrag';
 import { SQLParser } from '@/utils/sqlParser';
+import { setupInfluxQLAutoComplete } from '@/utils/influxqlAutoComplete';
 import type { QueryResult, QueryRequest } from '@/types';
 
 interface MenuProps {
@@ -1308,11 +1309,173 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       });
     };
 
+    // 获取当前主题颜色
+    const getThemeColors = () => {
+      const root = document.documentElement;
+      const primaryColor = getComputedStyle(root).getPropertyValue('--primary').trim();
+
+      // 将HSL转换为RGB
+      const hslToRgb = (hsl: string) => {
+        if (!hsl) return '#3B82F6'; // 默认蓝色
+
+        const values = hsl.match(/\d+(\.\d+)?/g);
+        if (!values || values.length < 3) return '#3B82F6';
+
+        const h = parseInt(values[0]) / 360;
+        const s = parseFloat(values[1]) / 100;
+        const l = parseFloat(values[2]) / 100;
+
+        const hue2rgb = (p: number, q: number, t: number) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+        const g = Math.round(hue2rgb(p, q, h) * 255);
+        const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+
+        return `rgb(${r}, ${g}, ${b})`;
+      };
+
+      const primaryRgb = hslToRgb(primaryColor);
+
+      // 生成配套的筛选条件颜色（稍微调整色相）
+      const filterColor = primaryColor ?
+        hslToRgb(primaryColor.replace(/hsl\((\d+)/, (match, hue) =>
+          `hsl(${(parseInt(hue) + 30) % 360}`)) : '#10B981';
+
+      return {
+        primary: primaryRgb,
+        filter: filterColor
+      };
+    };
+
+    // 应用注释样式
+    const applyCommentStyles = (editor: monaco.editor.IStandaloneCodeEditor) => {
+      const applyStyles = () => {
+        try {
+          const editorElement = editor.getDomNode();
+          if (!editorElement) return;
+
+          const lines = editorElement.querySelectorAll('.view-line');
+          const colors = getThemeColors();
+
+          lines.forEach((line: Element) => {
+            const text = line.textContent || '';
+
+            // 检查是否是注释行
+            if (text.trim().startsWith('--') || text.trim().startsWith('#')) {
+              // 找到所有span元素并直接设置样式
+              const spans = line.querySelectorAll('span');
+              spans.forEach((span: HTMLElement) => {
+                span.style.setProperty('color', '#BBBBBB', 'important');
+                span.style.setProperty('font-style', 'italic', 'important');
+              });
+            } else {
+              // 分析SQL关键词和其他元素
+              const spans = line.querySelectorAll('span');
+              spans.forEach((span: HTMLElement) => {
+                const spanText = span.textContent || '';
+
+                // 重置样式
+                span.style.removeProperty('color');
+                span.style.removeProperty('font-weight');
+                span.style.removeProperty('font-style');
+
+                // SQL主要关键词 - 黑色
+                if (/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE|EXPLAIN)\b/i.test(spanText)) {
+                  span.style.setProperty('color', '#000000', 'important');
+                  span.style.setProperty('font-weight', 'bold', 'important');
+                }
+                // 筛选条件关键词 - 配套颜色
+                else if (/\b(WHERE|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE|GROUP\s+BY|ORDER\s+BY|HAVING)\b/i.test(spanText)) {
+                  span.style.setProperty('color', colors.filter, 'important');
+                  span.style.setProperty('font-weight', 'bold', 'important');
+                }
+                // SQL函数 - 橙色
+                else if (/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|TIME|NOW|AGO|DURATION|FILL)\b/i.test(spanText)) {
+                  span.style.setProperty('color', '#F97316', 'important');
+                  span.style.setProperty('font-weight', 'bold', 'important');
+                }
+                // 表名/测量值 - 主题色
+                else if (/\b[a-zA-Z_][a-zA-Z0-9_]*\b/.test(spanText) &&
+                         !/(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText) &&
+                         !/^(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText)) {
+                  // 检查是否在FROM后面或者看起来像表名
+                  const lineText = line.textContent || '';
+                  if (/FROM\s+[^,\s]*$/i.test(lineText.substring(0, lineText.indexOf(spanText) + spanText.length))) {
+                    span.style.setProperty('color', colors.primary, 'important');
+                    span.style.setProperty('font-weight', '500', 'important');
+                  }
+                }
+                // 字符串 - 绿色
+                else if (spanText.includes('"') || spanText.includes("'")) {
+                  span.style.setProperty('color', '#10B981', 'important');
+                }
+                // 数字 - 蓝色
+                else if (/\b\d+(\.\d+)?\b/.test(spanText)) {
+                  span.style.setProperty('color', '#3B82F6', 'important');
+                }
+              });
+            }
+          });
+        } catch (error) {
+          // 静默处理错误，避免控制台噪音
+        }
+      };
+
+      // 立即执行一次
+      setTimeout(applyStyles, 100);
+
+      // 只在内容变化时重新应用样式
+      const model = editor.getModel();
+      if (model) {
+        const disposable = model.onDidChangeContent(() => {
+          setTimeout(applyStyles, 50);
+        });
+
+        return () => {
+          disposable.dispose();
+        };
+      }
+    };
+
     // 编辑器挂载
     const handleEditorDidMount = (
       editor: monaco.editor.IStandaloneCodeEditor
     ) => {
       editorRef.current = editor;
+
+      // 应用注释样式
+      const styleDisposable = applyCommentStyles(editor);
+
+      // 设置智能自动补全
+      setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
+
+      // 监听主题变化
+      const observer = new MutationObserver(() => {
+        // 主题变化时重新应用样式
+        setTimeout(() => {
+          const styleDisposable2 = applyCommentStyles(editor);
+        }, 100);
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['style', 'class', 'data-theme']
+      });
+
+      // 清理函数
+      return () => {
+        if (styleDisposable) styleDisposable();
+        observer.disconnect();
+      };
 
       // 注册InfluxQL语言支持（只注册一次）
       try {

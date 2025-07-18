@@ -1,0 +1,58 @@
+/* Monaco编辑器语法高亮样式 - 主题响应版本 */
+
+/* 定义CSS变量用于主题响应 */
+:root {
+  --monaco-comment-color: #BBBBBB;
+  --monaco-keyword-color: #000000;
+  --monaco-filter-color: var(--primary);
+  --monaco-table-color: var(--primary);
+  --monaco-function-color: #F97316;
+  --monaco-string-color: #10B981;
+  --monaco-number-color: #3B82F6;
+}
+
+/* 深色主题变量 */
+[data-theme="dark"] {
+  --monaco-comment-color: #888888;
+  --monaco-keyword-color: #FFFFFF;
+}
+
+/* 注释样式 */
+.monaco-editor .view-line span.comment-style {
+  color: var(--monaco-comment-color) !important;
+  font-style: italic !important;
+}
+
+/* SQL关键词样式 */
+.monaco-editor .view-line span.keyword-style {
+  color: var(--monaco-keyword-color) !important;
+  font-weight: bold !important;
+}
+
+/* 筛选条件样式 */
+.monaco-editor .view-line span.filter-style {
+  color: var(--monaco-filter-color) !important;
+  font-weight: bold !important;
+}
+
+/* 表名样式 */
+.monaco-editor .view-line span.table-style {
+  color: var(--monaco-table-color) !important;
+  font-weight: 500 !important;
+}
+
+/* 函数样式 */
+.monaco-editor .view-line span.function-style {
+  color: var(--monaco-function-color) !important;
+  font-weight: bold !important;
+}
+
+/* 字符串样式 */
+.monaco-editor .view-line span.string-style {
+  color: var(--monaco-string-color) !important;
+}
+
+/* 数字样式 */
+.monaco-editor .view-line span.number-style {
+  color: var(--monaco-number-color) !important;
+}
