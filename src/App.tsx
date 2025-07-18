@@ -19,7 +19,6 @@ import { UpdateNotification } from './components/updater/UpdateNotification';
 import { useUpdater } from './hooks/useUpdater';
 
 // 页面组件
-import ConnectionDebug from './components/debug/ConnectionDebug';
 import UserGuideTest from './components/test/UserGuideTest';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
@@ -85,7 +84,6 @@ const MainLayout: React.FC = () => {
         {/* 主内容区 */}
         <Content className='flex-1 p-4'>
           <Routes>
-            <Route path='/debug' element={<ConnectionDebug />} />
             <Route path='/user-guide-test' element={<UserGuideTest />} />
           </Routes>
         </Content>

@@ -1,6 +1,4 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
-import { Bug, Unplug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -8,7 +6,6 @@ import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
 
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
-import ConnectionDebugPanel from '@/components/debug/ConnectionDebugPanel';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 
 const Connections: React.FC = () => {
@@ -223,36 +220,11 @@ const Connections: React.FC = () => {
 
       {/* 连接管理器 */}
       <div className='flex-1 overflow-hidden bg-background'>
-        <Tabs defaultValue='manager' className='h-full flex flex-col'>
-          <div className='border-b'>
-            <TabsList className='h-12 w-full justify-start bg-transparent p-0 space-x-8'>
-              <TabsTrigger
-                value='manager'
-                className='relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none'
-              >
-                <Unplug className='w-4 h-4 mr-2' />
-                连接列表
-              </TabsTrigger>
-              <TabsTrigger
-                value='debug'
-                className='relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none'
-              >
-                <Bug className='w-4 h-4 mr-2' />
-                调试面板
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value='manager' className='mt-0 flex-1 overflow-hidden'>
-            <ConnectionManager
-              onConnectionSelect={handleConnectionSelect}
-              onEditConnection={handleOpenDialog}
-              onCreateConnection={() => handleOpenDialog()}
-            />
-          </TabsContent>
-          <TabsContent value='debug' className='mt-0 flex-1 overflow-hidden'>
-            <ConnectionDebugPanel />
-          </TabsContent>
-        </Tabs>
+        <ConnectionManager
+          onConnectionSelect={handleConnectionSelect}
+          onEditConnection={handleOpenDialog}
+          onCreateConnection={() => handleOpenDialog()}
+        />
       </div>
 
       {/* 连接配置对话框 */}
