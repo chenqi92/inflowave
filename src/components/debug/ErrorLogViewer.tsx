@@ -366,7 +366,7 @@ const ErrorLogViewer: React.FC = () => {
   }, []);
 
   return (
-    <div className='space-y-6'>
+    <div className='h-full flex flex-col space-y-6'>
       {/* 头部统计和操作 */}
       <Card>
         <CardHeader className='pb-3'>
@@ -486,14 +486,14 @@ const ErrorLogViewer: React.FC = () => {
       </Card>
 
       {/* 错误日志表格 */}
-      <Card>
-        <CardHeader className='pb-3'>
+      <Card className='flex-1 flex flex-col overflow-hidden'>
+        <CardHeader className='pb-3 flex-shrink-0'>
           <CardTitle className='text-base'>
             错误日志 ({filteredLogs.length} 条)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className='h-[600px]'>
+        <CardContent className='flex-1 overflow-hidden'>
+          <ScrollArea className='h-full'>
             <Table>
               <TableHeader>
                 <TableRow>

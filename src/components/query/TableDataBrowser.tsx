@@ -69,7 +69,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelec
         transition,
     };
 
-    const handleToggle = (e: React.MouseEvent) => {
+    const handleToggle = (e: React.MouseEvent | React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
         onToggle(column);

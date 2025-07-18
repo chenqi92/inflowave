@@ -51,7 +51,7 @@ const DevTools: React.FC = () => {
             value='error-logs'
             className='flex-1 mt-4 overflow-hidden'
           >
-            <div className='h-full overflow-y-auto'>
+            <div className='h-full'>
               <ErrorLogViewer />
             </div>
           </TabsContent>

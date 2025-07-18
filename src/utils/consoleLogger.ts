@@ -203,5 +203,4 @@ class ConsoleLogger {
 // 创建全局实例
 export const consoleLogger = new ConsoleLogger();
 
-// 导出类型
-export type { ConsoleLogEntry };
+// ConsoleLogEntry interface is already exported above
