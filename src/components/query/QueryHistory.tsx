@@ -257,10 +257,18 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
 
   useEffect(() => {
     if (visible) {
+      console.log('QueryHistory visible, loading data...');
       loadQueryHistory();
       loadSavedQueries();
     }
   }, [visible]);
+
+  // 预加载数据，避免第一次打开时的延迟
+  useEffect(() => {
+    // 组件挂载时预加载数据
+    loadQueryHistory();
+    loadSavedQueries();
+  }, []);
 
   const renderHistoryItem = (item: QueryHistoryItem) => (
     <Card key={item.id} className="mb-3">

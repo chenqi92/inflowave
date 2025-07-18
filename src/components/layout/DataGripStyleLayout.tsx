@@ -100,6 +100,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
   // 手动打开查询历史的方法
   const openQueryHistory = useCallback(() => {
+    console.log('Opening query history...');
     setShowQueryHistory(true);
   }, []);
   const [currentTimeRange, setCurrentTimeRange] = useState<{

@@ -92,10 +92,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         navigate('/query');
         // 确保先切换到查询视图
         onViewChange?.('query');
-        // 延迟打开查询历史，确保组件已经渲染
-        setTimeout(() => {
-          onOpenQueryHistory?.();
-        }, 200);
+        // 立即打开查询历史，无需延迟
+        onOpenQueryHistory?.();
         showMessage.info('正在打开查询历史...');
         break;
       case 'dev-tools':
