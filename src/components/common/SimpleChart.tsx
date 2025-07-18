@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Empty } from '@/components/ui';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import * as echarts from 'echarts';
 
 interface ChartData {
@@ -21,55 +22,104 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     if (!chartRef.current || !data) return;
 
     // 初始化图表
     if (!chartInstance.current) {
-      chartInstance.current = echarts.init(chartRef.current);
+      chartInstance.current = echarts.init(
+        chartRef.current,
+        resolvedTheme === 'dark' ? 'dark' : 'light'
+      );
     }
 
     const chart = chartInstance.current;
 
+    // 主题颜色配置
+    const isDark = resolvedTheme === 'dark';
+    const textColor = isDark ? '#e4e4e7' : '#09090b';
+    const backgroundColor = isDark ? '#020817' : '#ffffff';
+    const borderColor = isDark ? '#27272a' : '#e4e4e7';
+    
+    // 图表颜色配置
+    const chartColors = [
+      '#3b82f6', // blue
+      '#10b981', // emerald
+      '#f59e0b', // amber
+      '#ef4444', // red
+      '#8b5cf6', // violet
+      '#06b6d4', // cyan
+      '#84cc16', // lime
+      '#f97316', // orange
+    ];
+
     // 准备图表配置
-    let option: echarts.EChartsOption = {};
+    let option: echarts.EChartsOption = {
+      backgroundColor: backgroundColor,
+      textStyle: {
+        color: textColor,
+      },
+      color: chartColors,
+    };
 
     if (type === 'pie') {
-      // 饼图配置
-      const pieData =
-        data.valueColumns.slice(0, 1).map(col => {
-          return data.data.map((item: any, index: number) => ({
-            name: item[data.timeColumn || 'index'] || `Item ${index}`,
-            value: Number(item[col]) || 0,
-          }));
-        })[0] || [];
+      // 饼图配置 - 修复数据处理逻辑
+      const pieData = data.data.map((item: any, index: number) => {
+        const name = item[data.timeColumn || Object.keys(item)[0]] || `Item ${index + 1}`;
+        const value = data.valueColumns.reduce((sum, col) => {
+          return sum + (Number(item[col]) || 0);
+        }, 0);
+        return {
+          name: String(name),
+          value: value,
+        };
+      }).filter(item => item.value > 0);
 
       option = {
+        ...option,
         title: {
           text: '数据分布',
           left: 'center',
+          textStyle: {
+            color: textColor,
+          },
         },
         tooltip: {
           trigger: 'item',
           formatter: '{a} <br/>{b}: {c} ({d}%)',
+          backgroundColor: isDark ? '#1f2937' : '#ffffff',
+          borderColor: borderColor,
+          textStyle: {
+            color: textColor,
+          },
         },
         legend: {
           orient: 'vertical',
           left: 'left',
+          textStyle: {
+            color: textColor,
+          },
         },
         series: [
           {
-            name: data.valueColumns[0] || 'Value',
+            name: '数据分布',
             type: 'pie',
-            radius: '50%',
+            radius: ['40%', '70%'],
+            center: ['50%', '50%'],
             data: pieData,
             emphasis: {
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)',
+                shadowColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.5)',
               },
+            },
+            label: {
+              show: true,
+              formatter: '{b}: {d}%',
+              color: textColor,
             },
           },
         ],
@@ -97,22 +147,35 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       }));
 
       option = {
+        ...option,
         title: {
           text: '时序数据图表',
           left: 'center',
+          textStyle: {
+            color: textColor,
+          },
         },
         tooltip: {
           trigger: 'axis',
           axisPointer: {
             type: 'cross',
             label: {
-              backgroundColor: '#6a7985',
+              backgroundColor: isDark ? '#374151' : '#6a7985',
+              color: textColor,
             },
+          },
+          backgroundColor: isDark ? '#1f2937' : '#ffffff',
+          borderColor: borderColor,
+          textStyle: {
+            color: textColor,
           },
         },
         legend: {
           data: data.valueColumns,
           top: 30,
+          textStyle: {
+            color: textColor,
+          },
         },
         toolbox: {
           feature: {
@@ -122,12 +185,21 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
             },
             restore: {},
           },
+          iconStyle: {
+            borderColor: textColor,
+          },
+          emphasis: {
+            iconStyle: {
+              borderColor: '#3b82f6',
+            },
+          },
         },
         grid: {
           left: '3%',
           right: '4%',
           bottom: '3%',
           containLabel: true,
+          borderColor: borderColor,
         },
         xAxis: [
           {
@@ -137,12 +209,41 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
             axisLabel: {
               rotate: 45,
               interval: Math.max(1, Math.floor(xAxisData.length / 10)),
+              color: textColor,
+            },
+            axisLine: {
+              lineStyle: {
+                color: borderColor,
+              },
+            },
+            axisTick: {
+              lineStyle: {
+                color: borderColor,
+              },
             },
           },
         ],
         yAxis: [
           {
             type: 'value',
+            axisLabel: {
+              color: textColor,
+            },
+            axisLine: {
+              lineStyle: {
+                color: borderColor,
+              },
+            },
+            axisTick: {
+              lineStyle: {
+                color: borderColor,
+              },
+            },
+            splitLine: {
+              lineStyle: {
+                color: borderColor,
+              },
+            },
           },
         ],
         dataZoom: [
@@ -158,11 +259,14 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
               'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23.1h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
             handleSize: '80%',
             handleStyle: {
-              color: '#fff',
+              color: isDark ? '#374151' : '#fff',
               shadowBlur: 3,
-              shadowColor: 'rgba(0, 0, 0, 0.6)',
+              shadowColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.6)',
               shadowOffsetX: 2,
               shadowOffsetY: 2,
+            },
+            textStyle: {
+              color: textColor,
             },
           },
         ],
@@ -170,7 +274,8 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
       };
     }
 
-    // 设置图表配置
+    // 设置图表配置 - 强制清除旧配置
+    chart.clear();
     chart.setOption(option, true);
 
     // 响应式调整
@@ -183,7 +288,15 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [data, type]);
+  }, [data, type, resolvedTheme]);
+
+  // 监听主题变化，重新初始化图表
+  useEffect(() => {
+    if (chartInstance.current) {
+      chartInstance.current.dispose();
+      chartInstance.current = null;
+    }
+  }, [resolvedTheme]);
 
   useEffect(() => {
     return () => {
