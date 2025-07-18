@@ -106,6 +106,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const tabEditorRef = useRef<{
     executeQueryWithContent?: (query: string, database: string) => void;
     createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
+    createNewTab?: (type?: 'query' | 'table' | 'database') => void;
+    setSelectedDatabase?: (database: string) => void;
   } | null>(null);
 
   // 刷新数据源面板的方法
@@ -257,6 +259,35 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       tabEditorRef.current.createDataBrowserTab(connectionId, database, tableName);
     }
   };
+
+  // 处理创建查询标签页事件
+  const handleCreateQueryTab = (query?: string, database?: string) => {
+    // 切换到查询视图
+    setCurrentView('query');
+
+    // 如果有查询内容，使用 executeQueryWithContent 方法
+    if (query && database && tabEditorRef.current?.executeQueryWithContent) {
+      tabEditorRef.current.executeQueryWithContent(query, database);
+    } else {
+      // 否则创建新的空查询标签页
+      if (tabEditorRef.current?.createNewTab) {
+        tabEditorRef.current.createNewTab('query');
+
+        // 如果指定了数据库，设置选中的数据库
+        if (database && tabEditorRef.current?.setSelectedDatabase) {
+          // 延迟设置数据库，确保标签页已创建
+          setTimeout(() => {
+            if (tabEditorRef.current?.setSelectedDatabase) {
+              tabEditorRef.current.setSelectedDatabase(database);
+            }
+          }, 100);
+        }
+      }
+    }
+  };
+
+  // 获取当前视图
+  const getCurrentView = () => currentView;
 
   // 处理视图变化 - 特殊处理开发者工具
   const handleViewChange = useCallback(
@@ -471,6 +502,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 refreshTrigger={refreshTrigger}
                 onTableDoubleClick={handleTableDoubleClick}
                 onCreateDataBrowserTab={handleCreateDataBrowserTab}
+                onCreateQueryTab={handleCreateQueryTab}
+                onViewChange={handleViewChange}
+                onGetCurrentView={getCurrentView}
                 currentTimeRange={currentTimeRange}
               />
             </div>

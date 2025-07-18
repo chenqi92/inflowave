@@ -71,6 +71,9 @@ interface DatabaseExplorerProps {
   refreshTrigger?: number; // 用于触发刷新
   onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调（保留兼容性）
   onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void; // 创建数据浏览tab回调
+  onCreateQueryTab?: (query?: string, database?: string) => void; // 创建查询标签页回调
+  onViewChange?: (view: string) => void; // 视图切换回调
+  onGetCurrentView?: () => string; // 获取当前视图回调
   currentTimeRange?: {
     label: string;
     value: string;
@@ -95,6 +98,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   refreshTrigger,
   onTableDoubleClick,
   onCreateDataBrowserTab,
+  onCreateQueryTab,
+  onViewChange,
+  onGetCurrentView,
   currentTimeRange,
 }) => {
   const {
@@ -973,41 +979,81 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       // 连接节点被双击，切换连接状态
       const connectionId = String(key).replace('connection-', '');
       handleConnectionToggle(connectionId);
+    } else if (String(key).startsWith('database-')) {
+      // 数据库节点被双击，切换到查询面板并选中该数据库
+      const parts = String(key).split('-');
+      if (parts.length >= 3) {
+        const connectionId = parts[1];
+        const database = parts[2];
+
+        // 先切换到查询面板
+        if (onViewChange) {
+          onViewChange('query');
+        }
+
+        // 创建新的查询标签页并选中该数据库
+        if (onCreateQueryTab) {
+          onCreateQueryTab('', database);
+          showMessage.info(`已切换到查询面板并选中数据库 "${database}"`);
+        } else {
+          showMessage.info(`正在切换到查询面板，数据库: "${database}"`);
+        }
+      }
     } else if (String(key).startsWith('table-')) {
-      // 表节点被双击，创建数据浏览tab
+      // 表节点被双击，确保在查询面板中处理
       const parts = String(key).split('-');
       if (parts.length >= 4) {
         const connectionId = parts[1];
         const database = parts[2];
         const table = parts.slice(3).join('-'); // 处理表名包含连字符的情况
 
-        // 优先使用新的数据浏览回调
-        if (onCreateDataBrowserTab) {
-          onCreateDataBrowserTab(connectionId, database, table);
-          showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
-        } else if (onTableDoubleClick) {
-          // 保留原有逻辑以便兼容
-          const query = generateQueryWithTimeFilter(table);
-          onTableDoubleClick(database, table, query);
-          const timeDesc = currentTimeRange
-            ? currentTimeRange.label
-            : '最近1小时';
-          showMessage.info(
-            `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
-          );
+        // 如果当前不在查询面板，先切换到查询面板
+        if (onViewChange && onGetCurrentView && onGetCurrentView() !== 'query') {
+          onViewChange('query');
+          // 延迟执行表查询，确保查询面板已加载
+          setTimeout(() => {
+            executeTableQuery(connectionId, database, table);
+          }, 100);
         } else {
-          // 如果没有回调，复制查询到剪贴板
-          const query = generateQueryWithTimeFilter(table);
-          navigator.clipboard
-            .writeText(query)
-            .then(() => {
-              showMessage.success(`查询语句已复制到剪贴板: ${query}`);
-            })
-            .catch(() => {
-              showMessage.info(`查询语句: ${query}`);
-            });
+          // 直接执行表查询
+          executeTableQuery(connectionId, database, table);
         }
       }
+    }
+  };
+
+  // 执行表查询的辅助函数
+  const executeTableQuery = (connectionId: string, database: string, table: string) => {
+    // 优先使用新的数据浏览回调
+    if (onCreateDataBrowserTab) {
+      onCreateDataBrowserTab(connectionId, database, table);
+      showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
+    } else if (onTableDoubleClick) {
+      // 保留原有逻辑以便兼容
+      const query = generateQueryWithTimeFilter(table);
+      onTableDoubleClick(database, table, query);
+      const timeDesc = currentTimeRange
+        ? currentTimeRange.label
+        : '最近1小时';
+      showMessage.info(
+        `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
+      );
+    } else if (onCreateQueryTab) {
+      // 创建新查询标签页并填入查询语句
+      const query = generateQueryWithTimeFilter(table);
+      onCreateQueryTab(query, database);
+      showMessage.info(`已创建查询标签页，查询表 "${table}"`);
+    } else {
+      // 如果没有回调，复制查询到剪贴板
+      const query = generateQueryWithTimeFilter(table);
+      navigator.clipboard
+        .writeText(query)
+        .then(() => {
+          showMessage.success(`查询语句已复制到剪贴板: ${query}`);
+        })
+        .catch(() => {
+          showMessage.info(`查询语句: ${query}`);
+        });
     }
   };
 

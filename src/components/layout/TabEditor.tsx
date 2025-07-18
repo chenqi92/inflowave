@@ -87,6 +87,8 @@ interface TabEditorProps {
 interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
   createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
+  createNewTab: (type?: 'query' | 'table' | 'database') => void;
+  setSelectedDatabase: (database: string) => void;
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
@@ -673,6 +675,20 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       setShowExportDialog(true);
     };
 
+    // 创建新标签
+    const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
+      const newTab: EditorTab = {
+        id: Date.now().toString(),
+        title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
+        content: type === 'query' ? 'SELECT * FROM ' : '',
+        type,
+        modified: false,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+    };
+
     // 创建数据浏览标签
     const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
       const newTab: EditorTab = {
@@ -696,8 +712,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       () => ({
         executeQueryWithContent,
         createDataBrowserTab,
+        createNewTab,
+        setSelectedDatabase,
       }),
-      [executeQueryWithContent, createDataBrowserTab]
+      [executeQueryWithContent, createDataBrowserTab, createNewTab, setSelectedDatabase]
     );
 
     // 组件加载时加载数据库列表
@@ -785,22 +803,6 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
       };
     }, [activeConnectionId, selectedDatabase, tabs, activeKey]);
-
-    // 创建新标签
-    const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
-      const newTab: EditorTab = {
-        id: Date.now().toString(),
-        title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
-        content: type === 'query' ? 'SELECT * FROM ' : '',
-        type,
-        modified: false,
-      };
-
-      setTabs([...tabs, newTab]);
-      setActiveKey(newTab.id);
-    };
-
-
 
     // 处理tab分离
     const handleTabDetach = (tabId: string) => {

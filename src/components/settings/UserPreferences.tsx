@@ -936,7 +936,6 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                                 onCheckedChange={() =>
                                   toggleShortcutEnabled(shortcut.id)
                                 }
-                                size='sm'
                               />
                               {editingShortcutId !== shortcut.id && (
                                 <Button
