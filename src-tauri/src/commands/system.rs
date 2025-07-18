@@ -180,14 +180,15 @@ pub async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
                 window.open_devtools();
                 info!("打开开发者工具");
             }
+            Ok(())
         }
 
         #[cfg(not(debug_assertions))]
         {
-            return Err("开发者工具仅在调试模式下可用".to_string());
+            // 在非调试模式下，不使用window变量，直接返回错误
+            let _ = window; // 明确标记变量已使用，避免警告
+            Err("开发者工具仅在调试模式下可用".to_string())
         }
-
-        Ok(())
     } else {
         Err("找不到主窗口".to_string())
     }
