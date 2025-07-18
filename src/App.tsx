@@ -14,6 +14,7 @@ import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
+import { consoleLogger } from './utils/consoleLogger';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -153,6 +154,9 @@ const App: React.FC = () => {
     const initApp = async () => {
       try {
         console.log('InfloWave 启动中...');
+        
+        // 初始化控制台日志拦截器
+        console.log('初始化控制台日志拦截器...');
 
         // 初始化错误日志系统
         console.log('初始化错误日志系统...');

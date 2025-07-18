@@ -18,10 +18,216 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
     Checkbox,
+    Input,
+    DatePicker,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
     Spin,
     TooltipTrigger,
     TooltipContent,
 } from '@/components/ui';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+    useSortable,
+} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
+
+// 可拖拽的列项组件
+interface SortableColumnItemProps {
+    column: string;
+    isSelected: boolean;
+    onToggle: (column: string) => void;
+}
+
+const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelected, onToggle }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: column });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="flex items-center p-2 hover:bg-accent rounded cursor-move"
+        >
+            <div className="flex items-center flex-1" onClick={(e) => {
+                e.stopPropagation();
+                onToggle(column);
+            }}>
+                <Checkbox
+                    checked={isSelected}
+                    className="mr-2"
+                />
+                <span className="flex-1">{column}</span>
+                {column === 'time' && (
+                    <Badge variant="secondary" className="text-xs ml-2">
+                        时间
+                    </Badge>
+                )}
+            </div>
+            <div className="text-xs text-muted-foreground ml-2">⋮⋮</div>
+        </div>
+    );
+};
+
+// 增强的筛选器组件
+interface FilterEditorProps {
+    filter: ColumnFilter;
+    onUpdate: (filter: ColumnFilter) => void;
+    onRemove: () => void;
+    availableOperators: { value: FilterOperator; label: string }[];
+}
+
+const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove, availableOperators }) => {
+    const handleOperatorChange = (operator: FilterOperator) => {
+        onUpdate({ ...filter, operator, value: '', value2: undefined });
+    };
+
+    const handleValueChange = (value: string) => {
+        onUpdate({ ...filter, value });
+    };
+
+    const handleValue2Change = (value2: string) => {
+        onUpdate({ ...filter, value2 });
+    };
+
+    const renderValueInput = () => {
+        switch (filter.dataType) {
+            case 'number':
+                if (filter.operator === 'between') {
+                    return (
+                        <div className="flex items-center gap-2">
+                            <Input
+                                type="number"
+                                placeholder="最小值"
+                                value={filter.value}
+                                onChange={(e) => handleValueChange(e.target.value)}
+                                className="w-20"
+                            />
+                            <span className="text-xs text-muted-foreground">到</span>
+                            <Input
+                                type="number"
+                                placeholder="最大值"
+                                value={filter.value2 || ''}
+                                onChange={(e) => handleValue2Change(e.target.value)}
+                                className="w-20"
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <Input
+                        type="number"
+                        placeholder="数值"
+                        value={filter.value}
+                        onChange={(e) => handleValueChange(e.target.value)}
+                        className="w-24"
+                    />
+                );
+
+            case 'time':
+                if (filter.operator === 'time_range') {
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DatePicker
+                                value={filter.value ? new Date(filter.value) : undefined}
+                                onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
+                                placeholder="开始时间"
+                                showTime
+                                className="w-40"
+                            />
+                            <span className="text-xs text-muted-foreground">到</span>
+                            <DatePicker
+                                value={filter.value2 ? new Date(filter.value2) : undefined}
+                                onChange={(date) => handleValue2Change(date ? date.toISOString() : '')}
+                                placeholder="结束时间"
+                                showTime
+                                className="w-40"
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <DatePicker
+                        value={filter.value ? new Date(filter.value) : undefined}
+                        onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
+                        placeholder="选择时间"
+                        showTime
+                        className="w-40"
+                    />
+                );
+
+            default:
+                return (
+                    <Input
+                        placeholder="输入值"
+                        value={filter.value}
+                        onChange={(e) => handleValueChange(e.target.value)}
+                        className="w-32"
+                    />
+                );
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
+            <Badge variant="outline" className="text-xs">
+                {filter.column}
+            </Badge>
+
+            <Select value={filter.operator} onValueChange={handleOperatorChange}>
+                <SelectTrigger className="w-24">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {availableOperators.map(op => (
+                        <SelectItem key={op.value} value={op.value}>
+                            {op.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            {renderValueInput()}
+
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRemove}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+            >
+                ×
+            </Button>
+        </div>
+    );
+};
 import {
     RefreshCw,
     Filter,
@@ -46,11 +252,24 @@ interface DataRow {
     [key: string]: any;
 }
 
+// 列数据类型
+type ColumnDataType = 'string' | 'number' | 'time' | 'boolean';
+
+// 筛选操作符
+type FilterOperator =
+    // 字符串操作符
+    | 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with'
+    // 数字操作符
+    | 'gt' | 'gte' | 'lt' | 'lte' | 'between'
+    // 时间操作符
+    | 'time_range';
+
 interface ColumnFilter {
     column: string;
-    operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'gt' | 'lt' | 'between';
+    operator: FilterOperator;
     value: string;
-    value2?: string; // for between operator
+    value2?: string; // for between operator and time range end
+    dataType: ColumnDataType;
 }
 
 const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
@@ -62,6 +281,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [data, setData] = useState<DataRow[]>([]);
     const [rawData, setRawData] = useState<DataRow[]>([]); // 存储原始数据用于客户端排序
     const [columns, setColumns] = useState<string[]>([]);
+    const [columnOrder, setColumnOrder] = useState<string[]>([]); // 列的显示顺序
     const [selectedColumns, setSelectedColumns] = useState<string[]>([]); // 选中的列
     const [loading, setLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
@@ -71,6 +291,95 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [sortColumn, setSortColumn] = useState<string>('');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [searchText, setSearchText] = useState<string>('');
+
+    // 拖拽传感器
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // 检测列的数据类型
+    const detectColumnDataType = useCallback((column: string, sampleData: DataRow[]): ColumnDataType => {
+        if (column === 'time') return 'time';
+
+        // 取样本数据进行类型检测
+        const samples = sampleData.slice(0, 10).map(row => row[column]).filter(val => val != null && val !== '');
+        if (samples.length === 0) return 'string';
+
+        // 检测是否为数字
+        const numericSamples = samples.filter(val => {
+            const num = parseFloat(String(val));
+            return !isNaN(num) && isFinite(num);
+        });
+
+        if (numericSamples.length / samples.length > 0.8) {
+            return 'number';
+        }
+
+        // 检测是否为时间格式
+        const timeSamples = samples.filter(val => {
+            const dateVal = new Date(String(val));
+            return !isNaN(dateVal.getTime());
+        });
+
+        if (timeSamples.length / samples.length > 0.8) {
+            return 'time';
+        }
+
+        return 'string';
+    }, []);
+
+    // 根据数据类型获取可用的操作符
+    const getAvailableOperators = useCallback((dataType: ColumnDataType): { value: FilterOperator; label: string }[] => {
+        switch (dataType) {
+            case 'string':
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                    { value: 'contains', label: '包含' },
+                    { value: 'not_contains', label: '不包含' },
+                    { value: 'starts_with', label: '开始于' },
+                    { value: 'ends_with', label: '结束于' },
+                ];
+            case 'number':
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                    { value: 'gt', label: '大于' },
+                    { value: 'gte', label: '大于等于' },
+                    { value: 'lt', label: '小于' },
+                    { value: 'lte', label: '小于等于' },
+                    { value: 'between', label: '介于' },
+                ];
+            case 'time':
+                return [
+                    { value: 'time_range', label: '时间范围' },
+                    { value: 'equals', label: '等于' },
+                    { value: 'gt', label: '晚于' },
+                    { value: 'lt', label: '早于' },
+                ];
+            default:
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                ];
+        }
+    }, []);
+
+    // 处理拖拽结束
+    const handleDragEnd = useCallback((event: any) => {
+        const { active, over } = event;
+
+        if (active.id !== over?.id) {
+            setColumnOrder((items) => {
+                const oldIndex = items.indexOf(active.id);
+                const newIndex = items.indexOf(over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    }, []);
 
     // 生成查询语句
     const generateQuery = useCallback(() => {
@@ -92,27 +401,46 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 过滤条件
         filters.forEach(filter => {
+            if (!filter.value.trim() && filter.operator !== 'time_range') return;
+
             switch (filter.operator) {
                 case 'equals':
                     whereConditions.push(`"${filter.column}" = '${filter.value}'`);
                     break;
+                case 'not_equals':
+                    whereConditions.push(`"${filter.column}" != '${filter.value}'`);
+                    break;
                 case 'contains':
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}.*/`);
                     break;
-                case 'startsWith':
+                case 'not_contains':
+                    whereConditions.push(`"${filter.column}" !~ /.*${filter.value}.*/`);
+                    break;
+                case 'starts_with':
                     whereConditions.push(`"${filter.column}" =~ /^${filter.value}.*/`);
                     break;
-                case 'endsWith':
+                case 'ends_with':
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}$/`);
                     break;
                 case 'gt':
                     whereConditions.push(`"${filter.column}" > '${filter.value}'`);
                     break;
+                case 'gte':
+                    whereConditions.push(`"${filter.column}" >= '${filter.value}'`);
+                    break;
                 case 'lt':
                     whereConditions.push(`"${filter.column}" < '${filter.value}'`);
                     break;
+                case 'lte':
+                    whereConditions.push(`"${filter.column}" <= '${filter.value}'`);
+                    break;
                 case 'between':
                     if (filter.value2) {
+                        whereConditions.push(`"${filter.column}" >= '${filter.value}' AND "${filter.column}" <= '${filter.value2}'`);
+                    }
+                    break;
+                case 'time_range':
+                    if (filter.value && filter.value2) {
                         whereConditions.push(`"${filter.column}" >= '${filter.value}' AND "${filter.column}" <= '${filter.value2}'`);
                     }
                     break;
@@ -288,6 +616,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     useEffect(() => {
         if (columns.length > 0) {
             setSelectedColumns(columns);
+            setColumnOrder(columns); // 同时初始化列顺序
         }
     }, [columns]);
 
@@ -331,12 +660,24 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 添加过滤器
     const addFilter = (column: string) => {
+        const dataType = detectColumnDataType(column, rawData);
+        const availableOperators = getAvailableOperators(dataType);
+        const defaultOperator = availableOperators[0]?.value || 'equals';
+
         const newFilter: ColumnFilter = {
             column,
-            operator: 'equals',
+            operator: defaultOperator,
             value: '',
+            dataType,
         };
         setFilters([...filters, newFilter]);
+    };
+
+    // 更新过滤器
+    const updateFilter = (index: number, updatedFilter: ColumnFilter) => {
+        const newFilters = [...filters];
+        newFilters[index] = updatedFilter;
+        setFilters(newFilters);
     };
 
     // 移除过滤器
@@ -379,16 +720,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
 
         try {
-            // 构造符合 QueryResult 格式的数据（只包含选中的列）
+            // 构造符合 QueryResult 格式的数据（只包含选中的列，按columnOrder排序）
+            const orderedSelectedColumns = columnOrder.filter(column => selectedColumns.includes(column));
             const queryResult: QueryResult = {
                 results: [{
                     series: [{
                         name: tableName,
-                        columns: selectedColumns,
-                        values: data.map(row => selectedColumns.map(col => row[col]))
+                        columns: orderedSelectedColumns,
+                        values: data.map(row => orderedSelectedColumns.map(col => row[col]))
                     }]
                 }],
-                data: data.map(row => selectedColumns.map(col => row[col])), // 转换为正确的格式
+                data: data.map(row => orderedSelectedColumns.map(col => row[col])), // 转换为正确的格式
                 executionTime: 0
             };
 
@@ -441,32 +783,44 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                         </span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56 max-h-80 overflow-y-auto">
-                                    <DropdownMenuItem onClick={handleSelectAll}>
-                                        <Checkbox
-                                            checked={selectedColumns.length === columns.length}
-                                            className="mr-2"
-                                        />
-                                        全选/取消全选
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    {columns.map((column) => (
-                                        <DropdownMenuItem
-                                            key={column}
-                                            onClick={() => handleColumnToggle(column)}
+                                <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto">
+                                    <div className="p-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium">列显示设置</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleSelectAll}
+                                                className="h-6 text-xs"
+                                            >
+                                                {selectedColumns.length === columns.length ? '取消全选' : '全选'}
+                                            </Button>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mb-2">
+                                            拖拽调整顺序，勾选显示列
+                                        </div>
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
                                         >
-                                            <Checkbox
-                                                checked={selectedColumns.includes(column)}
-                                                className="mr-2"
-                                            />
-                                            <span className="flex-1">{column}</span>
-                                            {column === 'time' && (
-                                                <Badge variant="secondary" className="text-xs ml-2">
-                                                    时间
-                                                </Badge>
-                                            )}
-                                        </DropdownMenuItem>
-                                    ))}
+                                            <SortableContext
+                                                items={columnOrder}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-1">
+                                                    {columnOrder.map((column) => (
+                                                        <SortableColumnItem
+                                                            key={column}
+                                                            column={column}
+                                                            isSelected={selectedColumns.includes(column)}
+                                                            onToggle={handleColumnToggle}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                    </div>
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
@@ -505,20 +859,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 {/* 过滤栏 */}
                 {filters.length > 0 && (
                     <CardContent className="pt-0 pb-3">
-                        <div className="flex flex-wrap gap-2">
-                            {filters.map((filter, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                    {filter.column} {filter.operator} {filter.value}
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="ml-1 h-4 w-4 p-0"
-                                        onClick={() => removeFilter(index)}
-                                    >
-                                        ×
-                                    </Button>
-                                </Badge>
-                            ))}
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium text-muted-foreground">
+                                筛选条件 ({filters.length})
+                            </div>
+                            <div className="space-y-2">
+                                {filters.map((filter, index) => (
+                                    <FilterEditor
+                                        key={index}
+                                        filter={filter}
+                                        onUpdate={(updatedFilter) => updateFilter(index, updatedFilter)}
+                                        onRemove={() => removeFilter(index)}
+                                        availableOperators={getAvailableOperators(filter.dataType)}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </CardContent>
                 )}
@@ -537,7 +892,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <table className="w-full caption-bottom text-sm">
                                 <thead className="sticky top-0 bg-background z-10 border-b">
                                     <tr className="border-b transition-colors hover:bg-muted/50">
-                                        {selectedColumns.map((column) => (
+                                        {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
                                             <th
                                                 key={column}
                                                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50"
@@ -583,7 +938,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                             key={row._id || index}
                                             className="border-b transition-colors hover:bg-muted/50"
                                         >
-                                            {selectedColumns.map((column) => (
+                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
                                                 <td key={column} className="p-4 align-middle text-xs font-mono">
                                                     {column === 'time'
                                                         ? new Date(row[column]).toLocaleString()

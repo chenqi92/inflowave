@@ -12,6 +12,12 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
 import { 
   Terminal, 
@@ -23,12 +29,17 @@ import {
   RefreshCw,
   CheckCircle,
   Clock,
-  Activity
+  Activity,
+  Search,
+  Filter,
+  Bug,
+  FileText
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
+import { consoleLogger, type ConsoleLogEntry } from '@/utils/consoleLogger';
 
-interface ConsoleLogEntry {
+interface SystemLogEntry {
   id: string;
   timestamp: Date;
   level: 'info' | 'warning' | 'error' | 'debug';
@@ -38,23 +49,26 @@ interface ConsoleLogEntry {
 
 const DebugConsole: React.FC = () => {
   const { activeConnectionId, connections } = useConnectionStore();
-  const [logs, setLogs] = useState<ConsoleLogEntry[]>([]);
+  const [systemLogs, setSystemLogs] = useState<SystemLogEntry[]>([]);
+  const [consoleLogs, setConsoleLogs] = useState<ConsoleLogEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'app' | 'browser'>('system');
+  const [searchText, setSearchText] = useState('');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
 
   const activeConnection = activeConnectionId 
     ? connections.find(c => c.id === activeConnectionId) 
     : null;
 
   // 添加系统信息日志
-  const addSystemLog = (level: ConsoleLogEntry['level'], message: string, source?: string) => {
-    const newLog: ConsoleLogEntry = {
+  const addSystemLog = (level: SystemLogEntry['level'], message: string, source?: string) => {
+    const newLog: SystemLogEntry = {
       id: Date.now().toString(),
       timestamp: new Date(),
       level,
       message,
       source
     };
-    setLogs(prev => [newLog, ...prev].slice(0, 100)); // 保留最新100条
+    setSystemLogs(prev => [newLog, ...prev].slice(0, 100)); // 保留最新100条
   };
 
   // 初始化系统日志
@@ -69,17 +83,44 @@ const DebugConsole: React.FC = () => {
     }
   }, [activeConnectionId, activeConnection]);
 
+  // 初始化控制台日志监听
+  useEffect(() => {
+    // 获取现有的控制台日志
+    setConsoleLogs(consoleLogger.getLogs());
+
+    // 监听新的控制台日志
+    const removeListener = consoleLogger.addListener((newLog) => {
+      setConsoleLogs(prev => [newLog, ...prev].slice(0, 1000)); // 保留最新1000条
+    });
+
+    return removeListener;
+  }, []);
+
   // 清空日志
   const clearLogs = () => {
-    setLogs([]);
-    addSystemLog('info', '控制台日志已清空', '系统');
+    if (activeTab === 'system') {
+      setSystemLogs([]);
+      addSystemLog('info', '系统日志已清空', '系统');
+    } else if (activeTab === 'browser') {
+      consoleLogger.clearLogs();
+      setConsoleLogs([]);
+      addSystemLog('info', '控制台日志已清空', '系统');
+    }
   };
 
   // 复制日志到剪贴板
   const copyLogsToClipboard = () => {
-    const logText = logs.map(log => 
-      `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
-    ).join('\n');
+    let logText = '';
+    
+    if (activeTab === 'system') {
+      logText = systemLogs.map(log => 
+        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
+      ).join('\n');
+    } else if (activeTab === 'browser') {
+      logText = consoleLogs.map(log => 
+        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
+      ).join('\n');
+    }
     
     navigator.clipboard.writeText(logText).then(() => {
       showMessage.success('日志已复制到剪贴板');
@@ -118,26 +159,30 @@ const DebugConsole: React.FC = () => {
     }
   };
 
-  const getLevelIcon = (level: ConsoleLogEntry['level']) => {
+  const getLevelIcon = (level: string) => {
     switch (level) {
-      case 'info': return <Info className='w-4 h-4 text-blue-500' />;
-      case 'warning': return <AlertTriangle className='w-4 h-4 text-yellow-500' />;
+      case 'info': 
+      case 'log': return <Info className='w-4 h-4 text-blue-500' />;
+      case 'warning': 
+      case 'warn': return <AlertTriangle className='w-4 h-4 text-yellow-500' />;
       case 'error': return <X className='w-4 h-4 text-red-500' />;
       case 'debug': return <Terminal className='w-4 h-4 text-gray-500' />;
       default: return <Info className='w-4 h-4' />;
     }
   };
 
-  const getLevelBadge = (level: ConsoleLogEntry['level']) => {
+  const getLevelBadge = (level: string) => {
     const variants = {
       info: 'default',
+      log: 'default',
       warning: 'secondary',
+      warn: 'secondary',
       error: 'destructive',
       debug: 'outline'
     } as const;
     
     return (
-      <Badge variant={variants[level]} className='text-xs'>
+      <Badge variant={variants[level as keyof typeof variants] || 'outline'} className='text-xs'>
         {level.toUpperCase()}
       </Badge>
     );
@@ -216,7 +261,7 @@ const DebugConsole: React.FC = () => {
         <CardContent>
           <ScrollArea className='h-[300px]'>
             <div className='space-y-2'>
-              {logs.map(log => (
+              {systemLogs.map(log => (
                 <div key={log.id} className='flex items-start gap-2 p-2 rounded-lg bg-muted/50'>
                   <div className='flex-shrink-0 mt-0.5'>
                     {getLevelIcon(log.level)}
@@ -324,30 +369,99 @@ const DebugConsole: React.FC = () => {
             <div className='h-full overflow-y-auto px-4'>
               <Card>
                 <CardHeader>
-                  <CardTitle className='text-sm'>浏览器控制台</CardTitle>
+                  <CardTitle className='text-sm flex items-center justify-between'>
+                    <span>浏览器控制台日志</span>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant='outline' className='text-xs'>
+                        {consoleLogs.length} 条日志
+                      </Badge>
+                      <Button variant='outline' size='sm' onClick={openBrowserConsole}>
+                        <Terminal className='w-4 h-4 mr-2' />
+                        打开浏览器控制台
+                      </Button>
+                    </div>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
-                  <div className='text-center py-8'>
-                    <Terminal className='w-12 h-12 mx-auto mb-4 text-muted-foreground' />
-                    <p className='text-lg font-medium mb-2'>浏览器开发者控制台</p>
-                    <p className='text-muted-foreground mb-4'>
-                      获取详细的浏览器调试信息和JavaScript错误
-                    </p>
-                    <Button onClick={openBrowserConsole}>
-                      <Terminal className='w-4 h-4 mr-2' />
-                      打开浏览器控制台
-                    </Button>
+                  {/* 过滤器 */}
+                  <div className='flex items-center gap-4'>
+                    <div className='flex items-center gap-2'>
+                      <Search className='w-4 h-4 text-muted-foreground' />
+                      <Input
+                        placeholder='搜索日志...'
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className='w-48'
+                      />
+                    </div>
+                    <Select value={levelFilter} onValueChange={setLevelFilter}>
+                      <SelectTrigger className='w-32'>
+                        <SelectValue placeholder='级别' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='all'>全部</SelectItem>
+                        <SelectItem value='log'>LOG</SelectItem>
+                        <SelectItem value='info'>INFO</SelectItem>
+                        <SelectItem value='warn'>WARN</SelectItem>
+                        <SelectItem value='error'>ERROR</SelectItem>
+                        <SelectItem value='debug'>DEBUG</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Separator />
-                  <div className='space-y-2'>
-                    <h4 className='font-medium'>使用说明：</h4>
-                    <ul className='text-sm text-muted-foreground space-y-1'>
-                      <li>• 按 F12 键打开浏览器开发者工具</li>
-                      <li>• 切换到 Console 标签页查看JavaScript日志</li>
-                      <li>• 点击上方按钮会在浏览器控制台输出当前系统信息</li>
-                      <li>• 可以在控制台中执行JavaScript代码进行调试</li>
-                    </ul>
-                  </div>
+
+                  {/* 日志显示 */}
+                  <ScrollArea className='h-[400px]'>
+                    <div className='space-y-2'>
+                      {consoleLogs
+                        .filter(log => {
+                          const matchesSearch = !searchText || 
+                            log.message.toLowerCase().includes(searchText.toLowerCase()) ||
+                            log.source?.toLowerCase().includes(searchText.toLowerCase());
+                          const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
+                          return matchesSearch && matchesLevel;
+                        })
+                        .map(log => (
+                          <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
+                            <div className='flex-shrink-0 mt-0.5'>
+                              {getLevelIcon(log.level)}
+                            </div>
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center gap-2 mb-1'>
+                                {getLevelBadge(log.level)}
+                                <span className='text-xs text-muted-foreground flex items-center gap-1'>
+                                  <Clock className='w-3 h-3' />
+                                  {log.timestamp.toLocaleTimeString()}
+                                </span>
+                                {log.source && (
+                                  <Badge variant='outline' className='text-xs'>
+                                    {log.source}
+                                  </Badge>
+                                )}
+                              </div>
+                              <pre className='text-sm break-words font-mono whitespace-pre-wrap'>{log.message}</pre>
+                              {log.args && log.args.length > 1 && (
+                                <details className='mt-2'>
+                                  <summary className='text-xs text-muted-foreground cursor-pointer'>
+                                    显示详细参数
+                                  </summary>
+                                  <pre className='text-xs bg-muted/30 p-2 rounded mt-1 overflow-x-auto'>
+                                    {JSON.stringify(log.args, null, 2)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  {consoleLogs.length === 0 && (
+                    <div className='text-center py-8 text-muted-foreground'>
+                      <Terminal className='w-12 h-12 mx-auto mb-4' />
+                      <p>暂无控制台日志</p>
+                      <p className='text-sm mt-2'>应用启动后的所有控制台日志将在这里显示</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

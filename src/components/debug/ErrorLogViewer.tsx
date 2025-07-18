@@ -41,33 +41,112 @@ import {
   Eye,
   ChevronDown,
   Copy,
+  Terminal,
 } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
+import { consoleLogger, type ConsoleLogEntry } from '@/utils/consoleLogger';
+
+// 统一的错误日志类型
+interface UnifiedErrorLog {
+  id: string;
+  timestamp: string;
+  type: string;
+  level: string;
+  message: string;
+  source: 'app' | 'console';
+  stack?: string;
+  url?: string;
+  lineNumber?: number;
+  columnNumber?: number;
+  componentStack?: string;
+  userAgent?: string;
+  pathname?: string;
+  additional?: any;
+}
 
 const ErrorLogViewer: React.FC = () => {
   const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<ErrorLogEntry[]>([]);
+  const [unifiedLogs, setUnifiedLogs] = useState<UnifiedErrorLog[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<UnifiedErrorLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
+  const [selectedLog, setSelectedLog] = useState<UnifiedErrorLog | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+
+  // 合并应用日志和控制台日志
+  const mergeErrorLogs = (appLogs: ErrorLogEntry[], consoleLogs: ConsoleLogEntry[]): UnifiedErrorLog[] => {
+    const unified: UnifiedErrorLog[] = [];
+
+    // 转换应用日志
+    appLogs.forEach(log => {
+      unified.push({
+        id: log.id,
+        timestamp: log.timestamp,
+        type: log.type,
+        level: log.level,
+        message: log.message,
+        source: 'app',
+        stack: log.stack,
+        url: log.url,
+        lineNumber: log.lineNumber,
+        columnNumber: log.columnNumber,
+        componentStack: log.componentStack,
+        userAgent: log.userAgent,
+        pathname: log.pathname,
+        additional: log.additional,
+      });
+    });
+
+    // 转换控制台错误日志
+    consoleLogs
+      .filter(log => log.level === 'error' || log.level === 'warn')
+      .forEach(log => {
+        unified.push({
+          id: log.id,
+          timestamp: log.timestamp.toISOString(),
+          type: 'console',
+          level: log.level,
+          message: log.message,
+          source: 'console',
+          stack: log.stack,
+          url: log.source,
+          additional: { args: log.args },
+        });
+      });
+
+    // 按时间排序
+    return unified.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  };
 
   // 加载错误日志
   const loadErrorLogs = async () => {
     setLoading(true);
     try {
+      // 加载应用日志
       const logContent = await FileOperations.readFile('logs/error.log');
       const parsedLogs = parseLogContent(logContent);
       setLogs(parsedLogs);
-      setFilteredLogs(parsedLogs);
-      showMessage.success(`已加载 ${parsedLogs.length} 条错误日志`);
+      
+      // 获取控制台错误日志
+      const consoleErrors = consoleLogger.getErrorLogs();
+      
+      // 合并日志
+      const merged = mergeErrorLogs(parsedLogs, consoleErrors);
+      setUnifiedLogs(merged);
+      setFilteredLogs(merged);
+      
+      showMessage.success(`已加载 ${merged.length} 条错误日志 (应用: ${parsedLogs.length}, 控制台: ${consoleErrors.length})`);
     } catch (error) {
       console.error('加载错误日志失败:', error);
       showMessage.error('加载错误日志失败');
       setLogs([]);
+      setUnifiedLogs([]);
       setFilteredLogs([]);
     } finally {
       setLoading(false);
@@ -168,7 +247,7 @@ const ErrorLogViewer: React.FC = () => {
 
   // 应用过滤器
   useEffect(() => {
-    let filtered = logs;
+    let filtered = unifiedLogs;
 
     // 搜索过滤
     if (searchText) {
@@ -190,15 +269,22 @@ const ErrorLogViewer: React.FC = () => {
       filtered = filtered.filter(log => log.type === typeFilter);
     }
 
+    // 来源过滤
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter(log => log.source === sourceFilter);
+    }
+
     setFilteredLogs(filtered);
-  }, [logs, searchText, levelFilter, typeFilter]);
+  }, [unifiedLogs, searchText, levelFilter, typeFilter, sourceFilter]);
 
   // 清除错误日志
   const clearLogs = async () => {
     if (window.confirm('确认清除所有错误日志？此操作不可恢复。')) {
       try {
         await FileOperations.deleteFile('logs/error.log');
+        consoleLogger.clearLogs();
         setLogs([]);
+        setUnifiedLogs([]);
         setFilteredLogs([]);
         showMessage.success('错误日志已清除');
       } catch (error) {
@@ -288,18 +374,30 @@ const ErrorLogViewer: React.FC = () => {
             <div className='flex items-center gap-6'>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>总日志数:</span>
-                <Badge variant='secondary'>{logs.length}</Badge>
+                <Badge variant='secondary'>{unifiedLogs.length}</Badge>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>错误:</span>
                 <Badge variant='destructive'>
-                  {logs.filter(log => log.level === 'error').length}
+                  {unifiedLogs.filter(log => log.level === 'error').length}
                 </Badge>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>警告:</span>
                 <Badge variant='default'>
-                  {logs.filter(log => log.level === 'warn').length}
+                  {unifiedLogs.filter(log => log.level === 'warn').length}
+                </Badge>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm font-medium'>应用:</span>
+                <Badge variant='outline'>
+                  {unifiedLogs.filter(log => log.source === 'app').length}
+                </Badge>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm font-medium'>控制台:</span>
+                <Badge variant='outline'>
+                  {unifiedLogs.filter(log => log.source === 'console').length}
                 </Badge>
               </div>
               <div className='flex items-center gap-2'>
@@ -373,6 +471,16 @@ const ErrorLogViewer: React.FC = () => {
                 <SelectItem value='console'>控制台</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className='w-32'>
+                <SelectValue placeholder='来源' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>全部来源</SelectItem>
+                <SelectItem value='app'>应用日志</SelectItem>
+                <SelectItem value='console'>控制台日志</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -391,9 +499,10 @@ const ErrorLogViewer: React.FC = () => {
                 <TableRow>
                   <TableHead className='w-[160px]'>时间</TableHead>
                   <TableHead className='w-[80px]'>级别</TableHead>
+                  <TableHead className='w-[80px]'>来源</TableHead>
                   <TableHead className='w-[100px]'>类型</TableHead>
                   <TableHead>消息</TableHead>
-                  <TableHead className='w-[200px]'>来源</TableHead>
+                  <TableHead className='w-[200px]'>位置</TableHead>
                   <TableHead className='w-[80px]'>操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -410,6 +519,19 @@ const ErrorLogViewer: React.FC = () => {
                       >
                         {getLevelIcon(log.level)}
                         <span className='ml-1'>{log.level.toUpperCase()}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={log.source === 'app' ? 'default' : 'secondary'}
+                        className='text-xs'
+                      >
+                        {log.source === 'app' ? (
+                          <Bug className='w-3 h-3 mr-1' />
+                        ) : (
+                          <Terminal className='w-3 h-3 mr-1' />
+                        )}
+                        {log.source === 'app' ? '应用' : '控制台'}
                       </Badge>
                     </TableCell>
                     <TableCell>
