@@ -206,7 +206,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     };
 
     onConfigChange?.(newConfig);
-    updateChart(newConfig);
+    // updateChart expects (id, updates) but we don't have chart id here
+    // This call might need to be removed or modified based on the component's context
   };
 
   const renderSettingsMenu = () => (
@@ -455,10 +456,35 @@ function generateChartOption(config: ChartConfig, data: QueryResult): any {
         series: [
           {
             name: yAxis?.field || 'Value',
-            type: type === 'area' ? 'line' : 'line',
+            type: 'line',
             data: series.values?.map(row => row[yAxisIndex]),
             smooth: settings?.smooth || false,
-            areaStyle: type === 'area' ? { opacity: 0.3 } : undefined,
+            label: {
+              show: settings?.showDataLabels || false,
+            },
+          },
+        ],
+      };
+
+    case 'area':
+      return {
+        ...baseOption,
+        xAxis: {
+          type: 'category',
+          data: series.values?.map(row => row[xAxisIndex]),
+          boundaryGap: false,
+        },
+        yAxis: {
+          type: 'value',
+          name: yAxis?.field || 'Value',
+        },
+        series: [
+          {
+            name: yAxis?.field || 'Value',
+            type: 'line',
+            data: series.values?.map(row => row[yAxisIndex]),
+            smooth: settings?.smooth || false,
+            areaStyle: { opacity: 0.3 },
             label: {
               show: settings?.showDataLabels || false,
             },
