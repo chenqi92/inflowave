@@ -69,30 +69,45 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelec
         transition,
     };
 
+    const handleToggle = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle(column);
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
-            {...attributes}
-            {...listeners}
-            className="flex items-center p-2 hover:bg-accent rounded cursor-move"
+            className="flex items-center p-2 hover:bg-accent rounded"
         >
-            <div className="flex items-center flex-1" onClick={(e) => {
-                e.stopPropagation();
-                onToggle(column);
-            }}>
+            <div className="flex items-center flex-1">
                 <Checkbox
                     checked={isSelected}
+                    onChange={handleToggle}
+                    onClick={handleToggle}
                     className="mr-2"
                 />
-                <span className="flex-1">{column}</span>
+                <span
+                    className="flex-1 cursor-pointer"
+                    onClick={handleToggle}
+                >
+                    {column}
+                </span>
                 {column === 'time' && (
                     <Badge variant="secondary" className="text-xs ml-2">
                         时间
                     </Badge>
                 )}
             </div>
-            <div className="text-xs text-muted-foreground ml-2">⋮⋮</div>
+            <div
+                {...attributes}
+                {...listeners}
+                className="text-xs text-muted-foreground ml-2 cursor-move p-1"
+                title="拖拽排序"
+            >
+                ⋮⋮
+            </div>
         </div>
     );
 };
@@ -123,21 +138,21 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
             case 'number':
                 if (filter.operator === 'between') {
                     return (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                             <Input
                                 type="number"
                                 placeholder="最小值"
                                 value={filter.value}
                                 onChange={(e) => handleValueChange(e.target.value)}
-                                className="w-20"
+                                className="w-16 h-7 text-xs"
                             />
-                            <span className="text-xs text-muted-foreground">到</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                             <Input
                                 type="number"
                                 placeholder="最大值"
                                 value={filter.value2 || ''}
                                 onChange={(e) => handleValue2Change(e.target.value)}
-                                className="w-20"
+                                className="w-16 h-7 text-xs"
                             />
                         </div>
                     );
@@ -148,28 +163,30 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
                         placeholder="数值"
                         value={filter.value}
                         onChange={(e) => handleValueChange(e.target.value)}
-                        className="w-24"
+                        className="w-20 h-7 text-xs"
                     />
                 );
 
             case 'time':
                 if (filter.operator === 'time_range') {
                     return (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                             <DatePicker
                                 value={filter.value ? new Date(filter.value) : undefined}
                                 onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
                                 placeholder="开始时间"
                                 showTime
-                                className="w-40"
+                                size="small"
+                                className="w-32"
                             />
-                            <span className="text-xs text-muted-foreground">到</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                             <DatePicker
                                 value={filter.value2 ? new Date(filter.value2) : undefined}
                                 onChange={(date) => handleValue2Change(date ? date.toISOString() : '')}
                                 placeholder="结束时间"
                                 showTime
-                                className="w-40"
+                                size="small"
+                                className="w-32"
                             />
                         </div>
                     );
@@ -180,7 +197,8 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
                         onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
                         placeholder="选择时间"
                         showTime
-                        className="w-40"
+                        size="small"
+                        className="w-32"
                     />
                 );
 
@@ -190,7 +208,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
                         placeholder="输入值"
                         value={filter.value}
                         onChange={(e) => handleValueChange(e.target.value)}
-                        className="w-32"
+                        className="w-24 h-7 text-xs"
                     />
                 );
         }
@@ -198,17 +216,17 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
 
     return (
         <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs px-2 py-1">
                 {filter.column}
             </Badge>
 
             <Select value={filter.operator} onValueChange={handleOperatorChange}>
-                <SelectTrigger className="w-24">
+                <SelectTrigger className="w-20 h-7 text-xs">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                     {availableOperators.map(op => (
-                        <SelectItem key={op.value} value={op.value}>
+                        <SelectItem key={op.value} value={op.value} className="text-xs">
                             {op.label}
                         </SelectItem>
                     ))}
@@ -403,12 +421,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         filters.forEach(filter => {
             if (!filter.value.trim() && filter.operator !== 'time_range') return;
 
+            // 根据数据类型决定是否需要引号
+            const formatValue = (value: string) => {
+                if (filter.dataType === 'number') {
+                    return value; // 数字不需要引号
+                }
+                return `'${value}'`; // 字符串和时间需要引号
+            };
+
             switch (filter.operator) {
                 case 'equals':
-                    whereConditions.push(`"${filter.column}" = '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" = ${formatValue(filter.value)}`);
                     break;
                 case 'not_equals':
-                    whereConditions.push(`"${filter.column}" != '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" != ${formatValue(filter.value)}`);
                     break;
                 case 'contains':
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}.*/`);
@@ -423,20 +449,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}$/`);
                     break;
                 case 'gt':
-                    whereConditions.push(`"${filter.column}" > '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" > ${formatValue(filter.value)}`);
                     break;
                 case 'gte':
-                    whereConditions.push(`"${filter.column}" >= '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" >= ${formatValue(filter.value)}`);
                     break;
                 case 'lt':
-                    whereConditions.push(`"${filter.column}" < '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" < ${formatValue(filter.value)}`);
                     break;
                 case 'lte':
-                    whereConditions.push(`"${filter.column}" <= '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" <= ${formatValue(filter.value)}`);
                     break;
                 case 'between':
                     if (filter.value2) {
-                        whereConditions.push(`"${filter.column}" >= '${filter.value}' AND "${filter.column}" <= '${filter.value2}'`);
+                        whereConditions.push(`"${filter.column}" >= ${formatValue(filter.value)} AND "${filter.column}" <= ${formatValue(filter.value2)}`);
                     }
                     break;
                 case 'time_range':
