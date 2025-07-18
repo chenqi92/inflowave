@@ -276,14 +276,14 @@ export const getExportInfo = async (
   
   switch (format.toLowerCase()) {
     case 'csv':
-      data = convertToCSV(result, tempOptions as ExportOptions);
+      data = convertToCSV(result, tempOptions as any);
       break;
     case 'json':
-      data = convertToJSON(result, tempOptions as ExportOptions);
+      data = convertToJSON(result, tempOptions as any);
       break;
     case 'excel':
     case 'xlsx':
-      data = convertToExcel(result, tempOptions as ExportOptions);
+      data = convertToExcel(result, tempOptions as any);
       break;
     default:
       data = '';

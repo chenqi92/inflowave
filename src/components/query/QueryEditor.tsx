@@ -475,7 +475,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                   edits: [
                     {
                       resource: model.uri,
-                      edit: {
+                      textEdit: {
                         range: {
                           startLineNumber: marker.startLineNumber,
                           startColumn: marker.startColumn,
