@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { appWindow } from '@tauri-apps/api/window';
+import { Window } from '@tauri-apps/api/window';
 import { showMessage } from '@/utils/message';
 
 interface DraggedTab {
@@ -229,7 +229,7 @@ export const useTabDragDrop = () => {
 
   // 监听窗口关闭事件
   useEffect(() => {
-    const unlisten = appWindow.onCloseRequested(async () => {
+    const unlisten = Window.getCurrent().onCloseRequested(async () => {
       // 关闭所有分离的窗口
       for (const window of detachedWindows) {
         try {
@@ -241,7 +241,7 @@ export const useTabDragDrop = () => {
     });
 
     return () => {
-      unlisten.then(fn => fn());
+      unlisten.then((fn: any) => fn());
     };
   }, [detachedWindows]);
 

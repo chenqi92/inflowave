@@ -206,7 +206,7 @@ class MasterTestRunner {
 
       console.log(`\n总体健康状态: ${isHealthy ? '✅ 健康' : '❌ 异常'}`);
 
-      return isHealthy;
+      return isHealthy || false;
     } catch (error) {
       console.error('健康检查失败:', error);
       return false;

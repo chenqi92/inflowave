@@ -52,7 +52,19 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   currentDatabase,
   onSuccess,
 }) => {
-  const form = useForm({
+  const form = useForm<{
+    connectionId: string;
+    database: string;
+    measurement: string;
+    format: 'line-protocol' | 'csv' | 'json';
+    data: string;
+    options: {
+      precision: 'ns' | 'u' | 'ms' | 's' | 'm' | 'h';
+      batchSize: number;
+      retentionPolicy: string;
+      consistency: 'one' | 'quorum' | 'all' | 'any';
+    };
+  }>({
     defaultValues: {
       connectionId: '',
       database: '',
@@ -182,13 +194,13 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
     connectionId: string;
     database: string;
     measurement: string;
-    format: string;
+    format: 'line-protocol' | 'csv' | 'json';
     data: string;
     options: {
-      precision: string;
+      precision: 'ns' | 'u' | 'ms' | 's' | 'm' | 'h';
       batchSize: number;
       retentionPolicy: string;
-      consistency: string;
+      consistency: 'one' | 'quorum' | 'all' | 'any';
     };
   }) => {
     try {
@@ -316,7 +328,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
                         </FormControl>
                         <SelectContent>
                           {connections.map(conn => (
-                            <SelectItem key={conn.id} value={conn.id}>
+                            <SelectItem key={conn.id} value={conn.id || ''}>
                               {conn.name}
                             </SelectItem>
                           ))}

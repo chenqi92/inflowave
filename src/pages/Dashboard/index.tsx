@@ -8,8 +8,8 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
-  Tabs,
 } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Separator } from '@/components/ui';
 import {
   Database,
@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const {
     connections = [],
-    activeconnection_id,
+    activeConnectionId,
     connectionStatuses = {},
   } = useConnectionStore();
   const [activeTab, setActiveTab] = useState('overview');
@@ -71,14 +71,14 @@ const Dashboard: React.FC = () => {
       description: '创建图表和仪表板',
       icon: <BarChart className='w-4 h-4' />,
       action: () => setActiveTab('dashboards'),
-      disabled: !activeconnection_id,
+      disabled: !activeConnectionId,
     },
     {
       title: '数据导出',
       description: '导出查询结果到文件',
       icon: <Download className='w-4 h-4' />,
       action: () => setExportDialogVisible(true),
-      disabled: !activeconnection_id,
+      disabled: !activeConnectionId,
     },
     {
       title: '仪表板管理',
@@ -120,12 +120,15 @@ const Dashboard: React.FC = () => {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        items={[
-          {
-            key: 'overview',
-            label: '概览',
-            children: (
-              <div className='space-y-6'>
+      >
+        <TabsList>
+          <TabsTrigger value='overview'>概览</TabsTrigger>
+          <TabsTrigger value='connections'>连接管理</TabsTrigger>
+          <TabsTrigger value='dashboards'>仪表板</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value='overview'>
+          <div className='space-y-6'>
                 {/* 统计卡片 */}
                 <div className='border rounded-lg bg-background'>
                   <div className='p-6 pb-0'>
@@ -297,14 +300,14 @@ const Dashboard: React.FC = () => {
                     ) : (
                       <Empty
                         description='暂无连接配置'
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        image={undefined}
                       >
                         <Button
                           size='sm'
-                          type='primary'
-                          icon={<Plus className='w-4 h-4' />}
+                          className='bg-blue-500 text-white hover:bg-blue-600'
                           onClick={() => navigate('/connections')}
                         >
+                          <Plus className='w-4 h-4 mr-2' />
                           创建连接
                         </Button>
                       </Empty>
@@ -371,34 +374,33 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ),
-          },
-          {
-            key: 'dashboards',
-            label: '仪表板管理',
-            children: (
-              <div className='desktop-panel'>
-                <div className='desktop-panel-content'>
-                  <DashboardManager
-                    onOpenDashboard={dashboardId => {
-                      setCurrentDashboard(dashboardId);
-                      // 这里可以导航到仪表板详情页面
-                      console.log('打开仪表板:', dashboardId);
-                    }}
-                  />
-                </div>
-              </div>
-            ),
-          },
-        ]}
-      />
+        </TabsContent>
+        
+        <TabsContent value='connections'>
+          <div>Connections content here</div>
+        </TabsContent>
+        
+        <TabsContent value='dashboards'>
+          <div className='desktop-panel'>
+            <div className='desktop-panel-content'>
+              <DashboardManager
+                onOpenDashboard={dashboardId => {
+                  setCurrentDashboard(dashboardId);
+                  // 这里可以导航到仪表板详情页面
+                  console.log('打开仪表板:', dashboardId);
+                }}
+              />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* 数据导出对话框 */}
       <DataExportDialog
         open={exportDialogVisible}
         onClose={() => setExportDialogVisible(false)}
         connections={connections}
-        currentConnection={activeConnectionId}
+        currentConnection={activeConnectionId || undefined}
         onSuccess={result => {
           console.log('导出成功:', result);
         }}

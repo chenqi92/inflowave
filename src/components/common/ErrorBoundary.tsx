@@ -65,7 +65,7 @@ class ErrorBoundary extends Component<Props, State> {
     });
 
     // 记录到错误日志系统
-    errorLogger.logReactError(error, errorInfo);
+    errorLogger.logReactError(error, { componentStack: errorInfo.componentStack || '' });
 
     // 调用自定义错误处理器
     if (this.props.onError) {
@@ -278,7 +278,7 @@ class ErrorBoundary extends Component<Props, State> {
 
             {/* 错误详情（开发环境） */}
             <div className='flex-1 min-h-0'>
-              {(import.meta.env?.DEV ||
+              {((import.meta as any).env?.DEV ||
                 window.location.search.includes('debug=1')) && (
                 <Accordion type='single' collapsible className='w-full h-full'>
                   <AccordionItem value='error-details' className='h-full'>

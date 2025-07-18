@@ -272,18 +272,18 @@ export const getExportInfo = async (
   let data: string | ArrayBuffer;
   
   // 生成临时数据来计算大小
-  const tempOptions = { format, includeHeaders: true };
+  const tempOptions = { format: format as 'json' | 'csv' | 'excel' | 'xlsx', includeHeaders: true };
   
   switch (format.toLowerCase()) {
     case 'csv':
-      data = convertToCSV(result, tempOptions);
+      data = convertToCSV(result, tempOptions as ExportOptions);
       break;
     case 'json':
-      data = convertToJSON(result, tempOptions);
+      data = convertToJSON(result, tempOptions as ExportOptions);
       break;
     case 'excel':
     case 'xlsx':
-      data = convertToExcel(result, tempOptions);
+      data = convertToExcel(result, tempOptions as ExportOptions);
       break;
     default:
       data = '';

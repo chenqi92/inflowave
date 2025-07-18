@@ -219,7 +219,7 @@ class ErrorLogger {
 
     // 同时输出到控制台（开发环境）
     try {
-      if (import.meta?.env?.DEV) {
+      if ((import.meta as any)?.env?.DEV) {
         console.group(`🐛 Error Logged [${logEntry.type}:${logEntry.level}]`);
         console.log('Message:', logEntry.message);
         if (logEntry.stack) console.log('Stack:', logEntry.stack);
@@ -254,9 +254,9 @@ class ErrorLogger {
       clearTimeout(this.flushTimer);
     }
 
-    this.flushTimer = setTimeout(() => {
+    this.flushTimer = window.setTimeout(() => {
       this.flushLogs();
-    }, 1000); // 1秒后写入
+    }, 1000) as unknown as number; // 1秒后写入
   }
 
   private async flushLogs(): Promise<void> {

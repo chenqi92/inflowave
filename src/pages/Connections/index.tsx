@@ -258,7 +258,7 @@ const Connections: React.FC = () => {
       {/* 连接配置对话框 */}
       <SimpleConnectionDialog
         visible={isDialogVisible}
-        connection={editingConnection}
+        connection={editingConnection || undefined}
         onCancel={handleCloseDialog}
         onSuccess={handleConnectionSuccess}
       />

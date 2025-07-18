@@ -267,12 +267,22 @@ export interface DiskUsage {
 }
 
 export interface PerformanceMetrics {
-  queryExecutionTime: number[];
-  writeLatency: number[];
-  memoryUsage: number[];
-  cpuUsage: number[];
+  queryExecutionTime: { timestamp: string; value: number; }[];
+  writeLatency: { timestamp: string; value: number; }[];
+  memoryUsage: { timestamp: string; value: number; }[];
+  cpuUsage: { timestamp: string; value: number; }[];
   diskIO: DiskIOMetrics;
   networkIO: NetworkIOMetrics;
+  storageAnalysis?: {
+    totalSize: number;
+    compressionRatio: number;
+    retentionPolicyEffectiveness: number;
+    recommendations: {
+      priority: string;
+      description: string;
+      estimatedSavings: number;
+    }[];
+  };
 }
 
 export interface DiskIOMetrics {
@@ -493,7 +503,8 @@ export interface DataExportResult {
   success: boolean;
   message: string;
   filePath?: string;
-  rowCount: number;
+  recordCount?: number;
+  rowCount?: number;
   fileSize: number;
   duration: number;
   errors?: string[];

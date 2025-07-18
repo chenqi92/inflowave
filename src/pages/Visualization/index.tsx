@@ -476,7 +476,7 @@ const Visualization: React.FC = () => {
 
             <div className='space-y-2'>
               <label className='text-sm font-medium'>图表类型</label>
-              <Select onValueChange={value => form.setValue('type', value)}>
+              <Select onValueChange={(value: 'area' | 'line' | 'bar' | 'pie') => form.setValue('type', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder='选择图表类型' />
                 </SelectTrigger>

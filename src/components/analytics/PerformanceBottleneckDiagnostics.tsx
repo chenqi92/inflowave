@@ -328,10 +328,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       ]);
 
       setBasicMetrics({
-        queryExecutionTime: metricsResult.queryExecutionTime || [],
-        writeLatency: metricsResult.writeLatency || [],
-        memoryUsage: metricsResult.memoryUsage || [],
-        cpuUsage: metricsResult.cpuUsage || [],
+        queryExecutionTime: Array.isArray(metricsResult.queryExecutionTime) && metricsResult.queryExecutionTime.length > 0 && typeof metricsResult.queryExecutionTime[0] === 'object' 
+          ? metricsResult.queryExecutionTime as { timestamp: string; value: number; }[]
+          : (metricsResult.queryExecutionTime as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+        writeLatency: Array.isArray(metricsResult.writeLatency) && metricsResult.writeLatency.length > 0 && typeof metricsResult.writeLatency[0] === 'object'
+          ? metricsResult.writeLatency as { timestamp: string; value: number; }[]
+          : (metricsResult.writeLatency as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+        memoryUsage: Array.isArray(metricsResult.memoryUsage) && metricsResult.memoryUsage.length > 0 && typeof metricsResult.memoryUsage[0] === 'object'
+          ? metricsResult.memoryUsage as { timestamp: string; value: number; }[]
+          : (metricsResult.memoryUsage as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+        cpuUsage: Array.isArray(metricsResult.cpuUsage) && metricsResult.cpuUsage.length > 0 && typeof metricsResult.cpuUsage[0] === 'object'
+          ? metricsResult.cpuUsage as { timestamp: string; value: number; }[]
+          : (metricsResult.cpuUsage as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
         diskIO: metricsResult.diskIO || {
           readBytes: 0,
           writeBytes: 0,
@@ -348,7 +356,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           totalSize: 0,
           compressionRatio: 1.0,
           retentionPolicyEffectiveness: 0,
-          recommendations: [],
+          recommendations: [] as { priority: string; description: string; estimatedSavings: number; }[],
         },
       });
     } catch (error) {
@@ -755,7 +763,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <div>
                 <Select
                   value={severityFilter}
-                  onValueChange={setSeverityFilter}
+                  onValueChange={(value: 'all' | 'high' | 'low' | 'medium' | 'critical') => setSeverityFilter(value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder='严重程度' />
@@ -853,9 +861,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                         <TableCell key={column.accessorKey || column.id}>
                           {column.cell
                             ? column.cell({ row: { original: bottleneck } })
-                            : bottleneck[
+                            : String(bottleneck[
                                 column.accessorKey as keyof PerformanceBottleneck
-                              ]}
+                              ] ?? '')}
                         </TableCell>
                       ))}
                     </TableRow>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, Typography, Tag, Dialog, Separator } from '@/components/ui';
+import { Table, Typography, Tag, Separator } from '@/components/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import {
   Settings,
   File,
@@ -112,21 +113,14 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   ];
 
   return (
-    <Dialog
-      title={
-        <div className='flex gap-2'>
-          <Settings className='w-4 h-4' />
-          <span>键盘快捷键</span>
-        </div>
-      }
-      open={visible}
-      onOpenChange={open => {
-        if (!open) onClose();
-      }}
-      footer={null}
-      width={800}
-      style={{ top: 20 }}
-    >
+    <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className='flex gap-2'>
+            <Settings className='w-4 h-4' />
+            <span>键盘快捷键</span>
+          </DialogTitle>
+        </DialogHeader>
       <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
         {shortcutCategories.map((category, index) => (
           <div key={category.title} style={{ marginBottom: 24 }}>
@@ -166,6 +160,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
           </div>
         </div>
       </div>
+      </DialogContent>
     </Dialog>
   );
 };

@@ -576,7 +576,15 @@ const DataWrite: React.FC = () => {
                                                 render={({field}) => (
                                                     <FormItem className='flex-1'>
                                                         <FormControl>
-                                                            <InputNumber placeholder='字段值' {...field} />
+                                                            <InputNumber 
+                                                                placeholder='字段值' 
+                                                                value={typeof field.value === 'number' ? field.value : undefined}
+                                                                onChange={field.onChange}
+                                                                onBlur={field.onBlur}
+                                                                name={field.name}
+                                                                ref={field.ref}
+                                                                disabled={field.disabled}
+                                                            />
                                                         </FormControl>
                                                         <FormMessage/>
                                                     </FormItem>

@@ -52,6 +52,7 @@ interface ConnectionState {
 
   // 状态同步方法
   syncConnectionStates: () => void;
+  syncConnectionsToBackend: () => Promise<void>;
   initializeConnectionStates: () => void;
 }
 
@@ -345,13 +346,15 @@ export const useConnectionStore = create<ConnectionState>()(
           // 为所有连接创建断开状态
           const disconnectedStatuses: Record<string, ConnectionStatus> = {};
           connections.forEach(conn => {
-            disconnectedStatuses[conn.id] = {
-              id: conn.id,
-              status: 'disconnected',
-              error: undefined,
-              latency: undefined,
-              lastConnected: undefined,
-            };
+            if (conn.id) {
+              disconnectedStatuses[conn.id] = {
+                id: conn.id,
+                status: 'disconnected',
+                error: undefined,
+                latency: undefined,
+                lastConnected: undefined,
+              };
+            }
           });
 
           set(state => {
@@ -467,8 +470,7 @@ export const useConnectionStore = create<ConnectionState>()(
             'sync_connections',
             { configs: connections }
           );
-          console.log(`成功同步 ${syncedIds.length} 个连接`);
-          return syncedIds;
+          console.log(`成功同步 ${syncedIds?.length || 0} 个连接`);
         } catch (error) {
           console.error('同步连接到后端失败:', error);
           throw error;
@@ -505,13 +507,15 @@ export const useConnectionStore = create<ConnectionState>()(
 
           // 为所有连接创建断开状态
           state.connections.forEach(conn => {
-            disconnectedStatuses[conn.id] = {
-              id: conn.id,
-              status: 'disconnected',
-              error: undefined,
-              latency: undefined,
-              lastConnected: undefined,
-            };
+            if (conn.id) {
+              disconnectedStatuses[conn.id] = {
+                id: conn.id,
+                status: 'disconnected',
+                error: undefined,
+                latency: undefined,
+                lastConnected: undefined,
+              };
+            }
           });
 
           console.log('🔄 初始化连接状态: 所有连接设置为断开状态');
@@ -557,6 +561,7 @@ export const connectionUtils = {
 
     // 优先检查connectionStatuses中是否有连接状态为connected的连接
     const hasConnectedByStatus = connections.some(conn => {
+      if (!conn.id) return false;
       const status = connectionStatuses[conn.id];
       return status?.status === 'connected';
     });
@@ -577,6 +582,7 @@ export const connectionUtils = {
 
     // 优先使用connectionStatuses中的状态计数
     const countByStatus = connections.filter(conn => {
+      if (!conn.id) return false;
       const status = connectionStatuses[conn.id];
       return status?.status === 'connected';
     }).length;

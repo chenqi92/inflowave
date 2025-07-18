@@ -1394,7 +1394,7 @@ const Database: React.FC = () => {
 
         {/* 保留策略管理对话框 */}
         <RetentionPolicyDialog
-          open={retentionPolicyDialog.visible}
+          visible={retentionPolicyDialog.visible}
           mode={retentionPolicyDialog.mode}
           policy={retentionPolicyDialog.policy}
           database={selectedDatabase}

@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
       setTheme(values.theme);
 
       // 应用语言设置
-      setLanguage(values.language);
+      setLanguage(values.language as 'zh-CN' | 'en-US');
 
       // 保存到后端（如果需要）
       try {
@@ -331,7 +331,7 @@ const Settings: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+                    <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                           control={form.control}
