@@ -47,6 +47,7 @@ import type { QueryResult } from '@/types';
 interface EnhancedResultPanelProps {
   collapsed?: boolean;
   queryResult?: QueryResult | null;
+  queryResults?: QueryResult[]; // 支持多查询结果
   executedQueries?: string[];
   executionTime?: number;
   onClearResult?: () => void;
@@ -74,6 +75,7 @@ interface FieldStatistics {
 const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   collapsed = false,
   queryResult,
+  queryResults = [],
   executedQueries = [],
   executionTime = 0,
   onClearResult,
@@ -84,12 +86,134 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
 
+  // 处理多查询结果 - 优先使用queryResults，回退到单个queryResult
+  const allResults = useMemo(() => {
+    if (queryResults && queryResults.length > 0) {
+      return queryResults;
+    }
+    if (queryResult) {
+      return [queryResult];
+    }
+    return [];
+  }, [queryResults, queryResult]);
+
+  // 解析单个查询结果
+  const parseQueryResult = useCallback((result: QueryResult) => {
+    if (!result?.results?.[0]?.series?.[0]) return null;
+
+    const series = result.results[0].series[0];
+    const { columns, values } = series;
+
+    if (!columns || !values) return null;
+
+    const data = values.map((row, index) => {
+      const record: Record<string, any> = { _id: index };
+      columns.forEach((col, colIndex) => {
+        record[col] = row[colIndex];
+      });
+      return record;
+    });
+
+    return {
+      columns,
+      values,
+      rowCount: values.length,
+      data
+    };
+  }, []);
+
+  // 生成图表配置
+  const generateChartOption = useCallback((result: QueryResult, chartType: 'line' | 'bar' | 'pie') => {
+    const parsedResult = parseQueryResult(result);
+    if (!parsedResult || parsedResult.rowCount === 0) return null;
+
+    // 计算字段统计信息
+    const fieldStats = parsedResult.columns.map(column => {
+      const values = parsedResult.data.map(row => row[column]).filter(val => val !== null && val !== undefined);
+      const firstValue = values[0];
+      let dataType = 'string';
+      if (typeof firstValue === 'number') {
+        dataType = 'number';
+      } else if (firstValue instanceof Date || /^\d{4}-\d{2}-\d{2}/.test(String(firstValue))) {
+        dataType = 'datetime';
+      }
+      return { fieldName: column, dataType };
+    });
+
+    const timeColumn = fieldStats.find(stat => stat.dataType === 'datetime')?.fieldName;
+    const numericColumns = fieldStats.filter(stat => stat.dataType === 'number').map(stat => stat.fieldName);
+
+    if (!timeColumn && numericColumns.length > 0) {
+      // 数值型数据图表
+      const categories = parsedResult.data.slice(0, 10).map((_, index) => `行 ${index + 1}`);
+      const firstNumericCol = numericColumns[0];
+      const values = parsedResult.data.slice(0, 10).map(row => row[firstNumericCol] || 0);
+
+      if (chartType === 'pie') {
+        return {
+          title: { text: `${firstNumericCol} 分布`, left: 'center' },
+          tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
+          series: [{
+            name: firstNumericCol,
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: ['40%', '50%'],
+            data: categories.map((cat, index) => ({
+              name: cat,
+              value: Math.abs(values[index]) || 1
+            }))
+          }]
+        };
+      } else if (chartType === 'bar') {
+        return {
+          title: { text: `${firstNumericCol} 数据分布`, left: 'center' },
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: categories },
+          yAxis: { type: 'value', name: firstNumericCol },
+          series: [{ name: firstNumericCol, type: 'bar', data: values }]
+        };
+      } else {
+        return {
+          title: { text: `${firstNumericCol} 趋势`, left: 'center' },
+          tooltip: { trigger: 'axis' },
+          xAxis: { type: 'category', data: categories },
+          yAxis: { type: 'value', name: firstNumericCol },
+          series: [{ name: firstNumericCol, type: 'line', data: values, smooth: true }]
+        };
+      }
+    }
+
+    if (timeColumn && numericColumns.length > 0) {
+      // 时序图表
+      const seriesData = numericColumns.slice(0, 3).map((column, index) => {
+        const colors = ['#5470c6', '#91cc75', '#fac858'];
+        return {
+          name: column,
+          type: chartType === 'pie' ? 'line' : chartType,
+          data: parsedResult.data.map(row => [row[timeColumn], row[column]]),
+          smooth: chartType === 'line',
+          itemStyle: { color: colors[index] }
+        };
+      });
+
+      return {
+        title: { text: '时序数据趋势', left: 'center' },
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'time', name: timeColumn },
+        yAxis: { type: 'value', name: '数值' },
+        series: seriesData
+      };
+    }
+
+    return null;
+  }, [parseQueryResult]);
+
   // 自动切换到数据标签页当有查询结果时
   useEffect(() => {
-    if (queryResult) {
-      setActiveTab('data');
+    if (allResults.length > 0) {
+      setActiveTab('data-0'); // 切换到第一个数据tab
     }
-  }, [queryResult]);
+  }, [allResults]);
 
   // 解析查询结果数据
   const parsedData = useMemo(() => {
@@ -529,151 +653,241 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     <div className="h-full bg-background">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <TabsList className="inline-flex h-8 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-auto">
-          <TabsTrigger value="data" className="flex items-center gap-1 px-3 py-1 text-xs">
-            <Database className="w-3 h-3" />
-            数据
-            {parsedData && (
-              <Badge variant="secondary" className="ml-1 text-xs px-1">
-                {parsedData.rowCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="statistics" className="flex items-center gap-1 px-3 py-1 text-xs">
-            <Info className="w-3 h-3" />
-            字段统计
-            {fieldStatistics.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs px-1">
-                {fieldStatistics.length}
-              </Badge>
-            )}
-          </TabsTrigger>
+          {/* 执行器tab */}
           <TabsTrigger value="executor" className="flex items-center gap-1 px-3 py-1 text-xs">
             <Play className="w-3 h-3" />
             执行器
           </TabsTrigger>
-          <TabsTrigger value="preview" className="flex items-center gap-1 px-3 py-1 text-xs">
-            <Eye className="w-3 h-3" />
-            数据样本
-          </TabsTrigger>
-          <TabsTrigger value="visualization" className="flex items-center gap-1 px-3 py-1 text-xs">
-            <BarChart3 className="w-3 h-3" />
-            可视化
-          </TabsTrigger>
-          <TabsTrigger value="insights" className="flex items-center gap-1 px-3 py-1 text-xs">
-            <Brain className="w-3 h-3" />
-            洞察
-            {dataInsights.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs px-1">
-                {dataInsights.length}
-              </Badge>
-            )}
-          </TabsTrigger>
+
+          {/* 动态数据tab - 为每个查询结果创建一个tab */}
+          {allResults.map((result, index) => {
+            const parsedResult = parseQueryResult(result);
+            return (
+              <TabsTrigger
+                key={`data-${index}`}
+                value={`data-${index}`}
+                className="flex items-center gap-1 px-3 py-1 text-xs"
+              >
+                <Database className="w-3 h-3" />
+                数据 {allResults.length > 1 ? `${index + 1}` : ''}
+                {parsedResult && (
+                  <Badge variant="secondary" className="ml-1 text-xs px-1">
+                    {parsedResult.rowCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })}
+
+          {/* 字段统计tab - 合并所有结果的统计 */}
+          {allResults.length > 0 && (
+            <TabsTrigger value="statistics" className="flex items-center gap-1 px-3 py-1 text-xs">
+              <Info className="w-3 h-3" />
+              字段统计
+              {fieldStatistics.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs px-1">
+                  {fieldStatistics.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          )}
+
+          {/* 动态可视化tab - 为每个查询结果创建一个可视化tab */}
+          {allResults.map((result, index) => {
+            const isChartable = result && result.data && Array.isArray(result.data) && result.data.length > 0;
+            if (!isChartable) return null;
+
+            return (
+              <TabsTrigger
+                key={`visualization-${index}`}
+                value={`visualization-${index}`}
+                className="flex items-center gap-1 px-3 py-1 text-xs"
+              >
+                <BarChart3 className="w-3 h-3" />
+                可视化 {allResults.length > 1 ? `${index + 1}` : ''}
+              </TabsTrigger>
+            );
+          })}
+
+          {/* 洞察tab */}
+          {allResults.length > 0 && (
+            <TabsTrigger value="insights" className="flex items-center gap-1 px-3 py-1 text-xs">
+              <Brain className="w-3 h-3" />
+              洞察
+              {dataInsights.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs px-1">
+                  {dataInsights.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        {/* 数据标签页 - 默认显示所有查询结果 */}
-        <TabsContent value="data" className="flex-1 overflow-hidden mt-0">
-          {parsedData ? (
-            <div className="h-full flex flex-col">
-              {/* 数据表格头部 */}
-              <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4" />
-                    <span className="text-sm font-medium">查询结果</span>
-                    <Badge variant="outline" className="text-xs">
-                      {parsedData.rowCount} 行
-                    </Badge>
+        {/* 执行器标签页 */}
+        <TabsContent value="executor" className="flex-1 overflow-hidden mt-0">
+          <div className="h-full p-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Play className="w-4 h-4" />
+                  查询执行信息
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">执行状态</div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-sm">
+                          {allResults.length > 0 ? '执行成功' : '等待执行'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">执行时间</div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm font-mono">{executionTime}ms</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="text-xs">
-                      <Download className="w-3 h-3 mr-1" />
-                      导出
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-xs" onClick={onClearResult}>
-                      清空
-                    </Button>
-                  </div>
-                </div>
-              </div>
 
-              {/* 可滚动的数据表格 */}
-              <div className="flex-1 overflow-auto relative">
-                <div className="min-w-full">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        {parsedData.columns.map((column, index) => (
-                          <TableHead
-                            key={index}
-                            className={`px-3 py-2 text-left font-medium cursor-pointer hover:bg-muted/50 transition-colors ${
-                              sortColumn === column ? 'bg-muted/50 text-foreground' : 'text-muted-foreground'
-                            }`}
-                            onClick={() => handleColumnSort(column)}
-                          >
-                            <div className="flex items-center gap-1 select-none">
-                              <span className="text-xs">{column}</span>
-                              <span className="text-xs opacity-60">
-                                {sortColumn === column ? (
-                                  sortDirection === 'asc' ? '↑' : '↓'
-                                ) : '↕️'}
-                              </span>
+                  {executedQueries.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-muted-foreground">执行的查询</div>
+                      <div className="space-y-2">
+                        {executedQueries.map((query, index) => (
+                          <div key={index} className="bg-muted/50 rounded p-2">
+                            <div className="text-xs text-muted-foreground mb-1">
+                              查询 {index + 1}
                             </div>
-                          </TableHead>
+                            <code className="text-xs font-mono">{query}</code>
+                          </div>
                         ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {parsedData.data.map((row, rowIndex) => (
-                        <TableRow
-                          key={rowIndex}
-                          className="hover:bg-muted/30 transition-colors"
-                        >
-                          {parsedData.columns.map((column, colIndex) => (
-                            <TableCell
-                              key={colIndex}
-                              className="px-3 py-2 font-mono text-xs"
-                              style={{ maxWidth: '200px' }}
-                            >
-                              <div 
-                                className="truncate" 
-                                title={String(row[column] || '')}
-                                style={{ 
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {column === 'time' && row[column]
-                                  ? new Date(row[column]).toLocaleString()
-                                  : String(row[column] || '-')
-                                }
-                              </div>
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* 底部状态栏 */}
-              <div className="flex-shrink-0 bg-muted/30 border-t px-4 py-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>共 {parsedData.rowCount} 行数据</span>
-                  <span>执行时间: {executionTime}ms</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <Database className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">请执行查询以查看数据</p>
-              </div>
-            </div>
-          )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
+
+        {/* 动态数据标签页 - 为每个查询结果创建一个tab */}
+        {allResults.map((result, index) => {
+          const parsedResult = parseQueryResult(result);
+          return (
+            <TabsContent key={`data-${index}`} value={`data-${index}`} className="flex-1 overflow-hidden mt-0">
+              {parsedResult ? (
+                <div className="h-full flex flex-col">
+                  {/* 数据表格头部 */}
+                  <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Database className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          查询结果 {allResults.length > 1 ? `${index + 1}` : ''}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {parsedResult.rowCount} 行
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" className="text-xs">
+                          <Download className="w-3 h-3 mr-1" />
+                          导出
+                        </Button>
+                        {index === 0 && (
+                          <Button variant="outline" size="sm" className="text-xs" onClick={onClearResult}>
+                            清空
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 可滚动的数据表格 */}
+                  <div className="flex-1 overflow-auto relative">
+                    <div className="min-w-full">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-background z-10">
+                          <TableRow>
+                            {parsedResult.columns.map((column, colIndex) => (
+                              <TableHead
+                                key={colIndex}
+                                className={`px-3 py-2 text-left font-medium cursor-pointer hover:bg-muted/50 transition-colors ${
+                                  sortColumn === column ? 'bg-muted/50 text-foreground' : 'text-muted-foreground'
+                                }`}
+                                onClick={() => handleColumnSort(column)}
+                              >
+                                <div className="flex items-center gap-1 select-none">
+                                  <span className="text-xs">{column}</span>
+                                  <span className="text-xs opacity-60">
+                                    {sortColumn === column ? (
+                                      sortDirection === 'asc' ? '↑' : '↓'
+                                    ) : '↕️'}
+                                  </span>
+                                </div>
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {parsedResult.data.map((row, rowIndex) => (
+                            <TableRow
+                              key={rowIndex}
+                              className="hover:bg-muted/30 transition-colors"
+                            >
+                              {parsedResult.columns.map((column, colIndex) => (
+                                <TableCell
+                                  key={colIndex}
+                                  className="px-3 py-2 font-mono text-xs"
+                                  style={{ maxWidth: '200px' }}
+                                >
+                                  <div
+                                    className="truncate"
+                                    title={String(row[column] || '')}
+                                    style={{
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {column === 'time' && row[column]
+                                      ? new Date(row[column]).toLocaleString()
+                                      : String(row[column] || '-')
+                                    }
+                                  </div>
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  {/* 底部状态栏 */}
+                  <div className="flex-shrink-0 bg-muted/30 border-t px-4 py-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>共 {parsedResult.rowCount} 行数据</span>
+                      <span>执行时间: {executionTime}ms</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <Database className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">查询结果 {index + 1} 无数据</p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
 
         {/* 字段统计标签页 */}
         <TabsContent value="statistics" className="flex-1 overflow-hidden mt-0">
@@ -972,75 +1186,86 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           )}
         </TabsContent>
 
-        {/* 可视化标签页 */}
-        <TabsContent value="visualization" className="flex-1 p-4 space-y-4 mt-0">
-          {chartOption ? (
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium">数据可视化</h3>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-xs">
-                        {visualizationType === 'line' && <LineChart className="w-3 h-3 mr-1" />}
-                        {visualizationType === 'bar' && <BarChart className="w-3 h-3 mr-1" />}
-                        {visualizationType === 'pie' && <PieChart className="w-3 h-3 mr-1" />}
-                        {visualizationType === 'line' ? '折线图' : visualizationType === 'bar' ? '柱状图' : '饼图'}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setVisualizationType('line')}>
-                        <LineChart className="w-3 h-3 mr-2" />折线图
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setVisualizationType('bar')}>
-                        <BarChart className="w-3 h-3 mr-2" />柱状图
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setVisualizationType('pie')}>
-                        <PieChart className="w-3 h-3 mr-2" />饼图
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-xs">
-                        <Download className="w-3 h-3 mr-1" />
-                        导出图表
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleExportChart('png')}>
-                        <Download className="w-3 h-3 mr-2" />导出为 PNG
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExportChart('svg')}>
-                        <Download className="w-3 h-3 mr-2" />导出为 SVG
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExportChart('pdf')}>
-                        <Download className="w-3 h-3 mr-2" />导出为 PDF
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+        {/* 动态可视化标签页 - 为每个查询结果创建一个可视化tab */}
+        {allResults.map((result, index) => {
+          const isChartable = result && result.data && Array.isArray(result.data) && result.data.length > 0;
+          if (!isChartable) return null;
+
+          const chartOption = generateChartOption(result, visualizationType);
+
+          return (
+            <TabsContent key={`visualization-${index}`} value={`visualization-${index}`} className="flex-1 p-4 space-y-4 mt-0">
+              {chartOption ? (
+                <div className="h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium">
+                      数据可视化 {allResults.length > 1 ? `${index + 1}` : ''}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-xs">
+                            {visualizationType === 'line' && <LineChart className="w-3 h-3 mr-1" />}
+                            {visualizationType === 'bar' && <BarChart className="w-3 h-3 mr-1" />}
+                            {visualizationType === 'pie' && <PieChart className="w-3 h-3 mr-1" />}
+                            {visualizationType === 'line' ? '折线图' : visualizationType === 'bar' ? '柱状图' : '饼图'}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => setVisualizationType('line')}>
+                            <LineChart className="w-3 h-3 mr-2" />折线图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setVisualizationType('bar')}>
+                            <BarChart className="w-3 h-3 mr-2" />柱状图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setVisualizationType('pie')}>
+                            <PieChart className="w-3 h-3 mr-2" />饼图
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-xs">
+                            <Download className="w-3 h-3 mr-1" />
+                            导出图表
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleExportChart('png')}>
+                            <Download className="w-3 h-3 mr-2" />导出为 PNG
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportChart('svg')}>
+                            <Download className="w-3 h-3 mr-2" />导出为 SVG
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportChart('pdf')}>
+                            <Download className="w-3 h-3 mr-2" />导出为 PDF
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-white rounded border">
+                    <EChartsReact
+                      ref={chartRef}
+                      option={chartOption}
+                      style={{ height: '100%' }}
+                      notMerge={true}
+                      lazyUpdate={true}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 bg-white rounded border">
-                <EChartsReact 
-                  ref={chartRef}
-                  option={chartOption} 
-                  style={{ height: '100%' }} 
-                  notMerge={true}
-                  lazyUpdate={true}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-muted-foreground">
-                <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">暂无可视化数据</p>
-                <p className="text-xs mt-1">执行包含时间和数值字段的查询以生成图表</p>
-              </div>
-            </div>
-          )}
-        </TabsContent>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-muted-foreground">
+                    <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">查询结果 {index + 1} 暂无可视化数据</p>
+                    <p className="text-xs mt-1">执行包含时间和数值字段的查询以生成图表</p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
 
         {/* 数据洞察标签页 */}
         <TabsContent value="insights" className="flex-1 p-4 space-y-4 mt-0">

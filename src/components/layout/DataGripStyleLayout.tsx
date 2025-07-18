@@ -432,6 +432,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     <EnhancedResultPanel
                       collapsed={bottomPanelCollapsed}
                       queryResult={queryResult}
+                      queryResults={queryResults}
                       executedQueries={executedQueries}
                       executionTime={executionTime}
                       onClearResult={() => {

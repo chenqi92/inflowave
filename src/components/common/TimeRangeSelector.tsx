@@ -220,11 +220,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 </DropdownMenu>
 
                 {/* 自定义时间范围弹出框 */}
-                <Popover open={showCustomPopover} onOpenChange={setShowCustomPopover}>
-                    <PopoverTrigger asChild>
-                        <Button style={{ display: 'none' }} />
-                    </PopoverTrigger>
-                    <PopoverContent className='w-96 p-4' align='start' side='bottom'>
+                {showCustomPopover && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                        <div className="bg-background border rounded-lg shadow-lg w-96 p-4 max-h-[80vh] overflow-y-auto">
                         <div className='mb-3'>
                             <h4 className='text-sm font-medium mb-1'>自定义时间范围</h4>
                             <p className='text-xs text-muted-foreground'>
@@ -273,14 +271,15 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                             </div>
                         </div>
 
-                        <div className='flex justify-end gap-2 mt-4'>
-                            <Button variant='outline' size='sm' onClick={handleCustomCancel}>
-                                取消
-                            </Button>
-                            <Button size='sm' onClick={handleCustomSubmit}>确定</Button>
+                            <div className='flex justify-end gap-2 mt-4'>
+                                <Button variant='outline' size='sm' onClick={handleCustomCancel}>
+                                    取消
+                                </Button>
+                                <Button size='sm' onClick={handleCustomSubmit}>确定</Button>
+                            </div>
                         </div>
-                    </PopoverContent>
-                </Popover>
+                    </div>
+                )}
             </div>
         </TooltipProvider>
     );

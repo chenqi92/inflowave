@@ -199,7 +199,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       scrollBeyondLastLine: false,
       wordWrap: 'on',
       automaticLayout: true,
-      theme: resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light',
+      theme: resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light',
       suggestOnTriggerCharacters: true,
       quickSuggestions: {
         other: true,
@@ -533,15 +533,57 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
           [/[<>]=?|[!=]=|<>/, 'operator'],
           [/[+\-*/=]/, 'operator'],
           [/[,;]/, 'delimiter'],
+          // 扩展注释支持：-- 注释、# 注释、<!-- --> 注释
           [/--.*$/, 'comment'],
-          [/\/\*/, 'comment', '@comment'],
+          [/#.*$/, 'comment'],
+          [/<!--/, 'comment', '@htmlComment'],
+          [/\/\*/, 'comment', '@blockComment'],
         ],
         comment: [
           [/[^/*]+/, 'comment'],
           [/\*\//, 'comment', '@pop'],
           [/[/*]/, 'comment'],
         ],
+        // HTML风格注释状态
+        htmlComment: [
+          [/[^-]+/, 'comment'],
+          [/-->/, 'comment', '@pop'],
+          [/-/, 'comment'],
+        ],
+        // 块注释状态
+        blockComment: [
+          [/[^/*]+/, 'comment'],
+          [/\*\//, 'comment', '@pop'],
+          [/[/*]/, 'comment'],
+        ],
       },
+    });
+
+    // 定义自定义主题，让注释显示为灰色
+    monaco.editor.defineTheme('influxql-light', {
+      base: 'vs',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '999999', fontStyle: 'italic' },
+        { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
+        { token: 'function', foreground: 'FF6600', fontStyle: 'bold' },
+        { token: 'string', foreground: '008000' },
+        { token: 'number', foreground: 'FF0000' },
+      ],
+      colors: {}
+    });
+
+    monaco.editor.defineTheme('influxql-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
+        { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
+        { token: 'function', foreground: 'DCDCAA', fontStyle: 'bold' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+      ],
+      colors: {}
     });
 
     // 设置智能自动补全
@@ -1239,7 +1281,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
             <Editor
               height='100%'
               language='influxql'
-              theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+              theme={resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light'}
               value={currentTab?.query || ''}
               onChange={value => updateCurrentTabQuery(value || '')}
               onMount={handleEditorDidMount}

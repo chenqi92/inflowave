@@ -31,6 +31,9 @@ import {
   FileText,
   Download,
   Upload,
+  ChevronDown,
+  ChevronUp,
+  Code,
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -42,6 +45,7 @@ import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
 import SimpleDragOverlay from '@/components/common/SimpleDragOverlay';
 import useSimpleTabDrag from '@/hooks/useSimpleTabDrag';
+import { SQLParser } from '@/utils/sqlParser';
 import type { QueryResult, QueryRequest } from '@/types';
 
 interface MenuProps {
@@ -114,6 +118,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [closingTab, setClosingTab] = useState<EditorTab | null>(null);
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showImportDialog, setShowImportDialog] = useState(false);
+    const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]); // 实际执行的查询
+    const [showExecutedQueries, setShowExecutedQueries] = useState(false); // 是否显示实际执行的查询
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
     // 拖拽功能
@@ -129,6 +135,32 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       handleTabMove,
       showTabInPopup,
     } = useSimpleTabDrag();
+
+    // 前端查询处理函数
+    const processQueryForExecution = (
+      rawQuery: string,
+      timeRange?: { start: string; end: string; value: string }
+    ) => {
+      // 1. 使用SQLParser解析和清理查询
+      const parsedStatements = SQLParser.parseMultipleSQL(rawQuery);
+
+      // 2. 过滤出有效的SQL语句
+      const cleanedQueries = parsedStatements
+        .filter(parsed => !parsed.isEmpty)
+        .map(parsed => parsed.cleaned);
+
+      // 3. 为每个查询注入时间范围（如果需要）
+      const processedQueries = cleanedQueries.map(query =>
+        injectTimeRangeToQuery(query.trim(), timeRange)
+      );
+
+      return {
+        originalQuery: rawQuery,
+        cleanedQueries,
+        processedQueries,
+        statementCount: processedQueries.length
+      };
+    };
 
     // 处理时间范围的SQL注入
     const injectTimeRangeToQuery = (
@@ -340,16 +372,17 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           return;
         }
 
-        // 为查询注入时间范围条件
-        const queryWithTimeRange = injectTimeRangeToQuery(
-          query.trim(),
-          currentTimeRange
-        );
+        // 使用前端查询处理
+        const queryProcessResult = processQueryForExecution(query, currentTimeRange);
+        const processedQuery = queryProcessResult.processedQueries[0] || query;
+
+        // 保存实际执行的查询
+        setActualExecutedQueries([processedQuery]);
 
         const request: QueryRequest = {
           connectionId: activeConnectionId,
           database,
-          query: queryWithTimeRange,
+          query: processedQuery,
         };
 
         const result = await safeTauriInvoke<QueryResult>('execute_query', {
@@ -434,17 +467,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       const startTime = Date.now();
 
       try {
-        // 检查是否包含多条 SQL 语句（以分号分隔）
-        // 特殊处理：对于INSERT语句，分号可能出现在语句末尾但不意味着结束
-        const statements = queryText
-          .split('\n')
-          .map(stmt => stmt.trim())
-          .filter(stmt => stmt.length > 0 && !stmt.startsWith('#')) // 过滤空行和注释
-          .map(stmt => stmt.replace(/;$/, '')) // 移除末尾的分号
-          .filter(stmt => stmt.length > 0)
-          .map(stmt => injectTimeRangeToQuery(stmt, currentTimeRange)); // 为每个查询注入时间范围
+        // 使用前端查询处理函数
+        const queryProcessResult = processQueryForExecution(queryText, currentTimeRange);
+        console.log('🔍 查询处理结果:', queryProcessResult);
 
-        console.log('🔍 检测到查询语句数量:', statements.length);
+        // 保存实际执行的查询，用于显示
+        setActualExecutedQueries(queryProcessResult.processedQueries);
+
+        const statements = queryProcessResult.processedQueries;
+        console.log('🔍 检测到有效查询语句数量:', statements.length);
 
         if (statements.length > 1) {
           // 执行多条查询
@@ -1645,43 +1676,84 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   tableName={currentTab.tableName!}
                 />
               ) : (
-                <Editor
-                  height='100%'
-                  language='influxql'
-                  theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
-                  value={currentTab.content}
-                  onChange={handleEditorChange}
-                  onMount={handleEditorDidMount}
-                  options={{
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    fontSize: 14,
-                    lineNumbers: 'on',
-                    roundedSelection: false,
-                  scrollbar: {
-                    vertical: 'auto',
-                    horizontal: 'auto',
-                  },
-                  wordWrap: 'on',
-                  automaticLayout: true,
-                  suggestOnTriggerCharacters: true,
-                  quickSuggestions: {
-                    other: true,
-                    comments: false,
-                    strings: true, // 在字符串中也显示提示（用于测量名）
-                  },
-                  parameterHints: { enabled: true },
-                  formatOnPaste: true,
-                  formatOnType: true,
-                  acceptSuggestionOnEnter: 'on',
-                  tabCompletion: 'on',
-                  hover: { enabled: true },
-                  // 增加更多智能提示配置
-                  quickSuggestionsDelay: 50,
-                  suggestSelection: 'first',
-                  wordBasedSuggestions: 'currentDocument',
-                }}
-              />
+                <div className="h-full flex flex-col">
+                  <div className="flex-1">
+                    <Editor
+                      height='100%'
+                      language='influxql'
+                      theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+                      value={currentTab.content}
+                      onChange={handleEditorChange}
+                      onMount={handleEditorDidMount}
+                      options={{
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false,
+                        fontSize: 14,
+                        lineNumbers: 'on',
+                        roundedSelection: false,
+                      scrollbar: {
+                        vertical: 'auto',
+                        horizontal: 'auto',
+                      },
+                      wordWrap: 'on',
+                      automaticLayout: true,
+                      suggestOnTriggerCharacters: true,
+                      quickSuggestions: {
+                        other: true,
+                        comments: false,
+                        strings: true, // 在字符串中也显示提示（用于测量名）
+                      },
+                      parameterHints: { enabled: true },
+                      formatOnPaste: true,
+                      formatOnType: true,
+                      acceptSuggestionOnEnter: 'on',
+                      tabCompletion: 'on',
+                      hover: { enabled: true },
+                      // 增加更多智能提示配置
+                      quickSuggestionsDelay: 50,
+                      suggestSelection: 'first',
+                      wordBasedSuggestions: 'currentDocument',
+                      }}
+                    />
+                  </div>
+
+                  {/* 实际执行查询显示区域 */}
+                  {actualExecutedQueries.length > 0 && (
+                    <div className="border-t bg-muted/30">
+                      <div
+                        className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50"
+                        onClick={() => setShowExecutedQueries(!showExecutedQueries)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Code className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            实际执行的查询 ({actualExecutedQueries.length} 条)
+                          </span>
+                        </div>
+                        {showExecutedQueries ? (
+                          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      {showExecutedQueries && (
+                        <div className="px-3 pb-3 max-h-48 overflow-y-auto">
+                          {actualExecutedQueries.map((query, index) => (
+                            <div key={index} className="mb-2 last:mb-0">
+                              <div className="text-xs text-muted-foreground mb-1">
+                                查询 {index + 1}:
+                              </div>
+                              <div className="bg-background border rounded p-2 font-mono text-xs">
+                                <pre className="whitespace-pre-wrap">{query}</pre>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )
             ) : (
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
