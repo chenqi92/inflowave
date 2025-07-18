@@ -1,6 +1,6 @@
 import {useState, useCallback, useRef} from 'react';
 import {useQueryStore} from '@/store/query';
-import type {QueryRequest, QueryResult, QueryValidationResult, QueryHistoryItem} from '@/types';
+import type {QueryRequest, QueryResult, QueryValidationResult} from '@/types';
 
 /**
  * 查询管理 Hook
@@ -181,7 +181,7 @@ export const useQuery = () => {
 
 
             const request: QueryRequest = {
-                connectionId: connectionId,
+                connectionId,
                 database: targetDatabase,
                 query: currentTab.query,
             };

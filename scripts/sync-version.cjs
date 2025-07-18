@@ -27,7 +27,7 @@ function getCurrentVersion() {
 function updatePackageJson(version) {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     packageJson.version = version;
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+    fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
     console.log(`✅ 更新 package.json 版本为: ${version}`);
 }
 
@@ -37,7 +37,7 @@ function updatePackageJson(version) {
 function updateTauriConfig(version) {
     const tauriConfig = JSON.parse(fs.readFileSync(tauriConfigPath, 'utf8'));
     tauriConfig.version = version;
-    fs.writeFileSync(tauriConfigPath, JSON.stringify(tauriConfig, null, 2) + '\n');
+    fs.writeFileSync(tauriConfigPath, `${JSON.stringify(tauriConfig, null, 2)}\n`);
     console.log(`✅ 更新 tauri.conf.json 版本为: ${version}`);
 }
 
@@ -196,7 +196,7 @@ function main() {
     const command = args[0];
     
     switch (command) {
-        case 'check':
+        case 'check': {
             const { isConsistent, versions } = checkVersionConsistency();
             console.log('📋 版本检查结果:');
             console.log(`  package.json:    ${versions.packageJson}`);
@@ -204,13 +204,15 @@ function main() {
             console.log(`  Cargo.toml:      ${versions.cargoToml}`);
             console.log(`  状态: ${isConsistent ? '✅ 统一' : '❌ 不统一'}`);
             break;
+        }
             
-        case 'sync':
+        case 'sync': {
             const targetVersion = args[1];
             syncVersions(targetVersion);
             break;
+        }
             
-        case 'bump':
+        case 'bump': {
             const bumpType = args[1] || 'patch';
             if (!['major', 'minor', 'patch'].includes(bumpType)) {
                 console.error('❌ 无效的版本类型，应为: major, minor, patch');
@@ -223,11 +225,13 @@ function main() {
                 createVersionTag(newVersion);
             }
             break;
+        }
             
-        case 'tag':
+        case 'tag': {
             const currentVersion = getCurrentVersion();
             createVersionTag(currentVersion);
             break;
+        }
             
         default:
             console.log(`

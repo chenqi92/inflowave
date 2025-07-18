@@ -1,7 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
-  DataTable,
   Button,
   Badge,
   Form,
@@ -52,7 +51,6 @@ import {
   Edit,
   AlertCircle,
 } from 'lucide-react';
-import { dialog } from '@/utils/dialog';
 import '@/styles/database-management.css';
 
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -540,7 +538,7 @@ const Database: React.FC = () => {
                                 y: event.clientY,
                                 target: {
                                   type: 'measurement',
-                                  name: name,
+                                  name,
                                   database: selectedDatabase,
                                 },
                               });

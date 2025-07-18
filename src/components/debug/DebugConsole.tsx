@@ -110,7 +110,7 @@ const DebugConsole: React.FC = () => {
   const refreshSystemInfo = () => {
     addSystemLog('info', '=== 系统信息刷新 ===', '系统');
     addSystemLog('info', `当前时间: ${new Date().toLocaleString()}`, '系统');
-    addSystemLog('info', `内存使用: ${(performance as any).memory ? Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024) + 'MB' : '未知'}`, '系统');
+    addSystemLog('info', `内存使用: ${(performance as any).memory ? `${Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024)  }MB` : '未知'}`, '系统');
     addSystemLog('info', `活跃连接: ${activeConnectionId || '无'}`, '连接');
     
     if (activeConnection) {
@@ -168,7 +168,7 @@ const DebugConsole: React.FC = () => {
               <span className='text-sm text-muted-foreground'>内存使用</span>
               <Badge variant='outline'>
                 {(performance as any).memory ? 
-                  Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024) + 'MB' : 
+                  `${Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024)  }MB` : 
                   '未知'
                 }
               </Badge>

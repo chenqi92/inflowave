@@ -15,9 +15,6 @@ import {
   FormControl,
   FormMessage,
   Textarea,
-  List,
-  ListItem,
-  ListItemMeta,
   Empty,
   Dialog,
   DialogContent,
@@ -35,7 +32,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
   Popconfirm,
-  Separator,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
 import {

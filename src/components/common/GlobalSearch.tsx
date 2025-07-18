@@ -17,7 +17,6 @@ import {
   Settings,
   FileText,
   Zap,
-  List,
 } from 'lucide-react';
 
 interface SearchResult {

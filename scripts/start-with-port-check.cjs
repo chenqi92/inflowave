@@ -63,7 +63,7 @@ function updateTauriConfig(port) {
 /**
  * 更新 Vite 配置
  */
-function updateViteConfig(port) {
+function _updateViteConfig(port) {
     const configPath = path.join(__dirname, '..', 'vite.config.ts');
 
     try {
@@ -84,7 +84,7 @@ function updateViteConfig(port) {
 /**
  * 清理占用指定端口的进程
  */
-function killPortProcess(port) {
+function _killPortProcess(port) {
     try {
         const command = process.platform === 'win32' 
             ? `netstat -ano | findstr :${port}`
@@ -120,7 +120,7 @@ function killPortProcess(port) {
             // 等待一下确保端口释放
             return new Promise(resolve => setTimeout(resolve, 1000));
         }
-    } catch (error) {
+    } catch {
         // 忽略错误，可能端口没有被占用
         console.log(`ℹ️  端口 ${port} 未被占用或清理失败`);
     }

@@ -16,7 +16,6 @@ import {
 } from '@/components/ui';
 import { Bug, RefreshCw, FileText, AlertTriangle, Copy } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
-import { showMessage } from '@/utils/message';
 
 interface Props {
   children: ReactNode;

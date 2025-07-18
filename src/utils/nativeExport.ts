@@ -75,7 +75,7 @@ export const exportWithNativeDialog = async (
       'save_file_dialog',
       {
         default_path: defaultPath,
-        filters: filters
+        filters
       }
     );
 

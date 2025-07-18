@@ -133,7 +133,7 @@ export const useTabDragDrop = () => {
         y: Math.max(0, y - 100),
         width: 1000,
         height: 700,
-        tab: tab
+        tab
       });
 
       if (detachedWindow) {

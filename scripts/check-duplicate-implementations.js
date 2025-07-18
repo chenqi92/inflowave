@@ -138,7 +138,7 @@ function extractExports(content) {
  * 提取函数定义
  */
 function extractFunctions(content) {
-  const functionRegex = /(?:const|function)\s+(\w+)\s*[=\(]/g;
+  const functionRegex = /(?:const|function)\s+(\w+)\s*[=()]/g;
   const functions = [];
   let match;
 

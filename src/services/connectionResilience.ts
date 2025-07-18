@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
 import { portDiscoveryService } from './portDiscovery';
-import { healthCheckService } from './healthCheck';
 
 export interface ConnectionAttempt {
   timestamp: number;

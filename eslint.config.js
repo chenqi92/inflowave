@@ -10,6 +10,17 @@ export default [
   // Base configuration for all files
   js.configs.recommended,
 
+  // Ignore configuration
+  {
+    ignores: [
+      'scripts/**/*',
+      'dist/**/*',
+      'node_modules/**/*',
+      '*.config.js',
+      '*.config.ts',
+    ],
+  },
+
   // Configuration for TypeScript/React files (browser environment)
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -70,7 +81,7 @@ export default [
 
   // Configuration for Node.js files (config files, scripts)
   {
-    files: ['*.{js,ts,cjs,mjs}', 'scripts/**/*.{js,ts}', 'vite.config.ts'],
+    files: ['*.{js,ts,cjs,mjs}', 'scripts/**/*.{js,ts,cjs}', 'vite.config.ts'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -105,6 +116,7 @@ export default [
 
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': 'off', // Allow console in Node.js files
+      'no-unused-vars': 'off', // Turn off base rule for Node.js files
       'prefer-const': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',

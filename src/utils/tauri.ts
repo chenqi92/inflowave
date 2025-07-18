@@ -2,7 +2,7 @@
  * Tauri 环境检测和兼容性工具
  */
 
-import type { TauriCommandMap, SafeTauriInvoke, SafeTauriInvokeGeneric } from '@/types/tauri';
+import type { TauriCommandMap } from '@/types/tauri';
 
 // 扩展 Window 接口以包含 Tauri 特定的属性
 declare global {

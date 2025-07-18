@@ -4,7 +4,6 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
   Button,

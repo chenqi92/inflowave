@@ -694,7 +694,7 @@ export class PerformancePredictor {
             cpuUsage: queryFeatures.complexityScore * 0.1,
             ioOperations: queryFeatures.tableCount * 100,
             networkTraffic: queryFeatures.columnCount * 1024,
-            gain: gain,
+            gain,
             confidence: model.accuracy,
         });
     }
@@ -737,7 +737,7 @@ export class PerformancePredictor {
             cpuUsage: queryFeatures.complexityScore * 0.2,
             ioOperations: queryFeatures.tableCount * 150,
             networkTraffic: queryFeatures.columnCount * 2048,
-            gain: gain,
+            gain,
             confidence: model.accuracy,
         });
     }
@@ -780,7 +780,7 @@ export class PerformancePredictor {
             cpuUsage: queryFeatures.complexityScore * 0.15,
             ioOperations: queryFeatures.tableCount * 120,
             networkTraffic: queryFeatures.columnCount * 1536,
-            gain: gain,
+            gain,
             confidence: model.accuracy,
         });
     }
@@ -809,7 +809,7 @@ export class PerformancePredictor {
             cpuUsage: queryFeatures.complexityScore * 0.1,
             ioOperations: queryFeatures.tableCount * 80,
             networkTraffic: queryFeatures.columnCount * 1024,
-            gain: gain,
+            gain,
             confidence: 0.6,
         });
     }

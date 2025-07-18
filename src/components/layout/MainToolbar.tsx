@@ -11,7 +11,6 @@ import {
   History,
   Settings,
   RefreshCw,
-  Bug,
   BarChart,
   Edit,
   Zap,

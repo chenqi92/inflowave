@@ -268,12 +268,12 @@ export class HealthCheckService {
         latency,
         details: {
           memory: {
-            usage: memoryUsage.toFixed(2) + '%',
+            usage: `${memoryUsage.toFixed(2)  }%`,
             total: systemInfo.total_memory,
             used: systemInfo.used_memory,
           },
           cpu: {
-            usage: cpuUsage.toFixed(2) + '%',
+            usage: `${cpuUsage.toFixed(2)  }%`,
           },
         },
       };

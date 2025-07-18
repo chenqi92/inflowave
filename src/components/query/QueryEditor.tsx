@@ -10,7 +10,6 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
   TooltipWrapper as Tooltip,
   Label,
   Sheet,

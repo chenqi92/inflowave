@@ -41,7 +41,7 @@ const MainLayout: React.FC = () => {
     updateInfo,
     showNotification: showUpdateNotification,
     hideNotification,
-    skipVersion,
+    skipVersion: _skipVersion,
   } = useUpdater();
 
   // 检查是否显示用户指引

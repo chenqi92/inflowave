@@ -7,12 +7,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Tag,
   Badge,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Tabs,
   TabsContent,
   TabsList,
@@ -31,9 +28,7 @@ import {
   FormMessage,
   Textarea,
   ScrollArea,
-  Separator,
   Text,
-  Paragraph,
   Popconfirm,
   Tooltip,
   TooltipTrigger,
@@ -49,11 +44,8 @@ import {
   Book,
   PlayCircle,
   Search,
-  Filter,
-  Calendar,
   X,
-  Save,
-  Plus
+  Save
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useForm } from 'react-hook-form';

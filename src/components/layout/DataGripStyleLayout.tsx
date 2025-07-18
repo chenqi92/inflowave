@@ -13,7 +13,6 @@ import {
   ResizableHandle,
   Layout,
   Header,
-  Button,
 } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';

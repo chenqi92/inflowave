@@ -110,7 +110,7 @@ export interface ChartConfiguration {
 }
 
 // 导入统一的Dashboard类型定义
-import type { Dashboard, GridItem } from '@/types';
+import type { Dashboard } from '@/types';
 
 interface VisualizationState {
   // 图表配置
