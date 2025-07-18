@@ -74,8 +74,8 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [filterDatabase, setFilterDatabase] = useState<string>('');
-  const [filterDateRange, setFilterDateRange] = useState<string>('');
+  const [filterDatabase, setFilterDatabase] = useState<string>('__all__');
+  const [filterDateRange, setFilterDateRange] = useState<string>('__all__');
   const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
   const [editingQuery, setEditingQuery] = useState<SavedQuery | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -86,7 +86,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       name: '',
       description: '',
       query: '',
-      database: '',
+      database: '__none__',
       tags: [],
     },
   });
@@ -164,7 +164,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       name: query.name,
       description: query.description || '',
       query: query.query,
-      database: query.database || '',
+      database: query.database || '__none__',
       tags: query.tags || [],
     });
     setShowEditModal(true);
@@ -180,7 +180,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
         name: data.name,
         description: data.description,
         query: data.query,
-        database: data.database,
+        database: data.database === '__none__' || data.database === '__empty__' ? '' : data.database,
         tags: data.tags || [],
         updatedAt: new Date(),
       };
@@ -210,9 +210,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       item.query.toLowerCase().includes(searchText.toLowerCase()) ||
       item.database?.toLowerCase().includes(searchText.toLowerCase());
 
-    const matchesDatabase = !filterDatabase || item.database === filterDatabase;
+    const matchesDatabase = filterDatabase === '__all__' || item.database === filterDatabase || (filterDatabase === '__empty__' && !item.database);
 
-    const matchesDateRange = !filterDateRange || (() => {
+    const matchesDateRange = filterDateRange === '__all__' || (() => {
       const itemDate = new Date(item.executedAt);
       const now = new Date();
 
@@ -242,7 +242,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       query.description?.toLowerCase().includes(searchText.toLowerCase());
 
     const matchesDatabase =
-      !filterDatabase || query.database === filterDatabase;
+      filterDatabase === '__all__' || query.database === filterDatabase || (filterDatabase === '__empty__' && !query.database);
 
     return matchesSearch && matchesDatabase;
   });
@@ -418,10 +418,10 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 <SelectValue placeholder="筛选数据库" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">所有数据库</SelectItem>
+                <SelectItem value="__all__">所有数据库</SelectItem>
                 {allDatabases.map(db => (
-                  <SelectItem key={db} value={db || ''}>
-                    {db}
+                  <SelectItem key={db} value={db || '__empty__'}>
+                    {db || '(空)'}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -432,8 +432,8 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
               variant="outline"
               onClick={() => {
                 setSearchText('');
-                setFilterDatabase('');
-                setFilterDateRange('');
+                setFilterDatabase('__all__');
+                setFilterDateRange('__all__');
               }}
               className="w-full"
             >
@@ -451,7 +451,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                   <SelectValue placeholder="时间范围" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">所有时间</SelectItem>
+                  <SelectItem value="__all__">所有时间</SelectItem>
                   <SelectItem value="today">今天</SelectItem>
                   <SelectItem value="week">最近一周</SelectItem>
                   <SelectItem value="month">最近一月</SelectItem>
@@ -622,10 +622,10 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">未指定</SelectItem>
+                        <SelectItem value="__none__">未指定</SelectItem>
                         {allDatabases.map(db => (
-                          <SelectItem key={db} value={db || ''}>
-                            {db}
+                          <SelectItem key={db} value={db || '__empty__'}>
+                            {db || '(空)'}
                           </SelectItem>
                         ))}
                       </SelectContent>

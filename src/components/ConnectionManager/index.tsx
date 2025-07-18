@@ -75,7 +75,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     refreshConnectionStatus,
     getPoolStats,
     removeConnection,
+    testAllConnections,
   } = useConnectionStore();
+
+  // 刷新状态按钮的加载状态
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
 
   // const [loading, setLoading] = useState(false);
   const [connectionLoadingStates, setConnectionLoadingStates] = useState<
@@ -162,6 +166,42 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       showMessage.error(`监控操作失败: ${error}`);
     }
   }, [monitoringActive, startMonitoring, stopMonitoring, refreshAllStatuses]);
+
+  // 处理刷新所有连接状态 - 自动测试所有连接
+  const handleRefreshAllConnectionStatuses = useCallback(async () => {
+    if (connections.length === 0) {
+      showMessage.info('暂无连接需要测试');
+      return;
+    }
+
+    setIsRefreshingAll(true);
+    console.log('🔄 开始测试所有连接状态...');
+
+    try {
+      // 使用专门的测试所有连接方法
+      await testAllConnections();
+
+      // 等待状态更新完成后统计结果
+      setTimeout(() => {
+        const successCount = Object.values(connectionStatuses).filter(
+          status => status?.status === 'connected'
+        ).length;
+        const totalCount = connections.length;
+
+        showMessage.success(
+          `连接状态刷新完成：${successCount}/${totalCount} 个连接可用`
+        );
+
+        console.log(`✅ 连接状态测试完成: ${successCount}/${totalCount} 个连接可用`);
+      }, 500);
+
+    } catch (error) {
+      console.error('❌ 刷新连接状态失败:', error);
+      showMessage.error(`刷新连接状态失败: ${error}`);
+    } finally {
+      setIsRefreshingAll(false);
+    }
+  }, [connections, testAllConnections, connectionStatuses]);
 
   // 查看连接池统计
   const handleViewPoolStats = useCallback(
@@ -488,14 +528,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               </Button>
               <Button
                 variant='outline'
-                onClick={() => {
-                  console.log('🔄 手动刷新连接状态');
-                  refreshAllStatuses();
-                }}
+                onClick={handleRefreshAllConnectionStatuses}
+                disabled={isRefreshingAll}
                 size='sm'
               >
-                <RefreshCw className='w-4 h-4 mr-1' />
-                刷新状态
+                <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                {isRefreshingAll ? '测试中...' : '刷新状态'}
               </Button>
             </div>
           </div>

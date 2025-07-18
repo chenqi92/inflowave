@@ -46,6 +46,7 @@ interface ConnectionState {
   stopMonitoring: () => Promise<void>;
   refreshAllStatuses: () => Promise<void>;
   refreshConnectionStatus: (id: string) => Promise<void>;
+  testAllConnections: () => Promise<void>;
 
   // 连接池方法
   getPoolStats: (id: string) => Promise<void>;
@@ -527,6 +528,90 @@ export const useConnectionStore = create<ConnectionState>()(
             [id]: stats,
           },
         }));
+      },
+
+      // 测试所有连接 - 仅更新表格状态，不影响数据源树连接状态
+      testAllConnections: async () => {
+        console.log('🧪 开始测试所有连接...');
+        const connections = get().connections;
+
+        if (connections.length === 0) {
+          console.log('⚠️ 没有连接需要测试');
+          return;
+        }
+
+        // 并行测试所有连接
+        const testPromises = connections.map(async (connection) => {
+          if (!connection.id) return;
+
+          try {
+            console.log(`🧪 测试连接: ${connection.name} (${connection.id})`);
+
+            // 设置测试中状态
+            set(state => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                [connection.id!]: {
+                  ...state.connectionStatuses[connection.id!],
+                  id: connection.id!,
+                  status: 'connecting',
+                  error: undefined,
+                },
+              },
+            }));
+
+            // 调用后端测试连接API
+            const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string}>('test_connection', { connectionId: connection.id });
+
+            // 更新测试结果状态
+            if (result.success) {
+              set(state => ({
+                connectionStatuses: {
+                  ...state.connectionStatuses,
+                  [connection.id!]: {
+                    id: connection.id!,
+                    status: 'connected' as const,
+                    lastConnected: new Date(),
+                    error: undefined,
+                    latency: result.latency,
+                  },
+                },
+              }));
+              console.log(`✅ 连接测试成功: ${connection.name}`);
+            } else {
+              set(state => ({
+                connectionStatuses: {
+                  ...state.connectionStatuses,
+                  [connection.id!]: {
+                    id: connection.id!,
+                    status: 'error' as const,
+                    error: result.error || '连接测试失败',
+                    lastConnected: state.connectionStatuses[connection.id!]?.lastConnected,
+                    latency: undefined,
+                  },
+                },
+              }));
+              console.log(`❌ 连接测试失败: ${connection.name} - ${result.error}`);
+            }
+          } catch (error) {
+            console.error(`❌ 测试连接异常 ${connection.name}:`, error);
+            set(state => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                [connection.id!]: {
+                  id: connection.id!,
+                  status: 'error' as const,
+                  error: String(error),
+                  lastConnected: state.connectionStatuses[connection.id!]?.lastConnected,
+                  latency: undefined,
+                },
+              },
+            }));
+          }
+        });
+
+        await Promise.all(testPromises);
+        console.log('✅ 所有连接测试完成');
       },
 
       // 同步连接到后端
