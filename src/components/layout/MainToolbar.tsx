@@ -28,6 +28,7 @@ import TimeRangeSelector, {
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
   currentView?: string;
+  onOpenQueryHistory?: () => void;
   currentTimeRange?: {
     label: string;
     value: string;
@@ -47,6 +48,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   currentView = 'datasource', // 软件启动时默认选中数据源按钮
   currentTimeRange,
   onTimeRangeChange,
+  onOpenQueryHistory,
 }) => {
   const {
     activeConnectionId,
@@ -86,8 +88,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   const handleToolsMenuClick = ({ key }: { key: string }) => {
     switch (key) {
       case 'query-history':
-        // 查询历史 - 导航到查询页面并打开历史面板
-        navigate('/query?showHistory=true');
+        // 查询历史 - 先导航到查询页面，然后手动打开历史面板
+        navigate('/query');
+        // 确保先切换到查询视图
+        onViewChange?.('query');
+        // 延迟打开查询历史，确保组件已经渲染
+        setTimeout(() => {
+          onOpenQueryHistory?.();
+        }, 100);
         showMessage.info('正在打开查询历史...');
         break;
       case 'dev-tools':

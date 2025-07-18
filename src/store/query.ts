@@ -106,7 +106,11 @@ export const useQueryStore = create<QueryState>()(
 
       // 选项卡管理
       createTab: (query = '', database) => {
-        const id = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // 使用更唯一的ID生成方式，避免重复键警告
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const counter = Math.floor(Math.random() * 10000);
+        const id = `tab-${timestamp}-${random}-${counter}`;
         const newTab: QueryTab = {
           id,
           title: `查询 ${get().tabs.length + 1}`,
@@ -271,7 +275,11 @@ export const useQueryStore = create<QueryState>()(
 
       // 历史管理
       addToHistory: item => {
-        const id = `history-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // 使用更唯一的ID生成方式，避免重复键警告
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const counter = Math.floor(Math.random() * 10000);
+        const id = `history-${timestamp}-${random}-${counter}`;
         const historyItem: QueryHistoryItem = {
           ...item,
           id,

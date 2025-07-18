@@ -37,6 +37,11 @@ export interface DataGripStyleLayoutProps {
   children?: React.ReactNode;
 }
 
+// 导出用于外部调用的方法接口
+export interface DataGripLayoutRef {
+  openQueryHistory: () => void;
+}
+
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   children,
 }) => {
@@ -92,6 +97,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [executionTime, setExecutionTime] = useState<number>(0);
   const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
   const [showQueryHistory, setShowQueryHistory] = useState(false);
+
+  // 手动打开查询历史的方法
+  const openQueryHistory = useCallback(() => {
+    setShowQueryHistory(true);
+  }, []);
   const [currentTimeRange, setCurrentTimeRange] = useState<{
     label: string;
     value: string;
@@ -159,12 +169,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       setCurrentView(newView);
     }
 
-    // 处理查询历史URL参数
-    if (location.pathname === '/query' && location.search.includes('showHistory=true')) {
-      setCurrentView('query');
-      // 设置标志显示查询历史
-      setShowQueryHistory(true);
-    }
+    // 移除自动打开查询历史的逻辑，改为手动触发
+    // 这样可以避免软件启动时自动弹出查询历史对话框
   }, [location.pathname, location.search]);
 
   // 当偏好设置加载后，更新本地状态
@@ -422,28 +428,31 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                   className='h-2 bg-border hover:bg-border/80'
                 />
 
-                <ResizablePanel
-                  defaultSize={bottomPanelSize}
-                  minSize={25}
-                  maxSize={70}
-                  onResize={size => setBottomPanelSize(size)}
-                >
-                  <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
-                    <EnhancedResultPanel
-                      collapsed={bottomPanelCollapsed}
-                      queryResult={queryResult}
-                      queryResults={queryResults}
-                      executedQueries={executedQueries}
-                      executionTime={executionTime}
-                      onClearResult={() => {
-                        setQueryResult(null);
-                        setQueryResults([]);
-                        setExecutedQueries([]);
-                        setExecutionTime(0);
-                      }}
-                    />
-                  </div>
-                </ResizablePanel>
+                {/* 只有在有查询结果时才显示结果面板 */}
+                {(queryResult || (queryResults && queryResults.length > 0)) && (
+                  <ResizablePanel
+                    defaultSize={bottomPanelSize}
+                    minSize={25}
+                    maxSize={70}
+                    onResize={size => setBottomPanelSize(size)}
+                  >
+                    <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
+                      <EnhancedResultPanel
+                        collapsed={bottomPanelCollapsed}
+                        queryResult={queryResult}
+                        queryResults={queryResults}
+                        executedQueries={executedQueries}
+                        executionTime={executionTime}
+                        onClearResult={() => {
+                          setQueryResult(null);
+                          setQueryResults([]);
+                          setExecutedQueries([]);
+                          setExecutionTime(0);
+                        }}
+                      />
+                    </div>
+                  </ResizablePanel>
+                )}
               </>
             )}
           </ResizablePanelGroup>
@@ -472,6 +481,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           onViewChange={handleViewChange}
           currentTimeRange={currentTimeRange}
           onTimeRangeChange={setCurrentTimeRange}
+          onOpenQueryHistory={openQueryHistory}
         />
       </Header>
 

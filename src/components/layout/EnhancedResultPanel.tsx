@@ -97,6 +97,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     return [];
   }, [queryResults, queryResult]);
 
+  // 从SQL查询中提取表名
+  const extractTableName = useCallback((query: string): string => {
+    if (!query) return '';
+
+    // 匹配FROM后面的表名
+    const fromMatch = query.match(/FROM\s+["`]?([^"`\s,;]+)["`]?/i);
+    if (fromMatch) {
+      return fromMatch[1];
+    }
+
+    // 匹配INSERT INTO后面的表名
+    const insertMatch = query.match(/INSERT\s+INTO\s+["`]?([^"`\s,;]+)["`]?/i);
+    if (insertMatch) {
+      return insertMatch[1];
+    }
+
+    // 匹配UPDATE后面的表名
+    const updateMatch = query.match(/UPDATE\s+["`]?([^"`\s,;]+)["`]?/i);
+    if (updateMatch) {
+      return updateMatch[1];
+    }
+
+    return '';
+  }, []);
+
   // 解析单个查询结果
   const parseQueryResult = useCallback((result: QueryResult) => {
     if (!result?.results?.[0]?.series?.[0]) return null;
@@ -778,6 +803,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         {/* 动态数据标签页 - 为每个查询结果创建一个tab */}
         {allResults.map((result, index) => {
           const parsedResult = parseQueryResult(result);
+          const tableName = executedQueries && executedQueries[index] ? extractTableName(executedQueries[index]) : '';
+
           return (
             <TabsContent key={`data-${index}`} value={`data-${index}`} className="flex-1 overflow-hidden mt-0">
               {parsedResult ? (
@@ -785,6 +812,15 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   {/* 数据表格头部 */}
                   <div className="flex-shrink-0 bg-muted/50 border-b px-4 py-2">
                     <div className="flex items-center justify-between">
+                      {/* 表名标注 */}
+                      {tableName && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">查询表：</span>
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20">
+                            {tableName}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <Database className="w-4 h-4" />
                         <span className="text-sm font-medium">
@@ -1192,15 +1228,27 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (!isChartable) return null;
 
           const chartOption = generateChartOption(result, visualizationType);
+          const tableName = executedQueries && executedQueries[index] ? extractTableName(executedQueries[index]) : '';
 
           return (
             <TabsContent key={`visualization-${index}`} value={`visualization-${index}`} className="flex-1 p-4 space-y-4 mt-0">
               {chartOption ? (
                 <div className="h-full flex flex-col">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium">
-                      数据可视化 {allResults.length > 1 ? `${index + 1}` : ''}
-                    </h3>
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-sm font-medium">
+                        数据可视化 {allResults.length > 1 ? `${index + 1}` : ''}
+                      </h3>
+                      {/* 表名标注 */}
+                      {tableName && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">数据源：</span>
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20">
+                            {tableName}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -266,7 +266,11 @@ export const useVisualizationStore = create<VisualizationState>()(
 
       // 图表管理
       createChart: config => {
-        const id = `chart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // 使用更唯一的ID生成方式，避免重复键警告
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const counter = Math.floor(Math.random() * 10000);
+        const id = `chart-${timestamp}-${random}-${counter}`;
         const newChart: ChartConfiguration = {
           ...createDefaultChart(config.type),
           ...config,
@@ -375,7 +379,11 @@ export const useVisualizationStore = create<VisualizationState>()(
 
       // 仪表板管理
       createDashboard: dashboard => {
-        const id = `dashboard-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // 使用更唯一的ID生成方式，避免重复键警告
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const counter = Math.floor(Math.random() * 10000);
+        const id = `dashboard-${timestamp}-${random}-${counter}`;
         const now = new Date();
         const newDashboard: Dashboard = {
           ...dashboard,
