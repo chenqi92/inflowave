@@ -62,6 +62,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   const {
     connections,
     connectionStatuses,
+    tableConnectionStatuses,
     activeConnectionId,
     monitoringActive,
     monitoringInterval,
@@ -76,6 +77,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     getPoolStats,
     removeConnection,
     testAllConnections,
+    getTableConnectionStatus,
   } = useConnectionStore();
 
   // 刷新状态按钮的加载状态
@@ -183,7 +185,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
       // 等待状态更新完成后统计结果
       setTimeout(() => {
-        const successCount = Object.values(connectionStatuses).filter(
+        const successCount = Object.values(tableConnectionStatuses).filter(
           status => status?.status === 'connected'
         ).length;
         const totalCount = connections.length;
@@ -201,7 +203,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     } finally {
       setIsRefreshingAll(false);
     }
-  }, [connections, testAllConnections, connectionStatuses]);
+  }, [connections, testAllConnections, tableConnectionStatuses]);
 
   // 查看连接池统计
   const handleViewPoolStats = useCallback(
@@ -282,7 +284,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       key: 'name',
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
-        const status = connectionStatuses[record.id!];
+        const status = tableConnectionStatuses[record.id!];
 
         // 确定状态点的颜色
         const getStatusColor = () => {
@@ -356,7 +358,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       dataIndex: 'status',
       key: 'status',
       render: (_, record) => {
-        const status = connectionStatuses[record.id!];
+        const status = tableConnectionStatuses[record.id!];
         return (
           <div className='space-y-1'>
             {getStatusTag(status)}
@@ -374,7 +376,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       dataIndex: 'poolStats',
       key: 'poolStats',
       render: (_, record) => {
-        const status = connectionStatuses[record.id!];
+        const status = tableConnectionStatuses[record.id!];
         const isTestFailed = status?.status === 'error';
         const isTestSuccessful = status?.status === 'connected' && !status?.error;
         const stats = poolStats[record.id!];
@@ -431,7 +433,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       dataIndex: 'lastTested',
       key: 'lastTested',
       render: (_, record) => {
-        const status = connectionStatuses[record.id!];
+        const status = tableConnectionStatuses[record.id!];
         return status?.lastConnected ? (
           <div className='text-sm text-muted-foreground'>
             {new Date(status.lastConnected).toLocaleString()}
@@ -446,7 +448,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       dataIndex: 'actions',
       key: 'actions',
       render: (_, record) => {
-        const status = connectionStatuses[record.id!];
+        const status = tableConnectionStatuses[record.id!];
         const isLoading = connectionLoadingStates.get(record.id!);
         const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
 
@@ -506,7 +508,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   // 合并连接数据和状态
   const dataSource: ConnectionWithStatus[] = connections.map(conn => ({
     ...conn,
-    status: connectionStatuses[conn.id!],
+    status: tableConnectionStatuses[conn.id!],
     poolStats: poolStats[conn.id!],
   }));
 

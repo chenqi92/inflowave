@@ -7,8 +7,11 @@ interface ConnectionState {
   // 连接配置列表
   connections: ConnectionConfig[];
 
-  // 连接状态映射
+  // 连接状态映射 - 用于数据源树和实际连接操作
   connectionStatuses: Record<string, ConnectionStatus>;
+
+  // 表格连接状态映射 - 仅用于连接管理表格显示
+  tableConnectionStatuses: Record<string, ConnectionStatus>;
 
   // 已连接的连接ID列表
   connectedConnectionIds: string[];
@@ -28,12 +31,14 @@ interface ConnectionState {
   updateConnection: (id: string, config: Partial<ConnectionConfig>) => void;
   removeConnection: (id: string) => void;
   setConnectionStatus: (id: string, status: ConnectionStatus) => void;
+  setTableConnectionStatus: (id: string, status: ConnectionStatus) => void;
   setActiveConnection: (id: string | null) => void;
   addConnectedConnection: (id: string) => void;
   removeConnectedConnection: (id: string) => void;
   isConnectionConnected: (id: string) => boolean;
   getConnection: (id: string) => ConnectionConfig | undefined;
   getConnectionStatus: (id: string) => ConnectionStatus | undefined;
+  getTableConnectionStatus: (id: string) => ConnectionStatus | undefined;
   clearConnections: () => void;
 
   // 连接管理方法
@@ -64,6 +69,7 @@ export const useConnectionStore = create<ConnectionState>()(
       // 初始状态 - 软件启动时所有连接都应该为断开状态
       connections: [],
       connectionStatuses: {},
+      tableConnectionStatuses: {},
       connectedConnectionIds: [],
       activeConnectionId: null,
       monitoringActive: false,
@@ -147,6 +153,37 @@ export const useConnectionStore = create<ConnectionState>()(
         });
       },
 
+      // 设置表格连接状态 - 仅用于连接管理表格显示
+      setTableConnectionStatus: (id, status) => {
+        set(state => {
+          const currentStatus = state.tableConnectionStatuses[id];
+
+          // 如果状态没有实际变化，不更新
+          if (
+            currentStatus &&
+            currentStatus.status === status.status &&
+            currentStatus.error === status.error &&
+            currentStatus.latency === status.latency
+          ) {
+            return state;
+          }
+
+          return {
+            tableConnectionStatuses: {
+              ...state.tableConnectionStatuses,
+              [id]: {
+                ...status,
+                // 保留上次连接时间，除非是新的连接成功
+                lastConnected:
+                  status.status === 'connected'
+                    ? status.lastConnected || new Date()
+                    : currentStatus?.lastConnected || status.lastConnected,
+              },
+            },
+          };
+        });
+      },
+
       // 设置活跃连接
       setActiveConnection: id => {
         set({ activeConnectionId: id });
@@ -197,11 +234,17 @@ export const useConnectionStore = create<ConnectionState>()(
         return get().connectionStatuses[id];
       },
 
+      // 获取表格连接状态
+      getTableConnectionStatus: id => {
+        return get().tableConnectionStatuses[id];
+      },
+
       // 清空所有连接
       clearConnections: () => {
         set({
           connections: [],
           connectionStatuses: {},
+          tableConnectionStatuses: {},
           connectedConnectionIds: [],
           activeConnectionId: null,
           poolStats: {},
@@ -316,20 +359,20 @@ export const useConnectionStore = create<ConnectionState>()(
         }
       },
 
-      // 测试连接 - 只检测连通性，不影响实际连接状态
+      // 测试连接 - 只检测连通性，仅更新表格状态，不影响数据源树状态
       testConnection: async (id: string) => {
         console.log(`🧪 开始测试连接: ${id}`);
         try {
-          // 暂时更新状态为测试中
+          // 暂时更新表格状态为测试中
           set(state => ({
-            connectionStatuses: {
-              ...state.connectionStatuses,
+            tableConnectionStatuses: {
+              ...state.tableConnectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
+                ...state.tableConnectionStatuses[id],
                 id,
                 status: 'connecting',
                 error: undefined,
-                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                lastConnected: state.tableConnectionStatuses[id]?.lastConnected,
                 latency: undefined,
               },
             },
@@ -339,11 +382,11 @@ export const useConnectionStore = create<ConnectionState>()(
           const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string}>('test_connection', { connectionId: id });
           console.log(`✅ 测试连接结果: ${id}`, result);
 
-          // 更新状态为测试结果，但不影响实际连接状态
+          // 更新表格状态为测试结果，不影响数据源树连接状态
           if (result.success) {
             set(state => ({
-              connectionStatuses: {
-                ...state.connectionStatuses,
+              tableConnectionStatuses: {
+                ...state.tableConnectionStatuses,
                 [id]: {
                   id,
                   status: 'connected' as const,
@@ -355,13 +398,13 @@ export const useConnectionStore = create<ConnectionState>()(
             }));
           } else {
             set(state => ({
-              connectionStatuses: {
-                ...state.connectionStatuses,
+              tableConnectionStatuses: {
+                ...state.tableConnectionStatuses,
                 [id]: {
                   id,
                   status: 'error' as const,
                   error: result.error || '连接测试失败',
-                  lastConnected: state.connectionStatuses[id]?.lastConnected,
+                  lastConnected: state.tableConnectionStatuses[id]?.lastConnected,
                   latency: undefined,
                 },
               },
@@ -371,15 +414,15 @@ export const useConnectionStore = create<ConnectionState>()(
           return result.success;
         } catch (error) {
           console.error(`❌ 测试连接失败 (${id}):`, error);
-          // 更新状态为错误
+          // 更新表格状态为错误
           set(state => ({
-            connectionStatuses: {
-              ...state.connectionStatuses,
+            tableConnectionStatuses: {
+              ...state.tableConnectionStatuses,
               [id]: {
                 id,
                 status: 'error' as const,
                 error: String(error),
-                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                lastConnected: state.tableConnectionStatuses[id]?.lastConnected,
                 latency: undefined,
               },
             },
@@ -547,12 +590,12 @@ export const useConnectionStore = create<ConnectionState>()(
           try {
             console.log(`🧪 测试连接: ${connection.name} (${connection.id})`);
 
-            // 设置测试中状态
+            // 设置表格测试中状态
             set(state => ({
-              connectionStatuses: {
-                ...state.connectionStatuses,
+              tableConnectionStatuses: {
+                ...state.tableConnectionStatuses,
                 [connection.id!]: {
-                  ...state.connectionStatuses[connection.id!],
+                  ...state.tableConnectionStatuses[connection.id!],
                   id: connection.id!,
                   status: 'connecting',
                   error: undefined,
@@ -563,11 +606,11 @@ export const useConnectionStore = create<ConnectionState>()(
             // 调用后端测试连接API
             const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string}>('test_connection', { connectionId: connection.id });
 
-            // 更新测试结果状态
+            // 更新表格测试结果状态
             if (result.success) {
               set(state => ({
-                connectionStatuses: {
-                  ...state.connectionStatuses,
+                tableConnectionStatuses: {
+                  ...state.tableConnectionStatuses,
                   [connection.id!]: {
                     id: connection.id!,
                     status: 'connected' as const,
@@ -580,13 +623,13 @@ export const useConnectionStore = create<ConnectionState>()(
               console.log(`✅ 连接测试成功: ${connection.name}`);
             } else {
               set(state => ({
-                connectionStatuses: {
-                  ...state.connectionStatuses,
+                tableConnectionStatuses: {
+                  ...state.tableConnectionStatuses,
                   [connection.id!]: {
                     id: connection.id!,
                     status: 'error' as const,
                     error: result.error || '连接测试失败',
-                    lastConnected: state.connectionStatuses[connection.id!]?.lastConnected,
+                    lastConnected: state.tableConnectionStatuses[connection.id!]?.lastConnected,
                     latency: undefined,
                   },
                 },
@@ -596,13 +639,13 @@ export const useConnectionStore = create<ConnectionState>()(
           } catch (error) {
             console.error(`❌ 测试连接异常 ${connection.name}:`, error);
             set(state => ({
-              connectionStatuses: {
-                ...state.connectionStatuses,
+              tableConnectionStatuses: {
+                ...state.tableConnectionStatuses,
                 [connection.id!]: {
                   id: connection.id!,
                   status: 'error' as const,
                   error: String(error),
-                  lastConnected: state.connectionStatuses[connection.id!]?.lastConnected,
+                  lastConnected: state.tableConnectionStatuses[connection.id!]?.lastConnected,
                   latency: undefined,
                 },
               },
@@ -681,6 +724,7 @@ export const useConnectionStore = create<ConnectionState>()(
           return {
             ...state,
             connectionStatuses: disconnectedStatuses,
+            tableConnectionStatuses: { ...disconnectedStatuses }, // 表格状态也初始化为断开
             connectedConnectionIds: [],
             activeConnectionId: null,
           };
