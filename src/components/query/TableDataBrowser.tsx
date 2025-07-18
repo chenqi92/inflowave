@@ -16,6 +16,8 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    Checkbox,
     Spin,
     TooltipTrigger,
     TooltipContent,
@@ -60,6 +62,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [data, setData] = useState<DataRow[]>([]);
     const [rawData, setRawData] = useState<DataRow[]>([]); // 存储原始数据用于客户端排序
     const [columns, setColumns] = useState<string[]>([]);
+    const [selectedColumns, setSelectedColumns] = useState<string[]>([]); // 选中的列
     const [loading, setLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -281,6 +284,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [sortColumn, sortDirection, loadData, columns.length]);
 
+    // 初始化选中的列（默认全选）
+    useEffect(() => {
+        if (columns.length > 0) {
+            setSelectedColumns(columns);
+        }
+    }, [columns]);
+
     // 处理页面变化
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -334,6 +344,33 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setFilters(filters.filter((_, i) => i !== index));
     };
 
+    // 处理列选择
+    const handleColumnToggle = (column: string) => {
+        setSelectedColumns(prev => {
+            if (prev.includes(column)) {
+                // 如果已选中，则取消选中（但至少保留一列）
+                if (prev.length > 1) {
+                    return prev.filter(col => col !== column);
+                }
+                return prev; // 至少保留一列
+            } else {
+                // 如果未选中，则添加到选中列表
+                return [...prev, column];
+            }
+        });
+    };
+
+    // 全选/取消全选
+    const handleSelectAll = () => {
+        if (selectedColumns.length === columns.length) {
+            // 当前全选，取消全选（但保留第一列）
+            setSelectedColumns([columns[0]]);
+        } else {
+            // 当前非全选，全选
+            setSelectedColumns(columns);
+        }
+    };
+
     // 导出数据
     const exportData = async () => {
         if (data.length === 0) {
@@ -342,16 +379,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
 
         try {
-            // 构造符合 QueryResult 格式的数据
+            // 构造符合 QueryResult 格式的数据（只包含选中的列）
             const queryResult: QueryResult = {
                 results: [{
                     series: [{
                         name: tableName,
-                        columns,
-                        values: data.map(row => columns.map(col => row[col]))
+                        columns: selectedColumns,
+                        values: data.map(row => selectedColumns.map(col => row[col]))
                     }]
                 }],
-                data: data.map(row => columns.map(col => row[col])), // 转换为正确的格式
+                data: data.map(row => selectedColumns.map(col => row[col])), // 转换为正确的格式
                 executionTime: 0
             };
 
@@ -391,6 +428,48 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             </Badge>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* 列选择下拉菜单 */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3"
+                                    >
+                                        <span className="text-xs">
+                                            列 ({selectedColumns.length}/{columns.length})
+                                        </span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56 max-h-80 overflow-y-auto">
+                                    <DropdownMenuItem onClick={handleSelectAll}>
+                                        <Checkbox
+                                            checked={selectedColumns.length === columns.length}
+                                            className="mr-2"
+                                        />
+                                        全选/取消全选
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {columns.map((column) => (
+                                        <DropdownMenuItem
+                                            key={column}
+                                            onClick={() => handleColumnToggle(column)}
+                                        >
+                                            <Checkbox
+                                                checked={selectedColumns.includes(column)}
+                                                className="mr-2"
+                                            />
+                                            <span className="flex-1">{column}</span>
+                                            {column === 'time' && (
+                                                <Badge variant="secondary" className="text-xs ml-2">
+                                                    时间
+                                                </Badge>
+                                            )}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -458,7 +537,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <table className="w-full caption-bottom text-sm">
                                 <thead className="sticky top-0 bg-background z-10 border-b">
                                     <tr className="border-b transition-colors hover:bg-muted/50">
-                                        {columns.map((column) => (
+                                        {selectedColumns.map((column) => (
                                             <th
                                                 key={column}
                                                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50"
@@ -504,7 +583,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                             key={row._id || index}
                                             className="border-b transition-colors hover:bg-muted/50"
                                         >
-                                            {columns.map((column) => (
+                                            {selectedColumns.map((column) => (
                                                 <td key={column} className="p-4 align-middle text-xs font-mono">
                                                     {column === 'time'
                                                         ? new Date(row[column]).toLocaleString()
