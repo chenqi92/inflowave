@@ -130,13 +130,13 @@ pub async fn get_app_settings(
 }
 
 /// 更新应用设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_app_settings(
     settings_storage: State<'_, SettingsStorage>,
     new_settings: AppSettings,
 ) -> Result<(), String> {
     debug!("更新应用设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -165,7 +165,7 @@ pub async fn reset_app_settings(
 }
 
 /// 更新通用设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_general_settings(
     settings_storage: State<'_, SettingsStorage>,
     general_settings: GeneralSettings,
@@ -183,7 +183,7 @@ pub async fn update_general_settings(
 }
 
 /// 更新编辑器设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_editor_settings(
     settings_storage: State<'_, SettingsStorage>,
     editor_settings: EditorSettings,
@@ -201,7 +201,7 @@ pub async fn update_editor_settings(
 }
 
 /// 更新查询设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_query_settings(
     settings_storage: State<'_, SettingsStorage>,
     query_settings: QuerySettings,
@@ -219,7 +219,7 @@ pub async fn update_query_settings(
 }
 
 /// 更新可视化设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_visualization_settings(
     settings_storage: State<'_, SettingsStorage>,
     visualization_settings: VisualizationSettings,
@@ -237,7 +237,7 @@ pub async fn update_visualization_settings(
 }
 
 /// 更新安全设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_security_settings(
     settings_storage: State<'_, SettingsStorage>,
     security_settings: SecuritySettings,
@@ -273,7 +273,7 @@ pub async fn export_settings(
 }
 
 /// 导入设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn import_settings(
     settings_storage: State<'_, SettingsStorage>,
     settings_json: String,
@@ -323,7 +323,7 @@ pub async fn get_settings_schema() -> Result<serde_json::Value, String> {
 }
 
 /// 更新控制器设置
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn update_controller_settings(
     settings_storage: State<'_, SettingsStorage>,
     controller_settings: ControllerSettings,

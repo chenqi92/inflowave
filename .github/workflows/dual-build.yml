@@ -13,6 +13,11 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 jobs:
   build-standard:
     name: Build Standard Mode
