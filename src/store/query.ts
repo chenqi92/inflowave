@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { QueryResult, QueryRequest, QueryValidationResult } from '@/types';
 import { QueryAPI } from '@/services/api';
 
-interface QueryHistoryItem {
+export interface QueryHistoryItem {
   id: string;
   query: string;
   database: string;
@@ -14,7 +14,7 @@ interface QueryHistoryItem {
   error?: string;
 }
 
-interface QueryTab {
+export interface QueryTab {
   id: string;
   title: string;
   query: string;
