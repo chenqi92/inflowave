@@ -393,7 +393,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
                   </FormControl>
                   <SelectContent>
                     {allDatabases.map(db => (
-                      <SelectItem key={db} value={db}>
+                      <SelectItem key={db} value={db || ''}>
                         {db}
                       </SelectItem>
                     ))}
@@ -490,7 +490,7 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
               <SelectContent>
                 <SelectItem value=''>全部数据库</SelectItem>
                 {allDatabases.map(db => (
-                  <SelectItem key={db} value={db}>
+                  <SelectItem key={db} value={db || ''}>
                     {db}
                   </SelectItem>
                 ))}

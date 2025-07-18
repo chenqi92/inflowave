@@ -271,10 +271,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
   // 基础性能指标状态
   const [basicMetrics, setBasicMetrics] = useState<{
-    queryExecutionTime: number[];
-    writeLatency: number[];
-    memoryUsage: number[];
-    cpuUsage: number[];
+    queryExecutionTime: { timestamp: string; value: number; }[];
+    writeLatency: { timestamp: string; value: number; }[];
+    memoryUsage: { timestamp: string; value: number; }[];
+    cpuUsage: { timestamp: string; value: number; }[];
     diskIO: {
       readBytes: number;
       writeBytes: number;
@@ -352,7 +352,18 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           packetsIn: 0,
           packetsOut: 0,
         },
-        storageAnalysis: metricsResult.storageAnalysis || {
+        storageAnalysis: metricsResult.storageAnalysis ? {
+          totalSize: metricsResult.storageAnalysis.totalSize || 0,
+          compressionRatio: metricsResult.storageAnalysis.compressionRatio || 1.0,
+          retentionPolicyEffectiveness: metricsResult.storageAnalysis.retentionPolicyEffectiveness || 0,
+          recommendations: Array.isArray(metricsResult.storageAnalysis.recommendations) 
+            ? (metricsResult.storageAnalysis.recommendations as any[]).map(rec => 
+                typeof rec === 'string' 
+                  ? { priority: 'medium', description: rec, estimatedSavings: 0 }
+                  : rec as { priority: string; description: string; estimatedSavings: number; }
+              )
+            : [] as { priority: string; description: string; estimatedSavings: number; }[],
+        } : {
           totalSize: 0,
           compressionRatio: 1.0,
           retentionPolicyEffectiveness: 0,

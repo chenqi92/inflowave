@@ -384,7 +384,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                   }}
                   onActiveTabTypeChange={setActiveTabType}
                   currentTimeRange={currentTimeRange}
-                  ref={tabEditorRef}
+                  ref={tabEditorRef as any}
                 />
               </ResizablePanel>
 

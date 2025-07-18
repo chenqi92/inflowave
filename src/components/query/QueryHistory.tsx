@@ -420,7 +420,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
               <SelectContent>
                 <SelectItem value="">所有数据库</SelectItem>
                 {allDatabases.map(db => (
-                  <SelectItem key={db} value={db}>
+                  <SelectItem key={db} value={db || ''}>
                     {db}
                   </SelectItem>
                 ))}
@@ -624,7 +624,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                       <SelectContent>
                         <SelectItem value="">未指定</SelectItem>
                         {allDatabases.map(db => (
-                          <SelectItem key={db} value={db}>
+                          <SelectItem key={db} value={db || ''}>
                             {db}
                           </SelectItem>
                         ))}

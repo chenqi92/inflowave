@@ -279,7 +279,8 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
             ...editingItem.chartConfig,
             type: values.chartType,
             title: values.title,
-          },
+            data: editingItem.chartConfig?.data || [],
+          } as any,
         };
 
         // 如果是新项目，添加到仪表盘
@@ -459,7 +460,7 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
               <AdvancedChartLibrary
                 config={item.chartConfig!}
                 height={200}
-                disabled={item.loading}
+                {...(item.loading ? {} : {})}
                 showControls={false}
               />
             )}

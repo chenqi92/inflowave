@@ -307,6 +307,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     },
     {
       title: '连接信息',
+      dataIndex: 'connectionInfo',
       key: 'connectionInfo',
       width: 200,
       render: (_, record) => (
@@ -334,6 +335,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     },
     {
       title: '状态',
+      dataIndex: 'status',
       key: 'status',
       width: 120,
       render: (_, record) => {
@@ -352,6 +354,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     },
     {
       title: '最后连接',
+      dataIndex: 'lastConnected',
       key: 'lastConnected',
       width: 160,
       render: (_, record) => {
@@ -367,6 +370,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     },
     {
       title: '操作',
+      dataIndex: 'actions',
       key: 'actions',
       width: 300,
       render: (_, record) => {
@@ -560,7 +564,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               x: 'max-content',
               y: 'calc(100vh - 400px)',
             }}
-            size='default'
+            size='middle'
             className='w-full h-full'
             rowClassName={record =>
               activeConnectionId === record.id

@@ -693,7 +693,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         visible={shortcutsVisible}
         onClose={() => setShortcutsVisible(false)}
       /> */}
-      <AboutDialog open={aboutVisible} onClose={() => setAboutVisible(false)} />
+      <AboutDialog visible={aboutVisible} onClose={() => setAboutVisible(false)} />
     </>
   );
 };

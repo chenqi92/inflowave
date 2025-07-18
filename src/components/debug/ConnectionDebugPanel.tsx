@@ -20,6 +20,15 @@ import { Bug, RefreshCw, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 
+interface Column {
+  title: string;
+  dataIndex: string;
+  key: string;
+  width?: string;
+  ellipsis?: boolean;
+  render?: (value: any, record: any) => React.ReactNode;
+}
+
 interface DebugInfo {
   frontendConnections: any[];
   backendConnections: any[];
@@ -119,7 +128,7 @@ const ConnectionDebugPanel: React.FC = () => {
     return mismatched;
   };
 
-  const columns = [
+  const columns: Column[] = [
     {
       title: 'ID',
       dataIndex: 'id',

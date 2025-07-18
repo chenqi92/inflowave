@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, Typography, Tag, Separator } from '@/components/ui';
+import { Typography, Tag, Separator } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import {
   Settings,
@@ -92,25 +93,6 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
     },
   ];
 
-  // 表格列配置
-  const columns = [
-    {
-      title: '快捷键',
-      dataIndex: 'key',
-      key: 'key',
-      width: 120,
-      render: (text: string) => (
-        <Tag color='blue' style={{ fontFamily: 'monospace' }}>
-          {text}
-        </Tag>
-      ),
-    },
-    {
-      title: '功能描述',
-      dataIndex: 'description',
-      key: 'description',
-    },
-  ];
 
   return (
     <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -131,14 +113,31 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
               </div>
             </Title>
 
-            <Table
-              dataSource={category.shortcuts}
-              columns={columns}
-              pagination={false}
-              size='small'
-              rowKey='key'
-              style={{ marginBottom: 16 }}
-            />
+            <Table className="mb-4">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/3">快捷键</TableHead>
+                  <TableHead>描述</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {category.shortcuts.map((shortcut) => (
+                  <TableRow key={shortcut.key}>
+                    <TableCell className="font-mono">
+                      {shortcut.key.split('+').map((key, index) => (
+                        <span key={index}>
+                          {index > 0 && ' + '}
+                          <Tag variant="secondary" className="text-xs">
+                            {key}
+                          </Tag>
+                        </span>
+                      ))}
+                    </TableCell>
+                    <TableCell>{shortcut.description}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
             {index < shortcutCategories.length - 1 && <Separator />}
           </div>

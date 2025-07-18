@@ -1240,7 +1240,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
               language='influxql'
               theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={currentTab?.query || ''}
-              onValueChange={value => updateCurrentTabQuery(value || '')}
+              onChange={value => updateCurrentTabQuery(value || '')}
               onMount={handleEditorDidMount}
               options={{
                 minimap: { enabled: false },

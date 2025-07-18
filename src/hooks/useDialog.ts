@@ -13,7 +13,7 @@ interface DialogOptions {
 interface DialogState {
   isOpen: boolean;
   options: DialogOptions;
-  resolve?: (value?: string | boolean) => void;
+  resolve?: (value: string | boolean | PromiseLike<string | boolean>) => void;
   reject?: (reason?: any) => void;
 }
 

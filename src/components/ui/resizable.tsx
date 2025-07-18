@@ -65,7 +65,7 @@ const ResizableHandle = React.memo(
 
     // 优化的事件处理
     const handleMouseDown = React.useCallback(
-      (e: React.MouseEvent) => {
+      (e: React.MouseEvent<HTMLDivElement>) => {
         setIsResizing(true);
         props.onMouseDown?.(e);
       },
@@ -73,7 +73,7 @@ const ResizableHandle = React.memo(
     );
 
     const handleMouseUp = React.useCallback(
-      (e: React.MouseEvent) => {
+      (e: React.MouseEvent<HTMLDivElement>) => {
         setIsResizing(false);
         props.onMouseUp?.(e);
       },
@@ -93,8 +93,8 @@ const ResizableHandle = React.memo(
     return (
       <ResizablePrimitive.PanelResizeHandle
         className={handleClassName}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
+        onMouseDown={handleMouseDown as any}
+        onMouseUp={handleMouseUp as any}
         {...props}
       >
         {withHandle && (

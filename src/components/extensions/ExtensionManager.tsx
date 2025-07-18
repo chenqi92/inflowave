@@ -753,7 +753,7 @@ const ExtensionManager: React.FC = () => {
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        defaultValue={Array.isArray(field.value) ? field.value[0] || '' : field.value || ''}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder='选择要监听的事件' />

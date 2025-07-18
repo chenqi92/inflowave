@@ -250,7 +250,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 hover: { enabled: true },
                 quickSuggestionsDelay: 50,
                 suggestSelection: 'first',
-                wordBasedSuggestions: true,
+                wordBasedSuggestions: 'allDocuments',
               }}
             />
           </div>

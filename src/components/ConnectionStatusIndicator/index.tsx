@@ -23,7 +23,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
   if (!status) {
     return (
       <div className='flex gap-2' style={style}>
-        <Badge status='default' />
+        <Badge variant='secondary'>未知</Badge>
         {showText && <Text type='secondary'>未知状态</Text>}
       </div>
     );
@@ -95,14 +95,14 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
     if (size === 'small') {
       return (
         <Tooltip title={getTooltipContent()}>
-          <Badge status={config.badgeStatus} />
+          <Badge variant={config.badgeStatus === 'success' ? 'default' : config.badgeStatus === 'error' ? 'destructive' : 'secondary'}>{config.text}</Badge>
         </Tooltip>
       );
     }
 
     if (size === 'large') {
       return (
-        <div className='flex gap-2' direction='vertical' size='small'>
+        <div className='flex flex-col gap-2'>
           <div className='flex gap-2'>
             {config.icon}
             {showText && (
@@ -112,7 +112,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
             )}
           </div>
           {showLatency && status.latency && (
-            <div className='flex gap-2' size='small'>
+            <div className='flex gap-2'>
               <Clock
                 className='w-4 h-4'
                 style={{ fontSize: '12px', color: '#8c8c8c' }}
@@ -135,7 +135,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
     return (
       <Tooltip title={getTooltipContent()}>
         <div className='flex gap-2'>
-          <Badge status={config.badgeStatus} />
+          <Badge variant={config.badgeStatus === 'success' ? 'default' : config.badgeStatus === 'error' ? 'destructive' : 'secondary'}>{config.text}</Badge>
           {showText && (
             <Tag color={config.tagColor} style={{ margin: 0 }}>
               {config.text}
