@@ -196,7 +196,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
 
   if (!data) {
     return (
-      <Empty description='暂无图表数据' image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      <Empty description='暂无图表数据' />
     );
   }
 

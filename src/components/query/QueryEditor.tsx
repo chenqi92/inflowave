@@ -1084,7 +1084,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
                       currentTab?.name,
                       '标签页名称'
                     );
-                    if (newName && newName.trim()) {
+                    if (newName && typeof newName === 'string' && newName.trim()) {
                       renameTab(activeTabId, newName.trim());
                     }
                   }}>

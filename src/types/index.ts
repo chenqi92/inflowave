@@ -308,6 +308,7 @@ export interface AppConfig {
   autoSave: boolean;
   autoConnect: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  colorScheme?: string;
 }
 
 // 错误相关类型

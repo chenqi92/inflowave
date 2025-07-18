@@ -556,9 +556,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'console':
         // 打开浏览器开发者工具
-        if (window.chrome && window.chrome.runtime) {
+        if ((window as any).chrome && (window as any).chrome.runtime) {
           // Chrome
-          window.chrome.runtime.sendMessage({action: 'openDevTools'});
+          (window as any).chrome.runtime.sendMessage({action: 'openDevTools'});
         } else {
           // 通用方法
           document.dispatchEvent(new CustomEvent('open-console'));

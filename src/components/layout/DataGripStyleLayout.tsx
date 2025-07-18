@@ -105,6 +105,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   });
   const tabEditorRef = useRef<{
     executeQueryWithContent?: (query: string, database: string) => void;
+    createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
   } | null>(null);
 
   // 刷新数据源面板的方法
