@@ -8,10 +8,6 @@ import {
   TooltipTrigger,
   Progress,
   Typography,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -28,7 +24,6 @@ import {
   Unlink,
   PlayCircle,
   PauseCircle,
-  MoreHorizontal,
   RefreshCw,
   Plus,
 } from 'lucide-react';
@@ -269,7 +264,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
-      width: 280,
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         return (
@@ -309,7 +303,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接信息',
       dataIndex: 'connectionInfo',
       key: 'connectionInfo',
-      width: 200,
       render: (_, record) => (
         <div className='space-y-1'>
           <div className='text-sm'>
@@ -337,7 +330,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return (
@@ -353,10 +345,57 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
+      title: '连接池统计',
+      dataIndex: 'poolStats',
+      key: 'poolStats',
+      render: (_, record) => {
+        const status = connectionStatuses[record.id!];
+        const isConnected = status?.status === 'connected';
+        const stats = poolStats[record.id!];
+        
+        if (!isConnected) {
+          return <span className='text-muted-foreground text-sm'>未连接</span>;
+        }
+        
+        if (!stats) {
+          return (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => handleViewPoolStats(record.id!)}
+            >
+              <Eye className='w-3 h-3 mr-1' />
+              查看统计
+            </Button>
+          );
+        }
+        
+        return (
+          <div className='space-y-1'>
+            <div className='text-sm'>
+              <span className='text-muted-foreground'>活跃/总数：</span>
+              <span className='text-foreground font-medium'>
+                {stats.active_connections}/{stats.total_connections}
+              </span>
+            </div>
+            <div className='text-sm'>
+              <span className='text-muted-foreground'>空闲：</span>
+              <span className='text-foreground font-medium'>
+                {stats.idle_connections}
+              </span>
+              <span className='text-muted-foreground ml-2'>最大：</span>
+              <span className='text-foreground font-medium'>
+                {stats.max_connections}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       title: '最后连接',
       dataIndex: 'lastConnected',
       key: 'lastConnected',
-      width: 160,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -372,7 +411,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '操作',
       dataIndex: 'actions',
       key: 'actions',
-      width: 300,
       render: (_, record) => {
         const status = connectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
@@ -409,37 +447,22 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               编辑
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant='outline' size='sm' disabled={isLoading}>
-                  <MoreHorizontal className='w-4 h-4 mr-1' />
-                  更多
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  disabled={!isConnected}
-                  onClick={() => handleViewPoolStats(record.id!)}
-                >
-                  <Eye className='w-4 h-4 mr-2' />
-                  连接池统计
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className='text-destructive focus:text-destructive'
-                  onClick={async () => {
-                    const confirmed = await dialog.confirm(
-                      `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
-                    );
-                    if (confirmed) {
-                      removeConnection(record.id!);
-                    }
-                  }}
-                >
-                  <Trash2 className='w-4 h-4 mr-2' />
-                  删除连接
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={isLoading}
+              onClick={async () => {
+                const confirmed = await dialog.confirm(
+                  `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
+                );
+                if (confirmed) {
+                  removeConnection(record.id!);
+                }
+              }}
+            >
+              <Trash2 className='w-4 h-4 mr-1' />
+              删除
+            </Button>
           </div>
         );
       },
@@ -565,7 +588,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               y: 'calc(100vh - 400px)',
             }}
             size='middle'
-            className='w-full h-full'
+            className='w-full h-full connection-table'
             rowClassName={record =>
               activeConnectionId === record.id
                 ? 'bg-primary/10 dark:bg-primary/20'

@@ -111,7 +111,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         >
           <Table
             className={cn(
-              'w-full table-auto',
+              'w-full table-auto min-w-full',
               size === 'small' && 'text-xs',
               size === 'large' && 'text-base',
               bordered && 'border border-border'

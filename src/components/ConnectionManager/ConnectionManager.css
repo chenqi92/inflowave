@@ -77,10 +77,18 @@
 }
 
 /* 响应式表格 */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   /* 在中等屏幕上隐藏连接信息列 */
   .connection-table th:nth-child(2),
   .connection-table td:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 1200px) {
+  /* 在小屏幕上隐藏连接池统计列 */
+  .connection-table th:nth-child(4),
+  .connection-table td:nth-child(4) {
     display: none;
   }
 }
@@ -103,8 +111,8 @@
   }
 
   /* 在小屏幕上隐藏最后连接时间列 */
-  .connection-table th:nth-child(4),
-  .connection-table td:nth-child(4) {
+  .connection-table th:nth-child(5),
+  .connection-table td:nth-child(5) {
     display: none;
   }
 }
