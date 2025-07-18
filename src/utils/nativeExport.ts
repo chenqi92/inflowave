@@ -5,7 +5,7 @@
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { convertToCSV, convertToJSON, convertToExcel, getFileExtension, getMimeType } from './export';
-import type { QueryResult } from '@/types';
+import type { QueryResult, ExportOptions } from '@/types';
 
 export interface NativeExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx';

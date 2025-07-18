@@ -330,16 +330,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       setBasicMetrics({
         queryExecutionTime: Array.isArray(metricsResult.queryExecutionTime) && metricsResult.queryExecutionTime.length > 0 && typeof metricsResult.queryExecutionTime[0] === 'object' 
           ? metricsResult.queryExecutionTime as { timestamp: string; value: number; }[]
-          : (metricsResult.queryExecutionTime as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+          : (metricsResult.queryExecutionTime as unknown as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
         writeLatency: Array.isArray(metricsResult.writeLatency) && metricsResult.writeLatency.length > 0 && typeof metricsResult.writeLatency[0] === 'object'
           ? metricsResult.writeLatency as { timestamp: string; value: number; }[]
-          : (metricsResult.writeLatency as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+          : (metricsResult.writeLatency as unknown as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
         memoryUsage: Array.isArray(metricsResult.memoryUsage) && metricsResult.memoryUsage.length > 0 && typeof metricsResult.memoryUsage[0] === 'object'
           ? metricsResult.memoryUsage as { timestamp: string; value: number; }[]
-          : (metricsResult.memoryUsage as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+          : (metricsResult.memoryUsage as unknown as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
         cpuUsage: Array.isArray(metricsResult.cpuUsage) && metricsResult.cpuUsage.length > 0 && typeof metricsResult.cpuUsage[0] === 'object'
           ? metricsResult.cpuUsage as { timestamp: string; value: number; }[]
-          : (metricsResult.cpuUsage as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
+          : (metricsResult.cpuUsage as unknown as number[] || []).map((value, index) => ({ timestamp: new Date(Date.now() - (index * 60000)).toISOString(), value })),
         diskIO: metricsResult.diskIO || {
           readBytes: 0,
           writeBytes: 0,
