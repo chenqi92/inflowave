@@ -6,7 +6,7 @@ import { Button } from './Button';
 export interface InputNumberProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
-    'value' | 'onChange'
+    'value' | 'onChange' | 'onBlur' | 'onFocus' | 'min' | 'max' | 'step' | 'size'
   > {
   value?: number;
   defaultValue?: number;

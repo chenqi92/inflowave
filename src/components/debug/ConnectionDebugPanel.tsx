@@ -76,7 +76,7 @@ const ConnectionDebugPanel: React.FC = () => {
           conn => conn != null
         ),
         connectionStatuses: connectionStatuses || {},
-        activeconnection_id,
+        activeConnectionId,
         backendDebugInfo,
       };
 
@@ -150,6 +150,7 @@ const ConnectionDebugPanel: React.FC = () => {
     },
     {
       title: '主机:端口',
+      dataIndex: 'hostPort',
       key: 'hostPort',
       width: '20%',
       render: (value: any, record: any) =>
@@ -164,6 +165,7 @@ const ConnectionDebugPanel: React.FC = () => {
     },
     {
       title: '状态',
+      dataIndex: 'status',
       key: 'status',
       width: '20%',
       render: (value: any, record: any) => {
