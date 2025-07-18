@@ -1701,19 +1701,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <div>
-                  <div className='relative'>
-                    <InputNumber
-                      value={refreshInterval}
-                      onChange={value => setRefreshInterval(value || 30)}
-                      min={10}
-                      max={300}
-                      disabled={!autoRefresh}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      秒
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={refreshInterval}
+                    onChange={value => setRefreshInterval(value || 30)}
+                    min={10}
+                    max={300}
+                    disabled={!autoRefresh}
+                    addonAfter="秒"
+                    className='w-full'
+                  />
                 </div>
               </div>
             </div>
@@ -1725,83 +1721,67 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <div className='grid grid-cols-2 gap-4'>
                 <div>
                   <Text className='text-sm mb-2 block'>CPU使用率</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.cpuUsage}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          cpuUsage: value || 80,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.cpuUsage}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        cpuUsage: value || 80,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>内存使用率</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.memoryUsage}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          memoryUsage: value || 85,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.memoryUsage}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        memoryUsage: value || 85,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>磁盘I/O</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.diskIo}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          diskIo: value || 90,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.diskIo}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        diskIo: value || 90,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>网络I/O</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.networkIo}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          networkIo: value || 95,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.networkIo}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        networkIo: value || 95,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
               </div>
             </div>

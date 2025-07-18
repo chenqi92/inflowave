@@ -66,24 +66,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleThemeChange = (themeName: string) => {
     console.log('处理主题切换:', themeName);
 
-    // 处理新的主题名称格式，将其转换为系统使用的格式
-    let actualThemeName = themeName;
-
-    // 映射从菜单发来的主题名称到系统内部使用的格式
-    const themeMapping: Record<string, string> = {
-      'default-blue': 'default',
-      'natural-green': 'green',
-      'vibrant-red': 'red',
-      'warm-orange': 'orange',
-      'elegant-purple': 'purple',
-      'romantic-rose': 'rose',
-      'bright-yellow': 'yellow',
-      'mysterious-violet': 'violet',
-    };
-
-    if (themeMapping[themeName]) {
-      actualThemeName = themeMapping[themeName];
-    }
+    // 现在直接使用传入的主题名称，不需要映射
+    const actualThemeName = themeName;
 
     // 使用主题提供者的颜色方案切换功能
     setColorScheme(actualThemeName);
@@ -91,9 +75,15 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     // 同时更新设置存储以保持兼容性
     updateTheme({ primaryColor: actualThemeName });
 
-    // 显示成功消息
+    // 显示成功消息 - 支持更多主题
     const themeLabels: Record<string, string> = {
       default: '默认蓝色',
+      shadcn: 'Shadcn 黑白',
+      zinc: '锌灰色',
+      slate: '石板灰',
+      indigo: '靛蓝色',
+      emerald: '翡翠绿',
+      blue: '经典蓝',
       green: '自然绿色',
       red: '活力红色',
       orange: '温暖橙色',
@@ -238,6 +228,21 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     // 添加动作处理状态跟踪
     let handled = false;
 
+    // 检查需要数据库连接的操作
+    const connectionRequiredActions = [
+      'new_query', 'execute_query', 'execute_selection', 'stop_query',
+      'query_history', 'save_query', 'query_favorites', 'query_plan',
+      'explain_query', 'format_query', 'test_connection', 'edit_connection',
+      'delete_connection', 'refresh_structure', 'database_info', 'database_stats',
+      'import_structure', 'export_structure', 'import_data', 'export_data'
+    ];
+
+    // 如果操作需要连接但没有活跃连接，显示警告
+    if (connectionRequiredActions.includes(action) && !activeConnectionId) {
+      showMessage.warning('此操作需要先建立数据库连接');
+      return;
+    }
+
     // 导航动作
     if (action.startsWith('navigate:')) {
       const path = action.replace('navigate:', '');
@@ -268,11 +273,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     switch (action) {
       // 文件菜单
       case 'new_query':
-        if (activeConnectionId) {
-          navigate('/query');
-        } else {
-          showMessage.warning('请先建立数据库连接');
-        }
+        navigate('/query');
         handled = true;
         break;
 
@@ -292,34 +293,41 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'import_data':
-        handleImportData();
+        // 触发导入数据对话框
+        document.dispatchEvent(new CustomEvent('show-import-dialog'));
         handled = true;
         break;
 
       case 'export_data':
-        handleExportData();
+        // 触发导出数据对话框
+        document.dispatchEvent(new CustomEvent('show-export-dialog'));
         handled = true;
         break;
 
       // 编辑菜单
       case 'undo':
         document.execCommand('undo');
+        handled = true;
         break;
 
       case 'redo':
         document.execCommand('redo');
+        handled = true;
         break;
 
       case 'cut':
         document.execCommand('cut');
+        handled = true;
         break;
 
       case 'copy':
         document.execCommand('copy');
+        handled = true;
         break;
 
       case 'paste':
         document.execCommand('paste');
+        handled = true;
         break;
 
       case 'find':
@@ -332,6 +340,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           });
           document.activeElement.dispatchEvent(event);
         }
+        handled = true;
         break;
 
       case 'replace':
@@ -344,12 +353,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           });
           document.activeElement.dispatchEvent(event);
         }
+        handled = true;
         break;
 
       case 'global_search':
         if (onGlobalSearch) {
           onGlobalSearch();
         }
+        handled = true;
         break;
 
       // 查看菜单
@@ -360,6 +371,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         } else {
           document.dispatchEvent(new CustomEvent('toggle-sidebar'));
         }
+        handled = true;
         break;
 
       case 'toggle_statusbar':
@@ -367,6 +379,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         if (onToggleStatusbar) {
           onToggleStatusbar();
         }
+        handled = true;
         break;
 
       case 'fullscreen':
@@ -375,18 +388,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         } else {
           document.documentElement.requestFullscreen();
         }
+        handled = true;
         break;
 
       case 'zoom_in':
         handleZoomIn();
+        handled = true;
         break;
 
       case 'zoom_out':
         handleZoomOut();
+        handled = true;
         break;
 
       case 'zoom_reset':
         handleZoomReset();
+        handled = true;
         break;
 
       // 数据库菜单
@@ -394,17 +411,15 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'new-connection':
         navigate('/connections');
         showMessage.success('打开连接管理');
+        handled = true;
         break;
 
       case 'test_connection':
       case 'test-connection':
-        if (activeConnectionId) {
-          document.dispatchEvent(
-            new CustomEvent('test-connection', { detail: { connectionId: activeConnectionId } })
-          );
-        } else {
-          showMessage.warning('请先选择一个连接');
-        }
+        document.dispatchEvent(
+          new CustomEvent('test-connection', { detail: { connectionId: activeConnectionId } })
+        );
+        handled = true;
         break;
 
       case 'edit_connection':
@@ -640,9 +655,27 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         window.open('https://docs.influxdata.com/', '_blank');
         break;
 
-      // 主题切换菜单
+      // 主题切换菜单 - 支持更多主题
       case 'theme-default':
         handleThemeChange('default');
+        break;
+      case 'theme-shadcn':
+        handleThemeChange('shadcn');
+        break;
+      case 'theme-zinc':
+        handleThemeChange('zinc');
+        break;
+      case 'theme-slate':
+        handleThemeChange('slate');
+        break;
+      case 'theme-indigo':
+        handleThemeChange('indigo');
+        break;
+      case 'theme-emerald':
+        handleThemeChange('emerald');
+        break;
+      case 'theme-blue':
+        handleThemeChange('blue');
         break;
       case 'theme-green':
         handleThemeChange('green');

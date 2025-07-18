@@ -303,7 +303,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           selectedDate?.getSeconds() || 0
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-border rounded px-1'
+                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                   <span className='text-muted-foreground'>:</span>
@@ -324,7 +324,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           selectedDate?.getSeconds() || 0
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-border rounded px-1'
+                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                   <span className='text-muted-foreground'>:</span>
@@ -345,7 +345,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           seconds
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-border rounded px-1'
+                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                 </div>

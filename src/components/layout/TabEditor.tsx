@@ -1365,6 +1365,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
           const lines = editorElement.querySelectorAll('.view-line');
           const colors = getThemeColors();
+          const isDark = resolvedTheme === 'dark';
 
           lines.forEach((line: Element) => {
             const text = line.textContent || '';
@@ -1374,7 +1375,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               // 找到所有span元素并直接设置样式
               const spans = line.querySelectorAll('span');
               spans.forEach((span: HTMLElement) => {
-                span.style.setProperty('color', '#BBBBBB', 'important');
+                span.style.setProperty('color', isDark ? '#9CA3AF' : '#6B7280', 'important');
                 span.style.setProperty('font-style', 'italic', 'important');
               });
             } else {
@@ -1388,9 +1389,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 span.style.removeProperty('font-weight');
                 span.style.removeProperty('font-style');
 
-                // SQL主要关键词 - 黑色
+                // SQL主要关键词 - 根据主题调整颜色
                 if (/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE|EXPLAIN)\b/i.test(spanText)) {
-                  span.style.setProperty('color', '#000000', 'important');
+                  span.style.setProperty('color', isDark ? '#E5E7EB' : '#1F2937', 'important');
                   span.style.setProperty('font-weight', 'bold', 'important');
                 }
                 // 筛选条件关键词 - 配套颜色
@@ -1398,9 +1399,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   span.style.setProperty('color', colors.filter, 'important');
                   span.style.setProperty('font-weight', 'bold', 'important');
                 }
-                // SQL函数 - 橙色
+                // SQL函数 - 橙色，根据主题调整
                 else if (/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|TIME|NOW|AGO|DURATION|FILL)\b/i.test(spanText)) {
-                  span.style.setProperty('color', '#F97316', 'important');
+                  span.style.setProperty('color', isDark ? '#FB923C' : '#EA580C', 'important');
                   span.style.setProperty('font-weight', 'bold', 'important');
                 }
                 // 表名/测量值 - 主题色
@@ -1414,13 +1415,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     span.style.setProperty('font-weight', '500', 'important');
                   }
                 }
-                // 字符串 - 绿色
+                // 字符串 - 绿色，根据主题调整
                 else if (spanText.includes('"') || spanText.includes("'")) {
-                  span.style.setProperty('color', '#10B981', 'important');
+                  span.style.setProperty('color', isDark ? '#34D399' : '#059669', 'important');
                 }
-                // 数字 - 蓝色
+                // 数字 - 蓝色，根据主题调整
                 else if (/\b\d+(\.\d+)?\b/.test(spanText)) {
-                  span.style.setProperty('color', '#3B82F6', 'important');
+                  span.style.setProperty('color', isDark ? '#60A5FA' : '#2563EB', 'important');
                 }
               });
             }

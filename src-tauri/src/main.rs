@@ -112,16 +112,22 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("format_query", "格式化查询\tCtrl+Alt+L")
         .build()?;
 
-    // 风格设置子菜单
+    // 风格设置子菜单 - 更新为完整的主题支持
     let style_submenu = SubmenuBuilder::new(app, "风格设置")
-        .text("theme_default_blue", "默认蓝色")
-        .text("theme_natural_green", "自然绿色")
-        .text("theme_vibrant_red", "活力红色")
-        .text("theme_warm_orange", "温暖橙色")
-        .text("theme_elegant_purple", "优雅紫色")
-        .text("theme_romantic_rose", "浪漫玫瑰")
-        .text("theme_bright_yellow", "明亮黄色")
-        .text("theme_mysterious_violet", "神秘紫罗兰")
+        .text("theme_default", "默认蓝色")
+        .text("theme_shadcn", "Shadcn 黑白")
+        .text("theme_zinc", "锌灰色")
+        .text("theme_slate", "石板灰")
+        .text("theme_indigo", "靛蓝色")
+        .text("theme_emerald", "翡翠绿")
+        .text("theme_blue", "经典蓝")
+        .text("theme_green", "自然绿色")
+        .text("theme_red", "活力红色")
+        .text("theme_orange", "温暖橙色")
+        .text("theme_purple", "优雅紫色")
+        .text("theme_rose", "浪漫玫瑰")
+        .text("theme_yellow", "明亮黄色")
+        .text("theme_violet", "神秘紫罗兰")
         .build()?;
 
     // 工具菜单
@@ -330,36 +336,54 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
             let _ = window.emit("menu-action", "format_query");
         }
 
-        // 软件风格菜单
-        "theme_default_blue" => {
-            log::info!("发送主题切换事件: default-blue");
-            if let Err(e) = window.emit("theme-change", "default-blue") {
+        // 软件风格菜单 - 更新为完整的主题支持
+        "theme_default" => {
+            log::info!("发送主题切换事件: default");
+            if let Err(e) = window.emit("theme-change", "default") {
                 log::error!("发送主题事件失败: {}", e);
             }
         }
-        "theme_natural_green" => {
-            log::info!("发送主题切换事件: natural-green");
-            if let Err(e) = window.emit("theme-change", "natural-green") {
+        "theme_shadcn" => {
+            log::info!("发送主题切换事件: shadcn");
+            if let Err(e) = window.emit("theme-change", "shadcn") {
                 log::error!("发送主题事件失败: {}", e);
             }
         }
-        "theme_vibrant_red" => {
-            let _ = window.emit("theme-change", "vibrant-red");
+        "theme_zinc" => {
+            let _ = window.emit("theme-change", "zinc");
         }
-        "theme_warm_orange" => {
-            let _ = window.emit("theme-change", "warm-orange");
+        "theme_slate" => {
+            let _ = window.emit("theme-change", "slate");
         }
-        "theme_elegant_purple" => {
-            let _ = window.emit("theme-change", "elegant-purple");
+        "theme_indigo" => {
+            let _ = window.emit("theme-change", "indigo");
         }
-        "theme_romantic_rose" => {
-            let _ = window.emit("theme-change", "romantic-rose");
+        "theme_emerald" => {
+            let _ = window.emit("theme-change", "emerald");
         }
-        "theme_bright_yellow" => {
-            let _ = window.emit("theme-change", "bright-yellow");
+        "theme_blue" => {
+            let _ = window.emit("theme-change", "blue");
         }
-        "theme_mysterious_violet" => {
-            let _ = window.emit("theme-change", "mysterious-violet");
+        "theme_green" => {
+            let _ = window.emit("theme-change", "green");
+        }
+        "theme_red" => {
+            let _ = window.emit("theme-change", "red");
+        }
+        "theme_orange" => {
+            let _ = window.emit("theme-change", "orange");
+        }
+        "theme_purple" => {
+            let _ = window.emit("theme-change", "purple");
+        }
+        "theme_rose" => {
+            let _ = window.emit("theme-change", "rose");
+        }
+        "theme_yellow" => {
+            let _ = window.emit("theme-change", "yellow");
+        }
+        "theme_violet" => {
+            let _ = window.emit("theme-change", "violet");
         }
 
         // 工具菜单

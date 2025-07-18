@@ -121,14 +121,14 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       onChange?.(finalValue);
     };
 
-    const inputElement = (
+    const getInputElement = (hasAddonAfter: boolean = false) => (
       <input
         ref={ref}
         type='text'
         className={cn(
           'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
           sizeClasses[size],
-          controls && 'pr-8',
+          controls && (hasAddonAfter ? 'pr-10' : 'pr-8'),
           className
         )}
         value={formatValue(actualValue)}
@@ -140,8 +140,8 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       />
     );
 
-    const stepperControls = controls && !disabled && (
-      <div className='absolute right-1 top-1/2 -translate-y-1/2 flex flex-col'>
+    const getStepperControls = (hasAddonAfter: boolean = false) => controls && !disabled && (
+      <div className={`absolute ${hasAddonAfter ? 'right-8' : 'right-1'} top-1/2 -translate-y-1/2 flex flex-col`}>
         <Button
           type='button'
           variant='ghost'
@@ -178,8 +178,8 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
             </div>
           )}
           <div className='relative flex-1'>
-            {inputElement}
-            {stepperControls}
+            {getInputElement(!!addonAfter)}
+            {getStepperControls(!!addonAfter)}
           </div>
           {addonAfter && (
             <div className='flex items-center px-3 border border-l-0 border-input bg-muted rounded-r-md text-sm'>
@@ -192,8 +192,8 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
 
     return (
       <div className='relative'>
-        {inputElement}
-        {stepperControls}
+        {getInputElement(false)}
+        {getStepperControls(false)}
       </div>
     );
   }

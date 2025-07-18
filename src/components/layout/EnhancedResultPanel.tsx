@@ -42,6 +42,7 @@ import {
   Info,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import type { QueryResult } from '@/types';
 
 interface EnhancedResultPanelProps {
@@ -85,6 +86,23 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
+  const { resolvedTheme } = useTheme();
+
+  // 主题配置生成函数
+  const getThemeConfig = useCallback(() => {
+    const isDark = resolvedTheme === 'dark';
+    return {
+      textColor: isDark ? '#e4e4e7' : '#09090b',
+      backgroundColor: isDark ? '#020817' : '#ffffff',
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      gridColor: isDark ? '#27272a' : '#f1f5f9',
+      tooltipBgColor: isDark ? '#1f2937' : '#ffffff',
+      colors: [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+        '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+      ],
+    };
+  }, [resolvedTheme]);
 
   // 处理多查询结果 - 优先使用queryResults，回退到单个queryResult
   const allResults = useMemo(() => {
@@ -414,6 +432,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const chartOption = useMemo(() => {
     if (!parsedData || parsedData.rowCount === 0) return null;
 
+    const themeConfig = getThemeConfig();
     const timeColumn = fieldStatistics.find(stat => stat.dataType === 'datetime')?.fieldName;
     const numericColumns = fieldStatistics.filter(stat => stat.dataType === 'number').map(stat => stat.fieldName);
 
@@ -426,17 +445,28 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (visualizationType === 'pie') {
         // 饼图配置
         return {
-          title: { text: `${firstNumericCol} 分布`, left: 'center' },
+          backgroundColor: themeConfig.backgroundColor,
+          textStyle: { color: themeConfig.textColor },
+          color: themeConfig.colors,
+          title: { 
+            text: `${firstNumericCol} 分布`, 
+            left: 'center',
+            textStyle: { color: themeConfig.textColor }
+          },
           tooltip: { 
             trigger: 'item',
-            formatter: '{a} <br/>{b}: {c} ({d}%)'
+            formatter: '{a} <br/>{b}: {c} ({d}%)',
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.borderColor,
+            textStyle: { color: themeConfig.textColor }
           },
           legend: {
             type: 'scroll',
             orient: 'vertical',
             right: 10,
             top: 20,
-            bottom: 20
+            bottom: 20,
+            textStyle: { color: themeConfig.textColor }
           },
           series: [{
             name: firstNumericCol,
@@ -451,37 +481,54 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                shadowColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.5)'
               }
             },
             label: {
               show: true,
-              formatter: '{b}: {d}%'
+              formatter: '{b}: {d}%',
+              color: themeConfig.textColor
             }
           }]
         };
       } else if (visualizationType === 'bar') {
         // 柱状图配置
         return {
-          title: { text: `${firstNumericCol} 数据分布`, left: 'center' },
+          backgroundColor: themeConfig.backgroundColor,
+          textStyle: { color: themeConfig.textColor },
+          color: themeConfig.colors,
+          title: { 
+            text: `${firstNumericCol} 数据分布`, 
+            left: 'center',
+            textStyle: { color: themeConfig.textColor }
+          },
           tooltip: { 
             trigger: 'axis',
-            axisPointer: { type: 'shadow' }
+            axisPointer: { type: 'shadow' },
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.borderColor,
+            textStyle: { color: themeConfig.textColor }
           },
           grid: {
             left: '3%',
             right: '4%',
             bottom: '3%',
-            containLabel: true
+            containLabel: true,
+            borderColor: themeConfig.borderColor
           },
           xAxis: { 
             type: 'category', 
             data: categories,
-            axisTick: { alignWithLabel: true }
+            axisTick: { alignWithLabel: true },
+            axisLabel: { color: themeConfig.textColor },
+            axisLine: { lineStyle: { color: themeConfig.borderColor } }
           },
           yAxis: { 
             type: 'value',
-            name: firstNumericCol
+            name: firstNumericCol,
+            axisLabel: { color: themeConfig.textColor },
+            axisLine: { lineStyle: { color: themeConfig.borderColor } },
+            splitLine: { lineStyle: { color: themeConfig.gridColor } }
           },
           series: [{
             name: firstNumericCol,
@@ -490,15 +537,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             itemStyle: {
               color: new Proxy({}, {
                 get(target, prop) {
-                  const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
-                  return colors[parseInt(String(prop)) % colors.length];
+                  return themeConfig.colors[parseInt(String(prop)) % themeConfig.colors.length];
                 }
               })
             },
             emphasis: {
               itemStyle: {
                 shadowBlur: 10,
-                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                shadowColor: resolvedTheme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.5)'
               }
             }
           }]
@@ -506,7 +552,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       } else {
         // 折线图配置
         return {
-          title: { text: `${firstNumericCol} 趋势`, left: 'center' },
+          backgroundColor: themeConfig.backgroundColor,
+          textStyle: { color: themeConfig.textColor },
+          color: themeConfig.colors,
+          title: { 
+            text: `${firstNumericCol} 趋势`, 
+            left: 'center',
+            textStyle: { color: themeConfig.textColor }
+          },
           tooltip: { trigger: 'axis' },
           grid: {
             left: '3%',
@@ -596,7 +649,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
     // 无可视化数据
     return null;
-  }, [parsedData, fieldStatistics, visualizationType]);
+  }, [parsedData, fieldStatistics, visualizationType, resolvedTheme, getThemeConfig]);
 
   // 导出图表功能
   const handleExportChart = useCallback((format: 'png' | 'svg' | 'pdf' = 'png') => {
@@ -1292,13 +1345,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       </DropdownMenu>
                     </div>
                   </div>
-                  <div className="flex-1 bg-white rounded border">
+                  <div className="flex-1 bg-background rounded border">
                     <EChartsReact
                       ref={chartRef}
                       option={chartOption}
                       style={{ height: '100%' }}
                       notMerge={true}
                       lazyUpdate={true}
+                      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
                     />
                   </div>
                 </div>

@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {
     Button,
-    Input,
     Label,
     Dialog,
     DialogContent,
@@ -9,7 +8,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DatePicker
 } from '@/components/ui';
 import {
@@ -325,7 +323,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                 </Label>
                                 <div className='col-span-3'>
                                     <DatePicker
-                                        value={customStartDate}
+                                        value={customStartDate || undefined}
                                         onChange={(date) => setCustomStartDate(date)}
                                         placeholder='选择开始时间'
                                         showTime={true}
@@ -341,7 +339,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                 </Label>
                                 <div className='col-span-3'>
                                     <DatePicker
-                                        value={customEndDate}
+                                        value={customEndDate || undefined}
                                         onChange={(date) => setCustomEndDate(date)}
                                         placeholder='选择结束时间'
                                         showTime={true}
