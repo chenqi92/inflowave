@@ -17,7 +17,7 @@ export function ThemeColorSelector({
   const colorOptions = getThemeColorOptions();
 
   return (
-    <div className={cn('grid grid-cols-4 gap-3', className)}>
+    <div className={cn('grid grid-cols-6 gap-2', className)}>
       {colorOptions.map(option => {
         const isSelected = value === option.value;
         const primaryHsl = option.primary;
@@ -26,7 +26,7 @@ export function ThemeColorSelector({
           <div
             key={option.value}
             className={cn(
-              'relative flex flex-col items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md',
+              'relative flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md',
               isSelected
                 ? 'border-primary bg-primary/5'
                 : 'border-border hover:border-primary/50'
@@ -35,14 +35,14 @@ export function ThemeColorSelector({
           >
             {/* 颜色预览圆圈 */}
             <div
-              className='w-8 h-8 rounded-full border-2 border-white shadow-sm relative'
+              className='w-6 h-6 rounded-full border-2 border-white shadow-sm relative'
               style={{
                 backgroundColor: `hsl(${primaryHsl})`,
               }}
             >
               {isSelected && (
                 <div className='absolute inset-0 flex items-center justify-center'>
-                  <Check className='w-4 h-4 text-white' />
+                  <Check className='w-3 h-3 text-white' />
                 </div>
               )}
             </div>
@@ -50,7 +50,7 @@ export function ThemeColorSelector({
             {/* 颜色名称 */}
             <span
               className={cn(
-                'text-xs font-medium text-center',
+                'text-xs font-medium text-center leading-tight',
                 isSelected ? 'text-primary' : 'text-muted-foreground'
               )}
             >
