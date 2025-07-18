@@ -97,7 +97,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
     try {
       const history =
         await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
-      setHistoryItems(history || []);
+      // 确保所有历史项目都有唯一的ID
+      const uniqueHistory = ensureUniqueIds(history || []);
+      setHistoryItems(uniqueHistory);
     } catch (error) {
       showNotification.error({
         message: '加载查询历史失败',
@@ -261,6 +263,24 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
       loadSavedQueries();
     }
   }, [visible]);
+
+  // 确保历史项目有唯一的ID，避免重复键警告
+  const ensureUniqueIds = (items: QueryHistoryItem[]): QueryHistoryItem[] => {
+    const seenIds = new Set<string>();
+    return items.map((item, index) => {
+      if (seenIds.has(item.id)) {
+        // 如果ID重复，生成新的唯一ID
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const newId = `history-${timestamp}-${random}-${index}`;
+        console.warn(`发现重复的历史记录ID: ${item.id}，已替换为: ${newId}`);
+        seenIds.add(newId);
+        return { ...item, id: newId };
+      }
+      seenIds.add(item.id);
+      return item;
+    });
+  };
 
   const renderHistoryItem = (item: QueryHistoryItem) => (
     <Card key={item.id} className="mb-3">
@@ -674,7 +694,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
 
   if (visible && onClose) {
     return (
-      <TooltipProvider>
+      <TooltipProvider key="query-history-dialog">
         <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
           <DialogContent className="max-w-4xl max-h-[80vh]">
             <DialogHeader>
@@ -695,7 +715,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider key="query-history-panel">
       <div className="h-full flex flex-col">
         <div className="flex items-center gap-2 p-4 border-b">
           <History className="w-5 h-5" />
