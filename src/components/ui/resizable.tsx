@@ -67,7 +67,7 @@ const ResizableHandle = React.memo(
     const handleMouseDown = React.useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         setIsResizing(true);
-        props.onMouseDown?.(e);
+        props.onMouseDown?.(e as any);
       },
       [props.onMouseDown]
     );
@@ -75,7 +75,7 @@ const ResizableHandle = React.memo(
     const handleMouseUp = React.useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         setIsResizing(false);
-        props.onMouseUp?.(e);
+        props.onMouseUp?.(e as any);
       },
       [props.onMouseUp]
     );

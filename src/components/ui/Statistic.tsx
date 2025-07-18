@@ -11,7 +11,7 @@ interface StatisticProps {
   icon?: React.ReactNode;
   valueStyle?: React.CSSProperties;
   valueClassName?: string;
-  formatter?: (value?: string | number) => React.ReactNode;
+  formatter?: (value?: string | number) => string | number;
 }
 
 const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
@@ -31,7 +31,7 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
     },
     ref
   ) => {
-    const formatValue = (val?: string | number): React.ReactNode => {
+    const formatValue = (val?: string | number): string | number => {
       if (formatter) {
         return formatter(val);
       }
@@ -40,7 +40,7 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
         return val.toFixed(precision);
       }
 
-      return val;
+      return val ?? '';
     };
 
     return (
@@ -59,7 +59,7 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
           style={valueStyle}
         >
           {prefix && <span className='mr-1'>{prefix}</span>}
-          {formatValue(value)}
+          {typeof value === 'string' || typeof value === 'number' ? formatValue(value) : value}
           {suffix && <span className='ml-1'>{suffix}</span>}
         </div>
       </div>

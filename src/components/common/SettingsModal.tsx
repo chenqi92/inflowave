@@ -81,11 +81,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
       // 应用主题设置 - 使用新的主题系统
       if (values.theme) {
-        setTheme(values.theme);
+        setTheme(values.theme as 'light' | 'dark' | 'system');
       }
 
       // 应用语言设置
-      setLanguage(values.language);
+      setLanguage(values.language as 'zh-CN' | 'en-US');
 
       // 保存到后端
       try {
@@ -289,7 +289,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       icon: <Settings className='w-4 h-4' />,
       label: '常规设置',
       children: (
-        <form onSubmit={form.handleSubmit(saveSettings)} className='space-y-6'>
+        <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className='space-y-6'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
               <Monitor className='w-6 h-6 text-blue-600' />

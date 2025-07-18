@@ -342,7 +342,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               color: new Proxy({}, {
                 get(target, prop) {
                   const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
-                  return colors[parseInt(prop) % colors.length];
+                  return colors[parseInt(String(prop)) % colors.length];
                 }
               })
             },

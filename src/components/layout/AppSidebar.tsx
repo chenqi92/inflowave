@@ -98,7 +98,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
             return <Separator key={item.key} className='my-2 mx-4' />;
           }
 
-          const isSelected = selectedKeys.includes(item.key);
+          const isSelected = selectedKeys.includes(item.key || '');
 
           return (
             <Button
@@ -107,7 +107,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ collapsed }) => {
               className={`w-full justify-start px-4 py-2 h-10 mb-1 mx-2 ${
                 collapsed ? 'px-2' : 'px-4'
               }`}
-              onClick={() => handleMenuClick(item.key)}
+              onClick={() => handleMenuClick(item.key || '')}
               disabled={item.disabled}
             >
               {item.icon}

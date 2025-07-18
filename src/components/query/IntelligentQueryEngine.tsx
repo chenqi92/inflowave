@@ -921,7 +921,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
             <Text className="font-medium">优化级别</Text>
             <Select
               value={optimizationConfig.optimizationLevel}
-              onValueChange={value =>
+              onValueChange={(value: 'balanced' | 'aggressive' | 'conservative') =>
                 setOptimizationConfig(prev => ({
                   ...prev,
                   optimizationLevel: value,

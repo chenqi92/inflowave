@@ -302,7 +302,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
         canExecute: Boolean(currentQuery.trim() && activeConnectionId && selectedDatabase)
       };
       
-      showContextMenu(e.event, target);
+      showContextMenu(e.event as any, target);
     });
 
     // 注册 InfluxQL 语言支持
@@ -986,7 +986,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     };
 
     // 添加事件监听器
-    document.addEventListener('open-file-content', handleOpenFileContent);
+    document.addEventListener('open-file-content', handleOpenFileContent as any);
     document.addEventListener('save-current-query', handleSaveCurrentQuery);
     document.addEventListener('save-query-as', handleSaveQueryAs);
     document.addEventListener('format-query', handleFormatQueryEvent);
@@ -996,12 +996,12 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
     document.addEventListener('execute-selection', handleExecuteSelection);
     document.addEventListener('execute-query', handleExecuteQueryEvent);
     document.addEventListener('format-query', handleFormatQueryMenuItem);
-    document.addEventListener('insert-template', handleInsertTemplateEvent);
+    document.addEventListener('insert-template', handleInsertTemplateEvent as any);
     document.addEventListener('toggle-comment', handleToggleCommentEvent);
     document.addEventListener('save-query', handleSaveQueryEvent);
 
     return () => {
-      document.removeEventListener('open-file-content', handleOpenFileContent);
+      document.removeEventListener('open-file-content', handleOpenFileContent as any);
       document.removeEventListener('save-current-query', handleSaveCurrentQuery);
       document.removeEventListener('save-query-as', handleSaveQueryAs);
       document.removeEventListener('format-query', handleFormatQueryEvent);
@@ -1011,7 +1011,7 @@ const QueryEditor: React.FC<QueryEditorProps> = ({
       document.removeEventListener('execute-selection', handleExecuteSelection);
       document.removeEventListener('execute-query', handleExecuteQueryEvent);
       document.removeEventListener('format-query', handleFormatQueryMenuItem);
-      document.removeEventListener('insert-template', handleInsertTemplateEvent);
+      document.removeEventListener('insert-template', handleInsertTemplateEvent as any);
       document.removeEventListener('toggle-comment', handleToggleCommentEvent);
       document.removeEventListener('save-query', handleSaveQueryEvent);
     };

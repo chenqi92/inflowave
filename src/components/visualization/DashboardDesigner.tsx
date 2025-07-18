@@ -245,10 +245,10 @@ const DashboardDesigner: React.FC<DashboardDesignerProps> = ({
                     ...item.chartConfig,
                     data,
                   },
-                }
+                } as DashboardItem
               : item
           ),
-        }));
+        }) as DashboardConfig);
       } catch (error) {
         setDashboard(prev => ({
           ...prev,
