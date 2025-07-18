@@ -390,11 +390,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   }, [getConnectionStatus, isConnectionConnected]);
 
   // 构建完整的树形数据
-  const buildCompleteTreeData = useCallback(async () => {
+  const buildCompleteTreeData = useCallback(async (showGlobalLoading: boolean = true) => {
     console.log(
       `🏗️ 开始构建树形数据，已连接: [${connectedConnectionIds.join(', ')}]`
     );
-    setLoading(true);
+    
+    // 只在明确需要时才显示全局 loading
+    if (showGlobalLoading) {
+      setLoading(true);
+    }
+    
     const treeNodes: DataNode[] = [];
 
     for (const connection of connections) {
@@ -471,7 +476,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
     setTreeData(treeNodes);
-    setLoading(false);
+    
+    // 只在之前显示了全局 loading 时才清除
+    if (showGlobalLoading) {
+      setLoading(false);
+    }
   }, [
     connections,
     connectedConnectionIds,
@@ -1317,7 +1326,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 刷新树数据
   const refreshTree = useCallback(() => {
-    buildCompleteTreeData();
+    buildCompleteTreeData(true); // 手动刷新时显示全局 loading
   }, [buildCompleteTreeData]);
 
   // 更新特定连接节点的显示状态（不影响其他节点）
@@ -1396,13 +1405,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   );
 
   // 监听连接配置变化（只有连接增删改时才全量刷新）
+  const prevConnectionsRef = useRef<typeof connections>([]);
   useEffect(() => {
-    console.log(`🔄 DatabaseExplorer: 连接配置发生变化，需要重建树`);
-    console.log(
-      `🔗 所有连接 (${connections.length}):`,
-      connections.map(c => `${c.name} (${c.id})`)
-    );
-    buildCompleteTreeData();
+    const prevConnections = prevConnectionsRef.current;
+    
+    // 检查是否是连接增删改操作（而不是连接状态变化）
+    const isConfigChange = 
+      prevConnections.length !== connections.length ||
+      prevConnections.some((prev, index) => {
+        const current = connections[index];
+        return !current || prev.id !== current.id || prev.name !== current.name;
+      });
+    
+    if (isConfigChange) {
+      console.log(`🔄 DatabaseExplorer: 连接配置发生变化，需要重建树`);
+      console.log(
+        `🔗 所有连接 (${connections.length}):`,
+        connections.map(c => `${c.name} (${c.id})`)
+      );
+      // 配置变化时不显示全局 loading，因为这通常是由连接操作引起的
+      buildCompleteTreeData(false);
+    } else {
+      console.log(`👀 DatabaseExplorer: 连接配置无变化，跳过重建`);
+    }
+    
+    prevConnectionsRef.current = connections;
   }, [connections, buildCompleteTreeData]);
 
   // 监听连接状态变化（仅更新相关节点显示，不重建整棵树）
@@ -1554,7 +1581,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   useEffect(() => {
     if (refreshTrigger) {
       console.log(`🔄 收到刷新触发器，重新加载数据...`);
-      buildCompleteTreeData();
+      buildCompleteTreeData(true); // 外部触发器刷新时显示全局 loading
     }
   }, [refreshTrigger, buildCompleteTreeData]);
 
