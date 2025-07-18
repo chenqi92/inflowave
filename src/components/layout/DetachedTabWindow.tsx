@@ -8,6 +8,7 @@ import {
   CardTitle,
   Button,
   Badge,
+  Popconfirm,
 } from '@/components/ui';
 import {
   ArrowLeft,
@@ -47,6 +48,8 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   const [isMaximized, setIsMaximized] = useState(false);
   const [content, setContent] = useState(tab.content);
   const [modified, setModified] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showReattachConfirm, setShowReattachConfirm] = useState(false);
 
   // 处理内容变化
   const handleContentChange = (value: string | undefined) => {
@@ -74,25 +77,59 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   const handleClose = async () => {
     if (modified) {
-      // 这里可以显示保存确认对话框
-      const shouldClose = window.confirm('内容已修改，确定要关闭吗？');
-      if (!shouldClose) return;
+      setShowCloseConfirm(true);
+      return;
     }
-    
+
+    await performClose();
+  };
+
+  const performClose = async () => {
     onClose?.();
     const currentWindow = getCurrentWindow();
     await currentWindow.close();
   };
 
+  const handleSaveAndClose = async () => {
+    // 保存逻辑
+    if (modified) {
+      await safeTauriInvoke('save_tab_content', { tabId: tab.id, content });
+    }
+    setShowCloseConfirm(false);
+    await performClose();
+  };
+
+  const handleCloseWithoutSaving = async () => {
+    setShowCloseConfirm(false);
+    await performClose();
+  };
+
   const handleReattach = () => {
     if (modified) {
-      // 同步修改的内容
-      const updatedTab = { ...tab, content, modified };
-      // 这里可以通过IPC通知主窗口更新tab内容
-      safeTauriInvoke('sync_tab_content', { tabId: tab.id, content });
+      setShowReattachConfirm(true);
+      return;
     }
-    
+
+    performReattach();
+  };
+
+  const performReattach = () => {
     onReattach?.();
+  };
+
+  const handleSaveAndReattach = async () => {
+    // 保存并同步修改的内容
+    if (modified) {
+      await safeTauriInvoke('save_tab_content', { tabId: tab.id, content });
+      await safeTauriInvoke('sync_tab_content', { tabId: tab.id, content });
+    }
+    setShowReattachConfirm(false);
+    performReattach();
+  };
+
+  const handleReattachWithoutSaving = () => {
+    setShowReattachConfirm(false);
+    performReattach();
   };
 
   // 获取tab类型图标
@@ -175,14 +212,27 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
             
             {/* 窗口控制按钮 */}
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReattach}
-                title="重新附加到主窗口 (Ctrl+D)"
+              <Popconfirm
+                title="保存更改"
+                description={`"${tab.title}" 已修改，是否保存更改？`}
+                open={showReattachConfirm}
+                onConfirm={handleSaveAndReattach}
+                onOpenChange={(open) => {
+                  if (!open) handleReattachWithoutSaving();
+                }}
+                okText="保存"
+                cancelText="不保存"
+                placement="bottom"
               >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReattach}
+                  title="重新附加到主窗口 (Ctrl+D)"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Popconfirm>
               <Button
                 variant="ghost"
                 size="sm"
@@ -199,14 +249,27 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               >
                 <Maximize2 className="w-4 h-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                title="关闭窗口 (Ctrl+W)"
+              <Popconfirm
+                title="保存更改"
+                description={`"${tab.title}" 已修改，是否保存更改？`}
+                open={showCloseConfirm}
+                onConfirm={handleSaveAndClose}
+                onOpenChange={(open) => {
+                  if (!open) handleCloseWithoutSaving();
+                }}
+                okText="保存"
+                cancelText="不保存"
+                placement="bottom"
               >
-                <X className="w-4 h-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClose}
+                  title="关闭窗口 (Ctrl+W)"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </Popconfirm>
             </div>
           </div>
         </CardHeader>

@@ -905,7 +905,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     };
 
     // 关闭标签
-    const closeTab = (targetKey: string) => {
+    const closeTab = (targetKey: string, event?: React.MouseEvent) => {
       const tab = tabs.find(t => t.id === targetKey);
 
       if (tab?.modified) {
@@ -916,12 +916,76 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     };
 
     // 保存并关闭标签
-    const saveAndCloseTab = () => {
-      if (closingTab) {
-        // 保存逻辑
-        removeTab(closingTab.id);
+    const saveAndCloseTab = async (tabId: string) => {
+      const tab = tabs.find(t => t.id === tabId);
+      if (!tab || !editorRef.current) {
+        removeTab(tabId);
         setClosingTab(null);
+        return;
       }
+
+      const content = editorRef.current.getValue();
+
+      // 如果已有文件路径，直接保存
+      if (tab.filePath) {
+        try {
+          await safeTauriInvoke('write_file', {
+            path: tab.filePath,
+            content,
+          });
+          updateTabContent(tabId, content, false);
+          showMessage.success(`文件已保存`);
+        } catch (error) {
+          console.error('保存文件失败:', error);
+          showMessage.error(`保存文件失败: ${error}`);
+        }
+      } else {
+        // 没有文件路径，需要另存为
+        try {
+          const result = await safeTauriInvoke('save_file_dialog', {
+            defaultPath: `${tab.title}.sql`,
+            filters: [
+              { name: 'SQL Files', extensions: ['sql'] },
+              { name: 'Text Files', extensions: ['txt'] },
+              { name: 'All Files', extensions: ['*'] },
+            ],
+          });
+
+          if (result?.path) {
+            await safeTauriInvoke('write_file', {
+              path: result.path,
+              content,
+            });
+
+            const filename =
+              result.path.split('/').pop() ||
+              result.path.split('\\').pop() ||
+              '未命名';
+
+            // 更新标签信息
+            setTabs(tabs.map(t =>
+              t.id === tabId
+                ? { ...t, title: filename, filePath: result.path, modified: false }
+                : t
+            ));
+
+            showMessage.success(`文件已保存到 "${result.path}"`);
+          } else {
+            // 用户取消了保存，不关闭标签
+            setClosingTab(null);
+            return;
+          }
+        } catch (error) {
+          console.error('保存文件失败:', error);
+          showMessage.error(`保存文件失败: ${error}`);
+          setClosingTab(null);
+          return;
+        }
+      }
+
+      // 保存成功后关闭标签
+      removeTab(tabId);
+      setClosingTab(null);
     };
 
     // 不保存直接关闭标签
@@ -1472,12 +1536,6 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         attributeFilter: ['style', 'class', 'data-theme']
       });
 
-      // 清理函数
-      return () => {
-        if (styleDisposable) styleDisposable();
-        observer.disconnect();
-      };
-
       // 注册InfluxQL语言支持（只注册一次）
       try {
         // 检查语言是否已经注册
@@ -1602,6 +1660,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         showMessage.info('已触发智能提示，请查看控制台日志');
         editor.getAction('editor.action.formatDocument')?.run();
       });
+
+      // 清理函数
+      return () => {
+        if (styleDisposable) styleDisposable();
+        observer.disconnect();
+      };
     };
 
     // 标签页右键菜单
@@ -1717,17 +1781,47 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                         *
                       </span>
                     )}
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={e => {
-                        e.stopPropagation();
-                        closeTab(tab.id);
-                      }}
-                      className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
-                    >
-                      <X className='w-3 h-3' />
-                    </Button>
+                    {tab.modified ? (
+                      <Popconfirm
+                        title='保存更改'
+                        description={`"${tab.title}" 已修改，是否保存更改？`}
+                        open={closingTab?.id === tab.id}
+                        onConfirm={() => saveAndCloseTab(tab.id)}
+                        onOpenChange={open => {
+                          if (!open && closingTab?.id === tab.id) {
+                            removeTab(tab.id);
+                            setClosingTab(null);
+                          }
+                        }}
+                        okText='保存'
+                        cancelText='不保存'
+                        placement='bottom'
+                      >
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={e => {
+                            e.stopPropagation();
+                            closeTab(tab.id);
+                          }}
+                          className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
+                        >
+                          <X className='w-3 h-3' />
+                        </Button>
+                      </Popconfirm>
+                    ) : (
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={e => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
+                      >
+                        <X className='w-3 h-3' />
+                      </Button>
+                    )}
                   </div>
                 ))}
                 <Button
@@ -1937,22 +2031,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             )}
           </div>
 
-          {/* 关闭标签确认对话框 */}
-          {closingTab && (
-            <Popconfirm
-              title='保存更改'
-              description={`"${closingTab.title}" 已修改，是否保存更改？`}
-              open={!!closingTab}
-              onConfirm={saveAndCloseTab}
-              onOpenChange={open => {
-                if (!open) closeTabWithoutSaving();
-              }}
-              okText='保存'
-              cancelText='不保存'
-            >
-              <div />
-            </Popconfirm>
-          )}
+
 
           {/* 数据导出对话框 */}
           <DataExportDialog
