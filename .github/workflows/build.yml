@@ -7,15 +7,6 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      enable_embedded_server:
-        description: 'Enable embedded server mode'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-        - 'true'
-        - 'false'
 
 permissions:
   contents: write
@@ -71,22 +62,7 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Determine build mode
-        id: build_mode
-        run: |
-          if [ "${{ github.event.inputs.enable_embedded_server }}" = "true" ] || [ "${{ contains(github.ref, 'server') }}" = "true" ]; then
-            echo "mode=server" >> $GITHUB_OUTPUT
-            echo "command=tauri:build:server" >> $GITHUB_OUTPUT
-            echo "suffix=-server" >> $GITHUB_OUTPUT
-          else
-            echo "mode=standard" >> $GITHUB_OUTPUT
-            echo "command=tauri:build" >> $GITHUB_OUTPUT
-            echo "suffix=" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
-      - name: Build the app (Standard Mode)
-        if: steps.build_mode.outputs.mode == 'standard'
+      - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,47 +71,14 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'InfloWave v__VERSION__'
           releaseBody: |
-            InfloWave v__VERSION__ - Standard Mode
-            
-            This version uses pure Tauri mode:
-            - Frontend and backend communicate via IPC
-            - No HTTP ports required
-            - Optimal performance and security
-            - Smaller package size
-            
-            **Port Conflict Resolution**: ✅ Automatic (No HTTP ports used)
-            
-            See the assets below to download and install this version.
-          releaseDraft: true
-          prerelease: false
-          args: ${{ matrix.args }}
+            InfloWave v__VERSION__
 
-      - name: Build the app (Server Mode)
-        if: steps.build_mode.outputs.mode == 'server'
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENABLE_EMBEDDED_SERVER: true
-        with:
-          tagName: ${{ github.ref_name }}${{ steps.build_mode.outputs.suffix }}
-          releaseName: 'InfloWave v__VERSION__ (Server Mode)'
-          releaseBody: |
-            InfloWave v__VERSION__ - Server Mode
-            
-            This version includes embedded HTTP server:
-            - Built-in HTTP API support
-            - CORS proxy functionality  
-            - Debug endpoints
-            - WebSocket support
-            
-            **Port Conflict Resolution**: ✅ Automatic (Smart port allocation: 1422-1500)
-            
-            **Features**:
-            - 🚀 Smart port management
-            - 🔄 Automatic conflict resolution
-            - 📊 Real-time server status
-            - 🛠️ Debug tools included
-            
+            A modern time-series database management tool:
+            - Frontend and backend communicate via IPC
+            - Optimal performance and security
+            - Cross-platform support
+            - Modern UI with shadcn/ui components
+
             See the assets below to download and install this version.
           releaseDraft: true
           prerelease: false
@@ -210,12 +153,7 @@ jobs:
             });
           "
 
-      - name: Build test (Standard Mode)
+      - name: Build test
         run: npm run tauri:build
         env:
           ENABLE_EMBEDDED_SERVER: false
-
-      - name: Build test (Server Mode)  
-        run: npm run tauri:build:server
-        env:
-          ENABLE_EMBEDDED_SERVER: true

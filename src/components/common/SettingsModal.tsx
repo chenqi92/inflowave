@@ -46,8 +46,6 @@ import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
-import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
-import NotificationTest from '@/components/debug/NotificationTest';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
@@ -613,61 +611,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </p>
             </Alert>
           )}
-        </div>
-      ),
-    },
-    {
-      key: 'developer',
-      icon: <Bug className='w-4 h-4' />,
-      label: '开发者工具',
-      children: (
-        <div className='space-y-6'>
-          {/* 页面标题 */}
-          <div className='flex items-center gap-3 mb-4'>
-            <Bug className='w-6 h-6 text-blue-600' />
-            <div>
-              <h2 className='text-2xl font-bold'>开发者工具</h2>
-              <p className='text-muted-foreground'>调试和诊断工具</p>
-            </div>
-          </div>
-
-          {/* 错误测试工具 - 仅开发环境显示 */}
-          {(import.meta as any).env?.DEV && (
-            <div>
-              <h4 className='text-sm font-medium mb-2'>错误测试工具</h4>
-            </div>
-          )}
-
-          {/* 通知功能测试 */}
-          <div>
-            <h4 className='text-sm font-medium mb-2'>通知功能测试</h4>
-            <p className='text-sm text-muted-foreground mb-3'>
-              测试各种通知功能是否正常工作，包括Toast通知和桌面通知。
-            </p>
-            <div className='p-3 bg-muted/50 border rounded-lg'>
-              <NotificationTest />
-            </div>
-          </div>
-
-          <div>
-            <h4 className='text-sm font-medium mb-2'>应用错误日志</h4>
-            <p className='text-sm text-muted-foreground mb-3'>
-              查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
-            </p>
-            <div className='p-3 bg-muted/50 border rounded-lg min-h-[200px]'>
-              {isBrowserEnvironment() ? (
-                <Alert>
-                  <Info className='h-4 w-4' />
-                  <h5 className='font-medium'>浏览器环境提示</h5>
-                  <p className='text-sm text-muted-foreground'>
-                    在浏览器环境中，错误日志将显示在开发者工具的控制台中。请按F12打开开发者工具查看详细日志。
-                  </p>
-                </Alert>
-              ) : (
-                <ErrorLogViewer />
-              )}
-            </div>
-          </div>
         </div>
       ),
     },

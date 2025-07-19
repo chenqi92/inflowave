@@ -315,11 +315,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     connectionCount: 100,
   });
 
-  // 获取基础性能指标
+  // 获取基础性能指标（使用真实数据）
   const getBasicMetrics = useCallback(async () => {
     if (!activeConnectionId) return;
 
     try {
+      console.log('开始获取真实性能指标...', { activeConnectionId });
+      
       const [metricsResult, _slowQueryResult] = await Promise.all([
         safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
           connectionId: activeConnectionId,
@@ -328,6 +330,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           connectionId: activeConnectionId,
         }),
       ]);
+
+      console.log('获取到的指标结果:', { 
+        hasQueryTime: !!metricsResult.queryExecutionTime, 
+        hasMemoryUsage: !!metricsResult.memoryUsage,
+        hasCpuUsage: !!metricsResult.cpuUsage,
+        diskIO: metricsResult.diskIO,
+        networkIO: metricsResult.networkIO
+      });
 
       setBasicMetrics({
         queryExecutionTime: Array.isArray(metricsResult.queryExecutionTime) && metricsResult.queryExecutionTime.length > 0 && typeof metricsResult.queryExecutionTime[0] === 'object' 
@@ -374,6 +384,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       });
     } catch (error) {
       console.error('获取基础性能指标失败:', error);
+      showMessage.error('获取基础性能指标失败，请检查连接状态');
+      // 清空指标数据以避免显示过期信息
+      setBasicMetrics(null);
     }
   }, [activeConnectionId]);
 
@@ -527,16 +540,21 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
-  // 生成系统监控图表数据
+  // 生成基于真实数据的系统监控图表数据
   const generateSystemChartData = (type: 'cpu-memory' | 'disk-network') => {
     if (!basicMetrics) {
-      // 如果没有真实数据，显示空图表
+      // 如果没有真实数据，显示提示信息而不是空图表
       return {
         timeColumn: '时间',
         valueColumns: type === 'cpu-memory' 
           ? ['CPU使用率(%)', '内存使用率(%)'] 
           : ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
-        data: [],
+        data: [{
+          时间: '暂无数据',
+          ...(type === 'cpu-memory' 
+            ? { 'CPU使用率(%)': 0, '内存使用率(%)': 0 }
+            : { '磁盘读取(MB/s)': 0, '磁盘写入(MB/s)': 0, '网络入站(MB/s)': 0, '网络出站(MB/s)': 0 })
+        }],
       };
     }
     
@@ -561,25 +579,44 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       const diskIO = basicMetrics.diskIO;
       const networkIO = basicMetrics.networkIO;
       
-      // 为磁盘和网络创建时间序列数据
-      const now = new Date();
-      const data = [];
-      for (let i = 11; i >= 0; i--) {
-        const timestamp = new Date(now.getTime() - i * 5 * 60 * 1000); // 5分钟间隔
-        data.push({
-          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          '磁盘读取(MB/s)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
-          '磁盘写入(MB/s)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
-          '网络入站(MB/s)': Math.round((networkIO.bytesIn / (1024 * 1024)) * 10) / 10,
-          '网络出站(MB/s)': Math.round((networkIO.bytesOut / (1024 * 1024)) * 10) / 10,
+      // 基于真实数据创建时间序列，避免硬编码的时间循环
+      if (basicMetrics.cpuUsage.length > 0) {
+        // 使用已有的时间序列数据
+        const data = basicMetrics.cpuUsage.map((point, index) => {
+          // 将字节转换为MB/s，使用真实的速率计算
+          const readMBps = Math.round((diskIO.readBytes / (1024 * 1024)) / 60 * 10) / 10; // 假设60秒间隔
+          const writeMBps = Math.round((diskIO.writeBytes / (1024 * 1024)) / 60 * 10) / 10;
+          const netInMBps = Math.round((networkIO.bytesIn / (1024 * 1024)) / 60 * 10) / 10;
+          const netOutMBps = Math.round((networkIO.bytesOut / (1024 * 1024)) / 60 * 10) / 10;
+          
+          return {
+            时间: new Date(point.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            '磁盘读取(MB/s)': readMBps,
+            '磁盘写入(MB/s)': writeMBps,
+            '网络入站(MB/s)': netInMBps,
+            '网络出站(MB/s)': netOutMBps,
+          };
         });
+        
+        return {
+          timeColumn: '时间',
+          valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+          data,
+        };
+      } else {
+        // 如果没有时间序列数据，显示当前值
+        return {
+          timeColumn: '时间',
+          valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+          data: [{
+            时间: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            '磁盘读取(MB/s)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
+            '磁盘写入(MB/s)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
+            '网络入站(MB/s)': Math.round((networkIO.bytesIn / (1024 * 1024)) * 10) / 10,
+            '网络出站(MB/s)': Math.round((networkIO.bytesOut / (1024 * 1024)) * 10) / 10,
+          }],
+        };
       }
-      
-      return {
-        timeColumn: '时间',
-        valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
-        data,
-      };
     }
   };
 
