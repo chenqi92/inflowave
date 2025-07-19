@@ -59,12 +59,16 @@ const VOID_COMMANDS = new Set([
   'update_query_settings',
   'update_visualization_settings',
   'update_security_settings',
+  'update_monitoring_settings',
   'reset_settings',
   'save_app_config',
   'clear_query_history',
   'clear_optimization_history',
   'save_query_history',
   'save_optimization_history',
+  'start_system_monitoring',
+  'stop_system_monitoring',
+  'record_query_performance',
 ]);
 
 // 类型安全的 Tauri API 调用包装器 - 使用函数重载

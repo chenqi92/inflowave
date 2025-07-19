@@ -10,6 +10,7 @@ pub struct AppSettings {
     pub query: QuerySettings,
     pub visualization: VisualizationSettings,
     pub security: SecuritySettings,
+    pub monitoring: MonitoringSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -65,6 +66,15 @@ pub struct ControllerSettings {
     pub require_confirmation_for_drop: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MonitoringSettings {
+    pub default_mode: String, // "local" or "remote"
+    pub auto_refresh_interval: u32, // milliseconds
+    pub enable_auto_refresh: bool,
+    pub remote_metrics_timeout: u32, // milliseconds
+    pub fallback_to_local: bool,
+}
+
 pub type SettingsStorage = Mutex<AppSettings>;
 
 impl Default for AppSettings {
@@ -109,6 +119,13 @@ impl Default for AppSettings {
                     require_confirmation_for_delete: true,
                     require_confirmation_for_drop: true,
                 },
+            },
+            monitoring: MonitoringSettings {
+                default_mode: "remote".to_string(), // 默认远程监控模式
+                auto_refresh_interval: 30000, // 30秒自动刷新
+                enable_auto_refresh: true,
+                remote_metrics_timeout: 10000, // 10秒超时
+                fallback_to_local: true, // 远程失败时回退到本地监控
             },
         }
     }
@@ -354,4 +371,37 @@ pub async fn get_controller_settings(
     })?;
 
     Ok(settings.security.controller.clone())
+}
+
+/// 更新监控设置
+#[tauri::command(rename_all = "camelCase")]
+pub async fn update_monitoring_settings(
+    settings_storage: State<'_, SettingsStorage>,
+    monitoring_settings: MonitoringSettings,
+) -> Result<(), String> {
+    debug!("更新监控设置");
+    
+    let mut settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    settings.monitoring = monitoring_settings;
+    info!("监控设置已更新");
+    Ok(())
+}
+
+/// 获取监控设置
+#[tauri::command]
+pub async fn get_monitoring_settings(
+    settings_storage: State<'_, SettingsStorage>,
+) -> Result<MonitoringSettings, String> {
+    debug!("获取监控设置");
+    
+    let settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    Ok(settings.monitoring.clone())
 }

@@ -647,6 +647,8 @@ async fn main() {
             update_security_settings,
             update_controller_settings,
             get_controller_settings,
+            update_monitoring_settings,
+            get_monitoring_settings,
             export_settings,
             import_settings,
             get_settings_schema,
@@ -688,6 +690,7 @@ async fn main() {
             
             // Performance monitoring - frontend compatibility
             detect_performance_bottlenecks,
+            detect_performance_bottlenecks_with_mode,
             get_system_performance_metrics,
             get_slow_query_log,
             analyze_lock_waits,

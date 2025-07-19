@@ -42,6 +42,7 @@ import {
   Edit,
   Copy,
   BarChart,
+  FolderX,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
@@ -137,6 +138,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   } = useFavoritesStore();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+  const [openedDatabases, setOpenedDatabases] = useState<Set<string>>(new Set()); // 新增：已打开的数据库集合
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
@@ -156,6 +158,53 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const activeConnectionStatus = activeConnectionId
     ? connectionStatuses[activeConnectionId]
     : null;
+
+  // 数据库打开状态管理函数
+  const isDatabaseOpened = useCallback((connectionId: string, database: string) => {
+    const key = `${connectionId}/${database}`;
+    return openedDatabases.has(key);
+  }, [openedDatabases]);
+
+  const openDatabase = useCallback((connectionId: string, database: string) => {
+    const key = `${connectionId}/${database}`;
+    setOpenedDatabases(prev => {
+      const newSet = new Set(prev).add(key);
+      console.log(`📂 打开数据库: ${key}`, {
+        before: Array.from(prev),
+        after: Array.from(newSet)
+      });
+      return newSet;
+    });
+  }, []);
+
+  const closeDatabase = useCallback((connectionId: string, database: string) => {
+    const key = `${connectionId}/${database}`;
+    setOpenedDatabases(prev => {
+      const newSet = new Set(prev);
+      const wasDeleted = newSet.delete(key);
+      console.log(`📁 关闭数据库: ${key}`, {
+        wasDeleted,
+        before: Array.from(prev),
+        after: Array.from(newSet)
+      });
+      return newSet;
+    });
+  }, []);
+
+  const closeAllDatabasesForConnection = useCallback((connectionId: string) => {
+    setOpenedDatabases(prev => {
+      const newSet = new Set(prev);
+      const closedDatabases: string[] = [];
+      for (const key of newSet) {
+        if (key.startsWith(`${connectionId}/`)) {
+          newSet.delete(key);
+          closedDatabases.push(key);
+        }
+      }
+      console.log(`📁 关闭连接 ${connectionId} 的所有数据库:`, closedDatabases);
+      return newSet;
+    });
+  }, []);
 
   // 获取要显示的连接状态（优先显示正在连接的连接）
   const getDisplayConnectionStatus = () => {
@@ -462,6 +511,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             const isFav = isFavorite(dbPath);
             const databaseKey = `database-${connection.id}-${db}`;
             const isExpanded = expandedKeys.includes(databaseKey);
+            const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
 
             const nodeData: any = {
               title: (
@@ -473,18 +523,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 </span>
               ),
               key: databaseKey,
-              // 根据展开状态设置图标颜色：未展开为灰色，已展开为紫色
-              icon: <Database className={`w-4 h-4 ${isExpanded ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+              // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
+              icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
             };
 
-            if (isExpanded) {
-              // 已展开的数据库：设置为非叶子节点，有children数组
+            if (isOpened) {
+              // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
               nodeData.isLeaf = false;
-              nodeData.children = [];
+              nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
             } else {
-              // 未展开的数据库：设置为非叶子节点，显示展开按钮
-              nodeData.isLeaf = false;
-              nodeData.children = []; // 空数组表示有子节点但未加载
+              // 未打开的数据库：设置为叶子节点，无展开按钮
+              nodeData.isLeaf = true;
             }
 
             return nodeData;
@@ -514,6 +563,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     loadDatabases,
     isFavorite,
     expandedKeys, // 添加expandedKeys依赖，确保展开状态变化时重新构建树形数据
+    isDatabaseOpened, // 添加数据库打开状态依赖
   ]);
 
   // 动态加载节点数据
@@ -1001,7 +1051,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
           // 根据连接状态处理数据库节点
           if (isConnectionConnected(connection_id)) {
-            // 如果连接成功，为该连接加载数据库节点
+            // 如果连接成功，先清理之前可能残留的数据库打开状态，然后加载数据库节点
+            closeAllDatabasesForConnection(connection_id);
             await addDatabaseNodesToConnection(connection_id);
 
             // 自动展开连接节点，显示数据库列表
@@ -1011,8 +1062,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               console.log(`🔄 自动展开连接节点: ${connection.name}`);
             }
           } else {
-            // 如果连接断开，清理该连接的数据库子节点
+            // 如果连接断开，清理该连接的数据库子节点和打开状态
             clearDatabaseNodesForConnection(connection_id);
+            closeAllDatabasesForConnection(connection_id);
 
             // 收起连接节点
             const connectionKey = `connection-${connection_id}`;
@@ -1070,10 +1122,84 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const database = parts.slice(2).join('-');
         const databaseKey = `database-${connectionId}-${database}`;
 
-        // 检查数据库是否已经展开
+        // 检查数据库是否已经打开
+        const isOpened = isDatabaseOpened(connectionId, database);
         const isDatabaseExpanded = expandedKeys.includes(databaseKey);
 
-        if (!isDatabaseExpanded) {
+        console.log(`🖱️ 双击数据库 "${database}":`, {
+          connectionId,
+          database,
+          isOpened,
+          isDatabaseExpanded,
+          openedDatabases: Array.from(openedDatabases)
+        });
+
+        if (!isOpened) {
+          // 如果数据库未打开，则打开数据库并自动展开加载表列表
+          openDatabase(connectionId, database);
+          showMessage.success(`已打开数据库 "${database}"，正在加载表列表...`);
+
+          // 自动展开数据库
+          const newExpandedKeys = [...expandedKeys, databaseKey];
+          setExpandedKeys(newExpandedKeys);
+
+          // 加载表数据并更新树形结构
+          try {
+            const tables = await loadTables(connectionId, database);
+            console.log(`✅ 成功加载数据库 "${database}" 的表列表:`, tables);
+
+            // 更新树形数据，为该数据库添加表节点
+            setTreeData(prevData => {
+              return prevData.map(connectionNode => {
+                if (connectionNode.key === `connection-${connectionId}`) {
+                  const updatedConnectionNode = { ...connectionNode };
+                  if (updatedConnectionNode.children) {
+                    updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
+                      if (dbNode.key === databaseKey) {
+                        const tableNodes = tables.map(table => {
+                          const tablePath = `${connectionId}/${database}/${table}`;
+                          const isFav = isFavorite(tablePath);
+                          return {
+                            title: (
+                              <div className='flex items-center gap-2'>
+                                <span className='flex-1'>{table}</span>
+                                {isFav && (
+                                  <Star className='w-3 h-3 text-warning fill-current' />
+                                )}
+                              </div>
+                            ),
+                            key: `table-${connectionId}-${database}-${table}`,
+                            icon: <Table className='w-4 h-4 text-blue-600' />,
+                            isLeaf: false, // 表应该有展开按钮以显示tags和fields
+                            children: [], // 空数组表示有子节点但未加载
+                          };
+                        });
+
+                        return {
+                          ...dbNode,
+                          icon: <Database className='w-4 h-4 text-purple-600' />,
+                          isLeaf: false,
+                          children: tableNodes,
+                        };
+                      }
+                      return dbNode;
+                    });
+                  }
+                  return updatedConnectionNode;
+                }
+                return connectionNode;
+              });
+            });
+
+            showMessage.success(`已打开数据库 "${database}" 并加载了 ${tables.length} 个表`);
+          } catch (error) {
+            console.error('❌ 加载表列表失败:', error);
+            showMessage.error(`打开数据库 "${database}" 失败: ${error}`);
+            // 如果加载失败，回滚打开状态
+            closeDatabase(connectionId, database);
+            setExpandedKeys(expandedKeys);
+          }
+        } else if (!isDatabaseExpanded) {
           // 如果数据库未展开，则展开数据库（加载表列表）
           const newExpandedKeys = [...expandedKeys, databaseKey];
           console.log('🔄 双击展开数据库，更新 expandedKeys:', {
@@ -1082,25 +1208,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             databaseKey
           });
           setExpandedKeys(newExpandedKeys);
-
-          // 立即触发状态更新通知
-          if (onExpandedDatabasesChange) {
-            const expandedDatabases = newExpandedKeys
-              .filter(key => String(key).startsWith('database-'))
-              .map(key => {
-                const keyStr = String(key);
-                const parts = keyStr.split('-');
-                if (parts.length >= 3) {
-                  return parts.slice(2).join('-');
-                }
-                return '';
-              })
-              .filter(db => db !== '');
-
-            console.log('🔄 双击后立即通知父组件 expandedDatabases:', expandedDatabases);
-            onExpandedDatabasesChange(expandedDatabases);
-          }
-          showMessage.info(`正在连接并加载数据库 "${database}" 的表列表...`);
+          showMessage.info(`正在加载数据库 "${database}" 的表列表...`);
 
           // 手动加载表数据并更新树形结构
           try {
@@ -1339,6 +1447,42 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
           break;
 
+        case 'close_database':
+          if (contextMenuTarget.type === 'database') {
+            // 关闭数据库
+            closeDatabase(contextMenuTarget.connectionId, contextMenuTarget.database);
+            showMessage.success(`已关闭数据库 "${contextMenuTarget.database}"`);
+
+            // 立即更新树形数据以反映数据库关闭状态
+            setTreeData(prevData => {
+              return prevData.map(connectionNode => {
+                if (connectionNode.key === `connection-${contextMenuTarget.connectionId}`) {
+                  const updatedConnectionNode = { ...connectionNode };
+                  if (updatedConnectionNode.children) {
+                    updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
+                      if (dbNode.key === `database-${contextMenuTarget.connectionId}-${contextMenuTarget.database}`) {
+                        return {
+                          ...dbNode,
+                          icon: <Database className='w-4 h-4 text-muted-foreground' />,
+                          isLeaf: true, // 关闭后不能展开
+                          children: undefined, // 清除子节点
+                        };
+                      }
+                      return dbNode;
+                    });
+                  }
+                  return updatedConnectionNode;
+                }
+                return connectionNode;
+              });
+            });
+
+            // 同时收起该数据库的展开状态
+            const databaseKey = `database-${contextMenuTarget.connectionId}-${contextMenuTarget.database}`;
+            setExpandedKeys(prev => prev.filter(key => key !== databaseKey));
+          }
+          break;
+
         case 'refresh_database':
           if (contextMenuTarget.type === 'database') {
             // 重新加载数据库结构（功能待实现）
@@ -1573,6 +1717,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               const isFav = isFavorite(dbPath);
                               const databaseKey = `database-${connection_id}-${db}`;
                               const isExpanded = expandedKeys.includes(databaseKey);
+                              const isOpened = isDatabaseOpened(connection_id, db);
 
                               const nodeData: any = {
                                 title: (
@@ -1584,18 +1729,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                   </span>
                                 ),
                                 key: databaseKey,
-                                // 根据展开状态设置图标颜色：未展开为灰色，已展开为紫色
-                                icon: <Database className={`w-4 h-4 ${isExpanded ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+                                // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
+                                icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
                               };
 
-                              if (isExpanded) {
-                                // 已展开的数据库：设置为非叶子节点，有children数组
+                              if (isOpened) {
+                                // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
                                 nodeData.isLeaf = false;
-                                nodeData.children = [];
+                                nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
                               } else {
-                                // 未展开的数据库：设置为非叶子节点，显示展开按钮
-                                nodeData.isLeaf = false;
-                                nodeData.children = []; // 空数组表示有子节点但未加载
+                                // 未打开的数据库：设置为叶子节点，无展开按钮
+                                nodeData.isLeaf = true;
                               }
 
                               return nodeData;
@@ -1617,7 +1761,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           });
         });
       } else {
-        // 如果断开连接，清空子节点
+        // 如果断开连接，清空子节点并关闭所有相关数据库
+        closeAllDatabasesForConnection(connection_id);
         setTreeData(prevData => {
           return prevData.map(node => {
             if (node.key === `connection-${connection_id}`) {
@@ -1638,6 +1783,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       isFavorite,
       loadDatabases,
       expandedKeys, // 添加expandedKeys依赖，确保数据库节点状态正确
+      isDatabaseOpened, // 添加数据库打开状态依赖
     ]
   );
 
@@ -1817,6 +1963,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   const isFav = isFavorite(dbPath);
                   const databaseKey = `database-${connection_id}-${databaseName}`;
                   const isExpanded = expandedKeys.includes(databaseKey);
+                  const isOpened = isDatabaseOpened(connection_id, databaseName);
 
                   const nodeData: any = {
                     title: (
@@ -1828,18 +1975,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                       </span>
                     ),
                     key: databaseKey,
-                    // 根据展开状态设置图标颜色：未展开为灰色，已展开为紫色
-                    icon: <Database className={`w-4 h-4 ${isExpanded ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+                    // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
+                    icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
                   };
 
-                  if (isExpanded) {
-                    // 已展开的数据库：设置为非叶子节点，有children数组
+                  if (isOpened) {
+                    // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
                     nodeData.isLeaf = false;
-                    nodeData.children = [];
+                    nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
                   } else {
-                    // 未展开的数据库：设置为非叶子节点，显示展开按钮
-                    nodeData.isLeaf = false;
-                    nodeData.children = []; // 空数组表示有子节点但未加载
+                    // 未打开的数据库：设置为叶子节点，无展开按钮
+                    nodeData.isLeaf = true;
                   }
 
                   return nodeData;
@@ -1916,32 +2062,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
   }, [refreshTrigger, buildCompleteTreeData]);
 
-  // 监听已展开数据库变化，通知父组件
+  // 监听已打开数据库变化，通知父组件
   useEffect(() => {
     if (onExpandedDatabasesChange) {
-      // 从expandedKeys中提取数据库名称
-      const expandedDatabases = expandedKeys
-        .filter(key => String(key).startsWith('database-'))
+      // 从openedDatabases中提取数据库名称
+      const openedDatabasesList = Array.from(openedDatabases)
         .map(key => {
-          const keyStr = String(key);
-          const parts = keyStr.split('-');
-          // 处理数据库名称可能包含连字符的情况
-          if (parts.length >= 3) {
-            // 取第三部分及之后的所有部分，用连字符连接
-            return parts.slice(2).join('-');
+          // key格式为 "connectionId/database"
+          const parts = key.split('/');
+          if (parts.length >= 2) {
+            // 取第二部分及之后的所有部分，用斜杠连接（处理数据库名称可能包含斜杠的情况）
+            return parts.slice(1).join('/');
           }
           return '';
         })
         .filter(db => db !== ''); // 过滤掉空字符串
 
-      console.log('🔄 DatabaseExplorer 已展开数据库列表变化:', {
-        expandedKeys,
-        expandedDatabases,
-        filteredKeys: expandedKeys.filter(key => String(key).startsWith('database-'))
+      console.log('🔄 DatabaseExplorer 已打开数据库列表变化:', {
+        openedDatabases: Array.from(openedDatabases),
+        openedDatabasesList,
+        timestamp: new Date().toISOString()
       });
-      onExpandedDatabasesChange(expandedDatabases);
+      console.log('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
+      onExpandedDatabasesChange(openedDatabasesList);
     }
-  }, [expandedKeys]); // 移除 onExpandedDatabasesChange 依赖，因为它是稳定的 setState 函数
+  }, [openedDatabases, onExpandedDatabasesChange]);
 
   if (collapsed) {
     return (
@@ -2142,6 +2287,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                           {contextMenuTarget.type === 'database' && (
                             <>
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库操作</div>
+                              {/* 只有已打开的数据库才显示关闭选项 */}
+                              {isDatabaseOpened(contextMenuTarget.connectionId, contextMenuTarget.database) && (
+                                <button
+                                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                  onClick={() => {
+                                    handleContextMenuAction('close_database');
+                                    setContextMenuOpen(false);
+                                  }}
+                                >
+                                  <FolderX className="w-4 h-4" />
+                                  关闭数据库
+                                </button>
+                              )}
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {

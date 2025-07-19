@@ -28,6 +28,7 @@ import DatabasePage from '../../pages/Database';
 import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
+import QueryHistoryPage from '../../pages/QueryHistory';
 import DevTools from '../../pages/DevTools';
 import Extensions from '../../pages/Extensions';
 import QueryHistory from '../query/QueryHistory';
@@ -53,6 +54,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (pathname === '/connections') return 'datasource';
     if (pathname === '/database') return 'database';
     if (pathname === '/query') return 'query';
+    if (pathname === '/query-history') return 'query-history';
     if (pathname === '/visualization') return 'visualization';
     if (pathname === '/performance') return 'performance';
     if (pathname === '/extensions') return 'extensions';
@@ -102,7 +104,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
   // 调试：监听 expandedDatabases 变化
   useEffect(() => {
-    console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', expandedDatabases);
+    console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', {
+      expandedDatabases,
+      length: expandedDatabases.length,
+      timestamp: new Date().toISOString()
+    });
   }, [expandedDatabases]);
 
   // 智能视图切换：当在查询视图但没有展开数据库时，提示用户先展开数据库
@@ -316,6 +322,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         const pathMap: Record<string, string> = {
           datasource: '/connections',
           query: '/query',
+          'query-history': '/query-history',
           visualization: '/visualization',
           performance: '/performance',
         };
@@ -383,6 +390,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           <div className='h-full'>
             <div className='p-0 h-full'>
               <Extensions />
+            </div>
+          </div>
+        );
+      case 'query-history':
+        return (
+          <div className='h-full'>
+            <div className='p-0 h-full'>
+              <QueryHistoryPage />
             </div>
           </div>
         );

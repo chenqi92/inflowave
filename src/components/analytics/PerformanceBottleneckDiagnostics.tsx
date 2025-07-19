@@ -315,6 +315,28 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     connectionCount: 100,
   });
 
+  // 监控模式状态
+  const [monitoringMode, setMonitoringMode] = useState<'local' | 'remote'>('remote'); // 默认远程监控
+
+  // 从设置中加载监控模式
+  useEffect(() => {
+    const loadMonitoringSettings = async () => {
+      try {
+        const settings = await safeTauriInvoke<{
+          default_mode: string;
+          auto_refresh_interval: number;
+          enable_auto_refresh: boolean;
+          remote_metrics_timeout: number;
+          fallback_to_local: boolean;
+        }>('get_monitoring_settings');
+        setMonitoringMode(settings.default_mode as 'local' | 'remote');
+      } catch (error) {
+        console.warn('Failed to load monitoring settings, using default:', error);
+      }
+    };
+    loadMonitoringSettings();
+  }, []);
+
   // 获取基础性能指标（使用真实数据）
   const getBasicMetrics = useCallback(async () => {
     if (!activeConnectionId) return;
@@ -411,8 +433,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         _connectionPoolData,
         performanceReportData,
       ] = await Promise.all([
-        PerformanceBottleneckService.detectPerformanceBottlenecks(
+        PerformanceBottleneckService.detectPerformanceBottlenecksWithMode(
           activeConnectionId,
+          monitoringMode,
           range
         ),
         PerformanceBottleneckService.getSystemPerformanceMetrics(
@@ -1563,6 +1586,38 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               性能瓶颈诊断
             </CardTitle>
             <div className='flex gap-2'>
+              <Select
+                value={monitoringMode}
+                onValueChange={async (value: 'local' | 'remote') => {
+                  setMonitoringMode(value);
+                  // 保存到设置
+                  try {
+                    const settings = await safeTauriInvoke<{
+                      default_mode: string;
+                      auto_refresh_interval: number;
+                      enable_auto_refresh: boolean;
+                      remote_metrics_timeout: number;
+                      fallback_to_local: boolean;
+                    }>('get_monitoring_settings');
+                    await safeTauriInvoke('update_monitoring_settings', {
+                      monitoringSettings: {
+                        ...settings,
+                        default_mode: value,
+                      },
+                    });
+                  } catch (error) {
+                    console.warn('Failed to save monitoring mode:', error);
+                  }
+                }}
+              >
+                <SelectTrigger className='w-[120px]'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='remote'>远程监控</SelectItem>
+                  <SelectItem value='local'>本地监控</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 size='sm'
                 variant='outline'

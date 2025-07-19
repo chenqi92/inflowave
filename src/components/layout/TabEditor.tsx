@@ -913,7 +913,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, [activeConnectionId]);
 
-    // 监听已展开数据库变化，自动选择合适的数据库
+    // 监听已打开数据库变化，自动选择合适的数据库
     useEffect(() => {
       console.log('🔄 TabEditor expandedDatabases 变化:', {
         expandedDatabases,
@@ -921,20 +921,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         hasAnyConnectedInfluxDB,
         activeConnectionId,
         expandedDatabasesLength: expandedDatabases.length,
-        isDisabled: !hasAnyConnectedInfluxDB || expandedDatabases.length === 0
+        isDisabled: !hasAnyConnectedInfluxDB || expandedDatabases.length === 0,
+        timestamp: new Date().toISOString()
       });
 
       if (expandedDatabases.length > 0) {
-        // 如果当前选中的数据库不在已展开列表中，选择第一个已展开的数据库
+        // 如果当前选中的数据库不在已打开列表中，选择第一个已打开的数据库
         if (!selectedDatabase || !expandedDatabases.includes(selectedDatabase)) {
           setSelectedDatabase(expandedDatabases[0]);
-          console.log('🔄 自动选择已展开的数据库:', expandedDatabases[0]);
+          console.log('🔄 自动选择已打开的数据库:', expandedDatabases[0]);
         }
       } else {
-        // 如果没有已展开的数据库，清空选择
+        // 如果没有已打开的数据库，清空选择
         if (selectedDatabase) {
           setSelectedDatabase('');
-          console.log('🔄 清空数据库选择，因为没有已展开的数据库');
+          console.log('🔄 清空数据库选择，因为没有已打开的数据库');
         }
       }
     }, [expandedDatabases, selectedDatabase, hasAnyConnectedInfluxDB]);
@@ -1966,7 +1967,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 <SelectTrigger className='w-[140px] h-10'>
                   <SelectValue placeholder={
                     expandedDatabases.length === 0
-                      ? '请先展开数据库'
+                      ? '请先打开数据库'
                       : '选择数据库'
                   } />
                 </SelectTrigger>
@@ -1987,9 +1988,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 }
                 className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
                 title={
-                  hasAnyConnectedInfluxDB
-                    ? '执行查询 (Ctrl+Enter)'
-                    : '执行查询 (需要连接InfluxDB)'
+                  !hasAnyConnectedInfluxDB
+                    ? '执行查询 (需要连接InfluxDB)'
+                    : expandedDatabases.length === 0
+                    ? '执行查询 (需要先打开数据库)'
+                    : !selectedDatabase
+                    ? '执行查询 (需要选择数据库)'
+                    : '执行查询 (Ctrl+Enter)'
                 }
               >
                 <PlayCircle className='w-4 h-4' />

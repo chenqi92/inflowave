@@ -245,13 +245,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           size='sm'
           className='h-10 w-16 p-1 flex flex-col items-center justify-center gap-1'
           onClick={() => {
-            // 查询历史 - 先导航到查询页面，然后手动打开历史面板
-            navigate('/query');
-            // 确保先切换到查询视图
-            onViewChange?.('query');
-            // 立即打开查询历史，无需延迟
-            onOpenQueryHistory?.();
-            showMessage.info('正在打开查询历史...');
+            // 直接切换到查询历史视图
+            onViewChange?.('query-history');
+            showMessage.info('正在打开查询历史页面...');
           }}
           title='查询历史'
         >
