@@ -97,29 +97,95 @@ const sendDesktopNotification = async (title: string, message: string, icon?: st
     }
 };
 
-// 系统级别消息 - 使用原生系统通知而不是shadcn组件
+// 智能消息系统 - 根据用户设置自动选择系统通知或shadcn通知
+export const smartMessage = {
+    success: async (content: string, title?: string) => {
+        const prefs = await getUserNotificationPreferences();
+
+        if (!prefs.enabled) {
+            return; // 如果通知被禁用，不显示任何消息
+        }
+
+        // 如果启用了桌面通知和系统警报，使用系统通知
+        if (prefs.desktop && prefs.system_alerts && title) {
+            await sendDesktopNotification(title, content);
+        } else {
+            // 否则使用shadcn通知
+            const options = await createToastOptions();
+            if (options === null) return; // 通知被禁用
+            return toast.success(content, options);
+        }
+    },
+    error: async (content: string, title?: string) => {
+        const prefs = await getUserNotificationPreferences();
+
+        if (!prefs.enabled) {
+            return;
+        }
+
+        if (prefs.desktop && prefs.system_alerts && title) {
+            await sendDesktopNotification(title, content);
+        } else {
+            const options = await createToastOptions();
+            if (options === null) return; // 通知被禁用
+            return toast.error(content, options);
+        }
+    },
+    warning: async (content: string, title?: string) => {
+        const prefs = await getUserNotificationPreferences();
+
+        if (!prefs.enabled) {
+            return;
+        }
+
+        if (prefs.desktop && prefs.system_alerts && title) {
+            await sendDesktopNotification(title, content);
+        } else {
+            const options = await createToastOptions();
+            if (options === null) return; // 通知被禁用
+            return toast.warning(content, options);
+        }
+    },
+    info: async (content: string, title?: string) => {
+        const prefs = await getUserNotificationPreferences();
+
+        if (!prefs.enabled) {
+            return;
+        }
+
+        if (prefs.desktop && prefs.system_alerts && title) {
+            await sendDesktopNotification(title, content);
+        } else {
+            const options = await createToastOptions();
+            if (options === null) return; // 通知被禁用
+            return toast.info(content, options);
+        }
+    },
+};
+
+// 系统级别消息 - 强制使用原生系统通知
 export const systemMessage = {
     success: async (title: string, message: string) => {
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     error: async (title: string, message: string) => {
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     warning: async (title: string, message: string) => {
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     info: async (title: string, message: string) => {
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
@@ -129,7 +195,7 @@ export const systemMessage = {
 const createToastOptions = async (
     duration?: number,
     options?: Partial<ExternalToast>
-): Promise<ExternalToast> => {
+): Promise<ExternalToast | null> => {
     // 动态获取用户偏好设置
     let position: string = 'bottom-right';
     let enabled = true;
@@ -155,13 +221,9 @@ const createToastOptions = async (
         console.warn('获取通知偏好失败，使用默认设置:', error);
     }
 
-    // 如果通知被禁用，返回一个会被忽略的配置
+    // 如果通知被禁用，返回null让调用者决定
     if (!enabled) {
-        return {
-            duration: 0,
-            style: { display: 'none' },
-            ...options,
-        };
+        return null;
     }
 
     return {
@@ -175,22 +237,27 @@ const createToastOptions = async (
 const message = {
     success: async (content: string, duration?: number) => {
         const options = await createToastOptions(duration);
+        if (options === null) return; // 通知被禁用
         return toast.success(content, options);
     },
     error: async (content: string, duration?: number) => {
         const options = await createToastOptions(duration);
+        if (options === null) return; // 通知被禁用
         return toast.error(content, options);
     },
     warning: async (content: string, duration?: number) => {
         const options = await createToastOptions(duration);
+        if (options === null) return; // 通知被禁用
         return toast.warning(content, options);
     },
     info: async (content: string, duration?: number) => {
         const options = await createToastOptions(duration);
+        if (options === null) return; // 通知被禁用
         return toast.info(content, options);
     },
     loading: async (content: string, duration?: number) => {
         const options = await createToastOptions(duration);
+        if (options === null) return; // 通知被禁用
         return toast.loading(content, options);
     },
     // 新增：自定义消息
@@ -198,15 +265,6 @@ const message = {
         return toast(content, options);
     },
     // Promise 消息
-    promise: <T>(
-        promise: Promise<T>,
-        msgs: {
-            loading: string;
-            success: string | ((data: T) => string);
-            error: string | ((error: any) => string);
-        }
-    ) => toast.promise(promise, msgs),
-    // 新增：Promise 消息
     promise: <T>(
         promise: Promise<T>,
         msgs: {

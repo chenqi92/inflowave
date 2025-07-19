@@ -58,6 +58,7 @@ export {
   specialMessage,
   toastControl,
   systemMessage,
+  smartMessage,
 } from '@/utils/message';
 
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
