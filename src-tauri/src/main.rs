@@ -119,7 +119,7 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
     // 风格设置子菜单 - 恢复风格切换功能
     let style_submenu = SubmenuBuilder::new(app, "风格设置")
         .text("theme_default", "默认蓝色")
-        .text("theme_shadcn", "Shadcn 黑白")
+        .text("theme_shadcn", "极简黑")
         .text("theme_zinc", "锌灰色")
         .text("theme_slate", "石板灰")
         .text("theme_indigo", "靛蓝色")

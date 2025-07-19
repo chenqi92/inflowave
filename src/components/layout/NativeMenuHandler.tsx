@@ -92,7 +92,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     // 风格名称映射
     const themeLabels: Record<string, string> = {
       'default': '默认蓝色',
-      'shadcn': 'Shadcn 黑白',
+      'shadcn': '极简黑',
       'zinc': '锌灰色',
       'slate': '石板灰',
       'indigo': '靛蓝色',
