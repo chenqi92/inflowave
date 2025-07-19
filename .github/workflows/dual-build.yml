@@ -114,7 +114,7 @@ jobs:
             
             ### 📝 安装说明
             1. **Windows**: 下载 .msi 文件后双击安装
-            2. **macOS**: 下载 .tar.gz 文件，解压后拖入 Applications 文件夹
+            2. **macOS**: 下载 .dmg 文件，双击打开后拖入 Applications 文件夹
             3. **Linux**: 下载 .deb 或 .AppImage 文件进行安装或运行
           releaseDraft: ${{ inputs.create_release }}
           prerelease: false

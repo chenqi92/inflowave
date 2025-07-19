@@ -185,13 +185,13 @@ jobs:
             
             #### macOS 用户
             🍎 **Apple Silicon Mac (M1/M2/M3芯片)**  
-            📥 **[InfloWave_aarch64.app.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_aarch64.app.tar.gz)**  
+            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_aarch64.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_aarch64.dmg)**  
             - 适用于2020年后发布的 Mac (苹果芯片)  
             - 性能最优，原生支持  
             - ⚠️ **无法在 Intel Mac 上运行**  
             
             💻 **Intel Mac**  
-            📥 **[InfloWave_x64.app.tar.gz](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_x64.app.tar.gz)**  
+            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x64.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x64.dmg)**  
             - 适用于2020年前的 Intel 处理器 Mac  
             - 不支持 Apple Silicon 芯片  
             
@@ -207,7 +207,7 @@ jobs:
             
             ### 📝 安装说明
             1. **Windows**: 下载 .msi 文件后双击安装
-            2. **macOS**: 下载 .tar.gz 文件，解压后拖入 Applications 文件夹
+            2. **macOS**: 下载 .dmg 文件，双击打开后拖入 Applications 文件夹
             3. **Linux**: 下载 .deb 或 .AppImage 文件，按照上述说明操作
           releaseDraft: false
           prerelease: false
