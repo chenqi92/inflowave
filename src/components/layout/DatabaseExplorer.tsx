@@ -35,6 +35,13 @@ import {
   Trash2,
   Calendar,
   MousePointer,
+  X,
+  Plus,
+  Info,
+  Search,
+  Edit,
+  Copy,
+  BarChart,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
@@ -42,7 +49,14 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
-import ContextMenu from '@/components/common/ContextMenu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui';
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -1166,23 +1180,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   };
 
   // 右键菜单状态
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean;
-    x: number;
-    y: number;
-    target: any;
-  }>({
-    visible: false,
-    x: 0,
-    y: 0,
-    target: null,
-  });
+  const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
   // 处理右键菜单
-  const handleRightClick = (info: { node: TreeNode }) => {
-    const { node } = info;
-    const key = node.key;
+  const handleRightClick = (info: { node: TreeNode; event?: React.MouseEvent }) => {
+    const { node, event } = info;
+    event?.preventDefault();
+    event?.stopPropagation();
 
+    const key = node.key;
     let target = null;
 
     // 根据节点类型创建不同的目标对象
@@ -1242,127 +1249,112 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
 
     if (target) {
-      setContextMenu({
-        visible: true,
-        x: 100, // 默认位置
-        y: 100, // 默认位置
-        target,
-      });
+      setContextMenuTarget(target);
+      setContextMenuOpen(true);
     }
   };
 
-  // 隐藏右键菜单
-  const hideContextMenu = () => {
-    setContextMenu({
-      visible: false,
-      x: 0,
-      y: 0,
-      target: null,
-    });
-  };
-
   // 处理右键菜单动作
-  const handleContextMenuAction = async (action: string, params?: any) => {
-    const { target } = contextMenu;
-    if (!target) return;
+  const handleContextMenuAction = async (action: string) => {
+    if (!contextMenuTarget) return;
 
     try {
       switch (action) {
         case 'refresh_connection':
-          if (target.type === 'connection') {
+          if (contextMenuTarget.type === 'connection') {
             // 重新加载连接状态（功能待实现）
-            showMessage.success(`连接 ${target.title} 已刷新`);
+            showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
           }
           break;
 
         case 'disconnect':
-          if (target.type === 'connection') {
+          if (contextMenuTarget.type === 'connection') {
             // 断开连接逻辑
-            showMessage.success(`连接 ${target.title} 已断开`);
+            showMessage.success(`连接 ${contextMenuTarget.title} 已断开`);
           }
           break;
 
         case 'connection_properties':
-          if (target.type === 'connection') {
-            showMessage.info(`连接属性: ${target.title}`);
+          if (contextMenuTarget.type === 'connection') {
+            showMessage.info(`连接属性: ${contextMenuTarget.title}`);
           }
           break;
 
         case 'refresh_database':
-          if (target.type === 'database') {
+          if (contextMenuTarget.type === 'database') {
             // 重新加载数据库结构（功能待实现）
-            showMessage.success(`数据库 ${target.database} 已刷新`);
+            showMessage.success(`数据库 ${contextMenuTarget.database} 已刷新`);
           }
           break;
 
         case 'create_measurement':
-          if (target.type === 'database') {
-            showMessage.info(`创建测量值功能开发中: ${target.database}`);
+          if (contextMenuTarget.type === 'database') {
+            showMessage.info(`创建测量值功能开发中: ${contextMenuTarget.database}`);
           }
           break;
 
         case 'database_info':
-          if (target.type === 'database') {
-            showMessage.info(`数据库信息: ${target.database}`);
+          if (contextMenuTarget.type === 'database') {
+            showMessage.info(`数据库信息: ${contextMenuTarget.database}`);
           }
           break;
 
         case 'drop_database':
-          if (target.type === 'database') {
+          if (contextMenuTarget.type === 'database') {
             const confirmed = await dialog.confirm({
               title: '确认删除',
-              content: `确定要删除数据库 "${target.database}" 吗？此操作不可撤销。`,
+              content: `确定要删除数据库 "${contextMenuTarget.database}" 吗？此操作不可撤销。`,
             });
             if (confirmed) {
-              showMessage.info(`删除数据库功能开发中: ${target.database}`);
+              showMessage.info(`删除数据库功能开发中: ${contextMenuTarget.database}`);
             }
           }
           break;
 
         case 'query_table':
-          if (target.type === 'table') {
-            const query = generateQueryWithTimeFilter(target.table);
+          if (contextMenuTarget.type === 'table') {
+            const query = generateQueryWithTimeFilter(contextMenuTarget.table);
             if (onTableDoubleClick) {
-              onTableDoubleClick(target.database, target.table, query);
+              onTableDoubleClick(contextMenuTarget.database, contextMenuTarget.table, query);
             }
           }
           break;
 
         case 'table_designer':
-          if (target.type === 'table') {
-            openTableDesigner(target);
+          if (contextMenuTarget.type === 'table') {
+            openTableDesigner(contextMenuTarget);
           }
           break;
 
         case 'table_info':
-          if (target.type === 'table') {
-            showMessage.info(`表信息: ${target.table}`);
+          if (contextMenuTarget.type === 'table') {
+            showMessage.info(`表信息: ${contextMenuTarget.table}`);
           }
           break;
 
         case 'drop_table':
-          if (target.type === 'table') {
+          if (contextMenuTarget.type === 'table') {
             const confirmed = await dialog.confirm({
               title: '确认删除',
-              content: `确定要删除表 "${target.table}" 吗？此操作不可撤销。`,
+              content: `确定要删除表 "${contextMenuTarget.table}" 吗？此操作不可撤销。`,
             });
             if (confirmed) {
-              showMessage.info(`删除表功能开发中: ${target.table}`);
+              showMessage.info(`删除表功能开发中: ${contextMenuTarget.table}`);
             }
           }
           break;
 
         case 'copy_field_name':
-          if (target.type === 'field') {
-            await writeToClipboard(target.field, {
-              successMessage: `已复制字段名: ${target.field}`,
+          if (contextMenuTarget.type === 'field') {
+            await writeToClipboard(contextMenuTarget.field, {
+              successMessage: `已复制字段名: ${contextMenuTarget.field}`,
             });
           }
           break;
 
         case 'field_stats':
-          if (target.type === 'field') {
-            showMessage.info(`字段统计功能开发中: ${target.field}`);
+          if (contextMenuTarget.type === 'field') {
+            showMessage.info(`字段统计功能开发中: ${contextMenuTarget.field}`);
           }
           break;
 
@@ -1375,7 +1367,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       showMessage.error(`操作失败: ${error}`);
     }
 
-    hideContextMenu();
+    // 关闭右键菜单
+    setContextMenuOpen(false);
+    setContextMenuTarget(null);
   };
 
   // 打开表设计器
@@ -2009,17 +2003,113 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 <Spin tip='加载中...' />
               </div>
             ) : treeData.length > 0 ? (
-              <Tree
-                showIcon
-                showLine
-                treeData={filterTreeData(treeData)}
-                expandedKeys={expandedKeys.map(String)}
-                onExpand={handleExpand}
-                onSelect={handleSelect}
-                onDoubleClick={handleDoubleClick}
-                onRightClick={handleRightClick}
-                className='bg-transparent database-explorer-tree'
-              />
+              <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <div className="w-full">
+                    <Tree
+                      showIcon
+                      showLine
+                      treeData={filterTreeData(treeData)}
+                      expandedKeys={expandedKeys.map(String)}
+                      onExpand={handleExpand}
+                      onSelect={handleSelect}
+                      onDoubleClick={handleDoubleClick}
+                      onRightClick={handleRightClick}
+                      className='bg-transparent database-explorer-tree'
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  {contextMenuTarget && (
+                    <>
+                      {contextMenuTarget.type === 'connection' && (
+                        <>
+                          <DropdownMenuLabel>连接操作</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('refresh_connection')}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            刷新连接
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('disconnect')}>
+                            <X className="w-4 h-4 mr-2" />
+                            断开连接
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('connection_properties')}>
+                            <Settings className="w-4 h-4 mr-2" />
+                            连接属性
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {contextMenuTarget.type === 'database' && (
+                        <>
+                          <DropdownMenuLabel>数据库操作</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('refresh_database')}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            刷新数据库
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('create_measurement')}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            创建测量值
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('database_info')}>
+                            <Info className="w-4 h-4 mr-2" />
+                            数据库信息
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleContextMenuAction('drop_database')}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            删除数据库
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {contextMenuTarget.type === 'table' && (
+                        <>
+                          <DropdownMenuLabel>表操作</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('query_table')}>
+                            <Search className="w-4 h-4 mr-2" />
+                            查询表
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('table_designer')}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            表设计器
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('table_info')}>
+                            <Info className="w-4 h-4 mr-2" />
+                            表信息
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleContextMenuAction('drop_table')}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            删除表
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {contextMenuTarget.type === 'field' && (
+                        <>
+                          <DropdownMenuLabel>字段操作</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('copy_field_name')}>
+                            <Copy className="w-4 h-4 mr-2" />
+                            复制字段名
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleContextMenuAction('field_stats')}>
+                            <BarChart className="w-4 h-4 mr-2" />
+                            字段统计
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Card className='text-center text-muted-foreground mt-8'>
                 <CardContent className='pt-6'>
@@ -2196,16 +2286,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         </Tabs>
       </CardContent>
     </Card>
-
-    {/* 右键菜单 */}
-    <ContextMenu
-      open={contextMenu.visible}
-      x={contextMenu.x}
-      y={contextMenu.y}
-      target={contextMenu.target}
-      onClose={hideContextMenu}
-      onAction={handleContextMenuAction}
-    />
     </>
   );
 };

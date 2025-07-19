@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import SimpleChart from '@/components/common/SimpleChart';
+import { DEFAULT_PERFORMANCE_CONFIG } from '@/config/defaults';
 import {
   Card,
   CardContent,
@@ -303,7 +304,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
   const [diagnosticsModalVisible, setDiagnosticsModalVisible] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [refreshInterval, setRefreshInterval] = useState(DEFAULT_PERFORMANCE_CONFIG.connectionMonitorInterval);
   const [realTimeMode, setRealTimeMode] = useState(false);
   const [alertThresholds, setAlertThresholds] = useState({
     cpuUsage: 80,
@@ -320,7 +321,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
     try {
       const [metricsResult, _slowQueryResult] = await Promise.all([
-        safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics', {
+        safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
           connectionId: activeConnectionId,
         }),
         safeTauriInvoke<SlowQueryAnalysisResult>('get_slow_query_analysis', {
@@ -447,11 +448,27 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [autoRefresh, refreshInterval, getBottlenecks]);
 
-  // 初始加载性能数据
+  // 初始加载性能数据并启动监控
   useEffect(() => {
     if (activeConnectionId) {
-      getBottlenecks();
+      // 启动系统监控
+      safeTauriInvoke<void>('start_system_monitoring', {})
+        .then(() => {
+          console.log('系统监控已启动');
+          getBottlenecks();
+        })
+        .catch(error => {
+          console.error('启动系统监控失败:', error);
+          getBottlenecks(); // 即使监控启动失败也要加载数据
+        });
     }
+    
+    // 组件卸载时停止监控
+    return () => {
+      safeTauriInvoke<void>('stop_system_monitoring', {})
+        .then(() => console.log('系统监控已停止'))
+        .catch(error => console.error('停止系统监控失败:', error));
+    };
   }, [activeConnectionId, getBottlenecks]);
 
   // 获取严重程度颜色
@@ -510,38 +527,60 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
-  // 生成示例图表数据 - TODO: 替换为真实的系统监控数据
-  const generateSampleChartData = (type: 'cpu-memory' | 'disk-network') => {
-    const now = new Date();
-    const data = [];
-    
-    for (let i = 23; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-      
-      if (type === 'cpu-memory') {
-        data.push({
-          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          'CPU使用率(%)': Math.floor(Math.random() * 80 + 10),
-          '内存使用率(%)': Math.floor(Math.random() * 70 + 20),
-        });
-      } else {
-        data.push({
-          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          '磁盘读取(MB/s)': Math.floor(Math.random() * 100 + 10),
-          '磁盘写入(MB/s)': Math.floor(Math.random() * 80 + 5),
-          '网络入站(MB/s)': Math.floor(Math.random() * 50 + 5),
-          '网络出站(MB/s)': Math.floor(Math.random() * 40 + 3),
-        });
-      }
+  // 生成系统监控图表数据
+  const generateSystemChartData = (type: 'cpu-memory' | 'disk-network') => {
+    if (!basicMetrics) {
+      // 如果没有真实数据，显示空图表
+      return {
+        timeColumn: '时间',
+        valueColumns: type === 'cpu-memory' 
+          ? ['CPU使用率(%)', '内存使用率(%)'] 
+          : ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+        data: [],
+      };
     }
     
-    return {
-      timeColumn: '时间',
-      valueColumns: type === 'cpu-memory' 
-        ? ['CPU使用率(%)', '内存使用率(%)'] 
-        : ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
-      data,
-    };
+    if (type === 'cpu-memory') {
+      // 使用真实的CPU和内存数据
+      const combinedData = basicMetrics.cpuUsage.map((cpuPoint, index) => {
+        const memoryPoint = basicMetrics.memoryUsage[index];
+        return {
+          时间: new Date(cpuPoint.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          'CPU使用率(%)': Math.round(cpuPoint.value * 10) / 10,
+          '内存使用率(%)': memoryPoint ? Math.round(memoryPoint.value * 10) / 10 : 0,
+        };
+      });
+      
+      return {
+        timeColumn: '时间',
+        valueColumns: ['CPU使用率(%)', '内存使用率(%)'],
+        data: combinedData,
+      };
+    } else {
+      // 使用真实的磁盘和网络数据
+      const diskIO = basicMetrics.diskIO;
+      const networkIO = basicMetrics.networkIO;
+      
+      // 为磁盘和网络创建时间序列数据
+      const now = new Date();
+      const data = [];
+      for (let i = 11; i >= 0; i--) {
+        const timestamp = new Date(now.getTime() - i * 5 * 60 * 1000); // 5分钟间隔
+        data.push({
+          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          '磁盘读取(MB/s)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
+          '磁盘写入(MB/s)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
+          '网络入站(MB/s)': Math.round((networkIO.bytesIn / (1024 * 1024)) * 10) / 10,
+          '网络出站(MB/s)': Math.round((networkIO.bytesOut / (1024 * 1024)) * 10) / 10,
+        });
+      }
+      
+      return {
+        timeColumn: '时间',
+        valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+        data,
+      };
+    }
   };
 
   // 格式化文件大小
@@ -996,7 +1035,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             </CardHeader>
             <CardContent>
               <SimpleChart
-                data={generateSampleChartData('cpu-memory')}
+                data={generateSystemChartData('cpu-memory')}
                 type="line"
                 height={200}
               />
@@ -1008,7 +1047,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             </CardHeader>
             <CardContent>
               <SimpleChart
-                data={generateSampleChartData('disk-network')}
+                data={generateSystemChartData('disk-network')}
                 type="line"
                 height={200}
               />

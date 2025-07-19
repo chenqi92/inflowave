@@ -64,16 +64,14 @@
         }
       }
 
-      /* Dark theme support */
-      @media (prefers-color-scheme: dark) {
-        body {
-          background-color: #1f2937;
-          color: #f9fafb;
-        }
+      /* Dark theme support - 使用类选择器 */
+      .dark body {
+        background-color: #1f2937;
+        color: #f9fafb;
+      }
 
-        .loading-container {
-          background-color: #1f2937;
-        }
+      .dark .loading-container {
+        background-color: #1f2937;
       }
     </style>
   </head>

@@ -18,6 +18,7 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
+import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -58,15 +59,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const [isTesting, setIsTesting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    host: 'localhost',
-    port: 8086,
-    username: '',
-    password: '',
-    database: '',
-    ssl: false,
-    timeout: 30,
+  const [formData, setFormData] = useState<FormData>(() => {
+    const defaults = createDefaultConnectionConfig();
+    return {
+      name: '',
+      host: defaults.host!,
+      port: defaults.port!,
+      username: defaults.username!,
+      password: defaults.password!,
+      database: '',
+      ssl: defaults.ssl!,
+      timeout: defaults.timeout!,
+    };
   });
 
   const isEditing = !!connection?.id;
@@ -74,26 +78,28 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   useEffect(() => {
     if (visible) {
       if (connection) {
+        const filled = getFilledConnectionConfig(connection);
         setFormData({
           name: connection.name || '',
-          host: connection.host || 'localhost',
-          port: connection.port || 8086,
-          username: connection.username || '',
-          password: connection.password || '',
+          host: filled.host!,
+          port: filled.port!,
+          username: filled.username!,
+          password: filled.password!,
           database: connection.database || '',
-          ssl: connection.ssl || false,
-          timeout: connection.timeout || 30,
+          ssl: filled.ssl!,
+          timeout: filled.timeout!,
         });
       } else {
+        const defaults = createDefaultConnectionConfig();
         setFormData({
           name: '',
-          host: 'localhost',
-          port: 8086,
-          username: '',
-          password: '',
+          host: defaults.host!,
+          port: defaults.port!,
+          username: defaults.username!,
+          password: defaults.password!,
           database: '',
-          ssl: false,
-          timeout: 30,
+          ssl: defaults.ssl!,
+          timeout: defaults.timeout!,
         });
       }
       setCurrentStep(0);
@@ -284,7 +290,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <InputNumber
             placeholder='8086'
             value={formData.port}
-            onChange={value => handleInputChange('port', value || 8086)}
+            onChange={value => handleInputChange('port', value || createDefaultConnectionConfig().port)}
             className={`w-full ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             min={1}
             max={65535}

@@ -326,7 +326,38 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 value={query}
                 onChange={(value) => setQuery(value || '')}
                 onMount={(editor, monaco) => {
-                  // 添加中文右键菜单支持
+                  // 添加中文右键菜单支持 - 将执行查询放在第一位
+                  editor.addAction({
+                    id: 'execute-query-chinese-iqe',
+                    label: '执行查询',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                    contextMenuGroupId: 'query',
+                    contextMenuOrder: 1,
+                    run: (editor) => {
+                      // 将当前查询内容设置到主编辑器并执行
+                      const currentQuery = editor.getValue();
+                      if (currentQuery.trim()) {
+                        // 触发执行查询事件，让主编辑器处理
+                        const executeEvent = new CustomEvent('execute-query', {
+                          detail: {
+                            source: 'intelligent-query-engine',
+                            query: currentQuery
+                          }
+                        });
+                        document.dispatchEvent(executeEvent);
+                      }
+                    }
+                  });
+
+                  // 分隔符
+                  editor.addAction({
+                    id: 'separator-1-iqe',
+                    label: '',
+                    contextMenuGroupId: 'separator1',
+                    contextMenuOrder: 1,
+                    run: () => {}
+                  });
+
                   editor.addAction({
                     id: 'copy-chinese-iqe',
                     label: '复制',
@@ -371,28 +402,6 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     }
                   });
 
-                  editor.addAction({
-                    id: 'execute-query-chinese-iqe',
-                    label: '执行查询',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                    contextMenuGroupId: 'query',
-                    contextMenuOrder: 1,
-                    run: (editor) => {
-                      // 将当前查询内容设置到主编辑器并执行
-                      const currentQuery = editor.getValue();
-                      if (currentQuery.trim()) {
-                        // 触发执行查询事件，让主编辑器处理
-                        const executeEvent = new CustomEvent('execute-query', {
-                          detail: {
-                            source: 'intelligent-query-engine',
-                            query: currentQuery
-                          }
-                        });
-                        document.dispatchEvent(executeEvent);
-                      }
-                    }
-                  });
-
                   console.log('✅ IntelligentQueryEngine 中文右键菜单已添加（包含执行查询）');
                 }}
                 options={{
@@ -402,8 +411,8 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   lineNumbers: 'on',
                   wordWrap: 'on',
                   automaticLayout: true,
-                  // 桌面应用：启用Monaco编辑器的原生剪贴板功能
-                  contextmenu: true,
+                  // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+                  contextmenu: false,
                   copyWithSyntaxHighlighting: true,
                 }}
                 key={resolvedTheme} // 强制重新渲染以应用主题

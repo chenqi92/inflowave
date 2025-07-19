@@ -678,6 +678,9 @@ async fn main() {
 
             // Performance monitoring
             get_performance_metrics,
+            get_performance_metrics_result,
+            start_system_monitoring,
+            stop_system_monitoring,
             record_query_performance,
             get_slow_query_analysis,
             get_storage_analysis_report,

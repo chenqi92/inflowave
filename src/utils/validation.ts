@@ -1,6 +1,8 @@
 /**
  * 数据验证工具类
  */
+import { DEFAULT_APP_CONFIG } from '@/config/defaults';
+
 export class ValidationUtils {
   /**
    * 验证必填字段
@@ -228,7 +230,7 @@ export class ValidationUtils {
     }
 
     // 检查查询语句长度
-    if (query.length > 10000) {
+    if (query.length > DEFAULT_APP_CONFIG.maxQueryLength) {
       return '查询语句过长';
     }
 

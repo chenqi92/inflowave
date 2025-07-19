@@ -24,25 +24,21 @@
   opacity: 0.7 !important;
 }
 
-/* 系统主题跟随 */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .monaco-editor .token.comment,
-  :root:not([data-theme]) .monaco-editor .mtk3,
-  :root:not([data-theme]) .monaco-editor .view-line .mtk3 {
-    color: #9ca3af !important;
-    font-style: italic !important;
-    opacity: 0.8 !important;
-  }
+/* 系统主题跟随 - 使用类选择器 */
+.light:not([data-theme]) .monaco-editor .token.comment,
+.light:not([data-theme]) .monaco-editor .mtk3,
+.light:not([data-theme]) .monaco-editor .view-line .mtk3 {
+  color: #9ca3af !important;
+  font-style: italic !important;
+  opacity: 0.8 !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .monaco-editor .token.comment,
-  :root:not([data-theme]) .monaco-editor .mtk3,
-  :root:not([data-theme]) .monaco-editor .view-line .mtk3 {
-    color: #d1d5db !important;
-    font-style: italic !important;
-    opacity: 0.7 !important;
-  }
+.dark:not([data-theme]) .monaco-editor .token.comment,
+.dark:not([data-theme]) .monaco-editor .mtk3,
+.dark:not([data-theme]) .monaco-editor .view-line .mtk3 {
+  color: #d1d5db !important;
+  font-style: italic !important;
+  opacity: 0.7 !important;
 }
 
 

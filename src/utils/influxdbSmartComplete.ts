@@ -4,6 +4,7 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
+import { DEFAULT_PERFORMANCE_CONFIG } from '@/config/defaults';
 
 // 建议项接口
 export interface SmartSuggestion {
@@ -398,7 +399,7 @@ class InfluxDBSmartCompleteEngine {
   private databaseCache = new Map<string, string[]>();
   private measurementCache = new Map<string, { fields: any[]; tags: any[] }>();
   private lastCacheUpdate = new Map<string, number>();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+  private readonly CACHE_TTL = DEFAULT_PERFORMANCE_CONFIG.cacheTimeout;
 
   /**
    * 生成智能建议

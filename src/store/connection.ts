@@ -2,6 +2,7 @@
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
 
 interface ConnectionState {
   // 连接配置列表
@@ -841,13 +842,16 @@ export const connectionUtils = {
   },
 
   // 创建默认连接配置
-  createDefaultConfig: (): Partial<ConnectionConfig> => ({
-    name: '',
-    host: 'localhost',
-    port: 8086,
-    username: '',
-    password: '',
-    ssl: false,
-    timeout: 60,
-  }),
+  createDefaultConfig: (): Partial<ConnectionConfig> => {
+    const defaults = createDefaultConnectionConfig();
+    return {
+      name: defaults.name,
+      host: defaults.host,
+      port: defaults.port,
+      username: defaults.username,
+      password: defaults.password,
+      ssl: defaults.ssl,
+      timeout: defaults.timeout,
+    };
+  },
 };

@@ -307,7 +307,38 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               value={content}
               onChange={handleContentChange}
               onMount={(editor, monaco) => {
-                // 添加中文右键菜单支持
+                // 添加中文右键菜单支持 - 将执行查询放在第一位
+                editor.addAction({
+                  id: 'execute-query-chinese-detached',
+                  label: '执行查询',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                  contextMenuGroupId: 'query',
+                  contextMenuOrder: 1,
+                  run: (editor) => {
+                    // 将当前查询内容发送到主窗口执行
+                    const currentQuery = editor.getValue();
+                    if (currentQuery.trim()) {
+                      // 通过postMessage与主窗口通信
+                      if (window.opener) {
+                        window.opener.postMessage({
+                          type: 'execute-query-from-detached',
+                          query: currentQuery,
+                          tabId: tab.id
+                        }, '*');
+                      }
+                    }
+                  }
+                });
+
+                // 分隔符
+                editor.addAction({
+                  id: 'separator-1-detached',
+                  label: '',
+                  contextMenuGroupId: 'separator1',
+                  contextMenuOrder: 1,
+                  run: () => {}
+                });
+
                 editor.addAction({
                   id: 'copy-chinese-detached',
                   label: '复制',
@@ -352,28 +383,6 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                   }
                 });
 
-                editor.addAction({
-                  id: 'execute-query-chinese-detached',
-                  label: '执行查询',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                  contextMenuGroupId: 'query',
-                  contextMenuOrder: 1,
-                  run: (editor) => {
-                    // 将当前查询内容发送到主窗口执行
-                    const currentQuery = editor.getValue();
-                    if (currentQuery.trim()) {
-                      // 通过postMessage与主窗口通信
-                      if (window.opener) {
-                        window.opener.postMessage({
-                          type: 'execute-query-from-detached',
-                          query: currentQuery,
-                          tabId: tabId
-                        }, '*');
-                      }
-                    }
-                  }
-                });
-
                 console.log('✅ DetachedTabWindow 中文右键菜单已添加（包含执行查询）');
               }}
               key={resolvedTheme} // 强制重新渲染以应用主题
@@ -404,8 +413,8 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 quickSuggestionsDelay: 50,
                 suggestSelection: 'first',
                 wordBasedSuggestions: 'allDocuments',
-                // 桌面应用：启用Monaco编辑器的原生剪贴板功能
-                contextmenu: true,
+                // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+                contextmenu: false,
                 copyWithSyntaxHighlighting: true,
               }}
             />

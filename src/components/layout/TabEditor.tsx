@@ -1579,9 +1579,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         );
 
         if (hasThemeChange) {
-          // 获取当前主题
-          const currentResolvedTheme = document.documentElement.getAttribute('data-theme') ||
-            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          // 获取当前主题 - 优先使用类名检测
+          const isDark = document.documentElement.classList.contains('dark');
+          const currentResolvedTheme = isDark ? 'dark' : 'light';
 
           const newTheme = currentResolvedTheme === 'dark' ? 'vs-dark' : 'vs-light';
 
@@ -1598,7 +1598,28 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         attributeFilter: ['data-theme', 'class']
       });
 
-      // 添加中文右键菜单支持
+      // 添加中文右键菜单支持 - 将执行查询放在第一位
+      editor.addAction({
+        id: 'execute-query-chinese',
+        label: '执行查询',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+        contextMenuGroupId: 'query',
+        contextMenuOrder: 1,
+        run: (editor) => {
+          // 执行当前编辑器中的SQL查询，使用与工具栏按钮相同的逻辑
+          executeQuery();
+        }
+      });
+
+      // 分隔符
+      editor.addAction({
+        id: 'separator-1',
+        label: '',
+        contextMenuGroupId: 'separator1',
+        contextMenuOrder: 1,
+        run: () => {}
+      });
+
       editor.addAction({
         id: 'copy-chinese',
         label: '复制',
@@ -1643,6 +1664,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         }
       });
 
+      // 分隔符
+      editor.addAction({
+        id: 'separator-2',
+        label: '',
+        contextMenuGroupId: 'separator2',
+        contextMenuOrder: 1,
+        run: () => {}
+      });
+
       editor.addAction({
         id: 'undo-chinese',
         label: '撤销',
@@ -1684,18 +1714,6 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         contextMenuOrder: 4,
         run: (editor) => {
           editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
-        }
-      });
-
-      editor.addAction({
-        id: 'execute-query-chinese',
-        label: '执行查询',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-        contextMenuGroupId: 'query',
-        contextMenuOrder: 1,
-        run: (editor) => {
-          // 执行当前编辑器中的SQL查询
-          executeQuery();
         }
       });
 
@@ -2012,8 +2030,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       quickSuggestionsDelay: 50,
                       suggestSelection: 'first',
                       wordBasedSuggestions: 'currentDocument',
-                      // 桌面应用：启用Monaco编辑器的原生剪贴板功能
-                      contextmenu: true,
+                      // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+                      contextmenu: false,
                       copyWithSyntaxHighlighting: true,
                       }}
                     />
