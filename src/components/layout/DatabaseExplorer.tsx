@@ -1132,7 +1132,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   };
 
   // 执行表查询的辅助函数
-  const executeTableQuery = (connectionId: string, database: string, table: string) => {
+  const executeTableQuery = async (connectionId: string, database: string, table: string) => {
     // 优先使用新的数据浏览回调
     if (onCreateDataBrowserTab) {
       onCreateDataBrowserTab(connectionId, database, table);
@@ -1155,14 +1155,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     } else {
       // 如果没有回调，复制查询到剪贴板
       const query = generateQueryWithTimeFilter(table);
-      navigator.clipboard
-        .writeText(query)
-        .then(() => {
-          showMessage.success(`查询语句已复制到剪贴板: ${query}`);
-        })
-        .catch(() => {
-          showMessage.info(`查询语句: ${query}`);
-        });
+      const success = await writeToClipboard(query, {
+        successMessage: `查询语句已复制到剪贴板: ${query}`,
+        errorMessage: '复制失败',
+      });
+      if (!success) {
+        showMessage.info(`查询语句: ${query}`);
+      }
     }
   };
 

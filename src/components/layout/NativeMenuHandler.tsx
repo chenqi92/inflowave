@@ -409,12 +409,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'copy':
-        document.execCommand('copy');
+        // 触发系统复制快捷键
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'c',
+          ctrlKey: true,
+          bubbles: true
+        }));
         handled = true;
         break;
 
       case 'paste':
-        document.execCommand('paste');
+        // 触发系统粘贴快捷键
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'v',
+          ctrlKey: true,
+          bubbles: true
+        }));
         handled = true;
         break;
 

@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
 import { consoleLogger, type ConsoleLogEntry } from '@/utils/consoleLogger';
 
 interface SystemLogEntry {
@@ -109,7 +110,7 @@ const DebugConsole: React.FC = () => {
   };
 
   // 复制日志到剪贴板
-  const copyLogsToClipboard = () => {
+  const copyLogsToClipboard = async () => {
     let logText = '';
     
     if (activeTab === 'system') {
@@ -122,10 +123,9 @@ const DebugConsole: React.FC = () => {
       ).join('\n');
     }
     
-    navigator.clipboard.writeText(logText).then(() => {
-      showMessage.success('日志已复制到剪贴板');
-    }).catch(() => {
-      showMessage.error('复制失败');
+    const success = await writeToClipboard(logText, {
+      successMessage: '日志已复制到剪贴板',
+      errorMessage: '复制失败'
     });
   };
 

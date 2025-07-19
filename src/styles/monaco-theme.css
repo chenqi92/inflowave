@@ -5,6 +5,46 @@
   line-height: 1.5 !important;
 }
 
+/* 自定义注释颜色 - 更柔和的颜色 */
+/* 浅色模式下的注释颜色 - 淡灰色 */
+[data-theme="light"] .monaco-editor .token.comment,
+[data-theme="light"] .monaco-editor .mtk3,
+[data-theme="light"] .monaco-editor .view-line .mtk3 {
+  color: #9ca3af !important; /* 淡灰色 */
+  font-style: italic !important;
+  opacity: 0.8 !important;
+}
+
+/* 深色模式下的注释颜色 - 灰白色 */
+[data-theme="dark"] .monaco-editor .token.comment,
+[data-theme="dark"] .monaco-editor .mtk3,
+[data-theme="dark"] .monaco-editor .view-line .mtk3 {
+  color: #d1d5db !important; /* 灰白色 */
+  font-style: italic !important;
+  opacity: 0.7 !important;
+}
+
+/* 系统主题跟随 */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .monaco-editor .token.comment,
+  :root:not([data-theme]) .monaco-editor .mtk3,
+  :root:not([data-theme]) .monaco-editor .view-line .mtk3 {
+    color: #9ca3af !important;
+    font-style: italic !important;
+    opacity: 0.8 !important;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .monaco-editor .token.comment,
+  :root:not([data-theme]) .monaco-editor .mtk3,
+  :root:not([data-theme]) .monaco-editor .view-line .mtk3 {
+    color: #d1d5db !important;
+    font-style: italic !important;
+    opacity: 0.7 !important;
+  }
+}
+
 
 
 
