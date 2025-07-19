@@ -13,7 +13,24 @@ declare global {
 
 // 检查是否在 Tauri 环境中运行
 export const isTauriEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+  // 多重检查确保在 Tauri 环境中
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // 检查 Tauri 特有的全局对象
+  return (
+    window.__TAURI__ !== undefined ||
+    // 检查 Tauri API 是否可用
+    (typeof window !== 'undefined' &&
+     (window as any).__TAURI_INTERNALS__ !== undefined) ||
+    // 检查用户代理字符串
+    (typeof navigator !== 'undefined' &&
+     navigator.userAgent.includes('Tauri')) ||
+    // 检查是否在桌面应用环境中（非浏览器）
+    (typeof window !== 'undefined' &&
+     window.location.protocol === 'tauri:')
+  );
 };
 
 // 检查是否在浏览器开发环境中
@@ -127,22 +144,37 @@ export const safeTauriListen = async <T = any>(
   event: string,
   handler: (event: { payload: T }) => void
 ): Promise<() => void> => {
-  if (!isTauriEnvironment()) {
-    console.warn(
-      `Tauri event listener "${event}" called in browser environment, using mock handler`
-    );
-    // 返回一个空的取消监听函数
-    return () => {};
-  }
+  console.log(`🎧 尝试设置事件监听器: "${event}"`);
+  console.log(`🔍 Tauri环境检查:`, {
+    isTauri: isTauriEnvironment(),
+    hasWindow: typeof window !== 'undefined',
+    hasTauriGlobal: typeof window !== 'undefined' && window.__TAURI__ !== undefined,
+    hasTauriInternals: typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+    protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+  });
 
+  // 强制尝试设置事件监听器，即使环境检测失败
   try {
+    console.log(`📡 正在导入 Tauri 事件 API...`);
     const { listen } = await import('@tauri-apps/api/event');
+    console.log(`✅ Tauri 事件 API 导入成功，设置监听器: "${event}"`);
     const unlisten = await listen<T>(event, handler);
+    console.log(`🎯 事件监听器 "${event}" 设置成功`);
     return unlisten;
   } catch (error) {
-    console.error(`Tauri event listener error for event "${event}":`, error);
-    // 返回一个空的取消监听函数
-    return () => {};
+    console.error(`❌ Tauri event listener error for event "${event}":`, error);
+
+    // 如果不在 Tauri 环境中，返回空函数
+    if (!isTauriEnvironment()) {
+      console.warn(
+        `⚠️ Tauri event listener "${event}" failed, likely in browser environment`
+      );
+      return () => {};
+    }
+
+    // 在 Tauri 环境中但失败了，重新抛出错误
+    throw error;
   }
 };
 

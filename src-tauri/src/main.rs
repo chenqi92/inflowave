@@ -114,7 +114,7 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("format_query", &format!("格式化查询\t{}+Alt+L", cmd_key))
         .build()?;
 
-    // 风格设置子菜单 - 更新为完整的主题支持
+    // 风格设置子菜单 - 完整的主题支持
     let style_submenu = SubmenuBuilder::new(app, "风格设置")
         .text("theme_default", "默认蓝色")
         .text("theme_shadcn", "Shadcn 黑白")
@@ -132,6 +132,36 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("theme_violet", "神秘紫罗兰")
         .build()?;
 
+    // 创建主题类别子菜单
+    let theme_color_submenu = SubmenuBuilder::new(app, "颜色主题")
+        .text("theme_default", "默认蓝色")
+        .text("theme_blue", "经典蓝")
+        .text("theme_indigo", "靛蓝色")
+        .text("theme_emerald", "翡翠绿")
+        .text("theme_green", "自然绿色")
+        .text("theme_red", "活力红色")
+        .text("theme_orange", "温暖橙色")
+        .text("theme_purple", "优雅紫色")
+        .text("theme_rose", "浪漫玫瑰")
+        .text("theme_yellow", "明亮黄色")
+        .text("theme_violet", "神秘紫罗兰")
+        .build()?;
+
+    let theme_neutral_submenu = SubmenuBuilder::new(app, "中性主题")
+        .text("theme_shadcn", "Shadcn 黑白")
+        .text("theme_zinc", "锌灰色")
+        .text("theme_slate", "石板灰")
+        .build()?;
+
+    let theme_settings_submenu = SubmenuBuilder::new(app, "主题设置")
+        .item(&theme_color_submenu)
+        .item(&theme_neutral_submenu)
+        .separator()
+        .text("theme_custom", "自定义主题...")
+        .text("theme_import", "导入主题...")
+        .text("theme_export", "导出当前主题...")
+        .build()?;
+
     // 工具菜单 - 使用平台特定的快捷键
     let tools_menu = SubmenuBuilder::new(app, "工具")
         .text("console", &format!("控制台\t{}+`", cmd_key))
@@ -139,7 +169,7 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("query_performance", "查询性能分析")
         .separator()
         .text("extensions", "扩展管理")
-        .text("theme_settings", "主题设置")
+        .item(&theme_settings_submenu)
         .item(&style_submenu)
         .text("language_settings", "语言设置")
         .separator()
@@ -168,33 +198,43 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
 
 // 辅助函数：发送菜单动作事件
 fn emit_menu_action(window: &tauri::WebviewWindow, action: &str) {
-    log::info!("发送菜单动作: {}", action);
-    if let Err(e) = window.emit("menu-action", action) {
-        log::error!("发送菜单事件失败 '{}': {}", action, e);
+    log::info!("📤 发送菜单动作: {} 到窗口: {}", action, window.label());
+    match window.emit("menu-action", action) {
+        Ok(_) => {
+            log::info!("✅ 菜单事件发送成功: {}", action);
+        },
+        Err(e) => {
+            log::error!("❌ 发送菜单事件失败 '{}': {}", action, e);
+        }
     }
 }
 
 // 处理菜单事件 - 完整的专业化菜单
 fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
-    // 添加调试日志
-    log::info!("菜单事件触发: {}", event.id().as_ref());
-    
+    // 添加详细的调试日志
+    log::info!("🎯 菜单事件触发: {}", event.id().as_ref());
+    log::info!("🔍 当前平台: {}", std::env::consts::OS);
+
+    // 列出所有可用窗口
+    let windows: Vec<String> = app.webview_windows().keys().cloned().collect();
+    log::info!("📋 可用窗口列表: {:?}", windows);
+
     // 获取主窗口 - 改进的窗口查找逻辑
     let window = match app.get_webview_window("main") {
         Some(window) => {
-            log::debug!("找到主窗口: main");
+            log::info!("✅ 找到主窗口: main");
             window
         },
         None => {
             // 如果找不到 main 窗口，尝试获取第一个可用的窗口
-            log::warn!("未找到 'main' 窗口，尝试获取第一个可用窗口");
+            log::warn!("⚠️ 未找到 'main' 窗口，尝试获取第一个可用窗口");
             match app.webview_windows().values().next().cloned() {
                 Some(window) => {
-                    log::info!("使用第一个可用窗口: {}", window.label());
+                    log::info!("✅ 使用第一个可用窗口: {}", window.label());
                     window
                 },
                 None => {
-                    log::error!("没有找到任何可用窗口");
+                    log::error!("❌ 没有找到任何可用窗口");
                     return;
                 }
             }
@@ -257,91 +297,26 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "explain_query" => emit_menu_action(&window, "explain_query"),
         "format_query" => emit_menu_action(&window, "format_query"),
 
-        // 软件风格菜单 - 更新为完整的主题支持
-        "theme_default" => {
-            log::info!("发送主题切换事件: default");
-            if let Err(e) = window.emit("theme-change", "default") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_shadcn" => {
-            log::info!("发送主题切换事件: shadcn");
-            if let Err(e) = window.emit("theme-change", "shadcn") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_zinc" => {
-            log::info!("发送主题切换事件: zinc");
-            if let Err(e) = window.emit("theme-change", "zinc") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_slate" => {
-            log::info!("发送主题切换事件: slate");
-            if let Err(e) = window.emit("theme-change", "slate") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_indigo" => {
-            log::info!("发送主题切换事件: indigo");
-            if let Err(e) = window.emit("theme-change", "indigo") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_emerald" => {
-            log::info!("发送主题切换事件: emerald");
-            if let Err(e) = window.emit("theme-change", "emerald") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_blue" => {
-            log::info!("发送主题切换事件: blue");
-            if let Err(e) = window.emit("theme-change", "blue") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_green" => {
-            log::info!("发送主题切换事件: green");
-            if let Err(e) = window.emit("theme-change", "green") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_red" => {
-            log::info!("发送主题切换事件: red");
-            if let Err(e) = window.emit("theme-change", "red") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_orange" => {
-            log::info!("发送主题切换事件: orange");
-            if let Err(e) = window.emit("theme-change", "orange") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_purple" => {
-            log::info!("发送主题切换事件: purple");
-            if let Err(e) = window.emit("theme-change", "purple") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_rose" => {
-            log::info!("发送主题切换事件: rose");
-            if let Err(e) = window.emit("theme-change", "rose") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_yellow" => {
-            log::info!("发送主题切换事件: yellow");
-            if let Err(e) = window.emit("theme-change", "yellow") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
-        "theme_violet" => {
-            log::info!("发送主题切换事件: violet");
-            if let Err(e) = window.emit("theme-change", "violet") {
-                log::error!("发送主题事件失败: {}", e);
-            }
-        }
+        // 软件风格菜单 - 完整的主题支持
+        "theme_default" => emit_menu_action(&window, "theme_default"),
+        "theme_shadcn" => emit_menu_action(&window, "theme_shadcn"),
+        "theme_zinc" => emit_menu_action(&window, "theme_zinc"),
+        "theme_slate" => emit_menu_action(&window, "theme_slate"),
+        "theme_indigo" => emit_menu_action(&window, "theme_indigo"),
+        "theme_emerald" => emit_menu_action(&window, "theme_emerald"),
+        "theme_blue" => emit_menu_action(&window, "theme_blue"),
+        "theme_green" => emit_menu_action(&window, "theme_green"),
+        "theme_red" => emit_menu_action(&window, "theme_red"),
+        "theme_orange" => emit_menu_action(&window, "theme_orange"),
+        "theme_purple" => emit_menu_action(&window, "theme_purple"),
+        "theme_rose" => emit_menu_action(&window, "theme_rose"),
+        "theme_yellow" => emit_menu_action(&window, "theme_yellow"),
+        "theme_violet" => emit_menu_action(&window, "theme_violet"),
+
+        // 主题设置高级功能
+        "theme_custom" => emit_menu_action(&window, "theme_custom"),
+        "theme_import" => emit_menu_action(&window, "theme_import"),
+        "theme_export" => emit_menu_action(&window, "theme_export"),
 
         // 工具菜单
         "console" => emit_menu_action(&window, "console"),
@@ -839,11 +814,12 @@ async fn main() {
 
             // 设置菜单事件处理器
             let app_handle = app.handle().clone();
-            info!("正在设置菜单事件处理器...");
+            info!("🎛️ 正在设置菜单事件处理器...");
             app.on_menu_event(move |_app, event| {
-                info!("菜单事件处理器被调用，事件ID: {}", event.id().as_ref());
+                info!("🎯 菜单事件处理器被调用，事件ID: {}", event.id().as_ref());
                 handle_menu_event(&app_handle, event);
             });
+            info!("✅ 菜单事件处理器设置完成");
 
             // Initialize encryption service
             let encryption_service = create_encryption_service()

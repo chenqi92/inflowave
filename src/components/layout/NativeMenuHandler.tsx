@@ -42,6 +42,12 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       // 监听菜单动作事件
       unlistenMenuFn = await safeTauriListen<string>('menu-action', event => {
         console.log('📋 收到菜单动作事件:', event);
+        console.log('📋 菜单动作详情:', {
+          payload: event.payload,
+          // windowLabel 和 id 可能不存在于简化的事件类型中
+          ...(event as any).windowLabel && { windowLabel: (event as any).windowLabel },
+          ...(event as any).id && { id: (event as any).id }
+        });
         const action = event.payload;
         handleMenuAction(action);
       });
@@ -101,6 +107,83 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     const themeLabel = themeLabels[actualThemeName] || actualThemeName;
     showMessage.success(`已切换到${themeLabel}主题`);
+  };
+
+  // 主题导入处理函数
+  const handleImportTheme = async () => {
+    try {
+      console.log('📥 尝试导入主题文件...');
+      const result = await safeTauriInvoke('open_file_dialog', {
+        title: '导入主题文件',
+        filters: [
+          { name: '主题文件', extensions: ['json'] },
+          { name: '所有文件', extensions: ['*'] }
+        ],
+        multiple: false
+      });
+
+      if (result && result.path) {
+        console.log('📖 读取主题文件:', result.path);
+        const content = await safeTauriInvoke('read_file', { path: result.path });
+
+        try {
+          const themeData = JSON.parse(content);
+          // 这里可以添加主题验证和应用逻辑
+          console.log('🎨 导入的主题数据:', themeData);
+          showMessage.success('主题导入成功！');
+        } catch (parseError) {
+          showMessage.error('主题文件格式无效');
+        }
+      }
+    } catch (error) {
+      console.error('❌ 导入主题失败:', error);
+      showMessage.error(`导入主题失败: ${error}`);
+    }
+  };
+
+  // 主题导出处理函数
+  const handleExportTheme = async () => {
+    try {
+      console.log('📤 尝试导出当前主题...');
+
+      // 获取当前主题配置
+      const currentTheme = {
+        name: colorScheme || 'default',
+        version: '1.0.0',
+        colors: {
+          // 这里可以添加当前主题的颜色配置
+          primary: 'var(--primary)',
+          secondary: 'var(--secondary)',
+          background: 'var(--background)',
+          foreground: 'var(--foreground)',
+        },
+        exportedAt: new Date().toISOString(),
+      };
+
+      const themeJson = JSON.stringify(currentTheme, null, 2);
+      const fileName = `theme-${colorScheme || 'default'}-${Date.now()}.json`;
+
+      // 使用文件保存对话框
+      const result = await safeTauriInvoke('save_file_dialog', {
+        title: '导出主题文件',
+        defaultPath: fileName,
+        filters: [
+          { name: '主题文件', extensions: ['json'] },
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      });
+
+      if (result && result.path) {
+        await safeTauriInvoke('write_file', {
+          path: result.path,
+          content: themeJson
+        });
+        showMessage.success(`主题已导出到: ${result.path}`);
+      }
+    } catch (error) {
+      console.error('❌ 导出主题失败:', error);
+      showMessage.error(`导出主题失败: ${error}`);
+    }
   };
 
   // 文件操作处理函数
@@ -737,54 +820,87 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         window.open('https://docs.influxdata.com/', '_blank');
         break;
 
-      // 主题切换菜单 - 支持更多主题
-      case 'theme-default':
+      // 主题切换菜单 - 支持更多主题（使用下划线格式）
+      case 'theme_default':
         handleThemeChange('default');
+        handled = true;
         break;
-      case 'theme-shadcn':
+      case 'theme_shadcn':
         handleThemeChange('shadcn');
+        handled = true;
         break;
-      case 'theme-zinc':
+      case 'theme_zinc':
         handleThemeChange('zinc');
+        handled = true;
         break;
-      case 'theme-slate':
+      case 'theme_slate':
         handleThemeChange('slate');
+        handled = true;
         break;
-      case 'theme-indigo':
+      case 'theme_indigo':
         handleThemeChange('indigo');
+        handled = true;
         break;
-      case 'theme-emerald':
+      case 'theme_emerald':
         handleThemeChange('emerald');
+        handled = true;
         break;
-      case 'theme-blue':
+      case 'theme_blue':
         handleThemeChange('blue');
+        handled = true;
         break;
-      case 'theme-green':
+      case 'theme_green':
         handleThemeChange('green');
+        handled = true;
         break;
-      case 'theme-red':
+      case 'theme_red':
         handleThemeChange('red');
+        handled = true;
         break;
-      case 'theme-orange':
+      case 'theme_orange':
         handleThemeChange('orange');
+        handled = true;
         break;
-      case 'theme-purple':
+      case 'theme_purple':
         handleThemeChange('purple');
+        handled = true;
         break;
-      case 'theme-rose':
+      case 'theme_rose':
         handleThemeChange('rose');
+        handled = true;
         break;
-      case 'theme-yellow':
+      case 'theme_yellow':
         handleThemeChange('yellow');
+        handled = true;
         break;
-      case 'theme-violet':
+      case 'theme_violet':
         handleThemeChange('violet');
+        handled = true;
+        break;
+
+      // 主题设置高级功能
+      case 'theme_custom':
+        // 打开自定义主题对话框
+        showMessage.info('自定义主题功能开发中...');
+        handled = true;
+        break;
+
+      case 'theme_import':
+        // 导入主题文件
+        handleImportTheme();
+        handled = true;
+        break;
+
+      case 'theme_export':
+        // 导出当前主题
+        handleExportTheme();
+        handled = true;
         break;
 
       default:
-        // 检查是否是主题切换动作
-        if (action.startsWith('theme-')) {
-          const themeName = action.replace('theme-', '');
+        // 检查是否是主题切换动作（支持两种格式）
+        if (action.startsWith('theme_') || action.startsWith('theme-')) {
+          const themeName = action.replace(/^theme[_-]/, '');
           handleThemeChange(themeName);
           handled = true;
           return;
@@ -803,6 +919,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   return (
     <>
+
+
       {/* 临时注释掉 KeyboardShortcuts 组件以修复显示问题 */}
       {/* <KeyboardShortcuts
         visible={shortcutsVisible}
