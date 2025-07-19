@@ -307,80 +307,37 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               value={content}
               onChange={handleContentChange}
               onMount={(editor, monaco) => {
-                // 添加中文右键菜单支持 - 将执行查询放在第一位
-                editor.addAction({
-                  id: 'execute-query-chinese-detached',
-                  label: '执行查询',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                  contextMenuGroupId: 'query',
-                  contextMenuOrder: 1,
-                  run: (editor) => {
-                    // 将当前查询内容发送到主窗口执行
-                    const currentQuery = editor.getValue();
-                    if (currentQuery.trim()) {
-                      // 通过postMessage与主窗口通信
-                      if (window.opener) {
-                        window.opener.postMessage({
-                          type: 'execute-query-from-detached',
-                          query: currentQuery,
-                          tabId: tab.id
-                        }, '*');
-                      }
+                // 添加快捷键支持（不使用右键菜单）
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                  // 将当前查询内容发送到主窗口执行
+                  const currentQuery = editor.getValue();
+                  if (currentQuery.trim()) {
+                    // 通过postMessage与主窗口通信
+                    if (window.opener) {
+                      window.opener.postMessage({
+                        type: 'execute-query-from-detached',
+                        query: currentQuery,
+                        tabId: tab.id
+                      }, '*');
                     }
                   }
                 });
 
-                // 分隔符
-                editor.addAction({
-                  id: 'separator-1-detached',
-                  label: '',
-                  contextMenuGroupId: 'separator1',
-                  contextMenuOrder: 1,
-                  run: () => {}
+                // 保留基本的编辑快捷键
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+                  editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
                 });
 
-                editor.addAction({
-                  id: 'copy-chinese-detached',
-                  label: '复制',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
-                  contextMenuGroupId: 'navigation',
-                  contextMenuOrder: 1,
-                  run: (editor) => {
-                    editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
-                  }
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+                  editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
                 });
 
-                editor.addAction({
-                  id: 'cut-chinese-detached',
-                  label: '剪切',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
-                  contextMenuGroupId: 'navigation',
-                  contextMenuOrder: 2,
-                  run: (editor) => {
-                    editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
-                  }
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+                  editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
                 });
 
-                editor.addAction({
-                  id: 'paste-chinese-detached',
-                  label: '粘贴',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
-                  contextMenuGroupId: 'navigation',
-                  contextMenuOrder: 3,
-                  run: (editor) => {
-                    editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
-                  }
-                });
-
-                editor.addAction({
-                  id: 'select-all-chinese-detached',
-                  label: '全选',
-                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
-                  contextMenuGroupId: 'navigation',
-                  contextMenuOrder: 4,
-                  run: (editor) => {
-                    editor.trigger('keyboard', 'editor.action.selectAll', null);
-                  }
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+                  editor.trigger('keyboard', 'editor.action.selectAll', null);
                 });
 
                 console.log('✅ DetachedTabWindow 中文右键菜单已添加（包含执行查询）');

@@ -34,6 +34,8 @@ import {
   ChevronDown,
   ChevronUp,
   Code,
+  Copy,
+  Search,
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -138,6 +140,78 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       handleTabMove,
       showTabInPopup,
     } = useSimpleTabDrag();
+
+    // 自定义右键菜单状态
+    const [customContextMenu, setCustomContextMenu] = useState<{
+      visible: boolean;
+      x: number;
+      y: number;
+      editor: monaco.editor.IStandaloneCodeEditor | null;
+    }>({
+      visible: false,
+      x: 0,
+      y: 0,
+      editor: null,
+    });
+
+    // 显示自定义右键菜单
+    const showCustomContextMenu = (event: MouseEvent, editor: monaco.editor.IStandaloneCodeEditor) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      setCustomContextMenu({
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        editor,
+      });
+    };
+
+    // 隐藏自定义右键菜单
+    const hideCustomContextMenu = () => {
+      setCustomContextMenu({
+        visible: false,
+        x: 0,
+        y: 0,
+        editor: null,
+      });
+    };
+
+    // 处理右键菜单操作
+    const handleContextMenuAction = (action: string, editor: monaco.editor.IStandaloneCodeEditor) => {
+      switch (action) {
+        case 'execute-query':
+          executeQuery();
+          break;
+        case 'copy':
+          editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+          break;
+        case 'cut':
+          editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+          break;
+        case 'paste':
+          editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+          break;
+        case 'select-all':
+          editor.trigger('keyboard', 'editor.action.selectAll', null);
+          break;
+        case 'undo':
+          editor.trigger('keyboard', 'undo', null);
+          break;
+        case 'redo':
+          editor.trigger('keyboard', 'redo', null);
+          break;
+        case 'find':
+          editor.trigger('keyboard', 'actions.find', null);
+          break;
+        case 'replace':
+          editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
+          break;
+        default:
+          console.warn('未知的右键菜单操作:', action);
+      }
+      hideCustomContextMenu();
+    };
 
     // 前端查询处理函数
     const processQueryForExecution = (
@@ -1599,123 +1673,47 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         attributeFilter: ['data-theme', 'class']
       });
 
-      // 添加中文右键菜单支持 - 将执行查询放在第一位
-      editor.addAction({
-        id: 'execute-query-chinese',
-        label: '执行查询',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-        contextMenuGroupId: 'query',
-        contextMenuOrder: 1,
-        run: (editor) => {
-          // 执行当前编辑器中的SQL查询，使用与工具栏按钮相同的逻辑
-          executeQuery();
-        }
+      // 禁用默认右键菜单，使用自定义中文菜单
+      // 监听右键事件
+      editor.onContextMenu((e) => {
+        e.event.preventDefault();
+        e.event.stopPropagation();
+
+        // 显示自定义右键菜单
+        showCustomContextMenu(e.event.browserEvent, editor);
       });
 
-      // 分隔符
-      editor.addAction({
-        id: 'separator-1',
-        label: '',
-        contextMenuGroupId: 'separator1',
-        contextMenuOrder: 1,
-        run: () => {}
+      // 保留快捷键绑定，但不添加到右键菜单
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+        editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
       });
 
-      editor.addAction({
-        id: 'copy-chinese',
-        label: '复制',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
-        contextMenuGroupId: 'navigation',
-        contextMenuOrder: 1,
-        run: (editor) => {
-          editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+        editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
       });
 
-      editor.addAction({
-        id: 'cut-chinese',
-        label: '剪切',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
-        contextMenuGroupId: 'navigation',
-        contextMenuOrder: 2,
-        run: (editor) => {
-          editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
       });
 
-      editor.addAction({
-        id: 'paste-chinese',
-        label: '粘贴',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
-        contextMenuGroupId: 'navigation',
-        contextMenuOrder: 3,
-        run: (editor) => {
-          editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+        editor.trigger('keyboard', 'editor.action.selectAll', null);
       });
 
-      editor.addAction({
-        id: 'select-all-chinese',
-        label: '全选',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
-        contextMenuGroupId: 'navigation',
-        contextMenuOrder: 4,
-        run: (editor) => {
-          editor.trigger('keyboard', 'editor.action.selectAll', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
+        editor.trigger('keyboard', 'undo', null);
       });
 
-      // 分隔符
-      editor.addAction({
-        id: 'separator-2',
-        label: '',
-        contextMenuGroupId: 'separator2',
-        contextMenuOrder: 1,
-        run: () => {}
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
+        editor.trigger('keyboard', 'redo', null);
       });
 
-      editor.addAction({
-        id: 'undo-chinese',
-        label: '撤销',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ],
-        contextMenuGroupId: 'edit',
-        contextMenuOrder: 1,
-        run: (editor) => {
-          editor.trigger('keyboard', 'undo', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+        editor.trigger('keyboard', 'actions.find', null);
       });
 
-      editor.addAction({
-        id: 'redo-chinese',
-        label: '重做',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY],
-        contextMenuGroupId: 'edit',
-        contextMenuOrder: 2,
-        run: (editor) => {
-          editor.trigger('keyboard', 'redo', null);
-        }
-      });
-
-      editor.addAction({
-        id: 'find-chinese',
-        label: '查找',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
-        contextMenuGroupId: 'edit',
-        contextMenuOrder: 3,
-        run: (editor) => {
-          editor.trigger('keyboard', 'actions.find', null);
-        }
-      });
-
-      editor.addAction({
-        id: 'replace-chinese',
-        label: '替换',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH],
-        contextMenuGroupId: 'edit',
-        contextMenuOrder: 4,
-        run: (editor) => {
-          editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
-        }
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => {
+        editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
       });
 
       console.log('✅ 中文右键菜单已添加（包含执行查询）');
@@ -2031,8 +2029,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       quickSuggestionsDelay: 50,
                       suggestSelection: 'first',
                       wordBasedSuggestions: 'currentDocument',
-                      // 桌面应用：启用右键菜单，使用自定义中文菜单
-                      contextmenu: true,
+                      // 桌面应用：禁用默认右键菜单，只使用自定义中文菜单
+                      contextmenu: false,
                       copyWithSyntaxHighlighting: true,
                       }}
                     />
@@ -2113,6 +2111,101 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           {/* 拖拽提示覆盖层 */}
           <SimpleDragOverlay active={dropZoneActive} />
         </div>
+
+        {/* 自定义右键菜单 */}
+        {customContextMenu.visible && customContextMenu.editor && (
+          <div
+            className="fixed inset-0 z-50"
+            onClick={hideCustomContextMenu}
+          >
+            <div
+              className="absolute z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+              style={{
+                left: Math.min(customContextMenu.x, window.innerWidth - 200),
+                top: Math.min(customContextMenu.y, window.innerHeight - 300),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('execute-query', customContextMenu.editor!)}
+              >
+                <span className="text-blue-500">▶</span>
+                执行查询
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('copy', customContextMenu.editor!)}
+              >
+                <Copy className="w-4 h-4" />
+                复制
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('cut', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">✂</span>
+                剪切
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('paste', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">📋</span>
+                粘贴
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('select-all', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">🔘</span>
+                全选
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('undo', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">↶</span>
+                撤销
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('redo', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">↷</span>
+                重做
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('find', customContextMenu.editor!)}
+              >
+                <Search className="w-4 h-4" />
+                查找
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('replace', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">🔄</span>
+                替换
+              </button>
+            </div>
+          </div>
+        )}
       </TooltipProvider>
     );
   }

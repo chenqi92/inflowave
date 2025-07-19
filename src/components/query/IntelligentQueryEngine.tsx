@@ -326,26 +326,19 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 value={query}
                 onChange={(value) => setQuery(value || '')}
                 onMount={(editor, monaco) => {
-                  // 添加中文右键菜单支持 - 将执行查询放在第一位
-                  editor.addAction({
-                    id: 'execute-query-chinese-iqe',
-                    label: '执行查询',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                    contextMenuGroupId: 'query',
-                    contextMenuOrder: 1,
-                    run: (editor) => {
-                      // 将当前查询内容设置到主编辑器并执行
-                      const currentQuery = editor.getValue();
-                      if (currentQuery.trim()) {
-                        // 触发执行查询事件，让主编辑器处理
-                        const executeEvent = new CustomEvent('execute-query', {
-                          detail: {
-                            source: 'intelligent-query-engine',
-                            query: currentQuery
-                          }
-                        });
-                        document.dispatchEvent(executeEvent);
-                      }
+                  // 添加快捷键支持
+                  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                    // 将当前查询内容设置到主编辑器并执行
+                    const currentQuery = editor.getValue();
+                    if (currentQuery.trim()) {
+                      // 触发执行查询事件，让主编辑器处理
+                      const executeEvent = new CustomEvent('execute-query', {
+                        detail: {
+                          source: 'intelligent-query-engine',
+                          query: currentQuery
+                        }
+                      });
+                      document.dispatchEvent(executeEvent);
                     }
                   });
 
@@ -411,8 +404,8 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   lineNumbers: 'on',
                   wordWrap: 'on',
                   automaticLayout: true,
-                  // 桌面应用：启用右键菜单，使用自定义中文菜单
-                  contextmenu: true,
+                  // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+                  contextmenu: false,
                   copyWithSyntaxHighlighting: true,
                 }}
                 key={resolvedTheme} // 强制重新渲染以应用主题
