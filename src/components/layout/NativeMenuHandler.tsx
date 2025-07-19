@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settings';
 import { useTheme } from '@/components/providers/ThemeProvider';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
+import SettingsModal from '@/components/common/SettingsModal';
 
 interface NativeMenuHandlerProps {
   onToggleSidebar?: () => void;
@@ -28,9 +29,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     isConnectionConnected 
   } = useConnectionStore();
   const { settings, updateTheme } = useSettingsStore();
-  const { setColorScheme } = useTheme();
+  const { setColorScheme, setTheme } = useTheme();
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   useEffect(() => {
     let unlistenMenuFn: (() => void) | null = null;
@@ -74,117 +76,56 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     };
   }, []); // 移除依赖，只在组件挂载时设置一次监听器
 
-  // 处理主题切换
+  // 风格切换处理函数
   const handleThemeChange = (themeName: string) => {
-    console.log('处理主题切换:', themeName);
+    console.log('🎨 切换风格:', themeName);
 
-    // 现在直接使用传入的主题名称，不需要映射
-    const actualThemeName = themeName;
-
-    // 使用主题提供者的颜色方案切换功能
-    setColorScheme(actualThemeName);
-
-    // 同时更新设置存储以保持兼容性
-    updateTheme({ primaryColor: actualThemeName });
-
-    // 显示成功消息 - 支持更多主题
+    // 风格名称映射
     const themeLabels: Record<string, string> = {
-      default: '默认蓝色',
-      shadcn: 'Shadcn 黑白',
-      zinc: '锌灰色',
-      slate: '石板灰',
-      indigo: '靛蓝色',
-      emerald: '翡翠绿',
-      blue: '经典蓝',
-      green: '自然绿色',
-      red: '活力红色',
-      orange: '温暖橙色',
-      purple: '优雅紫色',
-      rose: '浪漫玫瑰',
-      yellow: '明亮黄色',
-      violet: '神秘紫罗兰',
+      'default': '默认蓝色',
+      'shadcn': 'Shadcn 黑白',
+      'zinc': '锌灰色',
+      'slate': '石板灰',
+      'indigo': '靛蓝色',
+      'emerald': '翡翠绿',
+      'blue': '经典蓝',
+      'green': '自然绿色',
+      'red': '活力红色',
+      'orange': '温暖橙色',
+      'purple': '优雅紫色',
+      'rose': '浪漫玫瑰',
+      'yellow': '明亮黄色',
+      'violet': '神秘紫罗兰'
     };
 
-    const themeLabel = themeLabels[actualThemeName] || actualThemeName;
-    showMessage.success(`已切换到${themeLabel}主题`);
+    // 设置颜色方案
+    setColorScheme(themeName);
+
+    // 显示成功消息
+    const themeLabel = themeLabels[themeName] || themeName;
+    showMessage.success(`已切换到${themeLabel}风格`);
   };
 
-  // 主题导入处理函数
-  const handleImportTheme = async () => {
-    try {
-      console.log('📥 尝试导入主题文件...');
-      const result = await safeTauriInvoke('open_file_dialog', {
-        title: '导入主题文件',
-        filters: [
-          { name: '主题文件', extensions: ['json'] },
-          { name: '所有文件', extensions: ['*'] }
-        ],
-        multiple: false
-      });
+  // 模式切换处理函数
+  const handleModeChange = (mode: 'system' | 'light' | 'dark') => {
+    console.log('🌓 切换模式:', mode);
 
-      if (result && result.path) {
-        console.log('📖 读取主题文件:', result.path);
-        const content = await safeTauriInvoke('read_file', { path: result.path });
+    // 模式名称映射
+    const modeLabels: Record<string, string> = {
+      'system': '跟随系统',
+      'light': '浅色模式',
+      'dark': '深色模式'
+    };
 
-        try {
-          const themeData = JSON.parse(content);
-          // 这里可以添加主题验证和应用逻辑
-          console.log('🎨 导入的主题数据:', themeData);
-          showMessage.success('主题导入成功！');
-        } catch (parseError) {
-          showMessage.error('主题文件格式无效');
-        }
-      }
-    } catch (error) {
-      console.error('❌ 导入主题失败:', error);
-      showMessage.error(`导入主题失败: ${error}`);
-    }
+    // 设置模式
+    setTheme(mode);
+
+    // 显示成功消息
+    const modeLabel = modeLabels[mode] || mode;
+    showMessage.success(`已切换到${modeLabel}`);
   };
 
-  // 主题导出处理函数
-  const handleExportTheme = async () => {
-    try {
-      console.log('📤 尝试导出当前主题...');
 
-      // 获取当前主题配置
-      const currentTheme = {
-        name: colorScheme || 'default',
-        version: '1.0.0',
-        colors: {
-          // 这里可以添加当前主题的颜色配置
-          primary: 'var(--primary)',
-          secondary: 'var(--secondary)',
-          background: 'var(--background)',
-          foreground: 'var(--foreground)',
-        },
-        exportedAt: new Date().toISOString(),
-      };
-
-      const themeJson = JSON.stringify(currentTheme, null, 2);
-      const fileName = `theme-${colorScheme || 'default'}-${Date.now()}.json`;
-
-      // 使用文件保存对话框
-      const result = await safeTauriInvoke('save_file_dialog', {
-        title: '导出主题文件',
-        defaultPath: fileName,
-        filters: [
-          { name: '主题文件', extensions: ['json'] },
-          { name: '所有文件', extensions: ['*'] }
-        ]
-      });
-
-      if (result && result.path) {
-        await safeTauriInvoke('write_file', {
-          path: result.path,
-          content: themeJson
-        });
-        showMessage.success(`主题已导出到: ${result.path}`);
-      }
-    } catch (error) {
-      console.error('❌ 导出主题失败:', error);
-      showMessage.error(`导出主题失败: ${error}`);
-    }
-  };
 
   // 文件操作处理函数
   const handleOpenFile = async () => {
@@ -767,13 +708,17 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'language_settings':
-        navigate('/settings');
-        showMessage.success('切换到语言设置');
+        // 打开设置弹框
+        setSettingsVisible(true);
+        showMessage.success('打开语言设置');
+        handled = true;
         break;
 
       case 'preferences':
-        navigate('/settings');
-        showMessage.success('切换到首选项');
+        // 打开设置弹框
+        setSettingsVisible(true);
+        showMessage.success('打开偏好设置');
+        handled = true;
         break;
 
       // 帮助菜单
@@ -820,7 +765,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         window.open('https://docs.influxdata.com/', '_blank');
         break;
 
-      // 主题切换菜单 - 支持更多主题（使用下划线格式）
+      // 风格切换菜单 - 恢复风格切换功能
       case 'theme_default':
         handleThemeChange('default');
         handled = true;
@@ -878,22 +823,17 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         handled = true;
         break;
 
-      // 主题设置高级功能
-      case 'theme_custom':
-        // 打开自定义主题对话框
-        showMessage.info('自定义主题功能开发中...');
+      // 模式切换菜单
+      case 'mode_system':
+        handleModeChange('system');
         handled = true;
         break;
-
-      case 'theme_import':
-        // 导入主题文件
-        handleImportTheme();
+      case 'mode_light':
+        handleModeChange('light');
         handled = true;
         break;
-
-      case 'theme_export':
-        // 导出当前主题
-        handleExportTheme();
+      case 'mode_dark':
+        handleModeChange('dark');
         handled = true;
         break;
 
@@ -927,6 +867,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         onClose={() => setShortcutsVisible(false)}
       /> */}
       <AboutDialog visible={aboutVisible} onClose={() => setAboutVisible(false)} />
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </>
   );
 };

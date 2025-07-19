@@ -30,7 +30,6 @@ import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
 import DevTools from '../../pages/DevTools';
 import Extensions from '../../pages/Extensions';
-import Settings from '../../pages/Settings';
 import QueryHistory from '../query/QueryHistory';
 
 export interface DataGripStyleLayoutProps {
@@ -58,7 +57,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (pathname === '/performance') return 'performance';
     if (pathname === '/extensions') return 'extensions';
     if (pathname === '/dev-tools') return 'dev-tools';
-    if (pathname === '/settings') return 'settings';
     return 'query'; // 默认视图
   };
 
@@ -368,14 +366,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           <div className='h-full'>
             <div className='p-0 h-full'>
               <Extensions />
-            </div>
-          </div>
-        );
-      case 'settings':
-        return (
-          <div className='h-full'>
-            <div className='p-0 h-full'>
-              <Settings />
             </div>
           </div>
         );

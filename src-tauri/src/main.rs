@@ -114,7 +114,9 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("format_query", &format!("格式化查询\t{}+Alt+L", cmd_key))
         .build()?;
 
-    // 风格设置子菜单 - 完整的主题支持
+
+
+    // 风格设置子菜单 - 恢复风格切换功能
     let style_submenu = SubmenuBuilder::new(app, "风格设置")
         .text("theme_default", "默认蓝色")
         .text("theme_shadcn", "Shadcn 黑白")
@@ -132,34 +134,11 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("theme_violet", "神秘紫罗兰")
         .build()?;
 
-    // 创建主题类别子菜单
-    let theme_color_submenu = SubmenuBuilder::new(app, "颜色主题")
-        .text("theme_default", "默认蓝色")
-        .text("theme_blue", "经典蓝")
-        .text("theme_indigo", "靛蓝色")
-        .text("theme_emerald", "翡翠绿")
-        .text("theme_green", "自然绿色")
-        .text("theme_red", "活力红色")
-        .text("theme_orange", "温暖橙色")
-        .text("theme_purple", "优雅紫色")
-        .text("theme_rose", "浪漫玫瑰")
-        .text("theme_yellow", "明亮黄色")
-        .text("theme_violet", "神秘紫罗兰")
-        .build()?;
-
-    let theme_neutral_submenu = SubmenuBuilder::new(app, "中性主题")
-        .text("theme_shadcn", "Shadcn 黑白")
-        .text("theme_zinc", "锌灰色")
-        .text("theme_slate", "石板灰")
-        .build()?;
-
-    let theme_settings_submenu = SubmenuBuilder::new(app, "主题设置")
-        .item(&theme_color_submenu)
-        .item(&theme_neutral_submenu)
-        .separator()
-        .text("theme_custom", "自定义主题...")
-        .text("theme_import", "导入主题...")
-        .text("theme_export", "导出当前主题...")
+    // 模式切换子菜单
+    let mode_submenu = SubmenuBuilder::new(app, "模式切换")
+        .text("mode_system", "跟随系统")
+        .text("mode_light", "浅色模式")
+        .text("mode_dark", "深色模式")
         .build()?;
 
     // 工具菜单 - 使用平台特定的快捷键
@@ -169,8 +148,8 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("query_performance", "查询性能分析")
         .separator()
         .text("extensions", "扩展管理")
-        .item(&theme_settings_submenu)
         .item(&style_submenu)
+        .item(&mode_submenu)
         .text("language_settings", "语言设置")
         .separator()
         .text("preferences", &format!("首选项\t{},", cmd_key))
@@ -297,7 +276,7 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "explain_query" => emit_menu_action(&window, "explain_query"),
         "format_query" => emit_menu_action(&window, "format_query"),
 
-        // 软件风格菜单 - 完整的主题支持
+        // 风格设置菜单 - 恢复风格切换功能
         "theme_default" => emit_menu_action(&window, "theme_default"),
         "theme_shadcn" => emit_menu_action(&window, "theme_shadcn"),
         "theme_zinc" => emit_menu_action(&window, "theme_zinc"),
@@ -313,10 +292,10 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "theme_yellow" => emit_menu_action(&window, "theme_yellow"),
         "theme_violet" => emit_menu_action(&window, "theme_violet"),
 
-        // 主题设置高级功能
-        "theme_custom" => emit_menu_action(&window, "theme_custom"),
-        "theme_import" => emit_menu_action(&window, "theme_import"),
-        "theme_export" => emit_menu_action(&window, "theme_export"),
+        // 模式切换菜单
+        "mode_system" => emit_menu_action(&window, "mode_system"),
+        "mode_light" => emit_menu_action(&window, "mode_light"),
+        "mode_dark" => emit_menu_action(&window, "mode_dark"),
 
         // 工具菜单
         "console" => emit_menu_action(&window, "console"),

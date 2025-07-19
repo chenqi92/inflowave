@@ -36,8 +36,10 @@ import {
   Monitor,
   User,
   Shield,
+  Info,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
-import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { saveJsonFile } from '@/utils/nativeDownload';
 import { useAppStore } from '@/store/app';
@@ -49,6 +51,8 @@ import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
+import { UpdateSettings } from '@/components/updater/UpdateSettings';
+import { open } from '@tauri-apps/plugin-shell';
 import type { AppConfig } from '@/types';
 
 interface SettingsModalProps {
@@ -722,6 +726,101 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               ) : (
                 <ErrorLogViewer />
               )}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'updates',
+      icon: <Download className='w-4 h-4' />,
+      label: '更新设置',
+      children: <UpdateSettings />,
+    },
+    {
+      key: 'about',
+      icon: <Info className='w-4 h-4' />,
+      label: '关于',
+      children: (
+        <div className='space-y-6'>
+          <div>
+            <div className='flex items-center gap-3 mb-4'>
+              <Info className='w-6 h-6 text-blue-600' />
+              <div>
+                <h2 className='text-2xl font-bold'>关于 InfloWave</h2>
+                <p className='text-muted-foreground'>
+                  现代化的 InfluxDB 数据库管理工具
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className='space-y-4'>
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>应用信息</h4>
+              <div className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>应用名称:</span>
+                  <span>InfloWave</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>版本:</span>
+                  <span>1.1.1</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>构建时间:</span>
+                  <span>{new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>开源项目</h4>
+              <p className='text-sm text-muted-foreground mb-3'>
+                InfloWave 是一个开源项目，欢迎贡献代码和反馈问题。
+              </p>
+              <Button
+                variant='outline'
+                onClick={async () => {
+                  try {
+                    if (isBrowserEnvironment()) {
+                      window.open('https://github.com/chenqi92/inflowave', '_blank');
+                    } else {
+                      await open('https://github.com/chenqi92/inflowave');
+                    }
+                    showMessage.success('正在打开GitHub项目页面');
+                  } catch (error) {
+                    console.error('打开GitHub页面失败:', error);
+                    showMessage.error('打开GitHub页面失败');
+                  }
+                }}
+                className='w-full justify-start'
+              >
+                <ExternalLink className='w-4 h-4 mr-2' />
+                访问 GitHub 项目
+              </Button>
+            </div>
+
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>技术栈</h4>
+              <div className='grid grid-cols-2 gap-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>前端:</span>
+                  <span>React + TypeScript</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>后端:</span>
+                  <span>Rust + Tauri</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>UI框架:</span>
+                  <span>Shadcn/ui</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>数据库:</span>
+                  <span>InfluxDB</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

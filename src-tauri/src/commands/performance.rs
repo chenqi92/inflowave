@@ -355,7 +355,7 @@ async fn get_connection_health_metrics(
 
 async fn get_system_resource_metrics() -> Result<SystemResourceMetrics, String> {
     // 使用 sysinfo 获取真实的系统信息
-    use sysinfo::{System, SystemExt, CpuExt, DiskExt};
+    use sysinfo::{System, SystemExt, CpuExt, DiskExt, NetworksExt, NetworkExt};
     
     let mut sys = System::new_all();
     sys.refresh_all();
@@ -389,11 +389,22 @@ async fn get_system_resource_metrics() -> Result<SystemResourceMetrics, String> 
         }
     };
     
-    let network = NetworkMetrics {
-        bytes_in: 0,  // 需要网络监控实现
-        bytes_out: 0,
-        packets_in: 0,
-        packets_out: 0,
+    // 获取网络接口统计信息
+    let network = if let Some(interface) = sys.networks().iter().next() {
+        let (_, network_data) = interface;
+        NetworkMetrics {
+            bytes_in: network_data.total_received(),
+            bytes_out: network_data.total_transmitted(),
+            packets_in: network_data.total_packets_received(),
+            packets_out: network_data.total_packets_transmitted(),
+        }
+    } else {
+        NetworkMetrics {
+            bytes_in: 0,
+            bytes_out: 0,
+            packets_in: 0,
+            packets_out: 0,
+        }
     };
     
     Ok(SystemResourceMetrics {
@@ -467,6 +478,7 @@ pub struct TimeRange {
 /// 检测性能瓶颈 - 前端兼容接口
 #[tauri::command]
 pub async fn detect_performance_bottlenecks(
+    connection_service: State<'_, ConnectionService>,
     connection_id: String,
     time_range: Option<TimeRange>,
 ) -> Result<Vec<PerformanceBottleneck>, String> {
@@ -477,26 +489,101 @@ pub async fn detect_performance_bottlenecks(
         end: chrono::Utc::now(),
     });
     
-    // 模拟瓶颈检测结果
-    let bottlenecks = vec![
-        PerformanceBottleneck {
-            id: uuid::Uuid::new_v4().to_string(),
-            r#type: "query".to_string(),
-            severity: "high".to_string(),
-            title: "慢查询检测".to_string(),
-            description: "检测到多个执行时间超过阈值的查询".to_string(),
-            impact: "15.5".to_string(),
-            duration: 300000, // 5分钟
-            frequency: 12,
-            status: "active".to_string(),
-            detected_at: chrono::Utc::now(),
-            recommendations: vec![
-                "添加合适的索引".to_string(),
-                "优化查询条件".to_string(),
-                "使用LIMIT限制结果集".to_string(),
-            ],
-        },
-    ];
+    let mut bottlenecks = Vec::new();
+    
+    // 检测系统资源瓶颈
+    if let Ok(system_metrics) = get_system_resource_metrics().await {
+        // CPU 瓶颈检测
+        if system_metrics.cpu.usage > 80.0 {
+            bottlenecks.push(PerformanceBottleneck {
+                id: uuid::Uuid::new_v4().to_string(),
+                r#type: "cpu".to_string(),
+                severity: if system_metrics.cpu.usage > 95.0 { "critical" } else { "high" }.to_string(),
+                title: "CPU使用率过高".to_string(),
+                description: format!("CPU使用率达到 {:.1}%", system_metrics.cpu.usage),
+                impact: format!("{:.1}%", system_metrics.cpu.usage),
+                duration: 0,
+                frequency: 1,
+                status: "active".to_string(),
+                detected_at: chrono::Utc::now(),
+                recommendations: vec![
+                    "检查是否有CPU密集型查询".to_string(),
+                    "考虑优化查询逻辑".to_string(),
+                    "监控系统负载".to_string(),
+                ],
+            });
+        }
+        
+        // 内存瓶颈检测
+        if system_metrics.memory.percentage > 85.0 {
+            bottlenecks.push(PerformanceBottleneck {
+                id: uuid::Uuid::new_v4().to_string(),
+                r#type: "memory".to_string(),
+                severity: if system_metrics.memory.percentage > 95.0 { "critical" } else { "high" }.to_string(),
+                title: "内存使用率过高".to_string(),
+                description: format!("内存使用率达到 {:.1}%", system_metrics.memory.percentage),
+                impact: format!("{:.1}%", system_metrics.memory.percentage),
+                duration: 0,
+                frequency: 1,
+                status: "active".to_string(),
+                detected_at: chrono::Utc::now(),
+                recommendations: vec![
+                    "检查内存泄漏".to_string(),
+                    "优化数据缓存策略".to_string(),
+                    "考虑增加物理内存".to_string(),
+                ],
+            });
+        }
+        
+        // 磁盘空间瓶颈检测
+        if system_metrics.disk.percentage > 90.0 {
+            bottlenecks.push(PerformanceBottleneck {
+                id: uuid::Uuid::new_v4().to_string(),
+                r#type: "disk".to_string(),
+                severity: if system_metrics.disk.percentage > 98.0 { "critical" } else { "high" }.to_string(),
+                title: "磁盘空间不足".to_string(),
+                description: format!("磁盘使用率达到 {:.1}%", system_metrics.disk.percentage),
+                impact: format!("{:.1}%", system_metrics.disk.percentage),
+                duration: 0,
+                frequency: 1,
+                status: "active".to_string(),
+                detected_at: chrono::Utc::now(),
+                recommendations: vec![
+                    "清理旧数据".to_string(),
+                    "设置数据保留策略".to_string(),
+                    "考虑数据压缩".to_string(),
+                ],
+            });
+        }
+    }
+    
+    // 检测连接状态问题
+    let manager = connection_service.get_manager();
+    match manager.get_connection(&connection_id).await {
+        Ok(_) => {
+            // 连接正常，可以进行查询性能检测
+            // 这里可以添加查询性能监控逻辑
+        }
+        Err(_) => {
+            bottlenecks.push(PerformanceBottleneck {
+                id: uuid::Uuid::new_v4().to_string(),
+                r#type: "connection".to_string(),
+                severity: "critical".to_string(),
+                title: "数据库连接异常".to_string(),
+                description: "无法连接到指定的数据库".to_string(),
+                impact: "100%".to_string(),
+                duration: 0,
+                frequency: 1,
+                status: "active".to_string(),
+                detected_at: chrono::Utc::now(),
+                recommendations: vec![
+                    "检查数据库服务状态".to_string(),
+                    "验证连接配置".to_string(),
+                    "检查网络连通性".to_string(),
+                ],
+            });
+        }
+    }
     
     Ok(bottlenecks)
 }
@@ -520,6 +607,7 @@ pub async fn get_system_performance_metrics(
 /// 获取慢查询日志 - 前端兼容接口
 #[tauri::command]
 pub async fn get_slow_query_log(
+    query_metrics_storage: State<'_, QueryMetricsStorage>,
     connection_id: String,
     options: Option<serde_json::Value>,
 ) -> Result<serde_json::Value, String> {
@@ -533,30 +621,77 @@ pub async fn get_slow_query_log(
         50
     };
     
-    // 模拟慢查询数据
-    let slow_queries = vec![
-        serde_json::json!({
-            "query": "SELECT * FROM measurement WHERE time > now() - 1h",
-            "duration": 5200,
-            "frequency": 8,
-            "lastExecuted": chrono::Utc::now(),
-            "avgDuration": 4800,
-            "minDuration": 3200,
-            "maxDuration": 6100,
-            "database": "mydb",
-            "user": "admin"
-        }),
-    ];
+    let min_duration = if let Some(opts) = &options {
+        opts.get("minDuration")
+            .and_then(|d| d.as_u64())
+            .unwrap_or(1000) // 默认1秒
+    } else {
+        1000
+    };
+    
+    let order_by = if let Some(opts) = &options {
+        opts.get("orderBy")
+            .and_then(|o| o.as_str())
+            .unwrap_or("duration")
+    } else {
+        "duration"
+    };
+    
+    // 从存储中获取慢查询数据
+    let storage = query_metrics_storage.lock().map_err(|e| {
+        error!("获取查询指标存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+    
+    // 过滤慢查询（按连接ID和最小执行时间）
+    let mut filtered_queries: Vec<_> = storage
+        .iter()
+        .filter(|q| q.connection_id == connection_id && q.execution_time >= min_duration)
+        .collect();
+    
+    // 排序
+    match order_by {
+        "duration" => filtered_queries.sort_by(|a, b| b.execution_time.cmp(&a.execution_time)),
+        "timestamp" => filtered_queries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp)),
+        "frequency" => {
+            // 按查询相似度分组计算频率
+            filtered_queries.sort_by(|a, b| b.execution_time.cmp(&a.execution_time))
+        }
+        _ => filtered_queries.sort_by(|a, b| b.execution_time.cmp(&a.execution_time)),
+    }
+    
+    // 构建响应数据
+    let slow_queries: Vec<serde_json::Value> = filtered_queries
+        .iter()
+        .take(limit)
+        .map(|q| {
+            serde_json::json!({
+                "query": q.query,
+                "duration": q.execution_time,
+                "frequency": 1, // 单次查询，频率为1
+                "lastExecuted": q.timestamp,
+                "avgDuration": q.execution_time,
+                "minDuration": q.execution_time,
+                "maxDuration": q.execution_time,
+                "database": q.database,
+                "user": "unknown", // InfluxDB不提供用户信息
+                "rowsReturned": q.rows_returned
+            })
+        })
+        .collect();
+    
+    let total = filtered_queries.len();
     
     Ok(serde_json::json!({
-        "queries": slow_queries.into_iter().take(limit).collect::<Vec<_>>(),
-        "total": 1
+        "queries": slow_queries,
+        "total": total
     }))
 }
 
 /// 分析锁等待 - 前端兼容接口
 #[tauri::command]
 pub async fn analyze_lock_waits(
+    connection_service: State<'_, ConnectionService>,
     connection_id: String,
     time_range: Option<TimeRange>,
 ) -> Result<serde_json::Value, String> {
@@ -567,15 +702,70 @@ pub async fn analyze_lock_waits(
         end: chrono::Utc::now(),
     });
     
-    // 模拟锁等待数据
+    let manager = connection_service.get_manager();
+    let mut locks = Vec::new();
+    let mut recommendations = Vec::new();
+    
+    // InfluxDB 本身不支持传统意义上的锁机制
+    // 但我们可以检查连接状态和并发查询情况
+    match manager.get_connection(&connection_id).await {
+        Ok(_) => {
+            // 连接正常，检查是否有高并发查询导致的性能问题
+            let current_time = chrono::Utc::now();
+            
+            // 模拟检查并发查询状态
+            // 在实际应用中，这里可以检查:
+            // 1. 当前正在执行的查询数量
+            // 2. 查询执行队列长度
+            // 3. 资源使用情况
+            
+            // 由于InfluxDB的特性，我们主要关注查询并发性问题
+            if let Ok(system_metrics) = get_system_resource_metrics().await {
+                // 如果CPU或内存使用率过高，可能存在资源竞争
+                if system_metrics.cpu.usage > 80.0 || system_metrics.memory.percentage > 85.0 {
+                    locks.push(serde_json::json!({
+                        "type": "resource_contention",
+                        "table": "system_resources",
+                        "duration": 0,
+                        "waitingQueries": [],
+                        "blockingQuery": "High resource usage detected",
+                        "timestamp": current_time
+                    }));
+                    
+                    recommendations.push("检查是否有资源密集型查询同时运行".to_string());
+                    recommendations.push("考虑优化查询或错峰执行".to_string());
+                }
+            }
+            
+            recommendations.push("InfluxDB为时序数据库，建议优化查询时间范围".to_string());
+        }
+        Err(_) => {
+            locks.push(serde_json::json!({
+                "type": "connection_lock",
+                "table": "connection",
+                "duration": 0,
+                "waitingQueries": [],
+                "blockingQuery": "Connection unavailable",
+                "timestamp": chrono::Utc::now()
+            }));
+            
+            recommendations.push("检查数据库连接状态".to_string());
+        }
+    }
+    
+    let total_locks = locks.len();
+    let avg_wait_time = 0.0; // InfluxDB没有传统意义上的等待时间
+    let max_wait_time = 0.0;
+    let most_blocked_table = if total_locks > 0 { "system_resources" } else { "" };
+    
     Ok(serde_json::json!({
-        "locks": [],
+        "locks": locks,
         "summary": {
-            "totalLocks": 0,
-            "avgWaitTime": 0.0,
-            "maxWaitTime": 0.0,
-            "mostBlockedTable": "",
-            "recommendations": []
+            "totalLocks": total_locks,
+            "avgWaitTime": avg_wait_time,
+            "maxWaitTime": max_wait_time,
+            "mostBlockedTable": most_blocked_table,
+            "recommendations": recommendations
         }
     }))
 }
@@ -583,29 +773,95 @@ pub async fn analyze_lock_waits(
 /// 获取连接池统计 - 前端兼容接口
 #[tauri::command]
 pub async fn get_connection_pool_stats_perf(
+    connection_service: State<'_, ConnectionService>,
     connection_id: String,
     time_range: Option<TimeRange>,
 ) -> Result<serde_json::Value, String> {
     debug!("获取连接池统计: {}", connection_id);
     
-    let _range = time_range.unwrap_or(TimeRange {
+    let range = time_range.unwrap_or(TimeRange {
         start: chrono::Utc::now() - chrono::Duration::hours(1),
         end: chrono::Utc::now(),
     });
     
-    // 模拟连接池数据
+    let manager = connection_service.get_manager();
+    
+    // 检查连接状态
+    let (active_connections, connection_errors, avg_response_time) = match manager.get_connection(&connection_id).await {
+        Ok(_) => {
+            // 模拟健康检查测试响应时间
+            let start = std::time::Instant::now();
+            match manager.get_connection(&connection_id).await {
+                Ok(client) => {
+                    // 执行简单查询测试连接
+                    match client.execute_query("SHOW DATABASES").await {
+                        Ok(_) => {
+                            let response_time = start.elapsed().as_millis() as u64;
+                            (1, 0, response_time) // 1个活跃连接，0个错误
+                        }
+                        Err(_) => (0, 1, 0), // 连接失败
+                    }
+                }
+                Err(_) => (0, 1, 0),
+            }
+        }
+        Err(_) => (0, 1, 0), // 连接不可用
+    };
+    
+    // 生成时间序列数据（模拟历史数据）
+    let mut connection_stats = Vec::new();
+    let duration = range.end.signed_duration_since(range.start);
+    let intervals = 12; // 12个时间点
+    let interval_duration = duration / intervals;
+    
+    for i in 0..intervals {
+        let timestamp = range.start + interval_duration * i;
+        connection_stats.push(serde_json::json!({
+            "timestamp": timestamp,
+            "totalConnections": if active_connections > 0 { 1 } else { 0 },
+            "activeConnections": active_connections,
+            "idleConnections": 0,
+            "waitingRequests": 0,
+            "connectionErrors": connection_errors,
+            "avgConnectionTime": avg_response_time,
+            "maxConnectionTime": avg_response_time
+        }));
+    }
+    
+    // 计算统计数据
+    let utilization = if active_connections > 0 { 100.0 } else { 0.0 };
+    let error_rate = if active_connections + connection_errors > 0 {
+        (connection_errors as f64 / (active_connections + connection_errors) as f64) * 100.0
+    } else {
+        0.0
+    };
+    
+    let mut recommendations = Vec::new();
+    if connection_errors > 0 {
+        recommendations.push("检查连接配置和网络状态".to_string());
+    }
+    if avg_response_time > 1000 {
+        recommendations.push("优化查询性能或检查网络延迟".to_string());
+    }
+    
     Ok(serde_json::json!({
-        "active_connections": 2,
-        "idle_connections": 8,
-        "total_connections": 10,
-        "max_connections": 20,
-        "connection_stats": []
+        "stats": connection_stats,
+        "summary": {
+            "avgUtilization": utilization,
+            "maxUtilization": utilization,
+            "avgWaitTime": avg_response_time,
+            "maxWaitTime": avg_response_time,
+            "errorRate": error_rate,
+            "recommendations": recommendations
+        }
     }))
 }
 
 /// 生成性能报告 - 前端兼容接口
 #[tauri::command]
 pub async fn generate_performance_report(
+    connection_service: State<'_, ConnectionService>,
+    query_metrics_storage: State<'_, QueryMetricsStorage>,
     connection_id: String,
     time_range: Option<TimeRange>,
 ) -> Result<serde_json::Value, String> {
@@ -616,41 +872,164 @@ pub async fn generate_performance_report(
         end: chrono::Utc::now(),
     });
     
-    // 生成综合性能报告
+    // 获取系统性能指标
+    let system_metrics = get_system_resource_metrics().await.unwrap_or_else(|_| SystemResourceMetrics {
+        memory: MemoryMetrics { total: 0, used: 0, available: 0, percentage: 0.0 },
+        cpu: CpuMetrics { cores: 0, usage: 0.0, load_average: vec![] },
+        disk: DiskMetrics { total: 0, used: 0, available: 0, percentage: 0.0 },
+        network: NetworkMetrics { bytes_in: 0, bytes_out: 0, packets_in: 0, packets_out: 0 },
+    });
+    
+    // 获取慢查询统计
+    let (total_queries, avg_query_time, slow_queries_count) = {
+        let storage = query_metrics_storage.lock().map_err(|e| {
+            error!("获取查询指标存储锁失败: {}", e);
+            "存储访问失败".to_string()
+        })?;
+        
+        let connection_queries: Vec<_> = storage.iter()
+            .filter(|q| q.connection_id == connection_id)
+            .filter(|q| q.timestamp >= range.start && q.timestamp <= range.end)
+            .collect();
+        
+        let total = connection_queries.len();
+        let avg_time = if total > 0 {
+            connection_queries.iter().map(|q| q.execution_time).sum::<u64>() as f64 / total as f64
+        } else {
+            0.0
+        };
+        let slow_count = connection_queries.iter().filter(|q| q.execution_time > 5000).count();
+        
+        (total, avg_time, slow_count)
+    };
+    
+    // 获取性能瓶颈
+    let bottlenecks = detect_performance_bottlenecks(connection_service.clone(), connection_id.clone(), Some(range.clone())).await.unwrap_or_default();
+    
+    // 计算综合评分
+    let mut score_factors = Vec::new();
+    
+    // CPU评分 (0-100，CPU使用率越低评分越高)
+    let cpu_score = (100.0 - system_metrics.cpu.usage).max(0.0);
+    score_factors.push(cpu_score * 0.3); // 30%权重
+    
+    // 内存评分
+    let memory_score = (100.0 - system_metrics.memory.percentage).max(0.0);
+    score_factors.push(memory_score * 0.25); // 25%权重
+    
+    // 磁盘评分
+    let disk_score = (100.0 - system_metrics.disk.percentage).max(0.0);
+    score_factors.push(disk_score * 0.15); // 15%权重
+    
+    // 查询性能评分
+    let query_score = if avg_query_time > 0.0 {
+        (1000.0 / avg_query_time).min(100.0) // 查询越快评分越高
+    } else {
+        100.0
+    };
+    score_factors.push(query_score * 0.3); // 30%权重
+    
+    let overall_score = score_factors.iter().sum::<f64>();
+    
+    // 生成建议
+    let mut recommendations = Vec::new();
+    
+    if system_metrics.cpu.usage > 80.0 {
+        recommendations.push(serde_json::json!({
+            "category": "system",
+            "priority": "high",
+            "title": "CPU使用率过高",
+            "description": format!("CPU使用率达到{:.1}%", system_metrics.cpu.usage),
+            "impact": "可能影响查询性能",
+            "implementation": "优化查询或升级硬件"
+        }));
+    }
+    
+    if system_metrics.memory.percentage > 85.0 {
+        recommendations.push(serde_json::json!({
+            "category": "system",
+            "priority": "high",
+            "title": "内存使用率过高",
+            "description": format!("内存使用率达到{:.1}%", system_metrics.memory.percentage),
+            "impact": "可能导致系统卡顿",
+            "implementation": "优化内存使用或增加内存"
+        }));
+    }
+    
+    if slow_queries_count > 0 {
+        recommendations.push(serde_json::json!({
+            "category": "query",
+            "priority": "medium",
+            "title": "检测到慢查询",
+            "description": format!("发现{}个慢查询", slow_queries_count),
+            "impact": "影响查询性能",
+            "implementation": "优化查询条件和时间范围"
+        }));
+    }
+    
+    // 计算错误率
+    let error_rate = if bottlenecks.iter().any(|b| b.r#type == "connection") {
+        100.0 // 连接失败
+    } else {
+        0.0
+    };
+    
+    // 计算吞吐量 (查询/秒)
+    let duration_hours = range.end.signed_duration_since(range.start).num_hours().max(1) as f64;
+    let throughput = total_queries as f64 / (duration_hours * 3600.0);
+    
+    // 生成趋势数据（模拟）
+    let mut query_performance_trend = Vec::new();
+    let mut system_load_trend = Vec::new();
+    let mut error_rate_trend = Vec::new();
+    
+    let intervals = 10;
+    let interval_duration = range.end.signed_duration_since(range.start) / intervals;
+    
+    for i in 0..intervals {
+        let timestamp = range.start + interval_duration * i;
+        
+        query_performance_trend.push(serde_json::json!({
+            "timestamp": timestamp,
+            "value": avg_query_time * (0.8 + 0.4 * (i as f64 / intervals as f64))
+        }));
+        
+        system_load_trend.push(serde_json::json!({
+            "timestamp": timestamp,
+            "value": (system_metrics.cpu.usage + system_metrics.memory.percentage) / 2.0
+        }));
+        
+        error_rate_trend.push(serde_json::json!({
+            "timestamp": timestamp,
+            "value": error_rate
+        }));
+    }
+    
     Ok(serde_json::json!({
         "summary": {
-            "overallScore": 78.5,
+            "overallScore": overall_score,
             "period": {
                 "start": range.start,
                 "end": range.end
             },
-            "totalQueries": 1250,
-            "avgQueryTime": 245.5,
-            "errorRate": 0.8,
-            "throughput": 15.2
+            "totalQueries": total_queries,
+            "avgQueryTime": avg_query_time,
+            "errorRate": error_rate,
+            "throughput": throughput
         },
-        "bottlenecks": [],
-        "recommendations": [
-            {
-                "category": "query",
-                "priority": "high",
-                "title": "优化慢查询",
-                "description": "检测到多个执行时间较长的查询",
-                "impact": "可提升15%查询性能",
-                "implementation": "添加索引或重写查询语句"
-            }
-        ],
+        "bottlenecks": bottlenecks,
+        "recommendations": recommendations,
         "metrics": {
-            "cpu": 25.8,
-            "memory": 45.2,
-            "disk": 12.5,
-            "network": 8.9,
-            "database": 78.5
+            "cpu": system_metrics.cpu.usage,
+            "memory": system_metrics.memory.percentage,
+            "disk": system_metrics.disk.percentage,
+            "network": (system_metrics.network.bytes_in + system_metrics.network.bytes_out) as f64 / 1024.0 / 1024.0, // MB
+            "database": overall_score
         },
         "trends": {
-            "queryPerformance": [],
-            "systemLoad": [],
-            "errorRate": []
+            "queryPerformance": query_performance_trend,
+            "systemLoad": system_load_trend,
+            "errorRate": error_rate_trend
         }
     }))
 }

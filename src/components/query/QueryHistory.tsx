@@ -95,14 +95,15 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   const loadQueryHistory = async () => {
     setLoading(true);
     try {
+      console.log('开始加载查询历史...');
       const history =
         await safeTauriInvoke<QueryHistoryItem[]>('get_query_history');
+      console.log('查询历史加载成功:', history?.length || 0, '条记录');
       setHistoryItems(history || []);
     } catch (error) {
-      showNotification.error({
-        message: '加载查询历史失败',
-        description: String(error),
-      });
+      console.error('加载查询历史失败:', error);
+      // 不显示错误通知，避免干扰用户体验
+      setHistoryItems([]);
     } finally {
       setLoading(false);
     }
@@ -112,13 +113,14 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   const loadSavedQueries = async () => {
     setLoading(true);
     try {
+      console.log('开始加载保存的查询...');
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
+      console.log('保存的查询加载成功:', queries?.length || 0, '条记录');
       setSavedQueries(queries || []);
     } catch (error) {
-      showNotification.error({
-        message: '加载保存的查询失败',
-        description: String(error),
-      });
+      console.error('加载保存的查询失败:', error);
+      // 不显示错误通知，避免干扰用户体验
+      setSavedQueries([]);
     } finally {
       setLoading(false);
     }
@@ -258,16 +260,25 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   useEffect(() => {
     if (visible) {
       console.log('QueryHistory visible, loading data...');
-      loadQueryHistory();
-      loadSavedQueries();
+      // 添加延迟确保Dialog完全渲染后再加载数据
+      const timer = setTimeout(() => {
+        loadQueryHistory();
+        loadSavedQueries();
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [visible]);
 
   // 预加载数据，避免第一次打开时的延迟
   useEffect(() => {
-    // 组件挂载时预加载数据
-    loadQueryHistory();
-    loadSavedQueries();
+    // 组件挂载时预加载数据，但要确保在组件完全挂载后
+    const timer = setTimeout(() => {
+      loadQueryHistory();
+      loadSavedQueries();
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const renderHistoryItem = (item: QueryHistoryItem) => (
@@ -683,8 +694,16 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
   if (onClose) {
     return (
       <TooltipProvider>
-        <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
-          <DialogContent className="max-w-4xl max-h-[80vh]">
+        <Dialog
+          open={visible}
+          onOpenChange={(open) => {
+            console.log('Dialog onOpenChange:', open);
+            if (!open && onClose) {
+              onClose();
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <History className="w-5 h-5" />
@@ -694,7 +713,9 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 查看和管理查询历史记录与保存的查询
               </DialogDescription>
             </DialogHeader>
-            {content}
+            <div className="flex-1 overflow-hidden">
+              {content}
+            </div>
           </DialogContent>
         </Dialog>
         {editModal}
