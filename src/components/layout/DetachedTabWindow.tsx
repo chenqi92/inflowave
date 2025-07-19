@@ -171,6 +171,16 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // 不要阻止系统级的复制粘贴快捷键
+      const isSystemClipboard = (
+        (event.ctrlKey || event.metaKey) &&
+        ['c', 'v', 'x', 'a'].includes(event.key.toLowerCase())
+      );
+
+      if (isSystemClipboard) {
+        return; // 让系统处理复制粘贴
+      }
+
       // Ctrl+S 保存
       if (event.ctrlKey && event.key === 's') {
         event.preventDefault();
@@ -180,7 +190,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
           setModified(false);
         }
       }
-      
+
       // Ctrl+W 关闭窗口
       if (event.ctrlKey && event.key === 'w') {
         event.preventDefault();

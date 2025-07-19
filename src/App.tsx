@@ -59,6 +59,16 @@ const MainLayout: React.FC = () => {
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 不要阻止系统级的复制粘贴快捷键
+      const isSystemClipboard = (
+        (e.ctrlKey || e.metaKey) &&
+        ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())
+      );
+
+      if (isSystemClipboard) {
+        return; // 让系统处理复制粘贴
+      }
+
       // Ctrl+Shift+P 打开全局搜索
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();

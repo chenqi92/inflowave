@@ -1087,48 +1087,95 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       // 注册语言
       monaco.languages.register({ id: 'influxql' });
 
-      // 设置语法高亮
+      // 设置语法高亮 - 使用更详细的配置
       monaco.languages.setMonarchTokensProvider('influxql', {
+        // 定义token类型
+        keywords: [
+          'SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'ORDER', 'LIMIT', 'OFFSET',
+          'INTO', 'VALUES', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
+          'SHOW', 'DESCRIBE', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS',
+          'NULL', 'TRUE', 'FALSE', 'TIME', 'NOW', 'AGO', 'DURATION', 'FILL',
+          'SLIMIT', 'SOFFSET', 'MEASUREMENTS', 'FIELD', 'TAG', 'KEYS', 'SERIES',
+          'DATABASES', 'RETENTION', 'POLICIES', 'STATS', 'DIAGNOSTICS'
+        ],
+
+        functions: [
+          'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN', 'MEDIAN',
+          'MODE', 'STDDEV', 'SPREAD', 'PERCENTILE', 'DERIVATIVE', 'DIFFERENCE',
+          'ELAPSED_TIME', 'MOVING_AVERAGE', 'CUMULATIVE_SUM'
+        ],
+
+        operators: [
+          '=', '!=', '<>', '<', '<=', '>', '>=', '=~', '!~', '+', '-', '*', '/', '%'
+        ],
+
+        // 符号定义
+        symbols: /[=><!~?:&|+\-*\/\^%]+/,
+
+        // tokenizer规则
         tokenizer: {
           root: [
-            // 关键字
-            [
-              /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|INTO|VALUES|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE)\b/i,
-              'keyword',
-            ],
-            [/\b(AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE)\b/i, 'keyword'],
-            // 函数
-            [
-              /\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM)\b/i,
-              'function',
-            ],
-            // InfluxQL特定关键字
-            [
-              /\b(TIME|NOW|AGO|DURATION|FILL|SLIMIT|SOFFSET|MEASUREMENTS|FIELD|TAG|KEYS|SERIES|DATABASES|RETENTION|POLICIES|STATS|DIAGNOSTICS)\b/i,
-              'keyword',
-            ],
-            // 字符串
-            [/'([^'\\]|\\.)*'/, 'string'],
-            [/"([^"\\]|\\.)*"/, 'string'],
-            // 数字
-            [/\d+(\.\d+)?(ns|u|µ|ms|s|m|h|d|w)?/, 'number'],
-            // 标识符
-            [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
-            // 括号
-            [/[{}()[\]]/, '@brackets'],
-            // 操作符
-            [/[<>]=?|[!=]=|<>/, 'operator'],
-            [/[+\-*/=]/, 'operator'],
-            // 分隔符
-            [/[,;]/, 'delimiter'],
-            // 注释
+            // 行注释
             [/--.*$/, 'comment'],
+
+            // 块注释
             [/\/\*/, 'comment', '@comment'],
+
+            // 字符串
+            [/'([^'\\]|\\.)*$/, 'string.invalid'],  // 未闭合的字符串
+            [/'/, 'string', '@string_single'],
+            [/"([^"\\]|\\.)*$/, 'string.invalid'],  // 未闭合的字符串
+            [/"/, 'string', '@string_double'],
+
+            // 数字
+            [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+            [/\d+([eE][\-+]?\d+)?/, 'number'],
+            [/\d+(ns|u|µ|ms|s|m|h|d|w)/, 'number'],
+
+            // 标识符和关键字
+            [/[a-zA-Z_]\w*/, {
+              cases: {
+                '@keywords': 'keyword',
+                '@functions': 'function',
+                '@default': 'identifier'
+              }
+            }],
+
+            // 操作符
+            [/@symbols/, {
+              cases: {
+                '@operators': 'operator',
+                '@default': ''
+              }
+            }],
+
+            // 分隔符
+            [/[;,.]/, 'delimiter'],
+
+            // 括号
+            [/[{}()\[\]]/, '@brackets'],
+
+            // 空白字符
+            [/[ \t\r\n]+/, 'white'],
           ],
+
           comment: [
-            [/[^/*]+/, 'comment'],
-            [/\*\//, 'comment', '@pop'],
-            [/[/*]/, 'comment'],
+            [/[^\/*]+/, 'comment'],
+            [/\/\*/, 'comment', '@push'],    // 嵌套注释
+            ["\\*/", 'comment', '@pop'],
+            [/[\/*]/, 'comment']
+          ],
+
+          string_single: [
+            [/[^\\']+/, 'string'],
+            [/\\./, 'string.escape.invalid'],
+            [/'/, 'string', '@pop']
+          ],
+
+          string_double: [
+            [/[^\\"]+/, 'string'],
+            [/\\./, 'string.escape.invalid'],
+            [/"/, 'string', '@pop']
           ],
         },
       });

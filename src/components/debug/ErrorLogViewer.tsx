@@ -358,6 +358,22 @@ const ErrorLogViewer: React.FC = () => {
     }
   };
 
+  // 获取级别显示颜色
+  const getLevelBadgeVariant = (
+    level: string
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (level) {
+      case 'error':
+        return 'destructive';
+      case 'warn':
+        return 'secondary';
+      case 'info':
+        return 'default';
+      default:
+        return 'outline';
+    }
+  };
+
   // 组件挂载时加载日志
   useEffect(() => {
     loadErrorLogs();

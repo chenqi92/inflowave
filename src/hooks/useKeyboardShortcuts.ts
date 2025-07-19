@@ -62,11 +62,19 @@ export const useKeyboardShortcuts = (
                 const metaMatch = !!shortcut.metaKey === !!keyboardEvent.metaKey;
 
                 if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
-                    if (shortcut.preventDefault ?? preventDefault) {
-                        keyboardEvent.preventDefault();
-                    }
-                    if (shortcut.stopPropagation ?? stopPropagation) {
-                        keyboardEvent.stopPropagation();
+                    // 不要阻止系统级的复制粘贴快捷键
+                    const isSystemClipboard = (
+                        (keyboardEvent.ctrlKey || keyboardEvent.metaKey) &&
+                        ['c', 'v', 'x', 'a'].includes(keyboardEvent.key.toLowerCase())
+                    );
+
+                    if (!isSystemClipboard) {
+                        if (shortcut.preventDefault ?? preventDefault) {
+                            keyboardEvent.preventDefault();
+                        }
+                        if (shortcut.stopPropagation ?? stopPropagation) {
+                            keyboardEvent.stopPropagation();
+                        }
                     }
 
                     shortcut.callback(keyboardEvent);

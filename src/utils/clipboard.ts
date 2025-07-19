@@ -76,6 +76,61 @@ export async function writeToClipboard(
 }
 
 /**
+ * 安全地读取剪贴板
+ * @param options 配置选项
+ */
+export async function readFromClipboard(
+  options: ClipboardOptions = {}
+): Promise<string | null> {
+  const {
+    showError = true,
+    errorMessage = '读取剪贴板失败',
+  } = options;
+
+  try {
+    // 检查是否在浏览器环境中
+    if (isBrowserEnvironment()) {
+      // 现代浏览器的 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        try {
+          const text = await navigator.clipboard.readText();
+          return text;
+        } catch (clipboardError) {
+          console.warn('Clipboard read API failed:', clipboardError);
+          if (showError) {
+            showMessage.error(`${errorMessage}: 权限被拒绝`);
+          }
+          return null;
+        }
+      } else {
+        if (showError) {
+          showMessage.error(`${errorMessage}: 浏览器不支持剪贴板读取`);
+        }
+        return null;
+      }
+    } else {
+      // 在 Tauri 环境中，使用 Tauri 的剪贴板插件
+      try {
+        const text = await readText();
+        return text;
+      } catch (tauriError) {
+        console.warn('Tauri clipboard read API failed:', tauriError);
+        if (showError) {
+          showMessage.error(`${errorMessage}: ${tauriError}`);
+        }
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error('Clipboard read failed:', error);
+    if (showError) {
+      showMessage.error(`${errorMessage}: ${error}`);
+    }
+    return null;
+  }
+}
+
+/**
  * 降级的复制方案 - 使用传统的 document.execCommand
  * @param text 要复制的文本
  * @param options 配置选项
@@ -129,35 +184,7 @@ function tryFallbackCopy(text: string, options: ClipboardOptions): boolean {
   }
 }
 
-/**
- * 尝试读取剪贴板内容
- * @returns 剪贴板文本内容或 null
- */
-export async function readFromClipboard(): Promise<string | null> {
-  try {
-    if (isBrowserEnvironment()) {
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        return await navigator.clipboard.readText();
-      } else {
-        // 浏览器不支持读取剪贴板
-        showMessage.warning('当前浏览器不支持读取剪贴板');
-        return null;
-      }
-    } else {
-      // 在 Tauri 环境中，使用 Tauri 的剪贴板插件
-      try {
-        return await readText();
-      } catch (tauriError) {
-        console.error('Tauri clipboard read failed:', tauriError);
-        return null;
-      }
-    }
-  } catch (error) {
-    console.error('Clipboard read failed:', error);
-    // 不显示错误消息，因为读取失败是常见的（权限问题）
-    return null;
-  }
-}
+
 
 /**
  * 检查是否支持剪贴板操作
