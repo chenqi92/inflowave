@@ -43,6 +43,7 @@ import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
+import { readFromClipboard } from '@/utils/clipboard';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
@@ -125,7 +126,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]); // 实际执行的查询
     const [showExecutedQueries, setShowExecutedQueries] = useState(false); // 是否显示实际执行的查询
-    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const editorRef = useRef<monaco.editor.ICodeEditor | null>(null);
 
     // 拖拽功能
     const {
@@ -146,7 +147,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       visible: boolean;
       x: number;
       y: number;
-      editor: monaco.editor.IStandaloneCodeEditor | null;
+      editor: monaco.editor.ICodeEditor | null;
     }>({
       visible: false,
       x: 0,
@@ -155,7 +156,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     });
 
     // 显示自定义右键菜单
-    const showCustomContextMenu = (event: MouseEvent, editor: monaco.editor.IStandaloneCodeEditor) => {
+    const showCustomContextMenu = (event: MouseEvent, editor: monaco.editor.ICodeEditor) => {
       event.preventDefault();
       event.stopPropagation();
 
@@ -165,6 +166,33 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         y: event.clientY,
         editor,
       });
+    };
+
+    // 自定义粘贴处理函数
+    const handleCustomPaste = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        // 桌面应用：使用Tauri剪贴板服务
+        const clipboardText = await readFromClipboard({ showError: false });
+        if (clipboardText) {
+          const selection = editor.getSelection();
+          if (selection) {
+            editor.executeEdits('paste', [{
+              range: selection,
+              text: clipboardText,
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+            return;
+          }
+        }
+
+        // 如果Tauri剪贴板失败，使用Monaco的原生粘贴功能作为备选
+        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+      } catch (error) {
+        console.error('粘贴操作失败:', error);
+        // 降级到Monaco原生粘贴
+        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+      }
     };
 
     // 隐藏自定义右键菜单
@@ -178,7 +206,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     };
 
     // 处理右键菜单操作
-    const handleContextMenuAction = (action: string, editor: monaco.editor.IStandaloneCodeEditor) => {
+    const handleContextMenuAction = async (action: string, editor: monaco.editor.ICodeEditor) => {
       switch (action) {
         case 'execute-query':
           executeQuery();
@@ -190,7 +218,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
           break;
         case 'paste':
-          editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+          // 使用自定义粘贴逻辑，避免浏览器权限问题
+          await handleCustomPaste(editor);
           break;
         case 'select-all':
           editor.trigger('keyboard', 'editor.action.selectAll', null);
@@ -941,7 +970,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         // 处理来自独立窗口的消息
         if (event.data && event.data.type === 'execute-query-from-detached') {
           const { query, tabId } = event.data;
-          console.log('📥 收到来自独立窗口的执行查询请求:', { query: query.substring(0, 50) + '...', tabId });
+          console.log('📥 收到来自独立窗口的执行查询请求:', { query: `${query.substring(0, 50)  }...`, tabId });
 
           // 找到对应的tab并更新内容
           const targetTab = tabs.find(tab => tab.id === tabId);
@@ -1511,12 +1540,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 编辑器挂载
     const handleEditorDidMount = (
-      editor: monaco.editor.IStandaloneCodeEditor
+      editor: monaco.editor.ICodeEditor
     ) => {
       editorRef.current = editor;
 
+      // 将编辑器转换为独立编辑器类型以支持命令添加
+      const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
+
       // 设置智能自动补全
-      setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
+      setupInfluxQLAutoComplete(monaco, standaloneEditor, selectedDatabase);
 
       console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
@@ -1561,7 +1593,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         // 增加更多提示配置
         quickSuggestionsDelay: 50, // 减少延迟到50ms
         suggestSelection: 'first', // 默认选择第一个建议
-        wordBasedSuggestions: 'currentDocument', // 基于单词的建议
+        // wordBasedSuggestions 属性在当前Monaco版本中不存在，已移除
         // 自动触发提示的字符
         autoIndent: 'full',
         // 更敏感的提示设置
@@ -1569,14 +1601,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       });
 
       // 添加快捷键
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         // 执行查询
         executeQuery();
       });
 
       // 添加手动触发智能提示的快捷键
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
-        editor.trigger('manual', 'editor.action.triggerSuggest', {});
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+        standaloneEditor.trigger('manual', 'editor.action.triggerSuggest', {});
       });
 
       // 添加焦点事件监听，确保智能提示正常工作
@@ -1620,29 +1652,29 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         }
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         saveCurrentTab();
       });
 
       // 添加执行查询快捷键 (Ctrl+Enter)
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         executeQuery();
       });
 
       // 添加测试智能提示的快捷键 (Ctrl+K)
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
         console.log('🧪 测试智能提示功能...');
         console.log('📊 当前状态:', {
           activeConnectionId,
           selectedDatabase,
           databases: databases.length,
-          cursorPosition: editor.getPosition(),
+          cursorPosition: standaloneEditor.getPosition(),
         });
 
         // 手动触发智能提示
-        editor.trigger('test', 'editor.action.triggerSuggest', {});
+        standaloneEditor.trigger('test', 'editor.action.triggerSuggest', {});
         showMessage.info('已触发智能提示，请查看控制台日志');
-        editor.getAction('editor.action.formatDocument')?.run();
+        standaloneEditor.getAction('editor.action.formatDocument')?.run();
       });
 
       // 监听主题变化
@@ -1675,45 +1707,45 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 禁用默认右键菜单，使用自定义中文菜单
       // 监听右键事件
-      editor.onContextMenu((e) => {
+      standaloneEditor.onContextMenu((e) => {
         e.event.preventDefault();
         e.event.stopPropagation();
 
         // 显示自定义右键菜单
-        showCustomContextMenu(e.event.browserEvent, editor);
+        showCustomContextMenu(e.event.browserEvent, standaloneEditor);
       });
 
       // 保留快捷键绑定，但不添加到右键菜单
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
-        editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
-        editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+        handleCustomPaste(standaloneEditor);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
-        editor.trigger('keyboard', 'editor.action.selectAll', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.selectAll', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
-        editor.trigger('keyboard', 'undo', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
+        standaloneEditor.trigger('keyboard', 'undo', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
-        editor.trigger('keyboard', 'redo', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
+        standaloneEditor.trigger('keyboard', 'redo', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
-        editor.trigger('keyboard', 'actions.find', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+        standaloneEditor.trigger('keyboard', 'actions.find', null);
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => {
-        editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
       });
 
       console.log('✅ 中文右键菜单已添加（包含执行查询）');

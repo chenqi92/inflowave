@@ -75,6 +75,7 @@ import Editor from '@monaco-editor/react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { dialog } from '@/utils/dialog';
 import * as monaco from 'monaco-editor';
+import { readFromClipboard } from '@/utils/clipboard';
 
 const { Text, Paragraph } = Typography;
 
@@ -111,6 +112,33 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
 
 
+
+  // 自定义粘贴处理函数
+  const handleCustomPaste = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      // 桌面应用：使用Tauri剪贴板服务
+      const clipboardText = await readFromClipboard({ showError: false });
+      if (clipboardText) {
+        const selection = editor.getSelection();
+        if (selection) {
+          editor.executeEdits('paste', [{
+            range: selection,
+            text: clipboardText,
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+          return;
+        }
+      }
+
+      // 如果Tauri剪贴板失败，使用Monaco的原生粘贴功能作为备选
+      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+    } catch (error) {
+      console.error('粘贴操作失败:', error);
+      // 降级到Monaco原生粘贴
+      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+    }
+  };
 
   // 获取查询统计
   const getQueryStats = useCallback(async () => {
@@ -380,7 +408,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     contextMenuGroupId: 'navigation',
                     contextMenuOrder: 3,
                     run: (editor) => {
-                      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+                      handleCustomPaste(editor as monaco.editor.IStandaloneCodeEditor);
                     }
                   });
 

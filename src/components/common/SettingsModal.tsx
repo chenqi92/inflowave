@@ -546,80 +546,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         </div>
       ),
     },
-    {
-      key: 'about',
-      icon: <Info className='w-4 h-4' />,
-      label: '关于',
-      children: (
-        <div className='space-y-6'>
-          {/* 页面标题 */}
-          <div className='flex items-center gap-3 mb-4'>
-            <Info className='w-6 h-6 text-blue-600' />
-            <div>
-              <h2 className='text-2xl font-bold'>关于应用</h2>
-              <p className='text-muted-foreground'>应用信息和版本详情</p>
-            </div>
-          </div>
 
-          <div className='grid grid-cols-2 gap-6'>
-            <div className='space-y-4'>
-              <div>
-                <p className='font-medium text-sm mb-1'>版本信息</p>
-                <p className='text-sm text-muted-foreground'>v0.1.0-alpha</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>构建时间</p>
-                <p className='text-sm text-muted-foreground'>
-                  {new Date().toLocaleDateString()}
-                </p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>技术栈</p>
-                <p className='text-sm text-muted-foreground'>
-                  React + TypeScript + Rust + Tauri
-                </p>
-              </div>
-            </div>
-
-            <div className='space-y-4'>
-              <div>
-                <p className='font-medium text-sm mb-1'>支持的 InfluxDB 版本</p>
-                <p className='text-sm text-muted-foreground'>InfluxDB 1.x</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>开源协议</p>
-                <p className='text-sm text-muted-foreground'>MIT License</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>项目地址</p>
-                <p className='text-sm text-primary hover:text-blue-800 cursor-pointer'>
-                  GitHub Repository
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <Alert>
-            <Info className='h-4 w-4' />
-            <h5 className='font-medium mb-2'>功能特性</h5>
-            <ul className='space-y-1 text-sm text-muted-foreground'>
-              <li>• 现代化的用户界面设计</li>
-              <li>• 安全的连接管理和密码加密</li>
-              <li>• 强大的查询编辑器和结果展示</li>
-              <li>• 灵活的数据可视化功能</li>
-              <li>• 便捷的数据写入和导入工具</li>
-              <li>• 跨平台支持 (Windows, macOS, Linux)</li>
-            </ul>
-          </Alert>
-        </div>
-      ),
-    },
     {
       key: 'user-guide',
       icon: <Bell className='w-4 h-4' />,
@@ -751,7 +678,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       children: <UpdateSettings />,
     },
     {
-      key: 'about',
+      key: 'about-app',
       icon: <Info className='w-4 h-4' />,
       label: '关于',
       children: (

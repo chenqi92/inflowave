@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { readFromClipboard } from '@/utils/clipboard';
+import { showMessage } from '@/utils/message';
 
 interface DetachedTab {
   id: string;
@@ -107,6 +109,33 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   const handleCloseWithoutSaving = async () => {
     setShowCloseConfirm(false);
     await performClose();
+  };
+
+  // 自定义粘贴处理函数
+  const handleCustomPaste = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      // 桌面应用：使用Tauri剪贴板服务
+      const clipboardText = await readFromClipboard({ showError: false });
+      if (clipboardText) {
+        const selection = editor.getSelection();
+        if (selection) {
+          editor.executeEdits('paste', [{
+            range: selection,
+            text: clipboardText,
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+          return;
+        }
+      }
+
+      // 如果Tauri剪贴板失败，使用Monaco的原生粘贴功能作为备选
+      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+    } catch (error) {
+      console.error('粘贴操作失败:', error);
+      // 降级到Monaco原生粘贴
+      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+    }
   };
 
   const handleReattach = () => {
@@ -307,10 +336,13 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               value={content}
               onChange={handleContentChange}
               onMount={(editor, monaco) => {
+                // 将编辑器转换为独立编辑器类型以支持命令添加
+                const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
+
                 // 添加快捷键支持（不使用右键菜单）
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
                   // 将当前查询内容发送到主窗口执行
-                  const currentQuery = editor.getValue();
+                  const currentQuery = standaloneEditor.getValue();
                   if (currentQuery.trim()) {
                     // 通过postMessage与主窗口通信
                     if (window.opener) {
@@ -324,20 +356,20 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 });
 
                 // 保留基本的编辑快捷键
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
-                  editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+                  standaloneEditor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
                 });
 
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
-                  editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+                  standaloneEditor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
                 });
 
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
-                  editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+                  handleCustomPaste(standaloneEditor);
                 });
 
-                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
-                  editor.trigger('keyboard', 'editor.action.selectAll', null);
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+                  standaloneEditor.trigger('keyboard', 'editor.action.selectAll', null);
                 });
 
                 console.log('✅ DetachedTabWindow 中文右键菜单已添加（包含执行查询）');

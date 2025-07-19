@@ -1290,7 +1290,7 @@ async fn collect_system_metrics() -> Result<(), String> {
     let memory_usage = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
     
     // 获取磁盘和网络统计
-    let (disk_read, disk_write) = if let Some(disk) = sys.disks().first() {
+    let (disk_read, disk_write) = if let Some(_disk) = sys.disks().first() {
         (0u64, 0u64) // sysinfo 不直接提供读写字节数，需要其他方法
     } else {
         (0u64, 0u64)
