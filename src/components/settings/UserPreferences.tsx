@@ -459,6 +459,14 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       }
       
       setPreferences(values);
+
+      // 触发全局状态更新 - 发送自定义事件
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
+          detail: values
+        }));
+      }
+
       showMessage.success('偏好设置已保存');
       onSave?.(values);
     } catch (error) {

@@ -52,6 +52,7 @@ const getUserNotificationPreferences = async () => {
             query_completion: true,
             connection_status: true,
             system_alerts: true,
+            position: 'topRight',
         };
         console.log('返回的通知设置:', notifications);
         return notifications;
@@ -67,6 +68,7 @@ const getUserNotificationPreferences = async () => {
         query_completion: true,
         connection_status: true,
         system_alerts: true,
+        position: 'topRight',
     };
     console.log('使用默认通知设置:', defaultNotifications);
     return defaultNotifications;
@@ -76,11 +78,11 @@ const getUserNotificationPreferences = async () => {
 const sendDesktopNotification = async (title: string, message: string, icon?: string) => {
     try {
         const prefs = await getUserNotificationPreferences();
-        
+
         if (!prefs.enabled || !prefs.desktop) {
             return;
         }
-        
+
         // 桌面应用专用：使用Tauri原生通知
         await safeTauriInvoke('send_notification', {
             notification: {
@@ -95,36 +97,115 @@ const sendDesktopNotification = async (title: string, message: string, icon?: st
     }
 };
 
+// 系统级别消息 - 使用原生系统通知而不是shadcn组件
+export const systemMessage = {
+    success: async (title: string, message: string) => {
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.system_alerts) {
+            await sendDesktopNotification(title, message);
+        }
+    },
+    error: async (title: string, message: string) => {
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.system_alerts) {
+            await sendDesktopNotification(title, message);
+        }
+    },
+    warning: async (title: string, message: string) => {
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.system_alerts) {
+            await sendDesktopNotification(title, message);
+        }
+    },
+    info: async (title: string, message: string) => {
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.system_alerts) {
+            await sendDesktopNotification(title, message);
+        }
+    },
+};
+
 // 创建标准化的 Sonner 配置
-const createToastOptions = (
+const createToastOptions = async (
     duration?: number,
     options?: Partial<ExternalToast>
-): ExternalToast => ({
-    duration: duration ? duration * 1000 : undefined,
-    ...options,
-});
+): Promise<ExternalToast> => {
+    // 动态获取用户偏好设置
+    let position: string = 'bottom-right';
+    let enabled = true;
+
+    try {
+        const prefs = await getUserNotificationPreferences();
+        enabled = prefs.enabled;
+
+        // 转换位置格式
+        const positionMap: Record<string, string> = {
+            'topLeft': 'top-left',
+            'topCenter': 'top-center',
+            'topRight': 'top-right',
+            'bottomLeft': 'bottom-left',
+            'bottomCenter': 'bottom-center',
+            'bottomRight': 'bottom-right',
+        };
+
+        if (prefs.position) {
+            position = positionMap[prefs.position] || 'bottom-right';
+        }
+    } catch (error) {
+        console.warn('获取通知偏好失败，使用默认设置:', error);
+    }
+
+    // 如果通知被禁用，返回一个会被忽略的配置
+    if (!enabled) {
+        return {
+            duration: 0,
+            style: { display: 'none' },
+            ...options,
+        };
+    }
+
+    return {
+        duration: duration ? duration * 1000 : undefined,
+        position: position as any,
+        ...options,
+    };
+};
 
 // 兼容的 message 对象 - 简单消息提示
 const message = {
-    success: (content: string, duration?: number) => {
-        return toast.success(content, createToastOptions(duration));
+    success: async (content: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        return toast.success(content, options);
     },
-    error: (content: string, duration?: number) => {
-        return toast.error(content, createToastOptions(duration));
+    error: async (content: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        return toast.error(content, options);
     },
-    warning: (content: string, duration?: number) => {
-        return toast.warning(content, createToastOptions(duration));
+    warning: async (content: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        return toast.warning(content, options);
     },
-    info: (content: string, duration?: number) => {
-        return toast.info(content, createToastOptions(duration));
+    info: async (content: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        return toast.info(content, options);
     },
-    loading: (content: string, duration?: number) => {
-        return toast.loading(content, createToastOptions(duration));
+    loading: async (content: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        return toast.loading(content, options);
     },
     // 新增：自定义消息
     custom: (content: string, options?: ExternalToast) => {
         return toast(content, options);
     },
+    // Promise 消息
+    promise: <T>(
+        promise: Promise<T>,
+        msgs: {
+            loading: string;
+            success: string | ((data: T) => string);
+            error: string | ((error: any) => string);
+        }
+    ) => toast.promise(promise, msgs),
     // 新增：Promise 消息
     promise: <T>(
         promise: Promise<T>,

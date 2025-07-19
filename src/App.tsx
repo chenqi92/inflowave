@@ -254,10 +254,12 @@ const App: React.FC = () => {
 
   // 获取通知位置设置，如果没有设置则使用默认值
   const getToasterPosition = () => {
+    console.log('获取Toaster位置，当前preferences:', preferences);
     if (!preferences?.notifications?.position) {
+      console.log('使用默认位置: bottom-right');
       return 'bottom-right'; // 默认位置
     }
-    
+
     // 转换用户偏好中的位置值为 Sonner 支持的格式
     const positionMap: Record<string, string> = {
       'topLeft': 'top-left',
@@ -267,8 +269,10 @@ const App: React.FC = () => {
       'bottomCenter': 'bottom-center',
       'bottomRight': 'bottom-right',
     };
-    
-    return positionMap[preferences.notifications.position] || 'bottom-right';
+
+    const position = positionMap[preferences.notifications.position] || 'bottom-right';
+    console.log('计算出的位置:', position, '原始值:', preferences.notifications.position);
+    return position;
   };
 
   return (
