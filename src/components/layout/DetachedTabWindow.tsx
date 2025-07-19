@@ -306,6 +306,76 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={content}
               onChange={handleContentChange}
+              onMount={(editor, monaco) => {
+                // 添加中文右键菜单支持
+                editor.addAction({
+                  id: 'copy-chinese-detached',
+                  label: '复制',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
+                  contextMenuGroupId: 'navigation',
+                  contextMenuOrder: 1,
+                  run: (editor) => {
+                    editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+                  }
+                });
+
+                editor.addAction({
+                  id: 'cut-chinese-detached',
+                  label: '剪切',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
+                  contextMenuGroupId: 'navigation',
+                  contextMenuOrder: 2,
+                  run: (editor) => {
+                    editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+                  }
+                });
+
+                editor.addAction({
+                  id: 'paste-chinese-detached',
+                  label: '粘贴',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
+                  contextMenuGroupId: 'navigation',
+                  contextMenuOrder: 3,
+                  run: (editor) => {
+                    editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+                  }
+                });
+
+                editor.addAction({
+                  id: 'select-all-chinese-detached',
+                  label: '全选',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+                  contextMenuGroupId: 'navigation',
+                  contextMenuOrder: 4,
+                  run: (editor) => {
+                    editor.trigger('keyboard', 'editor.action.selectAll', null);
+                  }
+                });
+
+                editor.addAction({
+                  id: 'execute-query-chinese-detached',
+                  label: '执行查询',
+                  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                  contextMenuGroupId: 'query',
+                  contextMenuOrder: 1,
+                  run: (editor) => {
+                    // 将当前查询内容发送到主窗口执行
+                    const currentQuery = editor.getValue();
+                    if (currentQuery.trim()) {
+                      // 通过postMessage与主窗口通信
+                      if (window.opener) {
+                        window.opener.postMessage({
+                          type: 'execute-query-from-detached',
+                          query: currentQuery,
+                          tabId: tabId
+                        }, '*');
+                      }
+                    }
+                  }
+                });
+
+                console.log('✅ DetachedTabWindow 中文右键菜单已添加（包含执行查询）');
+              }}
               key={resolvedTheme} // 强制重新渲染以应用主题
               options={{
                 minimap: { enabled: false },

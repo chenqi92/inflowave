@@ -309,7 +309,8 @@ pub async fn perform_health_check(
 
 // 辅助函数实现
 async fn get_query_performance_metrics(time_range: &str) -> Result<QueryPerformanceMetrics, String> {
-    // 模拟查询性能数据
+    // TODO: 实现真实的查询性能监控 - 当前使用模拟数据
+    // 应该从 InfluxDB 的 _internal 数据库或监控 API 获取真实数据
     Ok(QueryPerformanceMetrics {
         total_queries: 1250,
         average_execution_time: 245.5,

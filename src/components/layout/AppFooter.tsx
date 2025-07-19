@@ -3,6 +3,7 @@ import { Footer, Text, Separator } from '@/components/ui';
 import { Database, Wifi, Clock, HardDrive } from 'lucide-react';
 import { useConnectionStore } from '@store/connection';
 import dayjs from 'dayjs';
+import { getVersionInfo } from '@/utils/version';
 
 const AppFooter: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(dayjs());
@@ -22,24 +23,47 @@ const AppFooter: React.FC = () => {
     ? connectionStatuses[activeConnectionId]
     : null;
 
-  // 获取内存使用情况 (模拟数据)
-  const getMemoryUsage = () => {
-    // 在实际应用中，这里应该从 Tauri 后端获取真实的内存使用情况
-    return Math.floor(Math.random() * 100) + 50; // MB
-  };
+  // 获取内存使用情况
+  const [memoryUsage, setMemoryUsage] = useState<number | null>(null);
+  
+  useEffect(() => {
+    // 尝试获取真实的内存使用情况
+    const getMemoryUsage = async () => {
+      try {
+        // 检查是否在 Tauri 环境中
+        if (typeof window !== 'undefined' && window.__TAURI__) {
+          // 临时显示为未知，而不是随机数
+          setMemoryUsage(null);
+        } else {
+          // 在开发环境中显示为未知
+          setMemoryUsage(null);
+        }
+      } catch (error) {
+        console.warn('无法获取内存使用情况:', error);
+        setMemoryUsage(null);
+      }
+    };
+    
+    getMemoryUsage();
+    // 每30秒更新一次
+    const interval = setInterval(getMemoryUsage, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Footer className='app-footer'>
       <div className='flex items-center justify-between px-2 py-1'>
         {/* 左侧 - 应用信息 */}
         <div className='flex items-center gap-4'>
-          <Text className='text-xs text-muted-foreground'>InfluxDB GUI Manager v0.1.0</Text>
+          <Text className='text-xs text-muted-foreground'>{getVersionInfo().fullName}</Text>
 
           <Separator orientation="vertical" className="h-4" />
 
           <div className='flex items-center gap-2'>
             <HardDrive className='w-4 h-4 text-muted-foreground' />
-            <Text className='text-xs text-muted-foreground'>内存: {getMemoryUsage()}MB</Text>
+            <Text className='text-xs text-muted-foreground'>
+              内存: {memoryUsage !== null ? `${memoryUsage}MB` : '-- MB'}
+            </Text>
           </div>
         </div>
 

@@ -862,6 +862,32 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         loadDatabases();
       };
 
+      const handleMessageFromDetached = (event: MessageEvent) => {
+        // 处理来自独立窗口的消息
+        if (event.data && event.data.type === 'execute-query-from-detached') {
+          const { query, tabId } = event.data;
+          console.log('📥 收到来自独立窗口的执行查询请求:', { query: query.substring(0, 50) + '...', tabId });
+
+          // 找到对应的tab并更新内容
+          const targetTab = tabs.find(tab => tab.id === tabId);
+          if (targetTab) {
+            // 更新tab内容
+            const updatedTabs = tabs.map(tab =>
+              tab.id === tabId ? { ...tab, content: query } : tab
+            );
+            setTabs(updatedTabs);
+
+            // 切换到该tab
+            setActiveKey(tabId);
+
+            // 执行查询
+            setTimeout(() => {
+              executeQuery();
+            }, 100); // 稍微延迟以确保状态更新完成
+          }
+        }
+      };
+
       // 添加事件监听
       document.addEventListener('load-file-content', handleLoadFileContent);
       document.addEventListener('save-current-query', handleSaveCurrentQuery);
@@ -870,6 +896,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       document.addEventListener('show-import-dialog', handleShowImportDialog);
       document.addEventListener('execute-query', handleExecuteQuery);
       document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+      window.addEventListener('message', handleMessageFromDetached);
 
       // 清理事件监听
       return () => {
@@ -880,6 +907,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         document.removeEventListener('show-import-dialog', handleShowImportDialog);
         document.removeEventListener('execute-query', handleExecuteQuery);
         document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+        window.removeEventListener('message', handleMessageFromDetached);
       };
     }, [activeConnectionId, selectedDatabase, tabs, activeKey]);
 
@@ -1569,6 +1597,109 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         attributes: true,
         attributeFilter: ['data-theme', 'class']
       });
+
+      // 添加中文右键菜单支持
+      editor.addAction({
+        id: 'copy-chinese',
+        label: '复制',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 1,
+        run: (editor) => {
+          editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'cut-chinese',
+        label: '剪切',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 2,
+        run: (editor) => {
+          editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'paste-chinese',
+        label: '粘贴',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 3,
+        run: (editor) => {
+          editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'select-all-chinese',
+        label: '全选',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+        contextMenuGroupId: 'navigation',
+        contextMenuOrder: 4,
+        run: (editor) => {
+          editor.trigger('keyboard', 'editor.action.selectAll', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'undo-chinese',
+        label: '撤销',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ],
+        contextMenuGroupId: 'edit',
+        contextMenuOrder: 1,
+        run: (editor) => {
+          editor.trigger('keyboard', 'undo', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'redo-chinese',
+        label: '重做',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY],
+        contextMenuGroupId: 'edit',
+        contextMenuOrder: 2,
+        run: (editor) => {
+          editor.trigger('keyboard', 'redo', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'find-chinese',
+        label: '查找',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF],
+        contextMenuGroupId: 'edit',
+        contextMenuOrder: 3,
+        run: (editor) => {
+          editor.trigger('keyboard', 'actions.find', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'replace-chinese',
+        label: '替换',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH],
+        contextMenuGroupId: 'edit',
+        contextMenuOrder: 4,
+        run: (editor) => {
+          editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
+        }
+      });
+
+      editor.addAction({
+        id: 'execute-query-chinese',
+        label: '执行查询',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+        contextMenuGroupId: 'query',
+        contextMenuOrder: 1,
+        run: (editor) => {
+          // 执行当前编辑器中的SQL查询
+          executeQuery();
+        }
+      });
+
+      console.log('✅ 中文右键菜单已添加（包含执行查询）');
 
       // 清理函数
       return () => {

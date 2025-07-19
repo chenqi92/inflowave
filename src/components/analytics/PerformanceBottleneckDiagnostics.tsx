@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import SimpleChart from '@/components/common/SimpleChart';
 import {
   Card,
   CardContent,
@@ -509,6 +510,40 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
+  // 生成示例图表数据 - TODO: 替换为真实的系统监控数据
+  const generateSampleChartData = (type: 'cpu-memory' | 'disk-network') => {
+    const now = new Date();
+    const data = [];
+    
+    for (let i = 23; i >= 0; i--) {
+      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
+      
+      if (type === 'cpu-memory') {
+        data.push({
+          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          'CPU使用率(%)': Math.floor(Math.random() * 80 + 10),
+          '内存使用率(%)': Math.floor(Math.random() * 70 + 20),
+        });
+      } else {
+        data.push({
+          时间: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          '磁盘读取(MB/s)': Math.floor(Math.random() * 100 + 10),
+          '磁盘写入(MB/s)': Math.floor(Math.random() * 80 + 5),
+          '网络入站(MB/s)': Math.floor(Math.random() * 50 + 5),
+          '网络出站(MB/s)': Math.floor(Math.random() * 40 + 3),
+        });
+      }
+    }
+    
+    return {
+      timeColumn: '时间',
+      valueColumns: type === 'cpu-memory' 
+        ? ['CPU使用率(%)', '内存使用率(%)'] 
+        : ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+      data,
+    };
+  };
+
   // 格式化文件大小
   const formatBytes = (bytes: number): string => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -960,11 +995,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>CPU和内存使用率趋势</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='h-[200px] flex items-center justify-center bg-muted/20 rounded'>
-                <Text className='text-muted-foreground'>
-                  CPU和内存使用率趋势图
-                </Text>
-              </div>
+              <SimpleChart
+                data={generateSampleChartData('cpu-memory')}
+                type="line"
+                height={200}
+              />
             </CardContent>
           </Card>
           <Card>
@@ -972,11 +1007,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>磁盘和网络I/O趋势</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='h-[200px] flex items-center justify-center bg-muted/20 rounded'>
-                <Text className='text-muted-foreground'>
-                  磁盘和网络I/O趋势图
-                </Text>
-              </div>
+              <SimpleChart
+                data={generateSampleChartData('disk-network')}
+                type="line"
+                height={200}
+              />
             </CardContent>
           </Card>
         </div>

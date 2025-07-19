@@ -11,6 +11,7 @@ import {
 import { Wifi, Clock, Globe, Zap, HardDrive } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useConnectionStore } from '@/store/connection';
+import { getAppVersion } from '@/utils/version';
 
 const { Text } = Typography;
 
@@ -37,11 +38,37 @@ const AppStatusBar: React.FC = () => {
     ? connectionStatuses[activeConnectionId]
     : null;
 
-  // 获取内存使用情况 (模拟数据)
-  const getMemoryUsage = () => {
-    // 在实际应用中，这里应该从 Tauri 后端获取真实的内存使用情况
-    return Math.floor(Math.random() * 100) + 50; // MB
-  };
+  // 获取内存使用情况
+  const [memoryUsage, setMemoryUsage] = useState<number | null>(null);
+  
+  useEffect(() => {
+    // 尝试获取真实的内存使用情况
+    const getMemoryUsage = async () => {
+      try {
+        // 检查是否在 Tauri 环境中
+        if (typeof window !== 'undefined' && window.__TAURI__) {
+          // 可以调用 Tauri API 获取系统信息
+          // const { invoke } = window.__TAURI__.tauri;
+          // const memory = await invoke('get_memory_usage');
+          // setMemoryUsage(memory);
+          
+          // 临时显示为未知，而不是随机数
+          setMemoryUsage(null);
+        } else {
+          // 在开发环境中显示为未知
+          setMemoryUsage(null);
+        }
+      } catch (error) {
+        console.warn('无法获取内存使用情况:', error);
+        setMemoryUsage(null);
+      }
+    };
+    
+    getMemoryUsage();
+    // 每30秒更新一次
+    const interval = setInterval(getMemoryUsage, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
 
   return (
@@ -108,7 +135,9 @@ const AppStatusBar: React.FC = () => {
               <TooltipTrigger asChild>
                 <div className='flex items-center gap-1'>
                   <HardDrive className='w-3 h-3 text-blue-500' />
-                  <Text className='text-xs'>{getMemoryUsage()}MB</Text>
+                  <Text className='text-xs'>
+                    {memoryUsage !== null ? `${memoryUsage}MB` : '-- MB'}
+                  </Text>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -123,7 +152,7 @@ const AppStatusBar: React.FC = () => {
               <TooltipTrigger asChild>
                 <div className='flex items-center gap-1'>
                   <Globe className='w-3 h-3 text-purple-500' />
-                  <Text className='text-xs'>v0.1.0</Text>
+                  <Text className='text-xs'>v{getAppVersion()}</Text>
                 </div>
               </TooltipTrigger>
               <TooltipContent>

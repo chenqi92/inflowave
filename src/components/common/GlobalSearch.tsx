@@ -108,7 +108,8 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
     setLoading(true);
     try {
-      // 模拟搜索结果，实际应该调用后端API
+      // TODO: 实现真实的搜索功能 - 当前使用模拟数据
+      // 实际应该调用后端API搜索数据库、测量、字段等
       const mockResults: SearchResult[] = [
         // 数据库搜索结果
         {

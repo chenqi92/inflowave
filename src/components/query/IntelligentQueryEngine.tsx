@@ -325,6 +325,76 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
                 value={query}
                 onChange={(value) => setQuery(value || '')}
+                onMount={(editor, monaco) => {
+                  // 添加中文右键菜单支持
+                  editor.addAction({
+                    id: 'copy-chinese-iqe',
+                    label: '复制',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
+                    contextMenuGroupId: 'navigation',
+                    contextMenuOrder: 1,
+                    run: (editor) => {
+                      editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+                    }
+                  });
+
+                  editor.addAction({
+                    id: 'cut-chinese-iqe',
+                    label: '剪切',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
+                    contextMenuGroupId: 'navigation',
+                    contextMenuOrder: 2,
+                    run: (editor) => {
+                      editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+                    }
+                  });
+
+                  editor.addAction({
+                    id: 'paste-chinese-iqe',
+                    label: '粘贴',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
+                    contextMenuGroupId: 'navigation',
+                    contextMenuOrder: 3,
+                    run: (editor) => {
+                      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+                    }
+                  });
+
+                  editor.addAction({
+                    id: 'select-all-chinese-iqe',
+                    label: '全选',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+                    contextMenuGroupId: 'navigation',
+                    contextMenuOrder: 4,
+                    run: (editor) => {
+                      editor.trigger('keyboard', 'editor.action.selectAll', null);
+                    }
+                  });
+
+                  editor.addAction({
+                    id: 'execute-query-chinese-iqe',
+                    label: '执行查询',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                    contextMenuGroupId: 'query',
+                    contextMenuOrder: 1,
+                    run: (editor) => {
+                      // 将当前查询内容设置到主编辑器并执行
+                      const currentQuery = editor.getValue();
+                      if (currentQuery.trim()) {
+                        // 触发执行查询事件，让主编辑器处理
+                        const executeEvent = new CustomEvent('execute-query', {
+                          detail: {
+                            source: 'intelligent-query-engine',
+                            query: currentQuery
+                          }
+                        });
+                        document.dispatchEvent(executeEvent);
+                      }
+                    }
+                  });
+
+                  console.log('✅ IntelligentQueryEngine 中文右键菜单已添加（包含执行查询）');
+                }}
                 options={{
                   minimap: { enabled: false },
                   scrollBeyondLastLine: false,
