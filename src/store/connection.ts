@@ -255,6 +255,17 @@ export const useConnectionStore = create<ConnectionState>()(
       // 连接到数据库
       connectToDatabase: async (id: string) => {
         console.log(`🔗 开始连接数据库: ${id}`);
+
+        // 首先检查连接配置是否存在
+        const connection = get().connections.find(conn => conn.id === id);
+        if (!connection) {
+          const errorMsg = `连接配置不存在: ${id}`;
+          console.error(`❌ ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+
+        console.log(`📋 连接配置: ${connection.name} (${connection.host}:${connection.port})`);
+
         try {
           // 更新状态为连接中
           console.log(`⏳ 设置连接状态为连接中: ${id}`);
@@ -262,14 +273,34 @@ export const useConnectionStore = create<ConnectionState>()(
             connectionStatuses: {
               ...state.connectionStatuses,
               [id]: {
-                ...state.connectionStatuses[id],
+                id,
                 status: 'connecting',
                 error: undefined,
+                lastConnected: state.connectionStatuses[id]?.lastConnected,
+                latency: undefined,
               },
             },
           }));
 
           console.log(`🚀 调用后端连接API: ${id}`);
+
+          // 确保后端有该连接配置
+          try {
+            const backendConnection = await safeTauriInvoke('get_connection', { connectionId: id });
+            if (!backendConnection) {
+              console.log(`🔄 后端连接配置不存在，正在创建: ${id}`);
+              const connectionWithTimestamp = {
+                ...connection,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              await safeTauriInvoke('create_connection', { config: connectionWithTimestamp });
+              console.log(`✨ 后端连接配置创建成功: ${id}`);
+            }
+          } catch (syncError) {
+            console.warn(`⚠️ 连接配置同步检查失败，继续尝试连接: ${syncError}`);
+          }
+
           await safeTauriInvoke('connect_to_database', { connectionId: id });
           console.log(`✅ 后端连接成功: ${id}`);
 

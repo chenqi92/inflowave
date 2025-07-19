@@ -938,14 +938,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const handleConnectionToggle = async (connection_id: string) => {
     const isCurrentlyConnected = isConnectionConnected(connection_id);
     const connection = getConnection(connection_id);
+    const currentStatus = getConnectionStatus(connection_id);
 
     if (!connection) {
       showMessage.error('连接配置不存在');
       return;
     }
 
+    // 检查是否正在连接中，避免重复操作
+    if (currentStatus?.status === 'connecting') {
+      console.log(`⏳ 连接 ${connection.name} 正在连接中，跳过操作`);
+      showMessage.warning(`连接 ${connection.name} 正在连接中，请稍候...`);
+      return;
+    }
+
     console.log(
-      `🔄 开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`
+      `🔄 开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`,
+      { connectionId: connection_id, currentStatus: currentStatus?.status }
     );
 
     // 设置该连接的loading状态
@@ -957,10 +966,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     try {
       if (isCurrentlyConnected) {
         // 断开连接
+        console.log(`🔌 断开连接: ${connection.name}`);
         await disconnectFromDatabase(connection_id);
         showMessage.success(`已断开连接: ${connection.name}`);
       } else {
         // 建立连接
+        console.log(`🔗 建立连接: ${connection.name}`);
         await connectToDatabase(connection_id);
         showMessage.success(`已连接: ${connection.name}`);
       }
@@ -968,7 +979,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       console.log(`✅ 连接操作完成: ${connection.name}`);
     } catch (error) {
       console.error(`❌ 连接操作失败:`, error);
-      showMessage.error(`连接操作失败: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      showMessage.error(`连接操作失败: ${errorMessage}`);
+
+      // 确保错误状态被正确设置
+      console.log(`🔄 确保错误状态被设置: ${connection_id}`);
     } finally {
       // 清除loading状态
       setConnectionLoadingStates(prev => {
@@ -1033,10 +1048,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const { node } = info;
     const key = node.key;
 
+    console.log(`🖱️ 双击节点: ${key}`, { nodeTitle: node.title });
+
+    // 双击时立即关闭右键菜单，避免菜单状态冲突
+    if (contextMenuOpen) {
+      setContextMenuOpen(false);
+    }
+
     if (String(key).startsWith('connection-')) {
       // 连接节点被双击，切换连接状态
       const connectionId = String(key).replace('connection-', '');
-      handleConnectionToggle(connectionId);
+      const connection = getConnection(connectionId);
+
+      if (!connection) {
+        console.error(`❌ 双击连接失败: 连接配置不存在 ${connectionId}`);
+        showMessage.error(`连接配置不存在: ${connectionId}`);
+        return;
+      }
+
+      console.log(`🔄 双击连接: ${connection.name} (${connectionId})`);
+      await handleConnectionToggle(connectionId);
     } else if (String(key).startsWith('database-')) {
       // 数据库节点被双击
       const parts = String(key).split('-');
@@ -1250,7 +1281,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     if (target) {
       setContextMenuTarget(target);
-      setContextMenuOpen(true);
+      // 延迟打开菜单，避免与双击事件冲突
+      setTimeout(() => setContextMenuOpen(true), 100);
     }
   };
 
@@ -2003,23 +2035,24 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 <Spin tip='加载中...' />
               </div>
             ) : treeData.length > 0 ? (
-              <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <div className="w-full">
-                    <Tree
-                      showIcon
-                      showLine
-                      treeData={filterTreeData(treeData)}
-                      expandedKeys={expandedKeys.map(String)}
-                      onExpand={handleExpand}
-                      onSelect={handleSelect}
-                      onDoubleClick={handleDoubleClick}
-                      onRightClick={handleRightClick}
-                      className='bg-transparent database-explorer-tree'
-                    />
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
+              <div className="relative w-full">
+                <Tree
+                  showIcon
+                  showLine
+                  treeData={filterTreeData(treeData)}
+                  expandedKeys={expandedKeys.map(String)}
+                  onExpand={handleExpand}
+                  onSelect={handleSelect}
+                  onDoubleClick={handleDoubleClick}
+                  onRightClick={handleRightClick}
+                  className='bg-transparent database-explorer-tree'
+                />
+
+                <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <div className="hidden" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48">
                   {contextMenuTarget && (
                     <>
                       {contextMenuTarget.type === 'connection' && (
@@ -2108,8 +2141,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                       )}
                     </>
                   )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <Card className='text-center text-muted-foreground mt-8'>
                 <CardContent className='pt-6'>
