@@ -16,13 +16,10 @@ import {
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import type { Column } from '@/components/ui/DataTable';
 import {
-  Settings,
   Trash2,
   Edit,
   Eye,
   Wifi,
-  PlayCircle,
-  PauseCircle,
   RefreshCw,
   Plus,
   CheckCircle,
@@ -540,55 +537,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             </div>
           </div>
 
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <Settings className='w-4 h-4 text-muted-foreground' />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>总连接</p>
-                <p className='font-semibold'>{connections.length}</p>
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <Wifi className='w-4 h-4 text-success' />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>已连接</p>
-                <p className='font-semibold text-success'>
-                  {
-                    Object.values(connectionStatuses).filter(
-                      s => s.status === 'connected'
-                    ).length
-                  }
-                </p>
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <div
-                className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`}
-              />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>监控状态</p>
-                <p
-                  className={`font-semibold ${monitoringActive ? 'text-success' : 'text-muted-foreground'}`}
-                >
-                  {monitoringActive ? '运行中' : '已停止'}
-                </p>
-                {monitoringActive && (
-                  <p className='text-xs text-success'>自动检查连接状态</p>
-                )}
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <div className='w-4 h-4 rounded bg-primary/10 flex items-center justify-center'>
-                <span className='text-xs text-primary font-medium'>
-                  {monitoringInterval}
-                </span>
-              </div>
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>监控间隔</p>
-                <p className='font-semibold'>{monitoringInterval}秒</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

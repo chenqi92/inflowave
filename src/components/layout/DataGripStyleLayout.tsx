@@ -97,6 +97,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [executionTime, setExecutionTime] = useState<number>(0);
   const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
   const [showQueryHistory, setShowQueryHistory] = useState(false);
+  const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]);
 
   // 手动打开查询历史的方法
   const openQueryHistory = useCallback(() => {
@@ -414,6 +415,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     }
                   }}
                   onActiveTabTypeChange={setActiveTabType}
+                  expandedDatabases={expandedDatabases}
                   currentTimeRange={currentTimeRange}
                   ref={tabEditorRef as any}
                 />
@@ -509,6 +511,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 onCreateQueryTab={handleCreateQueryTab}
                 onViewChange={handleViewChange}
                 onGetCurrentView={getCurrentView}
+                onExpandedDatabasesChange={setExpandedDatabases}
                 currentTimeRange={currentTimeRange}
               />
             </div>
