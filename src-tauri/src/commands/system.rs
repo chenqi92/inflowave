@@ -195,24 +195,7 @@ pub async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
     }
 }
 
-/// 检查更新
-#[tauri::command]
-pub async fn check_for_updates() -> Result<serde_json::Value, String> {
-    debug!("检查应用更新");
 
-    // 这里应该实现真正的更新检查逻辑
-    // 目前返回模拟数据
-    let update_info = serde_json::json!({
-        "has_update": false,
-        "current_version": env!("CARGO_PKG_VERSION"),
-        "latest_version": env!("CARGO_PKG_VERSION"),
-        "update_url": env!("CARGO_PKG_REPOSITORY"),
-        "release_notes": "当前已是最新版本",
-        "checked_at": chrono::Utc::now()
-    });
-
-    Ok(update_info)
-}
 
 /// 文件对话框结果结构
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

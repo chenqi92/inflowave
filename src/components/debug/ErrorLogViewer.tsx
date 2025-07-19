@@ -42,6 +42,8 @@ import {
   ChevronDown,
   Copy,
   Terminal,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
@@ -76,6 +78,10 @@ const ErrorLogViewer: React.FC = () => {
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50); // 每页显示50条记录
 
   // 合并应用日志和控制台日志
   const mergeErrorLogs = (appLogs: ErrorLogEntry[], consoleLogs: ConsoleLogEntry[]): UnifiedErrorLog[] => {
@@ -275,7 +281,25 @@ const ErrorLogViewer: React.FC = () => {
     }
 
     setFilteredLogs(filtered);
+    // 重置到第一页当过滤条件改变时
+    setCurrentPage(1);
   }, [unifiedLogs, searchText, levelFilter, typeFilter, sourceFilter]);
+
+  // 计算分页数据
+  const totalPages = Math.ceil(filteredLogs.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+  // 分页控制函数
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToPrevPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
 
   // 清除错误日志
   const clearLogs = async () => {
@@ -521,7 +545,7 @@ const ErrorLogViewer: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.map(log => (
+                {paginatedLogs.map(log => (
                   <TableRow key={log.id}>
                     <TableCell className='text-xs'>
                       {new Date(log.timestamp).toLocaleString()}
@@ -594,6 +618,120 @@ const ErrorLogViewer: React.FC = () => {
             </Table>
           </ScrollArea>
         </CardContent>
+
+        {/* 分页控件 */}
+        {filteredLogs.length > 0 && (
+          <div className='flex items-center justify-between px-6 py-4 border-t'>
+            <div className='flex items-center gap-4'>
+              <span className='text-sm text-muted-foreground'>
+                显示 {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} 条，共 {filteredLogs.length} 条
+              </span>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className='w-20'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='25'>25</SelectItem>
+                  <SelectItem value='50'>50</SelectItem>
+                  <SelectItem value='100'>100</SelectItem>
+                  <SelectItem value='200'>200</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className='text-sm text-muted-foreground'>条/页</span>
+            </div>
+
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={goToPrevPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className='w-4 h-4' />
+                上一页
+              </Button>
+
+              <div className='flex items-center gap-1'>
+                {/* 页码显示逻辑 */}
+                {totalPages <= 7 ? (
+                  // 总页数少于等于7页，显示所有页码
+                  Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))
+                ) : (
+                  // 总页数大于7页，显示省略号
+                  <>
+                    <Button
+                      variant={currentPage === 1 ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(1)}
+                    >
+                      1
+                    </Button>
+
+                    {currentPage > 4 && <span className='px-2'>...</span>}
+
+                    {Array.from(
+                      { length: Math.min(5, totalPages - 2) },
+                      (_, i) => {
+                        const page = Math.max(2, Math.min(currentPage - 2, totalPages - 4)) + i;
+                        return page;
+                      }
+                    )
+                      .filter(page => page > 1 && page < totalPages)
+                      .map(page => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size='sm'
+                          className='w-8 h-8 p-0'
+                          onClick={() => goToPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+
+                    {currentPage < totalPages - 3 && <span className='px-2'>...</span>}
+
+                    <Button
+                      variant={currentPage === totalPages ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                下一页
+                <ChevronRight className='w-4 h-4' />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* 错误详情对话框 */}

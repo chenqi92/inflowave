@@ -69,7 +69,7 @@ const ControllerSettings: React.FC = () => {
     setLoading(true);
     try {
       await safeTauriInvoke('update_controller_settings', {
-        controller_settings: values,
+        controllerSettings: values,
       });
 
       setSettings(values);

@@ -1,4 +1,4 @@
-# Cargo 配置文件，用于优化构建性能和处理超时问题
+# Cargo 配置文件，用于优化构建性能和处理跨编译问题
 
 [build]
 # 增加并行编译任务数
@@ -21,15 +21,42 @@ low-speed-limit = 10      # 10 bytes/sec
 multiplexing = true
 user-agent = "cargo"
 
+# 环境变量配置 - 解决 glib-sys 跨编译问题
+[env]
+PKG_CONFIG_ALLOW_CROSS = { value = "1", relative = true }
+
 # 目标配置
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "target-cpu=native"]
 
 [target.x86_64-unknown-linux-gnu]
 rustflags = ["-C", "target-cpu=native"]
+# Linux 专用环境变量
+[target.x86_64-unknown-linux-gnu.env]
+PKG_CONFIG_ALLOW_CROSS = "1"
+PKG_CONFIG_PATH = "/usr/lib/pkgconfig:/usr/share/pkgconfig"
 
 [target.x86_64-apple-darwin]
 rustflags = ["-C", "target-cpu=native"]
 
 [target.aarch64-apple-darwin]
 rustflags = ["-C", "target-cpu=native"]
+
+# ARM64 Linux 跨编译配置
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+rustflags = ["-C", "target-cpu=generic"]
+[target.aarch64-unknown-linux-gnu.env]
+PKG_CONFIG_ALLOW_CROSS = "1"
+PKG_CONFIG_PATH = "/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+PKG_CONFIG_SYSROOT_DIR = "/"
+CC = "aarch64-linux-gnu-gcc"
+CXX = "aarch64-linux-gnu-g++"
+AR = "aarch64-linux-gnu-ar"
+
+# 专门为 32 位 Linux 目标添加配置（如果需要）
+[target.i686-unknown-linux-gnu]
+rustflags = ["-C", "target-cpu=native"]
+[target.i686-unknown-linux-gnu.env]
+PKG_CONFIG_ALLOW_CROSS = "1"
+PKG_CONFIG_PATH = "/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig"

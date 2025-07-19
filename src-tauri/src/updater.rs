@@ -74,28 +74,61 @@ pub fn compare_versions(current: &str, latest: &str) -> Result<i32> {
 /// 从GitHub API获取最新版本信息
 async fn fetch_latest_release() -> Result<GitHubRelease> {
     let client = reqwest::Client::new();
-    
-    let response = client
+
+    // 首先尝试获取 latest release
+    let latest_response = client
         .get(&format!("{}/latest", GITHUB_API_URL))
         .header("User-Agent", USER_AGENT)
         .header("Accept", "application/vnd.github.v3+json")
         .send()
         .await
-        .context("Failed to fetch release information")?;
+        .context("Failed to fetch latest release information")?;
 
-    if !response.status().is_success() {
-        return Err(anyhow::anyhow!(
-            "GitHub API request failed with status: {}", 
-            response.status()
-        ));
+    if latest_response.status().is_success() {
+        let release: GitHubRelease = latest_response
+            .json()
+            .await
+            .context("Failed to parse latest release JSON")?;
+        return Ok(release);
     }
 
-    let release: GitHubRelease = response
-        .json()
-        .await
-        .context("Failed to parse release JSON")?;
+    // 如果 latest 端点失败（404），尝试获取所有 releases 并选择最新的
+    if latest_response.status() == 404 {
+        let all_releases_response = client
+            .get(GITHUB_API_URL)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/vnd.github.v3+json")
+            .send()
+            .await
+            .context("Failed to fetch all releases")?;
 
-    Ok(release)
+        if !all_releases_response.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "GitHub API request failed with status: {}",
+                all_releases_response.status()
+            ));
+        }
+
+        let releases: Vec<GitHubRelease> = all_releases_response
+            .json()
+            .await
+            .context("Failed to parse releases JSON")?;
+
+        // 找到最新的非预发布版本
+        let latest_release = releases
+            .into_iter()
+            .filter(|r| !r.prerelease && !r.draft)
+            .max_by(|a, b| a.published_at.cmp(&b.published_at))
+            .ok_or_else(|| anyhow::anyhow!("No stable releases found"))?;
+
+        return Ok(latest_release);
+    }
+
+    // 其他错误
+    Err(anyhow::anyhow!(
+        "GitHub API request failed with status: {}",
+        latest_response.status()
+    ))
 }
 
 /// 检查是否有可用更新

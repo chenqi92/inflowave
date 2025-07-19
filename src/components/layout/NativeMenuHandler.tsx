@@ -265,9 +265,11 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   const handleCheckUpdates = async () => {
     try {
-      const result = await safeTauriInvoke('check_for_updates');
-      if (result.hasUpdate) {
-        showMessage.info(`发现新版本: ${result.version}`);
+      const result = await safeTauriInvoke('check_for_app_updates');
+      if (result.available && !result.is_skipped) {
+        showMessage.info(`发现新版本: ${result.latest_version}`);
+      } else if (result.is_skipped) {
+        showMessage.info(`版本 ${result.latest_version} 已被跳过`);
       } else {
         showMessage.success('您使用的是最新版本');
       }
