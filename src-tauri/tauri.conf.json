@@ -27,10 +27,6 @@
         "theme": null,
         "maximized": false,
         "visible": true,
-        "titleBarStyle": "Transparent",
-        "hiddenTitle": false,
-        "acceptFirstMouse": true,
-        "tabbingIdentifier": "main",
         "shadow": true
       }
     ],

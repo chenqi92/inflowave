@@ -74,6 +74,7 @@ interface DatabaseExplorerProps {
   onCreateQueryTab?: (query?: string, database?: string) => void; // 创建查询标签页回调
   onViewChange?: (view: string) => void; // 视图切换回调
   onGetCurrentView?: () => string; // 获取当前视图回调
+  onExpandedDatabasesChange?: (databases: string[]) => void; // 新增：通知已展开的数据库列表变化
   currentTimeRange?: {
     label: string;
     value: string;
@@ -101,6 +102,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   onCreateQueryTab,
   onViewChange,
   onGetCurrentView,
+  onExpandedDatabasesChange,
   currentTimeRange,
 }) => {
   const {
@@ -448,7 +450,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           connectionNode.children = databases.map(db => {
             const dbPath = `${connection.id}/${db}`;
             const isFav = isFavorite(dbPath);
-            return {
+            const databaseKey = `database-${connection.id}-${db}`;
+            const isExpanded = expandedKeys.includes(databaseKey);
+
+            const nodeData: any = {
               title: (
                 <span className='flex items-center gap-1'>
                   {db}
@@ -457,12 +462,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   )}
                 </span>
               ),
-              key: `database-${connection.id}-${db}`,
-              icon: <Database className='w-4 h-4 text-purple-600' />,
-              isLeaf: false,
-              children: [], // 空数组表示有子节点但未加载
-              // 延迟加载表数据
+              key: databaseKey,
+              // 根据展开状态设置图标颜色：未展开为灰色，已展开为紫色
+              icon: <Database className={`w-4 h-4 ${isExpanded ? 'text-purple-600' : 'text-muted-foreground'}`} />,
             };
+
+            if (isExpanded) {
+              // 已展开的数据库：设置为非叶子节点，有children数组
+              nodeData.isLeaf = false;
+              nodeData.children = [];
+            } else {
+              // 未展开的数据库：设置为叶子节点，不设置children属性
+              nodeData.isLeaf = true;
+              // 不设置children属性，这样Tree组件就不会显示展开按钮
+            }
+
+            return nodeData;
           });
         } catch (error) {
           console.error('❌ 加载数据库失败:', error);
@@ -895,9 +910,48 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     return [];
   };
 
+  // 获取已展开的数据库列表
+  const getExpandedDatabases = useCallback(() => {
+    const expandedDatabases: string[] = [];
+    expandedKeys.forEach(key => {
+      const keyStr = String(key);
+      if (keyStr.startsWith('database-')) {
+        const parts = keyStr.split('-');
+        if (parts.length >= 3) {
+          const database = parts[2];
+          if (!expandedDatabases.includes(database)) {
+            expandedDatabases.push(database);
+          }
+        }
+      }
+    });
+    return expandedDatabases;
+  }, [expandedKeys]);
+
+  // 监听展开状态变化，通知父组件
+  useEffect(() => {
+    if (onExpandedDatabasesChange) {
+      const expandedDatabases = getExpandedDatabases();
+      onExpandedDatabasesChange(expandedDatabases);
+    }
+  }, [expandedKeys, onExpandedDatabasesChange, getExpandedDatabases]);
+
   // 处理树节点展开
   const handleExpand = (expandedKeysValue: React.Key[]) => {
+    const oldExpandedKeys = expandedKeys;
     setExpandedKeys(expandedKeysValue);
+
+    // 检查是否有数据库节点的展开状态发生变化
+    const oldDatabaseKeys = oldExpandedKeys.filter(key => String(key).startsWith('database-'));
+    const newDatabaseKeys = expandedKeysValue.filter(key => String(key).startsWith('database-'));
+
+    if (oldDatabaseKeys.length !== newDatabaseKeys.length ||
+        !oldDatabaseKeys.every(key => newDatabaseKeys.includes(key))) {
+      // 数据库展开状态发生变化，需要重新构建树形数据以更新图标和按钮显示
+      setTimeout(() => {
+        buildTreeData();
+      }, 100);
+    }
   };
 
   // 处理连接操作
@@ -990,23 +1044,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const connectionId = String(key).replace('connection-', '');
       handleConnectionToggle(connectionId);
     } else if (String(key).startsWith('database-')) {
-      // 数据库节点被双击，切换到查询面板并选中该数据库
+      // 数据库节点被双击
       const parts = String(key).split('-');
       if (parts.length >= 3) {
         const connectionId = parts[1];
         const database = parts[2];
+        const databaseKey = `database-${connectionId}-${database}`;
 
-        // 先切换到查询面板
-        if (onViewChange) {
-          onViewChange('query');
-        }
+        // 检查数据库是否已经展开
+        const isDatabaseExpanded = expandedKeys.includes(databaseKey);
 
-        // 创建新的查询标签页并选中该数据库
-        if (onCreateQueryTab) {
-          onCreateQueryTab('', database);
-          showMessage.info(`已切换到查询面板并选中数据库 "${database}"`);
+        if (!isDatabaseExpanded) {
+          // 如果数据库未展开，则展开数据库（加载表列表）
+          const newExpandedKeys = [...expandedKeys, databaseKey];
+          setExpandedKeys(newExpandedKeys);
+          showMessage.info(`正在加载数据库 "${database}" 的表列表...`);
+
+          // 触发树形数据重新构建，以更新图标颜色和展开按钮显示状态
+          setTimeout(() => {
+            buildTreeData();
+          }, 100);
         } else {
-          showMessage.info(`正在切换到查询面板，数据库: "${database}"`);
+          // 如果数据库已经展开，则创建新的查询标签页并选中该数据库
+          if (onViewChange) {
+            onViewChange('query');
+          }
+
+          if (onCreateQueryTab) {
+            onCreateQueryTab('', database);
+            showMessage.info(`已切换到查询面板并选中数据库 "${database}"`);
+          } else {
+            showMessage.info(`正在切换到查询面板，数据库: "${database}"`);
+          }
         }
       }
     } else if (String(key).startsWith('table-')) {
@@ -1120,10 +1189,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 显示数据库的右键菜单
   const showDatabaseContextMenu = (event: React.MouseEvent | null, dbInfo: { connectionId: string; database: string }) => {
     console.log('数据库右键菜单:', dbInfo);
-    
-    // 暂时使用 alert 来模拟
-    if (window.confirm('是否打开数据库设计器?')) {
-      openDatabaseDesigner(dbInfo);
+
+    // 创建右键菜单选项
+    const menuOptions = [
+      '新建查询',
+      '打开数据库设计器',
+      '取消'
+    ];
+
+    const choice = window.prompt(
+      `选择操作:\n${menuOptions.map((option, index) => `${index + 1}. ${option}`).join('\n')}\n\n请输入选项编号 (1-${menuOptions.length}):`
+    );
+
+    const choiceNum = parseInt(choice || '0');
+
+    switch (choiceNum) {
+      case 1:
+        // 新建查询
+        if (onViewChange) {
+          onViewChange('query');
+        }
+        if (onCreateQueryTab) {
+          onCreateQueryTab('', dbInfo.database);
+          showMessage.info(`已创建新查询并选中数据库 "${dbInfo.database}"`);
+        }
+        break;
+      case 2:
+        // 打开数据库设计器
+        openDatabaseDesigner(dbInfo);
+        break;
+      default:
+        // 取消或无效选择
+        break;
     }
   };
 

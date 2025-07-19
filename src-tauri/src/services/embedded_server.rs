@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::oneshot;
 use log::{info, error};
 use serde::{Serialize, Deserialize};
+use anyhow::{anyhow, Error};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerConfig {
@@ -47,9 +48,9 @@ impl EmbeddedServer {
     }
 
     /// 启动嵌入式服务器
-    pub async fn start(&self) -> Result<u16, anyhow::Error> {
+    pub async fn start(&self) -> Result<u16, Error> {
         if !self.config.enabled {
-            return Err(anyhow::anyhow!("嵌入式服务器未启用"));
+            return Err(anyhow!("嵌入式服务器未启用"));
         }
 
         // 检查是否已经运行
@@ -99,7 +100,7 @@ impl EmbeddedServer {
     }
 
     /// 停止嵌入式服务器
-    pub fn stop(&self) -> Result<(), anyhow::Error> {
+    pub fn stop(&self) -> Result<(), Error> {
         let mut handle = self.server_handle.lock().unwrap();
         if let Some(server_handle) = handle.take() {
             let _ = server_handle.shutdown_tx.send(());
@@ -120,7 +121,7 @@ impl EmbeddedServer {
     }
 
     /// 重启服务器（处理端口冲突时使用）
-    pub async fn restart(&self) -> Result<u16, anyhow::Error> {
+    pub async fn restart(&self) -> Result<u16, Error> {
         self.stop()?;
         
         // 等待一下确保端口释放
@@ -134,7 +135,7 @@ impl EmbeddedServer {
         port: u16,
         features: Vec<String>,
         mut shutdown_rx: oneshot::Receiver<()>,
-    ) -> Result<(), anyhow::Error> {
+    ) -> Result<(), Error> {
         info!("启动嵌入式服务器，端口: {}, 功能: {:?}", port, features);
 
         // 这里是一个简单的示例实现
@@ -176,7 +177,7 @@ lazy_static::lazy_static! {
 }
 
 /// 初始化嵌入式服务器
-pub fn init_embedded_server(config: ServerConfig) -> Result<(), anyhow::Error> {
+pub fn init_embedded_server(config: ServerConfig) -> Result<(), Error> {
     let server = EmbeddedServer::new(config);
     *EMBEDDED_SERVER.lock().unwrap() = Some(server);
     Ok(())
@@ -188,16 +189,16 @@ pub fn get_embedded_server() -> Option<EmbeddedServer> {
 }
 
 /// 启动嵌入式服务器
-pub async fn start_embedded_server() -> Result<u16, anyhow::Error> {
+pub async fn start_embedded_server() -> Result<u16, Error> {
     if let Some(server) = get_embedded_server() {
         server.start().await
     } else {
-        Err(anyhow::anyhow!("嵌入式服务器未初始化"))
+        Err(anyhow!("嵌入式服务器未初始化"))
     }
 }
 
 /// 停止嵌入式服务器
-pub fn stop_embedded_server() -> Result<(), anyhow::Error> {
+pub fn stop_embedded_server() -> Result<(), Error> {
     if let Some(server) = get_embedded_server() {
         server.stop()
     } else {
@@ -206,10 +207,10 @@ pub fn stop_embedded_server() -> Result<(), anyhow::Error> {
 }
 
 /// 重启嵌入式服务器
-pub async fn restart_embedded_server() -> Result<u16, anyhow::Error> {
+pub async fn restart_embedded_server() -> Result<u16, Error> {
     if let Some(server) = get_embedded_server() {
         server.restart().await
     } else {
-        Err(anyhow::anyhow!("嵌入式服务器未初始化"))
+        Err(anyhow!("嵌入式服务器未初始化"))
     }
 }

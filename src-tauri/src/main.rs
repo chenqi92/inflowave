@@ -37,56 +37,58 @@ use updater::*;
 use services::ConnectionService;
 use utils::encryption::create_encryption_service;
 
-// 创建原生菜单 - 完整的专业化菜单
+// 创建原生菜单 - 完整的专业化菜单，支持跨平台
 fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
-    // 文件菜单
+    info!("为平台创建原生菜单: {}", std::env::consts::OS);
+    // 文件菜单 - 使用平台特定的快捷键
+    let cmd_key = if cfg!(target_os = "macos") { "Cmd" } else { "Ctrl" };
     let file_menu = SubmenuBuilder::new(app, "文件")
-        .text("new_query", "新建查询\tCtrl+N")
-        .text("open_file", "打开文件\tCtrl+O")
-        .text("save", "保存\tCtrl+S")
-        .text("save_as", "另存为\tCtrl+Shift+S")
+        .text("new_query", &format!("新建查询\t{}+N", cmd_key))
+        .text("open_file", &format!("打开文件\t{}+O", cmd_key))
+        .text("save", &format!("保存\t{}+S", cmd_key))
+        .text("save_as", &format!("另存为\t{}+Shift+S", cmd_key))
         .separator()
         .text("import_data", "导入数据")
         .text("export_data", "导出数据")
         .separator()
-        .text("quit", "退出\tCtrl+Q")
+        .text("quit", &format!("退出\t{}+Q", cmd_key))
         .build()?;
 
-    // 编辑菜单
+    // 编辑菜单 - 使用平台特定的快捷键
     let edit_menu = SubmenuBuilder::new(app, "编辑")
-        .text("undo", "撤销\tCtrl+Z")
-        .text("redo", "重做\tCtrl+Y")
+        .text("undo", &format!("撤销\t{}+Z", cmd_key))
+        .text("redo", &format!("重做\t{}+Y", cmd_key))
         .separator()
-        .text("cut", "剪切\tCtrl+X")
-        .text("copy", "复制\tCtrl+C")
-        .text("paste", "粘贴\tCtrl+V")
+        .text("cut", &format!("剪切\t{}+X", cmd_key))
+        .text("copy", &format!("复制\t{}+C", cmd_key))
+        .text("paste", &format!("粘贴\t{}+V", cmd_key))
         .separator()
-        .text("find", "查找\tCtrl+F")
-        .text("replace", "替换\tCtrl+H")
-        .text("global_search", "全局搜索\tCtrl+Shift+F")
+        .text("find", &format!("查找\t{}+F", cmd_key))
+        .text("replace", &format!("替换\t{}+H", cmd_key))
+        .text("global_search", &format!("全局搜索\t{}+Shift+F", cmd_key))
         .build()?;
 
-    // 查看菜单
+    // 查看菜单 - 使用平台特定的快捷键
     let view_menu = SubmenuBuilder::new(app, "查看")
-        .text("view_datasource", "数据源管理\tCtrl+1")
-        .text("view_query", "查询编辑器\tCtrl+2")
-        .text("view_visualization", "数据可视化\tCtrl+3")
-        .text("view_performance", "性能监控\tCtrl+4")
+        .text("view_datasource", &format!("数据源管理\t{}+1", cmd_key))
+        .text("view_query", &format!("查询编辑器\t{}+2", cmd_key))
+        .text("view_visualization", &format!("数据可视化\t{}+3", cmd_key))
+        .text("view_performance", &format!("性能监控\t{}+4", cmd_key))
         .separator()
-        .text("toggle_sidebar", "切换侧边栏\tCtrl+B")
+        .text("toggle_sidebar", &format!("切换侧边栏\t{}+B", cmd_key))
         .text("toggle_statusbar", "切换状态栏")
         .text("fullscreen", "全屏模式\tF11")
         .separator()
-        .text("zoom_in", "放大\tCtrl+=")
-        .text("zoom_out", "缩小\tCtrl+-")
-        .text("zoom_reset", "重置缩放\tCtrl+0")
+        .text("zoom_in", &format!("放大\t{}+=", cmd_key))
+        .text("zoom_out", &format!("缩小\t{}-", cmd_key))
+        .text("zoom_reset", &format!("重置缩放\t{}+0", cmd_key))
         .build()?;
 
-    // 数据库菜单
+    // 数据库菜单 - 使用平台特定的快捷键
     let database_menu = SubmenuBuilder::new(app, "数据库")
-        .text("new_connection", "新建连接\tCtrl+Shift+N")
+        .text("new_connection", &format!("新建连接\t{}+Shift+N", cmd_key))
         .text("edit_connection", "编辑连接")
-        .text("test_connection", "测试连接\tCtrl+T")
+        .text("test_connection", &format!("测试连接\t{}+T", cmd_key))
         .text("delete_connection", "删除连接")
         .separator()
         .text("refresh_structure", "刷新数据库结构\tF5")
@@ -97,19 +99,19 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("export_structure", "导出数据库结构")
         .build()?;
 
-    // 查询菜单
+    // 查询菜单 - 使用平台特定的快捷键
     let query_menu = SubmenuBuilder::new(app, "查询")
         .text("execute_query", "执行查询\tF5")
-        .text("stop_query", "停止查询\tCtrl+F2")
-        .text("execute_selection", "执行选中\tCtrl+Enter")
+        .text("stop_query", &format!("停止查询\t{}+F2", cmd_key))
+        .text("execute_selection", &format!("执行选中\t{}+Enter", cmd_key))
         .separator()
-        .text("query_history", "查询历史\tCtrl+H")
+        .text("query_history", &format!("查询历史\t{}+H", cmd_key))
         .text("save_query", "保存查询")
         .text("query_favorites", "查询收藏夹")
         .separator()
         .text("query_plan", "查询计划")
         .text("explain_query", "解释查询")
-        .text("format_query", "格式化查询\tCtrl+Alt+L")
+        .text("format_query", &format!("格式化查询\t{}+Alt+L", cmd_key))
         .build()?;
 
     // 风格设置子菜单 - 更新为完整的主题支持
@@ -130,9 +132,9 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("theme_violet", "神秘紫罗兰")
         .build()?;
 
-    // 工具菜单
+    // 工具菜单 - 使用平台特定的快捷键
     let tools_menu = SubmenuBuilder::new(app, "工具")
-        .text("console", "控制台\tCtrl+`")
+        .text("console", &format!("控制台\t{}+`", cmd_key))
         .text("dev_tools", "开发者工具\tF12")
         .text("query_performance", "查询性能分析")
         .separator()
@@ -141,14 +143,14 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .item(&style_submenu)
         .text("language_settings", "语言设置")
         .separator()
-        .text("preferences", "首选项\tCtrl+,")
+        .text("preferences", &format!("首选项\t{},", cmd_key))
         .build()?;
 
-    // 帮助菜单
+    // 帮助菜单 - 使用平台特定的快捷键
     let help_menu = SubmenuBuilder::new(app, "帮助")
         .text("user_manual", "用户手册\tF1")
         .text("quick_start", "快速入门")
-        .text("shortcuts_help", "键盘快捷键\tCtrl+/")
+        .text("shortcuts_help", &format!("键盘快捷键\t{}/", cmd_key))
         .separator()
         .text("sample_queries", "示例查询")
         .text("api_docs", "API文档")
@@ -164,177 +166,96 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .build()
 }
 
+// 辅助函数：发送菜单动作事件
+fn emit_menu_action(window: &tauri::WebviewWindow, action: &str) {
+    log::info!("发送菜单动作: {}", action);
+    if let Err(e) = window.emit("menu-action", action) {
+        log::error!("发送菜单事件失败 '{}': {}", action, e);
+    }
+}
+
 // 处理菜单事件 - 完整的专业化菜单
 fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
     // 添加调试日志
     log::info!("菜单事件触发: {}", event.id().as_ref());
     
-    // 获取主窗口
+    // 获取主窗口 - 改进的窗口查找逻辑
     let window = match app.get_webview_window("main") {
-        Some(window) => window,
+        Some(window) => {
+            log::debug!("找到主窗口: main");
+            window
+        },
         None => {
-            log::error!("没有找到'main'窗口");
-            return;
+            // 如果找不到 main 窗口，尝试获取第一个可用的窗口
+            log::warn!("未找到 'main' 窗口，尝试获取第一个可用窗口");
+            match app.webview_windows().values().next().cloned() {
+                Some(window) => {
+                    log::info!("使用第一个可用窗口: {}", window.label());
+                    window
+                },
+                None => {
+                    log::error!("没有找到任何可用窗口");
+                    return;
+                }
+            }
         }
     };
 
     match event.id().as_ref() {
         // 文件菜单
-        "new_query" => {
-            log::info!("发送菜单动作: new_query");
-            if let Err(e) = window.emit("menu-action", "new_query") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
-        "open_file" => {
-            log::info!("发送菜单动作: open_file");
-            if let Err(e) = window.emit("menu-action", "open_file") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
-        "save" => {
-            log::info!("发送菜单动作: save");
-            if let Err(e) = window.emit("menu-action", "save") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
-        "save_as" => {
-            log::info!("发送菜单动作: save_as");
-            if let Err(e) = window.emit("menu-action", "save_as") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
-        "import_data" => {
-            log::info!("发送菜单动作: import_data");
-            if let Err(e) = window.emit("menu-action", "import_data") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
-        "export_data" => {
-            log::info!("发送菜单动作: export_data");
-            if let Err(e) = window.emit("menu-action", "export_data") {
-                log::error!("发送菜单事件失败: {}", e);
-            }
-        }
+        "new_query" => emit_menu_action(&window, "new_query"),
+        "open_file" => emit_menu_action(&window, "open_file"),
+        "save" => emit_menu_action(&window, "save"),
+        "save_as" => emit_menu_action(&window, "save_as"),
+        "import_data" => emit_menu_action(&window, "import_data"),
+        "export_data" => emit_menu_action(&window, "export_data"),
         "quit" => {
             std::process::exit(0);
         }
 
         // 编辑菜单
-        "undo" => {
-            let _ = window.emit("menu-action", "undo");
-        }
-        "redo" => {
-            let _ = window.emit("menu-action", "redo");
-        }
-        "cut" => {
-            let _ = window.emit("menu-action", "cut");
-        }
-        "copy" => {
-            let _ = window.emit("menu-action", "copy");
-        }
-        "paste" => {
-            let _ = window.emit("menu-action", "paste");
-        }
-        "find" => {
-            let _ = window.emit("menu-action", "find");
-        }
-        "replace" => {
-            let _ = window.emit("menu-action", "replace");
-        }
-        "global_search" => {
-            let _ = window.emit("menu-action", "global_search");
-        }
+        "undo" => emit_menu_action(&window, "undo"),
+        "redo" => emit_menu_action(&window, "redo"),
+        "cut" => emit_menu_action(&window, "cut"),
+        "copy" => emit_menu_action(&window, "copy"),
+        "paste" => emit_menu_action(&window, "paste"),
+        "find" => emit_menu_action(&window, "find"),
+        "replace" => emit_menu_action(&window, "replace"),
+        "global_search" => emit_menu_action(&window, "global_search"),
 
         // 查看菜单
-        "view_datasource" => {
-            let _ = window.emit("menu-action", "navigate:/connections");
-        }
-        "view_query" => {
-            let _ = window.emit("menu-action", "navigate:/query");
-        }
-        "view_visualization" => {
-            let _ = window.emit("menu-action", "navigate:/visualization");
-        }
-        "view_performance" => {
-            let _ = window.emit("menu-action", "navigate:/performance");
-        }
-        "toggle_sidebar" => {
-            let _ = window.emit("menu-action", "toggle_sidebar");
-        }
-        "toggle_statusbar" => {
-            let _ = window.emit("menu-action", "toggle_statusbar");
-        }
-        "fullscreen" => {
-            let _ = window.emit("menu-action", "fullscreen");
-        }
-        "zoom_in" => {
-            let _ = window.emit("menu-action", "zoom_in");
-        }
-        "zoom_out" => {
-            let _ = window.emit("menu-action", "zoom_out");
-        }
-        "zoom_reset" => {
-            let _ = window.emit("menu-action", "zoom_reset");
-        }
+        "view_datasource" => emit_menu_action(&window, "navigate:/connections"),
+        "view_query" => emit_menu_action(&window, "navigate:/query"),
+        "view_visualization" => emit_menu_action(&window, "navigate:/visualization"),
+        "view_performance" => emit_menu_action(&window, "navigate:/performance"),
+        "toggle_sidebar" => emit_menu_action(&window, "toggle_sidebar"),
+        "toggle_statusbar" => emit_menu_action(&window, "toggle_statusbar"),
+        "fullscreen" => emit_menu_action(&window, "fullscreen"),
+        "zoom_in" => emit_menu_action(&window, "zoom_in"),
+        "zoom_out" => emit_menu_action(&window, "zoom_out"),
+        "zoom_reset" => emit_menu_action(&window, "zoom_reset"),
 
         // 数据库菜单
-        "new_connection" => {
-            let _ = window.emit("menu-action", "new_connection");
-        }
-        "edit_connection" => {
-            let _ = window.emit("menu-action", "edit_connection");
-        }
-        "test_connection" => {
-            let _ = window.emit("menu-action", "test_connection");
-        }
-        "delete_connection" => {
-            let _ = window.emit("menu-action", "delete_connection");
-        }
-        "refresh_structure" => {
-            let _ = window.emit("menu-action", "refresh_structure");
-        }
-        "database_info" => {
-            let _ = window.emit("menu-action", "database_info");
-        }
-        "database_stats" => {
-            let _ = window.emit("menu-action", "database_stats");
-        }
-        "import_structure" => {
-            let _ = window.emit("menu-action", "import_structure");
-        }
-        "export_structure" => {
-            let _ = window.emit("menu-action", "export_structure");
-        }
+        "new_connection" => emit_menu_action(&window, "new_connection"),
+        "edit_connection" => emit_menu_action(&window, "edit_connection"),
+        "test_connection" => emit_menu_action(&window, "test_connection"),
+        "delete_connection" => emit_menu_action(&window, "delete_connection"),
+        "refresh_structure" => emit_menu_action(&window, "refresh_structure"),
+        "database_info" => emit_menu_action(&window, "database_info"),
+        "database_stats" => emit_menu_action(&window, "database_stats"),
+        "import_structure" => emit_menu_action(&window, "import_structure"),
+        "export_structure" => emit_menu_action(&window, "export_structure"),
 
         // 查询菜单
-        "execute_query" => {
-            let _ = window.emit("menu-action", "execute_query");
-        }
-        "stop_query" => {
-            let _ = window.emit("menu-action", "stop_query");
-        }
-        "execute_selection" => {
-            let _ = window.emit("menu-action", "execute_selection");
-        }
-        "query_history" => {
-            let _ = window.emit("menu-action", "query_history");
-        }
-        "save_query" => {
-            let _ = window.emit("menu-action", "save_query");
-        }
-        "query_favorites" => {
-            let _ = window.emit("menu-action", "query_favorites");
-        }
-        "query_plan" => {
-            let _ = window.emit("menu-action", "query_plan");
-        }
-        "explain_query" => {
-            let _ = window.emit("menu-action", "explain_query");
-        }
-        "format_query" => {
-            let _ = window.emit("menu-action", "format_query");
-        }
+        "execute_query" => emit_menu_action(&window, "execute_query"),
+        "stop_query" => emit_menu_action(&window, "stop_query"),
+        "execute_selection" => emit_menu_action(&window, "execute_selection"),
+        "query_history" => emit_menu_action(&window, "query_history"),
+        "save_query" => emit_menu_action(&window, "save_query"),
+        "query_favorites" => emit_menu_action(&window, "query_favorites"),
+        "query_plan" => emit_menu_action(&window, "query_plan"),
+        "explain_query" => emit_menu_action(&window, "explain_query"),
+        "format_query" => emit_menu_action(&window, "format_query"),
 
         // 软件风格菜单 - 更新为完整的主题支持
         "theme_default" => {
@@ -350,93 +271,97 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
             }
         }
         "theme_zinc" => {
-            let _ = window.emit("theme-change", "zinc");
+            log::info!("发送主题切换事件: zinc");
+            if let Err(e) = window.emit("theme-change", "zinc") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_slate" => {
-            let _ = window.emit("theme-change", "slate");
+            log::info!("发送主题切换事件: slate");
+            if let Err(e) = window.emit("theme-change", "slate") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_indigo" => {
-            let _ = window.emit("theme-change", "indigo");
+            log::info!("发送主题切换事件: indigo");
+            if let Err(e) = window.emit("theme-change", "indigo") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_emerald" => {
-            let _ = window.emit("theme-change", "emerald");
+            log::info!("发送主题切换事件: emerald");
+            if let Err(e) = window.emit("theme-change", "emerald") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_blue" => {
-            let _ = window.emit("theme-change", "blue");
+            log::info!("发送主题切换事件: blue");
+            if let Err(e) = window.emit("theme-change", "blue") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_green" => {
-            let _ = window.emit("theme-change", "green");
+            log::info!("发送主题切换事件: green");
+            if let Err(e) = window.emit("theme-change", "green") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_red" => {
-            let _ = window.emit("theme-change", "red");
+            log::info!("发送主题切换事件: red");
+            if let Err(e) = window.emit("theme-change", "red") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_orange" => {
-            let _ = window.emit("theme-change", "orange");
+            log::info!("发送主题切换事件: orange");
+            if let Err(e) = window.emit("theme-change", "orange") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_purple" => {
-            let _ = window.emit("theme-change", "purple");
+            log::info!("发送主题切换事件: purple");
+            if let Err(e) = window.emit("theme-change", "purple") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_rose" => {
-            let _ = window.emit("theme-change", "rose");
+            log::info!("发送主题切换事件: rose");
+            if let Err(e) = window.emit("theme-change", "rose") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_yellow" => {
-            let _ = window.emit("theme-change", "yellow");
+            log::info!("发送主题切换事件: yellow");
+            if let Err(e) = window.emit("theme-change", "yellow") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
         "theme_violet" => {
-            let _ = window.emit("theme-change", "violet");
+            log::info!("发送主题切换事件: violet");
+            if let Err(e) = window.emit("theme-change", "violet") {
+                log::error!("发送主题事件失败: {}", e);
+            }
         }
 
         // 工具菜单
-        "console" => {
-            let _ = window.emit("menu-action", "console");
-        }
-        "dev_tools" => {
-            let _ = window.emit("menu-action", "dev_tools");
-        }
-        "query_performance" => {
-            let _ = window.emit("menu-action", "query_performance");
-        }
-        "extensions" => {
-            let _ = window.emit("menu-action", "navigate:/extensions");
-        }
-        "theme_settings" => {
-            let _ = window.emit("menu-action", "theme_settings");
-        }
-        "language_settings" => {
-            let _ = window.emit("menu-action", "language_settings");
-        }
-        "preferences" => {
-            let _ = window.emit("menu-action", "navigate:/settings");
-        }
+        "console" => emit_menu_action(&window, "console"),
+        "dev_tools" => emit_menu_action(&window, "dev_tools"),
+        "query_performance" => emit_menu_action(&window, "query_performance"),
+        "extensions" => emit_menu_action(&window, "navigate:/extensions"),
+        "theme_settings" => emit_menu_action(&window, "theme_settings"),
+        "language_settings" => emit_menu_action(&window, "language_settings"),
+        "preferences" => emit_menu_action(&window, "navigate:/settings"),
 
         // 帮助菜单
-        "user_manual" => {
-            let _ = window.emit("menu-action", "user_manual");
-        }
-        "quick_start" => {
-            let _ = window.emit("menu-action", "quick_start");
-        }
-        "shortcuts_help" => {
-            let _ = window.emit("menu-action", "shortcuts_help");
-        }
-        "sample_queries" => {
-            let _ = window.emit("menu-action", "sample_queries");
-        }
-        "api_docs" => {
-            let _ = window.emit("menu-action", "api_docs");
-        }
-        "influxdb_docs" => {
-            let _ = window.emit("menu-action", "influxdb_docs");
-        }
-        "check_updates" => {
-            let _ = window.emit("menu-action", "check_updates");
-        }
-        "report_issue" => {
-            let _ = window.emit("menu-action", "report_issue");
-        }
-        "about" => {
-            let _ = window.emit("menu-action", "about");
-        }
+        "user_manual" => emit_menu_action(&window, "user_manual"),
+        "quick_start" => emit_menu_action(&window, "quick_start"),
+        "shortcuts_help" => emit_menu_action(&window, "shortcuts_help"),
+        "sample_queries" => emit_menu_action(&window, "sample_queries"),
+        "api_docs" => emit_menu_action(&window, "api_docs"),
+        "influxdb_docs" => emit_menu_action(&window, "influxdb_docs"),
+        "check_updates" => emit_menu_action(&window, "check_updates"),
+        "report_issue" => emit_menu_action(&window, "report_issue"),
+        "about" => emit_menu_action(&window, "about"),
 
         _ => {}
     }
@@ -766,18 +691,23 @@ async fn main() {
             // 创建并设置原生菜单
             match create_native_menu(app.handle()) {
                 Ok(menu) => {
+                    info!("菜单创建成功，正在设置为应用菜单...");
                     if let Err(e) = app.set_menu(menu) {
-                        eprintln!("设置菜单失败: {}", e);
+                        error!("设置菜单失败: {}", e);
+                    } else {
+                        info!("应用菜单设置成功");
                     }
                 }
                 Err(e) => {
-                    eprintln!("创建菜单失败: {}", e);
+                    error!("创建菜单失败: {}", e);
                 }
             }
 
             // 设置菜单事件处理器
             let app_handle = app.handle().clone();
+            info!("正在设置菜单事件处理器...");
             app.on_menu_event(move |_app, event| {
+                info!("菜单事件处理器被调用，事件ID: {}", event.id().as_ref());
                 handle_menu_event(&app_handle, event);
             });
 

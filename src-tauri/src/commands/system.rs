@@ -3,6 +3,7 @@ use crate::services::ConnectionService;
 use tauri::{State, Manager, AppHandle};
 use log::{debug, error, info};
 use std::path::Path;
+use anyhow::Error;
 
 /// 获取系统信息
 #[tauri::command]
@@ -72,7 +73,7 @@ fn get_network_stats() -> NetworkStats {
 async fn get_series_count(
     client: &crate::database::InfluxClient,
     database: &str,
-) -> Result<u64, anyhow::Error> {
+) -> Result<u64, Error> {
     let query = format!("SHOW SERIES ON \"{}\"", database);
     let result = client.execute_query(&query).await?;
     Ok(result.row_count.unwrap_or(0) as u64)

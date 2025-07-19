@@ -20,7 +20,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   onGlobalSearch,
 }) => {
   const navigate = useNavigate();
-  const { activeConnectionId } = useConnectionStore();
+  const { 
+    activeConnectionId, 
+    connections, 
+    connectionStatuses, 
+    getConnectionStatus,
+    isConnectionConnected 
+  } = useConnectionStore();
   const { settings, updateTheme } = useSettingsStore();
   const { setColorScheme } = useTheme();
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
@@ -60,7 +66,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         unlistenThemeFn();
       }
     };
-  }, [navigate, activeConnectionId]);
+  }, []); // 移除依赖，只在组件挂载时设置一次监听器
 
   // 处理主题切换
   const handleThemeChange = (themeName: string) => {
@@ -169,7 +175,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   };
 
   const handleExplainQuery = () => {
-    document.dispatchEvent(new CustomEvent('explain-query'));
+    if (activeConnectionId && isConnectionConnected(activeConnectionId)) {
+      document.dispatchEvent(new CustomEvent('explain-query'));
+    } else if (activeConnectionId && !isConnectionConnected(activeConnectionId)) {
+      showMessage.warning('数据库连接已断开，请重新连接后再试');
+    } else {
+      showMessage.warning('解释查询需要数据库连接，请先建立连接');
+    }
   };
 
   const handleQueryFavorites = () => {
@@ -225,21 +237,51 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleMenuAction = (action: string) => {
     console.log('🎯 处理菜单动作:', action);
     
+    // 获取详细的连接状态信息
+    const activeConnectionStatus = activeConnectionId ? getConnectionStatus(activeConnectionId) : null;
+    const isConnected = activeConnectionId ? isConnectionConnected(activeConnectionId) : false;
+    
+    console.log('🔗 当前连接状态:', { 
+      activeConnectionId, 
+      isConnected,
+      connectionStatus: activeConnectionStatus?.status,
+      totalConnections: connections.length,
+      availableConnections: connections.map(c => ({ id: c.id, name: c.name }))
+    });
+    
     // 添加动作处理状态跟踪
     let handled = false;
 
-    // 检查需要数据库连接的操作
-    const connectionRequiredActions = [
-      'new_query', 'execute_query', 'execute_selection', 'stop_query',
-      'query_history', 'save_query', 'query_favorites', 'query_plan',
-      'explain_query', 'format_query', 'test_connection', 'edit_connection',
-      'delete_connection', 'refresh_structure', 'database_info', 'database_stats',
-      'import_structure', 'export_structure', 'import_data', 'export_data'
+    // 检查需要活跃数据库连接的操作
+    const activeConnectionRequiredActions = [
+      'execute_query', 'execute_selection', 'stop_query',
+      'refresh_structure', 'database_info', 'database_stats',
+      'import_structure', 'export_structure', 'import_data', 'export_data',
+      'query_plan', 'explain_query'
     ];
 
-    // 如果操作需要连接但没有活跃连接，显示警告
-    if (connectionRequiredActions.includes(action) && !activeConnectionId) {
-      showMessage.warning('此操作需要先建立数据库连接');
+    // 检查需要已选择连接（但不一定要活跃）的操作
+    const selectedConnectionRequiredActions = [
+      'test_connection', 'edit_connection', 'delete_connection'
+    ];
+
+    // 检查连接要求
+    const hasActiveConnection = activeConnectionId && isConnectionConnected(activeConnectionId);
+    const hasSelectedConnection = activeConnectionId && connections.some(c => c.id === activeConnectionId);
+    
+    if (activeConnectionRequiredActions.includes(action)) {
+      if (!activeConnectionId) {
+        showMessage.warning('此操作需要先选择一个数据库连接');
+        return;
+      }
+      if (!hasActiveConnection) {
+        showMessage.warning('此操作需要活跃的数据库连接，请先连接到数据库');
+        return;
+      }
+    }
+
+    if (selectedConnectionRequiredActions.includes(action) && !hasSelectedConnection) {
+      showMessage.warning('此操作需要先选择一个数据库连接');
       return;
     }
 
@@ -428,6 +470,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           document.dispatchEvent(
             new CustomEvent('edit-connection', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
         } else {
           showMessage.warning('请先选择一个连接');
         }
@@ -439,6 +482,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           document.dispatchEvent(
             new CustomEvent('delete-connection', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
         } else {
           showMessage.warning('请先选择一个连接');
         }
@@ -446,10 +490,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'refresh_structure':
       case 'refresh-structure':
-        if (activeConnectionId) {
-          showMessage.info('刷新结构功能开发中...');
+        if (activeConnectionId && isConnected) {
+          showMessage.info('正在刷新数据库结构...');
           // 触发刷新事件
           document.dispatchEvent(new CustomEvent('refresh-database-tree'));
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
@@ -457,40 +504,52 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'database-info':
       case 'database_info':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('show-database-info', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
       case 'database_stats':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('show-database-stats', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
       case 'import_structure':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('import-database-structure', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
       case 'export_structure':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('export-database-structure', { detail: { connectionId: activeConnectionId } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
@@ -499,21 +558,27 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       // 查询菜单
       case 'execute_query':
       case 'execute-query':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('execute-query', { detail: { source: 'menu' } })
           );
           showMessage.info('执行查询...');
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
         break;
 
       case 'execute_selection':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('execute-selection', { detail: { source: 'menu' } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
           showMessage.warning('请先建立数据库连接');
         }
@@ -551,15 +616,19 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'explain_query':
         handleExplainQuery();
+        handled = true;
         break;
 
       case 'query_plan':
-        if (activeConnectionId) {
+        if (activeConnectionId && isConnected) {
           document.dispatchEvent(
             new CustomEvent('show-query-plan', { detail: { source: 'menu' } })
           );
+          handled = true;
+        } else if (activeConnectionId && !isConnected) {
+          showMessage.warning('数据库连接已断开，请重新连接后再试');
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning('查询计划需要数据库连接，请先建立连接');
         }
         break;
 

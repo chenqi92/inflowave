@@ -50,7 +50,14 @@
     "version:bump": "node scripts/sync-version.cjs bump",
     "version:bump:patch": "node scripts/sync-version.cjs bump patch --tag",
     "version:bump:minor": "node scripts/sync-version.cjs bump minor --tag",
-    "version:bump:major": "node scripts/sync-version.cjs bump major --tag"
+    "version:bump:major": "node scripts/sync-version.cjs bump major --tag",
+    "clean": "npm run clean:cache && npm run clean:build && npm run clean:deps",
+    "clean:cache": "rm -rf node_modules/.cache && rm -rf node_modules/.vite && rm -rf .vite && rm -rf dist/.vite",
+    "clean:build": "rm -rf dist && rm -rf src-tauri/target",
+    "clean:deps": "rm -rf node_modules && npm install",
+    "clean:all": "npm run clean:build && npm run clean:deps && npm run clean:tauri",
+    "clean:tauri": "cd src-tauri && cargo clean && cd .. && rm -rf src-tauri/target",
+    "reset": "npm run clean:all && npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
