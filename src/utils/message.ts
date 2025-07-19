@@ -5,6 +5,7 @@
 
 import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
+import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -36,6 +37,95 @@ export interface NotificationConfig {
         | 'bottom-center'
         | 'bottom-right';
 }
+
+// 获取用户通知偏好设置
+const getUserNotificationPreferences = async () => {
+    try {
+        if (isBrowserEnvironment()) {
+            // 在浏览器环境中从localStorage获取设置
+            const storedPrefs = localStorage.getItem('user-preferences');
+            if (storedPrefs) {
+                const prefs = JSON.parse(storedPrefs);
+                return prefs.notifications || {
+                    enabled: true,
+                    desktop: true,
+                    sound: false,
+                    queryCompletion: true,
+                    connectionStatus: true,
+                    systemAlerts: true,
+                };
+            }
+        } else {
+            // 在Tauri环境中从后端获取设置
+            const prefs = await safeTauriInvoke('get_user_preferences');
+            return prefs?.notifications || {
+                enabled: true,
+                desktop: true,
+                sound: false,
+                queryCompletion: true,
+                connectionStatus: true,
+                systemAlerts: true,
+            };
+        }
+    } catch (error) {
+        console.warn('获取用户通知偏好失败，使用默认设置:', error);
+    }
+    
+    // 默认设置
+    return {
+        enabled: true,
+        desktop: true,
+        sound: false,
+        queryCompletion: true,
+        connectionStatus: true,
+        systemAlerts: true,
+    };
+};
+
+// 发送桌面通知
+const sendDesktopNotification = async (title: string, message: string, icon?: string) => {
+    try {
+        const prefs = await getUserNotificationPreferences();
+        
+        if (!prefs.enabled || !prefs.desktop) {
+            return;
+        }
+        
+        if (isBrowserEnvironment()) {
+            // 在浏览器环境中使用 Web Notification API
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: message,
+                        icon: icon || '/icon.png',
+                        tag: 'inflowave-notification',
+                    });
+                } else if (Notification.permission !== 'denied') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        new Notification(title, {
+                            body: message,
+                            icon: icon || '/icon.png',
+                            tag: 'inflowave-notification',
+                        });
+                    }
+                }
+            }
+        } else {
+            // 在Tauri环境中使用原生通知
+            await safeTauriInvoke('send_notification', {
+                notification: {
+                    title,
+                    message,
+                    notification_type: 'info',
+                    duration: 5000,
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('发送桌面通知失败:', error);
+    }
+};
 
 // 创建标准化的 Sonner 配置
 const createToastOptions = (
@@ -340,18 +430,27 @@ export const toastControl = {
 // 特殊场景的消息方法 - 针对应用的具体业务场景
 export const specialMessage = {
     // 连接相关消息
-    connectionSuccess: (name: string) =>
-        showNotification.success({
+    connectionSuccess: async (name: string) => {
+        const result = showNotification.success({
             message: '连接成功',
             description: `已成功连接到 ${name}`,
             action: {
                 label: '查看',
                 onClick: () => console.log(`查看连接: ${name}`),
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.connectionStatus) {
+            await sendDesktopNotification('连接成功', `已成功连接到 ${name}`);
+        }
+        
+        return result;
+    },
 
-    connectionError: (name: string, error: string) =>
-        showNotification.error({
+    connectionError: async (name: string, error: string) => {
+        const result = showNotification.error({
             message: '连接失败',
             description: `连接 ${name} 失败: ${error}`,
             duration: 6,
@@ -359,10 +458,19 @@ export const specialMessage = {
                 label: '重试',
                 onClick: () => console.log(`重试连接: ${name}`),
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.connectionStatus) {
+            await sendDesktopNotification('连接失败', `连接 ${name} 失败: ${error}`);
+        }
+        
+        return result;
+    },
 
-    connectionLost: (name: string) =>
-        showNotification.warning({
+    connectionLost: async (name: string) => {
+        const result = showNotification.warning({
             message: '连接中断',
             description: `与 ${name} 的连接已中断`,
             duration: 0, // 不自动关闭，替代 important
@@ -370,31 +478,67 @@ export const specialMessage = {
                 label: '重连',
                 onClick: () => console.log(`重连: ${name}`),
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.connectionStatus) {
+            await sendDesktopNotification('连接中断', `与 ${name} 的连接已中断`);
+        }
+        
+        return result;
+    },
 
     // 查询相关消息
-    querySuccess: (rowCount: number, duration: number) =>
-        showNotification.success({
+    querySuccess: async (rowCount: number, duration: number) => {
+        const result = showNotification.success({
             message: '查询完成',
             description: `返回 ${rowCount} 行数据，耗时 ${duration}ms`,
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.queryCompletion) {
+            await sendDesktopNotification('查询完成', `返回 ${rowCount} 行数据，耗时 ${duration}ms`);
+        }
+        
+        return result;
+    },
 
-    queryError: (error: string) =>
-        showNotification.error({
+    queryError: async (error: string) => {
+        const result = showNotification.error({
             message: '查询失败',
             description: error,
             duration: 5,
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.queryCompletion) {
+            await sendDesktopNotification('查询失败', error);
+        }
+        
+        return result;
+    },
 
-    queryTimeout: (timeout: number) =>
-        showNotification.warning({
+    queryTimeout: async (timeout: number) => {
+        const result = showNotification.warning({
             message: '查询超时',
             description: `查询执行超过 ${timeout}s，已自动取消`,
             action: {
                 label: '优化查询',
                 onClick: () => console.log('打开查询优化建议'),
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.queryCompletion) {
+            await sendDesktopNotification('查询超时', `查询执行超过 ${timeout}s，已自动取消`);
+        }
+        
+        return result;
+    },
 
     // 导出相关消息
     exportSuccess: (format: string, filename?: string) =>
@@ -445,8 +589,8 @@ export const specialMessage = {
         }),
 
     // 系统相关消息
-    updateAvailable: (version: string) =>
-        showNotification.info({
+    updateAvailable: async (version: string) => {
+        const result = showNotification.info({
             message: '发现新版本',
             description: `版本 ${version} 已发布`,
             action: {
@@ -456,10 +600,19 @@ export const specialMessage = {
             cancel: {
                 label: '稍后提醒',
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.systemAlerts) {
+            await sendDesktopNotification('发现新版本', `版本 ${version} 已发布`);
+        }
+        
+        return result;
+    },
 
-    systemError: (error: string) =>
-        showNotification.error({
+    systemError: async (error: string) => {
+        const result = showNotification.error({
             message: '系统错误',
             description: error,
             duration: 0, // 不自动关闭，替代 important
@@ -467,7 +620,16 @@ export const specialMessage = {
                 label: '报告问题',
                 onClick: () => console.log('打开问题报告'),
             },
-        }),
+        });
+        
+        // 发送桌面通知
+        const prefs = await getUserNotificationPreferences();
+        if (prefs.enabled && prefs.systemAlerts) {
+            await sendDesktopNotification('系统错误', error);
+        }
+        
+        return result;
+    },
 
     // 数据相关消息
     dataImportSuccess: (count: number) =>

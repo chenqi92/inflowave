@@ -1446,7 +1446,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       };
     };
 
-    // 应用注释样式
+    // 应用注释样式 - 使用CSS类而不是直接设置样式
     const applyCommentStyles = (editor: monaco.editor.IStandaloneCodeEditor) => {
       const applyStyles = () => {
         try {
@@ -1454,19 +1454,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           if (!editorElement) return;
 
           const lines = editorElement.querySelectorAll('.view-line');
-          const colors = getThemeColors();
-          const isDark = resolvedTheme === 'dark';
 
           lines.forEach((line: Element) => {
             const text = line.textContent || '';
 
             // 检查是否是注释行
             if (text.trim().startsWith('--') || text.trim().startsWith('#')) {
-              // 找到所有span元素并直接设置样式
+              // 使用CSS类而不是直接设置样式
               const spans = line.querySelectorAll('span');
               spans.forEach((span: HTMLElement) => {
-                span.style.setProperty('color', isDark ? '#9CA3AF' : '#6B7280', 'important');
-                span.style.setProperty('font-style', 'italic', 'important');
+                // 移除旧的样式类
+                span.classList.remove('keyword-style', 'function-style', 'string-style', 'number-style');
+                // 添加注释样式类
+                span.classList.add('comment-style');
               });
             } else {
               // 分析SQL关键词和其他元素
@@ -1474,44 +1474,38 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               spans.forEach((span: HTMLElement) => {
                 const spanText = span.textContent || '';
 
-                // 重置样式
-                span.style.removeProperty('color');
-                span.style.removeProperty('font-weight');
-                span.style.removeProperty('font-style');
+                // 移除所有样式类
+                span.classList.remove('comment-style', 'keyword-style', 'function-style', 'string-style', 'number-style');
 
-                // SQL主要关键词 - 根据主题调整颜色
+                // SQL主要关键词
                 if (/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE|EXPLAIN)\b/i.test(spanText)) {
-                  span.style.setProperty('color', isDark ? '#E5E7EB' : '#1F2937', 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
+                  span.classList.add('keyword-style');
                 }
-                // 筛选条件关键词 - 配套颜色
+                // 筛选条件关键词
                 else if (/\b(WHERE|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE|GROUP\s+BY|ORDER\s+BY|HAVING)\b/i.test(spanText)) {
-                  span.style.setProperty('color', colors.filter, 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
+                  span.classList.add('filter-style');
                 }
-                // SQL函数 - 橙色，根据主题调整
+                // SQL函数
                 else if (/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|TIME|NOW|AGO|DURATION|FILL)\b/i.test(spanText)) {
-                  span.style.setProperty('color', isDark ? '#FB923C' : '#EA580C', 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
+                  span.classList.add('function-style');
                 }
-                // 表名/测量值 - 主题色
+                // 表名/测量值
                 else if (/\b[a-zA-Z_][a-zA-Z0-9_]*\b/.test(spanText) &&
                          !/(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText) &&
                          !/^(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText)) {
                   // 检查是否在FROM后面或者看起来像表名
                   const lineText = line.textContent || '';
                   if (/FROM\s+[^,\s]*$/i.test(lineText.substring(0, lineText.indexOf(spanText) + spanText.length))) {
-                    span.style.setProperty('color', colors.primary, 'important');
-                    span.style.setProperty('font-weight', '500', 'important');
+                    span.classList.add('table-style');
                   }
                 }
-                // 字符串 - 绿色，根据主题调整
+                // 字符串
                 else if (spanText.includes('"') || spanText.includes("'")) {
-                  span.style.setProperty('color', isDark ? '#34D399' : '#059669', 'important');
+                  span.classList.add('string-style');
                 }
-                // 数字 - 蓝色，根据主题调整
+                // 数字
                 else if (/\b\d+(\.\d+)?\b/.test(spanText)) {
-                  span.style.setProperty('color', isDark ? '#60A5FA' : '#2563EB', 'important');
+                  span.classList.add('number-style');
                 }
               });
             }
@@ -1544,17 +1538,29 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       editorRef.current = editor;
 
       // 应用注释样式
-      const styleDisposable = applyCommentStyles(editor);
-
       // 设置智能自动补全
       setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
 
+      // 应用样式的函数
+      const styleDisposable = applyCommentStyles(editor);
+
       // 监听主题变化
-      const observer = new MutationObserver(() => {
-        // 主题变化时重新应用样式
-        setTimeout(() => {
-          const styleDisposable2 = applyCommentStyles(editor);
-        }, 100);
+      const observer = new MutationObserver((mutations) => {
+        // 检查是否有主题相关的变化
+        const hasThemeChange = mutations.some(mutation =>
+          mutation.type === 'attributes' &&
+          (mutation.attributeName === 'data-theme' ||
+           mutation.attributeName === 'class' ||
+           mutation.attributeName === 'style')
+        );
+
+        if (hasThemeChange) {
+          // 主题变化时重新应用样式
+          setTimeout(() => {
+            // 重新应用注释样式
+            applyCommentStyles(editor);
+          }, 100);
+        }
       });
 
       observer.observe(document.documentElement, {
@@ -1969,6 +1975,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       value={currentTab.content}
                       onChange={handleEditorChange}
                       onMount={handleEditorDidMount}
+                      key={`${currentTab.id}-${resolvedTheme}`} // 强制重新渲染以应用主题
                       options={{
                         minimap: { enabled: false },
                         scrollBeyondLastLine: false,

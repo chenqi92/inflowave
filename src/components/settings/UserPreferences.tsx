@@ -322,7 +322,27 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   const loadPreferences = async () => {
     setLoading(true);
     try {
-      const result = await safeTauriInvoke('get_user_preferences');
+      let result = null;
+      
+      // 首先尝试从后端加载
+      try {
+        result = await safeTauriInvoke('get_user_preferences');
+      } catch (tauriError) {
+        console.warn('从后端加载失败，尝试从本地存储加载:', tauriError);
+      }
+      
+      // 如果后端没有数据，尝试从本地存储加载
+      if (!result && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('user-preferences');
+        if (stored) {
+          try {
+            result = JSON.parse(stored);
+          } catch (parseError) {
+            console.warn('解析本地存储的用户偏好失败:', parseError);
+          }
+        }
+      }
+      
       if (result) {
         // 确保快捷键数据完整，如果没有快捷键数据，使用系统默认的
         const preferences = {
@@ -366,7 +386,18 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   const savePreferences = async (values: UserPreferences) => {
     setLoading(true);
     try {
-      await safeTauriInvoke('update_user_preferences', { preferences: values });
+      // 保存到后端（Tauri环境）
+      try {
+        await safeTauriInvoke('update_user_preferences', { preferences: values });
+      } catch (tauriError) {
+        console.warn('保存到后端失败，尝试保存到本地存储:', tauriError);
+      }
+      
+      // 保存到本地存储（浏览器环境或作为后备）
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user-preferences', JSON.stringify(values));
+      }
+      
       setPreferences(values);
       showMessage.success('偏好设置已保存');
       onSave?.(values);

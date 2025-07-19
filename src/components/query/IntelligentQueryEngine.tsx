@@ -328,6 +328,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   wordWrap: 'on',
                   automaticLayout: true,
                 }}
+                key={resolvedTheme} // 强制重新渲染以应用主题
               />
             </div>
           </div>

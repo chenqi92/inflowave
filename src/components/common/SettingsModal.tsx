@@ -47,6 +47,7 @@ import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
 import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
+import NotificationTest from '@/components/debug/NotificationTest';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
@@ -708,6 +709,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               <h4 className='text-sm font-medium mb-2'>错误测试工具</h4>
             </div>
           )}
+
+          {/* 通知功能测试 */}
+          <div>
+            <h4 className='text-sm font-medium mb-2'>通知功能测试</h4>
+            <p className='text-sm text-muted-foreground mb-3'>
+              测试各种通知功能是否正常工作，包括Toast通知和桌面通知。
+            </p>
+            <div className='p-3 bg-muted/50 border rounded-lg'>
+              <NotificationTest />
+            </div>
+          </div>
 
           <div>
             <h4 className='text-sm font-medium mb-2'>应用错误日志</h4>

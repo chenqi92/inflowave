@@ -151,7 +151,11 @@ export const useGlobalShortcuts = () => {
         {
             key: '7',
             ctrlKey: true,
-            callback: () => navigate('/settings'),
+            callback: () => {
+                // 触发设置弹框打开事件
+                const settingsEvent = new CustomEvent('open-settings-modal');
+                document.dispatchEvent(settingsEvent);
+            },
             description: '打开应用设置',
             category: 'navigation',
         },

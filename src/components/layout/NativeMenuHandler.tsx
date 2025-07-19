@@ -66,6 +66,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     setupListeners();
 
+    // 监听自定义设置弹框事件
+    const handleOpenSettings = () => {
+      setSettingsVisible(true);
+      showMessage.success('打开应用设置');
+    };
+
+    document.addEventListener('open-settings-modal', handleOpenSettings);
+
     return () => {
       if (unlistenMenuFn) {
         unlistenMenuFn();
@@ -73,6 +81,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       if (unlistenThemeFn) {
         unlistenThemeFn();
       }
+      document.removeEventListener('open-settings-modal', handleOpenSettings);
     };
   }, []); // 移除依赖，只在组件挂载时设置一次监听器
 
@@ -703,8 +712,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'theme_settings':
-        navigate('/settings');
-        showMessage.success('切换到主题设置');
+        // 打开设置弹框
+        setSettingsVisible(true);
+        showMessage.success('打开主题设置');
+        handled = true;
         break;
 
       case 'language_settings':

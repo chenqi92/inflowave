@@ -291,6 +291,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={content}
               onChange={handleContentChange}
+              key={resolvedTheme} // 强制重新渲染以应用主题
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,

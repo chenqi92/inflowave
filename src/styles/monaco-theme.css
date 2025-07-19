@@ -1,20 +1,38 @@
 /* Monaco编辑器语法高亮样式 - 主题响应版本 */
 
-/* 定义CSS变量用于主题响应 */
+/* 浅色主题变量 */
 :root {
-  --monaco-comment-color: #BBBBBB;
-  --monaco-keyword-color: #000000;
-  --monaco-filter-color: var(--primary);
-  --monaco-table-color: var(--primary);
-  --monaco-function-color: #F97316;
-  --monaco-string-color: #10B981;
-  --monaco-number-color: #3B82F6;
+  --monaco-comment-color: #6B7280;
+  --monaco-keyword-color: #1F2937;
+  --monaco-filter-color: #D97706;
+  --monaco-table-color: hsl(var(--primary));
+  --monaco-function-color: #EA580C;
+  --monaco-string-color: #059669;
+  --monaco-number-color: #2563EB;
 }
 
 /* 深色主题变量 */
 [data-theme="dark"] {
-  --monaco-comment-color: #888888;
-  --monaco-keyword-color: #FFFFFF;
+  --monaco-comment-color: #9CA3AF;
+  --monaco-keyword-color: #E5E7EB;
+  --monaco-filter-color: #F59E0B;
+  --monaco-table-color: hsl(var(--primary));
+  --monaco-function-color: #FB923C;
+  --monaco-string-color: #34D399;
+  --monaco-number-color: #60A5FA;
+}
+
+/* 自动主题 - 跟随系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --monaco-comment-color: #9CA3AF;
+    --monaco-keyword-color: #E5E7EB;
+    --monaco-filter-color: #F59E0B;
+    --monaco-table-color: hsl(var(--primary));
+    --monaco-function-color: #FB923C;
+    --monaco-string-color: #34D399;
+    --monaco-number-color: #60A5FA;
+  }
 }
 
 /* 注释样式 */

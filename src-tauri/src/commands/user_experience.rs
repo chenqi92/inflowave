@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, State, Window};
+use tauri::{Emitter, Manager, State, Window};
+use tauri_plugin_notification::NotificationExt;
 use log::{debug, error, info};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -233,10 +234,26 @@ pub async fn send_notification(
         "发送通知失败".to_string()
     })?;
     
-    // 如果启用了桌面通知，也发送桌面通知
+    // 如果启用了桌面通知，发送系统桌面通知
     if preferences.notifications.desktop {
-        // 这里可以集成系统桌面通知
         info!("桌面通知: {} - {}", notification.title, notification.message);
+        
+        // 使用 Tauri 的通知插件发送桌面通知
+        let app_handle = window.app_handle();
+        
+        // 构建通知内容
+        match app_handle.notification()
+            .builder()
+            .title(&notification.title)
+            .body(&notification.message)
+            .show() {
+            Ok(_) => {
+                info!("桌面通知发送成功: {}", notification.title);
+            }
+            Err(e) => {
+                error!("桌面通知发送失败: {}", e);
+            }
+        }
     }
     
     Ok(())
