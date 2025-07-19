@@ -482,9 +482,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               nodeData.isLeaf = false;
               nodeData.children = [];
             } else {
-              // 未展开的数据库：设置为叶子节点，不设置children属性
-              nodeData.isLeaf = true;
-              // 不设置children属性，这样Tree组件就不会显示展开按钮
+              // 未展开的数据库：设置为非叶子节点，显示展开按钮
+              nodeData.isLeaf = false;
+              nodeData.children = []; // 空数组表示有子节点但未加载
             }
 
             return nodeData;
@@ -1066,7 +1066,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const parts = String(key).split('-');
       if (parts.length >= 3) {
         const connectionId = parts[1];
-        const database = parts[2];
+        // 处理数据库名称可能包含连字符的情况
+        const database = parts.slice(2).join('-');
         const databaseKey = `database-${connectionId}-${database}`;
 
         // 检查数据库是否已经展开
@@ -1075,7 +1076,30 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         if (!isDatabaseExpanded) {
           // 如果数据库未展开，则展开数据库（加载表列表）
           const newExpandedKeys = [...expandedKeys, databaseKey];
+          console.log('🔄 双击展开数据库，更新 expandedKeys:', {
+            oldKeys: expandedKeys,
+            newKeys: newExpandedKeys,
+            databaseKey
+          });
           setExpandedKeys(newExpandedKeys);
+
+          // 立即触发状态更新通知
+          if (onExpandedDatabasesChange) {
+            const expandedDatabases = newExpandedKeys
+              .filter(key => String(key).startsWith('database-'))
+              .map(key => {
+                const keyStr = String(key);
+                const parts = keyStr.split('-');
+                if (parts.length >= 3) {
+                  return parts.slice(2).join('-');
+                }
+                return '';
+              })
+              .filter(db => db !== '');
+
+            console.log('🔄 双击后立即通知父组件 expandedDatabases:', expandedDatabases);
+            onExpandedDatabasesChange(expandedDatabases);
+          }
           showMessage.info(`正在连接并加载数据库 "${database}" 的表列表...`);
 
           // 手动加载表数据并更新树形结构
@@ -1569,9 +1593,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 nodeData.isLeaf = false;
                                 nodeData.children = [];
                               } else {
-                                // 未展开的数据库：设置为叶子节点，不设置children属性
-                                nodeData.isLeaf = true;
-                                // 不设置children属性，这样Tree组件就不会显示展开按钮
+                                // 未展开的数据库：设置为非叶子节点，显示展开按钮
+                                nodeData.isLeaf = false;
+                                nodeData.children = []; // 空数组表示有子节点但未加载
                               }
 
                               return nodeData;
@@ -1813,9 +1837,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     nodeData.isLeaf = false;
                     nodeData.children = [];
                   } else {
-                    // 未展开的数据库：设置为叶子节点，不设置children属性
-                    nodeData.isLeaf = true;
-                    // 不设置children属性，这样Tree组件就不会显示展开按钮
+                    // 未展开的数据库：设置为非叶子节点，显示展开按钮
+                    nodeData.isLeaf = false;
+                    nodeData.children = []; // 空数组表示有子节点但未加载
                   }
 
                   return nodeData;
@@ -1899,15 +1923,25 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const expandedDatabases = expandedKeys
         .filter(key => String(key).startsWith('database-'))
         .map(key => {
-          const parts = String(key).split('-');
-          return parts.length >= 3 ? parts[2] : '';
+          const keyStr = String(key);
+          const parts = keyStr.split('-');
+          // 处理数据库名称可能包含连字符的情况
+          if (parts.length >= 3) {
+            // 取第三部分及之后的所有部分，用连字符连接
+            return parts.slice(2).join('-');
+          }
+          return '';
         })
         .filter(db => db !== ''); // 过滤掉空字符串
 
-      console.log('🔄 已展开数据库列表变化:', expandedDatabases);
+      console.log('🔄 DatabaseExplorer 已展开数据库列表变化:', {
+        expandedKeys,
+        expandedDatabases,
+        filteredKeys: expandedKeys.filter(key => String(key).startsWith('database-'))
+      });
       onExpandedDatabasesChange(expandedDatabases);
     }
-  }, [expandedKeys, onExpandedDatabasesChange]);
+  }, [expandedKeys]); // 移除 onExpandedDatabasesChange 依赖，因为它是稳定的 setState 函数
 
   if (collapsed) {
     return (

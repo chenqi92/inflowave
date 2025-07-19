@@ -57,7 +57,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (pathname === '/performance') return 'performance';
     if (pathname === '/extensions') return 'extensions';
     if (pathname === '/dev-tools') return 'dev-tools';
-    return 'query'; // 默认视图
+    return 'datasource'; // 默认视图改为数据源视图
   };
 
   // 从用户偏好中获取初始状态，如果没有则使用默认值
@@ -74,10 +74,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     );
   });
   const [currentView, setCurrentView] = useState(() => {
-    // 优先使用路径映射的视图，其次是用户偏好，最后默认为数据源视图
-    return getViewFromPath(location.pathname) !== 'query'
-      ? getViewFromPath(location.pathname)
-      : preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
+    // 如果是特定的路径（如 /query, /visualization 等），使用对应的视图
+    const pathView = getViewFromPath(location.pathname);
+    if (location.pathname !== '/' && pathView !== 'datasource') {
+      return pathView;
+    }
+    // 否则优先使用用户偏好，最后默认为数据源视图
+    return preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
   });
 
   // 面板尺寸状态
@@ -96,6 +99,20 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
   const [showQueryHistory, setShowQueryHistory] = useState(false);
   const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]);
+
+  // 调试：监听 expandedDatabases 变化
+  useEffect(() => {
+    console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', expandedDatabases);
+  }, [expandedDatabases]);
+
+  // 智能视图切换：当在查询视图但没有展开数据库时，提示用户先展开数据库
+  useEffect(() => {
+    if (currentView === 'query' && expandedDatabases.length === 0) {
+      console.log('💡 检测到查询视图但没有展开数据库，建议切换到数据源视图');
+      // 可以选择自动切换到数据源视图，或者显示提示
+      // setCurrentView('datasource'); // 取消注释以启用自动切换
+    }
+  }, [currentView, expandedDatabases]);
 
   // 手动打开查询历史的方法
   const openQueryHistory = useCallback(() => {

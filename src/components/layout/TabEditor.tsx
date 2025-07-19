@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   forwardRef,
+  useMemo,
 } from 'react';
 import {
   Button,
@@ -104,8 +105,26 @@ interface TabEditorRef {
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
   ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
-    const { activeConnectionId, connections } = useConnectionStore();
-    const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
+    const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
+
+    // 响应式计算是否有已连接的InfluxDB
+    const hasAnyConnectedInfluxDB = useMemo(() => {
+      // 优先检查connectionStatuses中是否有连接状态为connected的连接
+      const hasConnectedByStatus = connections.some(conn => {
+        if (!conn.id) return false;
+        const status = connectionStatuses[conn.id];
+        return status?.status === 'connected';
+      });
+
+      // 如果connectionStatuses中找到了连接，直接返回true
+      if (hasConnectedByStatus) {
+        return true;
+      }
+
+      // 如果没有找到，检查connectedConnectionIds数组作为备用
+      return connectedConnectionIds.length > 0;
+    }, [connections, connectionStatuses, connectedConnectionIds]);
+
     const { resolvedTheme } = useTheme();
     const [activeKey, setActiveKey] = useState<string>('1');
     const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -900,7 +919,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         expandedDatabases,
         selectedDatabase,
         hasAnyConnectedInfluxDB,
-        activeConnectionId
+        activeConnectionId,
+        expandedDatabasesLength: expandedDatabases.length,
+        isDisabled: !hasAnyConnectedInfluxDB || expandedDatabases.length === 0
       });
 
       if (expandedDatabases.length > 0) {
@@ -916,7 +937,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('🔄 清空数据库选择，因为没有已展开的数据库');
         }
       }
-    }, [expandedDatabases, selectedDatabase]);
+    }, [expandedDatabases, selectedDatabase, hasAnyConnectedInfluxDB]);
 
     // 监听当前活动标签类型变化
     useEffect(() => {
