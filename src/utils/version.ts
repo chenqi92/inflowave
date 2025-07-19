@@ -16,9 +16,9 @@ export const getAppVersion = (): string => {
 // 获取应用名称
 export const getAppName = (): string => {
   try {
-    return packageJson.name || 'inflowave';
+    return packageJson.name || 'InfloWave';
   } catch (error) {
-    return 'inflowave';
+    return 'InfloWave';
   }
 };
 
@@ -26,8 +26,8 @@ export const getAppName = (): string => {
 export const getVersionInfo = () => {
   return {
     version: getAppVersion(),
-    name: 'InfluxDB GUI Manager',
+    name: 'InfloWave',
     appName: getAppName(),
-    fullName: `InfluxDB GUI Manager v${getAppVersion()}`,
+    fullName: `InfloWave v${getAppVersion()}`,
   };
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { generateUniqueId } from '@/utils/idGenerator';
 import {
   DataTable,
   Button,
@@ -359,7 +360,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           // 复制连接配置
           const duplicatedConnection = {
             ...connection,
-            id: `${connection.id}_copy_${Date.now()}`,
+            id: generateUniqueId(`${connection.id}_copy`),
             name: `${connection.name} (副本)`,
           };
           showMessage.info(`连接复制功能开发中: ${duplicatedConnection.name}`);
@@ -424,7 +425,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
 
-        // 确定状态点的颜色
+        // 确定状态点的颜色 - 使用CSS变量
         const getStatusColor = () => {
           if (!status) return 'bg-muted-foreground';
 
@@ -696,7 +697,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             className='w-full h-full connection-table'
             rowClassName={(record: ConnectionWithStatus) =>
               activeConnectionId === record.id
-                ? 'bg-primary/10 dark:bg-primary/20'
+                ? 'bg-accent'
                 : ''
             }
             onRow={(record: ConnectionWithStatus) => ({

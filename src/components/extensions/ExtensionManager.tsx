@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
+import { generateUniqueId } from '@/utils/idGenerator';
 import {
   Tabs,
   TabsContent,
@@ -166,7 +167,7 @@ const ExtensionManager: React.FC = () => {
     try {
       await safeTauriInvoke('create_api_integration', {
         integration: {
-          id: Date.now().toString(),
+          id: generateUniqueId('ext'),
           name: values.name,
           integration_type: values.type,
           endpoint: values.endpoint,
@@ -229,7 +230,7 @@ const ExtensionManager: React.FC = () => {
     try {
       await safeTauriInvoke('create_webhook', {
         webhook: {
-          id: Date.now().toString(),
+          id: generateUniqueId('ext'),
           name: values.name,
           url: values.url,
           events: values.events || [],
@@ -269,7 +270,7 @@ const ExtensionManager: React.FC = () => {
     try {
       await safeTauriInvoke('create_automation_rule', {
         rule: {
-          id: Date.now().toString(),
+          id: generateUniqueId('ext'),
           name: values.name,
           description: values.description,
           trigger: {

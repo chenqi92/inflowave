@@ -85,6 +85,7 @@ export function ThemeProvider({
       root.classList.add(systemTheme);
       currentTheme = systemTheme;
       setResolvedTheme(systemTheme);
+      applyThemeColors(colorScheme, systemTheme === 'dark');
 
       // 监听系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -95,6 +96,13 @@ export function ThemeProvider({
           root.classList.add(newSystemTheme);
           setResolvedTheme(newSystemTheme);
           applyThemeColors(colorScheme, newSystemTheme === 'dark');
+
+          // 强制触发重新渲染，确保所有组件都能响应主题变化
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('theme-changed', {
+              detail: { theme: newSystemTheme }
+            }));
+          }, 0);
         }
       };
 

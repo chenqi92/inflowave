@@ -19,6 +19,7 @@ import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
+import { generateUniqueId } from '@/utils/idGenerator';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -153,7 +154,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
     try {
       const tempConfig: ConnectionConfig = {
-        id: `temp-test-${Date.now()}`,
+        id: generateUniqueId('temp-test'),
         ...formData,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

@@ -405,7 +405,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (status?.status === 'connecting') return 'bg-warning';
 
     // 默认未连接状态
-    return 'bg-muted';
+    return 'bg-muted-foreground';
   }, [getConnectionStatus, isConnectionConnected]);
 
   // 构建完整的树形数据
@@ -1923,9 +1923,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 }
                 className={
                   displayConnectionInfo.status.status === 'connected'
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-success text-success-foreground'
                     : displayConnectionInfo.status.status === 'connecting'
-                      ? 'bg-yellow-600 text-white'
+                      ? 'bg-warning text-warning-foreground'
                       : ''
                 }
               >

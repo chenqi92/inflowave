@@ -29,9 +29,9 @@ const statusConfig = {
     borderColor: 'border-primary',
   },
   warning: {
-    color: 'text-yellow-500 dark:text-yellow-400',
-    bgColor: 'bg-yellow-100/50 dark:bg-yellow-900/20',
-    borderColor: 'border-yellow-300 dark:border-yellow-700',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
+    borderColor: 'border-warning',
   },
   '404': {
     color: 'text-muted-foreground',

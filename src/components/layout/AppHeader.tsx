@@ -47,13 +47,36 @@ const AppHeader: React.FC = () => {
       );
     }
 
-    const statusColor = {
-      connected: '#52c41a',
-      connecting: '#faad14',
-      disconnected: '#ff4d4f',
-      error: '#ff4d4f',
-    }[currentStatus.status];
+    const getStatusConfig = () => {
+      switch (currentStatus.status) {
+        case 'connected':
+          return {
+            variant: 'default' as const,
+            className: 'bg-success text-success-foreground',
+            iconClassName: 'text-success',
+          };
+        case 'connecting':
+          return {
+            variant: 'secondary' as const,
+            className: 'bg-warning text-warning-foreground',
+            iconClassName: 'text-warning',
+          };
+        case 'error':
+          return {
+            variant: 'destructive' as const,
+            className: '',
+            iconClassName: 'text-destructive',
+          };
+        default:
+          return {
+            variant: 'secondary' as const,
+            className: 'bg-muted text-muted-foreground',
+            iconClassName: 'text-muted-foreground',
+          };
+      }
+    };
 
+    const statusConfig = getStatusConfig();
     const statusText = {
       connected: '已连接',
       connecting: '连接中',
@@ -63,8 +86,8 @@ const AppHeader: React.FC = () => {
 
     return (
       <div className='flex gap-2'>
-        <Badge variant='secondary' style={{ backgroundColor: statusColor }} />
-        <Database className='w-4 h-4' style={{ color: statusColor }} />
+        <Badge variant={statusConfig.variant} className={statusConfig.className} />
+        <Database className={`w-4 h-4 ${statusConfig.iconClassName}`} />
         <div className='flex flex-col'>
           <Text strong className='text-sm'>
             {currentConnection.name}

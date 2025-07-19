@@ -39,6 +39,7 @@ import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
@@ -347,7 +348,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 创建新标签或更新当前标签
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `表查询-${tabs.length + 1}`,
         content: query,
         type: 'query',
@@ -612,7 +613,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               result.path.split('\\').pop() ||
               '未命名';
             const newTab: EditorTab = {
-              id: Date.now().toString(),
+              id: generateUniqueId('tab'),
               title: filename,
               content,
               type: 'query',
@@ -720,7 +721,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建新标签
     const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
         content: type === 'query' ? 'SELECT * FROM ' : '',
         type,
@@ -734,7 +735,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建数据浏览标签
     const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `${tableName}`,
         content: '', // 数据浏览不需要content
         type: 'data-browser',
@@ -751,7 +752,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建带数据库选择的查询标签页
     const createQueryTabWithDatabase = (database: string, query?: string) => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `查询-${tabs.length + 1}`,
         content: query || 'SELECT * FROM ',
         type: 'query',
@@ -823,7 +824,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
         // 创建新标签页
         const newTab: EditorTab = {
-          id: Date.now().toString(),
+          id: generateUniqueId('tab'),
           title: filename,
           content,
           type: 'query',

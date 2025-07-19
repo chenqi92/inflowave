@@ -301,7 +301,7 @@ export interface NetworkIOMetrics {
 
 // 配置相关类型
 export interface AppConfig {
-  theme: 'light' | 'dark' | 'auto';
+  theme: 'light' | 'dark' | 'auto' | 'system';
   language: string;
   queryTimeout: number;
   maxQueryResults: number;
@@ -356,7 +356,7 @@ export interface TabItem {
 }
 
 // 通用类型
-export type Theme = 'light' | 'dark' | 'auto';
+export type Theme = 'light' | 'dark' | 'auto' | 'system';
 export type Language = 'zh-CN' | 'en-US';
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 

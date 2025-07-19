@@ -475,15 +475,15 @@ pre,
 }
 
 .connection-status-connected {
-  background-color: #52c41a;
+  background-color: hsl(var(--success));
 }
 
 .connection-status-disconnected {
-  background-color: #ff4d4f;
+  background-color: hsl(var(--destructive));
 }
 
 .connection-status-connecting {
-  background-color: #faad14;
+  background-color: hsl(var(--warning));
   animation: pulse 1.5s infinite;
 }
 

@@ -39,6 +39,7 @@ import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { consoleLogger, type ConsoleLogEntry } from '@/utils/consoleLogger';
+import { generateUniqueId } from '@/utils/idGenerator';
 
 interface SystemLogEntry {
   id: string;
@@ -63,7 +64,7 @@ const DebugConsole: React.FC = () => {
   // 添加系统信息日志
   const addSystemLog = (level: SystemLogEntry['level'], message: string, source?: string) => {
     const newLog: SystemLogEntry = {
-      id: Date.now().toString(),
+      id: generateUniqueId('system'),
       timestamp: new Date(),
       level,
       message,
