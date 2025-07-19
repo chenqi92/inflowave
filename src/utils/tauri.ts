@@ -33,9 +33,10 @@ export const isTauriEnvironment = (): boolean => {
   );
 };
 
-// 检查是否在浏览器开发环境中
+// 检查是否在浏览器开发环境中 - 桌面应用专用，始终返回false
 export const isBrowserEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && window.__TAURI__ === undefined;
+  // 桌面应用专用，不支持浏览器环境
+  return false;
 };
 
 // 定义返回 void 的命令列表
@@ -199,24 +200,18 @@ export const getEnvironmentInfo = () => {
   };
 };
 
-// 显示环境警告
+// 显示环境警告 - 桌面应用专用，无需警告
 export const showEnvironmentWarning = () => {
-  if (isBrowserEnvironment()) {
-    console.warn(
-      '%c🌐 浏览器开发模式',
-      'color: #ff9800; font-size: 14px; font-weight: bold;',
-      '\n当前在浏览器中运行，Tauri API 不可用。\n正在使用模拟数据进行开发。\n要体验完整功能，请使用 `npm run tauri:dev` 启动。'
-    );
-  }
+  // 桌面应用专用，无需显示浏览器环境警告
+  console.log('🖥️ 桌面应用环境已初始化');
 };
 
-// 初始化环境检测
+// 初始化环境检测 - 桌面应用专用
 export const initializeEnvironment = () => {
   const envInfo = getEnvironmentInfo();
 
-  if (envInfo.isBrowser) {
-    showEnvironmentWarning();
-  }
+  // 桌面应用专用，始终显示桌面环境信息
+  showEnvironmentWarning();
 
   return envInfo;
 };

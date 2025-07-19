@@ -5,7 +5,7 @@
 
 import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
-import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -42,39 +42,19 @@ export interface NotificationConfig {
 const getUserNotificationPreferences = async () => {
     console.log('获取用户通知偏好设置');
     try {
-        if (isBrowserEnvironment()) {
-            // 在浏览器环境中从localStorage获取设置
-            const storedPrefs = localStorage.getItem('user-preferences');
-            console.log('localStorage原始数据:', storedPrefs);
-            if (storedPrefs) {
-                const prefs = JSON.parse(storedPrefs);
-                console.log('解析后的偏好数据:', prefs);
-                const notifications = prefs.notifications || {
-                    enabled: true,
-                    desktop: true,
-                    sound: false,
-                    query_completion: true,
-                    connection_status: true,
-                    system_alerts: true,
-                };
-                console.log('返回的通知设置:', notifications);
-                return notifications;
-            }
-        } else {
-            // 在Tauri环境中从后端获取设置
-            const prefs = await safeTauriInvoke('get_user_preferences');
-            console.log('从后端获取的偏好数据:', prefs);
-            const notifications = prefs?.notifications || {
-                enabled: true,
-                desktop: true,
-                sound: false,
-                query_completion: true,
-                connection_status: true,
-                system_alerts: true,
-            };
-            console.log('返回的通知设置:', notifications);
-            return notifications;
-        }
+        // 桌面应用专用：从Tauri后端获取设置
+        const prefs = await safeTauriInvoke('get_user_preferences');
+        console.log('从后端获取的偏好数据:', prefs);
+        const notifications = prefs?.notifications || {
+            enabled: true,
+            desktop: true,
+            sound: false,
+            query_completion: true,
+            connection_status: true,
+            system_alerts: true,
+        };
+        console.log('返回的通知设置:', notifications);
+        return notifications;
     } catch (error) {
         console.warn('获取用户通知偏好失败，使用默认设置:', error);
     }
@@ -101,37 +81,15 @@ const sendDesktopNotification = async (title: string, message: string, icon?: st
             return;
         }
         
-        if (isBrowserEnvironment()) {
-            // 在浏览器环境中使用 Web Notification API
-            if ('Notification' in window) {
-                if (Notification.permission === 'granted') {
-                    new Notification(title, {
-                        body: message,
-                        icon: icon || '/icon.png',
-                        tag: 'inflowave-notification',
-                    });
-                } else if (Notification.permission !== 'denied') {
-                    const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                        new Notification(title, {
-                            body: message,
-                            icon: icon || '/icon.png',
-                            tag: 'inflowave-notification',
-                        });
-                    }
-                }
+        // 桌面应用专用：使用Tauri原生通知
+        await safeTauriInvoke('send_notification', {
+            notification: {
+                title,
+                message,
+                notification_type: 'info',
+                duration: 5000,
             }
-        } else {
-            // 在Tauri环境中使用原生通知
-            await safeTauriInvoke('send_notification', {
-                notification: {
-                    title,
-                    message,
-                    notification_type: 'info',
-                    duration: 5000,
-                }
-            });
-        }
+        });
     } catch (error) {
         console.warn('发送桌面通知失败:', error);
     }

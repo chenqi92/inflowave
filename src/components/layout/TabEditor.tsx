@@ -1881,6 +1881,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       quickSuggestionsDelay: 50,
                       suggestSelection: 'first',
                       wordBasedSuggestions: 'currentDocument',
+                      // 桌面应用：启用Monaco编辑器的原生剪贴板功能
+                      contextmenu: true,
+                      copyWithSyntaxHighlighting: true,
                       }}
                     />
                   </div>

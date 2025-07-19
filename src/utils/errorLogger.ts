@@ -1,4 +1,4 @@
-import { isBrowserEnvironment } from './tauri';
+// 桌面应用专用错误日志系统
 import { FileOperations } from './fileOperations';
 
 export interface ErrorLogEntry {
@@ -37,14 +37,12 @@ class ErrorLogger {
 
   private async initializeLogging(): Promise<void> {
     try {
-      // 在浏览器环境中跳过文件相关的操作
-      if (!isBrowserEnvironment()) {
-        // 清除旧的错误日志
-        await this.clearOldLogs();
+      // 桌面应用专用：初始化文件日志
+      // 清除旧的错误日志
+      await this.clearOldLogs();
 
-        // 写入会话开始标记
-        await this.writeSessionStart();
-      }
+      // 写入会话开始标记
+      await this.writeSessionStart();
 
       // 设置全局错误处理器
       this.setupErrorHandlers();
@@ -262,11 +260,7 @@ class ErrorLogger {
   private async flushLogs(): Promise<void> {
     if (this.logBuffer.length === 0) return;
 
-    // 在浏览器环境中跳过文件写入
-    if (isBrowserEnvironment()) {
-      this.logBuffer = []; // 清空缓冲区
-      return;
-    }
+    // 桌面应用专用：写入日志文件
 
     try {
       const logsToWrite = [...this.logBuffer];

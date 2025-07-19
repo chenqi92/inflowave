@@ -45,6 +45,8 @@ const MainLayout: React.FC = () => {
     skipVersion: _skipVersion,
   } = useUpdater();
 
+
+
   // 检查是否显示用户指引
   useEffect(() => {
     if (!browserModeNoticeDismissed) {

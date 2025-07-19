@@ -332,6 +332,9 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   lineNumbers: 'on',
                   wordWrap: 'on',
                   automaticLayout: true,
+                  // 桌面应用：启用Monaco编辑器的原生剪贴板功能
+                  contextmenu: true,
+                  copyWithSyntaxHighlighting: true,
                 }}
                 key={resolvedTheme} // 强制重新渲染以应用主题
               />
