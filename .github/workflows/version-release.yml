@@ -3,6 +3,8 @@ name: Version-based Release
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -30,15 +32,49 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-          # 检查标签是否存在
-          if git tag -l | grep -q "^v$VERSION$"; then
-            echo "tag_exists=true" >> $GITHUB_OUTPUT
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "⚠️ Tag v$VERSION already exists, skipping release"
+          # 检查是否是package.json变更触发的
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # 检查package.json是否在本次提交中被修改
+            if git diff --name-only HEAD~1 HEAD | grep -q "package.json"; then
+              echo "📝 package.json was modified in this commit"
+              
+              # 检查版本号是否真的变更了
+              PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version" || echo "0.0.0")
+              echo "Previous version: $PREV_VERSION"
+              echo "Current version: $VERSION"
+              
+              if [ "$VERSION" != "$PREV_VERSION" ]; then
+                echo "✅ Version changed from $PREV_VERSION to $VERSION"
+                
+                # 检查标签是否存在
+                if git tag -l | grep -q "^v$VERSION$"; then
+                  echo "tag_exists=true" >> $GITHUB_OUTPUT
+                  echo "should_release=false" >> $GITHUB_OUTPUT
+                  echo "⚠️ Tag v$VERSION already exists, skipping release"
+                else
+                  echo "tag_exists=false" >> $GITHUB_OUTPUT
+                  echo "should_release=true" >> $GITHUB_OUTPUT
+                  echo "🚀 Will create release for v$VERSION"
+                fi
+              else
+                echo "should_release=false" >> $GITHUB_OUTPUT
+                echo "⏭️ Version unchanged, skipping release"
+              fi
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "⏭️ package.json not modified, skipping release"
+            fi
           else
-            echo "tag_exists=false" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "✅ New version v$VERSION detected, will create release"
+            # 手动触发的情况
+            if git tag -l | grep -q "^v$VERSION$"; then
+              echo "tag_exists=true" >> $GITHUB_OUTPUT
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "⚠️ Tag v$VERSION already exists, skipping release"
+            else
+              echo "tag_exists=false" >> $GITHUB_OUTPUT
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "✅ Manual trigger: will create release for v$VERSION"
+            fi
           fi
 
   # 全平台全架构构建

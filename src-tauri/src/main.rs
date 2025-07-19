@@ -9,7 +9,7 @@ mod utils;
 mod config;
 mod updater;
 
-use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}};
+use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}, LogicalSize};
 use log::{info, warn, error};
 
 // Tauri commands
@@ -413,6 +413,80 @@ async fn setup_embedded_server_if_needed(app_handle: tauri::AppHandle) -> Result
     Ok(())
 }
 
+/// 获取并设置响应式窗口大小
+fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("正在设置响应式窗口大小...");
+    
+    // 获取主显示器信息
+    match window.primary_monitor() {
+        Ok(Some(monitor)) => {
+            let screen_size = monitor.size();
+            let scale_factor = monitor.scale_factor();
+            
+            info!("检测到屏幕大小: {}x{}, 缩放因子: {}", 
+                  screen_size.width, screen_size.height, scale_factor);
+            
+            // 计算合适的窗口大小（屏幕的80%，但不超过最大合理尺寸）
+            let max_width = 1800.0;
+            let max_height = 1200.0;
+            let min_width = 1000.0;
+            let min_height = 700.0;
+            
+            // 计算目标尺寸（屏幕的80%）
+            let target_width = (screen_size.width as f64 * 0.8).min(max_width).max(min_width);
+            let target_height = (screen_size.height as f64 * 0.8).min(max_height).max(min_height);
+            
+            info!("计算出的窗口大小: {}x{}", target_width, target_height);
+            
+            // 设置窗口大小
+            let logical_size = LogicalSize::new(target_width, target_height);
+            if let Err(e) = window.set_size(logical_size) {
+                warn!("设置窗口大小失败: {}", e);
+            }
+            
+            // 居中显示
+            if let Err(e) = window.center() {
+                warn!("窗口居中失败: {}", e);
+            }
+            
+            // 显示窗口
+            if let Err(e) = window.show() {
+                warn!("显示窗口失败: {}", e);
+            }
+            
+            info!("响应式窗口大小设置完成: {}x{}", target_width, target_height);
+        }
+        Ok(None) => {
+            warn!("无法获取主显示器信息，使用默认窗口大小");
+            // 使用默认大小并显示窗口
+            if let Err(e) = window.set_size(LogicalSize::new(1400.0, 900.0)) {
+                warn!("设置默认窗口大小失败: {}", e);
+            }
+            if let Err(e) = window.center() {
+                warn!("窗口居中失败: {}", e);
+            }
+            if let Err(e) = window.show() {
+                warn!("显示窗口失败: {}", e);
+            }
+        }
+        Err(e) => {
+            error!("获取显示器信息失败: {}", e);
+            // 使用默认大小并显示窗口
+            if let Err(e) = window.set_size(LogicalSize::new(1400.0, 900.0)) {
+                warn!("设置默认窗口大小失败: {}", e);
+            }
+            if let Err(e) = window.center() {
+                warn!("窗口居中失败: {}", e);
+            }
+            if let Err(e) = window.show() {
+                warn!("显示窗口失败: {}", e);
+            }
+        }
+    }
+    
+    Ok(())
+}
+
 /// 处理启动时的端口冲突
 async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use services::port_manager::get_port_manager;
@@ -687,6 +761,15 @@ async fn main() {
         ])
         .setup(|app| {
             info!("Application setup started");
+
+            // 设置响应式窗口大小
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(e) = setup_responsive_window_size(&window) {
+                    error!("设置响应式窗口大小失败: {}", e);
+                }
+            } else {
+                warn!("无法获取主窗口，跳过响应式大小设置");
+            }
 
             // 创建并设置原生菜单
             match create_native_menu(app.handle()) {

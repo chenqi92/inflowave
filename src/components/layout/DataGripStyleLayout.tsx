@@ -96,7 +96,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [executedQueries, setExecutedQueries] = useState<string[]>([]);
   const [executionTime, setExecutionTime] = useState<number>(0);
   const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
-  const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]); // 新增：已展开的数据库列表
   const [showQueryHistory, setShowQueryHistory] = useState(false);
 
   // 手动打开查询历史的方法
@@ -291,11 +290,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   // 获取当前视图
   const getCurrentView = () => currentView;
 
-  // 处理已展开数据库列表变化
-  const handleExpandedDatabasesChange = (databases: string[]) => {
-    setExpandedDatabases(databases);
-  };
-
   // 处理视图变化 - 特殊处理开发者工具
   const handleViewChange = useCallback(
     (newView: string) => {
@@ -420,7 +414,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     }
                   }}
                   onActiveTabTypeChange={setActiveTabType}
-                  expandedDatabases={expandedDatabases}
                   currentTimeRange={currentTimeRange}
                   ref={tabEditorRef as any}
                 />
@@ -516,7 +509,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 onCreateQueryTab={handleCreateQueryTab}
                 onViewChange={handleViewChange}
                 onGetCurrentView={getCurrentView}
-                onExpandedDatabasesChange={handleExpandedDatabasesChange}
                 currentTimeRange={currentTimeRange}
               />
             </div>

@@ -81,7 +81,6 @@ interface TabEditorProps {
     executionTime: number
   ) => void;
   onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser') => void;
-  expandedDatabases?: string[]; // 新增：已展开的数据库列表
   currentTimeRange?: {
     label: string;
     value: string;
@@ -99,7 +98,7 @@ interface TabEditorRef {
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
-  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
+  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, currentTimeRange }, ref) => {
     const { activeConnectionId, connections } = useConnectionStore();
     const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
     const { resolvedTheme } = useTheme();
@@ -781,23 +780,6 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         setSelectedDatabase('');
       }
     }, [activeConnectionId]);
-
-    // 监听已展开数据库变化，自动选择合适的数据库
-    useEffect(() => {
-      if (expandedDatabases.length > 0) {
-        // 如果当前选中的数据库不在已展开列表中，选择第一个已展开的数据库
-        if (!selectedDatabase || !expandedDatabases.includes(selectedDatabase)) {
-          setSelectedDatabase(expandedDatabases[0]);
-          console.log('🔄 自动选择已展开的数据库:', expandedDatabases[0]);
-        }
-      } else {
-        // 如果没有已展开的数据库，清空选择
-        if (selectedDatabase) {
-          setSelectedDatabase('');
-          console.log('🔄 清空数据库选择，因为没有已展开的数据库');
-        }
-      }
-    }, [expandedDatabases, selectedDatabase]);
 
     // 监听当前活动标签类型变化
     useEffect(() => {
@@ -1859,13 +1841,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               <Select
                 value={selectedDatabase}
                 onValueChange={setSelectedDatabase}
-                disabled={!hasAnyConnectedInfluxDB || expandedDatabases.length === 0}
+                disabled={!hasAnyConnectedInfluxDB || databases.length === 0}
               >
                 <SelectTrigger className='w-[140px] h-10'>
                   <SelectValue placeholder='选择数据库' />
                 </SelectTrigger>
                 <SelectContent>
-                  {expandedDatabases.map(db => (
+                  {databases.map(db => (
                     <SelectItem key={db} value={db}>
                       {db}
                     </SelectItem>
