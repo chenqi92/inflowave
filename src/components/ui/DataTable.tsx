@@ -34,6 +34,7 @@ interface DataTableProps {
   className?: string;
   style?: React.CSSProperties;
   pagination?: any; // 暂时保留但不实现
+  onRow?: (record: any, index?: number) => { [key: string]: (event: any) => void };
 }
 
 const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
@@ -49,6 +50,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
       bordered = false,
       className,
       style,
+      onRow,
       ...props
     },
     ref
@@ -138,34 +140,38 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dataSource.map((record, index) => (
-                <TableRow
-                  key={getRowKey(record, index)}
-                  className={cn(
-                    'transition-colors duration-150',
-                    getRowClassName(record, index),
-                    bordered && 'border-b border-border'
-                  )}
-                >
-                  {columns.map(column => (
-                    <TableCell
-                      key={column.key}
-                      style={{
-                        textAlign: column.align || 'left',
-                      }}
-                      className={cn(
-                        'py-3', // 增加垂直内边距
-                        column.ellipsis && 'truncate',
-                        bordered && 'border-r border-border last:border-r-0'
-                      )}
-                    >
-                      {column.render
-                        ? column.render(record[column.dataIndex], record, index)
-                        : record[column.dataIndex]}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {dataSource.map((record, index) => {
+                const rowProps = onRow ? onRow(record, index) : {};
+                return (
+                  <TableRow
+                    key={getRowKey(record, index)}
+                    className={cn(
+                      'transition-colors duration-150',
+                      getRowClassName(record, index),
+                      bordered && 'border-b border-border'
+                    )}
+                    {...rowProps}
+                  >
+                    {columns.map(column => (
+                      <TableCell
+                        key={column.key}
+                        style={{
+                          textAlign: column.align || 'left',
+                        }}
+                        className={cn(
+                          'py-3', // 增加垂直内边距
+                          column.ellipsis && 'truncate',
+                          bordered && 'border-r border-border last:border-r-0'
+                        )}
+                      >
+                        {column.render
+                          ? column.render(record[column.dataIndex], record, index)
+                          : record[column.dataIndex]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

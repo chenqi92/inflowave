@@ -40,13 +40,16 @@ export interface NotificationConfig {
 
 // 获取用户通知偏好设置
 const getUserNotificationPreferences = async () => {
+    console.log('获取用户通知偏好设置');
     try {
         if (isBrowserEnvironment()) {
             // 在浏览器环境中从localStorage获取设置
             const storedPrefs = localStorage.getItem('user-preferences');
+            console.log('localStorage原始数据:', storedPrefs);
             if (storedPrefs) {
                 const prefs = JSON.parse(storedPrefs);
-                return prefs.notifications || {
+                console.log('解析后的偏好数据:', prefs);
+                const notifications = prefs.notifications || {
                     enabled: true,
                     desktop: true,
                     sound: false,
@@ -54,11 +57,14 @@ const getUserNotificationPreferences = async () => {
                     connection_status: true,
                     system_alerts: true,
                 };
+                console.log('返回的通知设置:', notifications);
+                return notifications;
             }
         } else {
             // 在Tauri环境中从后端获取设置
             const prefs = await safeTauriInvoke('get_user_preferences');
-            return prefs?.notifications || {
+            console.log('从后端获取的偏好数据:', prefs);
+            const notifications = prefs?.notifications || {
                 enabled: true,
                 desktop: true,
                 sound: false,
@@ -66,13 +72,15 @@ const getUserNotificationPreferences = async () => {
                 connection_status: true,
                 system_alerts: true,
             };
+            console.log('返回的通知设置:', notifications);
+            return notifications;
         }
     } catch (error) {
         console.warn('获取用户通知偏好失败，使用默认设置:', error);
     }
     
     // 默认设置
-    return {
+    const defaultNotifications = {
         enabled: true,
         desktop: true,
         sound: false,
@@ -80,6 +88,8 @@ const getUserNotificationPreferences = async () => {
         connection_status: true,
         system_alerts: true,
     };
+    console.log('使用默认通知设置:', defaultNotifications);
+    return defaultNotifications;
 };
 
 // 发送桌面通知

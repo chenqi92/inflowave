@@ -1457,25 +1457,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       // 设置智能自动补全
       setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
 
-      console.log('🎯 Monaco编辑器开始挂载，当前主题:', resolvedTheme);
-
-      // 注册自定义主题（必须在设置主题之前）
+      // 注册自定义主题以确保语法高亮正确
       try {
-        console.log('🎨 开始注册自定义主题...');
-
         // 深色主题
         monaco.editor.defineTheme('influxql-dark', {
           base: 'vs-dark',
           inherit: true,
           rules: [
-            { token: 'comment', foreground: 'A1A1AA', fontStyle: 'italic' },
-            { token: 'keyword', foreground: 'FFFFFF', fontStyle: 'bold' },
-            { token: 'function', foreground: 'F97316', fontStyle: 'bold' },
-            { token: 'string', foreground: '4ADE80' },
-            { token: 'number', foreground: '818CF8' },
-            { token: 'identifier', foreground: 'D4D4D4' },
-            { token: 'operator', foreground: 'FCD34D' },
-            { token: 'delimiter', foreground: 'D4D4D4' },
+            { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
+            { token: 'keyword', foreground: '569cd6', fontStyle: 'bold' },
+            { token: 'string', foreground: 'ce9178' },
+            { token: 'number', foreground: 'b5cea8' },
+            { token: 'function', foreground: 'dcdcaa', fontStyle: 'bold' },
+            { token: 'operator', foreground: 'c586c0' },
+            { token: 'identifier', foreground: 'd4d4d4' },
+            { token: 'delimiter', foreground: 'd4d4d4' },
           ],
           colors: {
             'editor.background': '#1e1e1e',
@@ -1492,14 +1488,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           base: 'vs',
           inherit: true,
           rules: [
-            { token: 'comment', foreground: '6B7280', fontStyle: 'italic' },
-            { token: 'keyword', foreground: '1F2937', fontStyle: 'bold' },
-            { token: 'function', foreground: 'EA580C', fontStyle: 'bold' },
-            { token: 'string', foreground: '059669' },
-            { token: 'number', foreground: '2563EB' },
-            { token: 'identifier', foreground: '374151' },
-            { token: 'operator', foreground: 'D97706' },
-            { token: 'delimiter', foreground: '374151' },
+            { token: 'comment', foreground: '008000', fontStyle: 'italic' },
+            { token: 'keyword', foreground: '0000ff', fontStyle: 'bold' },
+            { token: 'string', foreground: 'a31515' },
+            { token: 'number', foreground: '098658' },
+            { token: 'function', foreground: '795e26', fontStyle: 'bold' },
+            { token: 'operator', foreground: 'af00db' },
+            { token: 'identifier', foreground: '000000' },
+            { token: 'delimiter', foreground: '000000' },
           ],
           colors: {
             'editor.background': '#ffffff',
@@ -1511,29 +1507,16 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           }
         });
 
-        console.log('✅ 自定义主题注册完成');
-
         // 立即设置主题
         const currentTheme = resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
         monaco.editor.setTheme(currentTheme);
         console.log('🎨 Monaco编辑器主题已设置为:', currentTheme);
 
-        // 强制设置编辑器背景色（测试用）
+        // 手动设置编辑器的主题属性，确保CSS能够正确应用
         const editorElement = editor.getDomNode();
         if (editorElement) {
-          const backgroundColor = resolvedTheme === 'dark' ? '#1e1e1e' : '#ffffff';
-          const textColor = resolvedTheme === 'dark' ? '#d4d4d4' : '#000000';
-
-          editorElement.style.backgroundColor = backgroundColor;
-          editorElement.style.color = textColor;
-
-          // 设置编辑器内部元素的背景色
-          const viewLines = editorElement.querySelector('.view-lines');
-          if (viewLines) {
-            (viewLines as HTMLElement).style.backgroundColor = backgroundColor;
-          }
-
-          console.log('🎨 强制设置编辑器背景色为:', backgroundColor);
+          editorElement.setAttribute('data-theme-applied', resolvedTheme);
+          console.log('🎨 编辑器主题属性已设置为:', resolvedTheme);
         }
 
       } catch (error) {
@@ -1684,6 +1667,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           setTimeout(() => {
             monaco.editor.setTheme(newTheme);
             console.log('🔄 主题已切换到:', newTheme);
+
+            // 更新编辑器的主题属性
+            const editorElement = editor.getDomNode();
+            if (editorElement) {
+              editorElement.setAttribute('data-theme-applied', currentResolvedTheme);
+              console.log('🔄 编辑器主题属性已更新为:', currentResolvedTheme);
+            }
           }, 50);
         }
       });
@@ -1971,7 +1961,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     <Editor
                       height='100%'
                       language='influxql'
-                      theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+                      theme={resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light'}
                       value={currentTab.content}
                       onChange={handleEditorChange}
                       onMount={handleEditorDidMount}

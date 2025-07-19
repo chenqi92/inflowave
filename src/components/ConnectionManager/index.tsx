@@ -28,6 +28,9 @@ import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 // import {safeTauriInvoke} from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
+import { dialog } from '@/utils/dialog';
+import ContextMenu from '@/components/common/ContextMenu';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -79,6 +82,19 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
   // 刷新状态按钮的加载状态
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    target: any;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null,
+  });
 
   // const [loading, setLoading] = useState(false);
   const [connectionLoadingStates, setConnectionLoadingStates] = useState<
@@ -271,6 +287,131 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         </TooltipContent>
       </Tooltip>
     );
+  };
+
+  // 处理行右键菜单
+  const handleRowContextMenu = (event: React.MouseEvent, record: ConnectionWithStatus) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = {
+      type: 'connection_row',
+      connection: record,
+      connectionId: record.id,
+      name: record.name,
+      status: record.id ? connectionStatuses[record.id] : undefined,
+    };
+
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      target,
+    });
+  };
+
+  // 隐藏右键菜单
+  const hideContextMenu = () => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      target: null,
+    });
+  };
+
+  // 处理右键菜单动作
+  const handleContextMenuAction = async (action: string, params?: any) => {
+    const { target } = contextMenu;
+    if (!target || target.type !== 'connection_row') return;
+
+    const connection = target.connection;
+
+    try {
+      switch (action) {
+        case 'connect':
+          await connectToDatabase(connection.id);
+          showMessage.success(`已连接到 ${connection.name}`);
+          break;
+
+        case 'disconnect':
+          await disconnectFromDatabase(connection.id);
+          showMessage.success(`已断开 ${connection.name}`);
+          break;
+
+        case 'test_connection':
+          await testConnection(connection.id);
+          showMessage.success(`连接测试完成: ${connection.name}`);
+          break;
+
+        case 'refresh_status':
+          await refreshConnectionStatus(connection.id);
+          showMessage.success(`状态已刷新: ${connection.name}`);
+          break;
+
+        case 'edit_connection':
+          if (onEditConnection) {
+            onEditConnection(connection);
+          }
+          break;
+
+        case 'duplicate_connection': {
+          // 复制连接配置
+          const duplicatedConnection = {
+            ...connection,
+            id: `${connection.id}_copy_${Date.now()}`,
+            name: `${connection.name} (副本)`,
+          };
+          showMessage.info(`连接复制功能开发中: ${duplicatedConnection.name}`);
+          break;
+        }
+
+        case 'copy_connection_string': {
+          const connectionString = `${connection.host}:${connection.port}`;
+          await writeToClipboard(connectionString, {
+            successMessage: `已复制连接字符串: ${connectionString}`,
+          });
+          break;
+        }
+
+        case 'copy_connection_info': {
+          const connectionInfo = JSON.stringify(connection, null, 2);
+          await writeToClipboard(connectionInfo, {
+            successMessage: '已复制连接信息到剪贴板',
+          });
+          break;
+        }
+
+        case 'view_pool_stats':
+          if (poolStats[connection.id]) {
+            setSelectedConnectionId(connection.id);
+            setPoolStatsModalVisible(true);
+          } else {
+            showMessage.info('暂无连接池统计信息');
+          }
+          break;
+
+        case 'delete_connection': {
+          const confirmed = await dialog.confirm(
+            `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`
+          );
+          if (confirmed) {
+            await removeConnection(connection.id);
+            showMessage.success(`连接 ${connection.name} 已删除`);
+          }
+          break;
+        }
+
+        default:
+          console.warn('未处理的右键菜单动作:', action);
+          break;
+      }
+    } catch (error) {
+      console.error('执行右键菜单动作失败:', error);
+      showMessage.error(`操作失败: ${error}`);
+    }
+
+    hideContextMenu();
   };
 
   // 表格列定义
@@ -553,11 +694,14 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             }}
             size='middle'
             className='w-full h-full connection-table'
-            rowClassName={record =>
+            rowClassName={(record: ConnectionWithStatus) =>
               activeConnectionId === record.id
                 ? 'bg-primary/10 dark:bg-primary/20'
                 : ''
             }
+            onRow={(record: ConnectionWithStatus) => ({
+              onContextMenu: (event: React.MouseEvent) => handleRowContextMenu(event, record),
+            })}
           />
         </div>
       </div>
@@ -632,6 +776,16 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 右键菜单 */}
+      <ContextMenu
+        open={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        target={contextMenu.target}
+        onClose={hideContextMenu}
+        onAction={handleContextMenuAction}
+      />
     </div>
   );
 };

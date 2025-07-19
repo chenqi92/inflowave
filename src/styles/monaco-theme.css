@@ -156,9 +156,8 @@
 /* 强制覆盖Monaco编辑器样式 - 深色模式 */
 [data-theme="dark"] .monaco-editor,
 [data-theme="dark"] .monaco-editor .monaco-editor-background,
-[data-theme="dark"] .monaco-editor .inputarea.ime-input {
+[data-theme="dark"] .monaco-editor .overflow-guard {
   background-color: #1e1e1e !important;
-  color: #d4d4d4 !important;
 }
 
 [data-theme="dark"] .monaco-editor .view-lines,
@@ -167,50 +166,214 @@
   background-color: #1e1e1e !important;
 }
 
-[data-theme="dark"] .monaco-editor .current-line {
-  background-color: #2a2d2e !important;
+/* 最强力的深色模式覆盖 - 针对所有可能的Monaco编辑器元素 */
+html[data-theme="dark"] .monaco-editor,
+html[data-theme="dark"] .monaco-editor .monaco-editor-background,
+html[data-theme="dark"] .monaco-editor .overflow-guard,
+html[data-theme="dark"] .monaco-editor .monaco-scrollable-element,
+html[data-theme="dark"] .monaco-editor .view-lines,
+html[data-theme="dark"] .monaco-editor .view-line,
+html[data-theme="dark"] .monaco-editor .view-overlay,
+html[data-theme="dark"] .monaco-editor .monaco-mouse-cursor-text,
+html[data-theme="dark"] .monaco-editor .view-lines.monaco-mouse-cursor-text,
+html[data-theme="dark"] .monaco-editor .monaco-mouse-cursor-text .view-line,
+html[data-theme="dark"] .monaco-editor .inputarea,
+html[data-theme="dark"] .monaco-editor .inputarea.ime-input,
+html[data-theme="dark"] .monaco-editor .margin,
+html[data-theme="dark"] .monaco-editor .margin-view-overlays,
+html[data-theme="dark"] .monaco-editor .decorationsOverviewRuler,
+html[data-theme="dark"] .monaco-editor .lines-content,
+html[data-theme="dark"] .monaco-editor .monaco-editor-hover,
+html[data-theme="dark"] .monaco-editor .suggest-widget,
+html[data-theme="dark"] .monaco-editor .parameter-hints-widget {
+  background-color: #1e1e1e !important;
 }
 
-[data-theme="dark"] .monaco-editor .selected-text {
-  background-color: #264f78 !important;
+/* 深色模式文本颜色强制覆盖 */
+html[data-theme="dark"] .monaco-editor .view-line,
+html[data-theme="dark"] .monaco-editor .view-line span,
+html[data-theme="dark"] .monaco-editor .monaco-mouse-cursor-text,
+html[data-theme="dark"] .monaco-editor .monaco-mouse-cursor-text .view-line,
+html[data-theme="dark"] .monaco-editor .monaco-mouse-cursor-text .view-line span {
+  color: #d4d4d4 !important;
 }
 
-[data-theme="dark"] .monaco-editor .line-numbers {
-  color: #858585 !important;
+/* 深色模式下的语法高亮强制覆盖 - 使用最高优先级 */
+html[data-theme="dark"] .monaco-editor .mtk1,
+html[data-theme="dark"] .monaco-editor .view-line .mtk1 {
+  color: #d4d4d4 !important;
+} /* 默认文本 */
+
+html[data-theme="dark"] .monaco-editor .mtk2,
+html[data-theme="dark"] .monaco-editor .view-line .mtk2 {
+  color: #569cd6 !important;
+  font-weight: bold !important;
+} /* 关键词 */
+
+html[data-theme="dark"] .monaco-editor .mtk3,
+html[data-theme="dark"] .monaco-editor .view-line .mtk3 {
+  color: #6a9955 !important;
+  font-style: italic !important;
+} /* 注释 */
+
+html[data-theme="dark"] .monaco-editor .mtk4,
+html[data-theme="dark"] .monaco-editor .view-line .mtk4 {
+  color: #ce9178 !important;
+} /* 字符串 */
+
+html[data-theme="dark"] .monaco-editor .mtk5,
+html[data-theme="dark"] .monaco-editor .view-line .mtk5 {
+  color: #b5cea8 !important;
+} /* 数字 */
+
+html[data-theme="dark"] .monaco-editor .mtk6,
+html[data-theme="dark"] .monaco-editor .view-line .mtk6 {
+  color: #dcdcaa !important;
+  font-weight: bold !important;
+} /* 函数 */
+
+html[data-theme="dark"] .monaco-editor .mtk7,
+html[data-theme="dark"] .monaco-editor .view-line .mtk7 {
+  color: #c586c0 !important;
+} /* 操作符 */
+
+/* 深色模式下的Token级别覆盖 */
+html[data-theme="dark"] .monaco-editor .token.keyword,
+html[data-theme="dark"] .monaco-editor .token.keyword.sql {
+  color: #569cd6 !important;
+  font-weight: bold !important;
 }
 
-[data-theme="dark"] .monaco-editor .cursor {
-  color: #ffffff !important;
+html[data-theme="dark"] .monaco-editor .token.comment,
+html[data-theme="dark"] .monaco-editor .token.comment.sql {
+  color: #6a9955 !important;
+  font-style: italic !important;
 }
 
-/* 强制覆盖Monaco编辑器样式 - 浅色模式 */
-[data-theme="light"] .monaco-editor,
-[data-theme="light"] .monaco-editor .monaco-editor-background,
-[data-theme="light"] .monaco-editor .inputarea.ime-input {
+html[data-theme="dark"] .monaco-editor .token.string,
+html[data-theme="dark"] .monaco-editor .token.string.sql {
+  color: #ce9178 !important;
+}
+
+html[data-theme="dark"] .monaco-editor .token.number,
+html[data-theme="dark"] .monaco-editor .token.number.sql {
+  color: #b5cea8 !important;
+}
+
+html[data-theme="dark"] .monaco-editor .token.function,
+html[data-theme="dark"] .monaco-editor .token.function.sql {
+  color: #dcdcaa !important;
+  font-weight: bold !important;
+}
+
+html[data-theme="dark"] .monaco-editor .token.operator,
+html[data-theme="dark"] .monaco-editor .token.operator.sql {
+  color: #c586c0 !important;
+}
+
+/* 最强力的浅色模式覆盖 - 针对所有可能的Monaco编辑器元素 */
+html[data-theme="light"] .monaco-editor,
+html[data-theme="light"] .monaco-editor .monaco-editor-background,
+html[data-theme="light"] .monaco-editor .overflow-guard,
+html[data-theme="light"] .monaco-editor .monaco-scrollable-element,
+html[data-theme="light"] .monaco-editor .view-lines,
+html[data-theme="light"] .monaco-editor .view-line,
+html[data-theme="light"] .monaco-editor .view-overlay,
+html[data-theme="light"] .monaco-editor .monaco-mouse-cursor-text,
+html[data-theme="light"] .monaco-editor .view-lines.monaco-mouse-cursor-text,
+html[data-theme="light"] .monaco-editor .monaco-mouse-cursor-text .view-line,
+html[data-theme="light"] .monaco-editor .inputarea,
+html[data-theme="light"] .monaco-editor .inputarea.ime-input,
+html[data-theme="light"] .monaco-editor .margin,
+html[data-theme="light"] .monaco-editor .margin-view-overlays,
+html[data-theme="light"] .monaco-editor .decorationsOverviewRuler,
+html[data-theme="light"] .monaco-editor .lines-content,
+html[data-theme="light"] .monaco-editor .monaco-editor-hover,
+html[data-theme="light"] .monaco-editor .suggest-widget,
+html[data-theme="light"] .monaco-editor .parameter-hints-widget {
   background-color: #ffffff !important;
+}
+
+/* 浅色模式文本颜色强制覆盖 */
+html[data-theme="light"] .monaco-editor .view-line,
+html[data-theme="light"] .monaco-editor .view-line span,
+html[data-theme="light"] .monaco-editor .monaco-mouse-cursor-text,
+html[data-theme="light"] .monaco-editor .monaco-mouse-cursor-text .view-line,
+html[data-theme="light"] .monaco-editor .monaco-mouse-cursor-text .view-line span {
   color: #000000 !important;
 }
 
-[data-theme="light"] .monaco-editor .view-lines,
-[data-theme="light"] .monaco-editor .view-line,
-[data-theme="light"] .monaco-editor .view-overlay {
-  background-color: #ffffff !important;
-}
-
-[data-theme="light"] .monaco-editor .current-line {
-  background-color: #f0f0f0 !important;
-}
-
-[data-theme="light"] .monaco-editor .selected-text {
-  background-color: #add6ff !important;
-}
-
-[data-theme="light"] .monaco-editor .line-numbers {
-  color: #237893 !important;
-}
-
-[data-theme="light"] .monaco-editor .cursor {
+/* 浅色模式下的语法高亮强制覆盖 - 使用最高优先级 */
+html[data-theme="light"] .monaco-editor .mtk1,
+html[data-theme="light"] .monaco-editor .view-line .mtk1 {
   color: #000000 !important;
+} /* 默认文本 */
+
+html[data-theme="light"] .monaco-editor .mtk2,
+html[data-theme="light"] .monaco-editor .view-line .mtk2 {
+  color: #0000ff !important;
+  font-weight: bold !important;
+} /* 关键词 */
+
+html[data-theme="light"] .monaco-editor .mtk3,
+html[data-theme="light"] .monaco-editor .view-line .mtk3 {
+  color: #008000 !important;
+  font-style: italic !important;
+} /* 注释 */
+
+html[data-theme="light"] .monaco-editor .mtk4,
+html[data-theme="light"] .monaco-editor .view-line .mtk4 {
+  color: #a31515 !important;
+} /* 字符串 */
+
+html[data-theme="light"] .monaco-editor .mtk5,
+html[data-theme="light"] .monaco-editor .view-line .mtk5 {
+  color: #098658 !important;
+} /* 数字 */
+
+html[data-theme="light"] .monaco-editor .mtk6,
+html[data-theme="light"] .monaco-editor .view-line .mtk6 {
+  color: #795e26 !important;
+  font-weight: bold !important;
+} /* 函数 */
+
+html[data-theme="light"] .monaco-editor .mtk7,
+html[data-theme="light"] .monaco-editor .view-line .mtk7 {
+  color: #af00db !important;
+} /* 操作符 */
+
+/* 浅色模式下的Token级别覆盖 */
+html[data-theme="light"] .monaco-editor .token.keyword,
+html[data-theme="light"] .monaco-editor .token.keyword.sql {
+  color: #0000ff !important;
+  font-weight: bold !important;
+}
+
+html[data-theme="light"] .monaco-editor .token.comment,
+html[data-theme="light"] .monaco-editor .token.comment.sql {
+  color: #008000 !important;
+  font-style: italic !important;
+}
+
+html[data-theme="light"] .monaco-editor .token.string,
+html[data-theme="light"] .monaco-editor .token.string.sql {
+  color: #a31515 !important;
+}
+
+html[data-theme="light"] .monaco-editor .token.number,
+html[data-theme="light"] .monaco-editor .token.number.sql {
+  color: #098658 !important;
+}
+
+html[data-theme="light"] .monaco-editor .token.function,
+html[data-theme="light"] .monaco-editor .token.function.sql {
+  color: #795e26 !important;
+  font-weight: bold !important;
+}
+
+html[data-theme="light"] .monaco-editor .token.operator,
+html[data-theme="light"] .monaco-editor .token.operator.sql {
+  color: #af00db !important;
 }
 
 /* 默认主题（无data-theme属性时）- 浅色模式 */
@@ -226,3 +389,42 @@
 :root:not([data-theme]) .monaco-editor .view-overlay {
   background-color: #ffffff !important;
 }
+
+/* 终极强制覆盖 - 确保在任何情况下都能生效 */
+.monaco-editor[data-theme-applied="dark"],
+.monaco-editor[data-theme-applied="dark"] *,
+body[data-theme="dark"] .monaco-editor,
+body[data-theme="dark"] .monaco-editor *,
+div[data-theme="dark"] .monaco-editor,
+div[data-theme="dark"] .monaco-editor * {
+  background-color: #1e1e1e !important;
+}
+
+.monaco-editor[data-theme-applied="dark"] .view-line,
+.monaco-editor[data-theme-applied="dark"] .view-line span,
+body[data-theme="dark"] .monaco-editor .view-line,
+body[data-theme="dark"] .monaco-editor .view-line span,
+div[data-theme="dark"] .monaco-editor .view-line,
+div[data-theme="dark"] .monaco-editor .view-line span {
+  color: #d4d4d4 !important;
+}
+
+.monaco-editor[data-theme-applied="light"],
+.monaco-editor[data-theme-applied="light"] *,
+body[data-theme="light"] .monaco-editor,
+body[data-theme="light"] .monaco-editor *,
+div[data-theme="light"] .monaco-editor,
+div[data-theme="light"] .monaco-editor * {
+  background-color: #ffffff !important;
+}
+
+.monaco-editor[data-theme-applied="light"] .view-line,
+.monaco-editor[data-theme-applied="light"] .view-line span,
+body[data-theme="light"] .monaco-editor .view-line,
+body[data-theme="light"] .monaco-editor .view-line span,
+div[data-theme="light"] .monaco-editor .view-line,
+div[data-theme="light"] .monaco-editor .view-line span {
+  color: #000000 !important;
+}
+
+

@@ -5,6 +5,7 @@
 
 import { showMessage } from './message';
 import { isBrowserEnvironment } from './tauri';
+import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
 
 export interface ClipboardOptions {
   showSuccess?: boolean;
@@ -53,15 +54,15 @@ export async function writeToClipboard(
         return tryFallbackCopy(text, options);
       }
     } else {
-      // 在 Tauri 环境中，可以使用 Tauri 的 API
-      // 这里先使用浏览器的 API，后续可以集成 Tauri 的剪贴板 API
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
+      // 在 Tauri 环境中，使用 Tauri 的剪贴板插件
+      try {
+        await writeText(text);
         if (showSuccess) {
           showMessage.success(successMessage);
         }
         return true;
-      } else {
+      } catch (tauriError) {
+        console.warn('Tauri clipboard API failed, trying fallback:', tauriError);
         return tryFallbackCopy(text, options);
       }
     }
@@ -134,12 +135,22 @@ function tryFallbackCopy(text: string, options: ClipboardOptions): boolean {
  */
 export async function readFromClipboard(): Promise<string | null> {
   try {
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      return await navigator.clipboard.readText();
+    if (isBrowserEnvironment()) {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        return await navigator.clipboard.readText();
+      } else {
+        // 浏览器不支持读取剪贴板
+        showMessage.warning('当前浏览器不支持读取剪贴板');
+        return null;
+      }
     } else {
-      // 浏览器不支持读取剪贴板
-      showMessage.warning('当前浏览器不支持读取剪贴板');
-      return null;
+      // 在 Tauri 环境中，使用 Tauri 的剪贴板插件
+      try {
+        return await readText();
+      } catch (tauriError) {
+        console.error('Tauri clipboard read failed:', tauriError);
+        return null;
+      }
     }
   } catch (error) {
     console.error('Clipboard read failed:', error);

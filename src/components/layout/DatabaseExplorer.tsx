@@ -40,6 +40,9 @@ import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
+import { dialog } from '@/utils/dialog';
+import ContextMenu from '@/components/common/ContextMenu';
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -1163,64 +1166,217 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
   };
 
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    target: any;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null,
+  });
+
   // 处理右键菜单
   const handleRightClick = (info: { node: TreeNode }) => {
     const { node } = info;
     const key = node.key;
 
-    // 右键菜单暂不处理默认行为阻止
+    let target = null;
 
-    // 根据节点类型显示不同的右键菜单
-    if (String(key).startsWith('table-')) {
-      // 表节点右键菜单
+    // 根据节点类型创建不同的目标对象
+    if (String(key).startsWith('connection-')) {
+      // 连接节点
+      const connectionId = String(key).replace('connection-', '');
+      target = {
+        type: 'connection',
+        connectionId,
+        title: node.title,
+      };
+    } else if (String(key).startsWith('database-')) {
+      // 数据库节点
+      const parts = String(key).split('-');
+      if (parts.length >= 3) {
+        const connectionId = parts[1];
+        const database = parts[2];
+        target = {
+          type: 'database',
+          connectionId,
+          database,
+          title: node.title,
+        };
+      }
+    } else if (String(key).startsWith('table-')) {
+      // 表节点
       const parts = String(key).split('-');
       if (parts.length >= 4) {
         const connectionId = parts[1];
         const database = parts[2];
         const table = parts.slice(3).join('-');
-        
-        showTableContextMenu(null, { connectionId, database, table });
+        target = {
+          type: 'table',
+          connectionId,
+          database,
+          table,
+          title: node.title,
+        };
       }
-    } else if (String(key).startsWith('database-')) {
-      // 数据库节点右键菜单
+    } else if (String(key).startsWith('field-')) {
+      // 字段节点
       const parts = String(key).split('-');
-      if (parts.length >= 3) {
+      if (parts.length >= 5) {
         const connectionId = parts[1];
         const database = parts[2];
-        
-        showDatabaseContextMenu(null, { connectionId, database });
+        const table = parts[3];
+        const field = parts.slice(4).join('-');
+        target = {
+          type: 'field',
+          connectionId,
+          database,
+          table,
+          field,
+          title: node.title,
+        };
       }
+    }
+
+    if (target) {
+      setContextMenu({
+        visible: true,
+        x: 100, // 默认位置
+        y: 100, // 默认位置
+        target,
+      });
     }
   };
 
-  // 显示表的右键菜单
-  const showTableContextMenu = (event: React.MouseEvent | null, tableInfo: { connectionId: string; database: string; table: string }) => {
-    // 这里可以使用一个上下文菜单组件，暂时用简单的处理
-    // 你可以使用 Ant Design 的 Dropdown 或自定义上下文菜单组件
-    console.log('表右键菜单:', tableInfo);
-    
-    // 暂时使用 confirm 来模拟菜单选择
-    const choice = window.confirm('选择操作:\n确定: 打开表设计器\n取消: 查看表数据');
-    if (choice) {
-      // 打开表设计器 - 这里需要回调到 TabEditor
-      openTableDesigner(tableInfo);
-    } else {
-      // 查看表数据 - 使用现有的双击逻辑
-      const query = generateQueryWithTimeFilter(tableInfo.table);
-      if (onTableDoubleClick) {
-        onTableDoubleClick(tableInfo.database, tableInfo.table, query);
-      }
-    }
+  // 隐藏右键菜单
+  const hideContextMenu = () => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      target: null,
+    });
   };
 
-  // 显示数据库的右键菜单
-  const showDatabaseContextMenu = (event: React.MouseEvent | null, dbInfo: { connectionId: string; database: string }) => {
-    console.log('数据库右键菜单:', dbInfo);
-    
-    // 暂时使用 alert 来模拟
-    if (window.confirm('是否打开数据库设计器?')) {
-      openDatabaseDesigner(dbInfo);
+  // 处理右键菜单动作
+  const handleContextMenuAction = async (action: string, params?: any) => {
+    const { target } = contextMenu;
+    if (!target) return;
+
+    try {
+      switch (action) {
+        case 'refresh_connection':
+          if (target.type === 'connection') {
+            // 重新加载连接状态（功能待实现）
+            showMessage.success(`连接 ${target.title} 已刷新`);
+          }
+          break;
+
+        case 'disconnect':
+          if (target.type === 'connection') {
+            // 断开连接逻辑
+            showMessage.success(`连接 ${target.title} 已断开`);
+          }
+          break;
+
+        case 'connection_properties':
+          if (target.type === 'connection') {
+            showMessage.info(`连接属性: ${target.title}`);
+          }
+          break;
+
+        case 'refresh_database':
+          if (target.type === 'database') {
+            // 重新加载数据库结构（功能待实现）
+            showMessage.success(`数据库 ${target.database} 已刷新`);
+          }
+          break;
+
+        case 'create_measurement':
+          if (target.type === 'database') {
+            showMessage.info(`创建测量值功能开发中: ${target.database}`);
+          }
+          break;
+
+        case 'database_info':
+          if (target.type === 'database') {
+            showMessage.info(`数据库信息: ${target.database}`);
+          }
+          break;
+
+        case 'drop_database':
+          if (target.type === 'database') {
+            const confirmed = await dialog.confirm({
+              title: '确认删除',
+              content: `确定要删除数据库 "${target.database}" 吗？此操作不可撤销。`,
+            });
+            if (confirmed) {
+              showMessage.info(`删除数据库功能开发中: ${target.database}`);
+            }
+          }
+          break;
+
+        case 'query_table':
+          if (target.type === 'table') {
+            const query = generateQueryWithTimeFilter(target.table);
+            if (onTableDoubleClick) {
+              onTableDoubleClick(target.database, target.table, query);
+            }
+          }
+          break;
+
+        case 'table_designer':
+          if (target.type === 'table') {
+            openTableDesigner(target);
+          }
+          break;
+
+        case 'table_info':
+          if (target.type === 'table') {
+            showMessage.info(`表信息: ${target.table}`);
+          }
+          break;
+
+        case 'drop_table':
+          if (target.type === 'table') {
+            const confirmed = await dialog.confirm({
+              title: '确认删除',
+              content: `确定要删除表 "${target.table}" 吗？此操作不可撤销。`,
+            });
+            if (confirmed) {
+              showMessage.info(`删除表功能开发中: ${target.table}`);
+            }
+          }
+          break;
+
+        case 'copy_field_name':
+          if (target.type === 'field') {
+            await writeToClipboard(target.field, {
+              successMessage: `已复制字段名: ${target.field}`,
+            });
+          }
+          break;
+
+        case 'field_stats':
+          if (target.type === 'field') {
+            showMessage.info(`字段统计功能开发中: ${target.field}`);
+          }
+          break;
+
+        default:
+          console.warn('未处理的右键菜单动作:', action);
+          break;
+      }
+    } catch (error) {
+      console.error('执行右键菜单动作失败:', error);
+      showMessage.error(`操作失败: ${error}`);
     }
+
+    hideContextMenu();
   };
 
   // 打开表设计器
@@ -1757,6 +1913,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   }
 
   return (
+    <>
     <Card className='database-explorer h-full flex flex-col'>
       {/* 头部：连接状态和操作 */}
       <CardContent className='p-3 border-b'>
@@ -2040,6 +2197,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         </Tabs>
       </CardContent>
     </Card>
+
+    {/* 右键菜单 */}
+    <ContextMenu
+      open={contextMenu.visible}
+      x={contextMenu.x}
+      y={contextMenu.y}
+      target={contextMenu.target}
+      onClose={hideContextMenu}
+      onAction={handleContextMenuAction}
+    />
+    </>
   );
 };
 

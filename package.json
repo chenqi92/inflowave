@@ -88,6 +88,7 @@
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.3.2",

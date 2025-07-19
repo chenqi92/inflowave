@@ -8,6 +8,7 @@ import { Bell, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
  */
 const NotificationTest: React.FC = () => {
   const testToastNotifications = () => {
+    console.log('测试Toast通知');
     showMessage.success('这是一个成功通知');
     setTimeout(() => showMessage.error('这是一个错误通知'), 1000);
     setTimeout(() => showMessage.warning('这是一个警告通知'), 2000);
@@ -15,6 +16,7 @@ const NotificationTest: React.FC = () => {
   };
 
   const testConnectionNotifications = async () => {
+    console.log('测试连接通知');
     await specialMessage.connectionSuccess('测试数据库');
     setTimeout(async () => {
       await specialMessage.connectionError('测试数据库', '连接超时');

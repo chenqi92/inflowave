@@ -322,6 +322,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 加载用户偏好
   const loadPreferences = async () => {
+    console.log('开始加载用户偏好');
     setLoading(true);
     try {
       let result = null;
@@ -329,6 +330,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 首先尝试从后端加载
       try {
         result = await safeTauriInvoke('get_user_preferences');
+        console.log('从后端加载的数据:', result);
       } catch (tauriError) {
         console.warn('从后端加载失败，尝试从本地存储加载:', tauriError);
       }
@@ -336,9 +338,11 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 如果后端没有数据，尝试从本地存储加载
       if (!result && typeof window !== 'undefined') {
         const stored = localStorage.getItem('user-preferences');
+        console.log('从localStorage读取的原始数据:', stored);
         if (stored) {
           try {
             result = JSON.parse(stored);
+            console.log('从localStorage解析的数据:', result);
           } catch (parseError) {
             console.warn('解析本地存储的用户偏好失败:', parseError);
           }
@@ -354,8 +358,11 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               ? result.shortcuts
               : getAllSystemShortcuts(),
         };
+        console.log('最终设置的偏好数据:', preferences);
+        console.log('通知设置enabled状态:', preferences.notifications?.enabled);
         setPreferences(preferences);
         form.reset(preferences);
+        console.log('form.reset完成，当前表单值:', form.getValues());
       } else {
         // 如果没有用户偏好，使用默认值
         const defaultPreferences = {
@@ -428,11 +435,15 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 保存用户偏好
   const savePreferences = async (values: UserPreferences) => {
+    console.log('保存用户偏好被调用，数据:', values);
+    console.log('通知设置:', values.notifications);
+    
     setLoading(true);
     try {
       // 保存到后端（Tauri环境）
       try {
         await safeTauriInvoke('update_user_preferences', { preferences: values });
+        console.log('后端保存成功');
       } catch (tauriError) {
         console.warn('保存到后端失败，尝试保存到本地存储:', tauriError);
       }
@@ -440,6 +451,11 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 保存到本地存储（浏览器环境或作为后备）
       if (typeof window !== 'undefined') {
         localStorage.setItem('user-preferences', JSON.stringify(values));
+        console.log('localStorage保存成功:', values);
+        
+        // 验证保存
+        const saved = localStorage.getItem('user-preferences');
+        console.log('验证localStorage保存的数据:', JSON.parse(saved || '{}'));
       }
       
       setPreferences(values);
@@ -1039,7 +1055,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           重置为默认
         </Button>
         <Button
-          onClick={() => form.handleSubmit(savePreferences)()}
+          onClick={async () => {
+            console.log('保存按钮被点击');
+            const formData = form.getValues();
+            console.log('当前表单数据:', formData);
+            await savePreferences(formData);
+          }}
           disabled={loading}
         >
           <Settings className='w-4 h-4 mr-2' />
