@@ -106,6 +106,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   // 文件操作处理函数
   const handleOpenFile = async () => {
     try {
+      console.log('🔍 尝试打开文件对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
         title: '打开查询文件',
         filters: [
@@ -115,16 +116,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         ],
         multiple: false
       });
-      
+
+      console.log('📁 文件对话框结果:', result);
+
       if (result && result.path) {
+        console.log('📖 读取文件内容:', result.path);
         const content = await safeTauriInvoke('read_file', { path: result.path });
         // 通过自定义事件传递文件内容到查询编辑器
-        document.dispatchEvent(new CustomEvent('open-file-content', { 
-          detail: { content, filename: result.path } 
+        document.dispatchEvent(new CustomEvent('open-file-content', {
+          detail: { content, filename: result.path }
         }));
         showMessage.success('文件已打开');
+      } else {
+        console.log('❌ 用户取消了文件选择或没有选择文件');
       }
     } catch (error) {
+      console.error('❌ 打开文件失败:', error);
       showMessage.error(`打开文件失败: ${error}`);
     }
   };
@@ -142,6 +149,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   // 数据导入导出处理函数
   const handleImportData = async () => {
     try {
+      console.log('📥 尝试打开数据导入对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
         title: '导入数据文件',
         filters: [
@@ -151,15 +159,20 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         ],
         multiple: false
       });
-      
+
+      console.log('📥 数据导入对话框结果:', result);
+
       if (result && result.path) {
         // 导航到数据导入页面或显示导入对话框
-        document.dispatchEvent(new CustomEvent('import-data-file', { 
-          detail: { path: result.path } 
+        document.dispatchEvent(new CustomEvent('import-data-file', {
+          detail: { path: result.path }
         }));
         showMessage.success('准备导入数据...');
+      } else {
+        console.log('❌ 用户取消了数据导入或没有选择文件');
       }
     } catch (error) {
+      console.error('❌ 导入数据失败:', error);
       showMessage.error(`导入数据失败: ${error}`);
     }
   };

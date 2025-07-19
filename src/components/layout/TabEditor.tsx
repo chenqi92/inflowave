@@ -584,16 +584,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 打开文件
     const openFile = async () => {
       try {
+        console.log('🔍 TabEditor: 尝试打开文件对话框...');
         // 使用 Tauri 的文件对话框
         const result = await safeTauriInvoke<{ path?: string }>('open_file_dialog', {
+          title: '打开查询文件',
           filters: [
             { name: 'SQL Files', extensions: ['sql'] },
             { name: 'Text Files', extensions: ['txt'] },
             { name: 'All Files', extensions: ['*'] },
           ],
+          multiple: false,
         });
 
+        console.log('📁 TabEditor: 文件对话框结果:', result);
+
         if (result?.path) {
+          console.log('📖 TabEditor: 读取文件内容:', result.path);
           // 读取文件内容
           const content = await safeTauriInvoke<string>('read_file', {
             path: result.path,
@@ -618,9 +624,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             setActiveKey(newTab.id);
             showMessage.success(`文件 "${filename}" 已打开`);
           }
+        } else {
+          console.log('❌ TabEditor: 用户取消了文件选择或没有选择文件');
         }
       } catch (error) {
-        console.error('打开文件失败:', error);
+        console.error('❌ TabEditor: 打开文件失败:', error);
         showMessage.error(`打开文件失败: ${error}`);
       }
     };

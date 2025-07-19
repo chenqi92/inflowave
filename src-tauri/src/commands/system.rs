@@ -231,14 +231,76 @@ pub struct FileFilter {
 /// 打开文件对话框
 #[tauri::command]
 pub async fn open_file_dialog(
-    _filters: Option<Vec<FileFilter>>,
+    app: tauri::AppHandle,
+    title: Option<String>,
+    filters: Option<Vec<FileFilter>>,
+    multiple: Option<bool>,
 ) -> Result<Option<FileDialogResult>, String> {
     debug!("打开文件对话框");
-    
-    // 简化实现，返回模拟结果
-    // 在实际应用中，这里应该调用系统文件对话框
-    info!("文件对话框功能开发中");
-    Ok(None)
+
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app.dialog().file();
+
+    // 设置标题
+    if let Some(title_text) = title {
+        dialog = dialog.set_title(&title_text);
+    }
+
+    // 设置文件过滤器
+    if let Some(filter_list) = filters {
+        for filter in filter_list {
+            let extensions: Vec<&str> = filter.extensions.iter().map(|s| s.as_str()).collect();
+            dialog = dialog.add_filter(&filter.name, &extensions);
+        }
+    }
+
+    // 显示打开对话框
+    let result = if multiple.unwrap_or(false) {
+        // 多选文件
+        match dialog.blocking_pick_files() {
+            Some(file_paths) => {
+                if let Some(first_path) = file_paths.first() {
+                    let path_buf = first_path.as_path().unwrap_or_else(|| std::path::Path::new(""));
+                    let result = FileDialogResult {
+                        path: path_buf.to_string_lossy().to_string(),
+                        name: path_buf.file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default(),
+                    };
+                    info!("文件打开对话框结果: {:?}", result);
+                    Some(result)
+                } else {
+                    None
+                }
+            }
+            None => {
+                info!("用户取消了文件打开对话框");
+                None
+            }
+        }
+    } else {
+        // 单选文件
+        match dialog.blocking_pick_file() {
+            Some(file_path) => {
+                let path_buf = file_path.as_path().unwrap_or_else(|| std::path::Path::new(""));
+                let result = FileDialogResult {
+                    path: path_buf.to_string_lossy().to_string(),
+                    name: path_buf.file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_default(),
+                };
+                info!("文件打开对话框结果: {:?}", result);
+                Some(result)
+            }
+            None => {
+                info!("用户取消了文件打开对话框");
+                None
+            }
+        }
+    };
+
+    Ok(result)
 }
 
 /// 保存文件对话框
