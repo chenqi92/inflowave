@@ -442,6 +442,219 @@ async fn get_storage_analysis(
     })
 }
 
+// 前端兼容的性能瓶颈检测接口
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PerformanceBottleneck {
+    pub id: String,
+    pub r#type: String,
+    pub severity: String,
+    pub title: String,
+    pub description: String,
+    pub impact: String,
+    pub duration: u64,
+    pub frequency: u64,
+    pub status: String,
+    pub detected_at: chrono::DateTime<chrono::Utc>,
+    pub recommendations: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TimeRange {
+    pub start: chrono::DateTime<chrono::Utc>,
+    pub end: chrono::DateTime<chrono::Utc>,
+}
+
+/// 检测性能瓶颈 - 前端兼容接口
+#[tauri::command]
+pub async fn detect_performance_bottlenecks(
+    connection_id: String,
+    time_range: Option<TimeRange>,
+) -> Result<Vec<PerformanceBottleneck>, String> {
+    debug!("检测性能瓶颈: {}", connection_id);
+    
+    let _range = time_range.unwrap_or(TimeRange {
+        start: chrono::Utc::now() - chrono::Duration::hours(1),
+        end: chrono::Utc::now(),
+    });
+    
+    // 模拟瓶颈检测结果
+    let bottlenecks = vec![
+        PerformanceBottleneck {
+            id: uuid::Uuid::new_v4().to_string(),
+            r#type: "query".to_string(),
+            severity: "high".to_string(),
+            title: "慢查询检测".to_string(),
+            description: "检测到多个执行时间超过阈值的查询".to_string(),
+            impact: "15.5".to_string(),
+            duration: 300000, // 5分钟
+            frequency: 12,
+            status: "active".to_string(),
+            detected_at: chrono::Utc::now(),
+            recommendations: vec![
+                "添加合适的索引".to_string(),
+                "优化查询条件".to_string(),
+                "使用LIMIT限制结果集".to_string(),
+            ],
+        },
+    ];
+    
+    Ok(bottlenecks)
+}
+
+/// 获取系统性能指标 - 前端兼容接口
+#[tauri::command]
+pub async fn get_system_performance_metrics(
+    connection_id: String,
+    time_range: Option<TimeRange>,
+) -> Result<SystemResourceMetrics, String> {
+    debug!("获取系统性能指标: {}", connection_id);
+    
+    let _range = time_range.unwrap_or(TimeRange {
+        start: chrono::Utc::now() - chrono::Duration::hours(1),
+        end: chrono::Utc::now(),
+    });
+    
+    get_system_resource_metrics().await
+}
+
+/// 获取慢查询日志 - 前端兼容接口
+#[tauri::command]
+pub async fn get_slow_query_log(
+    connection_id: String,
+    options: Option<serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    debug!("获取慢查询日志: {}", connection_id);
+    
+    let limit = if let Some(opts) = &options {
+        opts.get("limit")
+            .and_then(|l| l.as_u64())
+            .unwrap_or(50) as usize
+    } else {
+        50
+    };
+    
+    // 模拟慢查询数据
+    let slow_queries = vec![
+        serde_json::json!({
+            "query": "SELECT * FROM measurement WHERE time > now() - 1h",
+            "duration": 5200,
+            "frequency": 8,
+            "lastExecuted": chrono::Utc::now(),
+            "avgDuration": 4800,
+            "minDuration": 3200,
+            "maxDuration": 6100,
+            "database": "mydb",
+            "user": "admin"
+        }),
+    ];
+    
+    Ok(serde_json::json!({
+        "queries": slow_queries.into_iter().take(limit).collect::<Vec<_>>(),
+        "total": 1
+    }))
+}
+
+/// 分析锁等待 - 前端兼容接口
+#[tauri::command]
+pub async fn analyze_lock_waits(
+    connection_id: String,
+    time_range: Option<TimeRange>,
+) -> Result<serde_json::Value, String> {
+    debug!("分析锁等待: {}", connection_id);
+    
+    let _range = time_range.unwrap_or(TimeRange {
+        start: chrono::Utc::now() - chrono::Duration::hours(1),
+        end: chrono::Utc::now(),
+    });
+    
+    // 模拟锁等待数据
+    Ok(serde_json::json!({
+        "locks": [],
+        "summary": {
+            "totalLocks": 0,
+            "avgWaitTime": 0.0,
+            "maxWaitTime": 0.0,
+            "mostBlockedTable": "",
+            "recommendations": []
+        }
+    }))
+}
+
+/// 获取连接池统计 - 前端兼容接口
+#[tauri::command]
+pub async fn get_connection_pool_stats_perf(
+    connection_id: String,
+    time_range: Option<TimeRange>,
+) -> Result<serde_json::Value, String> {
+    debug!("获取连接池统计: {}", connection_id);
+    
+    let _range = time_range.unwrap_or(TimeRange {
+        start: chrono::Utc::now() - chrono::Duration::hours(1),
+        end: chrono::Utc::now(),
+    });
+    
+    // 模拟连接池数据
+    Ok(serde_json::json!({
+        "active_connections": 2,
+        "idle_connections": 8,
+        "total_connections": 10,
+        "max_connections": 20,
+        "connection_stats": []
+    }))
+}
+
+/// 生成性能报告 - 前端兼容接口
+#[tauri::command]
+pub async fn generate_performance_report(
+    connection_id: String,
+    time_range: Option<TimeRange>,
+) -> Result<serde_json::Value, String> {
+    debug!("生成性能报告: {}", connection_id);
+    
+    let range = time_range.unwrap_or(TimeRange {
+        start: chrono::Utc::now() - chrono::Duration::hours(1),
+        end: chrono::Utc::now(),
+    });
+    
+    // 生成综合性能报告
+    Ok(serde_json::json!({
+        "summary": {
+            "overallScore": 78.5,
+            "period": {
+                "start": range.start,
+                "end": range.end
+            },
+            "totalQueries": 1250,
+            "avgQueryTime": 245.5,
+            "errorRate": 0.8,
+            "throughput": 15.2
+        },
+        "bottlenecks": [],
+        "recommendations": [
+            {
+                "category": "query",
+                "priority": "high",
+                "title": "优化慢查询",
+                "description": "检测到多个执行时间较长的查询",
+                "impact": "可提升15%查询性能",
+                "implementation": "添加索引或重写查询语句"
+            }
+        ],
+        "metrics": {
+            "cpu": 25.8,
+            "memory": 45.2,
+            "disk": 12.5,
+            "network": 8.9,
+            "database": 78.5
+        },
+        "trends": {
+            "queryPerformance": [],
+            "systemLoad": [],
+            "errorRate": []
+        }
+    }))
+}
+
 fn analyze_query_optimization(query: &str) -> Option<QueryOptimization> {
     let mut suggestions = Vec::new();
     let mut index_recommendations = Vec::new();

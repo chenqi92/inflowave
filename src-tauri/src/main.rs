@@ -729,6 +729,14 @@ async fn main() {
             get_storage_analysis_report,
             get_query_optimization_suggestions,
             perform_health_check,
+            
+            // Performance monitoring - frontend compatibility
+            detect_performance_bottlenecks,
+            get_system_performance_metrics,
+            get_slow_query_log,
+            analyze_lock_waits,
+            get_connection_pool_stats_perf,
+            generate_performance_report,
 
             // User experience
             get_user_preferences,

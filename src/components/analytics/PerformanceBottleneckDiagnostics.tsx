@@ -446,10 +446,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [autoRefresh, refreshInterval, getBottlenecks]);
 
-  // 暂时禁用自动加载以避免Tauri命令错误
-  // useEffect(() => {
-  //   getBottlenecks();
-  // }, [getBottlenecks]);
+  // 初始加载性能数据
+  useEffect(() => {
+    if (activeConnectionId) {
+      getBottlenecks();
+    }
+  }, [activeConnectionId, getBottlenecks]);
 
   // 获取严重程度颜色
   const getSeverityVariant = (severity: string) => {

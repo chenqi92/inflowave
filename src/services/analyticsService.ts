@@ -644,7 +644,7 @@ export class PerformanceBottleneckService {
         errorRate: number;
         recommendations: string[];
       };
-    }>('get_connection_pool_stats', {
+    }>('get_connection_pool_stats_perf', {
       connectionId,
       timeRange,
     });
