@@ -105,15 +105,11 @@ jobs:
             arch: 'arm64'
             rust_target: 'aarch64-apple-darwin'
           
-          # Linux - 暂时移除有问题的 i686 目标
+          # Linux - 仅支持 x64 架构以确保构建稳定性
           - platform: 'ubuntu-22.04'
             target: 'x86_64-unknown-linux-gnu'
             arch: 'x64'
             rust_target: 'x86_64-unknown-linux-gnu'
-          - platform: 'ubuntu-22.04'
-            target: 'aarch64-unknown-linux-gnu'
-            arch: 'arm64'
-            rust_target: 'aarch64-unknown-linux-gnu'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -127,41 +123,7 @@ jobs:
             pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
             libxdo-dev libxdo3
 
-      - name: Install cross-compilation dependencies (Linux ARM64)
-        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'arm64'
-        run: |
-          # Add ARM64 architecture and update sources
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          
-          # Install cross-compilation toolchain
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu pkg-config
-          
-          # Install ARM64 libraries
-          sudo apt-get install -y \
-            libglib2.0-dev:arm64 libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 \
-            libayatana-appindicator3-dev:arm64 librsvg2-dev:arm64 \
-            libgdk-pixbuf2.0-dev:arm64 libpango1.0-dev:arm64 libatk1.0-dev:arm64 \
-            libxdo-dev:arm64 libxdo3:arm64
-          
-          # Set cross-compilation environment variables
-          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
-          echo "AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar" >> $GITHUB_ENV
-          echo "STRIP_aarch64_unknown_linux_gnu=aarch64-linux-gnu-strip" >> $GITHUB_ENV
-          echo "PKG_CONFIG_aarch64_unknown_linux_gnu=aarch64-linux-gnu-pkg-config" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
-          echo "PKG_CONFIG_SYSROOT_DIR=/" >> $GITHUB_ENV
 
-      - name: Install cross-compilation dependencies (Linux x86)
-        if: matrix.platform == 'ubuntu-22.04' && matrix.arch == 'x86'
-        run: |
-          sudo apt-get install -y gcc-multilib g++-multilib \
-            libglib2.0-dev:i386 libgtk-3-dev:i386 pkg-config
-          # 设置32位库路径
-          echo "PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig:/usr/share/pkgconfig" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_CROSS=1" >> $GITHUB_ENV
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -195,8 +157,7 @@ jobs:
           ENABLE_EMBEDDED_SERVER: false
           # 跨编译环境变量
           PKG_CONFIG_ALLOW_CROSS: 1
-          PKG_CONFIG_PATH: ${{ matrix.platform == 'ubuntu-22.04' && (matrix.arch == 'arm64' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/share/pkgconfig') || '' }}
-          PKG_CONFIG_SYSROOT_DIR: ${{ matrix.platform == 'ubuntu-22.04' && matrix.arch == 'arm64' && '/' || '' }}
+          PKG_CONFIG_PATH: ${{ matrix.platform == 'ubuntu-22.04' && '/usr/lib/pkgconfig:/usr/share/pkgconfig' || '' }}
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.13' || '' }}
         with:
           tagName: v${{ needs.detect-version.outputs.version }}
@@ -242,11 +203,7 @@ jobs:
             🗂️ **通用 Linux**  
             📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_amd64.AppImage](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_amd64.AppImage)**  
             - 免安装，下载后直接运行  
-            - 适用于大部分 Linux 发行版  
-            
-            🔧 **ARM64 Linux (树莓派等)**  
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_arm64.AppImage](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_arm64.AppImage)**  
-            - 支持 ARM64 架构的 Linux 设备  
+            - 适用于大部分 x64 Linux 发行版  
             
             ### 📝 安装说明
             1. **Windows**: 下载 .msi 文件后双击安装

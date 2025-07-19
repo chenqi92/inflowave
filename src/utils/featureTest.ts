@@ -293,7 +293,8 @@ export class FeatureTester {
       await safeTauriInvoke('send_notification', {
         title: '测试通知',
         message: '这是一个测试通知',
-        severity: 'info',
+        notification_type: 'info',
+        duration: 5000,
       });
       return '通知系统功能正常';
     });

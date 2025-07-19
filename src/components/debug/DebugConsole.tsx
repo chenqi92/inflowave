@@ -33,7 +33,10 @@ import {
   Search,
   Filter,
   Bug,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Database
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
@@ -53,9 +56,14 @@ const DebugConsole: React.FC = () => {
   const { activeConnectionId, connections } = useConnectionStore();
   const [systemLogs, setSystemLogs] = useState<SystemLogEntry[]>([]);
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLogEntry[]>([]);
+  const [appLogs, setAppLogs] = useState<SystemLogEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'system' | 'app' | 'browser'>('system');
   const [searchText, setSearchText] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const activeConnection = activeConnectionId 
     ? connections.find(c => c.id === activeConnectionId) 
@@ -73,16 +81,35 @@ const DebugConsole: React.FC = () => {
     setSystemLogs(prev => [newLog, ...prev].slice(0, 100)); // 保留最新100条
   };
 
-  // 初始化系统日志
+  // 添加应用日志
+  const addAppLog = (level: SystemLogEntry['level'], message: string, source?: string) => {
+    const newLog: SystemLogEntry = {
+      id: generateUniqueId('app'),
+      timestamp: new Date(),
+      level,
+      message,
+      source
+    };
+    setAppLogs(prev => [newLog, ...prev].slice(0, 1000)); // 保留最新1000条
+  };
+
+  // 初始化系统日志和应用日志
   useEffect(() => {
     addSystemLog('info', '=== InfloWave 调试控制台已启动 ===', '系统');
     addSystemLog('info', `当前时间: ${new Date().toLocaleString()}`, '系统');
-    addSystemLog('info', '应用版本: v0.1.0', '系统');
+    addSystemLog('info', '应用版本: v0.1.3', '系统');
     addSystemLog('info', `活跃连接: ${activeConnectionId || '无'}`, '连接');
     
     if (activeConnection) {
       addSystemLog('info', `连接详情: ${activeConnection.name} (${activeConnection.host}:${activeConnection.port})`, '连接');
     }
+
+    // 初始化应用日志
+    addAppLog('info', '=== 应用日志系统已启动 ===', '应用');
+    addAppLog('info', '监听应用运行时事件...', '事件');
+    addAppLog('debug', `用户代理: ${navigator.userAgent}`, '浏览器');
+    addAppLog('debug', `屏幕分辨率: ${screen.width}x${screen.height}`, '系统');
+    addAppLog('info', `当前页面: ${window.location.pathname}`, '导航');
   }, [activeConnectionId, activeConnection]);
 
   // 初始化控制台日志监听
@@ -98,11 +125,72 @@ const DebugConsole: React.FC = () => {
     return removeListener;
   }, []);
 
+  // 初始化应用事件监听
+  useEffect(() => {
+    // 页面可见性变化监听
+    const handleVisibilityChange = () => {
+      addAppLog('info', `页面可见性变化: ${document.visibilityState}`, '页面事件');
+    };
+
+    // 网络状态变化监听
+    const handleOnline = () => {
+      addAppLog('info', '网络连接已恢复', '网络事件');
+    };
+
+    const handleOffline = () => {
+      addAppLog('warning', '网络连接已断开', '网络事件');
+    };
+
+    // 窗口焦点变化监听
+    const handleFocus = () => {
+      addAppLog('debug', '窗口获得焦点', '窗口事件');
+    };
+
+    const handleBlur = () => {
+      addAppLog('debug', '窗口失去焦点', '窗口事件');
+    };
+
+    // 性能监控
+    const performanceObserver = new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      entries.forEach((entry) => {
+        if (entry.entryType === 'navigation') {
+          addAppLog('debug', `页面加载时间: ${entry.duration.toFixed(2)}ms`, '性能监控');
+        }
+      });
+    });
+
+    try {
+      performanceObserver.observe({ entryTypes: ['navigation', 'resource'] });
+    } catch (error) {
+      // 某些浏览器可能不支持
+    }
+
+    // 添加事件监听器
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      performanceObserver.disconnect();
+    };
+  }, []);
+
   // 清空日志
   const clearLogs = () => {
     if (activeTab === 'system') {
       setSystemLogs([]);
       addSystemLog('info', '系统日志已清空', '系统');
+    } else if (activeTab === 'app') {
+      setAppLogs([]);
+      addAppLog('info', '应用日志已清空', '应用');
     } else if (activeTab === 'browser') {
       consoleLogger.clearLogs();
       setConsoleLogs([]);
@@ -118,8 +206,12 @@ const DebugConsole: React.FC = () => {
       logText = systemLogs.map(log => 
         `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
       ).join('\n');
+    } else if (activeTab === 'app') {
+      logText = getCurrentPageLogs().map(log => 
+        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
+      ).join('\n');
     } else if (activeTab === 'browser') {
-      logText = consoleLogs.map(log => 
+      logText = getCurrentPageConsoleLogs().map(log => 
         `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
       ).join('\n');
     }
@@ -139,7 +231,7 @@ const DebugConsole: React.FC = () => {
         'color: normal;'
       );
       console.log('当前时间:', new Date().toLocaleString());
-      console.log('应用版本: v0.1.0');
+      console.log('应用版本: v0.1.3');
       console.log('活跃连接:', activeConnectionId || '无');
       console.log('连接详情:', activeConnection);
       showMessage.info('请查看浏览器控制台（F12）获取详细信息');
@@ -147,6 +239,83 @@ const DebugConsole: React.FC = () => {
       showMessage.warning('浏览器控制台不可用');
     }
   };
+
+  // 获取过滤后的应用日志
+  const getFilteredAppLogs = () => {
+    let filtered = appLogs;
+
+    // 搜索过滤
+    if (searchText) {
+      filtered = filtered.filter(log =>
+        log.message.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.source?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // 级别过滤
+    if (levelFilter !== 'all') {
+      filtered = filtered.filter(log => log.level === levelFilter);
+    }
+
+    return filtered;
+  };
+
+  // 获取过滤后的控制台日志
+  const getFilteredConsoleLogs = () => {
+    let filtered = consoleLogs;
+
+    // 搜索过滤
+    if (searchText) {
+      filtered = filtered.filter(log =>
+        log.message.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.source?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // 级别过滤
+    if (levelFilter !== 'all') {
+      filtered = filtered.filter(log => log.level === levelFilter);
+    }
+
+    return filtered;
+  };
+
+  // 获取当前页面的应用日志
+  const getCurrentPageLogs = () => {
+    const filtered = getFilteredAppLogs();
+    const startIndex = (currentPage - 1) * pageSize;
+    return filtered.slice(startIndex, startIndex + pageSize);
+  };
+
+  // 获取当前页面的控制台日志
+  const getCurrentPageConsoleLogs = () => {
+    const filtered = getFilteredConsoleLogs();
+    const startIndex = (currentPage - 1) * pageSize;
+    return filtered.slice(startIndex, startIndex + pageSize);
+  };
+
+  // 计算总页数
+  const getTotalPages = () => {
+    if (activeTab === 'app') {
+      return Math.ceil(getFilteredAppLogs().length / pageSize);
+    } else if (activeTab === 'browser') {
+      return Math.ceil(getFilteredConsoleLogs().length / pageSize);
+    }
+    return 1;
+  };
+
+  // 分页控制
+  const goToPage = (page: number) => {
+    const totalPages = getTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // 重置分页当切换tab或过滤条件变化时
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchText, levelFilter]);
 
   // 刷新系统信息
   const refreshSystemInfo = () => {
@@ -157,6 +326,13 @@ const DebugConsole: React.FC = () => {
     
     if (activeConnection) {
       addSystemLog('info', `连接状态: 已连接到 ${activeConnection.name}`, '连接');
+    }
+
+    // 模拟应用日志事件
+    if (activeTab === 'app') {
+      addAppLog('info', '手动刷新系统信息', '用户操作');
+      addAppLog('debug', `页面可见性: ${document.visibilityState}`, '页面');
+      addAppLog('debug', `在线状态: ${navigator.onLine ? '在线' : '离线'}`, '网络');
     }
   };
 
@@ -202,7 +378,7 @@ const DebugConsole: React.FC = () => {
           <CardContent className='space-y-2'>
             <div className='flex items-center justify-between'>
               <span className='text-sm text-muted-foreground'>应用版本</span>
-              <Badge variant='outline'>v0.1.0</Badge>
+              <Badge variant='outline'>v0.1.3</Badge>
             </div>
             <div className='flex items-center justify-between'>
               <span className='text-sm text-muted-foreground'>运行时间</span>
@@ -351,16 +527,128 @@ const DebugConsole: React.FC = () => {
 
           <TabsContent value='app' className='flex-1 mt-4 overflow-hidden'>
             <div className='h-full overflow-y-auto px-4'>
-              <Card>
+              <Card className='h-full flex flex-col'>
                 <CardHeader>
-                  <CardTitle className='text-sm'>应用日志</CardTitle>
+                  <CardTitle className='text-sm flex items-center justify-between'>
+                    <span className='flex items-center gap-2'>
+                      <Database className='w-4 h-4' />
+                      应用日志
+                    </span>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant='outline' className='text-xs'>
+                        {getFilteredAppLogs().length} 条日志
+                      </Badge>
+                    </div>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className='text-center py-8 text-muted-foreground'>
-                    <Terminal className='w-12 h-12 mx-auto mb-4' />
-                    <p>应用日志功能开发中...</p>
-                    <p className='text-sm mt-2'>将显示应用运行时的详细日志信息</p>
+                <CardContent className='flex-1 flex flex-col space-y-4'>
+                  {/* 过滤器 */}
+                  <div className='flex items-center gap-4'>
+                    <div className='flex items-center gap-2'>
+                      <Search className='w-4 h-4 text-muted-foreground' />
+                      <Input
+                        placeholder='搜索应用日志...'
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className='w-48'
+                      />
+                    </div>
+                    <Select value={levelFilter} onValueChange={setLevelFilter}>
+                      <SelectTrigger className='w-32'>
+                        <SelectValue placeholder='级别' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='all'>全部</SelectItem>
+                        <SelectItem value='info'>INFO</SelectItem>
+                        <SelectItem value='warning'>WARN</SelectItem>
+                        <SelectItem value='error'>ERROR</SelectItem>
+                        <SelectItem value='debug'>DEBUG</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  {/* 日志显示 */}
+                  <ScrollArea className='flex-1'>
+                    <div className='space-y-2'>
+                      {getCurrentPageLogs().map(log => (
+                        <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
+                          <div className='flex-shrink-0 mt-0.5'>
+                            {getLevelIcon(log.level)}
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-2 mb-1'>
+                              {getLevelBadge(log.level)}
+                              <span className='text-xs text-muted-foreground flex items-center gap-1'>
+                                <Clock className='w-3 h-3' />
+                                {log.timestamp.toLocaleTimeString()}
+                              </span>
+                              {log.source && (
+                                <Badge variant='outline' className='text-xs'>
+                                  {log.source}
+                                </Badge>
+                              )}
+                            </div>
+                            <pre className='text-sm break-words font-mono whitespace-pre-wrap'>{log.message}</pre>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  {/* 分页控件 */}
+                  {getFilteredAppLogs().length > pageSize && (
+                    <div className='flex items-center justify-between pt-4 border-t'>
+                      <div className='flex items-center gap-4'>
+                        <span className='text-sm text-muted-foreground'>
+                          显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredAppLogs().length)} 条，共 {getFilteredAppLogs().length} 条
+                        </span>
+                        <Select
+                          value={pageSize.toString()}
+                          onValueChange={(value) => setPageSize(Number(value))}
+                        >
+                          <SelectTrigger className='w-20'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='25'>25</SelectItem>
+                            <SelectItem value='50'>50</SelectItem>
+                            <SelectItem value='100'>100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className='text-sm text-muted-foreground'>条/页</span>
+                      </div>
+
+                      <div className='flex items-center gap-2'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => goToPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className='w-4 h-4' />
+                        </Button>
+                        <span className='text-sm px-2'>
+                          第 {currentPage} 页，共 {getTotalPages()} 页
+                        </span>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => goToPage(currentPage + 1)}
+                          disabled={currentPage === getTotalPages()}
+                        >
+                          <ChevronRight className='w-4 h-4' />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {getFilteredAppLogs().length === 0 && (
+                    <div className='text-center py-8 text-muted-foreground'>
+                      <Database className='w-12 h-12 mx-auto mb-4' />
+                      <p>暂无应用日志</p>
+                      <p className='text-sm mt-2'>应用运行时的详细事件将在这里显示</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -368,13 +656,13 @@ const DebugConsole: React.FC = () => {
 
           <TabsContent value='browser' className='flex-1 mt-4 overflow-hidden'>
             <div className='h-full overflow-y-auto px-4'>
-              <Card>
+              <Card className='h-full flex flex-col'>
                 <CardHeader>
                   <CardTitle className='text-sm flex items-center justify-between'>
                     <span>浏览器控制台日志</span>
                     <div className='flex items-center gap-2'>
                       <Badge variant='outline' className='text-xs'>
-                        {consoleLogs.length} 条日志
+                        {getFilteredConsoleLogs().length} 条日志
                       </Badge>
                       <Button variant='outline' size='sm' onClick={openBrowserConsole}>
                         <Terminal className='w-4 h-4 mr-2' />
@@ -383,7 +671,7 @@ const DebugConsole: React.FC = () => {
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='space-y-4'>
+                <CardContent className='flex-1 flex flex-col space-y-4'>
                   {/* 过滤器 */}
                   <div className='flex items-center gap-4'>
                     <div className='flex items-center gap-2'>
@@ -411,52 +699,91 @@ const DebugConsole: React.FC = () => {
                   </div>
 
                   {/* 日志显示 */}
-                  <ScrollArea className='h-[400px]'>
+                  <ScrollArea className='flex-1'>
                     <div className='space-y-2'>
-                      {consoleLogs
-                        .filter(log => {
-                          const matchesSearch = !searchText || 
-                            log.message.toLowerCase().includes(searchText.toLowerCase()) ||
-                            log.source?.toLowerCase().includes(searchText.toLowerCase());
-                          const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-                          return matchesSearch && matchesLevel;
-                        })
-                        .map(log => (
-                          <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
-                            <div className='flex-shrink-0 mt-0.5'>
-                              {getLevelIcon(log.level)}
-                            </div>
-                            <div className='flex-1 min-w-0'>
-                              <div className='flex items-center gap-2 mb-1'>
-                                {getLevelBadge(log.level)}
-                                <span className='text-xs text-muted-foreground flex items-center gap-1'>
-                                  <Clock className='w-3 h-3' />
-                                  {log.timestamp.toLocaleTimeString()}
-                                </span>
-                                {log.source && (
-                                  <Badge variant='outline' className='text-xs'>
-                                    {log.source}
-                                  </Badge>
-                                )}
-                              </div>
-                              <pre className='text-sm break-words font-mono whitespace-pre-wrap'>{log.message}</pre>
-                              {log.args && log.args.length > 1 && (
-                                <details className='mt-2'>
-                                  <summary className='text-xs text-muted-foreground cursor-pointer'>
-                                    显示详细参数
-                                  </summary>
-                                  <pre className='text-xs bg-muted/30 p-2 rounded mt-1 overflow-x-auto'>
-                                    {JSON.stringify(log.args, null, 2)}
-                                  </pre>
-                                </details>
+                      {getCurrentPageConsoleLogs().map(log => (
+                        <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
+                          <div className='flex-shrink-0 mt-0.5'>
+                            {getLevelIcon(log.level)}
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-2 mb-1'>
+                              {getLevelBadge(log.level)}
+                              <span className='text-xs text-muted-foreground flex items-center gap-1'>
+                                <Clock className='w-3 h-3' />
+                                {log.timestamp.toLocaleTimeString()}
+                              </span>
+                              {log.source && (
+                                <Badge variant='outline' className='text-xs'>
+                                  {log.source}
+                                </Badge>
                               )}
                             </div>
+                            <pre className='text-sm break-words font-mono whitespace-pre-wrap'>{log.message}</pre>
+                            {log.args && log.args.length > 1 && (
+                              <details className='mt-2'>
+                                <summary className='text-xs text-muted-foreground cursor-pointer'>
+                                  显示详细参数
+                                </summary>
+                                <pre className='text-xs bg-muted/30 p-2 rounded mt-1 overflow-x-auto'>
+                                  {JSON.stringify(log.args, null, 2)}
+                                </pre>
+                              </details>
+                            )}
                           </div>
-                        ))}
+                        </div>
+                      ))}
                     </div>
                   </ScrollArea>
+
+                  {/* 分页控件 */}
+                  {getFilteredConsoleLogs().length > pageSize && (
+                    <div className='flex items-center justify-between pt-4 border-t'>
+                      <div className='flex items-center gap-4'>
+                        <span className='text-sm text-muted-foreground'>
+                          显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredConsoleLogs().length)} 条，共 {getFilteredConsoleLogs().length} 条
+                        </span>
+                        <Select
+                          value={pageSize.toString()}
+                          onValueChange={(value) => setPageSize(Number(value))}
+                        >
+                          <SelectTrigger className='w-20'>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='25'>25</SelectItem>
+                            <SelectItem value='50'>50</SelectItem>
+                            <SelectItem value='100'>100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className='text-sm text-muted-foreground'>条/页</span>
+                      </div>
+
+                      <div className='flex items-center gap-2'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => goToPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className='w-4 h-4' />
+                        </Button>
+                        <span className='text-sm px-2'>
+                          第 {currentPage} 页，共 {getTotalPages()} 页
+                        </span>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={() => goToPage(currentPage + 1)}
+                          disabled={currentPage === getTotalPages()}
+                        >
+                          <ChevronRight className='w-4 h-4' />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   
-                  {consoleLogs.length === 0 && (
+                  {getFilteredConsoleLogs().length === 0 && (
                     <div className='text-center py-8 text-muted-foreground'>
                       <Terminal className='w-12 h-12 mx-auto mb-4' />
                       <p>暂无控制台日志</p>

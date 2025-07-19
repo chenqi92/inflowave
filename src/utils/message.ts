@@ -3,6 +3,7 @@
  * 提供统一的消息提示接口，完全兼容 shadcn/ui 主题系统
  */
 
+import React from 'react';
 import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -26,8 +27,8 @@ export interface NotificationConfig {
     };
     id?: string | number;
     dismissible?: boolean;
-    onDismiss?: (toast: any) => void;
-    onAutoClose?: (toast: any) => void;
+    onDismiss?: (toast: unknown) => void;
+    onAutoClose?: (toast: unknown) => void;
     important?: boolean;
     position?:
         | 'top-left'
@@ -75,7 +76,7 @@ const getUserNotificationPreferences = async () => {
 };
 
 // 发送桌面通知
-const sendDesktopNotification = async (title: string, message: string, icon?: string) => {
+const sendDesktopNotification = async (title: string, message: string, _icon?: string) => {
     try {
         const prefs = await getUserNotificationPreferences();
 
@@ -85,12 +86,10 @@ const sendDesktopNotification = async (title: string, message: string, icon?: st
 
         // 桌面应用专用：使用Tauri原生通知
         await safeTauriInvoke('send_notification', {
-            notification: {
-                title,
-                message,
-                notification_type: 'info',
-                duration: 5000,
-            }
+            title,
+            message,
+            notification_type: 'info',
+            duration: 5000,
         });
     } catch (error) {
         console.warn('发送桌面通知失败:', error);
@@ -228,7 +227,7 @@ const createToastOptions = async (
 
     return {
         duration: duration ? duration * 1000 : undefined,
-        position: position as any,
+        position: position as ExternalToast['position'],
         ...options,
     };
 };
@@ -270,7 +269,7 @@ const message = {
         msgs: {
             loading: string;
             success: string | ((data: T) => string);
-            error: string | ((error: any) => string);
+            error: string | ((error: unknown) => string);
         }
     ) => {
         return toast.promise(promise, msgs);
@@ -324,7 +323,7 @@ export const showMessage = {
         msgs: {
             loading: string;
             success: string | ((data: T) => string);
-            error: string | ((error: any) => string);
+            error: string | ((error: unknown) => string);
         }
     ) => message.promise(promise, msgs),
 };
@@ -529,7 +528,7 @@ export const toastControl = {
         msgs: {
             loading: string;
             success: string | ((data: T) => string);
-            error: string | ((error: any) => string);
+            error: string | ((error: unknown) => string);
         }
     ) => toast.promise(promise, msgs),
 };
