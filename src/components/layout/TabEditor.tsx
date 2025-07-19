@@ -896,6 +896,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 监听已展开数据库变化，自动选择合适的数据库
     useEffect(() => {
+      console.log('🔄 TabEditor expandedDatabases 变化:', {
+        expandedDatabases,
+        selectedDatabase,
+        hasAnyConnectedInfluxDB,
+        activeConnectionId
+      });
+
       if (expandedDatabases.length > 0) {
         // 如果当前选中的数据库不在已展开列表中，选择第一个已展开的数据库
         if (!selectedDatabase || !expandedDatabases.includes(selectedDatabase)) {
@@ -1929,11 +1936,18 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             <div className='flex items-center gap-2 px-3 flex-shrink-0'>
               <Select
                 value={selectedDatabase}
-                onValueChange={setSelectedDatabase}
+                onValueChange={(value) => {
+                  console.log('🔄 数据库选择变化:', value);
+                  setSelectedDatabase(value);
+                }}
                 disabled={!hasAnyConnectedInfluxDB || expandedDatabases.length === 0}
               >
                 <SelectTrigger className='w-[140px] h-10'>
-                  <SelectValue placeholder='选择数据库' />
+                  <SelectValue placeholder={
+                    expandedDatabases.length === 0
+                      ? '请先展开数据库'
+                      : '选择数据库'
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {expandedDatabases.map(db => (

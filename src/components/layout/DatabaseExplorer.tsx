@@ -1105,7 +1105,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             ),
                             key: `table-${connectionId}-${database}-${table}`,
                             icon: <Table className='w-4 h-4 text-blue-600' />,
-                            isLeaf: true,
+                            isLeaf: false, // 修复：表应该有展开按钮以显示tags和fields
+                            children: [], // 空数组表示有子节点但未加载
                           };
                         });
 
@@ -2047,6 +2048,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   onSelect={handleSelect}
                   onDoubleClick={handleDoubleClick}
                   onRightClick={handleRightClick}
+                  loadData={loadDataAdapter}
                   className='bg-transparent database-explorer-tree'
                 />
 
