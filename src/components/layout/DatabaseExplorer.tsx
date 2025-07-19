@@ -49,14 +49,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui';
+// DropdownMenu相关组件已移除，使用自定义右键菜单
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -1213,12 +1206,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 右键菜单状态
   const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   // 处理右键菜单
   const handleRightClick = (info: { node: TreeNode; event?: React.MouseEvent }) => {
     const { node, event } = info;
     event?.preventDefault();
     event?.stopPropagation();
+
+    // 记录鼠标位置
+    if (event) {
+      setContextMenuPosition({
+        x: event.clientX,
+        y: event.clientY
+      });
+    }
 
     const key = node.key;
     let target = null;
@@ -1282,7 +1284,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     if (target) {
       setContextMenuTarget(target);
       // 延迟打开菜单，避免与双击事件冲突
-      setTimeout(() => setContextMenuOpen(true), 100);
+      setTimeout(() => setContextMenuOpen(true), 50);
     }
   };
 
@@ -2048,101 +2050,183 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   className='bg-transparent database-explorer-tree'
                 />
 
-                <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <div className="hidden" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-48">
-                  {contextMenuTarget && (
-                    <>
-                      {contextMenuTarget.type === 'connection' && (
+                {/* 使用自定义定位的右键菜单 */}
+                {contextMenuOpen && contextMenuTarget && (
+                  <div
+                    className="fixed inset-0 z-50"
+                    onClick={() => setContextMenuOpen(false)}
+                  >
+                    <div
+                      className="absolute z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                      style={{
+                        left: Math.min(contextMenuPosition.x, window.innerWidth - 200),
+                        top: Math.min(contextMenuPosition.y, window.innerHeight - 300),
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {contextMenuTarget && (
                         <>
-                          <DropdownMenuLabel>连接操作</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('refresh_connection')}>
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            刷新连接
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('disconnect')}>
-                            <X className="w-4 h-4 mr-2" />
-                            断开连接
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('connection_properties')}>
-                            <Settings className="w-4 h-4 mr-2" />
-                            连接属性
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                          {contextMenuTarget.type === 'connection' && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">连接操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('refresh_connection');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                刷新连接
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('disconnect');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                                断开连接
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('connection_properties');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Settings className="w-4 h-4" />
+                                连接属性
+                              </button>
+                            </>
+                          )}
 
-                      {contextMenuTarget.type === 'database' && (
-                        <>
-                          <DropdownMenuLabel>数据库操作</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('refresh_database')}>
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            刷新数据库
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('create_measurement')}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            创建测量值
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('database_info')}>
-                            <Info className="w-4 h-4 mr-2" />
-                            数据库信息
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleContextMenuAction('drop_database')}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            删除数据库
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                          {contextMenuTarget.type === 'database' && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('refresh_database');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                刷新数据库
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('create_measurement');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Plus className="w-4 h-4" />
+                                创建测量值
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('database_info');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Info className="w-4 h-4" />
+                                数据库信息
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  handleContextMenuAction('drop_database');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                删除数据库
+                              </button>
+                            </>
+                          )}
 
-                      {contextMenuTarget.type === 'table' && (
-                        <>
-                          <DropdownMenuLabel>表操作</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('query_table')}>
-                            <Search className="w-4 h-4 mr-2" />
-                            查询表
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('table_designer')}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            表设计器
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('table_info')}>
-                            <Info className="w-4 h-4 mr-2" />
-                            表信息
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleContextMenuAction('drop_table')}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            删除表
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                          {contextMenuTarget.type === 'table' && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('query_table');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Search className="w-4 h-4" />
+                                查询表
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('table_designer');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                                表设计器
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('table_info');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Info className="w-4 h-4" />
+                                表信息
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  handleContextMenuAction('drop_table');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                删除表
+                              </button>
+                            </>
+                          )}
 
-                      {contextMenuTarget.type === 'field' && (
-                        <>
-                          <DropdownMenuLabel>字段操作</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('copy_field_name')}>
-                            <Copy className="w-4 h-4 mr-2" />
-                            复制字段名
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleContextMenuAction('field_stats')}>
-                            <BarChart className="w-4 h-4 mr-2" />
-                            字段统计
-                          </DropdownMenuItem>
+                          {contextMenuTarget.type === 'field' && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">字段操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('copy_field_name');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                复制字段名
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('field_stats');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <BarChart className="w-4 h-4" />
+                                字段统计
+                              </button>
+                            </>
+                          )}
                         </>
                       )}
-                    </>
-                  )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <Card className='text-center text-muted-foreground mt-8'>

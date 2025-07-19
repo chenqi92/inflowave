@@ -411,8 +411,8 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   lineNumbers: 'on',
                   wordWrap: 'on',
                   automaticLayout: true,
-                  // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
-                  contextmenu: false,
+                  // 桌面应用：启用右键菜单，使用自定义中文菜单
+                  contextmenu: true,
                   copyWithSyntaxHighlighting: true,
                 }}
                 key={resolvedTheme} // 强制重新渲染以应用主题

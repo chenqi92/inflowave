@@ -2031,8 +2031,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       quickSuggestionsDelay: 50,
                       suggestSelection: 'first',
                       wordBasedSuggestions: 'currentDocument',
-                      // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
-                      contextmenu: false,
+                      // 桌面应用：启用右键菜单，使用自定义中文菜单
+                      contextmenu: true,
                       copyWithSyntaxHighlighting: true,
                       }}
                     />
