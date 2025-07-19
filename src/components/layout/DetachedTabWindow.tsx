@@ -302,7 +302,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
           <div className="h-full p-0">
             <Editor
               height="100%"
-              language="influxql"
+              language="sql"
               theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={content}
               onChange={handleContentChange}
