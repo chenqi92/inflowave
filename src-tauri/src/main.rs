@@ -9,7 +9,7 @@ mod utils;
 mod config;
 mod updater;
 
-use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}, LogicalSize};
+use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}, LogicalSize, LogicalPosition};
 use log::{info, warn, error};
 
 // Tauri commands
@@ -438,46 +438,89 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
             
             info!("计算出的窗口大小: {}x{}", target_width, target_height);
             
+            // 计算屏幕正中心位置
+            let center_x = (screen_size.width as f64 - target_width) / 2.0;
+            let center_y = (screen_size.height as f64 - target_height) / 2.0;
+            
+            // 确保位置不为负数
+            let center_x = center_x.max(0.0);
+            let center_y = center_y.max(0.0);
+            
+            info!("计算出的中心位置: ({}, {})", center_x, center_y);
+            
             // 设置窗口大小
             let logical_size = LogicalSize::new(target_width, target_height);
             if let Err(e) = window.set_size(logical_size) {
                 warn!("设置窗口大小失败: {}", e);
+            } else {
+                info!("窗口大小已设置: {}x{}", target_width, target_height);
             }
             
-            // 居中显示
+            // 直接设置窗口位置到计算出的中心点
+            let center_position = LogicalPosition::new(center_x, center_y);
+            if let Err(e) = window.set_position(center_position) {
+                warn!("设置窗口位置失败: {}", e);
+                // 如果手动设置位置失败，则使用系统的居中方法作为备用
+                if let Err(e) = window.center() {
+                    warn!("备用居中方法也失败: {}", e);
+                }
+            } else {
+                info!("窗口已精确定位到屏幕中心: ({}, {})", center_x, center_y);
+            }
+            
+            // 显示窗口
+            if let Err(e) = window.show() {
+                warn!("显示窗口失败: {}", e);
+            } else {
+                info!("窗口已显示");
+            }
+            
+            info!("响应式窗口大小设置完成: {}x{}", target_width, target_height);
+        }
+        Ok(None) => {
+            warn!("无法获取主显示器信息，使用默认窗口大小和居中");
+            
+            // 设置默认大小
+            let default_width = 1400.0;
+            let default_height = 900.0;
+            if let Err(e) = window.set_size(LogicalSize::new(default_width, default_height)) {
+                warn!("设置默认窗口大小失败: {}", e);
+            } else {
+                info!("默认窗口大小已设置: {}x{}", default_width, default_height);
+            }
+            
+            // 使用系统居中方法
             if let Err(e) = window.center() {
                 warn!("窗口居中失败: {}", e);
+            } else {
+                info!("默认窗口已居中显示");
             }
             
             // 显示窗口
             if let Err(e) = window.show() {
                 warn!("显示窗口失败: {}", e);
             }
-            
-            info!("响应式窗口大小设置完成: {}x{}", target_width, target_height);
-        }
-        Ok(None) => {
-            warn!("无法获取主显示器信息，使用默认窗口大小");
-            // 使用默认大小并显示窗口
-            if let Err(e) = window.set_size(LogicalSize::new(1400.0, 900.0)) {
-                warn!("设置默认窗口大小失败: {}", e);
-            }
-            if let Err(e) = window.center() {
-                warn!("窗口居中失败: {}", e);
-            }
-            if let Err(e) = window.show() {
-                warn!("显示窗口失败: {}", e);
-            }
         }
         Err(e) => {
-            error!("获取显示器信息失败: {}", e);
-            // 使用默认大小并显示窗口
-            if let Err(e) = window.set_size(LogicalSize::new(1400.0, 900.0)) {
+            error!("获取显示器信息失败: {}, 使用错误恢复模式", e);
+            
+            // 设置默认大小
+            let default_width = 1400.0;
+            let default_height = 900.0;
+            if let Err(e) = window.set_size(LogicalSize::new(default_width, default_height)) {
                 warn!("设置默认窗口大小失败: {}", e);
+            } else {
+                info!("错误恢复模式下窗口大小已设置: {}x{}", default_width, default_height);
             }
+            
+            // 使用系统居中方法
             if let Err(e) = window.center() {
                 warn!("窗口居中失败: {}", e);
+            } else {
+                info!("错误恢复模式下窗口已居中显示");
             }
+            
+            // 显示窗口
             if let Err(e) = window.show() {
                 warn!("显示窗口失败: {}", e);
             }
