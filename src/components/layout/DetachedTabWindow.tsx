@@ -62,77 +62,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
 
 
-  // 编辑器挂载处理
-  const handleEditorDidMount = useCallback((
-    editor: monaco.editor.IStandaloneCodeEditor,
-    monaco: typeof import('monaco-editor')
-  ) => {
-    // 注册自定义主题
-    try {
-      // 深色主题
-      monaco.editor.defineTheme('influxql-dark', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-          { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '569cd6', fontStyle: 'bold' },
-          { token: 'string', foreground: 'ce9178' },
-          { token: 'number', foreground: 'b5cea8' },
-          { token: 'function', foreground: 'dcdcaa', fontStyle: 'bold' },
-          { token: 'operator', foreground: 'c586c0' },
-          { token: 'identifier', foreground: 'd4d4d4' },
-          { token: 'delimiter', foreground: 'd4d4d4' },
-        ],
-        colors: {
-          'editor.background': '#1e1e1e',
-          'editor.foreground': '#d4d4d4',
-          'editorLineNumber.foreground': '#858585',
-          'editorCursor.foreground': '#ffffff',
-          'editor.selectionBackground': '#264f78',
-          'editor.lineHighlightBackground': '#2a2d2e',
-        }
-      });
 
-      // 浅色主题
-      monaco.editor.defineTheme('influxql-light', {
-        base: 'vs',
-        inherit: true,
-        rules: [
-          { token: 'comment', foreground: '008000', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '0000ff', fontStyle: 'bold' },
-          { token: 'string', foreground: 'a31515' },
-          { token: 'number', foreground: '098658' },
-          { token: 'function', foreground: '795e26', fontStyle: 'bold' },
-          { token: 'operator', foreground: 'af00db' },
-          { token: 'identifier', foreground: '000000' },
-          { token: 'delimiter', foreground: '000000' },
-        ],
-        colors: {
-          'editor.background': '#ffffff',
-          'editor.foreground': '#000000',
-          'editorLineNumber.foreground': '#237893',
-          'editorCursor.foreground': '#000000',
-          'editor.selectionBackground': '#add6ff',
-          'editor.lineHighlightBackground': '#f0f0f0',
-        }
-      });
-
-      // 立即设置主题
-      const currentTheme = resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
-      monaco.editor.setTheme(currentTheme);
-      console.log('🎨 独立窗口编辑器主题已设置为:', currentTheme);
-
-      // 手动设置编辑器的主题属性
-      const editorElement = editor.getDomNode();
-      if (editorElement) {
-        editorElement.setAttribute('data-theme-applied', resolvedTheme);
-        console.log('🎨 独立窗口编辑器主题属性已设置为:', resolvedTheme);
-      }
-
-    } catch (error) {
-      console.error('⚠️ 注册独立窗口主题失败:', error);
-    }
-  }, [resolvedTheme]);
 
   // 处理窗口控制
   const handleMinimize = async () => {
@@ -363,10 +293,9 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
             <Editor
               height="100%"
               language="influxql"
-              theme={resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light'}
+              theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={content}
               onChange={handleContentChange}
-              onMount={handleEditorDidMount}
               key={resolvedTheme} // 强制重新渲染以应用主题
               options={{
                 minimap: { enabled: false },

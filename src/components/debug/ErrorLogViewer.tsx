@@ -314,19 +314,17 @@ const ErrorLogViewer: React.FC = () => {
     }
   };
 
-  // 获取级别显示信息
-  const getLevelBadgeVariant = (
-    level: string
-  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  // 获取级别显示信息 - 使用固定颜色，不跟随系统主题
+  const getLevelBadgeStyle = (level: string) => {
     switch (level) {
       case 'error':
-        return 'destructive';
+        return { backgroundColor: '#dc2626', color: 'white' }; // 红色
       case 'warn':
-        return 'default';
+        return { backgroundColor: '#d97706', color: 'white' }; // 黄色
       case 'info':
-        return 'secondary';
+        return { backgroundColor: '#6b7280', color: 'white' }; // 灰色
       default:
-        return 'outline';
+        return { backgroundColor: '#9ca3af', color: 'white' }; // 默认灰色
     }
   };
 
@@ -499,7 +497,7 @@ const ErrorLogViewer: React.FC = () => {
                 <TableRow>
                   <TableHead className='w-[160px]'>时间</TableHead>
                   <TableHead className='w-[80px]'>级别</TableHead>
-                  <TableHead className='w-[80px]'>来源</TableHead>
+                  <TableHead className='w-[120px]'>来源</TableHead>
                   <TableHead className='w-[100px]'>类型</TableHead>
                   <TableHead>消息</TableHead>
                   <TableHead className='w-[200px]'>位置</TableHead>
@@ -513,25 +511,25 @@ const ErrorLogViewer: React.FC = () => {
                       {new Date(log.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={getLevelBadgeVariant(log.level)}
-                        className='text-xs'
+                      <div
+                        className='inline-flex items-center px-2 py-1 rounded text-xs font-medium'
+                        style={getLevelBadgeStyle(log.level)}
                       >
                         {getLevelIcon(log.level)}
                         <span className='ml-1'>{log.level.toUpperCase()}</span>
-                      </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant={log.source === 'app' ? 'default' : 'secondary'}
-                        className='text-xs'
+                        className='text-xs whitespace-nowrap'
                       >
                         {log.source === 'app' ? (
                           <Bug className='w-3 h-3 mr-1' />
                         ) : (
                           <Terminal className='w-3 h-3 mr-1' />
                         )}
-                        {log.source === 'app' ? '应用' : '控制台'}
+                        {log.source === 'app' ? '应用日志' : '控制台日志'}
                       </Badge>
                     </TableCell>
                     <TableCell>

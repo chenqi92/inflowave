@@ -110,77 +110,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
 
 
-  // 编辑器挂载处理
-  const handleEditorDidMount = useCallback((
-    editor: monaco.editor.IStandaloneCodeEditor,
-    monaco: typeof import('monaco-editor')
-  ) => {
-    // 注册自定义主题
-    try {
-      // 深色主题
-      monaco.editor.defineTheme('sql-dark', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-          { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '569cd6', fontStyle: 'bold' },
-          { token: 'string', foreground: 'ce9178' },
-          { token: 'number', foreground: 'b5cea8' },
-          { token: 'function', foreground: 'dcdcaa', fontStyle: 'bold' },
-          { token: 'operator', foreground: 'c586c0' },
-          { token: 'identifier', foreground: 'd4d4d4' },
-          { token: 'delimiter', foreground: 'd4d4d4' },
-        ],
-        colors: {
-          'editor.background': '#1e1e1e',
-          'editor.foreground': '#d4d4d4',
-          'editorLineNumber.foreground': '#858585',
-          'editorCursor.foreground': '#ffffff',
-          'editor.selectionBackground': '#264f78',
-          'editor.lineHighlightBackground': '#2a2d2e',
-        }
-      });
 
-      // 浅色主题
-      monaco.editor.defineTheme('sql-light', {
-        base: 'vs',
-        inherit: true,
-        rules: [
-          { token: 'comment', foreground: '008000', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '0000ff', fontStyle: 'bold' },
-          { token: 'string', foreground: 'a31515' },
-          { token: 'number', foreground: '098658' },
-          { token: 'function', foreground: '795e26', fontStyle: 'bold' },
-          { token: 'operator', foreground: 'af00db' },
-          { token: 'identifier', foreground: '000000' },
-          { token: 'delimiter', foreground: '000000' },
-        ],
-        colors: {
-          'editor.background': '#ffffff',
-          'editor.foreground': '#000000',
-          'editorLineNumber.foreground': '#237893',
-          'editorCursor.foreground': '#000000',
-          'editor.selectionBackground': '#add6ff',
-          'editor.lineHighlightBackground': '#f0f0f0',
-        }
-      });
-
-      // 立即设置主题
-      const currentTheme = resolvedTheme === 'dark' ? 'sql-dark' : 'sql-light';
-      monaco.editor.setTheme(currentTheme);
-      console.log('🎨 智能查询引擎编辑器主题已设置为:', currentTheme);
-
-      // 手动设置编辑器的主题属性
-      const editorElement = editor.getDomNode();
-      if (editorElement) {
-        editorElement.setAttribute('data-theme-applied', resolvedTheme);
-        console.log('🎨 智能查询引擎编辑器主题属性已设置为:', resolvedTheme);
-      }
-
-    } catch (error) {
-      console.error('⚠️ 注册智能查询引擎主题失败:', error);
-    }
-  }, [resolvedTheme]);
 
   // 获取查询统计
   const getQueryStats = useCallback(async () => {
@@ -392,10 +322,9 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               <Editor
                 height="200px"
                 language="sql"
-                theme={resolvedTheme === 'dark' ? 'sql-dark' : 'sql-light'}
+                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
                 value={query}
                 onChange={(value) => setQuery(value || '')}
-                onMount={handleEditorDidMount}
                 options={{
                   minimap: { enabled: false },
                   scrollBeyondLastLine: false,

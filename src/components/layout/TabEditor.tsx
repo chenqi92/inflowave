@@ -1457,71 +1457,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       // 设置智能自动补全
       setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
 
-      // 注册自定义主题以确保语法高亮正确
-      try {
-        // 深色主题
-        monaco.editor.defineTheme('influxql-dark', {
-          base: 'vs-dark',
-          inherit: true,
-          rules: [
-            { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
-            { token: 'keyword', foreground: '569cd6', fontStyle: 'bold' },
-            { token: 'string', foreground: 'ce9178' },
-            { token: 'number', foreground: 'b5cea8' },
-            { token: 'function', foreground: 'dcdcaa', fontStyle: 'bold' },
-            { token: 'operator', foreground: 'c586c0' },
-            { token: 'identifier', foreground: 'd4d4d4' },
-            { token: 'delimiter', foreground: 'd4d4d4' },
-          ],
-          colors: {
-            'editor.background': '#1e1e1e',
-            'editor.foreground': '#d4d4d4',
-            'editorLineNumber.foreground': '#858585',
-            'editorCursor.foreground': '#ffffff',
-            'editor.selectionBackground': '#264f78',
-            'editor.lineHighlightBackground': '#2a2d2e',
-          }
-        });
-
-        // 浅色主题
-        monaco.editor.defineTheme('influxql-light', {
-          base: 'vs',
-          inherit: true,
-          rules: [
-            { token: 'comment', foreground: '008000', fontStyle: 'italic' },
-            { token: 'keyword', foreground: '0000ff', fontStyle: 'bold' },
-            { token: 'string', foreground: 'a31515' },
-            { token: 'number', foreground: '098658' },
-            { token: 'function', foreground: '795e26', fontStyle: 'bold' },
-            { token: 'operator', foreground: 'af00db' },
-            { token: 'identifier', foreground: '000000' },
-            { token: 'delimiter', foreground: '000000' },
-          ],
-          colors: {
-            'editor.background': '#ffffff',
-            'editor.foreground': '#000000',
-            'editorLineNumber.foreground': '#237893',
-            'editorCursor.foreground': '#000000',
-            'editor.selectionBackground': '#add6ff',
-            'editor.lineHighlightBackground': '#f0f0f0',
-          }
-        });
-
-        // 立即设置主题
-        const currentTheme = resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
-        monaco.editor.setTheme(currentTheme);
-        console.log('🎨 Monaco编辑器主题已设置为:', currentTheme);
-
-        // 手动设置编辑器的主题属性，确保CSS能够正确应用
-        const editorElement = editor.getDomNode();
-        if (editorElement) {
-          editorElement.setAttribute('data-theme-applied', resolvedTheme);
-          console.log('🎨 编辑器主题属性已设置为:', resolvedTheme);
-        }
-
-      } catch (error) {
-        console.error('⚠️ 注册自定义主题失败:', error);
-      }
+      console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
       // 注册InfluxQL语言支持（只注册一次）
       try {
@@ -1661,19 +1597,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           const currentResolvedTheme = document.documentElement.getAttribute('data-theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
-          const newTheme = currentResolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
+          const newTheme = currentResolvedTheme === 'dark' ? 'vs-dark' : 'vs-light';
 
           // 立即更新Monaco编辑器主题
           setTimeout(() => {
             monaco.editor.setTheme(newTheme);
             console.log('🔄 主题已切换到:', newTheme);
-
-            // 更新编辑器的主题属性
-            const editorElement = editor.getDomNode();
-            if (editorElement) {
-              editorElement.setAttribute('data-theme-applied', currentResolvedTheme);
-              console.log('🔄 编辑器主题属性已更新为:', currentResolvedTheme);
-            }
           }, 50);
         }
       });
@@ -1961,7 +1890,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     <Editor
                       height='100%'
                       language='influxql'
-                      theme={resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light'}
+                      theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
                       value={currentTab.content}
                       onChange={handleEditorChange}
                       onMount={handleEditorDidMount}
