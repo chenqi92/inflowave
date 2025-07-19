@@ -295,25 +295,27 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       shortcuts: getAllSystemShortcuts(),
       notifications: {
         enabled: true,
-        queryCompletion: true,
-        connectionStatus: true,
-        systemAlerts: true,
+        query_completion: true,
+        connection_status: true,
+        system_alerts: true,
+        export_completion: true,
         sound: false,
         desktop: true,
         position: 'topRight',
       },
       accessibility: {
-        highContrast: false,
-        fontSize: 'medium',
-        reducedMotion: false,
-        screenReader: false,
-        keyboardNavigation: true,
+        high_contrast: false,
+        font_size: 'medium',
+        reduced_motion: false,
+        screen_reader: false,
+        keyboard_navigation: true,
       },
       workspace: {
         layout: 'default',
-        openTabs: true,
-        pinnedQueries: true,
-        recentFiles: true,
+        panel_sizes: {},
+        open_tabs: [],
+        pinned_queries: [],
+        recent_files: [],
       },
     },
   });
@@ -358,9 +360,30 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         // 如果没有用户偏好，使用默认值
         const defaultPreferences = {
           shortcuts: getAllSystemShortcuts(),
-          notifications: form.getValues('notifications'),
-          accessibility: form.getValues('accessibility'),
-          workspace: form.getValues('workspace'),
+          notifications: {
+            enabled: true,
+            query_completion: true,
+            connection_status: true,
+            system_alerts: true,
+            export_completion: true,
+            sound: false,
+            desktop: true,
+            position: 'topRight',
+          },
+          accessibility: {
+            high_contrast: false,
+            font_size: 'medium',
+            reduced_motion: false,
+            screen_reader: false,
+            keyboard_navigation: true,
+          },
+          workspace: {
+            layout: 'default',
+            panel_sizes: {},
+            open_tabs: [],
+            pinned_queries: [],
+            recent_files: [],
+          },
         };
         setPreferences(defaultPreferences);
         form.reset(defaultPreferences);
@@ -371,9 +394,30 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 即使加载失败，也使用默认快捷键
       const defaultPreferences = {
         shortcuts: getAllSystemShortcuts(),
-        notifications: form.getValues('notifications'),
-        accessibility: form.getValues('accessibility'),
-        workspace: form.getValues('workspace'),
+        notifications: {
+          enabled: true,
+          query_completion: true,
+          connection_status: true,
+          system_alerts: true,
+          export_completion: true,
+          sound: false,
+          desktop: true,
+          position: 'topRight',
+        },
+        accessibility: {
+          high_contrast: false,
+          font_size: 'medium',
+          reduced_motion: false,
+          screen_reader: false,
+          keyboard_navigation: true,
+        },
+        workspace: {
+          layout: 'default',
+          panel_sizes: {},
+          open_tabs: [],
+          pinned_queries: [],
+          recent_files: [],
+        },
       };
       setPreferences(defaultPreferences);
       form.reset(defaultPreferences);
@@ -607,7 +651,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='notifications.queryCompletion'
+                    name='notifications.query_completion'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -626,7 +670,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='notifications.connectionStatus'
+                    name='notifications.connection_status'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -659,7 +703,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='accessibility.highContrast'
+                    name='accessibility.high_contrast'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -678,7 +722,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='accessibility.reducedMotion'
+                    name='accessibility.reduced_motion'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -699,7 +743,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='accessibility.fontSize'
+                    name='accessibility.font_size'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>字体大小</FormLabel>
@@ -725,7 +769,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='accessibility.keyboardNavigation'
+                    name='accessibility.keyboard_navigation'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -783,7 +827,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='workspace.openTabs'
+                    name='workspace.open_tabs'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -794,8 +838,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>
@@ -806,7 +850,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='workspace.pinnedQueries'
+                    name='workspace.pinned_queries'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -817,8 +861,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>
@@ -827,7 +871,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='workspace.recentFiles'
+                    name='workspace.recent_files'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -838,8 +882,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>

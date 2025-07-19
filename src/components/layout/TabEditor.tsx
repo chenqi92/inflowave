@@ -1446,90 +1446,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       };
     };
 
-    // 应用注释样式 - 使用CSS类而不是直接设置样式
-    const applyCommentStyles = (editor: monaco.editor.IStandaloneCodeEditor) => {
-      const applyStyles = () => {
-        try {
-          const editorElement = editor.getDomNode();
-          if (!editorElement) return;
 
-          const lines = editorElement.querySelectorAll('.view-line');
-
-          lines.forEach((line: Element) => {
-            const text = line.textContent || '';
-
-            // 检查是否是注释行
-            if (text.trim().startsWith('--') || text.trim().startsWith('#')) {
-              // 使用CSS类而不是直接设置样式
-              const spans = line.querySelectorAll('span');
-              spans.forEach((span: HTMLElement) => {
-                // 移除旧的样式类
-                span.classList.remove('keyword-style', 'function-style', 'string-style', 'number-style');
-                // 添加注释样式类
-                span.classList.add('comment-style');
-              });
-            } else {
-              // 分析SQL关键词和其他元素
-              const spans = line.querySelectorAll('span');
-              spans.forEach((span: HTMLElement) => {
-                const spanText = span.textContent || '';
-
-                // 移除所有样式类
-                span.classList.remove('comment-style', 'keyword-style', 'function-style', 'string-style', 'number-style');
-
-                // SQL主要关键词
-                if (/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE|EXPLAIN)\b/i.test(spanText)) {
-                  span.classList.add('keyword-style');
-                }
-                // 筛选条件关键词
-                else if (/\b(WHERE|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE|GROUP\s+BY|ORDER\s+BY|HAVING)\b/i.test(spanText)) {
-                  span.classList.add('filter-style');
-                }
-                // SQL函数
-                else if (/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|TIME|NOW|AGO|DURATION|FILL)\b/i.test(spanText)) {
-                  span.classList.add('function-style');
-                }
-                // 表名/测量值
-                else if (/\b[a-zA-Z_][a-zA-Z0-9_]*\b/.test(spanText) &&
-                         !/(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText) &&
-                         !/^(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText)) {
-                  // 检查是否在FROM后面或者看起来像表名
-                  const lineText = line.textContent || '';
-                  if (/FROM\s+[^,\s]*$/i.test(lineText.substring(0, lineText.indexOf(spanText) + spanText.length))) {
-                    span.classList.add('table-style');
-                  }
-                }
-                // 字符串
-                else if (spanText.includes('"') || spanText.includes("'")) {
-                  span.classList.add('string-style');
-                }
-                // 数字
-                else if (/\b\d+(\.\d+)?\b/.test(spanText)) {
-                  span.classList.add('number-style');
-                }
-              });
-            }
-          });
-        } catch (error) {
-          // 静默处理错误，避免控制台噪音
-        }
-      };
-
-      // 立即执行一次
-      setTimeout(applyStyles, 100);
-
-      // 只在内容变化时重新应用样式
-      const model = editor.getModel();
-      if (model) {
-        const disposable = model.onDidChangeContent(() => {
-          setTimeout(applyStyles, 50);
-        });
-
-        return () => {
-          disposable.dispose();
-        };
-      }
-    };
 
     // 编辑器挂载
     const handleEditorDidMount = (
@@ -1537,36 +1454,91 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     ) => {
       editorRef.current = editor;
 
-      // 应用注释样式
       // 设置智能自动补全
       setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
 
-      // 应用样式的函数
-      const styleDisposable = applyCommentStyles(editor);
+      console.log('🎯 Monaco编辑器开始挂载，当前主题:', resolvedTheme);
 
-      // 监听主题变化
-      const observer = new MutationObserver((mutations) => {
-        // 检查是否有主题相关的变化
-        const hasThemeChange = mutations.some(mutation =>
-          mutation.type === 'attributes' &&
-          (mutation.attributeName === 'data-theme' ||
-           mutation.attributeName === 'class' ||
-           mutation.attributeName === 'style')
-        );
+      // 注册自定义主题（必须在设置主题之前）
+      try {
+        console.log('🎨 开始注册自定义主题...');
 
-        if (hasThemeChange) {
-          // 主题变化时重新应用样式
-          setTimeout(() => {
-            // 重新应用注释样式
-            applyCommentStyles(editor);
-          }, 100);
+        // 深色主题
+        monaco.editor.defineTheme('influxql-dark', {
+          base: 'vs-dark',
+          inherit: true,
+          rules: [
+            { token: 'comment', foreground: 'A1A1AA', fontStyle: 'italic' },
+            { token: 'keyword', foreground: 'FFFFFF', fontStyle: 'bold' },
+            { token: 'function', foreground: 'F97316', fontStyle: 'bold' },
+            { token: 'string', foreground: '4ADE80' },
+            { token: 'number', foreground: '818CF8' },
+            { token: 'identifier', foreground: 'D4D4D4' },
+            { token: 'operator', foreground: 'FCD34D' },
+            { token: 'delimiter', foreground: 'D4D4D4' },
+          ],
+          colors: {
+            'editor.background': '#1e1e1e',
+            'editor.foreground': '#d4d4d4',
+            'editorLineNumber.foreground': '#858585',
+            'editorCursor.foreground': '#ffffff',
+            'editor.selectionBackground': '#264f78',
+            'editor.lineHighlightBackground': '#2a2d2e',
+          }
+        });
+
+        // 浅色主题
+        monaco.editor.defineTheme('influxql-light', {
+          base: 'vs',
+          inherit: true,
+          rules: [
+            { token: 'comment', foreground: '6B7280', fontStyle: 'italic' },
+            { token: 'keyword', foreground: '1F2937', fontStyle: 'bold' },
+            { token: 'function', foreground: 'EA580C', fontStyle: 'bold' },
+            { token: 'string', foreground: '059669' },
+            { token: 'number', foreground: '2563EB' },
+            { token: 'identifier', foreground: '374151' },
+            { token: 'operator', foreground: 'D97706' },
+            { token: 'delimiter', foreground: '374151' },
+          ],
+          colors: {
+            'editor.background': '#ffffff',
+            'editor.foreground': '#000000',
+            'editorLineNumber.foreground': '#237893',
+            'editorCursor.foreground': '#000000',
+            'editor.selectionBackground': '#add6ff',
+            'editor.lineHighlightBackground': '#f0f0f0',
+          }
+        });
+
+        console.log('✅ 自定义主题注册完成');
+
+        // 立即设置主题
+        const currentTheme = resolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
+        monaco.editor.setTheme(currentTheme);
+        console.log('🎨 Monaco编辑器主题已设置为:', currentTheme);
+
+        // 强制设置编辑器背景色（测试用）
+        const editorElement = editor.getDomNode();
+        if (editorElement) {
+          const backgroundColor = resolvedTheme === 'dark' ? '#1e1e1e' : '#ffffff';
+          const textColor = resolvedTheme === 'dark' ? '#d4d4d4' : '#000000';
+
+          editorElement.style.backgroundColor = backgroundColor;
+          editorElement.style.color = textColor;
+
+          // 设置编辑器内部元素的背景色
+          const viewLines = editorElement.querySelector('.view-lines');
+          if (viewLines) {
+            (viewLines as HTMLElement).style.backgroundColor = backgroundColor;
+          }
+
+          console.log('🎨 强制设置编辑器背景色为:', backgroundColor);
         }
-      });
 
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['style', 'class', 'data-theme']
-      });
+      } catch (error) {
+        console.error('⚠️ 注册自定义主题失败:', error);
+      }
 
       // 注册InfluxQL语言支持（只注册一次）
       try {
@@ -1693,10 +1665,38 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         editor.getAction('editor.action.formatDocument')?.run();
       });
 
+      // 监听主题变化
+      const observer = new MutationObserver((mutations) => {
+        const hasThemeChange = mutations.some(mutation =>
+          mutation.type === 'attributes' &&
+          (mutation.attributeName === 'data-theme' ||
+           mutation.attributeName === 'class')
+        );
+
+        if (hasThemeChange) {
+          // 获取当前主题
+          const currentResolvedTheme = document.documentElement.getAttribute('data-theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+          const newTheme = currentResolvedTheme === 'dark' ? 'influxql-dark' : 'influxql-light';
+
+          // 立即更新Monaco编辑器主题
+          setTimeout(() => {
+            monaco.editor.setTheme(newTheme);
+            console.log('🔄 主题已切换到:', newTheme);
+          }, 50);
+        }
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'class']
+      });
+
       // 清理函数
       return () => {
-        if (styleDisposable) styleDisposable();
         observer.disconnect();
+        console.log('🧹 Monaco编辑器清理完成');
       };
     };
 

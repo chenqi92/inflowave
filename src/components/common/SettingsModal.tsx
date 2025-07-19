@@ -848,14 +848,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           if (!open) onClose();
         }}
       >
-        <DialogContent className='max-w-5xl w-full h-[90vh] p-0 flex flex-col settings-modal'>
-          <DialogHeader className='px-6 py-3 border-b shrink-0'>
+        <DialogContent className='max-w-5xl w-full h-[90vh] p-0 flex flex-col gap-0 settings-modal'>
+          <DialogHeader className='px-6 py-3 border-b shrink-0 space-y-0'>
             <DialogTitle className='flex items-center gap-2'>
               <Settings className='w-5 h-5' />
               偏好设置
             </DialogTitle>
           </DialogHeader>
-
           <div className='flex flex-1 min-h-0'>
             <Tabs
               defaultValue='general'

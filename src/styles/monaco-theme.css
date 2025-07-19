@@ -11,27 +11,27 @@
   --monaco-number-color: #2563EB;
 }
 
-/* 深色主题变量 */
+/* 深色主题变量 - 高对比度版本 */
 [data-theme="dark"] {
-  --monaco-comment-color: #9CA3AF;
-  --monaco-keyword-color: #E5E7EB;
-  --monaco-filter-color: #F59E0B;
-  --monaco-table-color: hsl(var(--primary));
-  --monaco-function-color: #FB923C;
-  --monaco-string-color: #34D399;
-  --monaco-number-color: #60A5FA;
+  --monaco-comment-color: #A1A1AA;  /* 更亮的灰色，提高对比度 */
+  --monaco-keyword-color: #FFFFFF;  /* 纯白色，最高对比度 */
+  --monaco-filter-color: #FCD34D;   /* 更亮的黄色，提高对比度 */
+  --monaco-table-color: #60A5FA;    /* 明亮的蓝色 */
+  --monaco-function-color: #F97316; /* 更亮的橙色，提高对比度 */
+  --monaco-string-color: #4ADE80;   /* 更亮的绿色，提高对比度 */
+  --monaco-number-color: #818CF8;   /* 更亮的紫蓝色，提高对比度 */
 }
 
-/* 自动主题 - 跟随系统 */
+/* 自动主题 - 跟随系统深色模式 - 高对比度版本 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --monaco-comment-color: #9CA3AF;
-    --monaco-keyword-color: #E5E7EB;
-    --monaco-filter-color: #F59E0B;
-    --monaco-table-color: hsl(var(--primary));
-    --monaco-function-color: #FB923C;
-    --monaco-string-color: #34D399;
-    --monaco-number-color: #60A5FA;
+    --monaco-comment-color: #A1A1AA;  /* 更亮的灰色，提高对比度 */
+    --monaco-keyword-color: #FFFFFF;  /* 纯白色，最高对比度 */
+    --monaco-filter-color: #FCD34D;   /* 更亮的黄色，提高对比度 */
+    --monaco-table-color: #60A5FA;    /* 明亮的蓝色 */
+    --monaco-function-color: #F97316; /* 更亮的橙色，提高对比度 */
+    --monaco-string-color: #4ADE80;   /* 更亮的绿色，提高对比度 */
+    --monaco-number-color: #818CF8;   /* 更亮的紫蓝色，提高对比度 */
   }
 }
 
@@ -73,4 +73,156 @@
 /* 数字样式 */
 .monaco-editor .view-line span.number-style {
   color: var(--monaco-number-color) !important;
+}
+
+/* 深色模式下的Monaco编辑器优化 */
+[data-theme="dark"] .monaco-editor {
+  /* 确保背景色足够深 */
+  background-color: #1e1e1e !important;
+}
+
+[data-theme="dark"] .monaco-editor .view-lines {
+  /* 确保文本区域背景色 */
+  background-color: #1e1e1e !important;
+}
+
+[data-theme="dark"] .monaco-editor .view-line {
+  /* 默认文本颜色 */
+  color: #d4d4d4 !important;
+}
+
+/* 深色模式下的特殊样式增强 */
+[data-theme="dark"] .monaco-editor .view-line span.keyword-style {
+  color: #FFFFFF !important;
+  font-weight: bold !important;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .monaco-editor .view-line span.function-style {
+  color: #F97316 !important;
+  font-weight: bold !important;
+  text-shadow: 0 0 1px rgba(249, 115, 22, 0.3);
+}
+
+[data-theme="dark"] .monaco-editor .view-line span.string-style {
+  color: #4ADE80 !important;
+  text-shadow: 0 0 1px rgba(74, 222, 128, 0.3);
+}
+
+[data-theme="dark"] .monaco-editor .view-line span.comment-style {
+  color: #A1A1AA !important;
+  font-style: italic !important;
+  opacity: 0.8;
+}
+
+/* 系统跟随深色模式的优化 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .monaco-editor {
+    background-color: #1e1e1e !important;
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-lines {
+    background-color: #1e1e1e !important;
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-line {
+    color: #d4d4d4 !important;
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-line span.keyword-style {
+    color: #FFFFFF !important;
+    font-weight: bold !important;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.3);
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-line span.function-style {
+    color: #F97316 !important;
+    font-weight: bold !important;
+    text-shadow: 0 0 1px rgba(249, 115, 22, 0.3);
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-line span.string-style {
+    color: #4ADE80 !important;
+    text-shadow: 0 0 1px rgba(74, 222, 128, 0.3);
+  }
+
+  :root:not([data-theme]) .monaco-editor .view-line span.comment-style {
+    color: #A1A1AA !important;
+    font-style: italic !important;
+    opacity: 0.8;
+  }
+}
+
+/* 强制覆盖Monaco编辑器样式 - 深色模式 */
+[data-theme="dark"] .monaco-editor,
+[data-theme="dark"] .monaco-editor .monaco-editor-background,
+[data-theme="dark"] .monaco-editor .inputarea.ime-input {
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+[data-theme="dark"] .monaco-editor .view-lines,
+[data-theme="dark"] .monaco-editor .view-line,
+[data-theme="dark"] .monaco-editor .view-overlay {
+  background-color: #1e1e1e !important;
+}
+
+[data-theme="dark"] .monaco-editor .current-line {
+  background-color: #2a2d2e !important;
+}
+
+[data-theme="dark"] .monaco-editor .selected-text {
+  background-color: #264f78 !important;
+}
+
+[data-theme="dark"] .monaco-editor .line-numbers {
+  color: #858585 !important;
+}
+
+[data-theme="dark"] .monaco-editor .cursor {
+  color: #ffffff !important;
+}
+
+/* 强制覆盖Monaco编辑器样式 - 浅色模式 */
+[data-theme="light"] .monaco-editor,
+[data-theme="light"] .monaco-editor .monaco-editor-background,
+[data-theme="light"] .monaco-editor .inputarea.ime-input {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+[data-theme="light"] .monaco-editor .view-lines,
+[data-theme="light"] .monaco-editor .view-line,
+[data-theme="light"] .monaco-editor .view-overlay {
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] .monaco-editor .current-line {
+  background-color: #f0f0f0 !important;
+}
+
+[data-theme="light"] .monaco-editor .selected-text {
+  background-color: #add6ff !important;
+}
+
+[data-theme="light"] .monaco-editor .line-numbers {
+  color: #237893 !important;
+}
+
+[data-theme="light"] .monaco-editor .cursor {
+  color: #000000 !important;
+}
+
+/* 默认主题（无data-theme属性时）- 浅色模式 */
+:root:not([data-theme]) .monaco-editor,
+:root:not([data-theme]) .monaco-editor .monaco-editor-background,
+:root:not([data-theme]) .monaco-editor .inputarea.ime-input {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+:root:not([data-theme]) .monaco-editor .view-lines,
+:root:not([data-theme]) .monaco-editor .view-line,
+:root:not([data-theme]) .monaco-editor .view-overlay {
+  background-color: #ffffff !important;
 }

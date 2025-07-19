@@ -50,9 +50,9 @@ const getUserNotificationPreferences = async () => {
                     enabled: true,
                     desktop: true,
                     sound: false,
-                    queryCompletion: true,
-                    connectionStatus: true,
-                    systemAlerts: true,
+                    query_completion: true,
+                    connection_status: true,
+                    system_alerts: true,
                 };
             }
         } else {
@@ -62,9 +62,9 @@ const getUserNotificationPreferences = async () => {
                 enabled: true,
                 desktop: true,
                 sound: false,
-                queryCompletion: true,
-                connectionStatus: true,
-                systemAlerts: true,
+                query_completion: true,
+                connection_status: true,
+                system_alerts: true,
             };
         }
     } catch (error) {
@@ -76,9 +76,9 @@ const getUserNotificationPreferences = async () => {
         enabled: true,
         desktop: true,
         sound: false,
-        queryCompletion: true,
-        connectionStatus: true,
-        systemAlerts: true,
+        query_completion: true,
+        connection_status: true,
+        system_alerts: true,
     };
 };
 
@@ -442,7 +442,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connectionStatus) {
+        if (prefs.enabled && prefs.connection_status) {
             await sendDesktopNotification('连接成功', `已成功连接到 ${name}`);
         }
         
@@ -462,7 +462,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connectionStatus) {
+        if (prefs.enabled && prefs.connection_status) {
             await sendDesktopNotification('连接失败', `连接 ${name} 失败: ${error}`);
         }
         
@@ -482,7 +482,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connectionStatus) {
+        if (prefs.enabled && prefs.connection_status) {
             await sendDesktopNotification('连接中断', `与 ${name} 的连接已中断`);
         }
         
@@ -498,7 +498,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.queryCompletion) {
+        if (prefs.enabled && prefs.query_completion) {
             await sendDesktopNotification('查询完成', `返回 ${rowCount} 行数据，耗时 ${duration}ms`);
         }
         
@@ -514,7 +514,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.queryCompletion) {
+        if (prefs.enabled && prefs.query_completion) {
             await sendDesktopNotification('查询失败', error);
         }
         
@@ -533,7 +533,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.queryCompletion) {
+        if (prefs.enabled && prefs.query_completion) {
             await sendDesktopNotification('查询超时', `查询执行超过 ${timeout}s，已自动取消`);
         }
         
@@ -604,7 +604,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.systemAlerts) {
+        if (prefs.enabled && prefs.system_alerts) {
             await sendDesktopNotification('发现新版本', `版本 ${version} 已发布`);
         }
         
@@ -624,7 +624,7 @@ export const specialMessage = {
         
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.systemAlerts) {
+        if (prefs.enabled && prefs.system_alerts) {
             await sendDesktopNotification('系统错误', error);
         }
         

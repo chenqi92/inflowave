@@ -660,27 +660,29 @@ export interface KeyboardShortcut {
 
 export interface NotificationSettings {
   enabled: boolean;
-  queryCompletion: boolean;
-  connectionStatus: boolean;
-  systemAlerts: boolean;
+  query_completion: boolean;
+  connection_status: boolean;
+  system_alerts: boolean;
+  export_completion: boolean;
   sound: boolean;
   desktop: boolean;
-  position: 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft';
+  position: string;
 }
 
 export interface AccessibilitySettings {
-  highContrast: boolean;
-  fontSize: 'small' | 'medium' | 'large' | 'extraLarge';
-  reducedMotion: boolean;
-  screenReader: boolean;
-  keyboardNavigation: boolean;
+  high_contrast: boolean;
+  font_size: string;
+  reduced_motion: boolean;
+  screen_reader: boolean;
+  keyboard_navigation: boolean;
 }
 
 export interface WorkspaceSettings {
-  layout: 'default' | 'compact' | 'wide';
-  openTabs: boolean;
-  pinnedQueries: boolean;
-  recentFiles: boolean;
+  layout: string;
+  panel_sizes: Record<string, number>;
+  open_tabs: string[];
+  pinned_queries: string[];
+  recent_files: string[];
 }
 
 // 扩展和集成相关类型
