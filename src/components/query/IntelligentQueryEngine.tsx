@@ -215,12 +215,12 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         }
       }
 
-      // 如果Tauri剪贴板失败，使用Monaco的原生粘贴功能作为备选
-      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+      // 如果Tauri剪贴板失败，显示提示而不是使用浏览器剪贴板
+      showMessage.warning('剪贴板读取失败，请手动输入内容');
     } catch (error) {
       console.error('粘贴操作失败:', error);
-      // 降级到Monaco原生粘贴
-      editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+      // 不再降级到Monaco原生粘贴，避免触发浏览器剪贴板权限
+      showMessage.error('粘贴操作失败，请手动输入内容');
     }
   };
 

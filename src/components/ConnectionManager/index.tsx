@@ -390,7 +390,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: '25%',
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
@@ -439,6 +439,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接信息',
       dataIndex: 'connectionInfo',
       key: 'connectionInfo',
+      width: '20%',
       render: (_, record) => (
         <div className='space-y-1'>
           <div className='text-sm'>
@@ -466,6 +467,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: '15%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         return (
@@ -484,6 +486,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '最后测试',
       dataIndex: 'lastTested',
       key: 'lastTested',
+      width: '15%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -499,6 +502,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '操作',
       dataIndex: 'actions',
       key: 'actions',
+      width: '25%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         const isLoading = connectionLoadingStates.get(record.id!);

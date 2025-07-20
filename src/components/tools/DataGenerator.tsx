@@ -302,18 +302,30 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
   // 加载数据库列表
   const loadDatabases = async () => {
-    if (!activeConnectionId) return;
+    if (!activeConnectionId) {
+      showMessage.error('请先连接到InfluxDB');
+      return;
+    }
 
     try {
       const dbList = await safeTauriInvoke<string[]>('get_databases', {
         connectionId: activeConnectionId,
       });
-      setDatabases(dbList);
-      if (dbList.length > 0 && !selectedDatabase) {
-        setSelectedDatabase(dbList[0]);
+      setDatabases(dbList || []);
+      if (dbList && dbList.length > 0) {
+        if (!selectedDatabase) {
+          setSelectedDatabase(dbList[0]);
+        }
+        showMessage.success(`已加载 ${dbList.length} 个数据库`);
+      } else {
+        setSelectedDatabase('');
+        showMessage.info('未找到数据库，请先创建数据库');
       }
     } catch (error) {
       console.error('加载数据库列表失败:', error);
+      showMessage.error(`加载数据库列表失败: ${error}`);
+      setDatabases([]);
+      setSelectedDatabase('');
     }
   };
 
@@ -490,22 +502,45 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         </div>
         <div className='flex items-center gap-4'>
           <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium'>目标数据库:</span>
+            <span className='text-sm font-medium whitespace-nowrap'>目标数据库:</span>
             <Select
               value={selectedDatabase}
               onValueChange={setSelectedDatabase}
+              disabled={!activeConnectionId || databases.length === 0}
             >
               <SelectTrigger className='min-w-[150px]'>
-                <SelectValue placeholder='选择数据库' />
+                <SelectValue 
+                  placeholder={
+                    !activeConnectionId 
+                      ? '请先连接数据库' 
+                      : databases.length === 0 
+                        ? '暂无数据库' 
+                        : '选择数据库'
+                  } 
+                />
               </SelectTrigger>
               <SelectContent>
-                {databases.map(db => (
-                  <SelectItem key={db} value={db}>
-                    {db}
+                {databases.length > 0 ? (
+                  databases.map(db => (
+                    <SelectItem key={db} value={db}>
+                      {db}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    暂无数据库
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
+            <Button
+              onClick={loadDatabases}
+              disabled={!activeConnectionId}
+              variant='outline'
+              size='sm'
+            >
+              <RefreshCw className='w-4 h-4' />
+            </Button>
           </div>
           <div className='flex gap-2'>
             {!loading ? (

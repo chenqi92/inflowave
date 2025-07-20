@@ -534,7 +534,7 @@ pub async fn update_controller_settings(
     settings_storage: State<'_, SettingsStorage>,
     controller_settings: ControllerSettings,
 ) -> Result<(), String> {
-    debug!("更新控制器设置");
+    debug!("更新控制器设置: {:?}", controller_settings);
 
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置锁失败: {}", e);

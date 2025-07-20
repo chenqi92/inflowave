@@ -1073,11 +1073,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                     </tr>
                                 </thead>
                                 <tbody className="[&_tr:last-child]:border-0">
-                                    {data.map((row, index) => (
-                                        <tr
-                                            key={row._id || index}
-                                            className="border-b transition-colors hover:bg-muted/50"
-                                        >
+                                    {data.map((row, index) => {
+                                        // 创建更健壮的唯一key，避免重复
+                                        const uniqueKey = row._id !== undefined
+                                            ? `row_${row._id}_${index}`
+                                            : `row_index_${index}_${currentPage}_${pageSize}`;
+
+                                        return (
+                                            <tr
+                                                key={uniqueKey}
+                                                className="border-b transition-colors hover:bg-muted/50"
+                                            >
                                             {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
                                                 <td
                                                     key={column}
@@ -1095,8 +1101,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                     }
                                                 </td>
                                             ))}
-                                        </tr>
-                                    ))}
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

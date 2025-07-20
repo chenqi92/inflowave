@@ -332,12 +332,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           }
         }
 
-        // 如果Tauri剪贴板失败，使用Monaco的原生粘贴功能作为备选
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+        // 如果Tauri剪贴板失败，显示提示而不是使用浏览器剪贴板
+        showMessage.warning('剪贴板读取失败，请手动输入内容');
       } catch (error) {
         console.error('粘贴操作失败:', error);
-        // 降级到Monaco原生粘贴
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', null);
+        // 不再降级到Monaco原生粘贴，避免触发浏览器剪贴板权限
+        showMessage.error('粘贴操作失败，请手动输入内容');
       }
     };
 
@@ -2002,6 +2002,33 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         standaloneEditor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
       });
 
+      // 完全禁用Monaco内部的剪贴板相关命令，避免浏览器权限错误
+      try {
+        // 移除Monaco内部的剪贴板命令，防止它们调用浏览器API
+        const commands = [
+          'editor.action.clipboardCopyAction',
+          'editor.action.clipboardCutAction',
+          'editor.action.clipboardPasteAction',
+          'editor.action.clipboardCopyWithSyntaxHighlightingAction'
+        ];
+
+        commands.forEach(commandId => {
+          try {
+            // 尝试移除内部命令（如果存在）
+            standaloneEditor.addCommand(monaco.KeyCode.Unknown, () => {
+              // 空操作，覆盖默认行为
+            }, commandId);
+          } catch (error) {
+            // 忽略移除失败的错误
+            console.debug(`无法移除命令 ${commandId}:`, error);
+          }
+        });
+
+        console.log('🚫 已禁用Monaco内部剪贴板命令，使用Tauri剪贴板服务');
+      } catch (error) {
+        console.warn('禁用Monaco剪贴板命令时出错:', error);
+      }
+
       console.log('✅ 中文右键菜单已添加（包含执行查询）');
 
       // 清理函数
@@ -2339,6 +2366,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       // 禁用所有可能触发剪贴板权限的功能
                       dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
                       selectionClipboard: false, // 禁用选择自动复制到剪贴板
+                      // 完全禁用Monaco内部剪贴板操作，避免浏览器权限错误
+                      useTabStops: false, // 禁用Tab停止，避免某些剪贴板相关操作
+                      multiCursorModifier: 'alt', // 使用Alt键进行多光标操作，避免Ctrl+Click触发剪贴板
+                      // 禁用所有可能调用浏览器剪贴板API的功能
+                      accessibilitySupport: 'off', // 禁用辅助功能支持，避免剪贴板相关操作
                       }}
                     />
                   </div>

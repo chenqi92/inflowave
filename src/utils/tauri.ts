@@ -59,6 +59,7 @@ const VOID_COMMANDS = new Set([
   'update_query_settings',
   'update_visualization_settings',
   'update_security_settings',
+  'update_controller_settings',
   'update_monitoring_settings',
   'reset_settings',
   'save_app_config',

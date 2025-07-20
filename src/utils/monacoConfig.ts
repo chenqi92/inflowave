@@ -49,7 +49,12 @@ export function getSafeMonacoOptions(): monaco.editor.IStandaloneEditorConstruct
     links: false, // 禁用链接检测，避免触发剪贴板权限
     dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
     selectionClipboard: false, // 禁用选择自动复制到剪贴板
-    
+
+    // 额外的剪贴板安全配置
+    useTabStops: false, // 禁用Tab停止，避免某些剪贴板相关操作
+    multiCursorModifier: 'alt', // 使用Alt键进行多光标操作，避免Ctrl+Click触发剪贴板
+    accessibilitySupport: 'off', // 禁用辅助功能支持，避免剪贴板相关操作
+
     // 查找配置 - 避免自动复制选择内容
     find: {
       addExtraSpaceOnTop: false,
@@ -112,6 +117,30 @@ export function configureMonacoGlobally() {
         }
         return './editor.worker.bundle.js';
       };
+
+      // 全局禁用Monaco的剪贴板功能
+      // 重写navigator.clipboard以防止Monaco内部调用
+      if (window.navigator && window.navigator.clipboard) {
+        const originalClipboard = window.navigator.clipboard;
+
+        // 创建一个安全的剪贴板代理，阻止所有浏览器剪贴板API调用
+        try {
+          Object.defineProperty(window.navigator, 'clipboard', {
+            value: {
+              writeText: () => Promise.reject(new Error('Clipboard access disabled for security')),
+              readText: () => Promise.reject(new Error('Clipboard access disabled for security')),
+              write: () => Promise.reject(new Error('Clipboard access disabled for security')),
+              read: () => Promise.reject(new Error('Clipboard access disabled for security')),
+            },
+            writable: false,
+            configurable: false
+          });
+
+          console.log('🔒 已全局禁用浏览器剪贴板API，防止Monaco内部调用');
+        } catch (clipboardError) {
+          console.warn('⚠️ 无法重写剪贴板API:', clipboardError);
+        }
+      }
 
       console.log('✅ Monaco Editor全局配置已完成');
     } catch (error) {
