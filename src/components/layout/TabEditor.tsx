@@ -45,7 +45,7 @@ import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
-import { readFromClipboard } from '@/utils/clipboard';
+import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
@@ -217,6 +217,93 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       });
     };
 
+    // 自定义复制处理函数
+    const handleCustomCopy = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        const selection = editor.getSelection();
+        if (selection && !selection.isEmpty()) {
+          const selectedText = editor.getModel()?.getValueInRange(selection);
+          if (selectedText) {
+            await writeToClipboard(selectedText, {
+              successMessage: '已复制到剪贴板',
+              showSuccess: false // 避免过多提示
+            });
+            return;
+          }
+        }
+
+        // 如果没有选中内容，复制当前行
+        const position = editor.getPosition();
+        if (position) {
+          const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+          if (lineContent) {
+            await writeToClipboard(lineContent, {
+              successMessage: '已复制当前行',
+              showSuccess: false
+            });
+          }
+        }
+      } catch (error) {
+        console.error('复制操作失败:', error);
+        showMessage.error('复制失败');
+      }
+    };
+
+    // 自定义剪切处理函数
+    const handleCustomCut = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        const selection = editor.getSelection();
+        if (selection && !selection.isEmpty()) {
+          const selectedText = editor.getModel()?.getValueInRange(selection);
+          if (selectedText) {
+            // 先复制到剪贴板
+            await writeToClipboard(selectedText, {
+              successMessage: '已剪切到剪贴板',
+              showSuccess: false
+            });
+
+            // 然后删除选中的文本
+            editor.executeEdits('cut', [{
+              range: selection,
+              text: '',
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+            return;
+          }
+        }
+
+        // 如果没有选中内容，剪切当前行
+        const position = editor.getPosition();
+        if (position) {
+          const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+          if (lineContent) {
+            await writeToClipboard(lineContent, {
+              successMessage: '已剪切当前行',
+              showSuccess: false
+            });
+
+            // 删除整行
+            const lineRange = {
+              startLineNumber: position.lineNumber,
+              startColumn: 1,
+              endLineNumber: position.lineNumber + 1,
+              endColumn: 1
+            };
+            editor.executeEdits('cut', [{
+              range: lineRange,
+              text: '',
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+          }
+        }
+      } catch (error) {
+        console.error('剪切操作失败:', error);
+        showMessage.error('剪切失败');
+      }
+    };
+
     // 自定义粘贴处理函数
     const handleCustomPaste = async (editor: monaco.editor.ICodeEditor) => {
       try {
@@ -261,10 +348,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           executeQuery();
           break;
         case 'copy':
-          editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+          // 使用自定义复制逻辑，避免浏览器权限问题
+          await handleCustomCopy(editor);
           break;
         case 'cut':
-          editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+          // 使用自定义剪切逻辑，避免浏览器权限问题
+          await handleCustomCut(editor);
           break;
         case 'paste':
           // 使用自定义粘贴逻辑，避免浏览器权限问题
@@ -1788,13 +1877,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         showCustomContextMenu(e.event.browserEvent, standaloneEditor);
       });
 
-      // 保留快捷键绑定，但不添加到右键菜单
+      // 保留快捷键绑定，使用自定义剪贴板处理避免权限问题
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
-        standaloneEditor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+        handleCustomCopy(standaloneEditor);
       });
 
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
-        standaloneEditor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+        handleCustomCut(standaloneEditor);
       });
 
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {

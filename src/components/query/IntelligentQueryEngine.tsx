@@ -75,7 +75,7 @@ import Editor from '@monaco-editor/react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { dialog } from '@/utils/dialog';
 import * as monaco from 'monaco-editor';
-import { readFromClipboard } from '@/utils/clipboard';
+import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
 
 const { Text, Paragraph } = Typography;
 
@@ -112,6 +112,90 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
 
 
+
+  // 自定义复制处理函数
+  const handleCustomCopy = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      const selection = editor.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = editor.getModel()?.getValueInRange(selection);
+        if (selectedText) {
+          await writeToClipboard(selectedText, {
+            successMessage: '已复制到剪贴板',
+            showSuccess: false
+          });
+          return;
+        }
+      }
+
+      // 如果没有选中内容，复制当前行
+      const position = editor.getPosition();
+      if (position) {
+        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+        if (lineContent) {
+          await writeToClipboard(lineContent, {
+            successMessage: '已复制当前行',
+            showSuccess: false
+          });
+        }
+      }
+    } catch (error) {
+      console.error('复制操作失败:', error);
+      showMessage.error('复制失败');
+    }
+  };
+
+  // 自定义剪切处理函数
+  const handleCustomCut = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      const selection = editor.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = editor.getModel()?.getValueInRange(selection);
+        if (selectedText) {
+          await writeToClipboard(selectedText, {
+            successMessage: '已剪切到剪贴板',
+            showSuccess: false
+          });
+
+          editor.executeEdits('cut', [{
+            range: selection,
+            text: '',
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+          return;
+        }
+      }
+
+      // 如果没有选中内容，剪切当前行
+      const position = editor.getPosition();
+      if (position) {
+        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+        if (lineContent) {
+          await writeToClipboard(lineContent, {
+            successMessage: '已剪切当前行',
+            showSuccess: false
+          });
+
+          const lineRange = {
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber + 1,
+            endColumn: 1
+          };
+          editor.executeEdits('cut', [{
+            range: lineRange,
+            text: '',
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+        }
+      }
+    } catch (error) {
+      console.error('剪切操作失败:', error);
+      showMessage.error('剪切失败');
+    }
+  };
 
   // 自定义粘贴处理函数
   const handleCustomPaste = async (editor: monaco.editor.IStandaloneCodeEditor) => {
@@ -386,7 +470,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     contextMenuGroupId: 'navigation',
                     contextMenuOrder: 1,
                     run: (editor) => {
-                      editor.trigger('keyboard', 'editor.action.clipboardCopyAction', null);
+                      handleCustomCopy(editor as monaco.editor.IStandaloneCodeEditor);
                     }
                   });
 
@@ -397,7 +481,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     contextMenuGroupId: 'navigation',
                     contextMenuOrder: 2,
                     run: (editor) => {
-                      editor.trigger('keyboard', 'editor.action.clipboardCutAction', null);
+                      handleCustomCut(editor as monaco.editor.IStandaloneCodeEditor);
                     }
                   });
 
