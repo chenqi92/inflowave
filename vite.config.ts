@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+/// <reference types="vitest" />
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -81,6 +82,13 @@ export default defineConfig({
 
     // 环境变量配置
     envPrefix: ['VITE_', 'TAURI_'],
+
+    // 测试配置
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./src/test/setup.ts'],
+    },
 
     // 优化配置
     optimizeDeps: {

@@ -46,10 +46,25 @@ import {
   Lightbulb,
   AlertTriangle,
   Info,
+  Trash2,
+  Settings,
+  Shield,
+  FileText,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import type { QueryResult } from '@/types';
+import {
+  detectSQLStatementType,
+  getSQLStatementCategory,
+  getSQLStatementDisplayInfo,
+  getSQLStatementTabs,
+  getDefaultTab,
+  isQueryStatement,
+  getResultStatsLabels,
+  type SQLStatementType,
+  type SQLStatementCategory
+} from '@/utils/sqlTypeDetector';
 
 interface EnhancedResultPanelProps {
   collapsed?: boolean;
@@ -128,6 +143,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
     return [];
   }, [queryResults, queryResult]);
+
+  // 检测SQL语句类型
+  const sqlStatementTypes = useMemo(() => {
+    return executedQueries.map(query => detectSQLStatementType(query));
+  }, [executedQueries]);
+
+  // 获取主要的语句类型（如果有多个查询，取第一个）
+  const primaryStatementType = sqlStatementTypes[0] || 'UNKNOWN';
+  const primaryStatementCategory = getSQLStatementCategory(primaryStatementType);
+  const primaryDisplayInfo = getSQLStatementDisplayInfo(primaryStatementType);
 
   // 从SQL查询中提取表名
   const extractTableName = useCallback((query: string): string => {
@@ -905,20 +930,64 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             执行器
           </TabsTrigger>
 
-          {/* 动态数据tab - 为每个查询结果创建一个tab */}
+          {/* 动态数据tab - 根据SQL语句类型显示不同的tab */}
           {allResults.map((result, index) => {
             const parsedResult = parseQueryResult(result);
+            const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+            const statementCategory = getSQLStatementCategory(statementType);
+            const displayInfo = getSQLStatementDisplayInfo(statementType);
+
+            // 根据语句类型显示不同的图标和标题
+            const getTabIcon = () => {
+              switch (statementCategory) {
+                case 'query':
+                  return <Database className='w-3 h-3' />;
+                case 'write':
+                  return <CheckCircle className='w-3 h-3 text-green-500' />;
+                case 'delete':
+                  return <Trash2 className='w-3 h-3 text-orange-500' />;
+                case 'ddl':
+                  return <Settings className='w-3 h-3 text-blue-500' />;
+                case 'permission':
+                  return <Shield className='w-3 h-3 text-purple-500' />;
+                default:
+                  return <FileText className='w-3 h-3' />;
+              }
+            };
+
+            const getTabLabel = () => {
+              switch (statementCategory) {
+                case 'query':
+                  return '查询结果';
+                case 'write':
+                  return '写入结果';
+                case 'delete':
+                  return '删除结果';
+                case 'ddl':
+                  return '操作结果';
+                case 'permission':
+                  return '权限结果';
+                default:
+                  return '执行结果';
+              }
+            };
+
             return (
               <TabsTrigger
                 key={`data-${index}`}
                 value={`data-${index}`}
                 className='flex items-center gap-1 px-3 py-1 text-xs'
               >
-                <Database className='w-3 h-3' />
-                数据 {allResults.length > 1 ? `${index + 1}` : ''}
-                {parsedResult && (
+                {getTabIcon()}
+                {getTabLabel()} {allResults.length > 1 ? `${index + 1}` : ''}
+                {parsedResult && statementCategory === 'query' && (
                   <Badge variant='secondary' className='ml-1 text-xs px-1'>
                     {parsedResult.rowCount}
+                  </Badge>
+                )}
+                {statementCategory !== 'query' && (
+                  <Badge variant='outline' className='ml-1 text-xs px-1'>
+                    {statementType}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -1039,13 +1108,17 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           </div>
         </TabsContent>
 
-        {/* 动态数据标签页 - 为每个查询结果创建一个tab */}
+        {/* 动态数据标签页 - 根据SQL语句类型显示不同内容 */}
         {allResults.map((result, index) => {
           const parsedResult = parseQueryResult(result);
           const tableName =
             executedQueries && executedQueries[index]
               ? extractTableName(executedQueries[index])
               : '';
+          const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+          const statementCategory = getSQLStatementCategory(statementType);
+          const displayInfo = getSQLStatementDisplayInfo(statementType);
+          const statsLabels = getResultStatsLabels(statementType);
 
           return (
             <TabsContent
@@ -1053,9 +1126,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               value={`data-${index}`}
               className='flex-1 overflow-hidden mt-0'
             >
-              {parsedResult ? (
+              {/* 根据SQL语句类型显示不同的内容 */}
+              {statementCategory === 'query' && parsedResult ? (
                 <div className='h-full flex flex-col'>
-                  {/* 数据表格头部 */}
+                  {/* 查询结果头部 */}
                   <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
                     <div className='flex items-center justify-between'>
                       {/* 表名标注 */}
@@ -1072,7 +1146,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       <div className='flex items-center gap-2'>
                         <Database className='w-4 h-4' />
                         <span className='text-sm font-medium'>
-                          查询结果 {allResults.length > 1 ? `${index + 1}` : ''}
+                          {displayInfo.title} {allResults.length > 1 ? `${index + 1}` : ''}
                         </span>
                         <Badge variant='outline' className='text-xs'>
                           {parsedResult.rowCount} 行
@@ -1174,6 +1248,91 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   <div className='text-center text-muted-foreground'>
                     <Database className='w-16 h-16 mx-auto mb-4 opacity-50' />
                     <p className='text-sm'>查询结果 {index + 1} 无数据</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 非查询类语句的结果显示 */}
+              {statementCategory !== 'query' && (
+                <div className='h-full flex flex-col'>
+                  {/* 操作结果头部 */}
+                  <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-2'>
+                        {statementCategory === 'write' && <CheckCircle className='w-4 h-4 text-green-500' />}
+                        {statementCategory === 'delete' && <Trash2 className='w-4 h-4 text-orange-500' />}
+                        {statementCategory === 'ddl' && <Settings className='w-4 h-4 text-blue-500' />}
+                        {statementCategory === 'permission' && <Shield className='w-4 h-4 text-purple-500' />}
+                        {statementCategory === 'unknown' && <FileText className='w-4 h-4' />}
+                        <span className='text-sm font-medium'>
+                          {displayInfo.title} {allResults.length > 1 ? `${index + 1}` : ''}
+                        </span>
+                        <Badge variant='outline' className='text-xs'>
+                          {statementType}
+                        </Badge>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        {index === 0 && (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='text-xs'
+                            onClick={onClearResult}
+                          >
+                            清空
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 操作结果内容 */}
+                  <div className='flex-1 p-4 space-y-4'>
+                    {/* 执行状态 */}
+                    <div className='flex items-center gap-2'>
+                      <CheckCircle className='w-5 h-5 text-green-500' />
+                      <span className='font-medium text-green-700'>
+                        {displayInfo.description}执行成功
+                      </span>
+                    </div>
+
+                    {/* 执行统计 */}
+                    <div className='bg-muted/50 rounded-lg p-4 space-y-2'>
+                      <div className='flex justify-between'>
+                        <span className='text-muted-foreground'>执行时间:</span>
+                        <span className='font-mono'>{executionTime}ms</span>
+                      </div>
+                      {result?.rowCount !== undefined && (
+                        <div className='flex justify-between'>
+                          <span className='text-muted-foreground'>{statsLabels.rowCount}:</span>
+                          <span className='font-mono'>{result.rowCount}</span>
+                        </div>
+                      )}
+                      <div className='flex justify-between'>
+                        <span className='text-muted-foreground'>语句类型:</span>
+                        <span className='font-mono'>{statementType}</span>
+                      </div>
+                    </div>
+
+                    {/* 执行的语句 */}
+                    {executedQueries[index] && (
+                      <div>
+                        <span className='font-medium mb-2 block'>执行的语句:</span>
+                        <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
+                          {executedQueries[index]}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* JSON结果（如果有） */}
+                    {result && (
+                      <div>
+                        <span className='font-medium mb-2 block'>详细结果:</span>
+                        <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto max-h-64'>
+                          {JSON.stringify(result, null, 2)}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -194,37 +194,128 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
     let platform = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
     
-    // 定义平台特定的文件扩展名和标识符
+    // 定义平台特定的文件扩展名和标识符，按优先级排序
     let platform_patterns = match platform {
         "windows" => match arch {
-            "x86_64" => vec!["x64.msi", "x64.exe", "win64", "windows-x64"],
-            "x86" => vec!["x86.msi", "x86.exe", "win32", "windows-x86"],
-            _ => vec!["msi", "exe", "windows"],
+            "x86_64" => vec![
+                "_x64.msi",      // Tauri 生成的标准格式: InfloWave_0.1.3_x64.msi
+                "_x64.exe", 
+                "x64.msi", 
+                "x64.exe", 
+                "win64", 
+                "windows-x64",
+                ".msi",          // 通用备选
+                ".exe"
+            ],
+            "x86" => vec![
+                "_x86.msi",      // Tauri 生成的标准格式: InfloWave_0.1.3_x86.msi
+                "_x86.exe",
+                "x86.msi", 
+                "x86.exe", 
+                "win32", 
+                "windows-x86",
+                ".msi",          // 通用备选
+                ".exe"
+            ],
+            _ => vec![".msi", ".exe", "windows"],
         },
         "macos" => match arch {
-            "aarch64" => vec!["aarch64.dmg", "arm64.dmg", "macos-arm64"],
-            "x86_64" => vec!["x64.dmg", "intel.dmg", "macos-x64"],
-            _ => vec!["dmg", "macos"],
+            "aarch64" => vec![
+                "_aarch64.dmg",  // Tauri 生成的标准格式: InfloWave_0.1.3_aarch64.dmg
+                "_arm64.dmg",
+                "aarch64.dmg", 
+                "arm64.dmg", 
+                "macos-arm64",
+                ".dmg",          // 通用备选
+                ".app.tar.gz"
+            ],
+            "x86_64" => vec![
+                "_x64.dmg",      // Tauri 生成的标准格式: InfloWave_0.1.3_x64.dmg
+                "_intel.dmg",
+                "x64.dmg", 
+                "intel.dmg", 
+                "macos-x64",
+                ".dmg",          // 通用备选
+                ".app.tar.gz"
+            ],
+            _ => vec![".dmg", ".app.tar.gz", "macos"],
         },
         "linux" => match arch {
-            "x86_64" => vec!["x86_64.AppImage", "x64.AppImage", "amd64.deb", "x86_64.rpm"],
-            "aarch64" => vec!["aarch64.AppImage", "arm64.AppImage", "arm64.deb", "aarch64.rpm"],
-            _ => vec!["AppImage", "deb", "rpm"],
+            "x86_64" => vec![
+                "_amd64.deb",    // Tauri 生成的标准格式: inflowave_0.1.3_amd64.deb
+                "_amd64.AppImage", // Tauri 生成的标准格式: InfloWave_0.1.3_amd64.AppImage
+                "_x86_64.AppImage",
+                "amd64.deb",
+                "x86_64.AppImage", 
+                "x64.AppImage", 
+                "x86_64.rpm",
+                ".deb",          // 通用备选
+                ".AppImage",
+                ".rpm"
+            ],
+            "aarch64" => vec![
+                "_arm64.deb",
+                "_aarch64.AppImage",
+                "aarch64.AppImage", 
+                "arm64.AppImage", 
+                "arm64.deb", 
+                "aarch64.rpm",
+                ".deb",          // 通用备选
+                ".AppImage",
+                ".rpm"
+            ],
+            _ => vec![".AppImage", ".deb", ".rpm"],
         },
         _ => vec![],
     };
 
-    // 查找匹配的资源
+    // 查找匹配的资源，使用更精确的匹配逻辑
     for pattern in platform_patterns {
         if let Some(asset) = assets.iter().find(|asset| {
-            asset.name.to_lowercase().contains(&pattern.to_lowercase())
+            let asset_name = asset.name.to_lowercase();
+            let pattern_lower = pattern.to_lowercase();
+            
+            // 对于以 _ 开头的模式，使用精确匹配以避免误匹配
+            if pattern_lower.starts_with('_') {
+                asset_name.contains(&pattern_lower)
+            } else if pattern_lower.starts_with('.') {
+                // 对于文件扩展名，确保以该扩展名结尾
+                asset_name.ends_with(&pattern_lower)
+            } else {
+                // 对于其他模式，使用包含匹配
+                asset_name.contains(&pattern_lower)
+            }
         }) {
             return Some(asset.browser_download_url.clone());
         }
     }
 
-    // 如果没有找到特定平台的资源，返回第一个资源
-    assets.first().map(|asset| asset.browser_download_url.clone())
+    // 如果没有找到特定平台的资源，尝试更宽松的匹配
+    let fallback_patterns = match platform {
+        "windows" => vec![".msi", ".exe"],
+        "macos" => vec![".dmg", ".app"],
+        "linux" => vec![".deb", ".AppImage", ".rpm"],
+        _ => vec![],
+    };
+    
+    for pattern in fallback_patterns {
+        if let Some(asset) = assets.iter().find(|asset| {
+            asset.name.to_lowercase().ends_with(pattern)
+        }) {
+            log::warn!("Using fallback asset matching for platform {}: {}", platform, asset.name);
+            return Some(asset.browser_download_url.clone());
+        }
+    }
+    
+    // 最后的备选方案：返回第一个资源，并记录警告
+    if let Some(first_asset) = assets.first() {
+        log::warn!("No platform-specific asset found for {} {}, using first available: {}", 
+                   platform, arch, first_asset.name);
+        Some(first_asset.browser_download_url.clone())
+    } else {
+        log::error!("No assets found in release");
+        None
+    }
 }
 
 /// 检查用户是否跳过了特定版本
@@ -427,20 +518,40 @@ mod tests {
     fn test_find_platform_asset() {
         let assets = vec![
             GitHubAsset {
-                name: "inflowave-windows-x64.msi".to_string(),
+                name: "InfloWave_0.1.3_x64.msi".to_string(),
                 browser_download_url: "https://example.com/windows.msi".to_string(),
                 size: 1024,
                 content_type: "application/x-msi".to_string(),
             },
             GitHubAsset {
-                name: "inflowave-macos-arm64.dmg".to_string(),
+                name: "InfloWave_0.1.3_aarch64.dmg".to_string(),
                 browser_download_url: "https://example.com/macos.dmg".to_string(),
                 size: 2048,
                 content_type: "application/x-apple-diskimage".to_string(),
+            },
+            GitHubAsset {
+                name: "inflowave_0.1.3_amd64.deb".to_string(),
+                browser_download_url: "https://example.com/linux.deb".to_string(),
+                size: 3072,
+                content_type: "application/vnd.debian.binary-package".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_amd64.AppImage".to_string(),
+                browser_download_url: "https://example.com/linux.AppImage".to_string(),
+                size: 4096,
+                content_type: "application/x-executable".to_string(),
             },
         ];
 
         let result = find_platform_asset(&assets);
         assert!(result.is_some());
+        
+        // 测试应该找到与当前平台匹配的资源
+        let result_url = result.unwrap();
+        println!("Found asset URL: {}", result_url);
+        
+        // 验证 URL 不为空且是有效的下载链接
+        assert!(result_url.starts_with("https://"));
+        assert!(result_url.contains("example.com"));
     }
 }

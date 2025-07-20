@@ -176,11 +176,11 @@ jobs:
             ### 💻 支持平台
             
             #### Windows 用户
-            📥 **[InfloWave_v${{ needs.detect-version.outputs.version }}_x64.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_v${{ needs.detect-version.outputs.version }}_x64.msi)**  
+            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x64.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x64.msi)**  
             - 适用于 Windows 10/11 (64位系统)  
             - 推荐给大部分用户  
             
-            📥 **[InfloWave_v${{ needs.detect-version.outputs.version }}_x86.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_v${{ needs.detect-version.outputs.version }}_x86.msi)**  
+            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x86.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x86.msi)**  
             - 适用于较老的32位 Windows 系统  
             
             #### macOS 用户
@@ -197,7 +197,7 @@ jobs:
             
             #### Linux 用户
             📦 **Debian/Ubuntu 系列**  
-            📥 **[inflowav_${{ needs.detect-version.outputs.version }}_amd64.deb](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/inflowav_${{ needs.detect-version.outputs.version }}_amd64.deb)**  
+            📥 **[inflowave_${{ needs.detect-version.outputs.version }}_amd64.deb](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/inflowave_${{ needs.detect-version.outputs.version }}_amd64.deb)**  
             - 使用 `sudo dpkg -i` 命令安装  
             
             🗂️ **通用 Linux**  
