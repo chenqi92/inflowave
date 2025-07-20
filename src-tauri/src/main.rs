@@ -691,6 +691,7 @@ async fn main() {
             // Performance monitoring - frontend compatibility
             detect_performance_bottlenecks,
             detect_performance_bottlenecks_with_mode,
+            check_performance_monitoring_health,
             get_system_performance_metrics,
             get_slow_query_log,
             analyze_lock_waits,

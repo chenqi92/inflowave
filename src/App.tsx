@@ -15,6 +15,7 @@ import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { consoleLogger } from './utils/consoleLogger';
+import { initializeHealthCheck } from './utils/healthCheck';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -195,6 +196,14 @@ const App: React.FC = () => {
           console.log('前端连接状态初始化完成');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
+        }
+
+        // 初始化性能监控健康检查
+        try {
+          initializeHealthCheck();
+          console.log('性能监控健康检查初始化成功');
+        } catch (healthError) {
+          console.warn('性能监控健康检查初始化失败:', healthError);
         }
 
         showMessage.success('应用启动成功');

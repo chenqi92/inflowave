@@ -52,6 +52,8 @@ import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
 import { open } from '@tauri-apps/plugin-shell';
+import { dataExplorerRefresh } from '@/utils/refreshEvents';
+import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
 
 interface SettingsModalProps {
@@ -354,14 +356,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 <div className='flex items-center space-x-2'>
                   <Switch
                     checked={form.watch('showInternalDatabases') ?? config.showInternalDatabases}
-                    onCheckedChange={checked =>
-                      form.setValue('showInternalDatabases', checked)
-                    }
+                    onCheckedChange={checked => {
+                      form.setValue('showInternalDatabases', checked);
+
+                      // 立即保存设置并刷新数据库列表
+                      const currentConfig = form.getValues();
+                      const updatedConfig = { ...currentConfig, showInternalDatabases: checked };
+
+                      // 保存设置
+                      saveSettings(updatedConfig as AppConfig).then(() => {
+                        // 触发数据库列表刷新
+                        dataExplorerRefresh.trigger();
+
+                        // 提供即时反馈
+                        if (checked) {
+                          showMessage.success('已开启内部数据库显示并刷新列表');
+                        } else {
+                          showMessage.success('已关闭内部数据库显示并刷新列表');
+                        }
+                      }).catch(error => {
+                        console.error('保存设置失败:', error);
+                        showMessage.error('保存设置失败');
+                        // 回滚设置
+                        form.setValue('showInternalDatabases', !checked);
+                      });
+                    }}
                   />
                   <Label htmlFor='showInternalDatabases'>显示内部数据库</Label>
                 </div>
                 <div className='text-sm text-muted-foreground'>
                   <p>是否在数据源树中显示 _internal 等系统数据库</p>
+                  <p className='text-xs mt-1 text-amber-600'>
+                    注意：监控功能始终可用，无论此设置如何
+                  </p>
                 </div>
               </div>
 
@@ -430,6 +457,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                       form.setValue('autoConnect', checked)
                     }
                   />
+                </div>
+              </div>
+
+              {/* 系统健康检查 */}
+              <div className='space-y-4'>
+                <div>
+                  <Label className='text-base font-medium'>系统健康检查</Label>
+                  <p className='text-sm text-muted-foreground'>
+                    检查性能监控系统的运行状态
+                  </p>
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const result = await performHealthCheck();
+                        if (result) {
+                          showMessage.success('健康检查完成，系统运行正常');
+                        }
+                      } catch (error) {
+                        showMessage.error(`健康检查失败: ${error}`);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <Monitor className='w-4 h-4 mr-2' />
+                    执行健康检查
+                  </Button>
                 </div>
               </div>
             </div>

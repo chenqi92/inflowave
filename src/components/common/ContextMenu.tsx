@@ -104,7 +104,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     }
                 ];
 
-            case 'database':
+            case 'database_node':
                 return [
                     {
                         id: 'refresh_database',
@@ -293,7 +293,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     }
                 ];
 
-            case 'measurement':
+            case 'database':
                 return [
                     {
                         id: 'show_measurements',
@@ -455,7 +455,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     }
                 ];
 
-            case 'field':
+            case 'field_advanced':
                 return [
                     {
                         id: 'select_field',

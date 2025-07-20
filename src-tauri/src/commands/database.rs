@@ -28,15 +28,28 @@ pub async fn get_databases(
             format!("获取数据库列表失败: {}", e)
         })?;
 
+    debug!("原始数据库列表: {:?}", databases);
+
     // 检查是否需要过滤 _internal 数据库
     let settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
     })?;
 
-    if !settings.general.show_internal_databases {
+    let show_internal = settings.general.show_internal_databases;
+    drop(settings); // 尽早释放锁
+
+    if !show_internal {
+        let original_count = databases.len();
         databases.retain(|db| !db.starts_with("_internal"));
-        debug!("已过滤 _internal 数据库，剩余数据库: {:?}", databases);
+        let filtered_count = databases.len();
+
+        if original_count != filtered_count {
+            debug!("已过滤 {} 个内部数据库，剩余数据库: {:?}",
+                   original_count - filtered_count, databases);
+        }
+    } else {
+        debug!("显示所有数据库，包括内部数据库");
     }
 
     Ok(databases)

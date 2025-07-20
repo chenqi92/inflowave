@@ -353,12 +353,17 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         }),
       ]);
 
-      console.log('获取到的指标结果:', { 
-        hasQueryTime: !!metricsResult.queryExecutionTime, 
-        hasMemoryUsage: !!metricsResult.memoryUsage,
-        hasCpuUsage: !!metricsResult.cpuUsage,
+      console.log('获取到的指标结果:', {
+        hasQueryTime: !!metricsResult.queryExecutionTime && metricsResult.queryExecutionTime.length > 0,
+        hasMemoryUsage: !!metricsResult.memoryUsage && metricsResult.memoryUsage.length > 0,
+        hasCpuUsage: !!metricsResult.cpuUsage && metricsResult.cpuUsage.length > 0,
         diskIO: metricsResult.diskIO,
-        networkIO: metricsResult.networkIO
+        networkIO: metricsResult.networkIO,
+        dataLength: {
+          cpu: metricsResult.cpuUsage?.length || 0,
+          memory: metricsResult.memoryUsage?.length || 0,
+          queryTime: metricsResult.queryExecutionTime?.length || 0
+        }
       });
 
       setBasicMetrics({
@@ -1488,8 +1493,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.cpu}
-                  className={`h-2 ${metrics.cpu > 80 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.cpu || 0))}
+                  className={`h-2 ${(metrics.cpu || 0) > 80 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
@@ -1500,8 +1505,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.memory}
-                  className={`h-2 ${metrics.memory > 85 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.memory || 0))}
+                  className={`h-2 ${(metrics.memory || 0) > 85 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
@@ -1512,8 +1517,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.disk}
-                  className={`h-2 ${metrics.disk > 90 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.disk || 0))}
+                  className={`h-2 ${(metrics.disk || 0) > 90 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
@@ -1524,8 +1529,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.network}
-                  className={`h-2 ${metrics.network > 95 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.network || 0))}
+                  className={`h-2 ${(metrics.network || 0) > 95 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
             </CardContent>
