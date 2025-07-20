@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Tree,
   TreeNode,
@@ -82,6 +83,7 @@ interface DatabaseExplorerProps {
   onViewChange?: (view: string) => void; // 视图切换回调
   onGetCurrentView?: () => string; // 获取当前视图回调
   onExpandedDatabasesChange?: (databases: string[]) => void; // 已展开数据库列表变化回调
+  onEditConnection?: (connection: any) => void; // 编辑连接回调
   currentTimeRange?: {
     label: string;
     value: string;
@@ -110,8 +112,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   onViewChange,
   onGetCurrentView,
   onExpandedDatabasesChange,
+  onEditConnection,
   currentTimeRange,
 }) => {
+  const navigate = useNavigate();
   const {
     connections,
     activeConnectionId,
@@ -1082,7 +1086,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // 如果连接已建立，则切换展开/收起状态
         if (isExpanded) {
           // 当前已展开，收起连接节点
-          const newExpandedKeys = expandedKeys.filter(k => !k.startsWith(connectionKey));
+          const newExpandedKeys = expandedKeys.filter(k => !String(k).startsWith(connectionKey));
           setExpandedKeys(newExpandedKeys);
           console.log(`📁 收起连接节点: ${connection.name}`);
           showMessage.info(`已收起连接 "${connection.name}"`);
@@ -1404,21 +1408,47 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       switch (action) {
         case 'refresh_connection':
           if (contextMenuTarget.type === 'connection') {
-            // 重新加载连接状态（功能待实现）
-            showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
+            // 刷新连接状态
+            const connectionId = contextMenuTarget.connectionId;
+            try {
+              // 重新加载数据库列表
+              await loadDatabases(connectionId);
+              // 刷新树形数据
+              buildCompleteTreeData(true);
+              showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
+            } catch (error) {
+              console.error('刷新连接失败:', error);
+              showMessage.error(`刷新连接失败: ${error}`);
+            }
           }
           break;
 
         case 'disconnect':
           if (contextMenuTarget.type === 'connection') {
             // 断开连接逻辑
-            showMessage.success(`连接 ${contextMenuTarget.title} 已断开`);
+            const connectionId = contextMenuTarget.connectionId;
+            try {
+              await handleConnectionToggle(connectionId);
+              showMessage.success(`连接 ${contextMenuTarget.title} 已断开`);
+            } catch (error) {
+              console.error('断开连接失败:', error);
+              showMessage.error(`断开连接失败: ${error}`);
+            }
           }
           break;
 
         case 'connection_properties':
           if (contextMenuTarget.type === 'connection') {
-            showMessage.info(`连接属性: ${contextMenuTarget.title}`);
+            // 导航到连接管理页面
+            const connectionId = contextMenuTarget.connectionId;
+            const connection = getConnection(connectionId);
+            if (connection) {
+              // 使用 React Router 导航到连接管理页面
+              navigate('/connections');
+              showMessage.info(`正在打开连接属性: ${contextMenuTarget.title}`);
+            } else {
+              showMessage.error('连接不存在');
+            }
           }
           break;
 
