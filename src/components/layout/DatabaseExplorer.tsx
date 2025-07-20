@@ -3,10 +3,6 @@ import {
   Tree,
   TreeNode,
   Input,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
   Button,
   Tooltip,
   TooltipTrigger,
@@ -16,7 +12,6 @@ import {
   Typography,
   Card,
   CardContent,
-  Space,
 } from '@/components/ui';
 import {
   Database,
@@ -134,6 +129,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     addFavorite,
     removeFavorite,
     isFavorite,
+    getFavorite,
     getFavoritesByType,
     markAsAccessed,
   } = useFavoritesStore();
@@ -155,9 +151,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const [_connectionLoadingStates, setConnectionLoadingStates] = useState<
     Map<string, boolean>
   >(new Map());
-  const [favoritesFilter, setFavoritesFilter] = useState<
-    'all' | 'connection' | 'database' | 'table' | 'field' | 'tag'
-  >('all');
+
   const [_updateTimeouts, setUpdateTimeouts] = useState<
     Map<string, number>
   >(new Map());
@@ -1526,6 +1520,90 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
           break;
 
+        case 'copy_connection_name':
+          if (contextMenuTarget.type === 'connection') {
+            const connection = connections.find(c => c.id === contextMenuTarget.connectionId);
+            if (connection) {
+              await writeToClipboard(connection.name, {
+                successMessage: `已复制连接名: ${connection.name}`,
+              });
+            }
+          }
+          break;
+
+        case 'copy_database_name':
+          if (contextMenuTarget.type === 'database') {
+            await writeToClipboard(contextMenuTarget.database, {
+              successMessage: `已复制数据库名: ${contextMenuTarget.database}`,
+            });
+          }
+          break;
+
+        case 'copy_table_name':
+          if (contextMenuTarget.type === 'table') {
+            await writeToClipboard(contextMenuTarget.table, {
+              successMessage: `已复制表名: ${contextMenuTarget.table}`,
+            });
+          }
+          break;
+
+        case 'copy_tag_name':
+          if (contextMenuTarget.type === 'tag') {
+            await writeToClipboard(contextMenuTarget.tag, {
+              successMessage: `已复制标签名: ${contextMenuTarget.tag}`,
+            });
+          }
+          break;
+
+        case 'tag_values':
+          if (contextMenuTarget.type === 'tag') {
+            showMessage.info(`查看标签值功能开发中: ${contextMenuTarget.tag}`);
+          }
+          break;
+
+        case 'toggle_favorite':
+          if (contextMenuTarget) {
+            let path = '';
+            switch (contextMenuTarget.type) {
+              case 'connection':
+                path = contextMenuTarget.connectionId;
+                break;
+              case 'database':
+                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}`;
+                break;
+              case 'table':
+                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}`;
+                break;
+              case 'field':
+                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/${contextMenuTarget.field}`;
+                break;
+              case 'tag':
+                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/tags/${contextMenuTarget.tag}`;
+                break;
+            }
+
+            if (path) {
+              if (isFavorite(path)) {
+                const favorite = favorites.find(fav => fav.path === path);
+                if (favorite) {
+                  removeFavorite(favorite.id);
+                  showMessage.success('已取消收藏');
+                }
+              } else {
+                const favoriteItem = favoritesUtils.createFavoriteFromPath(
+                  path,
+                  contextMenuTarget.connectionId,
+                  connections
+                );
+                if (favoriteItem) {
+                  addFavorite(favoriteItem);
+                  showMessage.success('已添加到收藏');
+                }
+              }
+            }
+          }
+          break;
+
         default:
           console.warn('未处理的右键菜单动作:', action);
           break;
@@ -2041,31 +2119,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   if (collapsed) {
     return (
-      <div className='h-full flex flex-col items-center py-4'>
-        <Space direction='vertical' size='large'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant='ghost' size='icon' className='w-8 h-8'>
-                <Database className='w-4 h-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='right'>数据库浏览器</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'
-                className='w-8 h-8'
-                onClick={refreshTree}
-                disabled={loading}
-              >
-                <RefreshCw className='w-4 h-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='right'>刷新</TooltipContent>
-          </Tooltip>
-        </Space>
+      <div className='h-full flex flex-col items-center py-4 space-y-4'>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='icon' className='w-8 h-8'>
+              <Database className='w-4 h-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='right'>数据库浏览器</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-8 h-8'
+              onClick={refreshTree}
+              disabled={loading}
+            >
+              <RefreshCw className='w-4 h-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='right'>刷新</TooltipContent>
+        </Tooltip>
       </div>
     );
   }
@@ -2148,21 +2224,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         />
       </CardContent>
 
-      {/* 主要内容：标签页 */}
+      {/* 主要内容：数据源树 */}
       <CardContent className='flex-1 overflow-hidden p-0'>
-        <Tabs defaultValue='explorer' className='h-full'>
-          <TabsList className='ml-3'>
-            <TabsTrigger value='explorer' className='flex items-center gap-1'>
-              <Database className='w-4 h-4' />
-              数据源
-            </TabsTrigger>
-            <TabsTrigger value='favorites' className='flex items-center gap-1'>
-              <Star className='w-4 h-4' />
-              收藏 ({favorites.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value='explorer' className='px-2 h-full overflow-auto'>
+        <div className='px-2 h-full overflow-auto'>
             {loading ? (
               <div className='flex items-center justify-center py-8'>
                 <Spin tip='加载中...' />
@@ -2204,6 +2268,36 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
+                                  handleContextMenuAction('toggle_favorite');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                {isFavorite(contextMenuTarget.connectionId) ? (
+                                  <>
+                                    <StarOff className="w-4 h-4" />
+                                    取消收藏
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4" />
+                                    添加到收藏
+                                  </>
+                                )}
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('copy_connection_name');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                复制连接名
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
                                   handleContextMenuAction('refresh_connection');
                                   setContextMenuOpen(false);
                                 }}
@@ -2238,6 +2332,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                           {contextMenuTarget.type === 'database' && (
                             <>
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('toggle_favorite');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}`) ? (
+                                  <>
+                                    <StarOff className="w-4 h-4" />
+                                    取消收藏
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4" />
+                                    添加到收藏
+                                  </>
+                                )}
+                              </button>
+                              <div className="my-1 h-px bg-border" />
                               {/* 只有已打开的数据库才显示关闭选项 */}
                               {isDatabaseOpened(contextMenuTarget.connectionId, contextMenuTarget.database) && (
                                 <button
@@ -2251,6 +2365,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                   关闭数据库
                                 </button>
                               )}
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('copy_database_name');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                复制数据库名
+                              </button>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
@@ -2301,12 +2425,42 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
+                                  handleContextMenuAction('toggle_favorite');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}`) ? (
+                                  <>
+                                    <StarOff className="w-4 h-4" />
+                                    取消收藏
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4" />
+                                    添加到收藏
+                                  </>
+                                )}
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
                                   handleContextMenuAction('query_table');
                                   setContextMenuOpen(false);
                                 }}
                               >
                                 <Search className="w-4 h-4" />
                                 查询表
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('copy_table_name');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                复制表名
                               </button>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
@@ -2348,6 +2502,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
+                                  handleContextMenuAction('toggle_favorite');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/${contextMenuTarget.field}`) ? (
+                                  <>
+                                    <StarOff className="w-4 h-4" />
+                                    取消收藏
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4" />
+                                    添加到收藏
+                                  </>
+                                )}
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
                                   handleContextMenuAction('copy_field_name');
                                   setContextMenuOpen(false);
                                 }}
@@ -2364,6 +2538,52 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               >
                                 <BarChart className="w-4 h-4" />
                                 字段统计
+                              </button>
+                            </>
+                          )}
+
+                          {contextMenuTarget.type === 'tag' && (
+                            <>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">标签操作</div>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('toggle_favorite');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/tags/${contextMenuTarget.tag}`) ? (
+                                  <>
+                                    <StarOff className="w-4 h-4" />
+                                    取消收藏
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4" />
+                                    添加到收藏
+                                  </>
+                                )}
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('copy_tag_name');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                                复制标签名
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('tag_values');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Tags className="w-4 h-4" />
+                                查看标签值
                               </button>
                             </>
                           )}
@@ -2384,170 +2604,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value='favorites' className='px-2 h-full overflow-auto'>
-            {/* 收藏过滤器 */}
-            <CardContent className='p-2 border-b'>
-              <div className='flex flex-wrap gap-1'>
-                {[
-                  { key: 'all', label: '全部', icon: Star },
-                  { key: 'connection', label: '连接', icon: Link },
-                  { key: 'database', label: '数据库', icon: Database },
-                  { key: 'table', label: '表', icon: Table },
-                  { key: 'field', label: '字段', icon: Hash },
-                  { key: 'tag', label: '标签', icon: Tags },
-                ].map(({ key, label, icon: IconComponent }) => {
-                  const count =
-                    key === 'all'
-                      ? favorites.length
-                      : getFavoritesByType(key as Parameters<typeof getFavoritesByType>[0]).length;
-                  return (
-                    <Button
-                      key={key}
-                      variant={favoritesFilter === key ? 'default' : 'ghost'}
-                      size='sm'
-                      onClick={() => setFavoritesFilter(key as typeof favoritesFilter)}
-                      className='px-2 py-1 h-auto text-xs flex items-center gap-1'
-                    >
-                      <IconComponent className='w-3 h-3' />
-                      {label}
-                      <Badge variant='secondary' className='bg-background/20 text-xs px-1 h-auto ml-1'>
-                        {count}
-                      </Badge>
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-
-            {/* 收藏列表 */}
-            <CardContent className='p-2'>
-              <div>
-                {(() => {
-                  const filteredFavorites =
-                    favoritesFilter === 'all'
-                      ? favorites.sort(
-                          (a, b) =>
-                            new Date(b.createdAt).getTime() -
-                            new Date(a.createdAt).getTime()
-                        )
-                      : getFavoritesByType(favoritesFilter as Parameters<typeof getFavoritesByType>[0]);
-
-                  if (filteredFavorites.length === 0) {
-                    return (
-                      <Card className='text-center text-muted-foreground py-8'>
-                        <CardContent>
-                          <Star className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                          <Typography.Text className='text-sm block'>
-                            {favoritesFilter === 'all'
-                              ? '暂无收藏项'
-                              : `暂无${favoritesFilter}类型的收藏`}
-                          </Typography.Text>
-                          <Typography.Text className='text-xs mt-1 block'>
-                            右键数据源树节点可添加收藏
-                          </Typography.Text>
-                        </CardContent>
-                      </Card>
-                    );
-                  }
-
-                  return (
-                    <Space direction='vertical' size='small'>
-                      {filteredFavorites.map(favorite => {
-                        const IconComponent = (() => {
-                          switch (favorite.type) {
-                            case 'connection':
-                              return Link;
-                            case 'database':
-                              return Database;
-                            case 'table':
-                              return Table;
-                            case 'field':
-                              return Hash;
-                            case 'tag':
-                              return Tags;
-                            default:
-                              return Star;
-                          }
-                        })();
-
-                        const colorClass = favoritesUtils.getFavoriteColor(
-                          favorite.type
-                        );
-
-                        return (
-                          <Card
-                            key={favorite.id}
-                            className='group cursor-pointer hover:bg-muted/50 transition-colors'
-                            onClick={() => {
-                              markAsAccessed(favorite.id);
-                              // 这里可以添加导航到收藏项的逻辑
-                              showMessage.info(`访问收藏: ${favorite.name}`);
-                            }}
-                          >
-                            <CardContent className='p-2'>
-                              <div className='flex items-start gap-2'>
-                                <IconComponent
-                                  className={`w-4 h-4 mt-0.5 ${colorClass} flex-shrink-0`}
-                                />
-                                <div className='flex-1 min-w-0'>
-                                  <div className='flex items-center gap-2'>
-                                    <Typography.Text className='font-medium text-sm truncate'>
-                                      {favorite.name}
-                                    </Typography.Text>
-                                    <Badge
-                                      variant='secondary'
-                                      className={`text-xs px-1.5 py-0.5 h-auto ${colorClass} bg-current/10`}
-                                    >
-                                      {favorite.type}
-                                    </Badge>
-                                  </div>
-                                  {favorite.description && (
-                                    <Typography.Text className='text-xs text-muted-foreground truncate mt-1 block'>
-                                      {favorite.description}
-                                    </Typography.Text>
-                                  )}
-                                  <div className='flex items-center gap-3 mt-1 text-xs text-muted-foreground'>
-                                    <span className='flex items-center gap-1'>
-                                      <Calendar className='w-3 h-3' />
-                                      {new Date(
-                                        favorite.createdAt
-                                      ).toLocaleDateString()}
-                                    </span>
-                                    {favorite.accessCount > 0 && (
-                                      <span className='flex items-center gap-1'>
-                                        <MousePointer className='w-3 h-3' />
-                                        {favorite.accessCount}次
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <Button
-                                  variant='ghost'
-                                  size='sm'
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    removeFavorite(favorite.id);
-                                    showMessage.success('已移除收藏');
-                                  }}
-                                  className='opacity-0 group-hover:opacity-100 p-1 h-auto hover:bg-destructive/10 hover:text-destructive transition-all'
-                                >
-                                  <Trash2 className='w-3 h-3' />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </Space>
-                  );
-                })()}
-              </div>
-            </CardContent>
-          </TabsContent>
-        </Tabs>
+        </div>
       </CardContent>
+
+
     </Card>
     </>
   );
