@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
@@ -136,9 +137,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     getFavoritesByType,
     markAsAccessed,
   } = useFavoritesStore();
+
+  // 使用全局 store 管理已打开的数据库
+  const {
+    openedDatabasesList,
+    openDatabase,
+    closeDatabase,
+    closeAllDatabasesForConnection,
+    isDatabaseOpened
+  } = useOpenedDatabasesStore();
+
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
-  const [openedDatabases, setOpenedDatabases] = useState<Set<string>>(new Set()); // 新增：已打开的数据库集合
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
@@ -159,52 +169,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     ? connectionStatuses[activeConnectionId]
     : null;
 
-  // 数据库打开状态管理函数
-  const isDatabaseOpened = useCallback((connectionId: string, database: string) => {
-    const key = `${connectionId}/${database}`;
-    return openedDatabases.has(key);
-  }, [openedDatabases]);
-
-  const openDatabase = useCallback((connectionId: string, database: string) => {
-    const key = `${connectionId}/${database}`;
-    setOpenedDatabases(prev => {
-      const newSet = new Set(prev).add(key);
-      console.log(`📂 打开数据库: ${key}`, {
-        before: Array.from(prev),
-        after: Array.from(newSet)
-      });
-      return newSet;
-    });
-  }, []);
-
-  const closeDatabase = useCallback((connectionId: string, database: string) => {
-    const key = `${connectionId}/${database}`;
-    setOpenedDatabases(prev => {
-      const newSet = new Set(prev);
-      const wasDeleted = newSet.delete(key);
-      console.log(`📁 关闭数据库: ${key}`, {
-        wasDeleted,
-        before: Array.from(prev),
-        after: Array.from(newSet)
-      });
-      return newSet;
-    });
-  }, []);
-
-  const closeAllDatabasesForConnection = useCallback((connectionId: string) => {
-    setOpenedDatabases(prev => {
-      const newSet = new Set(prev);
-      const closedDatabases: string[] = [];
-      for (const key of newSet) {
-        if (key.startsWith(`${connectionId}/`)) {
-          newSet.delete(key);
-          closedDatabases.push(key);
-        }
-      }
-      console.log(`📁 关闭连接 ${connectionId} 的所有数据库:`, closedDatabases);
-      return newSet;
-    });
-  }, []);
+  // 数据库状态管理函数现在来自 store，无需本地定义
 
   // 获取要显示的连接状态（优先显示正在连接的连接）
   const getDisplayConnectionStatus = () => {
@@ -1131,7 +1096,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           database,
           isOpened,
           isDatabaseExpanded,
-          openedDatabases: Array.from(openedDatabases)
+          openedDatabasesList
         });
 
         if (!isOpened) {
@@ -2065,28 +2030,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 监听已打开数据库变化，通知父组件
   useEffect(() => {
     if (onExpandedDatabasesChange) {
-      // 从openedDatabases中提取数据库名称
-      const openedDatabasesList = Array.from(openedDatabases)
-        .map(key => {
-          // key格式为 "connectionId/database"
-          const parts = key.split('/');
-          if (parts.length >= 2) {
-            // 取第二部分及之后的所有部分，用斜杠连接（处理数据库名称可能包含斜杠的情况）
-            return parts.slice(1).join('/');
-          }
-          return '';
-        })
-        .filter(db => db !== ''); // 过滤掉空字符串
-
       console.log('🔄 DatabaseExplorer 已打开数据库列表变化:', {
-        openedDatabases: Array.from(openedDatabases),
         openedDatabasesList,
         timestamp: new Date().toISOString()
       });
       console.log('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
       onExpandedDatabasesChange(openedDatabasesList);
     }
-  }, [openedDatabases, onExpandedDatabasesChange]);
+  }, [openedDatabasesList, onExpandedDatabasesChange]);
 
   if (collapsed) {
     return (

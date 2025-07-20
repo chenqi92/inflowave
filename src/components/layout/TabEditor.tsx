@@ -41,6 +41,7 @@ import {
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
@@ -106,6 +107,35 @@ interface TabEditorRef {
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
   ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
     const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
+
+    // 直接使用全局 store 管理已打开的数据库
+    const { openedDatabasesList } = useOpenedDatabasesStore();
+
+    // 强制日志：每次渲染时显示当前状态
+    console.log('🔄 TabEditor 渲染，当前状态:', {
+      expandedDatabases: JSON.stringify(expandedDatabases), // props 传递的数据
+      openedDatabasesList: JSON.stringify(openedDatabasesList), // store 中的数据
+      length: openedDatabasesList.length,
+      timestamp: new Date().toISOString(),
+      renderCount: Math.random() // 用于区分不同的渲染
+    });
+
+    // 调试：监听组件挂载/卸载
+    useEffect(() => {
+      console.log('🚀 TabEditor 组件挂载');
+      return () => {
+        console.log('💀 TabEditor 组件卸载');
+      };
+    }, []);
+
+    // 调试：监听 props 变化
+    useEffect(() => {
+      console.log('🔄 TabEditor props expandedDatabases 变化:', {
+        expandedDatabases,
+        length: expandedDatabases.length,
+        timestamp: new Date().toISOString()
+      });
+    }, [expandedDatabases]);
 
     // 响应式计算是否有已连接的InfluxDB
     const hasAnyConnectedInfluxDB = useMemo(() => {
@@ -903,33 +933,46 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       [executeQueryWithContent, createDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
     );
 
-    // 组件加载时加载数据库列表
+    // 组件加载时不再自动加载数据库列表，改为使用 expandedDatabases
     useEffect(() => {
-      if (activeConnectionId) {
-        loadDatabases();
-      } else {
+      if (!activeConnectionId) {
         setDatabases([]);
         setSelectedDatabase('');
       }
+      // 注释掉自动加载，现在使用 expandedDatabases
+      // if (activeConnectionId) {
+      //   loadDatabases();
+      // }
     }, [activeConnectionId]);
 
-    // 监听已打开数据库变化，自动选择合适的数据库
+    // 监听已打开数据库变化，更新数据库列表和选择
     useEffect(() => {
-      console.log('🔄 TabEditor expandedDatabases 变化:', {
-        expandedDatabases,
+      console.log('🔄 TabEditor openedDatabasesList 变化:', {
+        openedDatabasesList: JSON.stringify(openedDatabasesList), // 显示具体内容
         selectedDatabase,
         hasAnyConnectedInfluxDB,
         activeConnectionId,
-        expandedDatabasesLength: expandedDatabases.length,
-        isDisabled: !hasAnyConnectedInfluxDB || expandedDatabases.length === 0,
+        openedDatabasesLength: openedDatabasesList.length,
+        isDisabled: !hasAnyConnectedInfluxDB || openedDatabasesList.length === 0,
         timestamp: new Date().toISOString()
       });
 
-      if (expandedDatabases.length > 0) {
+      console.log('🧪 使用 store 数据库列表:', openedDatabasesList);
+      console.log('🎯 下拉框状态检查:', {
+        openedDatabasesList,
+        selectedDatabase,
+        hasAnyConnectedInfluxDB,
+        isDisabled: !hasAnyConnectedInfluxDB || openedDatabasesList.length === 0
+      });
+
+      // 直接使用 store 中的已打开数据库作为数据库列表
+      setDatabases(openedDatabasesList);
+
+      if (openedDatabasesList.length > 0) {
         // 如果当前选中的数据库不在已打开列表中，选择第一个已打开的数据库
-        if (!selectedDatabase || !expandedDatabases.includes(selectedDatabase)) {
-          setSelectedDatabase(expandedDatabases[0]);
-          console.log('🔄 自动选择已打开的数据库:', expandedDatabases[0]);
+        if (!selectedDatabase || !openedDatabasesList.includes(selectedDatabase)) {
+          setSelectedDatabase(openedDatabasesList[0]);
+          console.log('🔄 自动选择已打开的数据库:', openedDatabasesList[0]);
         }
       } else {
         // 如果没有已打开的数据库，清空选择
@@ -938,7 +981,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('🔄 清空数据库选择，因为没有已打开的数据库');
         }
       }
-    }, [expandedDatabases, selectedDatabase, hasAnyConnectedInfluxDB]);
+    }, [openedDatabasesList, selectedDatabase, hasAnyConnectedInfluxDB]);
 
     // 监听当前活动标签类型变化
     useEffect(() => {
@@ -992,7 +1035,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       const handleRefreshDatabaseTree = () => {
         console.log('📥 收到刷新数据库树事件');
-        loadDatabases();
+        // 注释掉自动加载，现在使用 expandedDatabases
+        // loadDatabases();
       };
 
       const handleMessageFromDetached = (event: MessageEvent) => {
@@ -1962,17 +2006,17 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   console.log('🔄 数据库选择变化:', value);
                   setSelectedDatabase(value);
                 }}
-                disabled={!hasAnyConnectedInfluxDB || expandedDatabases.length === 0}
+                disabled={!hasAnyConnectedInfluxDB || openedDatabasesList.length === 0}
               >
                 <SelectTrigger className='w-[140px] h-10'>
                   <SelectValue placeholder={
-                    expandedDatabases.length === 0
+                    openedDatabasesList.length === 0
                       ? '请先打开数据库'
                       : '选择数据库'
                   } />
                 </SelectTrigger>
                 <SelectContent>
-                  {expandedDatabases.map(db => (
+                  {openedDatabasesList.map(db => (
                     <SelectItem key={db} value={db}>
                       {db}
                     </SelectItem>
@@ -1990,7 +2034,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 title={
                   !hasAnyConnectedInfluxDB
                     ? '执行查询 (需要连接InfluxDB)'
-                    : expandedDatabases.length === 0
+                    : openedDatabasesList.length === 0
                     ? '执行查询 (需要先打开数据库)'
                     : !selectedDatabase
                     ? '执行查询 (需要选择数据库)'
