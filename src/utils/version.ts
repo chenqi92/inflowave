@@ -6,10 +6,10 @@ import packageJson from '../../package.json';
 // 从package.json中获取版本号
 export const getAppVersion = (): string => {
   try {
-    return packageJson.version || '1.1.1';
+    return packageJson.version || '0.1.3';
   } catch (error) {
     console.warn('无法获取应用版本:', error);
-    return '1.1.1'; // 默认版本
+    return '0.1.3'; // 默认版本，与package.json保持一致
   }
 };
 

@@ -20,15 +20,18 @@ import {
   Github,
 } from 'lucide-react';
 
+import { getVersionInfo } from '@/utils/version';
+
 interface AboutDialogProps {
   visible: boolean;
   onClose: () => void;
 }
 
 const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
+  const versionInfo = getVersionInfo();
   const appInfo = {
     name: 'InfloWave',
-    version: '1.0.4',
+    version: versionInfo.version,
     description: '现代化的 InfluxDB 数据库管理工具',
     author: 'InfloWave Team',
     license: 'MIT',

@@ -303,6 +303,25 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     };
   } | null>(null);
 
+  // 格式化网络数据单位的函数
+  const formatNetworkData = useCallback((bytes: number) => {
+    if (bytes === 0) return { value: 0, unit: 'B/s' };
+
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex++;
+    }
+
+    return {
+      value: Math.round(value * 10) / 10, // 保留一位小数
+      unit: units[unitIndex]
+    };
+  }, []);
+
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
   const [diagnosticsModalVisible, setDiagnosticsModalVisible] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -418,7 +437,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       // 清空指标数据以避免显示过期信息
       setBasicMetrics(null);
     }
-  }, [activeConnectionId]);
+  }, [activeConnectionId, monitoringMode]);
 
   // 获取性能瓶颈数据
   const getBottlenecks = useCallback(async () => {
@@ -446,16 +465,26 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           monitoringMode,
           range
         ),
-        PerformanceBottleneckService.getSystemPerformanceMetrics(
-          activeConnectionId,
-          range
-        ),
+        // 根据监控模式获取系统性能指标
+        safeTauriInvoke('get_system_performance_metrics', {
+          connectionId: activeConnectionId,
+          timeRange: range,
+          monitoringMode,
+        }),
         // 只有远程监控才获取慢查询
         monitoringMode === 'remote'
           ? PerformanceBottleneckService.getSlowQueryLog(activeConnectionId, {
               limit: 50,
+            }).then(queries => {
+              if (Array.isArray(queries)) {
+                return { queries, total: queries.length };
+              } else if (queries && typeof queries === 'object' && 'queries' in queries) {
+                return queries as { queries: any[], total: number };
+              } else {
+                return { queries: [], total: 0 };
+              }
             })
-          : Promise.resolve([]),
+          : Promise.resolve({ queries: [], total: 0 }),
         // 只有远程监控才分析锁等待
         monitoringMode === 'remote'
           ? PerformanceBottleneckService.analyzeLockWaits(
@@ -495,16 +524,36 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, timeRange, getBasicMetrics]);
+  }, [activeConnectionId, timeRange, getBasicMetrics, monitoringMode]);
 
-  // 自动刷新 - 减少频率以避免渲染问题
+  // 自动刷新 - 支持本地和远程监控
   useEffect(() => {
-    if (autoRefresh && monitoringMode === 'remote') {
-      // 只有远程监控才需要频繁刷新，本地监控由后台任务处理
-      const interval = setInterval(getBottlenecks, Math.max(refreshInterval * 1000, 30000)); // 最少30秒
-      return () => clearInterval(interval);
+    if (autoRefresh) {
+      // 根据监控模式设置不同的刷新间隔
+      const interval = monitoringMode === 'local'
+        ? Math.max(refreshInterval * 1000, 10000) // 本地监控最少10秒
+        : Math.max(refreshInterval * 1000, 30000); // 远程监控最少30秒
+
+      const refreshTimer = setInterval(() => {
+        getBottlenecks();
+        getBasicMetrics(); // 同时刷新基础指标
+      }, interval);
+
+      return () => clearInterval(refreshTimer);
     }
-  }, [autoRefresh, refreshInterval, getBottlenecks, monitoringMode]);
+  }, [autoRefresh, refreshInterval, getBottlenecks, getBasicMetrics, monitoringMode]);
+
+  // 实时监控 - 更频繁的数据更新
+  useEffect(() => {
+    if (realTimeMode) {
+      // 实时监控每5秒更新一次
+      const realTimeTimer = setInterval(() => {
+        getBasicMetrics(); // 实时监控主要更新基础指标
+      }, 5000);
+
+      return () => clearInterval(realTimeTimer);
+    }
+  }, [realTimeMode, getBasicMetrics]);
 
   // 监控状态管理
   const [isMonitoringActive, setIsMonitoringActive] = useState(false);
@@ -554,10 +603,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       if (monitoringMode === 'local') {
         startMonitoring().then(() => {
           getBottlenecks();
+          getBasicMetrics(); // 确保获取基础指标
         });
       } else {
         // 远程监控模式不需要启动本地系统监控
         getBottlenecks();
+        getBasicMetrics(); // 确保获取基础指标
       }
     }
 
@@ -567,7 +618,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         stopMonitoring();
       }
     };
-  }, [activeConnectionId, monitoringMode, startMonitoring, stopMonitoring, getBottlenecks, isMonitoringActive]);
+  }, [activeConnectionId, monitoringMode, startMonitoring, stopMonitoring, getBottlenecks, getBasicMetrics, isMonitoringActive]);
 
   // 获取严重程度颜色
   const getSeverityVariant = (severity: string) => {
@@ -631,14 +682,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       // 如果没有真实数据，显示提示信息而不是空图表
       return {
         timeColumn: '时间',
-        valueColumns: type === 'cpu-memory' 
-          ? ['CPU使用率(%)', '内存使用率(%)'] 
-          : ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+        valueColumns: type === 'cpu-memory'
+          ? ['CPU使用率(%)', '内存使用率(%)']
+          : ['磁盘读取(MB)', '磁盘写入(MB)', '网络入站(B/s)', '网络出站(B/s)'],
         data: [{
           时间: '暂无数据',
-          ...(type === 'cpu-memory' 
+          ...(type === 'cpu-memory'
             ? { 'CPU使用率(%)': 0, '内存使用率(%)': 0 }
-            : { '磁盘读取(MB/s)': 0, '磁盘写入(MB/s)': 0, '网络入站(MB/s)': 0, '网络出站(MB/s)': 0 })
+            : { '磁盘读取(MB)': 0, '磁盘写入(MB)': 0, '网络入站(B/s)': 0, '网络出站(B/s)': 0 })
         }],
       };
     }
@@ -668,37 +719,45 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       if (basicMetrics.cpuUsage.length > 0) {
         // 使用已有的时间序列数据
         const data = basicMetrics.cpuUsage.map((point, index) => {
-          // 将字节转换为MB/s，使用真实的速率计算
-          const readMBps = Math.round((diskIO.readBytes / (1024 * 1024)) / 60 * 10) / 10; // 假设60秒间隔
-          const writeMBps = Math.round((diskIO.writeBytes / (1024 * 1024)) / 60 * 10) / 10;
-          const netInMBps = Math.round((networkIO.bytesIn / (1024 * 1024)) / 60 * 10) / 10;
-          const netOutMBps = Math.round((networkIO.bytesOut / (1024 * 1024)) / 60 * 10) / 10;
-          
+          // 将字节转换为合适的单位
+          const readMBps = Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10; // 转换为MB
+          const writeMBps = Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10;
+          // 网络数据自动转换单位
+          const netInFormatted = formatNetworkData(networkIO.bytesIn);
+          const netOutFormatted = formatNetworkData(networkIO.bytesOut);
+
           return {
             时间: new Date(point.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-            '磁盘读取(MB/s)': readMBps,
-            '磁盘写入(MB/s)': writeMBps,
-            '网络入站(MB/s)': netInMBps,
-            '网络出站(MB/s)': netOutMBps,
+            '磁盘读取(MB)': readMBps,
+            '磁盘写入(MB)': writeMBps,
+            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
+            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
           };
         });
         
+        // 获取网络数据的单位（使用第一个数据点的单位）
+        const firstNetInUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络入站')) || '网络入站(B/s)' : '网络入站(B/s)';
+        const firstNetOutUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络出站')) || '网络出站(B/s)' : '网络出站(B/s)';
+
         return {
           timeColumn: '时间',
-          valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', firstNetInUnit, firstNetOutUnit],
           data,
         };
       } else {
         // 如果没有时间序列数据，显示当前值
+        const netInFormatted = formatNetworkData(networkIO.bytesIn);
+        const netOutFormatted = formatNetworkData(networkIO.bytesOut);
+
         return {
           timeColumn: '时间',
-          valueColumns: ['磁盘读取(MB/s)', '磁盘写入(MB/s)', '网络入站(MB/s)', '网络出站(MB/s)'],
+          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', `网络入站(${netInFormatted.unit})`, `网络出站(${netOutFormatted.unit})`],
           data: [{
             时间: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-            '磁盘读取(MB/s)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
-            '磁盘写入(MB/s)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
-            '网络入站(MB/s)': Math.round((networkIO.bytesIn / (1024 * 1024)) * 10) / 10,
-            '网络出站(MB/s)': Math.round((networkIO.bytesOut / (1024 * 1024)) * 10) / 10,
+            '磁盘读取(MB)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
+            '磁盘写入(MB)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
+            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
+            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
           }],
         };
       }
@@ -1620,7 +1679,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>磁盘I/O</Text>
+                  <Text className='font-semibold'>磁盘使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
                     {(metrics.disk || 0).toFixed(2)}%
                   </Text>
@@ -1765,8 +1824,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     showMessage.error('保存监控设置失败');
                   }
 
-                  // 刷新数据
-                  getBottlenecks();
+                  // 立即刷新所有数据以反映新的监控模式
+                  setTimeout(() => {
+                    getBottlenecks();
+                    getBasicMetrics();
+                  }, 100); // 短暂延迟确保状态更新完成
                 }}
               >
                 <SelectTrigger className='w-[120px]'>

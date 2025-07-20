@@ -36,7 +36,7 @@ pub struct UpdateInfo {
 }
 
 const GITHUB_API_URL: &str = "https://api.github.com/repos/chenqi92/inflowave/releases";
-const USER_AGENT: &str = "InfloWave-Updater/1.0";
+const USER_AGENT: &str = "InfloWave-Updater/0.1";
 
 /// 获取当前应用版本
 pub fn get_current_version() -> String {

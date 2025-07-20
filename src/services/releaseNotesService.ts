@@ -218,13 +218,60 @@ class ReleaseNotesService {
     try {
       // 尝试列出本地发布说明文件
       const files = await safeTauriInvoke<string[]>('list_release_notes_files');
-      return files
-        .filter(file => file.endsWith('.md'))
-        .map(file => file.replace('.md', ''))
-        .sort((a, b) => this.compareVersions(b, a)); // 降序排列
+      
+      // 如果本地有文件，使用本地版本列表
+      if (files && files.length > 0) {
+        return files
+          .filter(file => file.endsWith('.md'))
+          .map(file => file.replace('.md', ''))
+          .sort((a, b) => this.compareVersions(b, a)); // 降序排列
+      }
+      
+      // 如果本地没有文件，尝试从GitHub API获取版本列表
+      const githubVersions = await this.fetchGitHubVersions();
+      if (githubVersions.length > 0) {
+        return githubVersions;
+      }
+      
+      // 如果都失败了，返回当前版本
+      const { getAppVersion } = await import('@/utils/version');
+      return [getAppVersion()];
     } catch (error) {
-      // 如果无法列出文件，返回预设的版本
-      return ['1.0.8', '1.0.7', '1.0.6'];
+      console.error('Failed to get available versions:', error);
+      // 如果所有方法都失败，返回当前版本作为默认值
+      return ['0.1.3'];
+    }
+  }
+
+  /**
+   * 从GitHub API获取可用版本列表
+   */
+  private async fetchGitHubVersions(): Promise<string[]> {
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/chenqi92/inflowave/releases',
+        {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'InfloWave-App/1.0'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        console.warn('GitHub API request failed:', response.status);
+        return [];
+      }
+
+      const releases = await response.json();
+      return releases
+        .filter((release: any) => !release.prerelease && !release.draft)
+        .map((release: any) => release.tag_name.replace(/^v/, ''))
+        .sort((a: string, b: string) => this.compareVersions(b, a))
+        .slice(0, 10); // 最多返回10个版本
+    } catch (error) {
+      console.error('Failed to fetch GitHub versions:', error);
+      return [];
     }
   }
 
