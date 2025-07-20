@@ -527,9 +527,9 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
                     暂无数据库
-                  </SelectItem>
+                  </div>
                 )}
               </SelectContent>
             </Select>
