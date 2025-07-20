@@ -179,16 +179,18 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
   // 调试：监听 expandedDatabases 变化
   useEffect(() => {
-    console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', {
-      expandedDatabases: JSON.stringify(expandedDatabases), // 显示具体内容
-      length: expandedDatabases.length,
-      timestamp: new Date().toISOString()
-    });
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+      console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', {
+        expandedDatabases: JSON.stringify(expandedDatabases), // 显示具体内容
+        length: expandedDatabases.length,
+        timestamp: new Date().toISOString()
+      });
 
-    // 强制触发 TabEditor 的重新渲染
-    if (tabEditorRef.current) {
-      console.log('🔄 强制更新 TabEditor 组件');
-      // 这里可以调用 TabEditor 的方法来强制更新
+      // 强制触发 TabEditor 的重新渲染
+      if (tabEditorRef.current) {
+        console.log('🔄 强制更新 TabEditor 组件');
+        // 这里可以调用 TabEditor 的方法来强制更新
+      }
     }
   }, [expandedDatabases]);
 

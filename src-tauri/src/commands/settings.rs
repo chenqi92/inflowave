@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::sync::Mutex;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -273,45 +273,201 @@ pub async fn update_security_settings(
     Ok(())
 }
 
-/// 导出设置
+/// 导出设置到文件
 #[tauri::command]
 pub async fn export_settings(
+    app: tauri::AppHandle,
     settings_storage: State<'_, SettingsStorage>,
-) -> Result<String, String> {
-    debug!("导出设置");
-    
-    let settings = settings_storage.lock().map_err(|e| {
-        error!("获取设置存储锁失败: {}", e);
-        "存储访问失败".to_string()
+    connection_service: State<'_, crate::services::ConnectionService>,
+    user_preferences_storage: State<'_, crate::commands::user_experience::UserPreferencesStorage>,
+) -> Result<(), String> {
+    debug!("导出设置到文件");
+
+    // 克隆设置以避免跨await持有锁
+    let settings_clone = {
+        let settings = settings_storage.lock().map_err(|e| {
+            error!("获取设置存储锁失败: {}", e);
+            "存储访问失败".to_string()
+        })?;
+        settings.clone()
+    };
+
+    // 获取连接配置
+    let connections = connection_service.get_all_connections().await.map_err(|e| {
+        error!("获取连接配置失败: {}", e);
+        format!("获取连接配置失败: {}", e)
     })?;
 
-    serde_json::to_string_pretty(&*settings).map_err(|e| {
+    // 获取用户偏好设置
+    let user_preferences = {
+        let prefs = user_preferences_storage.lock().map_err(|e| {
+            error!("获取用户偏好存储锁失败: {}", e);
+            "用户偏好访问失败".to_string()
+        })?;
+        prefs.clone()
+    };
+
+    // 创建导出数据结构，包含版本信息和时间戳
+    let export_data = serde_json::json!({
+        "version": "1.0.0",
+        "exportTime": chrono::Utc::now().to_rfc3339(),
+        "appSettings": settings_clone,
+        "connections": connections,
+        "userPreferences": user_preferences,
+        "metadata": {
+            "application": "InfloWave",
+            "description": "InfloWave完整应用配置文件"
+        }
+    });
+
+    let settings_json = serde_json::to_string_pretty(&export_data).map_err(|e| {
         error!("序列化设置失败: {}", e);
         "导出设置失败".to_string()
-    })
+    })?;
+
+    // 使用文件保存对话框
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app.dialog().file();
+    dialog = dialog.set_title("导出配置文件");
+    dialog = dialog.add_filter("配置文件", &["json"]);
+    dialog = dialog.add_filter("所有文件", &["*"]);
+
+    // 设置默认文件名
+    let default_filename = format!("inflowave-config-{}.json",
+        chrono::Local::now().format("%Y%m%d-%H%M%S"));
+    dialog = dialog.set_file_name(&default_filename);
+
+    match dialog.blocking_save_file() {
+        Some(file_path) => {
+            let path_str = file_path.as_path()
+                .ok_or("无效的文件路径")?
+                .to_string_lossy()
+                .to_string();
+
+            // 写入文件
+            std::fs::write(&path_str, settings_json).map_err(|e| {
+                error!("写入配置文件失败: {}: {}", path_str, e);
+                format!("写入文件失败: {}", e)
+            })?;
+
+            info!("配置已导出到: {}", path_str);
+            Ok(())
+        }
+        None => {
+            info!("用户取消了配置导出");
+            Err("用户取消了导出操作".to_string())
+        }
+    }
 }
 
-/// 导入设置
-#[tauri::command(rename_all = "camelCase")]
+/// 从文件导入设置
+#[tauri::command]
 pub async fn import_settings(
+    app: tauri::AppHandle,
     settings_storage: State<'_, SettingsStorage>,
-    settings_json: String,
-) -> Result<(), String> {
-    debug!("导入设置");
-    
-    let new_settings: AppSettings = serde_json::from_str(&settings_json).map_err(|e| {
-        error!("反序列化设置失败: {}", e);
-        "导入设置失败：格式错误".to_string()
-    })?;
+    connection_service: State<'_, crate::services::ConnectionService>,
+    user_preferences_storage: State<'_, crate::commands::user_experience::UserPreferencesStorage>,
+) -> Result<AppSettings, String> {
+    debug!("从文件导入设置");
 
-    let mut settings = settings_storage.lock().map_err(|e| {
-        error!("获取设置存储锁失败: {}", e);
-        "存储访问失败".to_string()
-    })?;
+    // 使用文件打开对话框
+    use tauri_plugin_dialog::DialogExt;
 
-    *settings = new_settings;
-    info!("设置导入成功");
-    Ok(())
+    let mut dialog = app.dialog().file();
+    dialog = dialog.set_title("导入配置文件");
+    dialog = dialog.add_filter("配置文件", &["json"]);
+    dialog = dialog.add_filter("所有文件", &["*"]);
+
+    match dialog.blocking_pick_file() {
+        Some(file_path) => {
+            let path_str = file_path.as_path()
+                .ok_or("无效的文件路径")?
+                .to_string_lossy()
+                .to_string();
+
+            // 读取文件内容
+            let file_content = std::fs::read_to_string(&path_str).map_err(|e| {
+                error!("读取配置文件失败: {}: {}", path_str, e);
+                format!("读取文件失败: {}", e)
+            })?;
+
+            // 尝试解析为新格式（包含版本信息）
+            if let Ok(export_data) = serde_json::from_str::<serde_json::Value>(&file_content) {
+                let new_settings: AppSettings = if export_data.get("appSettings").is_some() {
+                    // 新格式：包含版本信息和元数据
+                    serde_json::from_value(export_data["appSettings"].clone()).map_err(|e| {
+                        error!("解析新格式配置失败: {}", e);
+                        "配置文件格式错误".to_string()
+                    })?
+                } else {
+                    // 旧格式：直接是设置对象
+                    serde_json::from_value(export_data.clone()).map_err(|e| {
+                        error!("解析旧格式配置失败: {}", e);
+                        "配置文件格式错误".to_string()
+                    })?
+                };
+
+                // 如果配置文件包含连接信息，先导入连接配置
+                if let Some(connections_value) = export_data.get("connections") {
+                    if let Ok(connections) = serde_json::from_value::<Vec<crate::models::ConnectionConfig>>(connections_value.clone()) {
+                        info!("导入 {} 个连接配置", connections.len());
+
+                        // 清除现有连接配置
+                        if let Err(e) = connection_service.clear_all_connections().await {
+                            error!("清除现有连接配置失败: {}", e);
+                        }
+
+                        // 导入新的连接配置
+                        for connection in connections {
+                            if let Err(e) = connection_service.create_connection(connection.clone()).await {
+                                error!("导入连接配置失败: {} - {}", connection.name, e);
+                            } else {
+                                info!("成功导入连接配置: {}", connection.name);
+                            }
+                        }
+                    } else {
+                        warn!("连接配置格式错误，跳过连接配置导入");
+                    }
+                }
+
+                // 导入用户偏好设置
+                if let Some(user_prefs_value) = export_data.get("userPreferences") {
+                    if let Ok(user_prefs) = serde_json::from_value::<crate::commands::user_experience::UserPreferences>(user_prefs_value.clone()) {
+                        info!("导入用户偏好设置");
+                        let mut prefs_storage = user_preferences_storage.lock().map_err(|e| {
+                            error!("获取用户偏好存储锁失败: {}", e);
+                            "用户偏好访问失败".to_string()
+                        })?;
+                        *prefs_storage = user_prefs;
+                        info!("用户偏好设置导入成功");
+                    } else {
+                        warn!("用户偏好设置格式错误，跳过导入");
+                    }
+                }
+
+
+
+                // 更新应用设置
+                {
+                    let mut settings = settings_storage.lock().map_err(|e| {
+                        error!("获取设置存储锁失败: {}", e);
+                        "存储访问失败".to_string()
+                    })?;
+                    *settings = new_settings.clone();
+                }
+
+                info!("完整配置导入成功: {}", path_str);
+                Ok(new_settings)
+            } else {
+                Err("配置文件格式无效".to_string())
+            }
+        }
+        None => {
+            info!("用户取消了配置导入");
+            Err("用户取消了导入操作".to_string())
+        }
+    }
 }
 
 /// 获取设置模式列表
@@ -339,6 +495,37 @@ pub async fn get_settings_schema() -> Result<serde_json::Value, String> {
     });
 
     Ok(schema)
+}
+
+/// 重置所有配置为默认值
+#[tauri::command]
+pub async fn reset_all_settings(
+    settings_storage: State<'_, SettingsStorage>,
+    user_preferences_storage: State<'_, crate::commands::user_experience::UserPreferencesStorage>,
+) -> Result<AppSettings, String> {
+    debug!("重置所有配置为默认值");
+
+    // 重置应用设置
+    let default_settings = AppSettings::default();
+    {
+        let mut settings = settings_storage.lock().map_err(|e| {
+            error!("获取设置存储锁失败: {}", e);
+            "存储访问失败".to_string()
+        })?;
+        *settings = default_settings.clone();
+    }
+
+    // 重置用户偏好设置
+    {
+        let mut prefs = user_preferences_storage.lock().map_err(|e| {
+            error!("获取用户偏好存储锁失败: {}", e);
+            "用户偏好访问失败".to_string()
+        })?;
+        *prefs = crate::commands::user_experience::UserPreferences::default();
+    }
+
+    info!("所有配置已重置为默认值");
+    Ok(default_settings)
 }
 
 /// 更新控制器设置

@@ -117,7 +117,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const { openedDatabasesList } = useOpenedDatabasesStore();
 
     // 渲染状态日志（仅在开发模式下显示）
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
       console.log('🔄 TabEditor 渲染，当前状态:', {
         expandedDatabases: JSON.stringify(expandedDatabases),
         openedDatabasesList: JSON.stringify(openedDatabasesList),
@@ -128,19 +128,23 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 调试：监听组件挂载/卸载
     useEffect(() => {
-      console.log('🚀 TabEditor 组件挂载');
-      return () => {
-        console.log('💀 TabEditor 组件卸载');
-      };
+      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+        console.log('🚀 TabEditor 组件挂载');
+        return () => {
+          console.log('💀 TabEditor 组件卸载');
+        };
+      }
     }, []);
 
     // 调试：监听 props 变化
     useEffect(() => {
-      console.log('🔄 TabEditor props expandedDatabases 变化:', {
-        expandedDatabases,
-        length: expandedDatabases.length,
-        timestamp: new Date().toISOString()
-      });
+      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+        console.log('🔄 TabEditor props expandedDatabases 变化:', {
+          expandedDatabases,
+          length: expandedDatabases.length,
+          timestamp: new Date().toISOString()
+        });
+      }
     }, [expandedDatabases]);
 
     // 响应式计算是否有已连接的InfluxDB

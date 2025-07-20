@@ -157,33 +157,60 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   };
 
   // 重置设置
-  const handleResetSettings = () => {
-    resetConfig();
-    // 延迟设置表单值，确保 store 状态已更新
-    setTimeout(() => {
-      const latestConfig = useAppStore.getState().config;
-      form.reset(latestConfig);
-    }, 0);
-    showMessage.success('设置已重置为默认值');
+  const handleResetSettings = async () => {
+    try {
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：只重置前端配置
+        resetConfig();
+        setTimeout(() => {
+          const latestConfig = useAppStore.getState().config;
+          form.reset(latestConfig);
+        }, 0);
+        showMessage.success('设置已重置为默认值');
+      } else {
+        // Tauri 环境：调用后端重置命令
+        const defaultSettings = await safeTauriInvoke('reset_all_settings');
+        if (defaultSettings) {
+          // 更新前端配置
+          setConfig(defaultSettings);
+          form.reset(defaultSettings);
+
+          // 触发全局刷新事件
+          window.dispatchEvent(new CustomEvent('refresh-connections'));
+          window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
+            detail: null // 表示重置
+          }));
+
+          showMessage.success('所有配置已重置为默认值');
+        }
+      }
+    } catch (error) {
+      console.error('重置配置失败:', error);
+      showMessage.error(`重置配置失败: ${error}`);
+    }
   };
 
-  // 导出设置
+  // 导出配置
   const exportSettings = async () => {
     try {
-      const settings = {
-        appConfig: config,
-        connections: useConnectionStore.getState().connections,
-        exportTime: new Date().toISOString(),
-        version: '1.0.0',
-      };
-
       if (isBrowserEnvironment()) {
-        // 浏览器环境：显示文件保存对话框
+        // 浏览器环境：使用浏览器API导出
+        const settings = {
+          version: '1.0.0',
+          exportTime: new Date().toISOString(),
+          appSettings: config,
+          connections: useConnectionStore.getState().connections,
+          metadata: {
+            application: 'InfloWave',
+            description: 'InfloWave应用配置文件'
+          }
+        };
+
         try {
           // 尝试使用现代浏览器的文件系统访问API
           if ('showSaveFilePicker' in window) {
             const fileHandle = await (window as any).showSaveFilePicker({
-              suggestedName: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
+              suggestedName: `inflowave-config-${new Date().toISOString().split('T')[0]}.json`,
               types: [
                 {
                   description: 'JSON files',
@@ -194,19 +221,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             const writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(settings, null, 2));
             await writable.close();
-            showMessage.success('设置已导出到指定位置');
+            showMessage.success('配置已导出到指定位置');
           } else {
             // 使用原生文件保存对话框作为降级方案
             const success = await saveJsonFile(settings, {
-              filename: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
+              filename: `inflowave-config-${new Date().toISOString().split('T')[0]}.json`,
               filters: [
                 { name: '配置文件', extensions: ['json'] },
                 { name: '所有文件', extensions: ['*'] }
               ]
             });
-            
+
             if (success) {
-              showMessage.success('设置已导出');
+              showMessage.success('配置已导出');
             }
           }
         } catch (exportError) {
@@ -217,48 +244,57 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           }
         }
       } else {
-        // Tauri 环境：调用原生文件保存对话框
-        await safeTauriInvoke('export_settings', { settings });
-        showMessage.success('设置已导出');
+        // Tauri 环境：调用后端导出命令
+        await safeTauriInvoke('export_settings');
+        showMessage.success('配置已导出');
       }
     } catch (error) {
-      console.error('导出设置失败:', error);
-      showMessage.error(`导出设置失败: ${error}`);
+      console.error('导出配置失败:', error);
+      if (String(error).includes('取消')) {
+        showMessage.info('导出已取消');
+      } else {
+        showMessage.error(`导出配置失败: ${error}`);
+      }
     }
   };
 
-  // 导入设置
+  // 导入配置
   const importSettings = async () => {
     try {
-      // 使用原生文件选择对话框
-      const settings = await safeTauriInvoke('import_settings');
-      if (settings) {
-        setConfig(settings.appConfig);
-        form.reset(settings.appConfig);
-        showMessage.success('设置已导入');
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：使用文件输入
+        showMessage.info('浏览器环境下的配置导入功能开发中...');
+        return;
+      }
+
+      // Tauri 环境：调用后端导入命令
+      const importedSettings = await safeTauriInvoke('import_settings');
+      if (importedSettings) {
+        // 更新应用配置
+        setConfig(importedSettings);
+        form.reset(importedSettings);
+
+        // 刷新连接列表（因为后端已经处理了连接配置的导入）
+        try {
+          // 触发连接列表刷新
+          window.dispatchEvent(new CustomEvent('refresh-connections'));
+          showMessage.success('配置已导入并应用，连接配置已更新');
+        } catch (refreshError) {
+          console.warn('刷新连接列表失败:', refreshError);
+          showMessage.success('配置已导入并应用');
+        }
       }
     } catch (error) {
-      console.error('导入设置失败:', error);
-      showMessage.error(`导入设置失败: ${error}`);
+      console.error('导入配置失败:', error);
+      if (String(error).includes('取消')) {
+        showMessage.info('导入已取消');
+      } else {
+        showMessage.error(`导入配置失败: ${error}`);
+      }
     }
   };
 
-  // 清除所有数据
-  const clearAllData = () => {
-    clearConnections();
-    resetConfig();
-    setTimeout(() => {
-      const latestConfig = useAppStore.getState().config;
-      form.reset(latestConfig);
-    }, 0);
-    showMessage.success('所有数据已清除');
-  };
 
-  // 清除连接配置（带确认）
-  const clearConnectionsWithConfirm = () => {
-    clearConnections();
-    showMessage.success('连接配置已清除');
-  };
 
   const tabItems = [
     {
@@ -525,21 +561,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       children: <UserPreferencesComponent />,
     },
     {
-      key: 'data',
+      key: 'config',
       icon: <Database className='w-4 h-4' />,
-      label: '数据管理',
+      label: '配置管理',
       children: (
         <div className='space-y-6'>
           <div>
-            <h4 className='text-sm font-medium mb-3'>数据备份与恢复</h4>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            <h4 className='text-sm font-medium mb-3'>配置备份与恢复</h4>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
               <Button
                 variant='outline'
                 onClick={exportSettings}
                 className='w-full justify-start'
               >
                 <FileDown className='w-4 h-4 mr-2' />
-                导出设置
+                导出配置
               </Button>
               <Button
                 variant='outline'
@@ -547,74 +583,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 className='w-full justify-start'
               >
                 <FileUp className='w-4 h-4 mr-2' />
-                导入设置
+                导入配置
+              </Button>
+              <Button
+                variant='outline'
+                onClick={handleResetSettings}
+                className='w-full justify-start'
+              >
+                <RefreshCw className='w-4 h-4 mr-2' />
+                重置所有配置
               </Button>
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h4 className='text-sm font-medium mb-2 text-destructive'>
-              危险操作区域
-            </h4>
-            <Alert className='mb-4'>
+            <Alert className='mt-4'>
               <Info className='h-4 w-4' />
-              <h5 className='font-medium'>注意</h5>
-              <p className='text-sm text-muted-foreground'>
-                以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。
-              </p>
+              <div>
+                <h5 className='font-medium'>配置说明</h5>
+                <p className='text-sm text-muted-foreground mt-1'>
+                  • <strong>导出配置</strong>：将当前所有应用设置、连接配置、用户偏好保存到文件<br/>
+                  • <strong>导入配置</strong>：从配置文件恢复应用设置、连接配置、用户偏好<br/>
+                  • <strong>重置配置</strong>：将所有设置恢复为默认值（不影响连接配置）
+                </p>
+              </div>
             </Alert>
-
-            <div className='space-y-4'>
-              <div className='p-4 border rounded-lg'>
-                <div className='mb-2'>
-                  <p className='font-medium text-sm'>清除所有连接配置</p>
-                  <p className='text-sm text-muted-foreground'>
-                    删除所有保存的数据库连接配置
-                  </p>
-                </div>
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={async () => {
-                    const confirmed = await dialog.confirm(
-                      '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？'
-                    );
-                    if (confirmed) {
-                      clearConnectionsWithConfirm();
-                    }
-                  }}
-                >
-                  <Trash2 className='w-4 h-4 mr-2' />
-                  清除连接配置
-                </Button>
-              </div>
-
-              <div className='p-4 border rounded-lg'>
-                <div className='mb-2'>
-                  <p className='font-medium text-sm'>重置所有设置</p>
-                  <p className='text-sm text-muted-foreground'>
-                    将所有设置恢复为默认值，并清除所有用户数据
-                  </p>
-                </div>
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={async () => {
-                    const confirmed = await dialog.confirm(
-                      '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？'
-                    );
-                    if (confirmed) {
-                      clearAllData();
-                    }
-                  }}
-                >
-                  <Trash2 className='w-4 h-4 mr-2' />
-                  重置所有设置
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       ),

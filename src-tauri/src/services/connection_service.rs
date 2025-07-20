@@ -634,4 +634,53 @@ impl ConnectionService {
             Err(anyhow::anyhow!("连接池不存在: {}", connection_id))
         }
     }
+
+    /// 获取所有连接配置
+    pub async fn get_all_connections(&self) -> Result<Vec<crate::models::ConnectionConfig>> {
+        debug!("获取所有连接配置");
+
+        let configs = self.configs.read().await;
+        let connections: Vec<crate::models::ConnectionConfig> = configs.values().cloned().collect();
+
+        info!("返回 {} 个连接配置", connections.len());
+        Ok(connections)
+    }
+
+    /// 清除所有连接配置
+    pub async fn clear_all_connections(&self) -> Result<()> {
+        debug!("清除所有连接配置");
+
+        // 获取所有连接ID
+        let connection_ids: Vec<String> = {
+            let configs = self.configs.read().await;
+            configs.keys().cloned().collect()
+        };
+
+        // 逐个删除连接
+        for connection_id in connection_ids {
+            if let Err(e) = self.manager.remove_connection(&connection_id).await {
+                error!("从管理器移除连接失败: {} - {}", connection_id, e);
+            }
+        }
+
+        // 清空配置存储
+        {
+            let mut configs = self.configs.write().await;
+            configs.clear();
+        }
+
+        // 清空连接池
+        {
+            let mut pools = self.pools.write().await;
+            pools.clear();
+        }
+
+        // 保存到文件（空配置）
+        if let Err(e) = self.save_to_storage().await {
+            error!("保存清空后的连接配置失败: {}", e);
+        }
+
+        info!("所有连接配置已清除");
+        Ok(())
+    }
 }
