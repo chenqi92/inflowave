@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import SimpleChart from '@/components/common/SimpleChart';
 import { DEFAULT_PERFORMANCE_CONFIG } from '@/config/defaults';
+import { FormatUtils } from '@/utils/format';
 import {
   Card,
   CardContent,
@@ -319,21 +320,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   }, []);
 
   const formatNetworkData = useCallback((bytes: number) => {
-    if (bytes === 0) return { value: 0, unit: 'B/s' };
-
-    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
-    let value = bytes;
-    let unitIndex = 0;
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-
-    return {
-      value: Math.round(value * 10) / 10, // 保留一位小数
-      unit: units[unitIndex]
-    };
+    return FormatUtils.formatNetworkSpeed(bytes);
   }, []);
 
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
@@ -1232,7 +1219,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络I/O'
-                value={`${networkBytes.toFixed(1)} KB/s`}
+                value={FormatUtils.formatNetworkSpeed(networkBytes).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
               />
@@ -1479,7 +1466,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络输入'
-                value={formatBytes(networkIO.bytesIn)}
+                value={FormatUtils.formatNetworkSpeed(networkIO.bytesIn).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
               />
@@ -1492,7 +1479,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络输出'
-                value={formatBytes(networkIO.bytesOut)}
+                value={FormatUtils.formatNetworkSpeed(networkIO.bytesOut).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-orange-500'
               />

@@ -267,6 +267,102 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
     setColumnOrder(columns.map(col => col.key));
   }, [columns]);
 
+  // 数据处理：搜索、筛选、排序
+  const processedData = useMemo(() => {
+    let result = [...data];
+
+    // 搜索过滤
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase();
+      result = result.filter(row =>
+        Object.values(row).some(value =>
+          String(value || '').toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    // 筛选器过滤
+    if (filters.length > 0) {
+      result = result.filter(row => {
+        return filters.every(filter => {
+          const value = row[filter.column];
+          const filterValue = filter.value.toLowerCase();
+          const rowValue = String(value || '').toLowerCase();
+
+          switch (filter.operator) {
+            case 'equals':
+              return rowValue === filterValue;
+            case 'not_equals':
+              return rowValue !== filterValue;
+            case 'contains':
+              return rowValue.includes(filterValue);
+            case 'not_contains':
+              return !rowValue.includes(filterValue);
+            case 'starts_with':
+              return rowValue.startsWith(filterValue);
+            case 'ends_with':
+              return rowValue.endsWith(filterValue);
+            case 'greater_than':
+              return parseFloat(String(value)) > parseFloat(filter.value);
+            case 'less_than':
+              return parseFloat(String(value)) < parseFloat(filter.value);
+            case 'greater_equal':
+              return parseFloat(String(value)) >= parseFloat(filter.value);
+            case 'less_equal':
+              return parseFloat(String(value)) <= parseFloat(filter.value);
+            default:
+              return true;
+          }
+        });
+      });
+    }
+
+    // 排序
+    if (sortConfig) {
+      result.sort((a, b) => {
+        const aValue = a[sortConfig.column];
+        const bValue = b[sortConfig.column];
+
+        // 处理null/undefined值
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
+
+        // 时间列特殊排序
+        if (sortConfig.column === 'time' || (typeof aValue === 'string' && aValue.includes('T') && aValue.includes('Z'))) {
+          const aTime = new Date(aValue).getTime();
+          const bTime = new Date(bValue).getTime();
+          if (!isNaN(aTime) && !isNaN(bTime)) {
+            const result = aTime - bTime;
+            return sortConfig.direction === 'asc' ? result : -result;
+          }
+        }
+
+        // 数字排序
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          const result = aValue - bValue;
+          return sortConfig.direction === 'asc' ? result : -result;
+        }
+
+        // 字符串排序
+        const result = String(aValue).localeCompare(String(bValue));
+        return sortConfig.direction === 'asc' ? result : -result;
+      });
+    }
+
+    return result;
+  }, [data, searchText, filters, sortConfig]);
+
+  // 分页数据
+  const paginatedData = useMemo(() => {
+    if (pagination === false) {
+      return processedData;
+    }
+
+    const startIndex = (pagination.current - 1) * pagination.pageSize;
+    const endIndex = startIndex + pagination.pageSize;
+    return processedData.slice(startIndex, endIndex);
+  }, [processedData, pagination]);
+
   // 处理搜索
   const handleSearch = useCallback((value: string) => {
     setSearchText(value);
@@ -373,25 +469,27 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
     if (pagination === false) {
       return {
         current: 1,
-        pageSize: data.length,
-        total: data.length,
+        pageSize: processedData.length,
+        total: processedData.length,
         totalPages: 1,
         startIndex: 1,
-        endIndex: data.length,
+        endIndex: processedData.length,
       };
     }
 
-    const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+    const total = processedData.length; // 使用处理后的数据长度
+    const totalPages = Math.ceil(total / pagination.pageSize);
     const startIndex = (pagination.current - 1) * pagination.pageSize + 1;
-    const endIndex = Math.min(pagination.current * pagination.pageSize, pagination.total);
+    const endIndex = Math.min(pagination.current * pagination.pageSize, total);
 
     return {
       ...pagination,
+      total, // 更新总数
       totalPages,
       startIndex,
       endIndex,
     };
-  }, [pagination, data.length]);
+  }, [pagination, processedData.length]);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -527,7 +625,7 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
               <Spin />
               <span className="ml-2">加载中...</span>
             </div>
-          ) : data.length > 0 ? (
+          ) : processedData.length > 0 ? (
             <div className="h-full overflow-auto">
               <table className="w-full caption-bottom text-sm">
                 <thead className="sticky top-0 bg-background z-10 border-b">
@@ -560,7 +658,7 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
                   </tr>
                 </thead>
                 <tbody className="[&_tr:last-child]:border-0">
-                  {data.map((row, index) => (
+                  {paginatedData.map((row, index) => (
                     <tr
                       key={row._id || index}
                       className="border-b transition-colors hover:bg-muted/50"

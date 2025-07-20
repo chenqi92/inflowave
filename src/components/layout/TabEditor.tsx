@@ -117,7 +117,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const { openedDatabasesList } = useOpenedDatabasesStore();
 
     // 渲染状态日志（仅在开发模式下显示）
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('🔄 TabEditor 渲染，当前状态:', {
         expandedDatabases: JSON.stringify(expandedDatabases),
         openedDatabasesList: JSON.stringify(openedDatabasesList),
@@ -1861,7 +1861,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 添加焦点事件监听，确保智能提示正常工作
       editor.onDidFocusEditorText(() => {
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.log('👁️ 编辑器获得焦点，智能提示已启用');
           console.log('📊 当前数据库状态:', {
             selectedDatabase,
