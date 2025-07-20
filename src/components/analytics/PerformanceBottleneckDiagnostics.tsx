@@ -450,21 +450,34 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           activeConnectionId,
           range
         ),
-        PerformanceBottleneckService.getSlowQueryLog(activeConnectionId, {
-          limit: 50,
-        }),
-        PerformanceBottleneckService.analyzeLockWaits(
-          activeConnectionId,
-          range
-        ),
+        // 只有远程监控才获取慢查询
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.getSlowQueryLog(activeConnectionId, {
+              limit: 50,
+            })
+          : Promise.resolve([]),
+        // 只有远程监控才分析锁等待
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.analyzeLockWaits(
+              activeConnectionId,
+              range
+            )
+          : Promise.resolve({ locks: [], summary: { totalLocks: 0, avgWaitTime: 0, maxWaitTime: 0, mostBlockedTable: '', recommendations: [] } }),
         PerformanceBottleneckService.getConnectionPoolStats(
           activeConnectionId,
           range
         ),
-        PerformanceBottleneckService.generatePerformanceReport(
-          activeConnectionId,
-          range
-        ),
+        // 根据监控模式获取性能报告
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.generatePerformanceReport(
+              activeConnectionId,
+              range
+            )
+          : safeTauriInvoke('generate_local_performance_report', {
+              connectionId: activeConnectionId,
+              timeRange: range,
+              monitoringMode,
+            }),
       ]);
 
       // 同时获取基础性能指标
@@ -484,13 +497,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [activeConnectionId, timeRange, getBasicMetrics]);
 
-  // 自动刷新
+  // 自动刷新 - 减少频率以避免渲染问题
   useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(getBottlenecks, refreshInterval * 1000);
+    if (autoRefresh && monitoringMode === 'remote') {
+      // 只有远程监控才需要频繁刷新，本地监控由后台任务处理
+      const interval = setInterval(getBottlenecks, Math.max(refreshInterval * 1000, 30000)); // 最少30秒
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, refreshInterval, getBottlenecks]);
+  }, [autoRefresh, refreshInterval, getBottlenecks, monitoringMode]);
 
   // 监控状态管理
   const [isMonitoringActive, setIsMonitoringActive] = useState(false);
@@ -868,7 +882,23 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染概览
   const renderOverview = () => {
     if (!bottlenecks.length) {
-      return <Empty description='没有检测到性能瓶颈' />;
+      return (
+        <div className='text-center py-12'>
+          <div className='flex flex-col items-center gap-4'>
+            <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center'>
+              <CheckCircle className='w-8 h-8 text-green-600' />
+            </div>
+            <div>
+              <Text className='text-lg font-semibold mb-2'>系统运行良好</Text>
+              <Text className='text-muted-foreground'>
+                {monitoringMode === 'local'
+                  ? '本地系统监控未检测到性能瓶颈'
+                  : '远程监控未检测到性能瓶颈'}
+              </Text>
+            </div>
+          </div>
+        </div>
+      );
     }
 
     const activeBottlenecks = bottlenecks.filter(b => b.status === 'active');
@@ -1488,38 +1518,74 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                       : 'text-red-500'
                 }
               />
+              <Text className='text-xs text-muted-foreground mt-1'>
+                基于系统资源和查询性能的综合评估
+              </Text>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='平均查询时间'
-                value={`${summary.avgQueryTime.toFixed(2)} ms`}
-                icon={<Clock className='w-4 h-4' />}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='错误率'
-                value={`${summary.errorRate.toFixed(2)}%`}
-                icon={<Bug className='w-4 h-4' />}
-                valueClassName={
-                  summary.errorRate > 5 ? 'text-red-500' : 'text-green-500'
-                }
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='吞吐量'
-                value={`${summary.throughput.toFixed(1)} QPS`}
-                icon={<Rocket className='w-4 h-4' />}
-              />
-            </CardContent>
-          </Card>
+          {monitoringMode === 'remote' && (
+            <>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='平均查询时间'
+                    value={`${summary.avgQueryTime.toFixed(2)} ms`}
+                    icon={<Clock className='w-4 h-4' />}
+                    valueClassName={
+                      summary.avgQueryTime > 1000 ? 'text-red-500' : 'text-green-500'
+                    }
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    SQL查询的平均响应时间
+                  </Text>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='慢查询率'
+                    value={`${summary.errorRate.toFixed(2)}%`}
+                    icon={<Bug className='w-4 h-4' />}
+                    valueClassName={
+                      summary.errorRate > 5 ? 'text-red-500' : 'text-green-500'
+                    }
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    执行时间超过5秒的查询占比
+                  </Text>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='查询吞吐量'
+                    value={`${summary.throughput.toFixed(1)} QPS`}
+                    icon={<Rocket className='w-4 h-4' />}
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    每秒处理的查询数量
+                  </Text>
+                </CardContent>
+              </Card>
+            </>
+          )}
+          {monitoringMode === 'local' && (
+            <Card>
+              <CardContent className='p-4'>
+                <Statistic
+                  title='系统负载'
+                  value={`${((metrics.cpu + metrics.memory) / 2).toFixed(1)}%`}
+                  icon={<Rocket className='w-4 h-4' />}
+                  valueClassName={
+                    ((metrics.cpu + metrics.memory) / 2) > 80 ? 'text-red-500' : 'text-green-500'
+                  }
+                />
+                <Text className='text-xs text-muted-foreground mt-1'>
+                  CPU和内存的平均使用率
+                </Text>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
@@ -1532,7 +1598,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>CPU使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.cpu}%
+                    {(metrics.cpu || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
@@ -1544,7 +1610,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>内存使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.memory}%
+                    {(metrics.memory || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
@@ -1556,7 +1622,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>磁盘I/O</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.disk}%
+                    {(metrics.disk || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
@@ -1568,7 +1634,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>网络I/O</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.network}%
+                    {(metrics.network || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
@@ -1584,39 +1650,54 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>性能优化建议</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='space-y-3'>
-                {recommendations
-                  .slice(0, 5)
-                  .map((recommendation: Recommendation, index: number) => (
-                    <div
-                      key={index}
-                      className='flex items-start gap-3 p-3 bg-muted/20 rounded'
-                    >
-                      <Badge
-                        variant={
-                          recommendation.priority === 'critical'
-                            ? 'destructive'
-                            : recommendation.priority === 'high'
-                              ? 'outline'
-                              : recommendation.priority === 'medium'
-                                ? 'secondary'
-                                : 'default'
-                        }
-                        className='mt-0.5'
+              {recommendations && recommendations.length > 0 ? (
+                <div className='space-y-3'>
+                  {recommendations
+                    .slice(0, 5)
+                    .map((recommendation: Recommendation, index: number) => (
+                      <div
+                        key={index}
+                        className='flex items-start gap-3 p-3 bg-muted/20 rounded'
                       >
-                        {recommendation.priority}
-                      </Badge>
-                      <div className='flex-1'>
-                        <Text className='font-semibold text-sm'>
-                          {recommendation.title}
-                        </Text>
-                        <Text className='text-sm text-muted-foreground mt-1'>
-                          {recommendation.description}
-                        </Text>
+                        <Badge
+                          variant={
+                            recommendation.priority === 'critical'
+                              ? 'destructive'
+                              : recommendation.priority === 'high'
+                                ? 'outline'
+                                : recommendation.priority === 'medium'
+                                  ? 'secondary'
+                                  : 'default'
+                          }
+                          className='mt-0.5'
+                        >
+                          {recommendation.priority}
+                        </Badge>
+                        <div className='flex-1'>
+                          <Text className='font-semibold text-sm'>
+                            {recommendation.title}
+                          </Text>
+                          <Text className='text-sm text-muted-foreground mt-1'>
+                            {recommendation.description}
+                          </Text>
+                          {recommendation.implementation && (
+                            <Text className='text-xs text-blue-600 mt-1'>
+                              建议措施: {recommendation.implementation}
+                            </Text>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              ) : (
+                <div className='text-center py-8'>
+                  <Text className='text-muted-foreground'>
+                    {monitoringMode === 'local'
+                      ? '系统运行良好，暂无优化建议'
+                      : '正在分析性能数据，请稍候...'}
+                  </Text>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1777,12 +1858,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className='grid w-full grid-cols-6'>
+              <TabsList className={`grid w-full ${monitoringMode === 'local' ? 'grid-cols-4' : 'grid-cols-6'}`}>
                 <TabsTrigger value='overview'>瓶颈概览</TabsTrigger>
                 <TabsTrigger value='basic'>基础监控</TabsTrigger>
                 <TabsTrigger value='metrics'>系统指标</TabsTrigger>
-                <TabsTrigger value='slow-queries'>慢查询</TabsTrigger>
-                <TabsTrigger value='lock-waits'>锁等待</TabsTrigger>
+                {monitoringMode === 'remote' && (
+                  <TabsTrigger value='slow-queries'>慢查询</TabsTrigger>
+                )}
+                {monitoringMode === 'remote' && (
+                  <TabsTrigger value='lock-waits'>锁等待</TabsTrigger>
+                )}
                 <TabsTrigger value='report'>性能报告</TabsTrigger>
               </TabsList>
               <TabsContent value='overview' className='mt-6'>
@@ -1812,12 +1897,16 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <TabsContent value='metrics' className='mt-6'>
                 {renderSystemMetrics()}
               </TabsContent>
-              <TabsContent value='slow-queries' className='mt-6'>
-                {renderSlowQueries()}
-              </TabsContent>
-              <TabsContent value='lock-waits' className='mt-6'>
-                {renderLockWaits()}
-              </TabsContent>
+              {monitoringMode === 'remote' && (
+                <TabsContent value='slow-queries' className='mt-6'>
+                  {renderSlowQueries()}
+                </TabsContent>
+              )}
+              {monitoringMode === 'remote' && (
+                <TabsContent value='lock-waits' className='mt-6'>
+                  {renderLockWaits()}
+                </TabsContent>
+              )}
               <TabsContent value='report' className='mt-6'>
                 {renderPerformanceReport()}
               </TabsContent>

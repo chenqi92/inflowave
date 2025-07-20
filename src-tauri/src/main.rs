@@ -698,6 +698,7 @@ async fn main() {
             analyze_lock_waits,
             get_connection_pool_stats_perf,
             generate_performance_report,
+            generate_local_performance_report,
 
             // User experience
             get_user_preferences,
