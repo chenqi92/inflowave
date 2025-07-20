@@ -4,6 +4,7 @@
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS } from '@/types/updater';
+import { getAppVersion } from '@/utils/version';
 
 class UpdaterService {
   private checkInterval: NodeJS.Timeout | null = null;
@@ -214,7 +215,6 @@ class UpdaterService {
   getCurrentVersion(): string {
     // 从版本工具类获取实际版本号
     try {
-      const { getAppVersion } = require('@/utils/version');
       return getAppVersion();
     } catch (error) {
       console.warn('无法获取应用版本，使用默认值:', error);

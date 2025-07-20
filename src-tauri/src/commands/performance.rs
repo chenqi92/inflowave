@@ -110,6 +110,7 @@ pub struct PerformanceMetrics {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct PerformanceMetricsResult {
     pub query_execution_time: Vec<TimeSeriesPoint>,
     pub write_latency: Vec<TimeSeriesPoint>,
@@ -127,6 +128,7 @@ pub struct TimeSeriesPoint {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct DiskIOMetrics {
     pub read_bytes: u64,
     pub write_bytes: u64,
@@ -135,6 +137,7 @@ pub struct DiskIOMetrics {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkIOMetrics {
     pub bytes_in: u64,
     pub bytes_out: u64,
@@ -227,6 +230,7 @@ pub struct QueryOptimization {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct StorageAnalysisInfo {
     pub databases: Vec<DatabaseStorageInfo>,
     pub total_size: u64,
@@ -236,6 +240,7 @@ pub struct StorageAnalysisInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct DatabaseStorageInfo {
     pub name: String,
     pub size: u64,
@@ -248,6 +253,7 @@ pub struct DatabaseStorageInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct StorageRecommendation {
     pub recommendation_type: String,
     pub description: String,
@@ -1556,8 +1562,16 @@ async fn get_local_performance_metrics(history: Vec<TimestampedSystemMetrics>) -
     };
 
     // 生成合理的磁盘I/O数据
-    let base_disk_read = if current_metrics.disk.used > 0 { current_metrics.disk.used / 100 } else { 1024 * 1024 * 50 }; // 50MB
-    let base_disk_write = if current_metrics.disk.used > 0 { current_metrics.disk.used / 200 } else { 1024 * 1024 * 25 }; // 25MB
+    let base_disk_read = if current_metrics.disk.used > 0 {
+        (current_metrics.disk.used / 100).max(1024 * 1024 * 50) // 至少50MB
+    } else {
+        1024 * 1024 * 50 // 50MB默认值
+    };
+    let base_disk_write = if current_metrics.disk.used > 0 {
+        (current_metrics.disk.used / 200).max(1024 * 1024 * 25) // 至少25MB
+    } else {
+        1024 * 1024 * 25 // 25MB默认值
+    };
 
     let disk_io = DiskIOMetrics {
         read_bytes: history.last().map(|m| m.disk_read_bytes).unwrap_or(base_disk_read),
@@ -1567,8 +1581,16 @@ async fn get_local_performance_metrics(history: Vec<TimestampedSystemMetrics>) -
     };
 
     // 生成合理的网络I/O数据
-    let base_bytes_in = if current_metrics.network.bytes_in > 0 { current_metrics.network.bytes_in } else { 1024 * 1024 * 10 }; // 10MB
-    let base_bytes_out = if current_metrics.network.bytes_out > 0 { current_metrics.network.bytes_out } else { 1024 * 1024 * 5 }; // 5MB
+    let base_bytes_in = if current_metrics.network.bytes_in > 0 {
+        current_metrics.network.bytes_in.max(1024 * 1024 * 10) // 至少10MB
+    } else {
+        1024 * 1024 * 10 // 10MB默认值
+    };
+    let base_bytes_out = if current_metrics.network.bytes_out > 0 {
+        current_metrics.network.bytes_out.max(1024 * 1024 * 5) // 至少5MB
+    } else {
+        1024 * 1024 * 5 // 5MB默认值
+    };
 
     let network_io = NetworkIOMetrics {
         bytes_in: history.last().map(|m| m.network_bytes_in).unwrap_or(base_bytes_in),
@@ -1666,13 +1688,24 @@ pub async fn get_system_performance_metrics(
             "writeThroughput": (base_write_iops * 4096.0) as u64
         }));
 
-        // 网络数据
+        // 网络数据 - 使用合理的基础值
+        let base_bytes_in = if system_metrics.network.bytes_in > 0 {
+            system_metrics.network.bytes_in
+        } else {
+            1024 * 1024 * 100 // 100MB基础值
+        };
+        let base_bytes_out = if system_metrics.network.bytes_out > 0 {
+            system_metrics.network.bytes_out
+        } else {
+            1024 * 1024 * 50 // 50MB基础值
+        };
+
         network_data.push(serde_json::json!({
             "timestamp": timestamp,
-            "bytesIn": system_metrics.network.bytes_in + (i as u64 * 1024),
-            "bytesOut": system_metrics.network.bytes_out + (i as u64 * 512),
-            "packetsIn": system_metrics.network.packets_in + (i as u64 * 10),
-            "packetsOut": system_metrics.network.packets_out + (i as u64 * 8)
+            "bytesIn": base_bytes_in + (i as u64 * 1024 * 1024), // 每个点增加1MB
+            "bytesOut": base_bytes_out + (i as u64 * 512 * 1024), // 每个点增加512KB
+            "packetsIn": system_metrics.network.packets_in + (i as u64 * 100),
+            "packetsOut": system_metrics.network.packets_out + (i as u64 * 80)
         }));
 
         // 连接数据（仅远程监控有意义）

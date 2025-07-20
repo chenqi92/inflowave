@@ -179,10 +179,10 @@ export const ReleaseNotesManager: React.FC = () => {
             {/* 发布说明内容 */}
             {selectedVersion && (
                 <Card>
-                    <CardContent className="p-0">
+                    <CardContent className="p-6">
                         <ReleaseNotesViewer
                             version={selectedVersion}
-                            maxHeight="600px"
+                            maxHeight="400px"
                             showTitle={true}
                             showMetadata={true}
                             onExternalLink={(url) => updaterService.openDownloadPage(url)}

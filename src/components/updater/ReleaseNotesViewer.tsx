@@ -223,16 +223,24 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
                 </div>
             )}
 
-            {/* 发布说明内容 */}
-            <ScrollArea style={{maxHeight}} className="w-full">
-                <div className="pr-4 pb-4">
+            {/* 发布说明内容 - 只有Markdown内容在可滚动区域中 */}
+            <div 
+                style={{
+                    height: maxHeight,
+                    maxHeight: maxHeight,
+                    scrollbarWidth: 'none', // Firefox
+                    msOverflowStyle: 'none', // IE and Edge
+                }} 
+                className="w-full overflow-y-scroll overflow-x-hidden border border-gray-200 dark:border-gray-700 rounded-md p-4 [&::-webkit-scrollbar]:hidden"
+            >
+                <div className="min-h-full">
                     <MarkdownRenderer 
                         content={processContentForMarkdown(releaseNote.content)}
                         onInternalLinkClick={handleInternalLinkClick}
-                        className="text-sm"
+                        className="text-sm leading-relaxed"
                     />
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     );
 };
