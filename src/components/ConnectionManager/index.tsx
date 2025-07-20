@@ -7,8 +7,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Progress,
-  Typography,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,7 +17,6 @@ import type { Column } from '@/components/ui/DataTable';
 import {
   Trash2,
   Edit,
-  Eye,
   Wifi,
   RefreshCw,
   Plus,
@@ -42,7 +39,6 @@ interface ConnectionManagerProps {
 
 interface ConnectionWithStatus extends ConnectionConfig {
   status?: ConnectionStatus;
-  poolStats?: any;
 }
 
 // interface ColumnType<T = any> {
@@ -67,7 +63,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     activeConnectionId,
     monitoringActive,
     monitoringInterval,
-    poolStats,
     connectToDatabase,
     disconnectFromDatabase,
     testConnection,
@@ -75,7 +70,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     stopMonitoring,
     refreshAllStatuses,
     refreshConnectionStatus,
-    getPoolStats,
     removeConnection,
     testAllConnections,
     getTableConnectionStatus,
@@ -101,10 +95,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   const [connectionLoadingStates, setConnectionLoadingStates] = useState<
     Map<string, boolean>
   >(new Map());
-  const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
-  const [selectedConnectionId, setSelectedConnectionId] = useState<
-    string | null
-  >(null);
 
   // 自动刷新状态 - 仅在用户手动启动监控时执行
   useEffect(() => {
@@ -219,19 +209,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     }
   }, [connections, testAllConnections, tableConnectionStatuses]);
 
-  // 查看连接池统计
-  const handleViewPoolStats = useCallback(
-    async (connectionId: string) => {
-      try {
-        await getPoolStats(connectionId);
-        setSelectedConnectionId(connectionId);
-        setPoolStatsModalVisible(true);
-      } catch (error) {
-        showMessage.error(`获取连接池统计失败: ${error}`);
-      }
-    },
-    [getPoolStats]
-  );
 
   // 获取状态标签
   const getStatusTag = (status?: ConnectionStatus) => {
@@ -383,14 +360,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           break;
         }
 
-        case 'view_pool_stats':
-          if (poolStats[connection.id]) {
-            setSelectedConnectionId(connection.id);
-            setPoolStatsModalVisible(true);
-          } else {
-            showMessage.info('暂无连接池统计信息');
-          }
-          break;
 
         case 'delete_connection': {
           const confirmed = await dialog.confirm(
@@ -421,6 +390,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
+      width: 200,
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
@@ -511,63 +481,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '连接池统计',
-      dataIndex: 'poolStats',
-      key: 'poolStats',
-      render: (_, record) => {
-        const status = tableConnectionStatuses[record.id!];
-        const isTestFailed = status?.status === 'error';
-        const isTestSuccessful = status?.status === 'connected' && !status?.error;
-        const stats = poolStats[record.id!];
-
-        // 如果测试失败，显示失败信息
-        if (isTestFailed) {
-          return <span className='text-destructive text-sm'>连接失败，无法获取</span>;
-        }
-
-        // 如果未测试或测试中，显示相应状态
-        if (!isTestSuccessful) {
-          const statusText = status?.status === 'connecting' ? '测试中...' : '未测试';
-          return <span className='text-muted-foreground text-sm'>{statusText}</span>;
-        }
-
-        // 测试成功但没有统计数据时，显示查看按钮
-        if (!stats) {
-          return (
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => handleViewPoolStats(record.id!)}
-            >
-              <Eye className='w-3 h-3 mr-1' />
-              查看统计
-            </Button>
-          );
-        }
-        
-        return (
-          <div className='space-y-1'>
-            <div className='text-sm'>
-              <span className='text-muted-foreground'>活跃/总数：</span>
-              <span className='text-foreground font-medium'>
-                {stats.active_connections}/{stats.total_connections}
-              </span>
-            </div>
-            <div className='text-sm'>
-              <span className='text-muted-foreground'>空闲：</span>
-              <span className='text-foreground font-medium'>
-                {stats.idle_connections}
-              </span>
-              <span className='text-muted-foreground ml-2'>最大：</span>
-              <span className='text-foreground font-medium'>
-                {stats.max_connections}
-              </span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
       title: '最后测试',
       dataIndex: 'lastTested',
       key: 'lastTested',
@@ -648,7 +561,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   const dataSource: ConnectionWithStatus[] = connections.map(conn => ({
     ...conn,
     status: tableConnectionStatuses[conn.id!],
-    poolStats: poolStats[conn.id!],
   }));
 
   return (
@@ -707,76 +619,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         </div>
       </div>
 
-      {/* 连接池统计模态框 */}
-      <Dialog
-        open={poolStatsModalVisible}
-        onOpenChange={setPoolStatsModalVisible}
-      >
-        <DialogContent className='max-w-2xl'>
-          <DialogHeader>
-            <DialogTitle>连接池统计信息</DialogTitle>
-          </DialogHeader>
-          {selectedConnectionId && poolStats[selectedConnectionId] && (
-            <div className='space-y-6'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      总连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].total_connections}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      活跃连接数
-                    </div>
-                    <div className='text-2xl font-bold text-success'>
-                      {poolStats[selectedConnectionId].active_connections}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      空闲连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].idle_connections}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      最大连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].max_connections}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <Typography.Title level={4}>连接池使用率</Typography.Title>
-                <Progress
-                  value={Math.round(
-                    (poolStats[selectedConnectionId].active_connections /
-                      poolStats[selectedConnectionId].max_connections) *
-                      100
-                  )}
-                  className='mt-2'
-                />
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* 右键菜单 */}
       <ContextMenu

@@ -241,6 +241,37 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       mostBlockedTable: string;
       recommendations: string[];
     };
+  }>({
+    locks: [],
+    summary: {
+      totalLocks: 0,
+      avgWaitTime: 0,
+      maxWaitTime: 0,
+      mostBlockedTable: '',
+      recommendations: []
+    }
+  });
+
+  // 连接池统计状态
+  const [connectionPoolStats, setConnectionPoolStats] = useState<{
+    stats: {
+      timestamp: Date;
+      totalConnections: number;
+      activeConnections: number;
+      idleConnections: number;
+      waitingRequests: number;
+      connectionErrors: number;
+      avgConnectionTime: number;
+      maxConnectionTime: number;
+    }[];
+    summary: {
+      avgUtilization: number;
+      maxUtilization: number;
+      avgWaitTime: number;
+      maxWaitTime: number;
+      errorRate: number;
+      recommendations: string[];
+    };
   } | null>(null);
   const [performanceReport, setPerformanceReport] = useState<{
     summary: {
@@ -340,6 +371,35 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 监控模式状态
   const [monitoringMode, setMonitoringMode] = useState<'local' | 'remote'>('remote'); // 默认远程监控
 
+  // 清理数据状态的函数
+  const clearAllData = useCallback(() => {
+    console.log('🧹 开始清理所有性能监控数据...');
+    setBottlenecks([]);
+    setSystemMetrics(null);
+    setSlowQueries(null);
+    setLockWaits({
+      locks: [],
+      summary: {
+        totalLocks: 0,
+        avgWaitTime: 0,
+        maxWaitTime: 0,
+        mostBlockedTable: '',
+        recommendations: []
+      }
+    });
+    setConnectionPoolStats(null);
+    setPerformanceReport(null);
+    setBasicMetrics(null);
+    setLoading(false);
+    console.log('✅ 所有性能监控数据已清理完成');
+  }, []);
+
+  // 监控模式变化时清理数据
+  useEffect(() => {
+    console.log(`🔄 监控模式已变更为: ${monitoringMode}`);
+    // 不在这里清理数据，由切换函数负责
+  }, [monitoringMode]);
+
   // 从设置中加载监控模式
   useEffect(() => {
     const loadMonitoringSettings = async () => {
@@ -364,7 +424,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     if (!activeConnectionId) return;
 
     try {
-      console.log('开始获取真实性能指标...', { activeConnectionId });
+      console.log(`📊 开始获取${monitoringMode}监控模式的性能指标...`, { activeConnectionId, monitoringMode });
       
       const [metricsResult, _slowQueryResult] = await Promise.all([
         safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
@@ -448,6 +508,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
     setLoading(true);
     try {
+      console.log(`🔍 开始获取${monitoringMode}监控模式的性能瓶颈数据...`, { activeConnectionId, monitoringMode });
       const range = normalizeTimeRange(timeRange);
 
       const [
@@ -514,11 +575,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       setSystemMetrics(systemMetricsData);
       setSlowQueries(slowQueriesData);
       setLockWaits(lockWaitsData);
-      // setConnectionPoolStats(connectionPoolData);
+      setConnectionPoolStats(_connectionPoolData);
       setPerformanceReport(performanceReportData);
     } catch (error) {
-      console.error('获取性能瓶颈数据失败:', error);
-      showMessage.error('获取性能瓶颈数据失败');
+      console.error(`❌ 获取${monitoringMode}监控模式的性能瓶颈数据失败:`, error);
+      showMessage.error(`获取${monitoringMode === 'local' ? '本地' : '远程'}监控数据失败`);
+      // 清理可能的脏数据
+      clearAllData();
     } finally {
       setLoading(false);
     }
@@ -1792,10 +1855,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <Select
                 value={monitoringMode}
                 onValueChange={async (value: 'local' | 'remote') => {
+                  console.log(`🔄 切换监控模式: ${monitoringMode} -> ${value}`);
+
                   // 先停止当前监控
                   if (isMonitoringActive) {
                     await stopMonitoring();
                   }
+
+                  // 清理所有现有数据，避免数据混乱
+                  clearAllData();
 
                   setMonitoringMode(value);
 
@@ -1826,11 +1894,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     showMessage.error('保存监控设置失败');
                   }
 
-                  // 立即刷新所有数据以反映新的监控模式
+                  // 延迟加载新模式的数据，确保状态切换完成
                   setTimeout(() => {
+                    console.log(`📊 开始加载${value === 'local' ? '本地' : '远程'}监控数据`);
                     getBottlenecks();
                     getBasicMetrics();
-                  }, 200); // 稍长的延迟确保状态更新完成
+                  }, 500); // 增加延迟确保状态更新完成
                 }}
               >
                 <SelectTrigger className='w-[120px]'>

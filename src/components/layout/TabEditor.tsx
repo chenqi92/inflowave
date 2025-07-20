@@ -2328,7 +2328,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       wordBasedSuggestions: 'currentDocument',
                       // 桌面应用：禁用默认右键菜单，只使用自定义中文菜单
                       contextmenu: false,
-                      copyWithSyntaxHighlighting: true,
+                      copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
                       // 禁用默认的剪贴板操作，使用自定义的Tauri剪贴板服务
                       links: false, // 禁用链接检测，避免触发剪贴板权限
                       find: {
@@ -2336,6 +2336,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                         autoFindInSelection: 'never',
                         seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
                       },
+                      // 禁用所有可能触发剪贴板权限的功能
+                      dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
+                      selectionClipboard: false, // 禁用选择自动复制到剪贴板
                       }}
                     />
                   </div>

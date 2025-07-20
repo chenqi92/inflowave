@@ -809,9 +809,12 @@ const ErrorLogViewer: React.FC = () => {
                       size='sm'
                       variant='ghost'
                       className='absolute top-2 right-2'
-                      onClick={() =>
-                        navigator.clipboard.writeText(selectedLog.message)
-                      }
+                      onClick={async () => {
+                        const { writeToClipboard } = await import('@/utils/clipboard');
+                        await writeToClipboard(selectedLog.message, {
+                          successMessage: '错误消息已复制到剪贴板'
+                        });
+                      }}
                     >
                       <Copy className='w-3 h-3' />
                     </Button>
@@ -835,9 +838,12 @@ const ErrorLogViewer: React.FC = () => {
                         size='sm'
                         variant='ghost'
                         className='absolute top-2 right-2'
-                        onClick={() =>
-                          navigator.clipboard.writeText(selectedLog.stack || '')
-                        }
+                        onClick={async () => {
+                          const { writeToClipboard } = await import('@/utils/clipboard');
+                          await writeToClipboard(selectedLog.stack || '', {
+                            successMessage: '错误堆栈已复制到剪贴板'
+                          });
+                        }}
                       >
                         <Copy className='w-3 h-3' />
                       </Button>
@@ -862,11 +868,15 @@ const ErrorLogViewer: React.FC = () => {
                         size='sm'
                         variant='ghost'
                         className='absolute top-2 right-2'
-                        onClick={() =>
-                          navigator.clipboard.writeText(
-                            selectedLog.componentStack || ''
-                          )
-                        }
+                        onClick={async () => {
+                          const { writeToClipboard } = await import('@/utils/clipboard');
+                          await writeToClipboard(
+                            selectedLog.componentStack || '',
+                            {
+                              successMessage: '组件堆栈已复制到剪贴板'
+                            }
+                          );
+                        }}
                       >
                         <Copy className='w-3 h-3' />
                       </Button>
@@ -892,11 +902,15 @@ const ErrorLogViewer: React.FC = () => {
                           size='sm'
                           variant='ghost'
                           className='absolute top-2 right-2'
-                          onClick={() =>
-                            navigator.clipboard.writeText(
-                              JSON.stringify(selectedLog.additional, null, 2)
-                            )
-                          }
+                          onClick={async () => {
+                            const { writeToClipboard } = await import('@/utils/clipboard');
+                            await writeToClipboard(
+                              JSON.stringify(selectedLog.additional, null, 2),
+                              {
+                                successMessage: '附加信息已复制到剪贴板'
+                              }
+                            );
+                          }}
                         >
                           <Copy className='w-3 h-3' />
                         </Button>

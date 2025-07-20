@@ -462,7 +462,12 @@ const QueryHistoryPage: React.FC = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(item.query)}>
+                                <DropdownMenuItem onClick={async () => {
+                                  const { writeToClipboard } = await import('@/utils/clipboard');
+                                  await writeToClipboard(item.query, {
+                                    successMessage: '已复制查询到剪贴板'
+                                  });
+                                }}>
                                   复制查询
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />

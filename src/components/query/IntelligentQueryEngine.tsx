@@ -518,7 +518,16 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   automaticLayout: true,
                   // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
                   contextmenu: false,
-                  copyWithSyntaxHighlighting: true,
+                  copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
+                  // 禁用所有可能触发剪贴板权限的功能
+                  links: false, // 禁用链接检测，避免触发剪贴板权限
+                  dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
+                  selectionClipboard: false, // 禁用选择自动复制到剪贴板
+                  find: {
+                    addExtraSpaceOnTop: false,
+                    autoFindInSelection: 'never',
+                    seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
+                  },
                 }}
                 key={resolvedTheme} // 强制重新渲染以应用主题
               />

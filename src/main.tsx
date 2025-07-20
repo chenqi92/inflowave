@@ -11,6 +11,7 @@ import timezone from 'dayjs/plugin/timezone';
 import App from './App';
 import { TooltipProvider } from '@/components/ui';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { configureMonacoGlobally } from '@/utils/monacoConfig';
 
 import './styles/index.css';
 
@@ -20,6 +21,9 @@ dayjs.extend(duration);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('zh-cn');
+
+// 配置 Monaco Editor 全局设置
+configureMonacoGlobally();
 
 // 内部应用组件
 const InnerApp: React.FC = () => {

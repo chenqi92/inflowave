@@ -351,50 +351,54 @@ pub async fn get_performance_metrics_result(
     monitoring_mode: Option<String>,
     _time_range: Option<String>,
 ) -> Result<PerformanceMetricsResult, String> {
-    debug!("获取性能监控指标: {:?}, 模式: {:?}", connection_id, monitoring_mode);
-
     let mode = monitoring_mode.unwrap_or_else(|| "remote".to_string());
+    info!("📊 获取性能监控指标 - 连接ID: {:?}, 监控模式: {}", connection_id, mode);
 
     match mode.as_str() {
         "local" => {
             // 本地监控模式：收集本地系统指标
+            info!("🖥️ 使用本地监控模式");
             collect_system_metrics().await?;
             let history = get_metrics_history().await;
-            get_local_performance_metrics(history).await
+            let result = get_local_performance_metrics(history).await?;
+            debug!("✅ 本地监控数据获取完成");
+            Ok(result)
         }
         "remote" => {
             // 远程监控模式：获取远程InfluxDB指标
+            info!("🌐 使用远程监控模式");
             if let Some(conn_id) = &connection_id {
-                if let Ok(real_metrics) = get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
-                    debug!("成功获取真实InfluxDB指标");
-                    return Ok(real_metrics);
-                } else {
-                    warn!("获取真实InfluxDB指标失败，回退到本地监控");
-                    // 回退到本地监控
-                    collect_system_metrics().await?;
-                    let history = get_metrics_history().await;
-                    get_local_performance_metrics(history).await
+                match get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
+                    Ok(real_metrics) => {
+                        info!("✅ 成功获取远程InfluxDB指标");
+                        Ok(real_metrics)
+                    }
+                    Err(e) => {
+                        warn!("⚠️ 获取远程InfluxDB指标失败: {}, 不回退到本地监控", e);
+                        // 不回退到本地监控，避免数据混乱
+                        Err(format!("远程监控失败: {}", e))
+                    }
                 }
             } else {
-                return Err("远程监控模式需要连接ID".to_string());
+                Err("远程监控模式需要连接ID".to_string())
             }
         }
         _ => {
             // 默认使用远程监控
+            warn!("⚠️ 未知监控模式: {}, 默认使用远程监控", mode);
             if let Some(conn_id) = &connection_id {
-                if let Ok(real_metrics) = get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
-                    debug!("成功获取真实InfluxDB指标");
-                    return Ok(real_metrics);
-                } else {
-                    warn!("获取真实InfluxDB指标失败，使用本地监控");
-                    collect_system_metrics().await?;
-                    let history = get_metrics_history().await;
-                    get_local_performance_metrics(history).await
+                match get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
+                    Ok(real_metrics) => {
+                        info!("✅ 默认模式成功获取远程InfluxDB指标");
+                        Ok(real_metrics)
+                    }
+                    Err(e) => {
+                        warn!("⚠️ 默认模式获取远程指标失败: {}", e);
+                        Err(format!("远程监控失败: {}", e))
+                    }
                 }
             } else {
-                collect_system_metrics().await?;
-                let history = get_metrics_history().await;
-                get_local_performance_metrics(history).await
+                Err("需要连接ID".to_string())
             }
         }
     }

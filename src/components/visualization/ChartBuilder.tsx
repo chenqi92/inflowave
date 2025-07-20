@@ -263,8 +263,10 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
   const handleCopyConfig = async () => {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(chartConfig, null, 2));
-      // TODO: 显示成功提示
+      const { writeToClipboard } = await import('@/utils/clipboard');
+      await writeToClipboard(JSON.stringify(chartConfig, null, 2), {
+        successMessage: '图表配置已复制到剪贴板'
+      });
     } catch (error) {
       console.error('复制配置失败:', error);
     }
