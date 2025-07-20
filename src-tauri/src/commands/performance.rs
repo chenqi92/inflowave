@@ -769,7 +769,8 @@ async fn get_remote_system_stats(connection: &ConnectionConfig) -> Result<(CpuMe
             
             // 磁盘指标（基于合理估算）
             let disk_percentage = 35.0 + (cpu_usage * 0.5); // 基于CPU使用率估算磁盘使用
-            let disk_total = (100 * 1024 * 1024 * 1024) as u64; // 假设100GB
+            // 使用安全的乘法操作防止溢出
+            let disk_total = 100u64.saturating_mul(1024).saturating_mul(1024).saturating_mul(1024); // 100GB
             let disk_used = ((disk_percentage / 100.0) * disk_total as f64) as u64;
             
             let cpu_metrics = CpuMetrics {

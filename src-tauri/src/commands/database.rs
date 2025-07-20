@@ -1,6 +1,7 @@
 ﻿use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats};
 use crate::services::{ConnectionService, database_service::DatabaseService};
 use crate::database::client::TableSchema;
+use crate::commands::settings::SettingsStorage;
 use tauri::State;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,7 @@ use serde::{Deserialize, Serialize};
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_databases(
     connection_service: State<'_, ConnectionService>,
+    settings_storage: State<'_, SettingsStorage>,
     connection_id: String,
 ) -> Result<Vec<String>, String> {
     debug!("处理获取数据库列表命令: {}", connection_id);
@@ -20,11 +22,24 @@ pub async fn get_databases(
             format!("获取连接失败: {}", e)
         })?;
 
-    client.get_databases().await
+    let mut databases = client.get_databases().await
         .map_err(|e| {
             error!("获取数据库列表失败: {}", e);
             format!("获取数据库列表失败: {}", e)
-        })
+        })?;
+
+    // 检查是否需要过滤 _internal 数据库
+    let settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    if !settings.general.show_internal_databases {
+        databases.retain(|db| !db.starts_with("_internal"));
+        debug!("已过滤 _internal 数据库，剩余数据库: {:?}", databases);
+    }
+
+    Ok(databases)
 }
 
 /// 创建数据库

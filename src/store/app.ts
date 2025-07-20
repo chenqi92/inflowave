@@ -33,6 +33,7 @@ const defaultConfig: AppConfig = {
   autoSave: DEFAULT_APP_CONFIG.autoSave,
   autoConnect: DEFAULT_APP_CONFIG.autoConnect,
   logLevel: DEFAULT_APP_CONFIG.logLevel,
+  showInternalDatabases: false,
 };
 
 export const useAppStore = create<AppState>()(

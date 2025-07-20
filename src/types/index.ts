@@ -309,6 +309,7 @@ export interface AppConfig {
   autoConnect: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   colorScheme?: string;
+  showInternalDatabases?: boolean;
 }
 
 // 错误相关类型

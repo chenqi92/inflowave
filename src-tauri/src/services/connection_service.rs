@@ -483,6 +483,11 @@ impl ConnectionService {
             pools.insert(connection_id.to_string(), pool);
         }
 
+        // 连接成功后，尝试检查并连接到 _internal 数据库以获取监控数据
+        if let Err(e) = self.check_and_connect_internal_database(connection_id).await {
+            warn!("连接到 _internal 数据库失败: {}", e);
+        }
+
         info!("成功连接到数据库: {}", connection_id);
         Ok(())
     }
@@ -500,6 +505,42 @@ impl ConnectionService {
         }
 
         info!("成功断开数据库连接: {}", connection_id);
+        Ok(())
+    }
+
+    /// 检查并连接到 _internal 数据库以获取监控数据
+    async fn check_and_connect_internal_database(&self, connection_id: &str) -> Result<()> {
+        debug!("检查 _internal 数据库: {}", connection_id);
+
+        // 获取数据库列表
+        let manager = self.get_manager();
+        let client = manager.get_connection(connection_id).await
+            .context("获取连接失败")?;
+
+        match client.get_databases().await {
+            Ok(databases) => {
+                // 检查是否存在 _internal 数据库
+                if databases.iter().any(|db| db == "_internal") {
+                    info!("发现 _internal 数据库，用于监控数据收集: {}", connection_id);
+
+                    // 尝试执行一个简单的查询来验证 _internal 数据库的可用性
+                    match client.execute_query_with_database("SHOW MEASUREMENTS", Some("_internal")).await {
+                        Ok(_) => {
+                            info!("_internal 数据库连接验证成功: {}", connection_id);
+                        }
+                        Err(e) => {
+                            warn!("_internal 数据库查询失败，但不影响主连接: {}", e);
+                        }
+                    }
+                } else {
+                    debug!("未发现 _internal 数据库: {}", connection_id);
+                }
+            }
+            Err(e) => {
+                warn!("获取数据库列表失败，无法检查 _internal 数据库: {}", e);
+            }
+        }
+
         Ok(())
     }
 

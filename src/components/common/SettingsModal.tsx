@@ -351,6 +351,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
+                <div className='flex items-center space-x-2'>
+                  <Switch
+                    checked={form.watch('showInternalDatabases') ?? config.showInternalDatabases}
+                    onCheckedChange={checked =>
+                      form.setValue('showInternalDatabases', checked)
+                    }
+                  />
+                  <Label htmlFor='showInternalDatabases'>显示内部数据库</Label>
+                </div>
+                <div className='text-sm text-muted-foreground'>
+                  <p>是否在数据源树中显示 _internal 等系统数据库</p>
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-2'>
                   <Label htmlFor='logLevel'>日志级别</Label>
                   <Select

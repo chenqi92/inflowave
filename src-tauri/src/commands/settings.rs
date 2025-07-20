@@ -20,6 +20,7 @@ pub struct GeneralSettings {
     pub auto_save: bool,
     pub auto_connect: bool,
     pub startup_connection: Option<String>,
+    pub show_internal_databases: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -86,6 +87,7 @@ impl Default for AppSettings {
                 auto_save: true,
                 auto_connect: false,
                 startup_connection: None,
+                show_internal_databases: false,
             },
             editor: EditorSettings {
                 font_size: 14,
