@@ -35,6 +35,9 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
     const [dontShowAgain, setDontShowAgain] = useState(false);
     const [showSidebar, setShowSidebar] = useState(true);
     const {dismissBrowserModeNotice} = useNoticeStore();
+    
+    // 添加内容区域的ref，用于滚动控制
+    const contentScrollRef = React.useRef<HTMLDivElement>(null);
 
     // 加载用户文档
     useEffect(() => {
@@ -54,14 +57,33 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
             loadDocuments();
             // 检查屏幕尺寸，在移动端默认隐藏侧边栏
             setShowSidebar(window.innerWidth >= 768);
+            // 重置滚动位置到顶部
+            setTimeout(scrollToTop, 200);
         }
     }, [isOpen]);
+
+    // 监听文档索引变化，自动滚动到顶部
+    useEffect(() => {
+        if (documents.length > 0) {
+            setTimeout(scrollToTop, 100);
+        }
+    }, [currentIndex, documents.length]);
 
     const handleClose = () => {
         if (dontShowAgain) {
             dismissBrowserModeNotice();
         }
         onClose();
+    };
+
+    // 滚动到顶部的函数
+    const scrollToTop = () => {
+        if (contentScrollRef.current) {
+            contentScrollRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     };
 
     const goToNext = () => {
@@ -168,7 +190,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                         </div>
 
                         {/* 文档内容 */}
-                        <div className='flex-1 overflow-y-auto user-guide-scroll'>
+                        <div ref={contentScrollRef} className='flex-1 overflow-y-auto user-guide-scroll'>
                             <div className='p-6 max-w-none user-guide-content'>
                                 {loading ? (
                                     <div className='flex items-center justify-center h-64'>

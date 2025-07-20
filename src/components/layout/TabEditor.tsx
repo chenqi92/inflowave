@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { useConnectionStore, connectionUtils } from '@/store/connection';
+import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { generateUniqueId } from '@/utils/idGenerator';
@@ -77,10 +77,15 @@ interface EditorTab {
   connectionId?: string;
   database?: string;
   tableName?: string;
+  // 查询结果相关属性
+  queryResult?: QueryResult | null;
+  queryResults?: QueryResult[];
+  executedQueries?: string[];
+  executionTime?: number;
 }
 
 interface TabEditorProps {
-  onQueryResult?: (result: QueryResult) => void;
+  onQueryResult?: (result: QueryResult | null) => void;
   onBatchQueryResults?: (
     results: QueryResult[],
     queries: string[],
@@ -111,14 +116,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 直接使用全局 store 管理已打开的数据库
     const { openedDatabasesList } = useOpenedDatabasesStore();
 
-    // 强制日志：每次渲染时显示当前状态
-    console.log('🔄 TabEditor 渲染，当前状态:', {
-      expandedDatabases: JSON.stringify(expandedDatabases), // props 传递的数据
-      openedDatabasesList: JSON.stringify(openedDatabasesList), // store 中的数据
-      length: openedDatabasesList.length,
-      timestamp: new Date().toISOString(),
-      renderCount: Math.random() // 用于区分不同的渲染
-    });
+    // 渲染状态日志（仅在开发模式下显示）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 TabEditor 渲染，当前状态:', {
+        expandedDatabases: JSON.stringify(expandedDatabases),
+        openedDatabasesList: JSON.stringify(openedDatabasesList),
+        length: openedDatabasesList.length,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // 调试：监听组件挂载/卸载
     useEffect(() => {
@@ -587,10 +593,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         return;
       }
 
+      // 从查询中提取表名用于标题
+      const tableMatch = query.match(/FROM\s+"([^"]+)"/i);
+      const tableName = tableMatch ? tableMatch[1] : '未知表';
+
       // 创建新标签或更新当前标签
       const newTab: EditorTab = {
         id: generateUniqueId('tab'),
-        title: `表查询-${tabs.length + 1}`,
+        title: `${tableName} - 查询`,
         content: query,
         type: 'query',
         modified: false,
@@ -616,9 +626,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           return;
         }
 
-        // 使用前端查询处理
-        const queryProcessResult = processQueryForExecution(query, currentTimeRange);
-        const processedQuery = queryProcessResult.processedQueries[0] || query;
+        // 对于表查询，直接使用生成的查询语句，不再进行时间范围处理
+        // 因为 generateQueryWithTimeFilter 已经处理了时间范围
+        const processedQuery = query.trim();
 
         // 保存实际执行的查询
         setActualExecutedQueries([processedQuery]);
@@ -636,7 +646,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         console.log('✅ 查询结果:', result);
 
         if (result) {
+          // 将查询结果保存到当前tab
+          setTabs(prevTabs => prevTabs.map(tab =>
+            tab.id === newTab.id
+              ? {
+                  ...tab,
+                  queryResult: result,
+                  queryResults: [result],
+                  executedQueries: [processedQuery],
+                  executionTime: result.executionTime || 0
+                }
+              : tab
+          ));
+
+          // 同时调用回调以更新全局状态（用于结果面板显示）
           onQueryResult?.(result);
+          onBatchQueryResults?.([result], [processedQuery], result.executionTime || 0);
           showMessage.success(
             `表查询执行成功，返回 ${result.data?.length || 0} 行数据`
           );
@@ -751,6 +776,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('✅ 批量查询结果:', results);
 
           if (results && results.length > 0) {
+            // 将批量查询结果保存到当前tab
+            setTabs(prevTabs => prevTabs.map(tab =>
+              tab.id === activeKey
+                ? {
+                    ...tab,
+                    queryResult: results[0], // 第一个结果作为主要结果
+                    queryResults: results,
+                    executedQueries: statements,
+                    executionTime
+                  }
+                : tab
+            ));
+
             // 调用批量查询回调
             onBatchQueryResults?.(results, statements, executionTime);
 
@@ -803,6 +841,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('✅ 单条查询结果:', result);
 
           if (result) {
+            // 将查询结果保存到当前tab
+            setTabs(prevTabs => prevTabs.map(tab =>
+              tab.id === activeKey
+                ? {
+                    ...tab,
+                    queryResult: result,
+                    queryResults: [result],
+                    executedQueries: statements,
+                    executionTime
+                  }
+                : tab
+            ));
+
             onQueryResult?.(result);
             // 也调用批量查询回调，但只有一个结果
             onBatchQueryResults?.([result], statements, executionTime);
@@ -971,6 +1022,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       setTabs([...tabs, newTab]);
       setActiveKey(newTab.id);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
     };
 
     // 创建数据浏览标签
@@ -988,6 +1043,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       setTabs([...tabs, newTab]);
       setActiveKey(newTab.id);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
     };
 
     // 创建带数据库选择的查询标签页
@@ -1005,6 +1064,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 立即设置数据库选择
       setSelectedDatabase(database);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
 
       console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
     };
@@ -1072,13 +1135,32 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, [openedDatabasesList, selectedDatabase, hasAnyConnectedInfluxDB]);
 
-    // 监听当前活动标签类型变化
+    // 监听当前活动标签类型变化，并更新查询结果
     useEffect(() => {
       const currentTab = tabs.find(tab => tab.id === activeKey);
       if (currentTab && onActiveTabTypeChange) {
         onActiveTabTypeChange(currentTab.type);
+
+        // 更新全局查询结果状态
+        if (currentTab.queryResult || currentTab.queryResults) {
+          // 如果当前tab有查询结果，显示它们
+          if (currentTab.queryResult) {
+            onQueryResult?.(currentTab.queryResult);
+          }
+          if (currentTab.queryResults && currentTab.executedQueries) {
+            onBatchQueryResults?.(
+              currentTab.queryResults,
+              currentTab.executedQueries,
+              currentTab.executionTime || 0
+            );
+          }
+        } else {
+          // 如果当前tab没有查询结果，清空全局查询结果
+          onQueryResult?.(null);
+          onBatchQueryResults?.([], [], 0);
+        }
       }
-    }, [activeKey, tabs, onActiveTabTypeChange]);
+    }, [activeKey, tabs, onActiveTabTypeChange, onQueryResult, onBatchQueryResults]);
 
     // 监听菜单事件
     useEffect(() => {
@@ -1097,6 +1179,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
         setTabs(prevTabs => [...prevTabs, newTab]);
         setActiveKey(newTab.id);
+
+        // 清空查询结果，因为这是一个新的tab
+        onQueryResult?.(null);
+        onBatchQueryResults?.([], [], 0);
       };
 
       const handleSaveCurrentQuery = () => {
@@ -1775,12 +1861,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 添加焦点事件监听，确保智能提示正常工作
       editor.onDidFocusEditorText(() => {
-        console.log('👁️ 编辑器获得焦点，智能提示已启用');
-        console.log('📊 当前数据库状态:', {
-          selectedDatabase,
-          databases: databases.length,
-          activeConnectionId,
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('👁️ 编辑器获得焦点，智能提示已启用');
+          console.log('📊 当前数据库状态:', {
+            selectedDatabase,
+            databases: databases.length,
+            activeConnectionId,
+          });
+        }
       });
 
       // 添加输入事件监听，增强智能提示
@@ -2237,6 +2325,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       // 桌面应用：禁用默认右键菜单，只使用自定义中文菜单
                       contextmenu: false,
                       copyWithSyntaxHighlighting: true,
+                      // 禁用默认的剪贴板操作，使用自定义的Tauri剪贴板服务
+                      links: false, // 禁用链接检测，避免触发剪贴板权限
+                      find: {
+                        addExtraSpaceOnTop: false,
+                        autoFindInSelection: 'never',
+                        seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
+                      },
                       }}
                     />
                   </div>

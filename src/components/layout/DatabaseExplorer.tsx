@@ -219,14 +219,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const limit = 'LIMIT 500'; // 默认分页500条
 
     if (timeCondition) {
-      return `SELECT *
-                    FROM "${table}"
-                    WHERE ${timeCondition}
-                    ${limit}`;
+      return `SELECT * FROM "${table}" WHERE ${timeCondition} ORDER BY time DESC ${limit}`;
     } else {
-      return `SELECT *
-                    FROM "${table}"
-                    ${limit}`;
+      return `SELECT * FROM "${table}" ORDER BY time DESC ${limit}`;
     }
   };
 
@@ -1561,48 +1556,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
           break;
 
-        case 'toggle_favorite':
-          if (contextMenuTarget) {
-            let path = '';
-            switch (contextMenuTarget.type) {
-              case 'connection':
-                path = contextMenuTarget.connectionId;
-                break;
-              case 'database':
-                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}`;
-                break;
-              case 'table':
-                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}`;
-                break;
-              case 'field':
-                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/${contextMenuTarget.field}`;
-                break;
-              case 'tag':
-                path = `${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/tags/${contextMenuTarget.tag}`;
-                break;
-            }
 
-            if (path) {
-              if (isFavorite(path)) {
-                const favorite = favorites.find(fav => fav.path === path);
-                if (favorite) {
-                  removeFavorite(favorite.id);
-                  showMessage.success('已取消收藏');
-                }
-              } else {
-                const favoriteItem = favoritesUtils.createFavoriteFromPath(
-                  path,
-                  contextMenuTarget.connectionId,
-                  connections
-                );
-                if (favoriteItem) {
-                  addFavorite(favoriteItem);
-                  showMessage.success('已添加到收藏');
-                }
-              }
-            }
-          }
-          break;
 
         default:
           console.warn('未处理的右键菜单动作:', action);
@@ -2268,26 +2222,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
-                                  handleContextMenuAction('toggle_favorite');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                {isFavorite(contextMenuTarget.connectionId) ? (
-                                  <>
-                                    <StarOff className="w-4 h-4" />
-                                    取消收藏
-                                  </>
-                                ) : (
-                                  <>
-                                    <Star className="w-4 h-4" />
-                                    添加到收藏
-                                  </>
-                                )}
-                              </button>
-                              <div className="my-1 h-px bg-border" />
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
                                   handleContextMenuAction('copy_connection_name');
                                   setContextMenuOpen(false);
                                 }}
@@ -2332,26 +2266,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                           {contextMenuTarget.type === 'database' && (
                             <>
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库操作</div>
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
-                                  handleContextMenuAction('toggle_favorite');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}`) ? (
-                                  <>
-                                    <StarOff className="w-4 h-4" />
-                                    取消收藏
-                                  </>
-                                ) : (
-                                  <>
-                                    <Star className="w-4 h-4" />
-                                    添加到收藏
-                                  </>
-                                )}
-                              </button>
-                              <div className="my-1 h-px bg-border" />
                               {/* 只有已打开的数据库才显示关闭选项 */}
                               {isDatabaseOpened(contextMenuTarget.connectionId, contextMenuTarget.database) && (
                                 <button
@@ -2425,26 +2339,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
-                                  handleContextMenuAction('toggle_favorite');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}`) ? (
-                                  <>
-                                    <StarOff className="w-4 h-4" />
-                                    取消收藏
-                                  </>
-                                ) : (
-                                  <>
-                                    <Star className="w-4 h-4" />
-                                    添加到收藏
-                                  </>
-                                )}
-                              </button>
-                              <div className="my-1 h-px bg-border" />
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
                                   handleContextMenuAction('query_table');
                                   setContextMenuOpen(false);
                                 }}
@@ -2502,26 +2396,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
-                                  handleContextMenuAction('toggle_favorite');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/${contextMenuTarget.field}`) ? (
-                                  <>
-                                    <StarOff className="w-4 h-4" />
-                                    取消收藏
-                                  </>
-                                ) : (
-                                  <>
-                                    <Star className="w-4 h-4" />
-                                    添加到收藏
-                                  </>
-                                )}
-                              </button>
-                              <div className="my-1 h-px bg-border" />
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
                                   handleContextMenuAction('copy_field_name');
                                   setContextMenuOpen(false);
                                 }}
@@ -2545,26 +2419,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                           {contextMenuTarget.type === 'tag' && (
                             <>
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">标签操作</div>
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
-                                  handleContextMenuAction('toggle_favorite');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                {isFavorite(`${contextMenuTarget.connectionId}/${contextMenuTarget.database}/${contextMenuTarget.table}/tags/${contextMenuTarget.tag}`) ? (
-                                  <>
-                                    <StarOff className="w-4 h-4" />
-                                    取消收藏
-                                  </>
-                                ) : (
-                                  <>
-                                    <Star className="w-4 h-4" />
-                                    添加到收藏
-                                  </>
-                                )}
-                              </button>
-                              <div className="my-1 h-px bg-border" />
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {

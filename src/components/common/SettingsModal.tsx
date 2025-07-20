@@ -68,7 +68,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const [userGuideVisible, setUserGuideVisible] = useState(false);
   const { config, setConfig, setLanguage, resetConfig } = useAppStore();
   const { clearConnections } = useConnectionStore();
-  const { resetNoticeSettings } = useNoticeStore();
+  const { resetNoticeSettings, browserModeNoticeDismissed } = useNoticeStore();
   const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
 
   // 初始化表单值
@@ -635,57 +635,60 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             </div>
           </div>
 
-          <div>
-            <h4 className='text-sm font-medium mb-2'>预览模式说明</h4>
-            <p className='text-sm text-muted-foreground'>
-              管理在浏览器环境中运行时显示的功能说明提醒。
-            </p>
-          </div>
-
-          {isBrowserEnvironment() && (
-            <div className='space-y-4'>
-              <Alert>
-                <Info className='h-4 w-4' />
-                <h5 className='font-medium'>当前运行在浏览器预览模式</h5>
+          {/* 用户引导设置 */}
+          <div className='space-y-4'>
+            <div className='p-4 border rounded-lg'>
+              <div className='mb-4'>
+                <h4 className='text-base font-medium'>启动时展示用户引导</h4>
                 <p className='text-sm text-muted-foreground'>
-                  您可以重新查看功能说明，或者重置提醒设置。
+                  控制应用启动时是否自动显示用户引导
                 </p>
-              </Alert>
-
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                <Button
-                  onClick={() => setUserGuideVisible(true)}
-                  className='w-full justify-start'
-                >
-                  <Info className='w-4 h-4 mr-2' />
-                  查看用户指引
-                </Button>
-                <Button
-                  variant='outline'
-                  onClick={() => {
-                    resetNoticeSettings();
-                    showMessage.success(
-                      '提醒设置已重置，下次启动时会再次显示功能说明'
-                    );
+              </div>
+              <div className='flex items-center justify-between'>
+                <div className='space-y-0.5'>
+                  <Label className='text-sm'>启用启动引导</Label>
+                  <p className='text-xs text-muted-foreground'>
+                    开启后，每次启动应用时会显示用户引导
+                  </p>
+                </div>
+                <Switch
+                  checked={!browserModeNoticeDismissed}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      resetNoticeSettings();
+                      showMessage.success('已启用启动引导，下次启动时会显示用户引导');
+                    } else {
+                      useNoticeStore.getState().dismissBrowserModeNotice();
+                      showMessage.success('已关闭启动引导');
+                    }
                   }}
-                  className='w-full justify-start'
-                >
-                  <RefreshCw className='w-4 h-4 mr-2' />
-                  重置提醒设置
-                </Button>
+                />
               </div>
             </div>
-          )}
 
-          {!isBrowserEnvironment() && (
-            <Alert>
-              <Info className='h-4 w-4' />
-              <h5 className='font-medium'>当前运行在桌面应用模式</h5>
-              <p className='text-sm text-muted-foreground'>
-                桌面应用环境中不需要显示浏览器模式提醒。
-              </p>
-            </Alert>
-          )}
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              <Button
+                onClick={() => setUserGuideVisible(true)}
+                className='w-full justify-start'
+              >
+                <Info className='w-4 h-4 mr-2' />
+                查看用户引导
+              </Button>
+              <Button
+                variant='outline'
+                onClick={() => {
+                  resetNoticeSettings();
+                  showMessage.success(
+                    '引导设置已重置，下次启动时会再次显示用户引导'
+                  );
+                }}
+                className='w-full justify-start'
+              >
+                <RefreshCw className='w-4 h-4 mr-2' />
+                重置引导设置
+              </Button>
+            </div>
+          </div>
         </div>
       ),
     },

@@ -305,15 +305,36 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       refreshDataExplorer();
     };
 
+    const handleTableQuery = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { query, database, tableName } = customEvent.detail;
+      console.log('📥 DataGripStyleLayout收到表查询事件:', { query, database, tableName });
+
+      // 切换到查询视图并执行查询
+      setCurrentView('query');
+      if (tabEditorRef.current?.executeQueryWithContent) {
+        tabEditorRef.current.executeQueryWithContent(query, database);
+      }
+    };
+
     document.addEventListener(
       'refresh-database-tree',
       handleRefreshDatabaseTree
+    );
+
+    document.addEventListener(
+      'table-query',
+      handleTableQuery
     );
 
     return () => {
       document.removeEventListener(
         'refresh-database-tree',
         handleRefreshDatabaseTree
+      );
+      document.removeEventListener(
+        'table-query',
+        handleTableQuery
       );
     };
   }, []);
