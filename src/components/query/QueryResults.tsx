@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {AdvancedDataTable, type ColumnConfig, type DataRow} from '@/components/ui/AdvancedDataTable';
 import {
     DataTable,
     Tabs,
@@ -192,7 +193,68 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         showContextMenu(event, target);
     };
 
-    // 格式化查询结果为表格数据
+    // 格式化查询结果为高级表格数据
+    const formatResultForAdvancedTable = (queryResult: QueryResult) => {
+        if (
+            !queryResult ||
+            !queryResult.results ||
+            queryResult.results.length === 0 ||
+            !queryResult.results[0].series ||
+            queryResult.results[0].series.length === 0
+        ) {
+            return {columns: [], dataSource: []};
+        }
+
+        const series = queryResult.results[0].series[0];
+
+        // 创建列配置
+        const columns: ColumnConfig[] = series.columns.map((col: string) => {
+            // 检测数据类型
+            let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
+            if (col === 'time') {
+                dataType = 'date';
+            } else {
+                // 检查前几行数据来推断类型
+                for (let i = 0; i < Math.min(5, series.values.length); i++) {
+                    const colIndex = series.columns.indexOf(col);
+                    const value = series.values[i][colIndex];
+                    if (value !== null && value !== undefined) {
+                        if (typeof value === 'number') {
+                            dataType = 'number';
+                            break;
+                        }
+                        if (typeof value === 'boolean') {
+                            dataType = 'boolean';
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return {
+                key: col,
+                title: col,
+                dataType,
+                width: col === 'time' ? 180 : 120,
+                sortable: true,
+                filterable: true,
+                visible: true,
+            };
+        });
+
+        // 创建数据源
+        const dataSource: DataRow[] = series.values.map((row: unknown[], index: number) => {
+            const record: DataRow = {_id: index};
+            series.columns.forEach((col: string, colIndex: number) => {
+                record[col] = row[colIndex];
+            });
+            return record;
+        });
+
+        return {columns, dataSource};
+    };
+
+    // 格式化查询结果为表格数据（保留原有的DataTable格式）
     const formatResultForTable = (queryResult: QueryResult) => {
         if (
             !queryResult ||
@@ -213,6 +275,32 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 width: index === 0 ? 200 : 120, // 时间列宽一些
                 ellipsis: true,
                 align: 'left' as const,
+                sortable: true, // 启用排序
+                sorter: (a: any, b: any) => {
+                    const aValue = a[col];
+                    const bValue = b[col];
+
+                    // 处理null/undefined值
+                    if (aValue === null || aValue === undefined) return 1;
+                    if (bValue === null || bValue === undefined) return -1;
+
+                    // 时间列特殊排序
+                    if (col === 'time' || (typeof aValue === 'string' && aValue.includes('T') && aValue.includes('Z'))) {
+                        const aTime = new Date(aValue).getTime();
+                        const bTime = new Date(bValue).getTime();
+                        if (!isNaN(aTime) && !isNaN(bTime)) {
+                            return aTime - bTime;
+                        }
+                    }
+
+                    // 数字排序
+                    if (typeof aValue === 'number' && typeof bValue === 'number') {
+                        return aValue - bValue;
+                    }
+
+                    // 字符串排序
+                    return String(aValue).localeCompare(String(bValue));
+                },
                 render: (value: any, record: any, _index: number) => {
                     const cellContent = (() => {
                         if (value === null || value === undefined) {
@@ -349,26 +437,44 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         };
     };
 
+    // 为高级表格准备数据
+    const {columns: advancedColumns, dataSource: advancedDataSource} = result
+        ? formatResultForAdvancedTable(result)
+        : {columns: [], dataSource: []};
+
+    // 为原有DataTable准备数据（保持兼容性）
     const {columns, dataSource} = result
         ? formatResultForTable(result)
         : {columns: [], dataSource: []};
     const stats = result ? getResultStats(result) : null;
 
     const renderTableTab = () => (
-        <ScrollArea className="h-full">
+        <div className="h-full">
             {result ? (
-                <DataTable
-                    columns={columns}
-                    dataSource={dataSource}
-                    scroll={{x: 'max-content', y: 'calc(100vh - 300px)'}}
-                    size='small'
-                    bordered
-                    className="bg-background"
+                <AdvancedDataTable
+                    data={advancedDataSource}
+                    columns={advancedColumns}
+                    loading={false}
+                    pagination={{
+                        current: 1,
+                        pageSize: 50,
+                        total: advancedDataSource.length,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['20', '50', '100', '200', '500'],
+                    }}
+                    searchable={true}
+                    filterable={true}
+                    sortable={true}
+                    exportable={true}
+                    columnManagement={true}
+                    className="h-full"
                 />
             ) : (
-                <Empty description='暂无查询结果'/>
+                <div className="h-full flex items-center justify-center">
+                    <Empty description='暂无查询结果'/>
+                </div>
             )}
-        </ScrollArea>
+        </div>
     );
 
     const renderJsonTab = () => (

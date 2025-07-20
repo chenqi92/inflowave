@@ -28,6 +28,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
+import { DataTable } from '@/components/ui/DataTable';
+import { AdvancedDataTable } from '@/components/ui/AdvancedDataTable';
+import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
+import { exportWithNativeDialog } from '@/utils/nativeExport';
+import { showMessage } from '@/utils/message';
 import {
   Play,
   BarChart3,
@@ -109,6 +114,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
+
+  // 导出状态
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const { resolvedTheme } = useTheme();
 
   // 主题配置生成函数
@@ -426,6 +434,41 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       // 新列，默认升序
       setSortColumn(column);
       setSortDirection('asc');
+    }
+  };
+
+  // 导出数据函数
+  const handleExportData = async (options: ExportOptions, resultIndex: number) => {
+    try {
+      const result = allResults[resultIndex];
+      if (!result) {
+        showMessage.error('没有可导出的数据');
+        return;
+      }
+
+      // 构造符合 QueryResult 格式的数据
+      const queryResult = {
+        results: [result],
+        data: result.results?.[0]?.series?.[0]?.values || [],
+        executionTime: executionTime || 0
+      };
+
+      // 使用原生导出对话框
+      const success = await exportWithNativeDialog(queryResult, {
+        format: options.format,
+        includeHeaders: options.includeHeaders,
+        delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
+        defaultFilename: options.filename || `query_result_${resultIndex + 1}`,
+        tableName: options.tableName || `query_result_${resultIndex + 1}`
+      });
+
+      if (success) {
+        showMessage.success(`数据已导出为 ${options.format.toUpperCase()} 格式`);
+        setShowExportDialog(false);
+      }
+    } catch (error) {
+      console.error('导出数据失败:', error);
+      showMessage.error('导出数据失败');
     }
   };
 
@@ -1153,7 +1196,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </Badge>
                       </div>
                       <div className='flex items-center gap-2'>
-                        <Button variant='outline' size='sm' className='text-xs'>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='text-xs'
+                          onClick={() => setShowExportDialog(true)}
+                        >
                           <Download className='w-3 h-3 mr-1' />
                           导出
                         </Button>
@@ -1171,76 +1219,61 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     </div>
                   </div>
 
-                  {/* 可滚动的数据表格 */}
-                  <div className='flex-1 overflow-auto relative'>
-                    <div className='min-w-full'>
-                      <Table>
-                        <TableHeader className='sticky top-0 bg-background z-10'>
-                          <TableRow>
-                            {parsedResult.columns.map((column, colIndex) => (
-                              <TableHead
-                                key={colIndex}
-                                className={`px-3 py-2 text-left font-medium cursor-pointer hover:bg-muted/50 transition-colors ${
-                                  sortColumn === column
-                                    ? 'bg-muted/50 text-foreground'
-                                    : 'text-muted-foreground'
-                                }`}
-                                onClick={() => handleColumnSort(column)}
-                              >
-                                <div className='flex items-center gap-1 select-none'>
-                                  <span className='text-xs'>{column}</span>
-                                  <span className='text-xs opacity-60'>
-                                    {sortColumn === column
-                                      ? sortDirection === 'asc'
-                                        ? '↑'
-                                        : '↓'
-                                      : '↕️'}
-                                  </span>
-                                </div>
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {parsedResult.data.map((row, rowIndex) => (
-                            <TableRow
-                              key={rowIndex}
-                              className='hover:bg-muted/30 transition-colors'
-                            >
-                              {parsedResult.columns.map((column, colIndex) => (
-                                <TableCell
-                                  key={colIndex}
-                                  className='px-3 py-2 font-mono text-xs'
-                                  style={{ maxWidth: '200px' }}
-                                >
-                                  <div
-                                    className='truncate'
-                                    title={String(row[column] || '')}
-                                    style={{
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
-                                    }}
-                                  >
-                                    {column === 'time' && row[column]
-                                      ? new Date(row[column]).toLocaleString()
-                                      : String(row[column] || '-')}
-                                  </div>
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
+                  {/* 高级数据表格 - 使用AdvancedDataTable组件，禁用工具栏 */}
+                  <div className='flex-1 min-h-0'>
+                    <AdvancedDataTable
+                      data={parsedResult.data.map((row, rowIndex) => ({
+                        _id: rowIndex,
+                        ...row
+                      }))}
+                      columns={parsedResult.columns.map((column) => {
+                        // 检测数据类型
+                        let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
+                        if (column === 'time') {
+                          dataType = 'date';
+                        } else {
+                          // 检查前几行数据来推断类型
+                          for (let i = 0; i < Math.min(5, parsedResult.data.length); i++) {
+                            const value = parsedResult.data[i][column];
+                            if (value !== null && value !== undefined) {
+                              if (typeof value === 'number') {
+                                dataType = 'number';
+                                break;
+                              }
+                              if (typeof value === 'boolean') {
+                                dataType = 'boolean';
+                                break;
+                              }
+                            }
+                          }
+                        }
 
-                  {/* 底部状态栏 */}
-                  <div className='flex-shrink-0 bg-muted/30 border-t px-4 py-2'>
-                    <div className='flex items-center justify-between text-xs text-muted-foreground'>
-                      <span>共 {parsedResult.rowCount} 行数据</span>
-                      <span>执行时间: {executionTime}ms</span>
-                    </div>
+                        return {
+                          key: column,
+                          title: column,
+                          dataType,
+                          width: column === 'time' ? 180 : 120,
+                          sortable: true,
+                          filterable: true,
+                          visible: true,
+                        };
+                      })}
+                      loading={false}
+                      pagination={{
+                        current: 1,
+                        pageSize: 50,
+                        total: parsedResult.data.length,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['20', '50', '100', '200', '500'],
+                      }}
+                      searchable={true}
+                      filterable={true}
+                      sortable={true}
+                      exportable={false} // 禁用内置导出功能
+                      columnManagement={true}
+                      showToolbar={false} // 禁用工具栏
+                      className="h-full"
+                    />
                   </div>
                 </div>
               ) : (
@@ -1647,62 +1680,60 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 </div>
               </div>
 
-              {/* 可滚动的数据样本表格 */}
-              <div className='flex-1 overflow-auto relative'>
-                <div className='min-w-full'>
-                  <Table>
-                    <TableHeader className='sticky top-0 bg-background z-10'>
-                      <TableRow>
-                        {parsedData.columns.map((column, index) => (
-                          <TableHead
-                            key={index}
-                            className='px-3 py-2 text-xs font-medium'
-                          >
-                            {column}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {parsedData.data.slice(0, 10).map((row, rowIndex) => (
-                        <TableRow
-                          key={rowIndex}
-                          className='hover:bg-muted/30 transition-colors'
-                        >
-                          {parsedData.columns.map((column, colIndex) => (
-                            <TableCell
-                              key={colIndex}
-                              className='px-3 py-2 font-mono text-xs'
-                              style={{ maxWidth: '200px' }}
-                            >
-                              <div
-                                className='truncate'
-                                title={String(row[column] || '')}
-                                style={{
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {column === 'time' && row[column]
-                                  ? new Date(row[column]).toLocaleString()
-                                  : String(row[column] || '-')}
-                              </div>
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
+              {/* 数据表格 - 使用AdvancedDataTable组件支持高级功能 */}
+              <div className='flex-1 min-h-0'>
+                <AdvancedDataTable
+                  data={parsedData.data.map((row, index) => ({
+                    _id: index,
+                    ...row
+                  }))}
+                  columns={parsedData.columns.map((column) => {
+                    // 检测数据类型
+                    let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
+                    if (column === 'time') {
+                      dataType = 'date';
+                    } else {
+                      // 检查前几行数据来推断类型
+                      for (let i = 0; i < Math.min(5, parsedData.data.length); i++) {
+                        const value = parsedData.data[i][column];
+                        if (value !== null && value !== undefined) {
+                          if (typeof value === 'number') {
+                            dataType = 'number';
+                            break;
+                          }
+                          if (typeof value === 'boolean') {
+                            dataType = 'boolean';
+                            break;
+                          }
+                        }
+                      }
+                    }
 
-              {/* 底部状态栏 */}
-              <div className='flex-shrink-0 bg-muted/30 border-t px-4 py-2'>
-                <div className='flex items-center justify-between text-xs text-muted-foreground'>
-                  <span>显示前 10 行数据样本</span>
-                  <span>总数据: {parsedData.rowCount.toLocaleString()} 行</span>
-                </div>
+                    return {
+                      key: column,
+                      title: column,
+                      dataType,
+                      width: column === 'time' ? 180 : 120,
+                      sortable: true,
+                      filterable: true,
+                      visible: true,
+                    };
+                  })}
+                  loading={false}
+                  pagination={{
+                    current: 1,
+                    pageSize: 50,
+                    total: parsedData.data.length,
+                    showSizeChanger: true,
+                    pageSizeOptions: ['20', '50', '100', '200', '500'],
+                  }}
+                  searchable={true}
+                  filterable={true}
+                  sortable={true}
+                  exportable={true}
+                  columnManagement={true}
+                  className="h-full"
+                />
               </div>
             </div>
           ) : (
@@ -1941,6 +1972,21 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* 导出选项对话框 */}
+      <ExportOptionsDialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        onExport={(options) => {
+          // 找到当前活跃的查询结果索引
+          const activeTabMatch = activeTab.match(/^data-(\d+)$/);
+          const resultIndex = activeTabMatch ? parseInt(activeTabMatch[1]) : 0;
+          handleExportData(options, resultIndex);
+        }}
+        defaultTableName={`query_result`}
+        rowCount={parsedData?.rowCount || 0}
+        columnCount={parsedData?.columns.length || 0}
+      />
     </div>
   );
 };
