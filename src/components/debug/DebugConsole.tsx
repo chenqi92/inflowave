@@ -726,7 +726,27 @@ const DebugConsole: React.FC = () => {
                                   显示详细参数
                                 </summary>
                                 <pre className='text-xs bg-muted/30 p-2 rounded mt-1 overflow-x-auto'>
-                                  {JSON.stringify(log.args, null, 2)}
+                                  {(() => {
+                                    try {
+                                      return JSON.stringify(log.args, (key, value) => {
+                                        // 处理循环引用和不可序列化的对象
+                                        if (typeof value === 'object' && value !== null) {
+                                          if (value instanceof HTMLElement) {
+                                            return `[HTMLElement: ${value.tagName}]`;
+                                          }
+                                          if (value instanceof Error) {
+                                            return `[Error: ${value.message}]`;
+                                          }
+                                          if (value instanceof Function) {
+                                            return `[Function: ${value.name || 'anonymous'}]`;
+                                          }
+                                        }
+                                        return value;
+                                      }, 2);
+                                    } catch (error) {
+                                      return `[无法序列化参数: ${error instanceof Error ? error.message : '未知错误'}]`;
+                                    }
+                                  })()}
                                 </pre>
                               </details>
                             )}

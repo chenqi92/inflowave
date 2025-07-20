@@ -1055,7 +1055,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
 
     if (String(key).startsWith('connection-')) {
-      // 连接节点被双击，切换连接状态
+      // 连接节点被双击，根据连接状态决定行为
       const connectionId = String(key).replace('connection-', '');
       const connection = getConnection(connectionId);
 
@@ -1065,8 +1065,35 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         return;
       }
 
-      console.log(`🔄 双击连接: ${connection.name} (${connectionId})`);
-      await handleConnectionToggle(connectionId);
+      const isConnected = isConnectionConnected(connectionId);
+      const connectionKey = `connection-${connectionId}`;
+      const isExpanded = expandedKeys.includes(connectionKey);
+
+      console.log(`🖱️ 双击连接: ${connection.name} (${connectionId})`, {
+        isConnected,
+        isExpanded
+      });
+
+      if (!isConnected) {
+        // 如果连接未建立，则建立连接
+        console.log(`🔗 建立连接: ${connection.name}`);
+        await handleConnectionToggle(connectionId);
+      } else {
+        // 如果连接已建立，则切换展开/收起状态
+        if (isExpanded) {
+          // 当前已展开，收起连接节点
+          const newExpandedKeys = expandedKeys.filter(k => !k.startsWith(connectionKey));
+          setExpandedKeys(newExpandedKeys);
+          console.log(`📁 收起连接节点: ${connection.name}`);
+          showMessage.info(`已收起连接 "${connection.name}"`);
+        } else {
+          // 当前已收起，展开连接节点
+          const newExpandedKeys = [...expandedKeys, connectionKey];
+          setExpandedKeys(newExpandedKeys);
+          console.log(`📂 展开连接节点: ${connection.name}`);
+          showMessage.info(`已展开连接 "${connection.name}"`);
+        }
+      }
     } else if (String(key).startsWith('database-')) {
       // 数据库节点被双击
       const parts = String(key).split('-');
@@ -1220,17 +1247,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             setExpandedKeys(expandedKeys);
           }
         } else {
-          // 如果数据库已经展开，则创建新的查询标签页并选中该数据库
-          if (onViewChange) {
-            onViewChange('query');
-          }
-
-          if (onCreateQueryTab) {
-            onCreateQueryTab('', database);
-            showMessage.info(`已创建新查询并选中数据库 "${database}"`);
-          } else {
-            showMessage.info(`正在切换到查询面板，数据库: "${database}"`);
-          }
+          // 如果数据库已经展开，则收起数据库节点
+          const newExpandedKeys = expandedKeys.filter(k => k !== databaseKey);
+          setExpandedKeys(newExpandedKeys);
+          console.log(`📁 收起数据库节点: ${database}`);
+          showMessage.info(`已收起数据库 "${database}"`);
         }
       }
     } else if (String(key).startsWith('table-')) {
