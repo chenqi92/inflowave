@@ -304,6 +304,20 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   } | null>(null);
 
   // 格式化网络数据单位的函数
+  // 转换时间范围格式的函数
+  const normalizeTimeRange = useCallback((range: { from: Date; to: Date } | null) => {
+    if (!range) {
+      return {
+        start: new Date(Date.now() - 60 * 60 * 1000), // 1小时前
+        end: new Date(),
+      };
+    }
+    return {
+      start: range.from,
+      end: range.to,
+    };
+  }, []);
+
   const formatNetworkData = useCallback((bytes: number) => {
     if (bytes === 0) return { value: 0, unit: 'B/s' };
 
@@ -439,18 +453,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [activeConnectionId, monitoringMode]);
 
+
+
   // 获取性能瓶颈数据
   const getBottlenecks = useCallback(async () => {
     if (!activeConnectionId) return;
 
     setLoading(true);
     try {
-      const range = timeRange
-        ? {
-            start: timeRange.from,
-            end: timeRange.to,
-          }
-        : undefined;
+      const range = normalizeTimeRange(timeRange);
 
       const [
         bottlenecksData,
@@ -526,6 +537,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [activeConnectionId, timeRange, getBasicMetrics, monitoringMode]);
 
+
+
   // 自动刷新 - 支持本地和远程监控
   useEffect(() => {
     if (autoRefresh) {
@@ -554,6 +567,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       return () => clearInterval(realTimeTimer);
     }
   }, [realTimeMode, getBasicMetrics]);
+
+
 
   // 监控状态管理
   const [isMonitoringActive, setIsMonitoringActive] = useState(false);
@@ -1828,7 +1843,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   setTimeout(() => {
                     getBottlenecks();
                     getBasicMetrics();
-                  }, 100); // 短暂延迟确保状态更新完成
+                  }, 200); // 稍长的延迟确保状态更新完成
                 }}
               >
                 <SelectTrigger className='w-[120px]'>

@@ -3,12 +3,27 @@ import { cn } from '@/lib/utils';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from './Button';
 
+// Helper function to merge refs
+function mergeRefs<T = unknown>(
+  refs: Array<React.MutableRefObject<T> | React.LegacyRef<T>>
+): React.RefCallback<T> {
+  return (value) => {
+    refs.forEach((ref) => {
+      if (typeof ref === 'function') {
+        ref(value);
+      } else if (ref != null) {
+        (ref as React.MutableRefObject<T | null>).current = value;
+      }
+    });
+  };
+}
+
 export interface InputNumberProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
     'value' | 'onChange' | 'onBlur' | 'onFocus' | 'min' | 'max' | 'step' | 'size'
   > {
-  value?: number;
+  value?: number | null;
   defaultValue?: number;
   min?: number;
   max?: number;
@@ -23,13 +38,15 @@ export interface InputNumberProps
   size?: 'sm' | 'default' | 'lg';
   addonBefore?: React.ReactNode;
   addonAfter?: React.ReactNode;
+  /** 单位文本，会显示在数字后面，增减按钮前面（始终内联显示） */
+  unit?: string;
 }
 
 const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
   (
     {
       className,
-      type = 'number',
+      type: _type = 'number',
       value,
       defaultValue,
       min,
@@ -45,6 +62,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       size = 'default',
       addonBefore,
       addonAfter,
+      unit,
       disabled,
       ...props
     },
@@ -53,6 +71,8 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
     const [innerValue, setInnerValue] = React.useState<number | null>(
       value !== undefined ? value : defaultValue || null
     );
+    const inputRef = React.useRef<HTMLInputElement>(null);
+    const [textWidth, setTextWidth] = React.useState(0);
 
     const actualValue = value !== undefined ? value : innerValue;
 
@@ -62,7 +82,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       lg: 'h-12 px-4 text-lg',
     };
 
-    const formatValue = (val: number | null): string => {
+    const formatValue = React.useCallback((val: number | null): string => {
       if (val === null || val === undefined || isNaN(val)) return '';
 
       if (formatter) {
@@ -74,7 +94,39 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       }
 
       return val.toString();
-    };
+    }, [formatter, precision]);
+
+    // 计算文字宽度
+    React.useEffect(() => {
+      const calculateTextWidth = () => {
+        if (!inputRef.current) return;
+        
+        const input = inputRef.current;
+        const displayValue = formatValue(actualValue);
+        
+        if (!displayValue) {
+          setTextWidth(0);
+          return;
+        }
+        
+        // 创建一个临时元素来测量文字宽度
+        const span = document.createElement('span');
+        span.style.visibility = 'hidden';
+        span.style.position = 'absolute';
+        span.style.fontSize = window.getComputedStyle(input).fontSize;
+        span.style.fontFamily = window.getComputedStyle(input).fontFamily;
+        span.style.fontWeight = window.getComputedStyle(input).fontWeight;
+        span.textContent = displayValue;
+        
+        document.body.appendChild(span);
+        const width = span.offsetWidth;
+        document.body.removeChild(span);
+        
+        setTextWidth(width);
+      };
+      
+      calculateTextWidth();
+    }, [actualValue, formatValue]);
 
     const parseValue = (displayValue: string): number | null => {
       if (!displayValue.trim()) return null;
@@ -121,79 +173,115 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       onChange?.(finalValue);
     };
 
-    const getInputElement = (hasAddonAfter: boolean = false) => (
-      <input
-        ref={ref}
-        type='text'
-        className={cn(
-          'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          sizeClasses[size],
-          controls && (hasAddonAfter ? 'pr-10' : 'pr-8'),
-          className
-        )}
-        value={formatValue(actualValue)}
-        onChange={handleInputChange}
-        onBlur={onBlur}
-        onFocus={onFocus}
-        disabled={disabled}
-        {...props}
-      />
-    );
+    const getInputElement = () => {
+      // 只需要为控制按钮预留空间，单位会动态跟随数字
+      let rightPadding = 'pr-3'; // 默认padding
+      
+      if (controls && !disabled) {
+        rightPadding = 'pr-8'; // 只为控制按钮预留空间
+      }
+      
+      return (
+        <input
+          ref={mergeRefs([inputRef, ref])}
+          type='text'
+          className={cn(
+            'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            sizeClasses[size],
+            rightPadding,
+            className
+          )}
+          value={formatValue(actualValue)}
+          onChange={handleInputChange}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          disabled={disabled}
+          {...props}
+        />
+      );
+    };
 
-    const getStepperControls = (hasAddonAfter: boolean = false) => controls && !disabled && (
-      <div className={`absolute ${hasAddonAfter ? 'right-8' : 'right-1'} top-1/2 -translate-y-1/2 flex flex-col`}>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          className='h-4 w-6 p-0 hover:bg-muted'
-          onClick={() => handleStep('up')}
-          disabled={
-            max !== undefined && actualValue !== null && actualValue >= max
-          }
+    const getInlineUnit = () => {
+      const displayUnit = unit || addonAfter;
+      if (!displayUnit) return null;
+      
+      // 获取输入框的padding值
+      const sizeInfo = {
+        sm: 8,    // px-2
+        default: 12, // px-3  
+        lg: 16,   // px-4
+      };
+      
+      const leftPadding = sizeInfo[size];
+      const leftOffset = `${leftPadding + textWidth + 2}px`; // +2px for spacing
+      
+      return (
+        <div 
+          className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-sm text-muted-foreground"
+          style={{ left: leftOffset }}
         >
-          <Plus className='h-2 w-2' />
-        </Button>
-        <Button
-          type='button'
-          variant='ghost'
-          size='sm'
-          className='h-4 w-6 p-0 hover:bg-muted'
-          onClick={() => handleStep('down')}
-          disabled={
-            min !== undefined && actualValue !== null && actualValue <= min
-          }
-        >
-          <Minus className='h-2 w-2' />
-        </Button>
-      </div>
-    );
+          {displayUnit}
+        </div>
+      );
+    };
 
-    if (addonBefore || addonAfter) {
+    const getStepperControls = () => {
+      if (!controls || disabled) return null;
+      
+      // 控制按钮始终在最右侧
+      return (
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col z-10">
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='h-4 w-6 p-0 hover:bg-muted'
+            onClick={() => handleStep('up')}
+            disabled={
+              max !== undefined && actualValue !== null && actualValue >= max
+            }
+          >
+            <Plus className='h-2 w-2' />
+          </Button>
+          <Button
+            type='button'
+            variant='ghost'
+            size='sm'
+            className='h-4 w-6 p-0 hover:bg-muted'
+            onClick={() => handleStep('down')}
+            disabled={
+              min !== undefined && actualValue !== null && actualValue <= min
+            }
+          >
+            <Minus className='h-2 w-2' />
+          </Button>
+        </div>
+      );
+    };
+
+    // 所有单位都内联显示，不再有独立的addon框
+    // 只保留addonBefore的支持
+    
+    if (addonBefore) {
       return (
         <div className='flex w-full'>
-          {addonBefore && (
-            <div className='flex items-center px-3 border border-r-0 border-input bg-muted rounded-l-md text-sm'>
-              {addonBefore}
-            </div>
-          )}
-          <div className='relative flex-1'>
-            {getInputElement(!!addonAfter)}
-            {getStepperControls(!!addonAfter)}
+          <div className='flex items-center px-3 border border-r-0 border-input bg-muted rounded-l-md text-sm'>
+            {addonBefore}
           </div>
-          {addonAfter && (
-            <div className='flex items-center px-3 border border-l-0 border-input bg-muted rounded-r-md text-sm'>
-              {addonAfter}
-            </div>
-          )}
+          <div className='relative flex-1'>
+            {getInputElement()}
+            {getInlineUnit()}
+            {getStepperControls()}
+          </div>
         </div>
       );
     }
 
     return (
       <div className='relative'>
-        {getInputElement(false)}
-        {getStepperControls(false)}
+        {getInputElement()}
+        {getInlineUnit()}
+        {getStepperControls()}
       </div>
     );
   }

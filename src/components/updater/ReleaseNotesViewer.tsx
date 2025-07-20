@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import {releaseNotesService, ReleaseNote, VersionFeatures} from '@/services/releaseNotesService';
 import {toast} from 'sonner';
+import MarkdownRenderer from '@/components/common/MarkdownRenderer';
 
 interface ReleaseNotesViewerProps {
     version: string;
@@ -75,103 +76,38 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
         }
     };
 
-    const formatReleaseContent = (content: string) => {
-        // 简单的 Markdown 到 JSX 转换
-        const lines = content.split('\n');
-        const elements: React.ReactNode[] = [];
-        let listItems: string[] = [];
-        let currentIndex = 0;
-
-        const flushListItems = () => {
-            if (listItems.length > 0) {
-                elements.push(
-                    <ul key={`list-${currentIndex++}`}
-                        className="list-disc list-inside space-y-1 my-3 text-sm text-muted-foreground">
-                        {listItems.map((item, index) => (
-                            <li key={index} className="ml-2">{item}</li>
-                        ))}
-                    </ul>
-                );
-                listItems = [];
-            }
-        };
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-
-            if (line === '') {
-                continue;
-            }
-
-            if (line.startsWith('### ')) {
-                flushListItems();
-                elements.push(
-                    <h3 key={`h3-${currentIndex++}`}
-                        className="text-lg font-semibold mt-6 mb-3 text-foreground flex items-center gap-2">
-                        {getIconForSection(line)}
-                        {line.replace('### ', '')}
-                    </h3>
-                );
-            } else if (line.startsWith('## ')) {
-                flushListItems();
-                elements.push(
-                    <h2 key={`h2-${currentIndex++}`}
-                        className="text-xl font-bold mt-6 mb-4 text-foreground flex items-center gap-2">
-                        {getIconForSection(line)}
-                        {line.replace('## ', '')}
-                    </h2>
-                );
-            } else if (line.startsWith('# ')) {
-                flushListItems();
-                if (showTitle) {
-                    elements.push(
-                        <h1 key={`h1-${currentIndex++}`} className="text-2xl font-bold mb-4 text-foreground">
-                            {line.replace('# ', '')}
-                        </h1>
-                    );
+    const processContentForMarkdown = (content: string) => {
+        // 如果不显示标题，则移除主标题
+        if (!showTitle) {
+            const lines = content.split('\n');
+            const processedLines = [];
+            let skipNextEmpty = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // 跳过主标题（以# 开头且不是##的行）
+                if (line.match(/^# [^#]/)) {
+                    skipNextEmpty = true;
+                    continue;
                 }
-            } else if (line.startsWith('- ') || line.startsWith('* ')) {
-                listItems.push(line.substring(2));
-            } else if (line.startsWith('---')) {
-                flushListItems();
-                elements.push(<Separator key={`sep-${currentIndex++}`} className="my-4"/>);
-            } else if (line.length > 0) {
-                flushListItems();
-                elements.push(
-                    <p key={`p-${currentIndex++}`} className="text-sm text-muted-foreground mb-2 leading-relaxed">
-                        {formatInlineElements(line)}
-                    </p>
-                );
+                // 跳过标题后的第一个空行
+                if (skipNextEmpty && line.trim() === '') {
+                    skipNextEmpty = false;
+                    continue;
+                }
+                skipNextEmpty = false;
+                processedLines.push(line);
             }
+            return processedLines.join('\n');
         }
-
-        flushListItems();
-        return elements;
+        return content;
     };
 
-    const formatInlineElements = (text: string): React.ReactNode => {
-        // 处理粗体文本
-        return text.replace(/\*\*(.*?)\*\*/g, (match, content) => content);
+    const handleInternalLinkClick = (filename: string) => {
+        // 处理内部文档链接点击（如果需要）
+        console.log('Internal link clicked:', filename);
     };
 
-    const getIconForSection = (sectionTitle: string) => {
-        const title = sectionTitle.toLowerCase();
-
-        if (title.includes('新功能') || title.includes('new') || title.includes('feature') || title.includes('🚀') || title.includes('✨')) {
-            return <Sparkles className="w-5 h-5 text-blue-500"/>;
-        }
-        if (title.includes('改进') || title.includes('优化') || title.includes('improve') || title.includes('enhance') || title.includes('🛠️')) {
-            return <Wrench className="w-5 h-5 text-green-500"/>;
-        }
-        if (title.includes('修复') || title.includes('bug') || title.includes('fix') || title.includes('🐛')) {
-            return <Bug className="w-5 h-5 text-red-500"/>;
-        }
-        if (title.includes('技术') || title.includes('technical') || title.includes('🔧')) {
-            return <Code className="w-5 h-5 text-purple-500"/>;
-        }
-
-        return null;
-    };
 
     if (loading) {
         return (
@@ -289,8 +225,12 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
 
             {/* 发布说明内容 */}
             <ScrollArea style={{maxHeight}} className="w-full">
-                <div className="pr-4">
-                    {formatReleaseContent(releaseNote.content)}
+                <div className="pr-4 pb-4">
+                    <MarkdownRenderer 
+                        content={processContentForMarkdown(releaseNote.content)}
+                        onInternalLinkClick={handleInternalLinkClick}
+                        className="text-sm"
+                    />
                 </div>
             </ScrollArea>
         </div>
