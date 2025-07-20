@@ -44,9 +44,9 @@ export class ConnectionResilienceService {
     consecutiveFailures: 0,
   };
 
-  private reconnectionTimeout?: NodeJS.Timeout;
+  private reconnectionTimeout?: ReturnType<typeof setTimeout>;
   private listeners: Array<(state: ConnectionState) => void> = [];
-  private heartbeatInterval?: NodeJS.Timeout;
+  private heartbeatInterval?: ReturnType<typeof setInterval>;
 
   private constructor() {
     this.setupNetworkEventListeners();

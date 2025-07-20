@@ -117,10 +117,6 @@ export const useUserPreferences = () => {
   const updatePreferences = useCallback(
     async (newPreferences: UserPreferences) => {
       try {
-        // 添加调用栈跟踪，帮助定位频繁调用的源头
-        const stack = new Error().stack;
-        console.log('updatePreferences 被调用，调用栈:', stack?.split('\n').slice(1, 4).join('\n'));
-
         await safeTauriInvoke('update_user_preferences', {
           preferences: newPreferences,
         });

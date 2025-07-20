@@ -95,7 +95,45 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
   // 拖拽状态跟踪
   const [isResizing, setIsResizing] = useState(false);
-  const resizeTimerRef = useRef<NodeJS.Timeout>();
+  const resizeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // 保存工作区设置到用户偏好
+  const saveWorkspaceSettings = useCallback(async () => {
+    if (!preferences) return;
+
+    const currentPanelSizes = {
+      ...preferences.workspace.panel_sizes,
+      'left-panel-collapsed': leftPanelCollapsed ? 1 : 0,
+      'bottom-panel-collapsed': bottomPanelCollapsed ? 1 : 0,
+    };
+
+    const currentPanelPositions = {
+      ...preferences.workspace.panel_positions,
+      'left-panel': leftPanelSize,
+      'bottom-panel': bottomPanelSize,
+    };
+
+    const updatedWorkspace = {
+      ...preferences.workspace,
+      layout: currentView,
+      panel_sizes: currentPanelSizes,
+      panel_positions: currentPanelPositions,
+    };
+
+    await updateWorkspaceSettings(updatedWorkspace);
+  }, [
+    preferences,
+    leftPanelCollapsed,
+    bottomPanelCollapsed,
+    currentView,
+    leftPanelSize,
+    bottomPanelSize,
+    updateWorkspaceSettings,
+  ]);
+
+  // 使用 ref 来存储 saveWorkspaceSettings 函数，避免依赖问题
+  const saveWorkspaceSettingsRef = useRef(saveWorkspaceSettings);
+  saveWorkspaceSettingsRef.current = saveWorkspaceSettings;
 
   // 智能面板大小处理函数
   const handleLeftPanelResize = useCallback((size: number) => {
@@ -110,9 +148,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 设置新的定时器，拖拽结束后保存
     resizeTimerRef.current = setTimeout(() => {
       setIsResizing(false);
-      saveWorkspaceSettings();
+      saveWorkspaceSettingsRef.current();
     }, 1000);
-  }, [saveWorkspaceSettings]);
+  }, []);
 
   const handleBottomPanelResize = useCallback((size: number) => {
     setBottomPanelSize(size);
@@ -126,9 +164,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 设置新的定时器，拖拽结束后保存
     resizeTimerRef.current = setTimeout(() => {
       setIsResizing(false);
-      saveWorkspaceSettings();
+      saveWorkspaceSettingsRef.current();
     }, 1000);
-  }, [saveWorkspaceSettings]);
+  }, []);
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -192,39 +230,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // 保存工作区设置到用户偏好
-  const saveWorkspaceSettings = useCallback(async () => {
-    if (!preferences) return;
 
-    const currentPanelSizes = {
-      ...preferences.workspace.panel_sizes,
-      'left-panel-collapsed': leftPanelCollapsed ? 1 : 0,
-      'bottom-panel-collapsed': bottomPanelCollapsed ? 1 : 0,
-    };
-
-    const currentPanelPositions = {
-      ...preferences.workspace.panel_positions,
-      'left-panel': leftPanelSize,
-      'bottom-panel': bottomPanelSize,
-    };
-
-    const updatedWorkspace = {
-      ...preferences.workspace,
-      layout: currentView,
-      panel_sizes: currentPanelSizes,
-      panel_positions: currentPanelPositions,
-    };
-
-    await updateWorkspaceSettings(updatedWorkspace);
-  }, [
-    preferences,
-    leftPanelCollapsed,
-    bottomPanelCollapsed,
-    currentView,
-    leftPanelSize,
-    bottomPanelSize,
-    updateWorkspaceSettings,
-  ]);
 
   // 监听路径变化，自动切换视图
   useEffect(() => {

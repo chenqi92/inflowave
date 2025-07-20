@@ -203,7 +203,7 @@ export { Timeline, TimelineItem } from './Timeline';
 export type {
   TimelineProps,
   TimelineItemProps,
-  TimelineItemType,
+  TimelineItemData,
 } from './Timeline';
 
 export { Tree } from './Tree';

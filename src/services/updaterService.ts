@@ -7,7 +7,7 @@ import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS } from '@/types/u
 import { getAppVersion } from '@/utils/version';
 
 class UpdaterService {
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private settings: UpdaterSettings = { ...DEFAULT_UPDATER_SETTINGS };
 
   /**

@@ -437,11 +437,25 @@ pub async fn write_binary_file(path: String, data: String) -> Result<(), String>
     }
 }
 
+/// 创建目录
+#[tauri::command]
+pub async fn create_dir(path: String) -> Result<(), String> {
+    debug!("创建目录: {}", path);
+
+    std::fs::create_dir_all(&path).map_err(|e| {
+        error!("创建目录失败: {}: {}", path, e);
+        format!("创建目录失败: {}", e)
+    })?;
+
+    info!("成功创建目录: {}", path);
+    Ok(())
+}
+
 /// 获取用户下载目录
 #[tauri::command]
 pub async fn get_downloads_dir() -> Result<String, String> {
     debug!("获取下载目录");
-    
+
     match dirs::download_dir() {
         Some(dir) => {
             let path = dir.to_string_lossy().to_string();
@@ -453,7 +467,7 @@ pub async fn get_downloads_dir() -> Result<String, String> {
                 .map(|p| p.join("Downloads"))
                 .or_else(|| dirs::desktop_dir())
                 .unwrap_or_else(|| std::path::PathBuf::from("."));
-            
+
             let path = fallback.to_string_lossy().to_string();
             info!("使用备用下载目录: {}", path);
             Ok(path)

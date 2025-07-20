@@ -1,6 +1,6 @@
 [package]
 name = "inflowave"
-version = "1.0.0"
+version = "0.1.5"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"

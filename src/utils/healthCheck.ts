@@ -44,7 +44,7 @@ export async function performHealthCheck(): Promise<HealthCheckResult | null> {
  * 定期健康检查
  */
 export class PerformanceHealthMonitor {
-  private intervalId: NodeJS.Timeout | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
   private isRunning = false;
 
   /**

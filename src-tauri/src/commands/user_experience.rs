@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager, State, Window};
 use tauri_plugin_notification::NotificationExt;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -94,7 +94,12 @@ pub async fn update_user_preferences(
     preferences_storage: State<'_, UserPreferencesStorage>,
     preferences: UserPreferences,
 ) -> Result<(), String> {
+    use std::sync::atomic::{AtomicU64, AtomicU32, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    // 使用原子类型替代可变静态变量，避免 unsafe 代码
+    static LAST_CALL_TIME: AtomicU64 = AtomicU64::new(0);
+    static CALL_COUNT: AtomicU32 = AtomicU32::new(0);
 
     // 添加调用频率监控
     let now = SystemTime::now()
@@ -102,23 +107,17 @@ pub async fn update_user_preferences(
         .unwrap()
         .as_secs();
 
-    static mut LAST_CALL_TIME: u64 = 0;
-    static mut CALL_COUNT: u32 = 0;
+    let call_count = CALL_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+    let last_time = LAST_CALL_TIME.swap(now, Ordering::Relaxed);
+    let time_diff = now.saturating_sub(last_time);
 
-    unsafe {
-        CALL_COUNT += 1;
-        let time_diff = now - LAST_CALL_TIME;
+    if time_diff < 5 && last_time > 0 {
+        warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}", time_diff, call_count);
+    }
 
-        if time_diff < 5 {
-            warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}", time_diff, CALL_COUNT);
-        }
-
-        LAST_CALL_TIME = now;
-
-        // 每100次调用输出一次统计
-        if CALL_COUNT % 100 == 0 {
-            info!("用户偏好更新统计: 总调用次数 {}", CALL_COUNT);
-        }
+    // 每100次调用输出一次统计
+    if call_count % 100 == 0 {
+        info!("用户偏好更新统计: 总调用次数 {}", call_count);
     }
 
     let mut storage = preferences_storage.lock().map_err(|e| {

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Clock, CheckCircle, XCircle, AlertCircle, Circle } from 'lucide-react';
 
-interface TimelineItem {
+interface TimelineItemData {
   key?: string;
   children?: React.ReactNode;
   color?: 'blue' | 'green' | 'red' | 'yellow' | 'gray' | string;
@@ -17,7 +17,7 @@ interface TimelineProps {
   pendingDot?: React.ReactNode;
   reverse?: boolean;
   mode?: 'left' | 'alternate' | 'right';
-  items?: TimelineItem[];
+  items?: TimelineItemData[];
   children?: React.ReactNode;
 }
 
@@ -56,7 +56,7 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
 
     // 添加pending项
     if (pending) {
-      const pendingItem: TimelineItem = {
+      const pendingItem: TimelineItemData = {
         key: 'pending',
         children: typeof pending === 'boolean' ? null : pending,
         dot: pendingDot || <Clock className='h-3 w-3 animate-spin' />,
@@ -89,14 +89,14 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
       }
     };
 
-    const getItemPosition = (item: TimelineItem, index: number) => {
+    const getItemPosition = (item: TimelineItemData, index: number) => {
       if (mode === 'alternate') {
         return item.position || (index % 2 === 0 ? 'left' : 'right');
       }
       return mode;
     };
 
-    const renderItem = (item: TimelineItem, index: number, isLast: boolean) => {
+    const renderItem = (item: TimelineItemData, index: number, isLast: boolean) => {
       const position = getItemPosition(item, index);
       const isRight = position === 'right';
 
@@ -218,5 +218,5 @@ export { Timeline, TimelineItem };
 export type {
   TimelineProps,
   TimelineItemProps,
-  TimelineItem as TimelineItemType,
+  TimelineItemData,
 };

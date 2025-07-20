@@ -618,6 +618,7 @@ async fn main() {
             read_file,
             write_file,
             write_binary_file,
+            create_dir,
             get_downloads_dir,
 
             // Data write operations

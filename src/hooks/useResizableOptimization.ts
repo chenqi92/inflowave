@@ -62,7 +62,7 @@ export const useResizableOptimization = () => {
  * 用于防抖的 hook，在拖动时减少不必要的重新渲染
  */
 export const useResizeDebounce = (callback: () => void, delay: number = 16) => {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const rafRef = useRef<number>();
 
   const debouncedCallback = useCallback(() => {
