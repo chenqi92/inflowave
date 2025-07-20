@@ -67,6 +67,8 @@ import {
   Eye,
   Database,
   Zap,
+  PlayCircle,
+  PauseCircle,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import {
@@ -347,6 +349,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       const [metricsResult, _slowQueryResult] = await Promise.all([
         safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
           connectionId: activeConnectionId,
+          monitoringMode,
         }),
         safeTauriInvoke<SlowQueryAnalysisResult>('get_slow_query_analysis', {
           connectionId: activeConnectionId,
@@ -489,28 +492,68 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     }
   }, [autoRefresh, refreshInterval, getBottlenecks]);
 
+  // 监控状态管理
+  const [isMonitoringActive, setIsMonitoringActive] = useState(false);
+
+  // 同步监控状态
+  const syncMonitoringStatus = useCallback(async () => {
+    try {
+      const status = await safeTauriInvoke<boolean>('get_system_monitoring_status');
+      setIsMonitoringActive(status);
+    } catch (error) {
+      console.error('获取监控状态失败:', error);
+    }
+  }, []);
+
+  // 启动监控的函数
+  const startMonitoring = useCallback(async () => {
+    try {
+      await safeTauriInvoke<void>('start_system_monitoring', {});
+      await syncMonitoringStatus(); // 同步状态
+      console.log('系统监控已启动');
+    } catch (error) {
+      console.error('启动系统监控失败:', error);
+      showMessage.error('启动系统监控失败');
+    }
+  }, [syncMonitoringStatus]);
+
+  // 停止监控的函数
+  const stopMonitoring = useCallback(async () => {
+    try {
+      await safeTauriInvoke<void>('stop_system_monitoring', {});
+      await syncMonitoringStatus(); // 同步状态
+      console.log('系统监控已停止');
+    } catch (error) {
+      console.error('停止系统监控失败:', error);
+    }
+  }, [syncMonitoringStatus]);
+
+  // 初始化监控状态
+  useEffect(() => {
+    syncMonitoringStatus();
+  }, [syncMonitoringStatus]);
+
   // 初始加载性能数据并启动监控
   useEffect(() => {
     if (activeConnectionId) {
-      // 启动系统监控
-      safeTauriInvoke<void>('start_system_monitoring', {})
-        .then(() => {
-          console.log('系统监控已启动');
+      // 根据监控模式决定是否启动系统监控
+      if (monitoringMode === 'local') {
+        startMonitoring().then(() => {
           getBottlenecks();
-        })
-        .catch(error => {
-          console.error('启动系统监控失败:', error);
-          getBottlenecks(); // 即使监控启动失败也要加载数据
         });
+      } else {
+        // 远程监控模式不需要启动本地系统监控
+        getBottlenecks();
+      }
     }
-    
+
     // 组件卸载时停止监控
     return () => {
-      safeTauriInvoke<void>('stop_system_monitoring', {})
-        .then(() => console.log('系统监控已停止'))
-        .catch(error => console.error('停止系统监控失败:', error));
+      if (monitoringMode === 'local' && isMonitoringActive) {
+        stopMonitoring();
+      }
     };
-  }, [activeConnectionId, getBottlenecks]);
+  }, [activeConnectionId, monitoringMode, startMonitoring, stopMonitoring, getBottlenecks, isMonitoringActive]);
 
   // 获取严重程度颜色
   const getSeverityVariant = (severity: string) => {
@@ -1589,12 +1632,36 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardTitle className='flex items-center gap-2'>
               <Monitor className='w-5 h-5' />
               性能瓶颈诊断
+              <div className='flex items-center gap-2 ml-4'>
+                <div className={`w-2 h-2 rounded-full ${
+                  monitoringMode === 'local'
+                    ? (isMonitoringActive ? 'bg-green-500' : 'bg-gray-400')
+                    : 'bg-blue-500'
+                }`} />
+                <span className='text-sm text-muted-foreground'>
+                  {monitoringMode === 'local'
+                    ? (isMonitoringActive ? '本地监控运行中' : '本地监控已停止')
+                    : '远程监控模式'
+                  }
+                </span>
+              </div>
             </CardTitle>
             <div className='flex gap-2'>
               <Select
                 value={monitoringMode}
                 onValueChange={async (value: 'local' | 'remote') => {
+                  // 先停止当前监控
+                  if (isMonitoringActive) {
+                    await stopMonitoring();
+                  }
+
                   setMonitoringMode(value);
+
+                  // 根据新模式启动相应监控
+                  if (value === 'local') {
+                    await startMonitoring();
+                  }
+
                   // 保存到设置
                   try {
                     const settings = await safeTauriInvoke<{
@@ -1610,9 +1677,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                         default_mode: value,
                       },
                     });
+
+                    showMessage.success(`已切换到${value === 'local' ? '本地' : '远程'}监控模式`);
                   } catch (error) {
                     console.warn('Failed to save monitoring mode:', error);
+                    showMessage.error('保存监控设置失败');
                   }
+
+                  // 刷新数据
+                  getBottlenecks();
                 }}
               >
                 <SelectTrigger className='w-[120px]'>
@@ -1629,9 +1702,29 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 onClick={getBottlenecks}
                 disabled={loading}
               >
-                <RefreshCw className='w-4 h-4 mr-2' />
-                刷新
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                刷新数据
               </Button>
+              {monitoringMode === 'local' && (
+                <Button
+                  size='sm'
+                  variant={isMonitoringActive ? 'destructive' : 'default'}
+                  onClick={isMonitoringActive ? stopMonitoring : startMonitoring}
+                  disabled={loading}
+                >
+                  {isMonitoringActive ? (
+                    <>
+                      <PauseCircle className='w-4 h-4 mr-2' />
+                      停止监控
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className='w-4 h-4 mr-2' />
+                      启动监控
+                    </>
+                  )}
+                </Button>
+              )}
               <Button
                 size='sm'
                 variant='outline'
@@ -1696,6 +1789,24 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 {renderOverview()}
               </TabsContent>
               <TabsContent value='basic' className='mt-6'>
+                <div className='mb-4 p-4 bg-muted/50 rounded-lg'>
+                  <div className='flex items-center gap-2 mb-2'>
+                    <div className={`w-3 h-3 rounded-full ${
+                      monitoringMode === 'local'
+                        ? (isMonitoringActive ? 'bg-green-500' : 'bg-gray-400')
+                        : 'bg-blue-500'
+                    }`} />
+                    <Text className='font-medium'>
+                      当前监控模式：{monitoringMode === 'local' ? '本地监控' : '远程监控'}
+                    </Text>
+                  </div>
+                  <Text className='text-sm text-muted-foreground'>
+                    {monitoringMode === 'local'
+                      ? '正在监控本地系统资源使用情况，包括CPU、内存、磁盘和网络'
+                      : '正在监控远程InfluxDB服务器的性能指标和系统状态'
+                    }
+                  </Text>
+                </div>
                 {renderBasicMonitoring()}
               </TabsContent>
               <TabsContent value='metrics' className='mt-6'>

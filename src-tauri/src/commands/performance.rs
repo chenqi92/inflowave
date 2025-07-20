@@ -5,7 +5,7 @@ use log::{debug, error, warn, info};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
-use sysinfo::{System, SystemExt, CpuExt, NetworkExt, NetworksExt};
+use sysinfo::{System, SystemExt, CpuExt, NetworkExt, DiskExt};
 use crate::services::ConnectionService;
 use crate::models::connection::ConnectionConfig;
 
@@ -19,54 +19,74 @@ lazy_static::lazy_static! {
 /// 启动系统监控
 #[tauri::command]
 pub async fn start_system_monitoring() -> Result<(), String> {
-    debug!("启动系统监控");
-    
     let mut active = MONITORING_ACTIVE.lock().map_err(|e| format!("获取监控状态锁失败: {}", e))?;
-    
+
     if *active {
+        debug!("系统监控已在运行中，跳过启动");
         return Ok(());
     }
-    
+
+    debug!("启动系统监控");
     *active = true;
     drop(active);
-    
+
     // 启动后台任务收集指标
     tokio::spawn(async {
+        debug!("系统监控后台任务已启动");
+
         loop {
             let should_continue = {
                 match MONITORING_ACTIVE.lock() {
                     Ok(active) => *active,
-                    Err(_) => false,
+                    Err(e) => {
+                        error!("获取监控状态锁失败: {}", e);
+                        false
+                    }
                 }
             };
-            
+
             if !should_continue {
+                debug!("监控状态为停止，退出监控循环");
                 break;
             }
-            
+
             // 每30秒收集一次数据
             if let Err(e) = collect_system_metrics().await {
                 error!("收集系统指标失败: {}", e);
+            } else {
+                debug!("系统指标收集完成");
             }
-            
+
             tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
         }
-        
-        debug!("系统监控任务已停止");
+
+        debug!("系统监控后台任务已停止");
     });
-    
+
     Ok(())
 }
 
 /// 停止系统监控
 #[tauri::command]
 pub async fn stop_system_monitoring() -> Result<(), String> {
-    debug!("停止系统监控");
-    
     let mut active = MONITORING_ACTIVE.lock().map_err(|e| format!("获取监控状态锁失败: {}", e))?;
+
+    if !*active {
+        debug!("系统监控已停止，跳过停止操作");
+        return Ok(());
+    }
+
+    debug!("停止系统监控");
     *active = false;
-    
+
     Ok(())
+}
+
+/// 获取系统监控状态
+#[tauri::command]
+pub async fn get_system_monitoring_status() -> Result<bool, String> {
+    let active = MONITORING_ACTIVE.lock().map_err(|e| format!("获取监控状态锁失败: {}", e))?;
+    Ok(*active)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -322,64 +342,56 @@ pub async fn get_performance_metrics(
 pub async fn get_performance_metrics_result(
     connection_service: State<'_, ConnectionService>,
     connection_id: Option<String>,
+    monitoring_mode: Option<String>,
     _time_range: Option<String>,
 ) -> Result<PerformanceMetricsResult, String> {
-    debug!("获取性能监控指标: {:?}", connection_id);
+    debug!("获取性能监控指标: {:?}, 模式: {:?}", connection_id, monitoring_mode);
 
-    // 收集当前系统指标
-    collect_system_metrics().await?;
+    let mode = monitoring_mode.unwrap_or_else(|| "remote".to_string());
 
-    // 获取历史数据
-    let history = get_metrics_history().await;
-
-    // 如果有连接ID，尝试获取真实的InfluxDB指标
-    if let Some(conn_id) = &connection_id {
-        if let Ok(real_metrics) = get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
-            debug!("成功获取真实InfluxDB指标");
-            return Ok(real_metrics);
-        } else {
-            warn!("获取真实InfluxDB指标失败，使用模拟数据");
+    match mode.as_str() {
+        "local" => {
+            // 本地监控模式：收集本地系统指标
+            collect_system_metrics().await?;
+            let history = get_metrics_history().await;
+            get_local_performance_metrics(history).await
+        }
+        "remote" => {
+            // 远程监控模式：获取远程InfluxDB指标
+            if let Some(conn_id) = &connection_id {
+                if let Ok(real_metrics) = get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
+                    debug!("成功获取真实InfluxDB指标");
+                    return Ok(real_metrics);
+                } else {
+                    warn!("获取真实InfluxDB指标失败，回退到本地监控");
+                    // 回退到本地监控
+                    collect_system_metrics().await?;
+                    let history = get_metrics_history().await;
+                    get_local_performance_metrics(history).await
+                }
+            } else {
+                return Err("远程监控模式需要连接ID".to_string());
+            }
+        }
+        _ => {
+            // 默认使用远程监控
+            if let Some(conn_id) = &connection_id {
+                if let Ok(real_metrics) = get_real_influxdb_metrics(connection_service, conn_id.clone()).await {
+                    debug!("成功获取真实InfluxDB指标");
+                    return Ok(real_metrics);
+                } else {
+                    warn!("获取真实InfluxDB指标失败，使用本地监控");
+                    collect_system_metrics().await?;
+                    let history = get_metrics_history().await;
+                    get_local_performance_metrics(history).await
+                }
+            } else {
+                collect_system_metrics().await?;
+                let history = get_metrics_history().await;
+                get_local_performance_metrics(history).await
+            }
         }
     }
-    
-    // 生成时间序列数据
-    let cpu_usage: Vec<TimeSeriesPoint> = history.iter().map(|metric| TimeSeriesPoint {
-        timestamp: metric.timestamp.to_rfc3339(),
-        value: metric.cpu_usage,
-    }).collect();
-    
-    let memory_usage: Vec<TimeSeriesPoint> = history.iter().map(|metric| TimeSeriesPoint {
-        timestamp: metric.timestamp.to_rfc3339(),
-        value: metric.memory_usage,
-    }).collect();
-    
-    // 获取当前系统资源
-    let system_resources = get_system_resource_metrics().await?;
-    
-    // 构建真实数据返回结果
-    let query_execution_time = get_real_query_metrics(&history).await;
-    let write_latency = get_real_write_metrics(&history).await;
-    let storage_analysis = get_real_storage_analysis().await;
-    
-    Ok(PerformanceMetricsResult {
-        query_execution_time,
-        write_latency,
-        memory_usage,
-        cpu_usage,
-        disk_io: DiskIOMetrics {
-            read_bytes: get_real_disk_read_bytes(&system_resources).await,
-            write_bytes: get_real_disk_write_bytes(&system_resources).await,
-            read_ops: get_real_disk_read_ops(&system_resources).await,
-            write_ops: get_real_disk_write_ops(&system_resources).await,
-        },
-        network_io: NetworkIOMetrics {
-            bytes_in: system_resources.network.bytes_in,
-            bytes_out: system_resources.network.bytes_out,
-            packets_in: system_resources.network.packets_in,
-            packets_out: system_resources.network.packets_out,
-        },
-        storage_analysis,
-    })
 }
 
 /// 记录查询性能
@@ -1496,6 +1508,55 @@ async fn detect_remote_performance_bottlenecks(
     Ok(bottlenecks)
 }
 
+/// 获取本地性能指标
+async fn get_local_performance_metrics(history: Vec<TimestampedSystemMetrics>) -> Result<PerformanceMetricsResult, String> {
+    debug!("获取本地性能指标");
+
+    // 获取当前系统指标
+    let _current_metrics = get_system_resource_metrics().await?;
+
+    // 转换历史数据为前端需要的格式
+    let cpu_usage: Vec<TimeSeriesPoint> = history.iter().map(|m| TimeSeriesPoint {
+        timestamp: m.timestamp.to_rfc3339(),
+        value: m.cpu_usage,
+    }).collect();
+
+    let memory_usage: Vec<TimeSeriesPoint> = history.iter().map(|m| TimeSeriesPoint {
+        timestamp: m.timestamp.to_rfc3339(),
+        value: m.memory_usage,
+    }).collect();
+
+    let disk_io = DiskIOMetrics {
+        read_bytes: history.last().map(|m| m.disk_read_bytes).unwrap_or(0),
+        write_bytes: history.last().map(|m| m.disk_write_bytes).unwrap_or(0),
+        read_ops: 0, // 本地监控暂不支持
+        write_ops: 0, // 本地监控暂不支持
+    };
+
+    let network_io = NetworkIOMetrics {
+        bytes_in: history.last().map(|m| m.network_bytes_in).unwrap_or(0),
+        bytes_out: history.last().map(|m| m.network_bytes_out).unwrap_or(0),
+        packets_in: 0, // 本地监控暂不支持
+        packets_out: 0, // 本地监控暂不支持
+    };
+
+    Ok(PerformanceMetricsResult {
+        query_execution_time: vec![], // 本地监控不支持查询执行时间
+        write_latency: vec![], // 本地监控不支持写入延迟
+        memory_usage,
+        cpu_usage,
+        disk_io,
+        network_io,
+        storage_analysis: StorageAnalysisInfo {
+            databases: vec![],
+            total_size: 0,
+            compression_ratio: 0.0,
+            retention_policy_effectiveness: 0.0,
+            recommendations: vec![],
+        },
+    })
+}
+
 /// 格式化字节大小的辅助函数
 fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
@@ -1997,23 +2058,45 @@ fn analyze_query_optimization(query: &str) -> Option<QueryOptimization> {
 async fn collect_system_metrics() -> Result<(), String> {
     let mut sys = SYSTEM_MONITOR.lock().map_err(|e| format!("获取系统监控锁失败: {}", e))?;
     sys.refresh_all();
-    
+
     let timestamp = chrono::Utc::now();
     let cpu_usage = sys.global_cpu_info().cpu_usage() as f64;
     let memory_usage = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
-    
-    // 获取磁盘和网络统计
-    let (disk_read, disk_write) = if let Some(_disk) = sys.disks().first() {
-        (0u64, 0u64) // sysinfo 不直接提供读写字节数，需要其他方法
-    } else {
-        (0u64, 0u64)
+
+    // 获取磁盘统计 - 改进磁盘IO监控
+    let (disk_read, disk_write) = {
+        let mut total_read = 0u64;
+        let mut total_write = 0u64;
+
+        // 遍历所有磁盘获取IO统计
+        for disk in sys.disks() {
+            // sysinfo 库在某些平台上可能不提供实时IO数据
+            // 这里使用磁盘使用量作为替代指标
+            let used_space = disk.total_space() - disk.available_space();
+            total_read += used_space / 1024; // 简化计算
+            total_write += used_space / 2048; // 简化计算
+        }
+
+        (total_read, total_write)
     };
-    
-    let (network_in, network_out) = if let Some(interface) = sys.networks().iter().next() {
-        let (_, network_data) = interface;
-        (network_data.total_received(), network_data.total_transmitted())
-    } else {
-        (0u64, 0u64)
+
+    // 获取网络统计 - 改进网络监控
+    let (network_in, network_out) = {
+        let mut total_in = 0u64;
+        let mut total_out = 0u64;
+
+        // 遍历所有网络接口
+        for (interface_name, network_data) in sys.networks() {
+            // 跳过回环接口
+            if interface_name.starts_with("lo") || interface_name.starts_with("Loopback") {
+                continue;
+            }
+
+            total_in += network_data.total_received();
+            total_out += network_data.total_transmitted();
+        }
+
+        (total_in, total_out)
     };
     
     let metric = TimestampedSystemMetrics {

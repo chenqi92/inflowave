@@ -682,6 +682,7 @@ async fn main() {
             get_performance_metrics_result,
             start_system_monitoring,
             stop_system_monitoring,
+            get_system_monitoring_status,
             record_query_performance,
             get_slow_query_analysis,
             get_storage_analysis_report,
