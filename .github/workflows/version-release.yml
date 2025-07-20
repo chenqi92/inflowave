@@ -77,9 +77,37 @@ jobs:
             fi
           fi
 
+  # 准备发布说明
+  prepare-release-notes:
+    runs-on: ubuntu-latest
+    if: needs.detect-version.outputs.should_release == 'true'
+    needs: detect-version
+    outputs:
+      release_body: ${{ steps.generate.outputs.release_body }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      
+      - name: Generate release notes
+        id: generate
+        run: |
+          # 使用外部脚本生成release notes
+          RELEASE_BODY=$(node scripts/generate-release-notes.cjs)
+          
+          # 输出到GitHub Actions
+          {
+            echo 'release_body<<EOF'
+            echo "$RELEASE_BODY"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
   # 全平台全架构构建
   build-release:
-    needs: detect-version
+    needs: [detect-version, prepare-release-notes]
     if: needs.detect-version.outputs.should_release == 'true'
     strategy:
       fail-fast: false
@@ -162,53 +190,7 @@ jobs:
         with:
           tagName: v${{ needs.detect-version.outputs.version }}
           releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
-          releaseBody: |
-            ## 🚀 InfloWave v${{ needs.detect-version.outputs.version }}
-            
-            现代化的时序数据库管理工具，提供直观的用户界面和强大的数据分析功能。
-            
-            ### ✨ 主要特性
-            - 🔒 **安全稳定** - 采用 IPC 通信，无端口冲突风险
-            - ⚡ **性能优异** - 原生通信机制，响应速度更快
-            - 🛡️ **隐私保护** - 不暴露网络端口，数据更安全
-            - 📦 **体积精简** - 最小化依赖，安装包更小
-            
-            ### 💻 支持平台
-            
-            #### Windows 用户
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x64.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x64.msi)**  
-            - 适用于 Windows 10/11 (64位系统)  
-            - 推荐给大部分用户  
-            
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x86.msi](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x86.msi)**  
-            - 适用于较老的32位 Windows 系统  
-            
-            #### macOS 用户
-            🍎 **Apple Silicon Mac (M1/M2/M3芯片)**  
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_aarch64.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_aarch64.dmg)**  
-            - 适用于2020年后发布的 Mac (苹果芯片)  
-            - 性能最优，原生支持  
-            - ⚠️ **无法在 Intel Mac 上运行**  
-            
-            💻 **Intel Mac**  
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_x64.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_x64.dmg)**  
-            - 适用于2020年前的 Intel 处理器 Mac  
-            - 不支持 Apple Silicon 芯片  
-            
-            #### Linux 用户
-            📦 **Debian/Ubuntu 系列**  
-            📥 **[inflowave_${{ needs.detect-version.outputs.version }}_amd64.deb](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/inflowave_${{ needs.detect-version.outputs.version }}_amd64.deb)**  
-            - 使用 `sudo dpkg -i` 命令安装  
-            
-            🗂️ **通用 Linux**  
-            📥 **[InfloWave_${{ needs.detect-version.outputs.version }}_amd64.AppImage](https://github.com/${{ github.repository }}/releases/download/v${{ needs.detect-version.outputs.version }}/InfloWave_${{ needs.detect-version.outputs.version }}_amd64.AppImage)**  
-            - 免安装，下载后直接运行  
-            - 适用于大部分 x64 Linux 发行版  
-            
-            ### 📝 安装说明
-            1. **Windows**: 下载 .msi 文件后双击安装
-            2. **macOS**: 下载 .dmg 文件，双击打开后拖入 Applications 文件夹
-            3. **Linux**: 下载 .deb 或 .AppImage 文件，按照上述说明操作
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.rust_target }}

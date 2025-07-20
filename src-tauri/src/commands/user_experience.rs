@@ -94,15 +94,39 @@ pub async fn update_user_preferences(
     preferences_storage: State<'_, UserPreferencesStorage>,
     preferences: UserPreferences,
 ) -> Result<(), String> {
-    // debug!("更新用户偏好设置");
-    
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // 添加调用频率监控
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    static mut LAST_CALL_TIME: u64 = 0;
+    static mut CALL_COUNT: u32 = 0;
+
+    unsafe {
+        CALL_COUNT += 1;
+        let time_diff = now - LAST_CALL_TIME;
+
+        if time_diff < 5 {
+            warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}", time_diff, CALL_COUNT);
+        }
+
+        LAST_CALL_TIME = now;
+
+        // 每100次调用输出一次统计
+        if CALL_COUNT % 100 == 0 {
+            info!("用户偏好更新统计: 总调用次数 {}", CALL_COUNT);
+        }
+    }
+
     let mut storage = preferences_storage.lock().map_err(|e| {
         error!("获取偏好设置存储锁失败: {}", e);
         "存储访问失败".to_string()
     })?;
-    
+
     *storage = preferences;
-    // info!("用户偏好设置已更新");
     Ok(())
 }
 

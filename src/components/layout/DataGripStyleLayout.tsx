@@ -93,6 +93,43 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
   });
 
+  // 拖拽状态跟踪
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeTimerRef = useRef<NodeJS.Timeout>();
+
+  // 智能面板大小处理函数
+  const handleLeftPanelResize = useCallback((size: number) => {
+    setLeftPanelSize(size);
+    setIsResizing(true);
+
+    // 清除之前的定时器
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
+    }
+
+    // 设置新的定时器，拖拽结束后保存
+    resizeTimerRef.current = setTimeout(() => {
+      setIsResizing(false);
+      saveWorkspaceSettings();
+    }, 1000);
+  }, [saveWorkspaceSettings]);
+
+  const handleBottomPanelResize = useCallback((size: number) => {
+    setBottomPanelSize(size);
+    setIsResizing(true);
+
+    // 清除之前的定时器
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
+    }
+
+    // 设置新的定时器，拖拽结束后保存
+    resizeTimerRef.current = setTimeout(() => {
+      setIsResizing(false);
+      saveWorkspaceSettings();
+    }, 1000);
+  }, [saveWorkspaceSettings]);
+
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
@@ -226,7 +263,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }
   }, [preferences, location.pathname]);
 
-  // 当布局状态改变时自动保存
+  // 当布局状态改变时自动保存（排除面板大小变化）
   useEffect(() => {
     const timer = setTimeout(() => {
       saveWorkspaceSettings();
@@ -237,10 +274,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     leftPanelCollapsed,
     bottomPanelCollapsed,
     currentView,
-    leftPanelSize,
-    bottomPanelSize,
     saveWorkspaceSettings,
   ]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (resizeTimerRef.current) {
+        clearTimeout(resizeTimerRef.current);
+      }
+    };
+  }, []);
 
   // 监听全局刷新事件
   useEffect(() => {
@@ -464,7 +508,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     defaultSize={bottomPanelSize}
                     minSize={25}
                     maxSize={70}
-                    onResize={size => setBottomPanelSize(size)}
+                    onResize={handleBottomPanelResize}
                   >
                     <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
                       <EnhancedResultPanel
@@ -525,7 +569,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             maxSize={40}
             collapsible={true}
             collapsedSize={3}
-            onResize={size => setLeftPanelSize(size)}
+            onResize={handleLeftPanelResize}
             className={cn(
               'bg-background border-r border-border transition-all duration-200',
               leftPanelCollapsed && 'min-w-12'

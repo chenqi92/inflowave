@@ -14,7 +14,36 @@ permissions:
   actions: read
 
 jobs:
+  # 准备发布说明 (仅在标签推送或手动触发时运行)
+  prepare-release-notes:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    outputs:
+      release_body: ${{ steps.generate.outputs.release_body }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      
+      - name: Generate release notes
+        id: generate
+        run: |
+          # 使用外部脚本生成开发版本的release notes
+          RELEASE_BODY=$(node scripts/generate-release-notes.cjs --dev)
+          
+          # 输出到GitHub Actions
+          {
+            echo 'release_body<<EOF'
+            echo "$RELEASE_BODY"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
   build:
+    if: github.event_name != 'pull_request'
+    needs: [prepare-release-notes]
     strategy:
       fail-fast: false
       matrix:
@@ -80,16 +109,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'InfloWave v__VERSION__'
-          releaseBody: |
-            InfloWave v__VERSION__
-
-            A modern time-series database management tool:
-            - Frontend and backend communicate via IPC
-            - Optimal performance and security
-            - Cross-platform support
-            - Modern UI with shadcn/ui components
-
-            See the assets below to download and install this version.
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

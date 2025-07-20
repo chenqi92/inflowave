@@ -57,7 +57,11 @@
     "clean:deps": "rm -rf node_modules && npm install",
     "clean:all": "npm run clean:build && npm run clean:deps && npm run clean:tauri",
     "clean:tauri": "cd src-tauri && cargo clean && cd .. && rm -rf src-tauri/target",
-    "reset": "npm run clean:all && npm run build"
+    "reset": "npm run clean:all && npm run build",
+    "release:notes": "node scripts/generate-release-notes.cjs",
+    "release:notes:dev": "node scripts/generate-release-notes.cjs --dev",
+    "release:notes:save": "node scripts/generate-release-notes.cjs --output=release-notes-output.md",
+    "release:notes:dev:save": "node scripts/generate-release-notes.cjs --dev --output=release-notes-dev.md"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

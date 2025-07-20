@@ -33,6 +33,19 @@ import { AdvancedDataTable } from '@/components/ui/AdvancedDataTable';
 import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
+
+// 生成带时间戳的文件名
+const generateTimestampedFilename = (baseName: string, format: string): string => {
+  const now = new Date();
+  const timestamp = now.toISOString()
+    .replace(/:/g, '-')  // 替换冒号为连字符
+    .replace(/\./g, '-') // 替换点为连字符
+    .slice(0, 19);       // 只保留到秒，格式：2025-07-20T09-30-45
+
+  const extension = format === 'excel' ? 'xlsx' : format;
+  return `${baseName}_${timestamp}.${extension}`;
+};
+
 import {
   Play,
   BarChart3,
@@ -478,8 +491,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       // 生成默认文件名
       const defaultTableName = series.name || `query_result_${resultIndex + 1}`;
-      const fileExtension = options.format === 'excel' ? 'xlsx' : options.format;
-      const defaultFilename = options.filename || `${defaultTableName}.${fileExtension}`;
+      const defaultFilename = options.filename || generateTimestampedFilename(defaultTableName, options.format);
 
       // 调试日志
       console.log('EnhancedResultPanel导出调试:', {
@@ -487,7 +499,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         seriesName: series.name,
         defaultTableName,
         optionsFilename: options.filename,
-        fileExtension,
         finalDefaultFilename: defaultFilename,
         format: options.format
       });

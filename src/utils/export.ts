@@ -25,15 +25,35 @@ export const convertToCSV = (
     // 处理series数据
     if (resultItem.series) {
       for (const series of resultItem.series) {
-        // 添加标题行
-        if (options.includeHeaders && series.columns) {
-          lines.push(series.columns.join(delimiter));
-        }
+        if (series.columns && series.values) {
+          // 过滤掉行号列和其他非数据列
+          const filteredColumns: string[] = [];
+          const filteredColumnIndices: number[] = [];
 
-        // 添加数据行
-        if (series.values) {
+          series.columns.forEach((col, index) => {
+            // 过滤掉行号列（通常是 "#" 或 "序号" 等）
+            if (col !== '#' && col !== '序号' && col !== 'index' && col !== 'rowIndex') {
+              filteredColumns.push(col);
+              filteredColumnIndices.push(index);
+            }
+          });
+
+          // 如果没有有效列，跳过
+          if (filteredColumns.length === 0) {
+            continue;
+          }
+
+          // 添加标题行
+          if (options.includeHeaders) {
+            lines.push(filteredColumns.join(delimiter));
+          }
+
+          // 添加数据行
           for (const row of series.values) {
-            const csvRow = row
+            // 只取过滤后的列对应的值
+            const filteredValues = filteredColumnIndices.map(index => row[index]);
+
+            const csvRow = filteredValues
               .map((value: unknown) => {
                 if (value === null || value === undefined) {
                   return '';
@@ -77,12 +97,30 @@ export const convertToJSON = (
     if (resultItem.series) {
       for (const series of resultItem.series) {
         if (series.values && series.columns) {
+          // 过滤掉行号列和其他非数据列
+          const filteredColumns: string[] = [];
+          const filteredColumnIndices: number[] = [];
+
+          series.columns.forEach((col, index) => {
+            // 过滤掉行号列（通常是 "#" 或 "序号" 等）
+            if (col !== '#' && col !== '序号' && col !== 'index' && col !== 'rowIndex') {
+              filteredColumns.push(col);
+              filteredColumnIndices.push(index);
+            }
+          });
+
+          // 如果没有有效列，跳过
+          if (filteredColumns.length === 0) {
+            continue;
+          }
+
           for (const row of series.values) {
             const rowObj: Record<string, unknown> = {};
 
-            // 添加列数据
-            series.columns.forEach((column, index) => {
-              rowObj[column] = row[index];
+            // 只添加过滤后的列数据
+            filteredColumns.forEach((column, filteredIndex) => {
+              const originalIndex = filteredColumnIndices[filteredIndex];
+              rowObj[column] = row[originalIndex];
             });
 
             data.push(rowObj);
@@ -111,22 +149,42 @@ export const convertToExcel = (
     result.results.forEach((resultItem) => {
       if (resultItem.series) {
         resultItem.series.forEach((series) => {
-          const data: unknown[][] = [];
+          if (series.columns && series.values) {
+            // 过滤掉行号列和其他非数据列
+            const filteredColumns: string[] = [];
+            const filteredColumnIndices: number[] = [];
 
-          // 添加标题行
-          if (options.includeHeaders && series.columns) {
-            data.push(series.columns);
+            series.columns.forEach((col, index) => {
+              // 过滤掉行号列（通常是 "#" 或 "序号" 等）
+              if (col !== '#' && col !== '序号' && col !== 'index' && col !== 'rowIndex') {
+                filteredColumns.push(col);
+                filteredColumnIndices.push(index);
+              }
+            });
+
+            // 如果没有有效列，跳过
+            if (filteredColumns.length === 0) {
+              return;
+            }
+
+            const data: unknown[][] = [];
+
+            // 添加标题行
+            if (options.includeHeaders) {
+              data.push(filteredColumns);
+            }
+
+            // 添加数据行（只包含过滤后的列）
+            for (const row of series.values) {
+              const filteredRow = filteredColumnIndices.map(index => row[index]);
+              data.push(filteredRow);
+            }
+
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            const sheetName = series.name || `Sheet${sheetIndex}`;
+            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            sheetIndex++;
           }
-
-          // 添加数据行
-          if (series.values) {
-            data.push(...series.values);
-          }
-
-          const worksheet = XLSX.utils.aoa_to_sheet(data);
-          const sheetName = series.name || `Sheet${sheetIndex}`;
-          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-          sheetIndex++;
         });
       }
     });
@@ -159,24 +217,44 @@ export const convertToMarkdown = (
   for (const resultItem of result.results) {
     if (resultItem.series) {
       for (const series of resultItem.series) {
-        // 添加表格标题（如果有）
-        if (series.name) {
-          lines.push(`## ${series.name}`);
-          lines.push('');
-        }
+        if (series.columns && series.values) {
+          // 过滤掉行号列和其他非数据列
+          const filteredColumns: string[] = [];
+          const filteredColumnIndices: number[] = [];
 
-        // 添加表头
-        if (options.includeHeaders && series.columns) {
-          const headerRow = `| ${series.columns.join(' | ')} |`;
-          const separatorRow = `| ${series.columns.map(() => '---').join(' | ')} |`;
-          lines.push(headerRow);
-          lines.push(separatorRow);
-        }
+          series.columns.forEach((col, index) => {
+            // 过滤掉行号列（通常是 "#" 或 "序号" 等）
+            if (col !== '#' && col !== '序号' && col !== 'index' && col !== 'rowIndex') {
+              filteredColumns.push(col);
+              filteredColumnIndices.push(index);
+            }
+          });
 
-        // 添加数据行
-        if (series.values) {
+          // 如果没有有效列，跳过
+          if (filteredColumns.length === 0) {
+            continue;
+          }
+
+          // 添加表格标题（如果有）
+          if (series.name) {
+            lines.push(`## ${series.name}`);
+            lines.push('');
+          }
+
+          // 添加表头
+          if (options.includeHeaders) {
+            const headerRow = `| ${filteredColumns.join(' | ')} |`;
+            const separatorRow = `| ${filteredColumns.map(() => '---').join(' | ')} |`;
+            lines.push(headerRow);
+            lines.push(separatorRow);
+          }
+
+          // 添加数据行
           for (const row of series.values) {
-            const markdownRow = row
+            // 只取过滤后的列对应的值
+            const filteredValues = filteredColumnIndices.map(index => row[index]);
+
+            const markdownRow = filteredValues
               .map((value: unknown) => {
                 if (value === null || value === undefined) {
                   return '';
@@ -220,13 +298,33 @@ export const convertToSQL = (
     if (resultItem.series) {
       for (const series of resultItem.series) {
         if (series.columns && series.values) {
+          // 过滤掉行号列和其他非数据列
+          const filteredColumns: string[] = [];
+          const filteredColumnIndices: number[] = [];
+
+          series.columns.forEach((col, index) => {
+            // 过滤掉行号列（通常是 "#" 或 "序号" 等）
+            if (col !== '#' && col !== '序号' && col !== 'index' && col !== 'rowIndex') {
+              filteredColumns.push(col);
+              filteredColumnIndices.push(index);
+            }
+          });
+
+          // 如果没有有效列，跳过
+          if (filteredColumns.length === 0) {
+            continue;
+          }
+
           // 生成表结构注释
-          lines.push(`-- 表结构: ${series.columns.join(', ')}`);
+          lines.push(`-- 表结构: ${filteredColumns.join(', ')}`);
           lines.push('');
 
           // 生成INSERT语句
           for (const row of series.values) {
-            const values = row.map((value: unknown) => {
+            // 只取过滤后的列对应的值
+            const filteredValues = filteredColumnIndices.map(index => row[index]);
+
+            const values = filteredValues.map((value: unknown) => {
               if (value === null || value === undefined) {
                 return 'NULL';
               }
@@ -247,7 +345,7 @@ export const convertToSQL = (
               }
             });
 
-            const columnList = series.columns.map(col => `"${col}"`).join(', ');
+            const columnList = filteredColumns.map(col => `"${col}"`).join(', ');
             const valueList = values.join(', ');
             lines.push(`INSERT INTO "${tableName}" (${columnList}) VALUES (${valueList});`);
           }
