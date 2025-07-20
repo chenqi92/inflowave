@@ -446,20 +446,59 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         return;
       }
 
+      // 获取第一个series的数据
+      const series = result.results?.[0]?.series?.[0];
+      if (!series || !series.columns || !series.values) {
+        showMessage.error('没有可导出的数据');
+        return;
+      }
+
+      // 过滤掉不应该导出的列（如#序号列）
+      const filteredColumns = series.columns.filter(col => col !== '#');
+      const columnIndexes = filteredColumns.map(col => series.columns.indexOf(col));
+      const filteredValues = series.values.map(row =>
+        columnIndexes.map(index => row[index])
+      );
+
       // 构造符合 QueryResult 格式的数据
-      const queryResult = {
-        results: [result],
-        data: result.results?.[0]?.series?.[0]?.values || [],
-        executionTime: executionTime || 0
+      const queryResult: QueryResult = {
+        results: [{
+          series: [{
+            name: series.name || 'query_result',
+            columns: filteredColumns,
+            values: filteredValues
+          }]
+        }],
+        executionTime: executionTime || 0,
+        rowCount: filteredValues.length,
+        // 添加兼容性字段
+        columns: filteredColumns,
+        data: filteredValues
       };
+
+      // 生成默认文件名
+      const defaultTableName = series.name || `query_result_${resultIndex + 1}`;
+      const fileExtension = options.format === 'excel' ? 'xlsx' : options.format;
+      const defaultFilename = options.filename || `${defaultTableName}.${fileExtension}`;
+
+      // 调试日志
+      console.log('EnhancedResultPanel导出调试:', {
+        resultIndex,
+        seriesName: series.name,
+        defaultTableName,
+        optionsFilename: options.filename,
+        fileExtension,
+        finalDefaultFilename: defaultFilename,
+        format: options.format
+      });
 
       // 使用原生导出对话框
       const success = await exportWithNativeDialog(queryResult, {
         format: options.format,
         includeHeaders: options.includeHeaders,
         delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
-        defaultFilename: options.filename || `query_result_${resultIndex + 1}`,
-        tableName: options.tableName || `query_result_${resultIndex + 1}`
+        defaultFilename: defaultFilename,
+        tableName: options.tableName || defaultTableName
       });
 
       if (success) {
@@ -1983,7 +2022,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           const resultIndex = activeTabMatch ? parseInt(activeTabMatch[1]) : 0;
           handleExportData(options, resultIndex);
         }}
-        defaultTableName={`query_result`}
+        defaultTableName={(() => {
+          // 获取当前活跃的查询结果名称
+          const activeTabMatch = activeTab.match(/^data-(\d+)$/);
+          const resultIndex = activeTabMatch ? parseInt(activeTabMatch[1]) : 0;
+          const result = allResults[resultIndex];
+          const series = result?.results?.[0]?.series?.[0];
+          return series?.name || `query_result_${resultIndex + 1}`;
+        })()}
         rowCount={parsedData?.rowCount || 0}
         columnCount={parsedData?.columns.length || 0}
       />

@@ -198,8 +198,9 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
     let platform_patterns = match platform {
         "windows" => match arch {
             "x86_64" => vec![
-                "_x64.msi",      // Tauri 生成的标准格式: InfloWave_0.1.3_x64.msi
-                "_x64.exe", 
+                "_x64.msi",      // 标准格式: InfloWave_0.1.3_x64.msi
+                "_x64_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
+                "_x64-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x64-setup.exe
                 "x64.msi", 
                 "x64.exe", 
                 "win64", 
@@ -208,8 +209,9 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
                 ".exe"
             ],
             "x86" => vec![
-                "_x86.msi",      // Tauri 生成的标准格式: InfloWave_0.1.3_x86.msi
-                "_x86.exe",
+                "_x86.msi",      // 标准格式: InfloWave_0.1.3_x86.msi
+                "_x86_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
+                "_x86-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x86-setup.exe
                 "x86.msi", 
                 "x86.exe", 
                 "win32", 
@@ -221,7 +223,8 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
         },
         "macos" => match arch {
             "aarch64" => vec![
-                "_aarch64.dmg",  // Tauri 生成的标准格式: InfloWave_0.1.3_aarch64.dmg
+                "_aarch64.dmg",  // DMG 格式: InfloWave_0.1.3_aarch64.dmg
+                "_aarch64.app.tar.gz", // App bundle 格式: InfloWave_aarch64.app.tar.gz
                 "_arm64.dmg",
                 "aarch64.dmg", 
                 "arm64.dmg", 
@@ -230,7 +233,8 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
                 ".app.tar.gz"
             ],
             "x86_64" => vec![
-                "_x64.dmg",      // Tauri 生成的标准格式: InfloWave_0.1.3_x64.dmg
+                "_x64.dmg",      // DMG 格式: InfloWave_0.1.3_x64.dmg  
+                "_x64.app.tar.gz", // App bundle 格式: InfloWave_x64.app.tar.gz
                 "_intel.dmg",
                 "x64.dmg", 
                 "intel.dmg", 
@@ -242,9 +246,10 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
         },
         "linux" => match arch {
             "x86_64" => vec![
-                "_amd64.deb",    // Tauri 生成的标准格式: inflowave_0.1.3_amd64.deb
-                "_amd64.AppImage", // Tauri 生成的标准格式: InfloWave_0.1.3_amd64.AppImage
+                "_amd64.deb",    // DEB 格式: InfloWave_0.1.3_amd64.deb (注意：实际可能是小写inflowave)
+                "_amd64.AppImage", // AppImage 格式: InfloWave_0.1.3_amd64.AppImage
                 "_x86_64.AppImage",
+                "_x86_64.rpm",   // RPM 格式: InfloWave-0.1.3-1.x86_64.rpm
                 "amd64.deb",
                 "x86_64.AppImage", 
                 "x64.AppImage", 
@@ -256,6 +261,7 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
             "aarch64" => vec![
                 "_arm64.deb",
                 "_aarch64.AppImage",
+                "_aarch64.rpm",
                 "aarch64.AppImage", 
                 "arm64.AppImage", 
                 "arm64.deb", 
@@ -286,6 +292,7 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
                 asset_name.contains(&pattern_lower)
             }
         }) {
+            log::info!("Found matching asset for platform {}: {} -> {}", platform, pattern, asset.name);
             return Some(asset.browser_download_url.clone());
         }
     }
@@ -516,21 +523,34 @@ mod tests {
 
     #[test]
     fn test_find_platform_asset() {
+        // 使用真实的文件名格式进行测试
         let assets = vec![
             GitHubAsset {
-                name: "InfloWave_0.1.3_x64.msi".to_string(),
-                browser_download_url: "https://example.com/windows.msi".to_string(),
+                name: "InfloWave_0.1.3_x64_zh-CN.msi".to_string(),
+                browser_download_url: "https://example.com/windows-zh.msi".to_string(),
                 size: 1024,
                 content_type: "application/x-msi".to_string(),
             },
             GitHubAsset {
+                name: "InfloWave_0.1.3_x64-setup.exe".to_string(),
+                browser_download_url: "https://example.com/windows-setup.exe".to_string(),
+                size: 1536,
+                content_type: "application/x-executable".to_string(),
+            },
+            GitHubAsset {
                 name: "InfloWave_0.1.3_aarch64.dmg".to_string(),
-                browser_download_url: "https://example.com/macos.dmg".to_string(),
+                browser_download_url: "https://example.com/macos-arm.dmg".to_string(),
                 size: 2048,
                 content_type: "application/x-apple-diskimage".to_string(),
             },
             GitHubAsset {
-                name: "inflowave_0.1.3_amd64.deb".to_string(),
+                name: "InfloWave_0.1.3_x64.dmg".to_string(),
+                browser_download_url: "https://example.com/macos-intel.dmg".to_string(),
+                size: 2560,
+                content_type: "application/x-apple-diskimage".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_amd64.deb".to_string(),
                 browser_download_url: "https://example.com/linux.deb".to_string(),
                 size: 3072,
                 content_type: "application/vnd.debian.binary-package".to_string(),
@@ -540,6 +560,12 @@ mod tests {
                 browser_download_url: "https://example.com/linux.AppImage".to_string(),
                 size: 4096,
                 content_type: "application/x-executable".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave-0.1.3-1.x86_64.rpm".to_string(),
+                browser_download_url: "https://example.com/linux.rpm".to_string(),
+                size: 4608,
+                content_type: "application/x-rpm".to_string(),
             },
         ];
 

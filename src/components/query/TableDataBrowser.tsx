@@ -276,6 +276,18 @@ import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
 import ExportOptionsDialog, { type ExportOptions } from './ExportOptionsDialog';
 
+// 生成带时间戳的文件名
+const generateTimestampedFilename = (tableName: string, format: string): string => {
+  const now = new Date();
+  const timestamp = now.toISOString()
+    .replace(/:/g, '-')  // 替换冒号为连字符
+    .replace(/\./g, '-') // 替换点为连字符
+    .slice(0, 19);       // 只保留到秒，格式：2025-07-20T09-30-45
+
+  const extension = format === 'excel' ? 'xlsx' : format;
+  return `${tableName}_${timestamp}.${extension}`;
+};
+
 interface TableDataBrowserProps {
     connectionId: string;
     database: string;
@@ -833,7 +845,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 format: options.format,
                 includeHeaders: options.includeHeaders,
                 delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
-                defaultFilename: options.filename || `${tableName}_data`,
+                defaultFilename: options.filename || generateTimestampedFilename(tableName, options.format),
                 tableName: options.tableName || tableName
             });
 

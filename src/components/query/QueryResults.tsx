@@ -468,6 +468,12 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                     exportable={true}
                     columnManagement={true}
                     className="h-full"
+                    onExport={(format) => {
+                        // 使用查询结果的名称作为默认文件名
+                        const defaultName = `query_result_${Date.now()}`;
+                        console.log(`导出格式: ${format}, 默认文件名: ${defaultName}`);
+                        // 这里可以添加自定义导出逻辑
+                    }}
                 />
             ) : (
                 <div className="h-full flex items-center justify-center">

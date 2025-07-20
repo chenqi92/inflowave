@@ -3,7 +3,7 @@
  * 使用 Tauri 原生文件保存功能，避免浏览器下载提示
  */
 
-import { safeTauriInvoke } from '@/utils/tauri';
+import { safeTauriInvoke, safeTauriInvokeOptional } from '@/utils/tauri';
 import { convertToCSV, convertToJSON, convertToExcel, convertToTSV, convertToMarkdown, convertToSQL, getFileExtension, getMimeType } from './export';
 import type { QueryResult, ExportOptions } from '@/types';
 
@@ -78,21 +78,37 @@ export const exportWithNativeDialog = async (
   options: NativeExportOptions
 ): Promise<boolean> => {
   try {
-    // 准备文件保存对话框选项
+    // 准备文件保存对话框选项 - 参考TabEditor的实现
     const defaultFilename = options.defaultFilename || generateDefaultFilename(options.format);
-    const defaultPath = options.defaultDirectory 
-      ? `${options.defaultDirectory}/${defaultFilename}`
-      : defaultFilename;
+
+    // 关键修复：直接使用文件名，不包含路径（与TabEditor保持一致）
+    const defaultPath = defaultFilename;
 
     const filters = getFileFilters(options.format);
 
-    // 显示原生文件保存对话框
-    const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
-      'save_file_dialog',
-      {
-        default_path: defaultPath,
+    // 调试日志
+    console.log('导出参数调试:', {
+      originalDefaultFilename: options.defaultFilename,
+      generatedDefaultFilename: defaultFilename,
+      defaultPath: defaultPath,
+      format: options.format,
+      filters: filters
+    });
+
+    // 准备Tauri调用参数 - 使用正确的结构体包装格式
+    const tauriParams = {
+      params: {
+        default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
         filters
       }
+    };
+
+    console.log('Tauri调用参数 (正确格式):', tauriParams);
+
+    // 显示原生文件保存对话框 - 使用safeTauriInvokeOptional允许null返回值
+    const dialogResult = await safeTauriInvokeOptional<{ path?: string; name?: string }>(
+      'save_file_dialog',
+      tauriParams
     );
 
     // 用户取消了保存

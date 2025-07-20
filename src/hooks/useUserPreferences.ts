@@ -123,7 +123,7 @@ export const useUserPreferences = () => {
         setPreferences(newPreferences);
         return true;
       } catch (err) {
-        console.error('更新用户偏好失败:', err);
+        // console.error('更新用户偏好失败:', err);
         setError(String(err));
         return false;
       }

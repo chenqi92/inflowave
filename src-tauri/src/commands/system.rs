@@ -205,10 +205,16 @@ pub struct FileDialogResult {
 }
 
 /// 文件对话框过滤器
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct FileFilter {
     pub name: String,
     pub extensions: Vec<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct SaveFileDialogParams {
+    pub default_path: Option<String>,
+    pub filters: Option<Vec<FileFilter>>,
 }
 
 /// 打开文件对话框
@@ -290,10 +296,13 @@ pub async fn open_file_dialog(
 #[tauri::command]
 pub async fn save_file_dialog(
     app: tauri::AppHandle,
-    default_path: Option<String>,
-    filters: Option<Vec<FileFilter>>,
+    params: SaveFileDialogParams,
 ) -> Result<Option<FileDialogResult>, String> {
     debug!("保存文件对话框");
+    debug!("接收到的参数结构体: {:?}", params);
+
+    let default_path = params.default_path;
+    let filters = params.filters;
 
     use tauri_plugin_dialog::DialogExt;
 
@@ -301,12 +310,25 @@ pub async fn save_file_dialog(
 
     // 设置默认路径
     if let Some(path) = default_path {
-        if let Some(parent) = std::path::Path::new(&path).parent() {
+        info!("设置默认路径: {}", path);
+        let path_obj = std::path::Path::new(&path);
+
+        if let Some(parent) = path_obj.parent() {
+            info!("设置目录: {:?}", parent);
             dialog = dialog.set_directory(parent);
+        } else {
+            info!("没有父目录，使用纯文件名");
         }
-        if let Some(filename) = std::path::Path::new(&path).file_name() {
-            dialog = dialog.set_file_name(filename.to_string_lossy().as_ref());
+
+        if let Some(filename) = path_obj.file_name() {
+            let filename_str = filename.to_string_lossy();
+            info!("设置文件名: {}", filename_str);
+            dialog = dialog.set_file_name(filename_str.as_ref());
+        } else {
+            info!("无法提取文件名");
         }
+    } else {
+        info!("没有提供默认路径");
     }
 
     // 设置文件过滤器

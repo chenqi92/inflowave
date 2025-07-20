@@ -94,7 +94,7 @@ pub async fn update_user_preferences(
     preferences_storage: State<'_, UserPreferencesStorage>,
     preferences: UserPreferences,
 ) -> Result<(), String> {
-    debug!("更新用户偏好设置");
+    // debug!("更新用户偏好设置");
     
     let mut storage = preferences_storage.lock().map_err(|e| {
         error!("获取偏好设置存储锁失败: {}", e);
@@ -102,7 +102,7 @@ pub async fn update_user_preferences(
     })?;
     
     *storage = preferences;
-    info!("用户偏好设置已更新");
+    // info!("用户偏好设置已更新");
     Ok(())
 }
 

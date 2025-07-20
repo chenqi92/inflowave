@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,18 +6,12 @@ import {
   DialogTitle,
   DialogFooter,
   Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Checkbox,
   Input,
   Label,
   Badge,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui';
@@ -30,6 +24,17 @@ import {
   Download,
   Info
 } from 'lucide-react';
+
+// 生成带时间戳的文件名
+const generateTimestampedFilename = (tableName: string, extension: string): string => {
+  const now = new Date();
+  const timestamp = now.toISOString()
+    .replace(/:/g, '-')  // 替换冒号为连字符
+    .replace(/\./g, '-') // 替换点为连字符
+    .slice(0, 19);       // 只保留到秒，格式：2025-07-20T09-30-45
+
+  return `${tableName}_${timestamp}${extension}`;
+};
 
 export interface ExportFormat {
   id: 'csv' | 'tsv' | 'excel' | 'json' | 'markdown' | 'sql';
@@ -122,14 +127,26 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
   const [tableName, setTableName] = useState(defaultTableName);
   const [filename, setFilename] = useState('');
 
+  // 当defaultTableName变化时，更新tableName和filename
+  useEffect(() => {
+    setTableName(defaultTableName);
+    // 生成带时间戳的文件名
+    const extension = EXPORT_FORMATS.find(f => f.id === selectedFormat)?.extension || '.csv';
+    const timestampedFilename = generateTimestampedFilename(defaultTableName, extension);
+    setFilename(timestampedFilename);
+  }, [defaultTableName, selectedFormat]);
+
   const selectedFormatInfo = EXPORT_FORMATS.find(f => f.id === selectedFormat);
 
   const handleExport = () => {
+    // 确保有有效的文件名，如果为空则生成带时间戳的文件名
+    const finalFilename = filename.trim() || generateTimestampedFilename(defaultTableName, selectedFormatInfo?.extension || '.csv');
+
     const options: ExportOptions = {
       format: selectedFormat,
       includeHeaders,
       tableName: selectedFormat === 'sql' ? tableName : undefined,
-      filename: filename.trim() || undefined
+      filename: finalFilename
     };
 
     // 处理自定义分隔符
@@ -137,13 +154,22 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
       options.delimiter = customDelimiter.trim();
     }
 
+    // 调试日志
+    console.log('ExportOptionsDialog导出调试:', {
+      originalFilename: filename,
+      finalFilename,
+      defaultTableName,
+      selectedFormat,
+      extension: selectedFormatInfo?.extension
+    });
+
     onExport(options);
   };
 
   const generateDefaultFilename = () => {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
     const extension = selectedFormatInfo?.extension || '.txt';
-    return `${defaultTableName}_${timestamp}${extension}`;
+    return `${tableName}_${timestamp}${extension}`;
   };
 
   return (
@@ -223,7 +249,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
               <Checkbox
                 id="includeHeaders"
                 checked={includeHeaders}
-                onCheckedChange={setIncludeHeaders}
+                onCheckedChange={(checked) => setIncludeHeaders(checked === true)}
               />
               <Label htmlFor="includeHeaders" className="text-sm">
                 包含表头
