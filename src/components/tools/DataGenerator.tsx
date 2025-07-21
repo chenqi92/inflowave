@@ -804,28 +804,50 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 获取表结构信息
   const loadTableInfo = async (tableName: string) => {
     if (!activeConnectionId || !selectedDatabase || !tableName) {
+      console.log('loadTableInfo: 参数检查失败', { activeConnectionId, selectedDatabase, tableName });
       return;
     }
 
     try {
-      console.log(`开始分析表 "${tableName}" 的结构...`);
+      console.log(`开始分析表 "${tableName}" 的结构...`, { activeConnectionId, selectedDatabase });
       
       // 方法1：尝试使用SHOW FIELD KEYS和SHOW TAG KEYS
       const fields: FieldInfo[] = [];
       const tags: FieldInfo[] = [];
 
       try {
-        // 获取字段信息
-        const fieldResult = await safeTauriInvoke<any>('execute_query', {
-          request: {
-            connectionId: activeConnectionId,
-            database: selectedDatabase,
-            query: `SHOW FIELD KEYS FROM "${tableName}"`,
-          },
-        });
+        // 获取字段信息 - 尝试多种查询格式
+        let fieldResult;
+        const fieldQueries = [
+          `SHOW FIELD KEYS FROM "${tableName}"`,
+          `SHOW FIELD KEYS FROM ${tableName}`,
+          `SHOW FIELD KEYS FROM "${selectedDatabase}"."${tableName}"`,
+          `SHOW FIELD KEYS`
+        ];
+        
+        for (const query of fieldQueries) {
+          try {
+            console.log('尝试字段查询:', query);
+            fieldResult = await safeTauriInvoke<any>('execute_query', {
+              request: {
+                connectionId: activeConnectionId,
+                database: selectedDatabase,
+                query: query,
+              },
+            });
+            if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
+              console.log('字段查询成功，使用查询:', query);
+              break;
+            }
+          } catch (queryError) {
+            console.log(`字段查询失败 "${query}":`, queryError);
+            continue;
+          }
+        }
 
         if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
           console.log('字段查询结果:', fieldResult.data);
+          console.log('字段查询第一行数据:', fieldResult.data[0]);
           fieldResult.data.forEach((row: any) => {
             // 兼容不同版本的InfluxDB字段名称
             const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
@@ -852,28 +874,55 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 }
               }
               fields.push({ name: fieldName, type });
+              console.log('添加字段:', { name: fieldName, type });
             }
           });
+        } else {
+          console.log('字段查询失败或无数据:', { success: fieldResult.success, dataLength: fieldResult.data?.length });
         }
 
-        // 获取标签信息
-        const tagResult = await safeTauriInvoke<any>('execute_query', {
-          request: {
-            connectionId: activeConnectionId,
-            database: selectedDatabase,
-            query: `SHOW TAG KEYS FROM "${tableName}"`,
-          },
-        });
+        // 获取标签信息 - 尝试多种查询格式
+        let tagResult;
+        const tagQueries = [
+          `SHOW TAG KEYS FROM "${tableName}"`,
+          `SHOW TAG KEYS FROM ${tableName}`,
+          `SHOW TAG KEYS FROM "${selectedDatabase}"."${tableName}"`,
+          `SHOW TAG KEYS`
+        ];
+        
+        for (const query of tagQueries) {
+          try {
+            console.log('尝试标签查询:', query);
+            tagResult = await safeTauriInvoke<any>('execute_query', {
+              request: {
+                connectionId: activeConnectionId,
+                database: selectedDatabase,
+                query: query,
+              },
+            });
+            if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
+              console.log('标签查询成功，使用查询:', query);
+              break;
+            }
+          } catch (queryError) {
+            console.log(`标签查询失败 "${query}":`, queryError);
+            continue;
+          }
+        }
 
         if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
           console.log('标签查询结果:', tagResult.data);
+          console.log('标签查询第一行数据:', tagResult.data[0]);
           tagResult.data.forEach((row: any) => {
             // 兼容不同版本的InfluxDB字段名称
             const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
             if (tagName && typeof tagName === 'string') {
               tags.push({ name: tagName, type: 'string' });
+              console.log('添加标签:', { name: tagName, type: 'string' });
             }
           });
+        } else {
+          console.log('标签查询失败或无数据:', { success: tagResult.success, dataLength: tagResult.data?.length });
         }
       } catch (schemaError) {
         console.log('使用SHOW语句查询失败，尝试采样数据方法:', schemaError);
@@ -916,34 +965,63 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         }
         
         // 然后采样数据来获取字段信息
-        const sampleResult = await safeTauriInvoke<any>('execute_query', {
-          request: {
-            connectionId: activeConnectionId,
-            database: selectedDatabase,
-            query: `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 5`,
-          },
-        });
+        const sampleQueries = [
+          `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 5`,
+          `SELECT * FROM ${tableName} ORDER BY time DESC LIMIT 5`,
+          `SELECT * FROM "${tableName}" LIMIT 5`
+        ];
+        
+        for (const sampleQuery of sampleQueries) {
+          try {
+            console.log('尝试采样查询:', sampleQuery);
+            const sampleResult = await safeTauriInvoke<any>('execute_query', {
+              request: {
+                connectionId: activeConnectionId,
+                database: selectedDatabase,
+                query: sampleQuery,
+              },
+            });
 
-        if (sampleResult.success && sampleResult.data && sampleResult.data.length > 0) {
-          console.log('采样数据结果:', sampleResult.data[0]);
-          const sample = sampleResult.data[0];
+            if (sampleResult.success && sampleResult.data && sampleResult.data.length > 0) {
+              console.log('采样数据成功，使用查询:', sampleQuery);
+              console.log('采样数据结果:', sampleResult.data[0]);
+              const sample = sampleResult.data[0];
 
-          Object.entries(sample).forEach(([key, value]) => {
-            if (key === 'time') return; // 跳过时间字段
-            
-            // 如果已经被识别为tag，跳过
-            if (tags.find(t => t.name === key)) return;
+              Object.entries(sample).forEach(([key, value]) => {
+                if (key === 'time') return; // 跳过时间字段
+                
+                // 如果已经被识别为tag，跳过
+                if (tags.find(t => t.name === key)) return;
 
-            let type: FieldInfo['type'] = 'string';
-            if (typeof value === 'number') {
-              type = Number.isInteger(value) ? 'int' : 'float';
-            } else if (typeof value === 'boolean') {
-              type = 'boolean';
+                let type: FieldInfo['type'] = 'string';
+                if (typeof value === 'number') {
+                  type = Number.isInteger(value) ? 'int' : 'float';
+                } else if (typeof value === 'boolean') {
+                  type = 'boolean';
+                }
+
+                // 如果SHOW FIELD KEYS没有数据，我们需要猜测这是field还是tag
+                // 通常数字类型更可能是field，字符串类型可能是tag
+                if (typeof value === 'string' && !fields.length && !tags.length) {
+                  // 如果值比较短且看起来像标识符，可能是tag
+                  if (value.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(value)) {
+                    tags.push({ name: key, type: 'string' });
+                    console.log('推测为标签:', { name: key, type: 'string' });
+                  } else {
+                    fields.push({ name: key, type });
+                    console.log('推测为字段:', { name: key, type });
+                  }
+                } else {
+                  fields.push({ name: key, type });
+                  console.log('添加字段:', { name: key, type });
+                }
+              });
+              break; // 成功处理了采样数据，退出循环
             }
-
-            // 剩下的字段都当作fields处理
-            fields.push({ name: key, type });
-          });
+          } catch (sampleError) {
+            console.log(`采样查询失败 "${sampleQuery}":`, sampleError);
+            continue;
+          }
         }
       }
 
@@ -955,6 +1033,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
       setTableInfo(info);
       console.log('表结构分析完成:', info);
+      console.log('最终字段数量:', fields.length, '最终标签数量:', tags.length);
       
       if (fields.length > 0 || tags.length > 0) {
         showMessage.success(`已分析表 "${tableName}" 的结构：${fields.length} 个字段，${tags.length} 个标签`);
