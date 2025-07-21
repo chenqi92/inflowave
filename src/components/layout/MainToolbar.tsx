@@ -6,7 +6,6 @@ import {
   Database,
   History,
   Settings,
-  RefreshCw,
   BarChart,
   Edit,
   Zap,
@@ -210,26 +209,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
       <div className='flex items-center gap-1 flex-shrink-0'>
         <div className='w-px h-6 bg-border mx-3' />
 
-        {/* 刷新按钮 */}
-        <Button
-          variant='ghost'
-          size='sm'
-          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
-          disabled={!hasAnyConnectedInfluxDB}
-          title={
-            hasAnyConnectedInfluxDB
-              ? '刷新数据'
-              : `刷新数据 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
-          }
-          onClick={() => {
-            // 触发刷新数据库结构事件
-            document.dispatchEvent(new CustomEvent('refresh-database-tree'));
-            showMessage.info('正在刷新数据库结构...');
-          }}
-        >
-          <RefreshCw className='w-4 h-4' />
-          <span className='text-xs'>刷新</span>
-        </Button>
 
         {/* 主题切换按钮 */}
         <ThemeToggle
