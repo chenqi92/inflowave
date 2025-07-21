@@ -62,6 +62,25 @@ const MainLayout: React.FC = () => {
     }
   }, [browserModeNoticeDismissed]);
 
+  // 监听菜单触发的用户引导事件
+  useEffect(() => {
+    const handleShowUserGuide = () => {
+      setUserGuideVisible(true);
+    };
+
+    const handleShowQuickStart = () => {
+      setUserGuideVisible(true);
+    };
+
+    document.addEventListener('show-user-guide', handleShowUserGuide);
+    document.addEventListener('show-quick-start', handleShowQuickStart);
+    
+    return () => {
+      document.removeEventListener('show-user-guide', handleShowUserGuide);
+      document.removeEventListener('show-quick-start', handleShowQuickStart);
+    };
+  }, []);
+
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,28 +115,33 @@ const MainLayout: React.FC = () => {
 
   if (isSpecialPage) {
     return (
-      <Layout className='min-h-screen bg-background'>
-        {/* 应用工具栏 */}
+      <>
+        {/* 全局菜单处理器 - 确保特殊页面也能处理菜单事件 */}
+        <NativeMenuHandler onGlobalSearch={() => setGlobalSearchVisible(true)} />
+        
+        <Layout className='min-h-screen bg-background'>
+          {/* 应用工具栏 */}
 
-        {/* 主内容区 */}
-        <Content className='flex-1 p-4'>
-          <Routes>
-            <Route path='/user-guide-test' element={<UserGuideTest />} />
-          </Routes>
-        </Content>
+          {/* 主内容区 */}
+          <Content className='flex-1 p-4'>
+            <Routes>
+              <Route path='/user-guide-test' element={<UserGuideTest />} />
+            </Routes>
+          </Content>
 
-        {/* 全局搜索 */}
-        <GlobalSearch
-          isOpen={globalSearchVisible}
-          onClose={() => setGlobalSearchVisible(false)}
-          onNavigate={(path, params) => {
-            navigate(path, { state: params });
-          }}
-          onExecuteQuery={query => {
-            navigate('/query', { state: { query } });
-          }}
-        />
-      </Layout>
+          {/* 全局搜索 */}
+          <GlobalSearch
+            isOpen={globalSearchVisible}
+            onClose={() => setGlobalSearchVisible(false)}
+            onNavigate={(path, params) => {
+              navigate(path, { state: params });
+            }}
+            onExecuteQuery={query => {
+              navigate('/query', { state: { query } });
+            }}
+          />
+        </Layout>
+      </>
     );
   }
 

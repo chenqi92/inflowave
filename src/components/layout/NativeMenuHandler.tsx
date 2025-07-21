@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { safeTauriListen, safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -33,35 +33,47 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const setupRef = useRef(false);
 
   useEffect(() => {
     let unlistenMenuFn: (() => void) | null = null;
     let unlistenThemeFn: (() => void) | null = null;
 
     const setupListeners = async () => {
+      if (setupRef.current) {
+        console.log('⚠️ 菜单监听器已设置，跳过重复设置 (React StrictMode)');
+        return;
+      }
+      setupRef.current = true;
+      
       console.log('🎛️ 设置原生菜单监听器...');
 
-      // 监听菜单动作事件
-      unlistenMenuFn = await safeTauriListen<string>('menu-action', event => {
-        console.log('📋 收到菜单动作事件:', event);
-        console.log('📋 菜单动作详情:', {
-          payload: event.payload,
-          // windowLabel 和 id 可能不存在于简化的事件类型中
-          ...(event as any).windowLabel && { windowLabel: (event as any).windowLabel },
-          ...(event as any).id && { id: (event as any).id }
+      try {
+        // 监听菜单动作事件
+        unlistenMenuFn = await safeTauriListen<string>('menu-action', event => {
+          console.log('📋 收到菜单动作事件:', event);
+          console.log('📋 菜单动作详情:', {
+            payload: event.payload,
+            // windowLabel 和 id 可能不存在于简化的事件类型中
+            ...(event as any).windowLabel && { windowLabel: (event as any).windowLabel },
+            ...(event as any).id && { id: (event as any).id }
+          });
+          const action = event.payload;
+          handleMenuAction(action);
         });
-        const action = event.payload;
-        handleMenuAction(action);
-      });
 
-      // 监听主题切换事件
-      unlistenThemeFn = await safeTauriListen<string>('theme-change', event => {
-        console.log('🎨 收到主题切换事件:', event);
-        const themeName = event.payload;
-        handleThemeChange(themeName);
-      });
+        // 监听主题切换事件
+        unlistenThemeFn = await safeTauriListen<string>('theme-change', event => {
+          console.log('🎨 收到主题切换事件:', event);
+          const themeName = event.payload;
+          handleThemeChange(themeName);
+        });
 
-      console.log('✅ 原生菜单监听器设置完成');
+        console.log('✅ 原生菜单监听器设置完成');
+      } catch (error) {
+        console.error('❌ 设置菜单监听器失败:', error);
+        setupRef.current = false; // 设置失败时重置，允许重试
+      }
     };
 
     setupListeners();
@@ -75,6 +87,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     document.addEventListener('open-settings-modal', handleOpenSettings);
 
     return () => {
+      console.log('🧹 清理菜单监听器...');
       if (unlistenMenuFn) {
         unlistenMenuFn();
       }
@@ -82,6 +95,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         unlistenThemeFn();
       }
       document.removeEventListener('open-settings-modal', handleOpenSettings);
+      setupRef.current = false; // 组件卸载时重置标志
     };
   }, []); // 移除依赖，只在组件挂载时设置一次监听器
 
@@ -275,11 +289,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   // 帮助系统处理函数
   const handleUserManual = () => {
-    window.open('https://docs.influxdata.com/', '_blank');
+    // 触发用户引导弹框
+    document.dispatchEvent(new CustomEvent('show-user-guide'));
+    showMessage.success('打开用户引导');
   };
 
   const handleQuickStart = () => {
     document.dispatchEvent(new CustomEvent('show-quick-start'));
+    showMessage.success('打开快速入门');
   };
 
   const handleCheckUpdates = async () => {
