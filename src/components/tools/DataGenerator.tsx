@@ -17,6 +17,7 @@ import {
   Separator,
   Input,
   Label,
+  Checkbox,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import {
@@ -79,6 +80,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [recordCount, setRecordCount] = useState<number>(100);
   const [mode, setMode] = useState<'predefined' | 'custom'>('predefined');
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   // 预定义的数据生成任务
   const generatorTasks: GeneratorTask[] = [
@@ -1085,9 +1087,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           }, 1000);
         }
       } else {
-        // 预定义任务数据生成
-        for (let i = 0; i < generatorTasks.length && !shouldStop; i++) {
-          const task = generatorTasks[i];
+        // 预定义任务数据生成 - 只生成选中的任务
+        const selectedTasksToGenerate = generatorTasks.filter(task => selectedTasks.includes(task.name));
+        
+        for (let i = 0; i < selectedTasksToGenerate.length && !shouldStop; i++) {
+          const task = selectedTasksToGenerate[i];
           setCurrentTask(task.name);
 
           // 检查是否需要停止
@@ -1145,8 +1149,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
             // 更新进度
             const batchProgress =
-              ((j + 1) / batches) * (1 / generatorTasks.length);
-            const totalProgress = i / generatorTasks.length + batchProgress;
+              ((j + 1) / batches) * (1 / selectedTasksToGenerate.length);
+            const totalProgress = i / selectedTasksToGenerate.length + batchProgress;
             setProgress(Math.round(totalProgress * 100));
 
             // 添加小延迟以避免过快的请求
@@ -1212,6 +1216,24 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
     }
   }, [selectedTable, mode]);
 
+  // 处理任务选择
+  const handleTaskSelection = (taskName: string, checked: boolean) => {
+    if (checked) {
+      setSelectedTasks(prev => [...prev, taskName]);
+    } else {
+      setSelectedTasks(prev => prev.filter(name => name !== taskName));
+    }
+  };
+
+  // 全选/全不选
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedTasks(generatorTasks.map(task => task.name));
+    } else {
+      setSelectedTasks([]);
+    }
+  };
+
   // 清空数据
   const clearData = async () => {
     if (!activeConnectionId) {
@@ -1236,8 +1258,15 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         });
         showMessage.success(`表 "${selectedTable}" 数据已清空`);
       } else {
-        // 预定义任务模式
-        for (const task of generatorTasks) {
+        // 预定义任务模式 - 只清空选中的任务
+        const selectedTasksToDelete = generatorTasks.filter(task => selectedTasks.includes(task.name));
+        
+        if (selectedTasksToDelete.length === 0) {
+          showMessage.warning('请先选择要清空的数据表');
+          return;
+        }
+        
+        for (const task of selectedTasksToDelete) {
           await safeTauriInvoke('execute_query', {
             request: {
               connectionId: activeConnectionId,
@@ -1246,8 +1275,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             },
           });
         }
-        setCompletedTasks([]);
-        showMessage.success('所有测试数据已清空');
+        setCompletedTasks(prev => prev.filter(name => !selectedTasks.includes(name)));
+        showMessage.success(`已清空 ${selectedTasksToDelete.length} 个选中数据表的数据`);
       }
     } catch (error) {
       console.error('清空数据失败:', error);
@@ -1259,69 +1288,71 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
   return (
     <div className='space-y-4'>
-      {/* 操作区域 */}
-      <div className='space-y-4'>
-        {/* 第一行：数据库和模式选择 */}
-        <div className='flex flex-wrap items-center gap-3'>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium whitespace-nowrap'>目标数据库:</span>
-            <Select
-              value={selectedDatabase}
-              onValueChange={setSelectedDatabase}
-              disabled={!activeConnectionId || databases.length === 0}
-            >
-              <SelectTrigger className='w-[180px]'>
-                <SelectValue 
-                  placeholder={
-                    !activeConnectionId 
-                      ? '请先连接数据库' 
-                      : databases.length === 0 
-                        ? '暂无数据库' 
-                        : '选择数据库'
-                  } 
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {databases.length > 0 ? (
-                  databases.map(db => (
-                    <SelectItem key={db} value={db}>
-                      {db}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    暂无数据库
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={loadDatabases}
-              disabled={!activeConnectionId}
-              variant='outline'
-              size='sm'
-            >
-              <RefreshCw className='w-4 h-4' />
-            </Button>
-          </div>
-          
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium whitespace-nowrap'>生成模式:</span>
-            <Select value={mode} onValueChange={(value: 'predefined' | 'custom') => setMode(value)}>
-              <SelectTrigger className='w-[140px]'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="predefined">预定义任务</SelectItem>
-                <SelectItem value="custom">自定义表</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* 操作区域 - 所有控制元素在同一行 */}
+      <div className='flex flex-wrap items-center gap-3 p-4 border rounded-lg bg-muted/30'>
+        {/* 目标数据库 */}
+        <div className='flex items-center gap-2'>
+          <span className='text-sm font-medium whitespace-nowrap'>目标数据库:</span>
+          <Select
+            value={selectedDatabase}
+            onValueChange={setSelectedDatabase}
+            disabled={!activeConnectionId || databases.length === 0}
+          >
+            <SelectTrigger className='w-[160px]'>
+              <SelectValue 
+                placeholder={
+                  !activeConnectionId 
+                    ? '请先连接数据库' 
+                    : databases.length === 0 
+                      ? '暂无数据库' 
+                      : '选择数据库'
+                } 
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {databases.length > 0 ? (
+                databases.map(db => (
+                  <SelectItem key={db} value={db}>
+                    {db}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  暂无数据库
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={loadDatabases}
+            disabled={!activeConnectionId}
+            variant='outline'
+            size='sm'
+          >
+            <RefreshCw className='w-4 h-4' />
+          </Button>
+        </div>
+        
+        {/* 生成模式 */}
+        <div className='flex items-center gap-2'>
+          <span className='text-sm font-medium whitespace-nowrap'>生成模式:</span>
+          <Select value={mode} onValueChange={(value: 'predefined' | 'custom') => {
+            setMode(value);
+            setSelectedTasks([]);
+          }}>
+            <SelectTrigger className='w-[120px]'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="predefined">预定义任务</SelectItem>
+              <SelectItem value="custom">自定义表</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* 第二行：自定义模式的表选择和配置 */}
+        {/* 自定义模式的表选择 */}
         {mode === 'custom' && (
-          <div className='flex flex-wrap items-center gap-3'>
+          <>
             <div className='flex items-center gap-2'>
               <span className='text-sm font-medium whitespace-nowrap'>目标表:</span>
               <Select
@@ -1329,7 +1360,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 onValueChange={setSelectedTable}
                 disabled={!selectedDatabase || tables.length === 0}
               >
-                <SelectTrigger className='w-[180px]'>
+                <SelectTrigger className='w-[160px]'>
                   <SelectValue 
                     placeholder={
                       !selectedDatabase 
@@ -1373,23 +1404,24 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 type="number"
                 value={recordCount}
                 onChange={(e) => setRecordCount(Number(e.target.value))}
-                className='w-24'
+                className='w-20'
                 min={1}
                 max={10000}
               />
             </div>
-          </div>
+          </>
         )}
         
-        {/* 第三行：操作按钮 */}
-        <div className='flex flex-wrap gap-2'>
+        {/* 操作按钮 */}
+        <div className='flex items-center gap-2 ml-auto'>
           {!loading ? (
             <Button
               onClick={generateData}
               disabled={
                 !activeConnectionId || 
                 !selectedDatabase || 
-                (mode === 'custom' && (!selectedTable || !tableInfo))
+                (mode === 'custom' && (!selectedTable || !tableInfo)) ||
+                (mode === 'predefined' && selectedTasks.length === 0)
               }
             >
               <PlayCircle className='w-4 h-4 mr-2' />
@@ -1541,17 +1573,38 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
         {mode === 'predefined' && (
           <>
-            <h4 className='text-lg font-semibold mb-4'>将要创建的数据表</h4>
+            <div className='flex items-center justify-between mb-4'>
+              <h4 className='text-lg font-semibold'>数据表选择</h4>
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-2'>
+                  <Checkbox
+                    id="selectAll"
+                    checked={selectedTasks.length === generatorTasks.length && generatorTasks.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <Label htmlFor="selectAll" className='text-sm font-medium'>
+                    全选 ({selectedTasks.length}/{generatorTasks.length})
+                  </Label>
+                </div>
+              </div>
+            </div>
             <div className='space-y-4'>
               {generatorTasks.map((task, index) => (
-            <Card key={task.name}>
+            <Card key={task.name} className={selectedTasks.includes(task.name) ? 'ring-2 ring-primary' : ''}>
               <CardHeader className='pb-3'>
                 <div className='flex items-center justify-between'>
-                  <div className='flex-1'>
-                    <CardTitle className='text-base'>{task.name}</CardTitle>
-                    <CardDescription className='mt-1'>
-                      {task.description}
-                    </CardDescription>
+                  <div className='flex items-center gap-3 flex-1'>
+                    <Checkbox
+                      id={`task-${index}`}
+                      checked={selectedTasks.includes(task.name)}
+                      onCheckedChange={(checked) => handleTaskSelection(task.name, checked)}
+                    />
+                    <div className='flex-1'>
+                      <CardTitle className='text-base'>{task.name}</CardTitle>
+                      <CardDescription className='mt-1'>
+                        {task.description}
+                      </CardDescription>
+                    </div>
                   </div>
                   <div className='flex items-center gap-2'>
                     {completedTasks.includes(task.name) ? (
@@ -1609,16 +1662,16 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                     <code className='bg-muted px-2 py-1 rounded text-sm font-mono'>
                       {selectedDatabase || '未选择'}
                     </code>{' '}
-                    中创建 {generatorTasks.length} 张测试数据表
+                    中创建 {selectedTasks.length} 张选中的测试数据表
                   </p>
                   <p>
                     • 总共将生成约{' '}
-                    {generatorTasks.reduce(
-                      (sum, task) => sum + task.recordCount,
-                      0
-                    )}{' '}
+                    {generatorTasks
+                      .filter(task => selectedTasks.includes(task.name))
+                      .reduce((sum, task) => sum + task.recordCount, 0)}{' '}
                     条测试记录
                   </p>
+                  <p>• 请先勾选要生成的数据表，然后点击"生成数据"按钮</p>
                   <p>• 数据时间戳将分布在指定的时间范围内</p>
                   <p>• 所有数值都是随机生成的模拟数据</p>
                 </div>
