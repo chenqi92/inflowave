@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui';
 import { specialMessage, showMessage } from '@/utils/message';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { Bell, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 
 /**
@@ -48,9 +49,7 @@ const NotificationTest: React.FC = () => {
     console.log('测试Tauri原生通知...');
     try {
       // 直接调用 Tauri 通知接口进行调试
-      const { invoke } = await import('@tauri-apps/api/tauri');
-      
-      const result = await invoke('send_notification', {
+      const result = await safeTauriInvoke('send_notification', {
         title: 'Tauri测试通知',
         message: '这是直接通过Tauri后端发送的测试通知',
         notification_type: 'info',
@@ -68,10 +67,8 @@ const NotificationTest: React.FC = () => {
   const debugNotificationSettings = async () => {
     console.log('调试通知设置...');
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri');
-      
       // 获取当前用户偏好设置
-      const prefs = await invoke('get_user_preferences');
+      const prefs = await safeTauriInvoke('get_user_preferences');
       console.log('当前用户偏好设置:', prefs);
       
       // 显示通知设置状态
