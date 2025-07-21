@@ -781,6 +781,16 @@ async fn main() {
                 if let Err(e) = setup_responsive_window_size(&window) {
                     error!("设置响应式窗口大小失败: {}", e);
                 }
+
+                #[cfg(debug_assertions)]
+                {
+                    info!("开发环境：保留右键上下文菜单用于调试");
+                }
+
+                #[cfg(not(debug_assertions))]
+                {
+                    info!("生产环境：上下文菜单禁用将由前端处理");
+                }
             } else {
                 warn!("无法获取主窗口，跳过响应式大小设置");
             }

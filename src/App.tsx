@@ -16,6 +16,7 @@ import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { consoleLogger } from './utils/consoleLogger';
 import { initializeHealthCheck } from './utils/healthCheck';
+import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -176,6 +177,9 @@ const App: React.FC = () => {
 
         // 初始化环境检测
         initializeEnvironment();
+
+        // 初始化上下文菜单禁用器（生产环境）
+        initializeContextMenuDisabler();
 
         // 尝试获取应用配置信息
         try {
