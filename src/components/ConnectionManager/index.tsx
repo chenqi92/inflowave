@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
-// import {safeTauriInvoke} from '@/utils/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
@@ -73,6 +73,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     removeConnection,
     testAllConnections,
     getTableConnectionStatus,
+    forceRefreshConnections,
   } = useConnectionStore();
 
   // 刷新状态按钮的加载状态
@@ -173,37 +174,21 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     }
   }, [monitoringActive, startMonitoring, stopMonitoring, refreshAllStatuses]);
 
-  // 处理刷新所有连接状态 - 自动测试所有连接
+  // 处理刷新所有连接状态 - 强制刷新连接列表
   const handleRefreshAllConnectionStatuses = useCallback(async () => {
-    if (connections.length === 0) {
-      showMessage.info('暂无连接需要测试');
-      return;
-    }
-
     setIsRefreshingAll(true);
-    console.log('🔄 开始测试所有连接状态...');
+    console.log('🔄 开始强制刷新连接列表...');
 
     try {
-      // 使用专门的测试所有连接方法
-      await testAllConnections();
+      // 使用强制刷新方法重新加载所有连接
+      await forceRefreshConnections();
 
-      // 等待状态更新完成后统计结果
-      setTimeout(() => {
-        const successCount = Object.values(tableConnectionStatuses).filter(
-          status => status?.status === 'connected'
-        ).length;
-        const totalCount = connections.length;
-
-        showMessage.success(
-          `连接状态刷新完成：${successCount}/${totalCount} 个连接可用`
-        );
-
-        console.log(`✅ 连接状态测试完成: ${successCount}/${totalCount} 个连接可用`);
-      }, 500);
+      showMessage.success('连接列表已刷新');
+      console.log('✅ 连接列表强制刷新完成');
 
     } catch (error) {
-      console.error('❌ 刷新连接状态失败:', error);
-      showMessage.error(`刷新连接状态失败: ${error}`);
+      console.error('❌ 刷新连接列表失败:', error);
+      showMessage.error(`刷新连接列表失败: ${error}`);
     } finally {
       setIsRefreshingAll(false);
     }
@@ -366,8 +351,28 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`
           );
           if (confirmed) {
-            await removeConnection(connection.id);
-            showMessage.success(`连接 ${connection.name} 已删除`);
+            try {
+              console.log('🗑️ 开始删除连接:', connection.id);
+
+              // 先从后端删除
+              await safeTauriInvoke('delete_connection', { connectionId: connection.id });
+              console.log('✅ 后端删除成功');
+
+              // 再从前端状态删除
+              removeConnection(connection.id);
+              console.log('✅ 前端状态删除成功');
+
+              showMessage.success(`连接 ${connection.name} 已删除`);
+
+              // 延迟刷新以确保状态同步
+              setTimeout(() => {
+                forceRefreshConnections();
+              }, 100);
+
+            } catch (error) {
+              console.error('❌ 删除连接失败:', error);
+              showMessage.error(`删除连接失败: ${error}`);
+            }
           }
           break;
         }

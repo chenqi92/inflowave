@@ -63,6 +63,7 @@ interface ConnectionState {
   syncConnectionStates: () => void;
   syncConnectionsToBackend: () => Promise<void>;
   initializeConnectionStates: () => void;
+  forceRefreshConnections: () => Promise<void>;
 }
 
 // 辅助函数：解析 InfluxDB 版本字符串，返回主版本号（1.x, 2.x, 3.x）
@@ -103,9 +104,19 @@ export const useConnectionStore = create<ConnectionState>()(
           updatedAt: new Date(),
         };
 
-        set(state => ({
-          connections: [...state.connections, newConnection],
-        }));
+        set(state => {
+          // 检查是否已存在相同ID的连接，避免重复添加
+          const existingIndex = state.connections.findIndex(conn => conn.id === id);
+          if (existingIndex >= 0) {
+            console.warn(`⚠️ 连接ID ${id} 已存在，将替换现有连接`);
+            const updatedConnections = [...state.connections];
+            updatedConnections[existingIndex] = newConnection;
+            return { connections: updatedConnections };
+          }
+
+          console.log(`✅ 添加新连接: ${newConnection.name} (${id})`);
+          return { connections: [...state.connections, newConnection] };
+        });
 
         return id;
       },
@@ -125,11 +136,14 @@ export const useConnectionStore = create<ConnectionState>()(
       removeConnection: id => {
         set(state => {
           const newStatuses = { ...state.connectionStatuses };
+          const newTableStatuses = { ...state.tableConnectionStatuses };
           delete newStatuses[id];
+          delete newTableStatuses[id];
 
           return {
             connections: state.connections.filter(conn => conn.id !== id),
             connectionStatuses: newStatuses,
+            tableConnectionStatuses: newTableStatuses,
             connectedConnectionIds: state.connectedConnectionIds.filter(
               connId => connId !== id
             ),
@@ -258,6 +272,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
       // 清空所有连接
       clearConnections: () => {
+        console.log('🧹 清空所有连接配置和状态');
         set({
           connections: [],
           connectionStatuses: {},
@@ -800,6 +815,59 @@ export const useConnectionStore = create<ConnectionState>()(
             activeConnectionId: null,
           };
         });
+      },
+
+      // 强制刷新连接列表
+      forceRefreshConnections: async () => {
+        try {
+          console.log('🔄 强制刷新连接列表');
+
+          // 从后端获取最新的连接配置
+          const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+
+          if (backendConnections) {
+            console.log(`📥 从后端获取到 ${backendConnections.length} 个连接配置`);
+
+            // 清空当前状态
+            set({
+              connections: [],
+              connectionStatuses: {},
+              tableConnectionStatuses: {},
+              connectedConnectionIds: [],
+              activeConnectionId: null,
+            });
+
+            // 重新添加连接
+            const { addConnection } = get();
+            for (const conn of backendConnections) {
+              addConnection(conn);
+            }
+
+            // 初始化所有连接为断开状态
+            const disconnectedStatuses: Record<string, ConnectionStatus> = {};
+            backendConnections.forEach(conn => {
+              if (conn.id) {
+                disconnectedStatuses[conn.id] = {
+                  id: conn.id,
+                  status: 'disconnected',
+                  error: undefined,
+                  latency: undefined,
+                  lastConnected: undefined,
+                };
+              }
+            });
+
+            set(state => ({
+              connectionStatuses: disconnectedStatuses,
+              tableConnectionStatuses: disconnectedStatuses,
+            }));
+
+            console.log(`✅ 强制刷新完成，当前有 ${backendConnections.length} 个连接`);
+          }
+        } catch (error) {
+          console.error('❌ 强制刷新连接列表失败:', error);
+          throw error;
+        }
       },
     }),
     {

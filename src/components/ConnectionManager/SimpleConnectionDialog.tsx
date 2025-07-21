@@ -371,14 +371,17 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
       if (isEditing) {
         // 编辑现有连接
+        console.log('📝 编辑现有连接:', connection?.id);
         const configData = buildConfigData();
         await editConnection(configData);
         onSuccess(configData);
       } else {
         // 创建新连接
-        const id = await createConnection(buildConfigData());
-        const configData = buildConfigData(id);
-        onSuccess(configData);
+        console.log('➕ 创建新连接:', formData.name);
+        const configData = buildConfigData();
+        const id = await createConnection(configData);
+        const finalConfigData = { ...configData, id };
+        onSuccess(finalConfigData);
       }
     } catch (error) {
       console.error('保存连接失败:', error);

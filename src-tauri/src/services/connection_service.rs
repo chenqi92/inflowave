@@ -88,16 +88,29 @@ impl ConnectionService {
     /// 创建连接
     pub async fn create_connection(&self, mut config: ConnectionConfig) -> Result<String> {
         debug!("创建连接: {}", config.name);
-        
+
+        let connection_id = config.id.clone();
+
+        // 检查连接是否已存在
+        {
+            let configs = self.configs.read().await;
+            if configs.contains_key(&connection_id) {
+                warn!("连接 ID '{}' 已存在，将覆盖现有连接", connection_id);
+                // 先移除现有连接
+                drop(configs);
+                if let Err(e) = self.manager.remove_connection(&connection_id).await {
+                    warn!("移除现有连接失败: {}", e);
+                }
+            }
+        }
+
         // 加密密码
         if let Some(password) = &config.password {
             let encrypted_password = self.encryption.encrypt_password(password)
                 .context("密码加密失败")?;
             config.password = Some(encrypted_password);
         }
-        
-        let connection_id = config.id.clone();
-        
+
         // 存储配置
         {
             let mut configs = self.configs.write().await;
@@ -116,11 +129,11 @@ impl ConnectionService {
                 .context("密码解密失败")?;
             runtime_config.password = Some(decrypted_password);
         }
-        
+
         // 添加到连接管理器
         self.manager.add_connection(runtime_config).await
             .context("添加连接失败")?;
-        
+
         info!("连接 '{}' 创建成功", config.name);
         Ok(connection_id)
     }

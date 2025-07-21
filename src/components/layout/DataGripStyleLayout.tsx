@@ -68,7 +68,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (pathname === '/performance') return 'performance';
     if (pathname === '/extensions') return 'extensions';
     if (pathname === '/dev-tools') return 'dev-tools';
-    return 'datasource'; // 默认视图改为数据源视图
+
+    // 根据路径返回对应视图，如果没有匹配则保持当前视图不变
+    if (pathname === '/' || pathname === '/dashboard') return 'datasource';
+
+    // 对于未知路径，返回当前视图以避免意外跳转
+    return currentView || 'datasource';
   };
 
   // 从用户偏好中获取初始状态，如果没有则使用默认值
@@ -249,13 +254,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const newView = getViewFromPath(location.pathname);
 
     // 只有当视图真的不同时才更新，避免不必要的重渲染
-    if (currentView !== newView) {
+    // 同时确保新视图不是当前视图，防止循环更新
+    if (currentView !== newView && newView !== currentView) {
+      console.log(`🔄 路径变化导致视图切换: ${currentView} -> ${newView} (路径: ${location.pathname})`);
       setCurrentView(newView);
     }
 
     // 移除自动打开查询历史的逻辑，改为手动触发
     // 这样可以避免软件启动时自动弹出查询历史对话框
-  }, [location.pathname, location.search]);
+  }, [location.pathname, currentView]); // 添加 currentView 依赖以避免循环
 
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {

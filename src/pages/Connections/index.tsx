@@ -17,6 +17,7 @@ const Connections: React.FC = () => {
     setConnectionStatus,
     clearConnections,
     syncConnectionsToBackend,
+    forceRefreshConnections,
   } = useConnectionStore();
 
   const [isDialogVisible, setIsDialogVisible] = useState(false);
@@ -26,32 +27,38 @@ const Connections: React.FC = () => {
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
     try {
+      console.log('🔄 开始同步连接配置从后端到前端');
       const backendConnections =
         await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (backendConnections && backendConnections.length > 0) {
-        // 对比前端和后端的连接，只更新有差异的
+        console.log(`📥 从后端获取到 ${backendConnections.length} 个连接配置`);
+
+        // 对比前端和后端的连接，检查是否需要更新
         const currentConnections = connections;
-        const needsUpdate = backendConnections.some(backendConn => {
-          const frontendConn = currentConnections.find(
-            c => c.id === backendConn.id
-          );
-          return (
-            !frontendConn ||
-            JSON.stringify(frontendConn) !== JSON.stringify(backendConn)
-          );
+        const backendIds = new Set(backendConnections.map(c => c.id));
+        const frontendIds = new Set(currentConnections.map(c => c.id));
+
+        // 检查是否有差异
+        const hasIdDifference = backendIds.size !== frontendIds.size ||
+          [...backendIds].some(id => !frontendIds.has(id)) ||
+          [...frontendIds].some(id => !backendIds.has(id));
+
+        const hasContentDifference = backendConnections.some(backendConn => {
+          const frontendConn = currentConnections.find(c => c.id === backendConn.id);
+          if (!frontendConn) return true;
+
+          // 比较关键字段，忽略时间戳差异
+          const backendKey = `${backendConn.name}-${backendConn.host}-${backendConn.port}-${backendConn.version}`;
+          const frontendKey = `${frontendConn.name}-${frontendConn.host}-${frontendConn.port}-${frontendConn.version}`;
+          return backendKey !== frontendKey;
         });
 
-        if (
-          needsUpdate ||
-          currentConnections.length !== backendConnections.length
-        ) {
-          // 保存当前活跃连接ID和连接状态
-          const {
-            activeConnectionId,
-            connectedConnectionIds,
-            connectionStatuses,
-          } = useConnectionStore.getState();
+        if (hasIdDifference || hasContentDifference) {
+          console.log('🔄 检测到连接配置差异，开始同步');
+
+          // 保存当前状态
+          const { activeConnectionId, connectionStatuses } = useConnectionStore.getState();
 
           // 清空前端存储的连接
           clearConnections();
@@ -61,46 +68,29 @@ const Connections: React.FC = () => {
             addConnection(conn);
           }
 
-          // 恢复活跃连接和连接状态
-          if (
-            activeConnectionId &&
-            backendConnections.some(conn => conn.id === activeConnectionId)
-          ) {
-            useConnectionStore
-              .getState()
-              .setActiveConnection(activeConnectionId);
-
-            // 恢复连接状态
-            Object.entries(connectionStatuses).forEach(([id, status]) => {
-              if (backendConnections.some(conn => conn.id === id)) {
-                setConnectionStatus(id, status);
-              }
-            });
-
-            // 恢复已连接列表
-            connectedConnectionIds.forEach(id => {
-              if (backendConnections.some(conn => conn.id === id)) {
-                useConnectionStore.getState().addConnectedConnection(id);
-              }
-            });
+          // 恢复活跃连接（如果仍然存在）
+          if (activeConnectionId && backendConnections.some(conn => conn.id === activeConnectionId)) {
+            useConnectionStore.getState().setActiveConnection(activeConnectionId);
           }
 
-          console.log(
-            `已同步 ${backendConnections.length} 个连接配置，保持活跃连接: ${activeConnectionId}`
-          );
+          console.log(`✅ 成功同步 ${backendConnections.length} 个连接配置`);
+        } else {
+          console.log('✅ 连接配置已是最新，无需同步');
         }
       } else if (connections.length > 0) {
         // 如果后端没有连接但前端有，将前端连接推送到后端
-        console.log('后端无连接配置，尝试同步前端连接到后端');
+        console.log('📤 后端无连接配置，尝试同步前端连接到后端');
         try {
           await syncConnectionsToBackend();
-          console.log('前端连接已同步到后端');
+          console.log('✅ 前端连接已同步到后端');
         } catch (syncError) {
-          console.warn('同步前端连接到后端失败:', syncError);
+          console.warn('⚠️ 同步前端连接到后端失败:', syncError);
         }
+      } else {
+        console.log('📭 前后端都没有连接配置');
       }
     } catch (error) {
-      console.error('同步连接配置失败:', error);
+      console.error('❌ 同步连接配置失败:', error);
       showMessage.error('同步连接配置失败，请检查后端服务');
     }
   };
@@ -162,6 +152,8 @@ const Connections: React.FC = () => {
   // 处理连接保存成功
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
+      console.log('💾 开始保存连接配置:', connection.name);
+
       if (editingConnection?.id) {
         // 更新现有连接 - 确保使用正确的连接ID和时间戳字段
         const updateConfig = {
@@ -170,6 +162,8 @@ const Connections: React.FC = () => {
           created_at: editingConnection.created_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
+
+        console.log('📝 更新现有连接:', updateConfig.id);
         await safeTauriInvoke('update_connection', { config: updateConfig });
         updateConnection(editingConnection.id, updateConfig);
         showMessage.success('连接配置已更新');
@@ -180,22 +174,31 @@ const Connections: React.FC = () => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
+
+        console.log('➕ 创建新连接:', connectionWithTimestamp.name);
         const connectionId = await safeTauriInvoke<string>(
           'create_connection',
           { config: connectionWithTimestamp }
         );
+
         if (connectionId) {
-          const newConnection = { ...connection, id: connectionId };
+          const newConnection = { ...connectionWithTimestamp, id: connectionId };
           addConnection(newConnection);
+          console.log('✅ 新连接已添加到前端状态:', connectionId);
           showMessage.success('连接配置已创建');
         }
       }
 
       handleCloseDialog();
-      // 重新加载连接列表以确保状态同步
-      await loadConnections();
+
+      // 延迟强制刷新以确保后端状态已更新
+      setTimeout(async () => {
+        console.log('🔄 强制刷新连接列表');
+        await forceRefreshConnections();
+      }, 100);
+
     } catch (error) {
-      console.error('保存连接配置失败:', error);
+      console.error('❌ 保存连接配置失败:', error);
       showMessage.error(`保存连接配置失败: ${error}`);
     }
   };
