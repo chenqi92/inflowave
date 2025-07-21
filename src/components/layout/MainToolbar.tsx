@@ -220,9 +220,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
         {/* 查询历史按钮 */}
         <Button
-          variant='ghost'
+          variant={currentView === 'query-history' ? 'default' : 'ghost'}
           size='sm'
-          className='h-10 w-16 p-1 flex flex-col items-center justify-center gap-1'
+          className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+            currentView === 'query-history'
+              ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
+              : 'hover:bg-accent hover:text-accent-foreground'
+          }`}
           onClick={() => {
             // 直接切换到查询历史视图
             onViewChange?.('query-history');
