@@ -41,19 +41,25 @@ export const isBrowserEnvironment = (): boolean => {
 
 // 定义返回 void 的命令列表
 const VOID_COMMANDS = new Set([
+  // Connection management
   'initialize_connections',
-  'update_user_preferences',
   'update_connection',
   'delete_connection',
   'connect_to_database',
   'disconnect_from_database',
+  'start_connection_monitoring',
+  'stop_connection_monitoring',
+
+  // System operations
+  'cleanup_resources',
+  'toggle_devtools',
   'write_file',
-  'import_data',
-  'perform_health_check',
-  'export_analytics_report',
-  'init_embedded_server_cmd',
-  'stop_embedded_server_cmd',
-  'restart_embedded_server_cmd',
+  'write_binary_file',
+  'create_dir',
+  'close_app',
+
+  // Settings
+  'update_app_settings',
   'update_general_settings',
   'update_editor_settings',
   'update_query_settings',
@@ -61,15 +67,40 @@ const VOID_COMMANDS = new Set([
   'update_security_settings',
   'update_controller_settings',
   'update_monitoring_settings',
-  'reset_settings',
-  'save_app_config',
+  'export_settings',
+
+  // Query history
+  'delete_query_history',
+  'update_saved_query',
+  'delete_saved_query',
+
+  // User preferences
+  'update_user_preferences',
+
+  // Data operations
+  'import_data',
+
+  // Performance monitoring
+  'perform_health_check',
+  'export_analytics_report',
+  'start_system_monitoring',
+  'stop_system_monitoring',
+  'record_query_performance',
+
+  // Embedded server
+  'init_embedded_server_cmd',
+  'stop_embedded_server_cmd',
+  'restart_embedded_server_cmd',
+
+  // History operations
   'clear_query_history',
   'clear_optimization_history',
   'save_query_history',
   'save_optimization_history',
-  'start_system_monitoring',
-  'stop_system_monitoring',
-  'record_query_performance',
+
+  // Legacy/deprecated
+  'reset_settings',
+  'save_app_config',
 ]);
 
 // 类型安全的 Tauri API 调用包装器 - 使用函数重载

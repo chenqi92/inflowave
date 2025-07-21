@@ -51,11 +51,21 @@ const AppWrapper: React.FC = () => {
 // 渲染应用
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
-root.render(
-  <React.StrictMode>
-    <AppWrapper />
-  </React.StrictMode>
-);
+// 在开发环境中暂时禁用 StrictMode 以避免 DOM 操作错误
+// StrictMode 在开发环境中会双重调用 effects，可能导致 DOM 操作冲突
+const isDevelopment = import.meta.env.DEV;
+
+if (isDevelopment) {
+  console.log('🔧 开发环境：禁用 React StrictMode 以避免 DOM 操作冲突');
+  root.render(<AppWrapper />);
+} else {
+  console.log('🚀 生产环境：启用 React StrictMode');
+  root.render(
+    <React.StrictMode>
+      <AppWrapper />
+    </React.StrictMode>
+  );
+}
 
 // 开发环境热更新
 // Hot module replacement is handled by Vite automatically in development mode

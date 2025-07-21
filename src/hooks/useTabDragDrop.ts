@@ -241,7 +241,13 @@ export const useTabDragDrop = () => {
     });
 
     return () => {
-      unlisten.then((fn: any) => fn());
+      try {
+        unlisten.then((fn: any) => fn()).catch((error: any) => {
+          console.debug('清理窗口监听器时出错:', error);
+        });
+      } catch (error) {
+        console.debug('清理窗口监听器时出错:', error);
+      }
     };
   }, [detachedWindows]);
 

@@ -2191,10 +2191,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         }
       });
 
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['data-theme', 'class']
-      });
+      try {
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-theme', 'class']
+        });
+      } catch (error) {
+        console.debug('设置主题观察器时出错:', error);
+      }
 
       // 禁用默认右键菜单，使用自定义中文菜单
       // 监听右键事件
@@ -2270,8 +2274,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 清理函数
       return () => {
-        observer.disconnect();
-        console.log('🧹 Monaco编辑器清理完成');
+        try {
+          observer.disconnect();
+          console.log('🧹 Monaco编辑器清理完成');
+        } catch (error) {
+          console.debug('清理Monaco编辑器观察器时出错:', error);
+        }
       };
     };
 
