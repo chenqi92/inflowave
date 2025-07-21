@@ -98,6 +98,12 @@ const VOID_COMMANDS = new Set([
   'save_query_history',
   'save_optimization_history',
 
+  // Workspace operations
+  'set_active_workspace_tab',
+  'remove_tab_from_workspace',
+  'clear_workspace',
+  'save_tabs_to_workspace',
+
   // Legacy/deprecated
   'reset_settings',
   'save_app_config',

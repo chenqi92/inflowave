@@ -64,8 +64,9 @@ pub struct ConnectionConfig {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    #[serde(rename = "dbType")]
+    #[serde(rename = "dbType", default = "default_db_type")]
     pub db_type: DatabaseType,
+    #[serde(default = "default_version")]
     pub version: Option<InfluxDBVersion>,
     pub host: String,
     pub port: u16,
@@ -74,11 +75,11 @@ pub struct ConnectionConfig {
     pub database: Option<String>,
     pub ssl: bool,
     pub timeout: u64,
-    #[serde(rename = "connectionTimeout")]
+    #[serde(rename = "connectionTimeout", default = "default_connection_timeout")]
     pub connection_timeout: u64,
-    #[serde(rename = "queryTimeout")]
+    #[serde(rename = "queryTimeout", default = "default_query_timeout")]
     pub query_timeout: u64,
-    #[serde(rename = "defaultQueryLanguage")]
+    #[serde(rename = "defaultQueryLanguage", default = "default_query_language")]
     pub default_query_language: Option<String>,
     #[serde(rename = "proxyConfig")]
     pub proxy_config: Option<ProxyConfig>,
@@ -92,6 +93,27 @@ pub struct ConnectionConfig {
     pub created_at: DateTime<Utc>,
     #[serde(rename = "updated_at")]
     pub updated_at: DateTime<Utc>,
+}
+
+// Default functions for backward compatibility
+fn default_db_type() -> DatabaseType {
+    DatabaseType::InfluxDB
+}
+
+fn default_version() -> Option<InfluxDBVersion> {
+    Some(InfluxDBVersion::V1x)
+}
+
+fn default_connection_timeout() -> u64 {
+    30
+}
+
+fn default_query_timeout() -> u64 {
+    60
+}
+
+fn default_query_language() -> Option<String> {
+    Some("InfluxQL".to_string())
 }
 
 impl Default for ProxyConfig {

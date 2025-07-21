@@ -254,8 +254,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const newView = getViewFromPath(location.pathname);
 
     // 只有当视图真的不同时才更新，避免不必要的重渲染
-    // 同时确保新视图不是当前视图，防止循环更新
-    if (currentView !== newView && newView !== currentView) {
+    if (currentView !== newView) {
       console.log(`🔄 路径变化导致视图切换: ${currentView} -> ${newView} (路径: ${location.pathname})`);
       setCurrentView(newView);
     }
@@ -419,31 +418,39 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   // 获取当前视图
   const getCurrentView = (): string => currentView;
 
-  // 处理视图变化 - 特殊处理开发者工具和偏好设置同步
+  // 处理视图变化 - 特殊处理路径导航和偏好设置同步
   const handleViewChange = useCallback(
     (newView: string) => {
-      // 如果当前在开发者工具页面，并且要切换到其他视图，需要同时导航
-      if (currentView === 'dev-tools' && newView !== 'dev-tools') {
-        setCurrentView(newView);
-        // 根据视图导航到对应路径
-        const pathMap: Record<string, string> = {
-          datasource: '/connections',
-          query: '/query',
-          'query-history': '/query-history',
-          visualization: '/visualization',
-          performance: '/performance',
-        };
-        if (pathMap[newView]) {
-          navigate(pathMap[newView]);
-        }
+      // 防止重复切换到相同视图
+      if (currentView === newView) {
+        return;
+      }
+
+      // 定义视图到路径的映射
+      const pathMap: Record<string, string> = {
+        datasource: '/connections',
+        query: '/query',
+        'query-history': '/query-history',
+        visualization: '/visualization',
+        performance: '/performance',
+        extensions: '/extensions',
+        'dev-tools': '/dev-tools',
+      };
+
+      // 对于需要特定路径的视图，先导航再设置视图状态
+      if (pathMap[newView] && location.pathname !== pathMap[newView]) {
+        // 对于所有有特定路径的视图，都先导航再让路径监听器处理状态更新
+        // 这样可以确保路径和视图状态的同步
+        navigate(pathMap[newView]);
+        // 不立即设置 currentView，让 useEffect 监听路径变化来处理
       } else {
         setCurrentView(newView);
       }
 
       // 如果在主页或仪表板，并且视图切换是有效的布局，则更新偏好设置
-      if ((location.pathname === '/' || location.pathname === '/dashboard') && 
-          isValidLayout(newView) && 
-          preferences?.workspace && 
+      if ((location.pathname === '/' || location.pathname === '/dashboard') &&
+          isValidLayout(newView) &&
+          preferences?.workspace &&
           preferences.workspace.layout !== newView) {
         console.log('手动切换视图，更新偏好设置:', newView);
         const updatedWorkspaceSettings = {

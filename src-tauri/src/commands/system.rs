@@ -476,6 +476,94 @@ pub async fn get_downloads_dir() -> Result<String, String> {
     }
 }
 
+/// 检查文件是否存在
+#[tauri::command]
+pub async fn file_exists(path: String) -> Result<bool, String> {
+    debug!("检查文件是否存在: {}", path);
+
+    let exists = Path::new(&path).exists();
+    info!("文件 {} 存在性检查结果: {}", path, exists);
+    Ok(exists)
+}
+
+/// 删除文件
+#[tauri::command]
+pub async fn delete_file(path: String) -> Result<(), String> {
+    debug!("删除文件: {}", path);
+
+    let file_path = Path::new(&path);
+
+    if !file_path.exists() {
+        return Err(format!("文件不存在: {}", path));
+    }
+
+    match std::fs::remove_file(&path) {
+        Ok(_) => {
+            info!("成功删除文件: {}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("删除文件失败: {}: {}", path, e);
+            Err(format!("删除文件失败: {}", e))
+        }
+    }
+}
+
+/// 文件信息结构
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct FileInfo {
+    pub size: u64,
+    pub modified: String,
+    pub created: String,
+    pub is_file: bool,
+    pub is_dir: bool,
+}
+
+/// 获取文件信息
+#[tauri::command]
+pub async fn get_file_info(path: String) -> Result<FileInfo, String> {
+    debug!("获取文件信息: {}", path);
+
+    let file_path = Path::new(&path);
+
+    if !file_path.exists() {
+        return Err(format!("文件不存在: {}", path));
+    }
+
+    match std::fs::metadata(&path) {
+        Ok(metadata) => {
+            let modified = metadata.modified()
+                .map(|time| {
+                    let datetime: chrono::DateTime<chrono::Utc> = time.into();
+                    datetime.to_rfc3339()
+                })
+                .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339());
+
+            let created = metadata.created()
+                .map(|time| {
+                    let datetime: chrono::DateTime<chrono::Utc> = time.into();
+                    datetime.to_rfc3339()
+                })
+                .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339());
+
+            let file_info = FileInfo {
+                size: metadata.len(),
+                modified,
+                created,
+                is_file: metadata.is_file(),
+                is_dir: metadata.is_dir(),
+            };
+
+            info!("文件信息获取成功: {:?}", file_info);
+            Ok(file_info)
+        }
+        Err(e) => {
+            error!("获取文件信息失败: {}: {}", path, e);
+            Err(format!("获取文件信息失败: {}", e))
+        }
+    }
+}
+
 /// 显示消息对话框
 #[tauri::command]
 pub async fn show_message_dialog(

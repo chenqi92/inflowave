@@ -658,6 +658,9 @@ async fn main() {
             write_binary_file,
             create_dir,
             get_downloads_dir,
+            file_exists,
+            delete_file,
+            get_file_info,
             show_message_dialog,
             close_app,
 

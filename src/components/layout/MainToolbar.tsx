@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Button,
 } from '@/components/ui';
@@ -92,6 +92,31 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
     });
   };
 
+  // 使用 useCallback 优化按钮点击处理器，防止不必要的重渲染
+  const handleDatasourceClick = useCallback(() => {
+    onViewChange?.('datasource');
+  }, [onViewChange]);
+
+  const handleQueryClick = useCallback(() => {
+    onViewChange?.('query');
+  }, [onViewChange]);
+
+  const handleVisualizationClick = useCallback(() => {
+    onViewChange?.('visualization');
+  }, [onViewChange]);
+
+  const handlePerformanceClick = useCallback(() => {
+    onViewChange?.('performance');
+  }, [onViewChange]);
+
+  const handleQueryHistoryClick = useCallback(() => {
+    onViewChange?.('query-history');
+  }, [onViewChange]);
+
+  const handleDevToolsClick = useCallback(() => {
+    onViewChange?.('dev-tools');
+  }, [onViewChange]);
+
   return (
     <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
       {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
@@ -135,7 +160,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
-              onClick={() => onViewChange?.('datasource')}
+              onClick={handleDatasourceClick}
               title='数据源管理'
             >
               <Database className='w-4 h-4' />
@@ -150,7 +175,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
-              onClick={() => onViewChange?.('query')}
+              onClick={handleQueryClick}
               disabled={!hasAnyConnectedInfluxDB}
               title={
                 hasAnyConnectedInfluxDB
@@ -170,7 +195,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
-              onClick={() => onViewChange?.('visualization')}
+              onClick={handleVisualizationClick}
               disabled={!hasAnyConnectedInfluxDB}
               title={
                 hasAnyConnectedInfluxDB
@@ -190,7 +215,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
                   : 'hover:bg-accent hover:text-accent-foreground'
               }`}
-              onClick={() => onViewChange?.('performance')}
+              onClick={handlePerformanceClick}
               disabled={!hasAnyConnectedInfluxDB}
               title={
                 hasAnyConnectedInfluxDB
@@ -227,10 +252,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
               ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
               : 'hover:bg-accent hover:text-accent-foreground'
           }`}
-          onClick={() => {
-            // 直接切换到查询历史视图
-            onViewChange?.('query-history');
-          }}
+          onClick={handleQueryHistoryClick}
           title='查询历史'
         >
           <History className='w-4 h-4' />
@@ -246,11 +268,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
               ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
               : 'hover:bg-accent hover:text-accent-foreground'
           }`}
-          onClick={() => {
-            // 开发者工具 - 特殊处理：先导航再更新视图状态
-            navigate('/dev-tools');
-            setTimeout(() => onViewChange?.('dev-tools'), 100);
-          }}
+          onClick={handleDevToolsClick}
           title='开发者工具'
         >
           <Wrench className='w-4 h-4' />
