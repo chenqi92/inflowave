@@ -142,6 +142,12 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("mode_dark", "深色模式")
         .build()?;
 
+    // 语言设置子菜单
+    let language_submenu = SubmenuBuilder::new(app, "语言设置")
+        .text("lang_chinese", "中文")
+        .text("lang_english", "English")
+        .build()?;
+
     // 工具菜单 - 使用平台特定的快捷键
     let tools_menu = SubmenuBuilder::new(app, "工具")
         .text("console", &format!("控制台\t{}+`", cmd_key))
@@ -151,7 +157,7 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
         .text("extensions", "扩展管理")
         .item(&style_submenu)
         .item(&mode_submenu)
-        .text("language_settings", "语言设置")
+        .item(&language_submenu)
         .separator()
         .text("preferences", &format!("首选项\t{},", cmd_key))
         .build()?;
@@ -304,8 +310,11 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "query_performance" => emit_menu_action(&window, "query_performance"),
         "extensions" => emit_menu_action(&window, "navigate:/extensions"),
         "theme_settings" => emit_menu_action(&window, "theme_settings"),
-        "language_settings" => emit_menu_action(&window, "language_settings"),
         "preferences" => emit_menu_action(&window, "preferences"),
+
+        // 语言设置菜单
+        "lang_chinese" => emit_menu_action(&window, "lang_chinese"),
+        "lang_english" => emit_menu_action(&window, "lang_english"),
 
         // 帮助菜单
         "user_manual" => emit_menu_action(&window, "user_manual"),

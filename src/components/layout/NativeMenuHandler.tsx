@@ -134,6 +134,25 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     showMessage.success(`已切换到${modeLabel}`);
   };
 
+  // 语言切换处理函数
+  const handleLanguageChange = (locale: string, label: string) => {
+    console.log('🌐 切换语言:', locale, label);
+
+    // 保存语言设置到localStorage
+    localStorage.setItem('app-language', locale);
+
+    // 触发语言切换事件，让应用其他部分知道语言已切换
+    document.dispatchEvent(new CustomEvent('language-change', {
+      detail: { locale, label }
+    }));
+
+    // 显示成功消息
+    showMessage.success(`语言已切换到 ${label}`);
+
+    // 可以在这里添加国际化库的切换逻辑
+    // 例如: i18n.changeLanguage(locale);
+  };
+
 
 
   // 文件操作处理函数
@@ -730,10 +749,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         handled = true;
         break;
 
-      case 'language_settings':
-        // 打开设置弹框
-        setSettingsVisible(true);
-        showMessage.success('打开语言设置');
+      // 语言切换菜单
+      case 'lang_chinese':
+        handleLanguageChange('zh-CN', '中文');
+        handled = true;
+        break;
+
+      case 'lang_english':
+        handleLanguageChange('en-US', 'English');
         handled = true;
         break;
 
