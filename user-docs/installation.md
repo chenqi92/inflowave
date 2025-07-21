@@ -28,8 +28,8 @@
 
 **支持的架构**：
 
-- x64 (64位): `InfloWave_x.x.x_x64_en-US.msi`
-- x86 (32位): `InfloWave_x.x.x_x86_en-US.msi`
+- x64 (64位): `InfloWave_x.x.x_x64.msi`
+- x86 (32位): `InfloWave_x.x.x_x86.msi`
 
 **安装步骤**：
 
