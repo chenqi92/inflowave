@@ -371,9 +371,16 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         };
         console.log('最终设置的偏好数据:', preferences);
         console.log('通知设置enabled状态:', preferences.notifications?.enabled);
+        console.log('工作区布局值:', preferences.workspace?.layout);
         setPreferences(preferences);
         form.reset(preferences);
-        console.log('form.reset完成，当前表单值:', form.getValues());
+        
+        // 确保布局字段被正确设置
+        setTimeout(() => {
+          form.setValue('workspace.layout', preferences.workspace?.layout || 'comfortable');
+          console.log('form.reset完成，当前表单值:', form.getValues());
+          console.log('布局字段值:', form.getValues('workspace.layout'));
+        }, 100);
       } else {
         // 如果没有用户偏好，使用默认值
         const defaultPreferences = {
@@ -409,8 +416,14 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             restore_tabs_on_startup: true,
           },
         };
+        console.log('使用默认偏好设置, 布局值:', defaultPreferences.workspace.layout);
         setPreferences(defaultPreferences);
         form.reset(defaultPreferences);
+        // 确保布局字段被正确设置
+        setTimeout(() => {
+          form.setValue('workspace.layout', 'comfortable');
+          console.log('默认设置完成，布局字段值:', form.getValues('workspace.layout'));
+        }, 100);
       }
     } catch (error) {
       console.error('加载用户偏好失败:', error);
@@ -449,8 +462,14 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           restore_tabs_on_startup: true,
         },
       };
+      console.log('错误处理：使用默认偏好设置, 布局值:', defaultPreferences.workspace.layout);
       setPreferences(defaultPreferences);
       form.reset(defaultPreferences);
+      // 确保布局字段被正确设置
+      setTimeout(() => {
+        form.setValue('workspace.layout', 'comfortable');
+        console.log('错误处理：默认设置完成，布局字段值:', form.getValues('workspace.layout'));
+      }, 100);
     } finally {
       setLoading(false);
     }
@@ -582,6 +601,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   useEffect(() => {
     loadPreferences();
   }, []);
+
+  // 监听表单字段变化以调试布局字段问题
+  const watchedLayout = form.watch('workspace.layout');
+  useEffect(() => {
+    console.log('布局字段值变化:', watchedLayout);
+  }, [watchedLayout]);
 
   if (!preferences) {
     return (
@@ -902,28 +927,48 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                   <FormField
                     control={form.control}
                     name='workspace.layout'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>布局模式</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || "comfortable"}
-                          defaultValue="comfortable"
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder='选择布局模式' />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value='compact'>紧凑布局</SelectItem>
-                            <SelectItem value='comfortable'>舒适布局</SelectItem>
-                            <SelectItem value='spacious'>宽松布局</SelectItem>
-                            <SelectItem value='minimal'>极简布局</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      // 确保值始终有效
+                      const currentValue = field.value || 'comfortable';
+                      const validValues = ['compact', 'comfortable', 'spacious', 'minimal'];
+                      const safeValue = validValues.includes(currentValue) ? currentValue : 'comfortable';
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel>布局模式</FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              console.log('布局模式选择变更:', value);
+                              field.onChange(value);
+                            }}
+                            value={safeValue}
+                            defaultValue="comfortable"
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue 
+                                  placeholder={safeValue ? 
+                                    (safeValue === 'compact' ? '紧凑布局' :
+                                     safeValue === 'comfortable' ? '舒适布局' :
+                                     safeValue === 'spacious' ? '宽松布局' :
+                                     safeValue === 'minimal' ? '极简布局' : '选择布局模式') 
+                                    : '选择布局模式'}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value='compact'>紧凑布局</SelectItem>
+                              <SelectItem value='comfortable'>舒适布局</SelectItem>
+                              <SelectItem value='spacious'>宽松布局</SelectItem>
+                              <SelectItem value='minimal'>极简布局</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            选择工作区的视觉布局风格 (当前: {safeValue})
+                          </FormDescription>
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField
