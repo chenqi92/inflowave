@@ -40,7 +40,7 @@ const DesktopPageWrapper: React.FC<DesktopPageWrapperProps> = ({
       </div>
 
       {/* 页面内容 - 添加滚动容器 */}
-      <div className='desktop-page-content'>
+      <div className='desktop-page-content content-area'>
         <div className='desktop-page-scroll-container'>{children}</div>
       </div>
     </div>

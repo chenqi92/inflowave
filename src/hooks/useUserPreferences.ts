@@ -16,6 +16,7 @@ export interface NotificationSettings {
 export interface AccessibilitySettings {
   high_contrast: boolean;
   font_size: string;
+  font_family: string;
   reduced_motion: boolean;
   screen_reader: boolean;
   keyboard_navigation: boolean;
@@ -64,12 +65,13 @@ const defaultPreferences: UserPreferences = {
   accessibility: {
     high_contrast: false,
     font_size: 'medium',
+    font_family: 'system',
     reduced_motion: false,
     screen_reader: false,
     keyboard_navigation: true,
   },
   workspace: {
-    layout: 'datasource',
+    layout: 'comfortable',
     panel_sizes: {},
     panel_positions: {
       'left-panel': 25, // 左侧面板默认25%宽度

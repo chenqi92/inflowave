@@ -192,8 +192,8 @@ const App: React.FC = () => {
   // 应用无障碍设置到 DOM
   useEffect(() => {
     if (!preferences?.accessibility) return;
-    
-    const { high_contrast, font_size, reduced_motion } = preferences.accessibility;
+
+    const { high_contrast, font_size, font_family, reduced_motion } = preferences.accessibility;
     const body = document.body;
     
     // 高对比度设置
@@ -209,26 +209,157 @@ const App: React.FC = () => {
       case 'small':
         body.classList.add('font-small');
         break;
+      case 'medium':
+        body.classList.add('font-medium');
+        break;
       case 'large':
         body.classList.add('font-large');
         break;
       case 'xlarge':
+      case 'extraLarge':
         body.classList.add('font-xlarge');
         break;
-      default: // medium
+      default:
         body.classList.add('font-medium');
         break;
     }
-    
+
+    // 字体系列设置
+    body.classList.remove(
+      'font-system', 'font-inter', 'font-roboto', 'font-open-sans', 'font-lato', 'font-source-sans',
+      'font-nunito', 'font-poppins', 'font-montserrat', 'font-fira-sans', 'font-noto-sans', 'font-ubuntu',
+      'font-work-sans', 'font-dm-sans', 'font-plus-jakarta', 'font-manrope', 'font-space-grotesk',
+      'font-outfit', 'font-lexend', 'font-be-vietnam', 'font-fira-code', 'font-jetbrains-mono',
+      'font-source-code-pro', 'font-inconsolata', 'font-roboto-mono', 'font-ubuntu-mono',
+      'font-cascadia-code', 'font-sf-mono'
+    );
+    switch (font_family) {
+      case 'inter':
+        body.classList.add('font-inter');
+        break;
+      case 'roboto':
+        body.classList.add('font-roboto');
+        break;
+      case 'open-sans':
+        body.classList.add('font-open-sans');
+        break;
+      case 'lato':
+        body.classList.add('font-lato');
+        break;
+      case 'source-sans':
+        body.classList.add('font-source-sans');
+        break;
+      case 'nunito':
+        body.classList.add('font-nunito');
+        break;
+      case 'poppins':
+        body.classList.add('font-poppins');
+        break;
+      case 'montserrat':
+        body.classList.add('font-montserrat');
+        break;
+      case 'fira-sans':
+        body.classList.add('font-fira-sans');
+        break;
+      case 'noto-sans':
+        body.classList.add('font-noto-sans');
+        break;
+      case 'ubuntu':
+        body.classList.add('font-ubuntu');
+        break;
+      case 'work-sans':
+        body.classList.add('font-work-sans');
+        break;
+      case 'dm-sans':
+        body.classList.add('font-dm-sans');
+        break;
+      case 'plus-jakarta':
+        body.classList.add('font-plus-jakarta');
+        break;
+      case 'manrope':
+        body.classList.add('font-manrope');
+        break;
+      case 'space-grotesk':
+        body.classList.add('font-space-grotesk');
+        break;
+      case 'outfit':
+        body.classList.add('font-outfit');
+        break;
+      case 'lexend':
+        body.classList.add('font-lexend');
+        break;
+      case 'be-vietnam':
+        body.classList.add('font-be-vietnam');
+        break;
+      // 等宽字体
+      case 'fira-code':
+        body.classList.add('font-fira-code');
+        break;
+      case 'jetbrains-mono':
+        body.classList.add('font-jetbrains-mono');
+        break;
+      case 'source-code-pro':
+        body.classList.add('font-source-code-pro');
+        break;
+      case 'inconsolata':
+        body.classList.add('font-inconsolata');
+        break;
+      case 'roboto-mono':
+        body.classList.add('font-roboto-mono');
+        break;
+      case 'ubuntu-mono':
+        body.classList.add('font-ubuntu-mono');
+        break;
+      case 'cascadia-code':
+        body.classList.add('font-cascadia-code');
+        break;
+      case 'sf-mono':
+        body.classList.add('font-sf-mono');
+        break;
+      default: // system
+        body.classList.add('font-system');
+        break;
+    }
+
     // 减少动画设置
     if (reduced_motion) {
       body.classList.add('reduced-motion');
     } else {
       body.classList.remove('reduced-motion');
     }
-    
-    console.log('已应用无障碍设置:', { high_contrast, font_size, reduced_motion });
+
+    console.log('已应用无障碍设置:', { high_contrast, font_size, font_family, reduced_motion });
   }, [preferences?.accessibility]);
+
+  // 应用工作区设置到 DOM
+  useEffect(() => {
+    if (!preferences?.workspace) return;
+
+    const { layout } = preferences.workspace;
+    const body = document.body;
+
+    // 布局模式设置
+    body.classList.remove('layout-compact', 'layout-comfortable', 'layout-spacious', 'layout-minimal');
+    switch (layout) {
+      case 'compact':
+        body.classList.add('layout-compact');
+        break;
+      case 'comfortable':
+        body.classList.add('layout-comfortable');
+        break;
+      case 'spacious':
+        body.classList.add('layout-spacious');
+        break;
+      case 'minimal':
+        body.classList.add('layout-minimal');
+        break;
+      default:
+        body.classList.add('layout-comfortable');
+        break;
+    }
+
+    console.log('已应用工作区设置:', { layout });
+  }, [preferences?.workspace]);
 
   // 初始化应用
   useEffect(() => {

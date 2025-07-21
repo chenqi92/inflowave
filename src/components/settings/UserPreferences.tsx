@@ -306,16 +306,22 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       accessibility: {
         high_contrast: false,
         font_size: 'medium',
+        font_family: 'system',
         reduced_motion: false,
         screen_reader: false,
         keyboard_navigation: true,
       },
       workspace: {
-        layout: 'datasource',
+        layout: 'comfortable',
         panel_sizes: {},
+        panel_positions: {
+          'left-panel': 25,
+          'bottom-panel': 40,
+        },
         open_tabs: [],
         pinned_queries: [],
         recent_files: [],
+        restore_tabs_on_startup: true,
       },
     },
   });
@@ -380,13 +386,18 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           accessibility: {
             high_contrast: false,
             font_size: 'medium',
+            font_family: 'system',
             reduced_motion: false,
             screen_reader: false,
             keyboard_navigation: true,
           },
           workspace: {
-            layout: 'datasource',
+            layout: 'comfortable',
             panel_sizes: {},
+            panel_positions: {
+              'left-panel': 25,
+              'bottom-panel': 40,
+            },
             open_tabs: [],
             pinned_queries: [],
             recent_files: [],
@@ -415,13 +426,18 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         accessibility: {
           high_contrast: false,
           font_size: 'medium',
+          font_family: 'system',
           reduced_motion: false,
           screen_reader: false,
           keyboard_navigation: true,
         },
         workspace: {
-          layout: 'datasource',
+          layout: 'comfortable',
           panel_sizes: {},
+          panel_positions: {
+            'left-panel': 25,
+            'bottom-panel': 40,
+          },
           open_tabs: [],
           pinned_queries: [],
           recent_files: [],
@@ -570,7 +586,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   return (
     <>
-      <div className='space-y-6'>
+      <div className='space-y-6 settings-content'>
         <Form {...form}>
           <div className='space-y-6'>
             {/* 通知设置 */}
@@ -651,7 +667,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormLabel>通知位置</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -775,7 +791,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormLabel>字体大小</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -793,6 +809,58 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name='accessibility.font_family'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>字体系列</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='选择字体系列' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='system'>系统默认</SelectItem>
+                            <SelectItem value='inter'>Inter</SelectItem>
+                            <SelectItem value='roboto'>Roboto</SelectItem>
+                            <SelectItem value='open-sans'>Open Sans</SelectItem>
+                            <SelectItem value='lato'>Lato</SelectItem>
+                            <SelectItem value='source-sans'>Source Sans Pro</SelectItem>
+                            <SelectItem value='nunito'>Nunito</SelectItem>
+                            <SelectItem value='poppins'>Poppins</SelectItem>
+                            <SelectItem value='montserrat'>Montserrat</SelectItem>
+                            <SelectItem value='fira-sans'>Fira Sans</SelectItem>
+                            <SelectItem value='noto-sans'>Noto Sans</SelectItem>
+                            <SelectItem value='ubuntu'>Ubuntu</SelectItem>
+                            <SelectItem value='work-sans'>Work Sans</SelectItem>
+                            <SelectItem value='dm-sans'>DM Sans</SelectItem>
+                            <SelectItem value='plus-jakarta'>Plus Jakarta Sans</SelectItem>
+                            <SelectItem value='manrope'>Manrope</SelectItem>
+                            <SelectItem value='space-grotesk'>Space Grotesk</SelectItem>
+                            <SelectItem value='outfit'>Outfit</SelectItem>
+                            <SelectItem value='lexend'>Lexend</SelectItem>
+                            <SelectItem value='be-vietnam'>Be Vietnam Pro</SelectItem>
+                            <SelectItem value='fira-code'>Fira Code (Mono)</SelectItem>
+                            <SelectItem value='jetbrains-mono'>JetBrains Mono</SelectItem>
+                            <SelectItem value='source-code-pro'>Source Code Pro (Mono)</SelectItem>
+                            <SelectItem value='inconsolata'>Inconsolata (Mono)</SelectItem>
+                            <SelectItem value='roboto-mono'>Roboto Mono</SelectItem>
+                            <SelectItem value='ubuntu-mono'>Ubuntu Mono</SelectItem>
+                            <SelectItem value='cascadia-code'>Cascadia Code (Mono)</SelectItem>
+                            <SelectItem value='sf-mono'>SF Mono (Mono)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
                     name='accessibility.keyboard_navigation'
@@ -835,6 +903,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          defaultValue="comfortable"
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -842,10 +911,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value='datasource'>数据源视图</SelectItem>
-                            <SelectItem value='query'>查询视图</SelectItem>
-                            <SelectItem value='visualization'>可视化视图</SelectItem>
-                            <SelectItem value='query-history'>查询历史视图</SelectItem>
+                            <SelectItem value='compact'>紧凑布局</SelectItem>
+                            <SelectItem value='comfortable'>舒适布局</SelectItem>
+                            <SelectItem value='spacious'>宽松布局</SelectItem>
+                            <SelectItem value='minimal'>极简布局</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>

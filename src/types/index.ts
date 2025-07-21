@@ -673,6 +673,7 @@ export interface NotificationSettings {
 export interface AccessibilitySettings {
   high_contrast: boolean;
   font_size: string;
+  font_family: string;
   reduced_motion: boolean;
   screen_reader: boolean;
   keyboard_navigation: boolean;
@@ -681,9 +682,11 @@ export interface AccessibilitySettings {
 export interface WorkspaceSettings {
   layout: string;
   panel_sizes: Record<string, number>;
+  panel_positions?: Record<string, number>;
   open_tabs: string[];
   pinned_queries: string[];
   recent_files: string[];
+  restore_tabs_on_startup: boolean;
 }
 
 // 扩展和集成相关类型

@@ -39,6 +39,7 @@ pub struct NotificationSettings {
 pub struct AccessibilitySettings {
     pub high_contrast: bool,
     pub font_size: String,
+    pub font_family: String,
     pub reduced_motion: bool,
     pub screen_reader: bool,
     pub keyboard_navigation: bool,
@@ -48,6 +49,8 @@ pub struct AccessibilitySettings {
 pub struct WorkspaceSettings {
     pub layout: String,
     pub panel_sizes: HashMap<String, f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub panel_positions: Option<HashMap<String, f64>>,
     pub open_tabs: Vec<String>,
     pub pinned_queries: Vec<String>,
     pub recent_files: Vec<String>,
@@ -454,13 +457,20 @@ impl Default for UserPreferences {
             accessibility: AccessibilitySettings {
                 high_contrast: false,
                 font_size: "medium".to_string(),
+                font_family: "system".to_string(),
                 reduced_motion: false,
                 screen_reader: false,
                 keyboard_navigation: true,
             },
             workspace: WorkspaceSettings {
-                layout: "datasource".to_string(),
+                layout: "comfortable".to_string(),
                 panel_sizes: HashMap::new(),
+                panel_positions: Some({
+                    let mut positions = HashMap::new();
+                    positions.insert("left-panel".to_string(), 25.0);
+                    positions.insert("bottom-panel".to_string(), 40.0);
+                    positions
+                }),
                 open_tabs: vec![],
                 pinned_queries: vec![],
                 recent_files: vec![],

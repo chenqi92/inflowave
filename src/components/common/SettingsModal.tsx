@@ -302,7 +302,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       icon: <Settings className='w-4 h-4' />,
       label: '常规设置',
       children: (
-        <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className='space-y-6'>
+        <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className='space-y-6 settings-content'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
               <Monitor className='w-6 h-6 text-blue-600' />

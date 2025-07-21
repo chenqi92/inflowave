@@ -38,150 +38,341 @@
   background-color: hsl(0, 0%, 15%) !important;
 }
 
-/* 字体大小设置 - 使用根级CSS变量和高优先级选择器 */
-.font-small {
-  --base-font-size: 12px;
-  font-size: 12px !important;
+/* 字体大小设置 - 精确控制，避免影响UI组件 */
+
+/* 设置CSS变量，供其他组件使用 */
+body.font-small {
+  --font-size-base: 12px;
+  --font-size-sm: 10px;
+  --font-size-lg: 14px;
+  --font-size-xl: 16px;
+  --font-size-2xl: 18px;
 }
 
-.font-small,
-.font-small p,
-.font-small div,
-.font-small span,
-.font-small button,
-.font-small input,
-.font-small textarea,
-.font-small label {
-  font-size: 12px !important;
+body.font-medium {
+  --font-size-base: 14px;
+  --font-size-sm: 12px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
 }
 
-.font-small .text-sm {
-  font-size: 10px !important;
+body.font-large {
+  --font-size-base: 16px;
+  --font-size-sm: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
 }
 
-.font-small .text-base {
-  font-size: 12px !important;
+body.font-xlarge {
+  --font-size-base: 18px;
+  --font-size-sm: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 28px;
 }
 
-.font-small .text-lg {
-  font-size: 14px !important;
+/* 只对内容区域应用字体大小，不影响UI组件 */
+/* 内容区域的文本元素 */
+body.font-small .content-area p,
+body.font-small .content-area div:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]):not([class*="dropdown"]),
+body.font-small .content-area span:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]),
+body.font-small .content-area .text-content,
+body.font-small .settings-content p,
+body.font-small .settings-content .form-description,
+body.font-small .settings-content .text-content {
+  font-size: 12px;
 }
 
-.font-small .text-xl {
-  font-size: 16px !important;
+body.font-medium .content-area p,
+body.font-medium .content-area div:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]):not([class*="dropdown"]),
+body.font-medium .content-area span:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]),
+body.font-medium .content-area .text-content,
+body.font-medium .settings-content p,
+body.font-medium .settings-content .form-description,
+body.font-medium .settings-content .text-content {
+  font-size: 14px;
 }
 
-.font-small .text-2xl {
-  font-size: 18px !important;
+body.font-large .content-area p,
+body.font-large .content-area div:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]):not([class*="dropdown"]),
+body.font-large .content-area span:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]),
+body.font-large .content-area .text-content,
+body.font-large .settings-content p,
+body.font-large .settings-content .form-description,
+body.font-large .settings-content .text-content {
+  font-size: 16px;
 }
 
-.font-medium {
-  --base-font-size: 14px;
-  font-size: 14px !important;
+body.font-xlarge .content-area p,
+body.font-xlarge .content-area div:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]):not([class*="dropdown"]),
+body.font-xlarge .content-area span:not([class*="toolbar"]):not([class*="menu"]):not([class*="button"]):not([class*="select"]),
+body.font-xlarge .content-area .text-content,
+body.font-xlarge .settings-content p,
+body.font-xlarge .settings-content .form-description,
+body.font-xlarge .settings-content .text-content {
+  font-size: 18px;
 }
 
-.font-medium,
-.font-medium p,
-.font-medium div,
-.font-medium span,
-.font-medium button,
-.font-medium input,
-.font-medium textarea,
-.font-medium label {
-  font-size: 14px !important;
+/* Tailwind CSS 类的字体大小覆盖 */
+body.font-small .text-sm { font-size: var(--font-size-sm) !important; }
+body.font-small .text-base { font-size: var(--font-size-base) !important; }
+body.font-small .text-lg { font-size: var(--font-size-lg) !important; }
+body.font-small .text-xl { font-size: var(--font-size-xl) !important; }
+body.font-small .text-2xl { font-size: var(--font-size-2xl) !important; }
+
+body.font-medium .text-sm { font-size: var(--font-size-sm) !important; }
+body.font-medium .text-base { font-size: var(--font-size-base) !important; }
+body.font-medium .text-lg { font-size: var(--font-size-lg) !important; }
+body.font-medium .text-xl { font-size: var(--font-size-xl) !important; }
+body.font-medium .text-2xl { font-size: var(--font-size-2xl) !important; }
+
+body.font-large .text-sm { font-size: var(--font-size-sm) !important; }
+body.font-large .text-base { font-size: var(--font-size-base) !important; }
+body.font-large .text-lg { font-size: var(--font-size-lg) !important; }
+body.font-large .text-xl { font-size: var(--font-size-xl) !important; }
+body.font-large .text-2xl { font-size: var(--font-size-2xl) !important; }
+
+body.font-xlarge .text-sm { font-size: var(--font-size-sm) !important; }
+body.font-xlarge .text-base { font-size: var(--font-size-base) !important; }
+body.font-xlarge .text-lg { font-size: var(--font-size-lg) !important; }
+body.font-xlarge .text-xl { font-size: var(--font-size-xl) !important; }
+body.font-xlarge .text-2xl { font-size: var(--font-size-2xl) !important; }
+
+/* 字体系列设置 */
+body.font-system,
+body.font-system * {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
-.font-medium .text-sm {
-  font-size: 12px !important;
+body.font-inter,
+body.font-inter * {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-medium .text-base {
-  font-size: 14px !important;
+body.font-roboto,
+body.font-roboto * {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
-.font-medium .text-lg {
-  font-size: 16px !important;
+body.font-open-sans,
+body.font-open-sans * {
+  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-medium .text-xl {
-  font-size: 18px !important;
+body.font-lato,
+body.font-lato * {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-medium .text-2xl {
-  font-size: 20px !important;
+body.font-source-sans,
+body.font-source-sans * {
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large {
-  --base-font-size: 16px;
-  font-size: 16px !important;
+body.font-nunito,
+body.font-nunito * {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large,
-.font-large p,
-.font-large div,
-.font-large span,
-.font-large button,
-.font-large input,
-.font-large textarea,
-.font-large label {
-  font-size: 16px !important;
+body.font-poppins,
+body.font-poppins * {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large .text-sm {
-  font-size: 14px !important;
+body.font-montserrat,
+body.font-montserrat * {
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large .text-base {
-  font-size: 16px !important;
+body.font-fira-sans,
+body.font-fira-sans * {
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large .text-lg {
-  font-size: 18px !important;
+body.font-noto-sans,
+body.font-noto-sans * {
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large .text-xl {
-  font-size: 20px !important;
+body.font-ubuntu,
+body.font-ubuntu * {
+  font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-large .text-2xl {
-  font-size: 24px !important;
+body.font-work-sans,
+body.font-work-sans * {
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge {
-  --base-font-size: 18px;
-  font-size: 18px !important;
+body.font-dm-sans,
+body.font-dm-sans * {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge,
-.font-xlarge p,
-.font-xlarge div,
-.font-xlarge span,
-.font-xlarge button,
-.font-xlarge input,
-.font-xlarge textarea,
-.font-xlarge label {
-  font-size: 18px !important;
+body.font-plus-jakarta,
+body.font-plus-jakarta * {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge .text-sm {
-  font-size: 16px !important;
+body.font-manrope,
+body.font-manrope * {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge .text-base {
-  font-size: 18px !important;
+body.font-space-grotesk,
+body.font-space-grotesk * {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge .text-lg {
-  font-size: 20px !important;
+body.font-outfit,
+body.font-outfit * {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge .text-xl {
-  font-size: 24px !important;
+body.font-lexend,
+body.font-lexend * {
+  font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
 
-.font-xlarge .text-2xl {
-  font-size: 28px !important;
+body.font-be-vietnam,
+body.font-be-vietnam * {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
 }
+
+/* 等宽字体系列 */
+body.font-fira-code,
+body.font-fira-code * {
+  font-family: 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+body.font-jetbrains-mono,
+body.font-jetbrains-mono * {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+body.font-source-code-pro,
+body.font-source-code-pro * {
+  font-family: 'Source Code Pro', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+}
+
+body.font-inconsolata,
+body.font-inconsolata * {
+  font-family: 'Inconsolata', 'SF Mono', 'Monaco', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+body.font-roboto-mono,
+body.font-roboto-mono * {
+  font-family: 'Roboto Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Source Code Pro', monospace !important;
+}
+
+body.font-ubuntu-mono,
+body.font-ubuntu-mono * {
+  font-family: 'Ubuntu Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+body.font-cascadia-code,
+body.font-cascadia-code * {
+  font-family: 'Cascadia Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+body.font-sf-mono,
+body.font-sf-mono * {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace !important;
+}
+
+/* 布局模式设置 */
+body.layout-compact {
+  --spacing-unit: 0.5rem;
+  --padding-sm: 0.25rem;
+  --padding-md: 0.5rem;
+  --padding-lg: 0.75rem;
+  --margin-sm: 0.25rem;
+  --margin-md: 0.5rem;
+  --margin-lg: 0.75rem;
+}
+
+/* 紧凑布局 - 减少所有间距 */
+body.layout-compact .space-y-6 > * + * { margin-top: 1rem !important; }
+body.layout-compact .space-y-4 > * + * { margin-top: 0.5rem !important; }
+body.layout-compact .space-y-3 > * + * { margin-top: 0.375rem !important; }
+body.layout-compact .space-y-2 > * + * { margin-top: 0.25rem !important; }
+body.layout-compact .p-8 { padding: 0.5rem !important; }
+body.layout-compact .p-6 { padding: 0.375rem !important; }
+body.layout-compact .p-4 { padding: 0.25rem !important; }
+body.layout-compact .p-3 { padding: 0.1875rem !important; }
+body.layout-compact .p-2 { padding: 0.125rem !important; }
+body.layout-compact .gap-6 { gap: 1rem !important; }
+body.layout-compact .gap-4 { gap: 0.5rem !important; }
+body.layout-compact .gap-3 { gap: 0.375rem !important; }
+body.layout-compact .gap-2 { gap: 0.25rem !important; }
+
+body.layout-comfortable {
+  --spacing-unit: 1rem;
+  --padding-sm: 0.5rem;
+  --padding-md: 1rem;
+  --padding-lg: 1.5rem;
+  --margin-sm: 0.5rem;
+  --margin-md: 1rem;
+  --margin-lg: 1.5rem;
+}
+
+/* 舒适布局 - 默认间距 */
+body.layout-comfortable .space-y-6 > * + * { margin-top: 1.5rem !important; }
+body.layout-comfortable .space-y-4 > * + * { margin-top: 1rem !important; }
+body.layout-comfortable .space-y-3 > * + * { margin-top: 0.75rem !important; }
+body.layout-comfortable .space-y-2 > * + * { margin-top: 0.5rem !important; }
+
+body.layout-spacious {
+  --spacing-unit: 1.5rem;
+  --padding-sm: 0.75rem;
+  --padding-md: 1.5rem;
+  --padding-lg: 2.25rem;
+  --margin-sm: 0.75rem;
+  --margin-md: 1.5rem;
+  --margin-lg: 2.25rem;
+}
+
+/* 宽松布局 - 增加所有间距 */
+body.layout-spacious .space-y-6 > * + * { margin-top: 2.5rem !important; }
+body.layout-spacious .space-y-4 > * + * { margin-top: 2rem !important; }
+body.layout-spacious .space-y-3 > * + * { margin-top: 1.5rem !important; }
+body.layout-spacious .space-y-2 > * + * { margin-top: 1rem !important; }
+body.layout-spacious .p-8 { padding: 2.5rem !important; }
+body.layout-spacious .p-6 { padding: 2rem !important; }
+body.layout-spacious .p-4 { padding: 1.5rem !important; }
+body.layout-spacious .p-3 { padding: 1.25rem !important; }
+body.layout-spacious .p-2 { padding: 1rem !important; }
+body.layout-spacious .gap-6 { gap: 2.5rem !important; }
+body.layout-spacious .gap-4 { gap: 2rem !important; }
+body.layout-spacious .gap-3 { gap: 1.5rem !important; }
+body.layout-spacious .gap-2 { gap: 1rem !important; }
+
+body.layout-minimal {
+  --spacing-unit: 0.25rem;
+  --padding-sm: 0.125rem;
+  --padding-md: 0.25rem;
+  --padding-lg: 0.5rem;
+  --margin-sm: 0.125rem;
+  --margin-md: 0.25rem;
+  --margin-lg: 0.5rem;
+}
+
+/* 极简布局 - 最小间距 */
+body.layout-minimal .space-y-6 > * + * { margin-top: 0.5rem !important; }
+body.layout-minimal .space-y-4 > * + * { margin-top: 0.25rem !important; }
+body.layout-minimal .space-y-3 > * + * { margin-top: 0.1875rem !important; }
+body.layout-minimal .space-y-2 > * + * { margin-top: 0.125rem !important; }
+body.layout-minimal .p-8 { padding: 0.25rem !important; }
+body.layout-minimal .p-6 { padding: 0.1875rem !important; }
+body.layout-minimal .p-4 { padding: 0.125rem !important; }
+body.layout-minimal .p-3 { padding: 0.09375rem !important; }
+body.layout-minimal .p-2 { padding: 0.0625rem !important; }
+body.layout-minimal .gap-6 { gap: 0.5rem !important; }
+body.layout-minimal .gap-4 { gap: 0.25rem !important; }
+body.layout-minimal .gap-3 { gap: 0.1875rem !important; }
+body.layout-minimal .gap-2 { gap: 0.125rem !important; }
 
 /* 减少动画 */
 .reduced-motion * {
