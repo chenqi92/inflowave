@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
+import { safeTauriInvoke } from '@/utils/tauri';
 import {
   Tabs,
   TabsList,

@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { QueryResult } from '@/types';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 export interface ExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
@@ -359,29 +360,107 @@ export const convertToSQL = (
   return lines.join('\n');
 };
 
-// 下载数据到文件
-export const downloadData = (
+// 下载数据到文件 - 使用 Tauri 原生实现
+export const downloadData = async (
   data: string | ArrayBuffer,
   filename: string,
   mimeType: string
-): void => {
+): Promise<void> => {
   try {
-    const blob = new Blob([data], { type: mimeType });
-    const url = URL.createObjectURL(blob);
+    // 检查是否在 Tauri 环境中
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+      // Tauri 环境：使用原生文件保存
+      
+      // 显示文件保存对话框
+      const dialogResult = await safeTauriInvoke<{ path?: string } | null>(
+        'show_save_dialog',
+        {
+          defaultFilename: filename,
+          filters: [{
+            name: getFilterName(mimeType),
+            extensions: [getFileExtensionFromFilename(filename)]
+          }]
+        }
+      );
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      if (!dialogResult?.path) {
+        // 用户取消了保存
+        return;
+      }
 
-    // 清理对象 URL
-    URL.revokeObjectURL(url);
+      // 保存文件
+      if (data instanceof ArrayBuffer) {
+        // 二进制数据：转换为 base64
+        const base64Data = arrayBufferToBase64(data);
+        await safeTauriInvoke('write_binary_file', {
+          path: dialogResult.path,
+          data: base64Data
+        });
+      } else {
+        // 文本数据
+        await safeTauriInvoke('write_file', {
+          path: dialogResult.path,
+          content: data
+        });
+      }
+
+      console.log('文件已保存到:', dialogResult.path);
+    } else {
+      // 浏览器环境：使用传统方法
+      const blob = new Blob([data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // 清理对象 URL
+      URL.revokeObjectURL(url);
+    }
   } catch (error) {
     console.error('下载文件失败:', error);
     throw new Error('文件下载失败');
   }
+};
+
+// 辅助函数：ArrayBuffer 转 base64
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+// 辅助函数：根据 MIME 类型获取过滤器名称
+const getFilterName = (mimeType: string): string => {
+  switch (mimeType) {
+    case 'text/csv':
+      return 'CSV 文件';
+    case 'application/json':
+      return 'JSON 文件';
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      return 'Excel 文件';
+    case 'text/markdown':
+      return 'Markdown 文件';
+    case 'text/sql':
+      return 'SQL 文件';
+    case 'text/tab-separated-values':
+      return 'TSV 文件';
+    default:
+      return '所有文件';
+  }
+};
+
+// 辅助函数：从文件名获取扩展名
+const getFileExtensionFromFilename = (filename: string): string => {
+  const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1) return 'txt';
+  return filename.substring(lastDotIndex + 1);
 };
 
 // 根据格式获取 MIME 类型

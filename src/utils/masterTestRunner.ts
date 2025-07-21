@@ -234,17 +234,52 @@ class MasterTestRunner {
           `📄 测试报告准备就绪，但因为 Tauri 2.0 API 变更，暂时无法保存到文件`
         );
       } else {
-        // 浏览器环境，下载文件
-        const blob = new Blob([reportContent], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `inflowave-test-report-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        console.log('📄 测试报告已下载');
+        // 使用 Tauri 原生文件保存或浏览器下载
+        try {
+          if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+            // Tauri 环境：使用原生文件保存对话框
+            const { safeTauriInvoke } = await import('@/utils/tauri');
+            
+            const filename = `inflowave-test-report-${Date.now()}.json`;
+            const dialogResult = await safeTauriInvoke<{ path?: string } | null>(
+              'show_save_dialog',
+              {
+                defaultFilename: filename,
+                filters: [{
+                  name: 'JSON 文件',
+                  extensions: ['json']
+                }]
+              }
+            );
+
+            if (dialogResult?.path) {
+              await safeTauriInvoke('write_file', {
+                path: dialogResult.path,
+                content: reportContent
+              });
+              console.log('📄 测试报告已保存到:', dialogResult.path);
+            } else {
+              console.log('📄 用户取消了保存操作');
+            }
+          } else {
+            // 浏览器环境，使用传统下载方法
+            const blob = new Blob([reportContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inflowave-test-report-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('📄 测试报告已下载');
+          }
+        } catch (error) {
+          console.error('📄 保存测试报告失败:', error);
+          console.log(
+            `📄 无法保存文件，请手动复制以下报告内容:\n${reportContent}`
+          );
+        }
       }
     } catch (error) {
       console.error('保存测试报告失败:', error);
