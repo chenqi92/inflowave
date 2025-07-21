@@ -826,10 +826,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         // 获取字段信息 - 尝试多种查询格式
         let fieldResult;
         const fieldQueries = [
+          `SHOW FIELD KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
           `SHOW FIELD KEYS FROM "${tableName}"`,
           `SHOW FIELD KEYS FROM ${tableName}`,
-          `SHOW FIELD KEYS FROM "${selectedDatabase}"."${tableName}"`,
-          `SHOW FIELD KEYS`
+          `SHOW FIELD KEYS ON "${selectedDatabase}"`
         ];
         
         for (const query of fieldQueries) {
@@ -891,10 +891,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         // 获取标签信息 - 尝试多种查询格式
         let tagResult;
         const tagQueries = [
+          `SHOW TAG KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
           `SHOW TAG KEYS FROM "${tableName}"`,
           `SHOW TAG KEYS FROM ${tableName}`,
-          `SHOW TAG KEYS FROM "${selectedDatabase}"."${tableName}"`,
-          `SHOW TAG KEYS`
+          `SHOW TAG KEYS ON "${selectedDatabase}"`
         ];
         
         for (const query of tagQueries) {
