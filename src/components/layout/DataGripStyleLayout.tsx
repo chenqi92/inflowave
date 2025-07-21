@@ -268,12 +268,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 ||
           false
       );
-      // 只有在根路径时才使用偏好设置的布局
-      if (location.pathname === '/') {
-        const userLayout = preferences.workspace.layout;
-        const layout = isValidLayout(userLayout) ? userLayout : 'datasource';
-        setCurrentView(layout);
-      }
       setLeftPanelSize(
         preferences.workspace.panel_positions?.['left-panel'] || 25
       );
@@ -281,7 +275,43 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         preferences.workspace.panel_positions?.['bottom-panel'] || 40
       );
     }
-  }, [preferences, location.pathname]);
+  }, [preferences]);
+
+  // 监听布局偏好设置变化，应用到当前视图
+  useEffect(() => {
+    if (preferences?.workspace.layout) {
+      const pathView = getViewFromPath(location.pathname);
+      
+      // 如果是根路径或者仪表板路径，应用用户偏好的布局
+      if (location.pathname === '/' || location.pathname === '/dashboard') {
+        const userLayout = preferences.workspace.layout;
+        const layout = isValidLayout(userLayout) ? userLayout : 'datasource';
+        if (currentView !== layout) {
+          setCurrentView(layout);
+          console.log('应用用户偏好布局:', layout);
+        }
+      }
+      // 对于特定路径，保持路径对应的视图，但记录偏好设置
+      else {
+        console.log('当前在特定路径:', location.pathname, '使用路径视图:', pathView, '用户偏好:', preferences.workspace.layout);
+      }
+    }
+  }, [preferences?.workspace.layout, location.pathname, currentView]);
+
+  // 当视图变化时，如果在主要路径上，同步更新偏好设置
+  useEffect(() => {
+    if ((location.pathname === '/' || location.pathname === '/dashboard') && 
+        preferences?.workspace.layout !== currentView && 
+        isValidLayout(currentView) && 
+        preferences?.workspace) {
+      console.log('同步布局偏好设置:', currentView);
+      const updatedWorkspaceSettings = {
+        ...preferences.workspace,
+        layout: currentView
+      };
+      updateWorkspaceSettings(updatedWorkspaceSettings);
+    }
+  }, [currentView, location.pathname, preferences?.workspace, updateWorkspaceSettings]);
 
   // 当布局状态改变时自动保存（排除面板大小变化）
   useEffect(() => {
