@@ -115,6 +115,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   onEditConnection,
   currentTimeRange,
 }) => {
+  // 用于检测容器宽度的 ref
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
   const navigate = useNavigate();
   const {
     connections,
@@ -2122,6 +2125,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
   }, [openedDatabasesList, onExpandedDatabasesChange]);
 
+  // 监听容器宽度变化，判断是否需要隐藏文字
+  useEffect(() => {
+    const headerElement = headerRef.current;
+    if (!headerElement) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        // 当宽度小于200px时隐藏文字，只显示状态点
+        setIsNarrow(width < 200);
+      }
+    });
+
+    resizeObserver.observe(headerElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   if (collapsed) {
     return (
       <div className='h-full flex flex-col items-center py-4 space-y-4'>
@@ -2156,7 +2179,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     <Card className='database-explorer h-full flex flex-col'>
       {/* 头部：连接状态和操作 */}
       <CardContent className='p-3 border-b'>
-        <div className='flex items-center justify-between mb-3'>
+        <div ref={headerRef} className='flex items-center justify-between mb-3'>
           {displayConnectionInfo ? (
             <div className='flex items-center gap-2'>
               <Badge
@@ -2177,15 +2200,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               >
                 <div className='flex items-center gap-1'>
                   <span className='w-2 h-2 rounded-full bg-current'></span>
-                  <Typography.Text className='text-sm font-medium'>
-                    {displayConnectionInfo.status.status === 'connected'
-                      ? '已连接'
-                      : displayConnectionInfo.status.status === 'connecting'
-                        ? '连接中'
-                        : displayConnectionInfo.status.status === 'error'
-                          ? '连接错误'
-                          : '已断开'}
-                  </Typography.Text>
+                  {!isNarrow && (
+                    <Typography.Text className='text-sm font-medium'>
+                      {displayConnectionInfo.status.status === 'connected'
+                        ? '已连接'
+                        : displayConnectionInfo.status.status === 'connecting'
+                          ? '连接中'
+                          : displayConnectionInfo.status.status === 'error'
+                            ? '连接错误'
+                            : '已断开'}
+                    </Typography.Text>
+                  )}
                 </div>
               </Badge>
               <div className='flex flex-col'>
@@ -2202,7 +2227,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             </div>
           ) : (
             <Badge variant='secondary'>
-              <Typography.Text className='text-sm font-medium'>未连接</Typography.Text>
+              <div className='flex items-center gap-1'>
+                <span className='w-2 h-2 rounded-full bg-current'></span>
+                {!isNarrow && (
+                  <Typography.Text className='text-sm font-medium'>未连接</Typography.Text>
+                )}
+              </div>
             </Badge>
           )}
           <Tooltip>
