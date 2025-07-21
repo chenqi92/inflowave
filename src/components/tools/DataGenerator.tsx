@@ -786,14 +786,21 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         connectionId: activeConnectionId,
         database: selectedDatabase,
       });
-      setTables(tableList || []);
-      if (tableList && tableList.length > 0) {
-        showMessage.success(`已加载 ${tableList.length} 个表`);
+      const newTables = tableList || [];
+      setTables(newTables);
+      
+      if (newTables.length > 0) {
+        showMessage.success(`已加载 ${newTables.length} 个表`);
+        // 如果当前选中的表不在新的表列表中，才清除选择
+        if (selectedTable && !newTables.includes(selectedTable)) {
+          setSelectedTable('');
+          setTableInfo(null);
+        }
       } else {
         showMessage.info('数据库中暂无表');
+        setSelectedTable('');
+        setTableInfo(null);
       }
-      setSelectedTable('');
-      setTableInfo(null);
     } catch (error) {
       console.error('加载表列表失败:', error);
       showMessage.error(`加载表列表失败: ${error}`);
@@ -1035,11 +1042,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       console.log('表结构分析完成:', info);
       console.log('最终字段数量:', fields.length, '最终标签数量:', tags.length);
       
-      if (fields.length > 0 || tags.length > 0) {
-        showMessage.success(`已分析表 "${tableName}" 的结构：${fields.length} 个字段，${tags.length} 个标签`);
-      } else {
-        showMessage.warning(`表 "${tableName}" 暂无数据，无法分析字段类型`);
-      }
+      // 强制触发重新渲染
+      setTimeout(() => {
+        if (fields.length > 0 || tags.length > 0) {
+          showMessage.success(`已分析表 "${tableName}" 的结构：${fields.length} 个字段，${tags.length} 个标签`);
+        } else {
+          showMessage.warning(`表 "${tableName}" 暂无数据，无法分析字段类型`);
+        }
+      }, 100);
     } catch (error) {
       console.error('获取表结构失败:', error);
       showMessage.error(`获取表结构失败: ${error}`);
@@ -1511,9 +1521,21 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 disabled={!selectedDatabase}
                 variant='outline'
                 size='sm'
+                title="刷新表列表"
               >
                 <RefreshCw className='w-4 h-4' />
               </Button>
+              {selectedTable && (
+                <Button
+                  onClick={() => loadTableInfo(selectedTable)}
+                  disabled={!selectedTable}
+                  variant='outline'
+                  size='sm'
+                  title="刷新表结构"
+                >
+                  <Database className='w-4 h-4' />
+                </Button>
+              )}
             </div>
             
             <div className='flex items-center gap-2'>
