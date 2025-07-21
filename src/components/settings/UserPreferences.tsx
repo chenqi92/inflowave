@@ -295,34 +295,60 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       shortcuts: getAllSystemShortcuts(),
       notifications: {
         enabled: true,
-        queryCompletion: true,
-        connectionStatus: true,
-        systemAlerts: true,
+        query_completion: true,
+        connection_status: true,
+        system_alerts: true,
+        export_completion: true,
         sound: false,
         desktop: true,
         position: 'topRight',
       },
       accessibility: {
-        highContrast: false,
-        fontSize: 'medium',
-        reducedMotion: false,
-        screenReader: false,
-        keyboardNavigation: true,
+        high_contrast: false,
+        font_size: 'medium',
+        reduced_motion: false,
+        screen_reader: false,
+        keyboard_navigation: true,
       },
       workspace: {
         layout: 'default',
-        openTabs: true,
-        pinnedQueries: true,
-        recentFiles: true,
+        panel_sizes: {},
+        open_tabs: [],
+        pinned_queries: [],
+        recent_files: [],
       },
     },
   });
 
   // 加载用户偏好
   const loadPreferences = async () => {
+    console.log('开始加载用户偏好');
     setLoading(true);
     try {
-      const result = await safeTauriInvoke('get_user_preferences');
+      let result = null;
+      
+      // 首先尝试从后端加载
+      try {
+        result = await safeTauriInvoke('get_user_preferences');
+        console.log('从后端加载的数据:', result);
+      } catch (tauriError) {
+        console.warn('从后端加载失败，尝试从本地存储加载:', tauriError);
+      }
+      
+      // 如果后端没有数据，尝试从本地存储加载
+      if (!result && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('user-preferences');
+        console.log('从localStorage读取的原始数据:', stored);
+        if (stored) {
+          try {
+            result = JSON.parse(stored);
+            console.log('从localStorage解析的数据:', result);
+          } catch (parseError) {
+            console.warn('解析本地存储的用户偏好失败:', parseError);
+          }
+        }
+      }
+      
       if (result) {
         // 确保快捷键数据完整，如果没有快捷键数据，使用系统默认的
         const preferences = {
@@ -332,15 +358,39 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               ? result.shortcuts
               : getAllSystemShortcuts(),
         };
+        console.log('最终设置的偏好数据:', preferences);
+        console.log('通知设置enabled状态:', preferences.notifications?.enabled);
         setPreferences(preferences);
         form.reset(preferences);
+        console.log('form.reset完成，当前表单值:', form.getValues());
       } else {
         // 如果没有用户偏好，使用默认值
         const defaultPreferences = {
           shortcuts: getAllSystemShortcuts(),
-          notifications: form.getValues('notifications'),
-          accessibility: form.getValues('accessibility'),
-          workspace: form.getValues('workspace'),
+          notifications: {
+            enabled: true,
+            query_completion: true,
+            connection_status: true,
+            system_alerts: true,
+            export_completion: true,
+            sound: false,
+            desktop: true,
+            position: 'topRight',
+          },
+          accessibility: {
+            high_contrast: false,
+            font_size: 'medium',
+            reduced_motion: false,
+            screen_reader: false,
+            keyboard_navigation: true,
+          },
+          workspace: {
+            layout: 'default',
+            panel_sizes: {},
+            open_tabs: [],
+            pinned_queries: [],
+            recent_files: [],
+          },
         };
         setPreferences(defaultPreferences);
         form.reset(defaultPreferences);
@@ -351,9 +401,30 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 即使加载失败，也使用默认快捷键
       const defaultPreferences = {
         shortcuts: getAllSystemShortcuts(),
-        notifications: form.getValues('notifications'),
-        accessibility: form.getValues('accessibility'),
-        workspace: form.getValues('workspace'),
+        notifications: {
+          enabled: true,
+          query_completion: true,
+          connection_status: true,
+          system_alerts: true,
+          export_completion: true,
+          sound: false,
+          desktop: true,
+          position: 'topRight',
+        },
+        accessibility: {
+          high_contrast: false,
+          font_size: 'medium',
+          reduced_motion: false,
+          screen_reader: false,
+          keyboard_navigation: true,
+        },
+        workspace: {
+          layout: 'default',
+          panel_sizes: {},
+          open_tabs: [],
+          pinned_queries: [],
+          recent_files: [],
+        },
       };
       setPreferences(defaultPreferences);
       form.reset(defaultPreferences);
@@ -364,10 +435,38 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 保存用户偏好
   const savePreferences = async (values: UserPreferences) => {
+    console.log('保存用户偏好被调用，数据:', values);
+    console.log('通知设置:', values.notifications);
+    
     setLoading(true);
     try {
-      await safeTauriInvoke('update_user_preferences', { preferences: values });
+      // 保存到后端（Tauri环境）
+      try {
+        await safeTauriInvoke('update_user_preferences', { preferences: values });
+        console.log('后端保存成功');
+      } catch (tauriError) {
+        console.warn('保存到后端失败，尝试保存到本地存储:', tauriError);
+      }
+      
+      // 保存到本地存储（浏览器环境或作为后备）
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user-preferences', JSON.stringify(values));
+        console.log('localStorage保存成功:', values);
+        
+        // 验证保存
+        const saved = localStorage.getItem('user-preferences');
+        console.log('验证localStorage保存的数据:', JSON.parse(saved || '{}'));
+      }
+      
       setPreferences(values);
+
+      // 触发全局状态更新 - 发送自定义事件
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
+          detail: values
+        }));
+      }
+
       showMessage.success('偏好设置已保存');
       onSave?.(values);
     } catch (error) {
@@ -576,7 +675,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='notifications.queryCompletion'
+                    name='notifications.query_completion'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -595,7 +694,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='notifications.connectionStatus'
+                    name='notifications.connection_status'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -628,7 +727,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='accessibility.highContrast'
+                    name='accessibility.high_contrast'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -647,7 +746,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='accessibility.reducedMotion'
+                    name='accessibility.reduced_motion'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -668,7 +767,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='accessibility.fontSize'
+                    name='accessibility.font_size'
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>字体大小</FormLabel>
@@ -694,7 +793,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='accessibility.keyboardNavigation'
+                    name='accessibility.keyboard_navigation'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -752,7 +851,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='workspace.openTabs'
+                    name='workspace.open_tabs'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -763,8 +862,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>
@@ -775,7 +874,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
-                    name='workspace.pinnedQueries'
+                    name='workspace.pinned_queries'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -786,8 +885,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>
@@ -796,7 +895,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='workspace.recentFiles'
+                    name='workspace.recent_files'
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -807,8 +906,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
+                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
                           />
                         </FormControl>
                       </FormItem>
@@ -820,25 +919,22 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
             {/* 键盘快捷键 */}
             <div>
-              <div className='flex items-center gap-3 mb-4'>
-                <Keyboard className='w-6 h-6 text-blue-600' />
-                <div>
-                  <h2 className='text-2xl font-bold'>键盘快捷键</h2>
-                  <p className='text-muted-foreground'>自定义快捷键设置</p>
+              <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                  <Keyboard className='w-6 h-6 text-blue-600' />
+                  <div>
+                    <h2 className='text-2xl font-bold'>键盘快捷键</h2>
+                    <p className='text-muted-foreground'>自定义快捷键设置</p>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className='text-sm text-muted-foreground'>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={loadDefaultShortcuts}
-                    className='ml-4'
-                  >
-                    重置为默认
-                  </Button>
-                </p>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  onClick={loadDefaultShortcuts}
+                >
+                  重置为默认
+                </Button>
               </div>
               <div>
                 <div className='space-y-6'>
@@ -967,7 +1063,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           重置为默认
         </Button>
         <Button
-          onClick={() => form.handleSubmit(savePreferences)()}
+          onClick={async () => {
+            console.log('保存按钮被点击');
+            const formData = form.getValues();
+            console.log('当前表单数据:', formData);
+            await savePreferences(formData);
+          }}
           disabled={loading}
         >
           <Settings className='w-4 h-4 mr-2' />

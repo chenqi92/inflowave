@@ -62,11 +62,19 @@ export const useKeyboardShortcuts = (
                 const metaMatch = !!shortcut.metaKey === !!keyboardEvent.metaKey;
 
                 if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
-                    if (shortcut.preventDefault ?? preventDefault) {
-                        keyboardEvent.preventDefault();
-                    }
-                    if (shortcut.stopPropagation ?? stopPropagation) {
-                        keyboardEvent.stopPropagation();
+                    // 不要阻止系统级的复制粘贴快捷键
+                    const isSystemClipboard = (
+                        (keyboardEvent.ctrlKey || keyboardEvent.metaKey) &&
+                        ['c', 'v', 'x', 'a'].includes(keyboardEvent.key.toLowerCase())
+                    );
+
+                    if (!isSystemClipboard) {
+                        if (shortcut.preventDefault ?? preventDefault) {
+                            keyboardEvent.preventDefault();
+                        }
+                        if (shortcut.stopPropagation ?? stopPropagation) {
+                            keyboardEvent.stopPropagation();
+                        }
                     }
 
                     shortcut.callback(keyboardEvent);
@@ -151,7 +159,11 @@ export const useGlobalShortcuts = () => {
         {
             key: '7',
             ctrlKey: true,
-            callback: () => navigate('/settings'),
+            callback: () => {
+                // 触发设置弹框打开事件
+                const settingsEvent = new CustomEvent('open-settings-modal');
+                document.dispatchEvent(settingsEvent);
+            },
             description: '打开应用设置',
             category: 'navigation',
         },

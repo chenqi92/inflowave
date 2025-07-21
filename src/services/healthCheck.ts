@@ -18,7 +18,7 @@ export interface SystemHealthStatus {
 
 export class HealthCheckService {
   private static instance: HealthCheckService;
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setInterval>;
   private listeners: Array<(status: SystemHealthStatus) => void> = [];
   private lastHealthStatus: SystemHealthStatus = {
     overall: 'unhealthy',

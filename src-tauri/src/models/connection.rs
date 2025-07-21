@@ -69,6 +69,7 @@ pub struct ConnectionStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ConnectionState {
     Connected,
     Disconnected,

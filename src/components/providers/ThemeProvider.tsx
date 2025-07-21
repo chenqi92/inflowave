@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { applyThemeColors } from '@/lib/theme-colors';
+import { useAppStore } from '@/store/app';
 
-type Theme = 'dark' | 'light' | 'system';
+type Theme = 'dark' | 'light' | 'system' | 'auto';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -37,8 +38,15 @@ export function ThemeProvider({
   colorSchemeStorageKey = 'vite-ui-color-scheme',
   ...props
 }: ThemeProviderProps) {
+  const { config } = useAppStore();
+
+  // 从 useAppStore 获取主题，如果没有则使用 localStorage 或默认值
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
+      // 优先使用 useAppStore 中的主题
+      if (config?.theme) {
+        return config.theme as Theme;
+      }
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     }
     return defaultTheme;
@@ -53,6 +61,13 @@ export function ThemeProvider({
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
+  // 同步 useAppStore 中的主题变化
+  useEffect(() => {
+    if (config?.theme && config.theme !== theme) {
+      setTheme(config.theme as Theme);
+    }
+  }, [config?.theme, theme]);
+
   useEffect(() => {
     const root = window.document.documentElement;
 
@@ -61,7 +76,7 @@ export function ThemeProvider({
 
     let currentTheme: 'light' | 'dark' = 'light';
 
-    if (theme === 'system') {
+    if (theme === 'system' || theme === 'auto') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
@@ -70,16 +85,24 @@ export function ThemeProvider({
       root.classList.add(systemTheme);
       currentTheme = systemTheme;
       setResolvedTheme(systemTheme);
+      applyThemeColors(colorScheme, systemTheme === 'dark');
 
       // 监听系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => {
-        if (theme === 'system') {
+        if (theme === 'system' || theme === 'auto') {
           const newSystemTheme = mediaQuery.matches ? 'dark' : 'light';
           root.classList.remove('light', 'dark');
           root.classList.add(newSystemTheme);
           setResolvedTheme(newSystemTheme);
           applyThemeColors(colorScheme, newSystemTheme === 'dark');
+
+          // 强制触发重新渲染，确保所有组件都能响应主题变化
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('theme-changed', {
+              detail: { theme: newSystemTheme }
+            }));
+          }, 0);
         }
       };
 
@@ -87,12 +110,12 @@ export function ThemeProvider({
       return () => mediaQuery.removeEventListener('change', handleChange);
     } else {
       // 确保theme不是空字符串
-      if (theme && theme.trim()) {
+      if (theme && theme.trim() && (theme === 'light' || theme === 'dark')) {
         root.classList.add(theme);
-        currentTheme = theme;
-        setResolvedTheme(theme);
+        currentTheme = theme as 'light' | 'dark';
+        setResolvedTheme(theme as 'light' | 'dark');
       } else {
-        // 如果theme为空，使用默认的light主题
+        // 如果theme为空或无效，使用默认的light主题
         root.classList.add('light');
         currentTheme = 'light';
         setResolvedTheme('light');
@@ -108,6 +131,9 @@ export function ThemeProvider({
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
+      // 同步到 useAppStore
+      const { setConfig } = useAppStore.getState();
+      setConfig({ theme });
     },
     colorScheme,
     setColorScheme: (colorScheme: string) => {

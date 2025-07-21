@@ -301,7 +301,7 @@ export interface NetworkIOMetrics {
 
 // 配置相关类型
 export interface AppConfig {
-  theme: 'light' | 'dark' | 'auto';
+  theme: 'light' | 'dark' | 'auto' | 'system';
   language: string;
   queryTimeout: number;
   maxQueryResults: number;
@@ -309,6 +309,7 @@ export interface AppConfig {
   autoConnect: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   colorScheme?: string;
+  showInternalDatabases?: boolean;
 }
 
 // 错误相关类型
@@ -356,7 +357,7 @@ export interface TabItem {
 }
 
 // 通用类型
-export type Theme = 'light' | 'dark' | 'auto';
+export type Theme = 'light' | 'dark' | 'auto' | 'system';
 export type Language = 'zh-CN' | 'en-US';
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -660,27 +661,29 @@ export interface KeyboardShortcut {
 
 export interface NotificationSettings {
   enabled: boolean;
-  queryCompletion: boolean;
-  connectionStatus: boolean;
-  systemAlerts: boolean;
+  query_completion: boolean;
+  connection_status: boolean;
+  system_alerts: boolean;
+  export_completion: boolean;
   sound: boolean;
   desktop: boolean;
-  position: 'topRight' | 'topLeft' | 'bottomRight' | 'bottomLeft';
+  position: string;
 }
 
 export interface AccessibilitySettings {
-  highContrast: boolean;
-  fontSize: 'small' | 'medium' | 'large' | 'extraLarge';
-  reducedMotion: boolean;
-  screenReader: boolean;
-  keyboardNavigation: boolean;
+  high_contrast: boolean;
+  font_size: string;
+  reduced_motion: boolean;
+  screen_reader: boolean;
+  keyboard_navigation: boolean;
 }
 
 export interface WorkspaceSettings {
-  layout: 'default' | 'compact' | 'wide';
-  openTabs: boolean;
-  pinnedQueries: boolean;
-  recentFiles: boolean;
+  layout: string;
+  panel_sizes: Record<string, number>;
+  open_tabs: string[];
+  pinned_queries: string[];
+  recent_files: string[];
 }
 
 // 扩展和集成相关类型

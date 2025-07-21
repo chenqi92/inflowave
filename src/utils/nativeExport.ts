@@ -3,16 +3,17 @@
  * 使用 Tauri 原生文件保存功能，避免浏览器下载提示
  */
 
-import { safeTauriInvoke } from '@/utils/tauri';
-import { convertToCSV, convertToJSON, convertToExcel, getFileExtension, getMimeType } from './export';
+import { safeTauriInvoke, safeTauriInvokeOptional } from '@/utils/tauri';
+import { convertToCSV, convertToJSON, convertToExcel, convertToTSV, convertToMarkdown, convertToSQL, getFileExtension, getMimeType } from './export';
 import type { QueryResult, ExportOptions } from '@/types';
 
 export interface NativeExportOptions {
-  format: 'csv' | 'json' | 'excel' | 'xlsx';
+  format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
   includeHeaders: boolean;
   delimiter?: string;
   defaultFilename?: string;
   defaultDirectory?: string;
+  tableName?: string; // 用于SQL插入语句
 }
 
 export interface FileFilter {
@@ -28,6 +29,11 @@ export const getFileFilters = (format: string): FileFilter[] => {
         { name: 'CSV 文件', extensions: ['csv'] },
         { name: '所有文件', extensions: ['*'] }
       ];
+    case 'tsv':
+      return [
+        { name: 'TSV 文件', extensions: ['tsv'] },
+        { name: '所有文件', extensions: ['*'] }
+      ];
     case 'json':
       return [
         { name: 'JSON 文件', extensions: ['json'] },
@@ -37,6 +43,16 @@ export const getFileFilters = (format: string): FileFilter[] => {
     case 'xlsx':
       return [
         { name: 'Excel 文件', extensions: ['xlsx'] },
+        { name: '所有文件', extensions: ['*'] }
+      ];
+    case 'markdown':
+      return [
+        { name: 'Markdown 文件', extensions: ['md'] },
+        { name: '所有文件', extensions: ['*'] }
+      ];
+    case 'sql':
+      return [
+        { name: 'SQL 文件', extensions: ['sql'] },
         { name: '所有文件', extensions: ['*'] }
       ];
     default:
@@ -62,21 +78,37 @@ export const exportWithNativeDialog = async (
   options: NativeExportOptions
 ): Promise<boolean> => {
   try {
-    // 准备文件保存对话框选项
+    // 准备文件保存对话框选项 - 参考TabEditor的实现
     const defaultFilename = options.defaultFilename || generateDefaultFilename(options.format);
-    const defaultPath = options.defaultDirectory 
-      ? `${options.defaultDirectory}/${defaultFilename}`
-      : defaultFilename;
+
+    // 关键修复：直接使用文件名，不包含路径（与TabEditor保持一致）
+    const defaultPath = defaultFilename;
 
     const filters = getFileFilters(options.format);
 
-    // 显示原生文件保存对话框
-    const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
-      'save_file_dialog',
-      {
-        default_path: defaultPath,
+    // 调试日志
+    console.log('导出参数调试:', {
+      originalDefaultFilename: options.defaultFilename,
+      generatedDefaultFilename: defaultFilename,
+      defaultPath: defaultPath,
+      format: options.format,
+      filters: filters
+    });
+
+    // 准备Tauri调用参数 - 使用正确的结构体包装格式
+    const tauriParams = {
+      params: {
+        default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
         filters
       }
+    };
+
+    console.log('Tauri调用参数 (正确格式):', tauriParams);
+
+    // 显示原生文件保存对话框 - 使用safeTauriInvokeOptional允许null返回值
+    const dialogResult = await safeTauriInvokeOptional<{ path?: string; name?: string }>(
+      'save_file_dialog',
+      tauriParams
     );
 
     // 用户取消了保存
@@ -91,12 +123,21 @@ export const exportWithNativeDialog = async (
       case 'csv':
         data = convertToCSV(result, options);
         break;
+      case 'tsv':
+        data = convertToTSV(result, options);
+        break;
       case 'json':
         data = convertToJSON(result, options);
         break;
       case 'excel':
       case 'xlsx':
         data = convertToExcel(result, options);
+        break;
+      case 'markdown':
+        data = convertToMarkdown(result, options);
+        break;
+      case 'sql':
+        data = convertToSQL(result, options);
         break;
       default:
         throw new Error(`不支持的导出格式: ${options.format}`);
@@ -144,12 +185,21 @@ export const exportToPath = async (
       case 'csv':
         data = convertToCSV(result, options);
         break;
+      case 'tsv':
+        data = convertToTSV(result, options);
+        break;
       case 'json':
         data = convertToJSON(result, options);
         break;
       case 'excel':
       case 'xlsx':
         data = convertToExcel(result, options);
+        break;
+      case 'markdown':
+        data = convertToMarkdown(result, options);
+        break;
+      case 'sql':
+        data = convertToSQL(result, options);
         break;
       default:
         throw new Error(`不支持的导出格式: ${options.format}`);
@@ -184,7 +234,7 @@ export const exportToPath = async (
  */
 export const quickExport = async (
   result: QueryResult,
-  format: 'csv' | 'json' | 'excel' | 'xlsx',
+  format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql',
   prefix: string = 'export'
 ): Promise<string> => {
   try {
@@ -217,7 +267,7 @@ export const quickExport = async (
  */
 export const batchExport = async (
   result: QueryResult,
-  formats: ('csv' | 'json' | 'excel' | 'xlsx')[],
+  formats: ('csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql')[],
   baseFilename: string = 'export'
 ): Promise<string[]> => {
   const exportedFiles: string[] = [];
@@ -272,11 +322,14 @@ export const getExportInfo = async (
   let data: string | ArrayBuffer;
   
   // 生成临时数据来计算大小
-  const tempOptions = { format: format as 'json' | 'csv' | 'excel' | 'xlsx', includeHeaders: true };
-  
+  const tempOptions = { format: format as any, includeHeaders: true };
+
   switch (format.toLowerCase()) {
     case 'csv':
       data = convertToCSV(result, tempOptions as any);
+      break;
+    case 'tsv':
+      data = convertToTSV(result, tempOptions as any);
       break;
     case 'json':
       data = convertToJSON(result, tempOptions as any);
@@ -284,6 +337,12 @@ export const getExportInfo = async (
     case 'excel':
     case 'xlsx':
       data = convertToExcel(result, tempOptions as any);
+      break;
+    case 'markdown':
+      data = convertToMarkdown(result, tempOptions as any);
+      break;
+    case 'sql':
+      data = convertToSQL(result, tempOptions as any);
       break;
     default:
       data = '';

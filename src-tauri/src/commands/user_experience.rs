@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, State, Window};
-use log::{debug, error, info};
+use tauri::{Emitter, Manager, State, Window};
+use tauri_plugin_notification::NotificationExt;
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -93,15 +94,38 @@ pub async fn update_user_preferences(
     preferences_storage: State<'_, UserPreferencesStorage>,
     preferences: UserPreferences,
 ) -> Result<(), String> {
-    debug!("更新用户偏好设置");
-    
+    use std::sync::atomic::{AtomicU64, AtomicU32, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    // 使用原子类型替代可变静态变量，避免 unsafe 代码
+    static LAST_CALL_TIME: AtomicU64 = AtomicU64::new(0);
+    static CALL_COUNT: AtomicU32 = AtomicU32::new(0);
+
+    // 添加调用频率监控
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    let call_count = CALL_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+    let last_time = LAST_CALL_TIME.swap(now, Ordering::Relaxed);
+    let time_diff = now.saturating_sub(last_time);
+
+    if time_diff < 5 && last_time > 0 {
+        warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}", time_diff, call_count);
+    }
+
+    // 每100次调用输出一次统计
+    if call_count % 100 == 0 {
+        info!("用户偏好更新统计: 总调用次数 {}", call_count);
+    }
+
     let mut storage = preferences_storage.lock().map_err(|e| {
         error!("获取偏好设置存储锁失败: {}", e);
         "存储访问失败".to_string()
     })?;
-    
+
     *storage = preferences;
-    info!("用户偏好设置已更新");
     Ok(())
 }
 
@@ -233,10 +257,26 @@ pub async fn send_notification(
         "发送通知失败".to_string()
     })?;
     
-    // 如果启用了桌面通知，也发送桌面通知
+    // 如果启用了桌面通知，发送系统桌面通知
     if preferences.notifications.desktop {
-        // 这里可以集成系统桌面通知
         info!("桌面通知: {} - {}", notification.title, notification.message);
+        
+        // 使用 Tauri 的通知插件发送桌面通知
+        let app_handle = window.app_handle();
+        
+        // 构建通知内容
+        match app_handle.notification()
+            .builder()
+            .title(&notification.title)
+            .body(&notification.message)
+            .show() {
+            Ok(_) => {
+                info!("桌面通知发送成功: {}", notification.title);
+            }
+            Err(e) => {
+                error!("桌面通知发送失败: {}", e);
+            }
+        }
     }
     
     Ok(())

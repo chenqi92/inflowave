@@ -16,10 +16,246 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    Checkbox,
+    Input,
+    DatePicker,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
     Spin,
     TooltipTrigger,
     TooltipContent,
 } from '@/components/ui';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+    useSortable,
+} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
+
+// 可拖拽的列项组件
+interface SortableColumnItemProps {
+    column: string;
+    isSelected: boolean;
+    onToggle: (column: string) => void;
+}
+
+const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelected, onToggle }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: column });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    const handleToggle = (e: React.MouseEvent | React.FormEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 序号列不能被取消选择
+        if (column === '#') {
+            return;
+        }
+        onToggle(column);
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex items-center p-2 hover:bg-accent rounded"
+        >
+            <div className="flex items-center flex-1">
+                <Checkbox
+                    checked={isSelected}
+                    onChange={handleToggle}
+                    onClick={handleToggle}
+                    disabled={column === '#'}
+                    className="mr-2"
+                />
+                <span
+                    className={`flex-1 ${column === '#' ? 'cursor-default' : 'cursor-pointer'}`}
+                    onClick={handleToggle}
+                >
+                    {column === '#' ? '序号' : column}
+                </span>
+                {column === 'time' && (
+                    <Badge variant="secondary" className="text-xs ml-2">
+                        时间
+                    </Badge>
+                )}
+                {column === '#' && (
+                    <Badge variant="outline" className="text-xs ml-2">
+                        必选
+                    </Badge>
+                )}
+            </div>
+            <div
+                {...attributes}
+                {...listeners}
+                className="text-xs text-muted-foreground ml-2 cursor-move p-1"
+                title="拖拽排序"
+            >
+                ⋮⋮
+            </div>
+        </div>
+    );
+};
+
+// 增强的筛选器组件
+interface FilterEditorProps {
+    filter: ColumnFilter;
+    onUpdate: (filter: ColumnFilter) => void;
+    onRemove: () => void;
+    availableOperators: { value: FilterOperator; label: string }[];
+}
+
+const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove, availableOperators }) => {
+    const handleOperatorChange = (operator: FilterOperator) => {
+        onUpdate({ ...filter, operator, value: '', value2: undefined });
+    };
+
+    const handleValueChange = (value: string) => {
+        onUpdate({ ...filter, value });
+    };
+
+    const handleValue2Change = (value2: string) => {
+        onUpdate({ ...filter, value2 });
+    };
+
+    const renderValueInput = () => {
+        switch (filter.dataType) {
+            case 'number':
+                if (filter.operator === 'between') {
+                    return (
+                        <div className="flex items-center gap-1">
+                            <Input
+                                type="number"
+                                placeholder="最小值"
+                                value={filter.value}
+                                onChange={(e) => handleValueChange(e.target.value)}
+                                className="w-16 h-7 text-xs"
+                            />
+                            <span className="text-xs text-muted-foreground">-</span>
+                            <Input
+                                type="number"
+                                placeholder="最大值"
+                                value={filter.value2 || ''}
+                                onChange={(e) => handleValue2Change(e.target.value)}
+                                className="w-16 h-7 text-xs"
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <Input
+                        type="number"
+                        placeholder="数值"
+                        value={filter.value}
+                        onChange={(e) => handleValueChange(e.target.value)}
+                        className="w-20 h-7 text-xs"
+                    />
+                );
+
+            case 'time':
+                if (filter.operator === 'time_range') {
+                    return (
+                        <div className="flex items-center gap-1">
+                            <DatePicker
+                                value={filter.value ? new Date(filter.value) : undefined}
+                                onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
+                                placeholder="开始时间"
+                                showTime
+                                size="small"
+                                className="w-32"
+                            />
+                            <span className="text-xs text-muted-foreground">-</span>
+                            <DatePicker
+                                value={filter.value2 ? new Date(filter.value2) : undefined}
+                                onChange={(date) => handleValue2Change(date ? date.toISOString() : '')}
+                                placeholder="结束时间"
+                                showTime
+                                size="small"
+                                className="w-32"
+                            />
+                        </div>
+                    );
+                }
+                return (
+                    <DatePicker
+                        value={filter.value ? new Date(filter.value) : undefined}
+                        onChange={(date) => handleValueChange(date ? date.toISOString() : '')}
+                        placeholder="选择时间"
+                        showTime
+                        size="small"
+                        className="w-32"
+                    />
+                );
+
+            default:
+                return (
+                    <Input
+                        placeholder="输入值"
+                        value={filter.value}
+                        onChange={(e) => handleValueChange(e.target.value)}
+                        className="w-24 h-7 text-xs"
+                    />
+                );
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
+            <Badge variant="outline" className="text-xs px-2 py-1">
+                {filter.column}
+            </Badge>
+
+            <Select value={filter.operator} onValueChange={handleOperatorChange}>
+                <SelectTrigger className="w-20 h-7 text-xs">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {availableOperators.map(op => (
+                        <SelectItem key={op.value} value={op.value} className="text-xs">
+                            {op.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            {renderValueInput()}
+
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRemove}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+            >
+                ×
+            </Button>
+        </div>
+    );
+};
 import {
     RefreshCw,
     Filter,
@@ -28,11 +264,29 @@ import {
     ChevronRight,
     Database,
     Table as TableIcon,
+    FileText,
+    FileSpreadsheet,
+    Code,
+    Hash,
+    ChevronDown,
 } from 'lucide-react';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
+import ExportOptionsDialog, { type ExportOptions } from './ExportOptionsDialog';
+
+// 生成带时间戳的文件名
+const generateTimestampedFilename = (tableName: string, format: string): string => {
+  const now = new Date();
+  const timestamp = now.toISOString()
+    .replace(/:/g, '-')  // 替换冒号为连字符
+    .replace(/\./g, '-') // 替换点为连字符
+    .slice(0, 19);       // 只保留到秒，格式：2025-07-20T09-30-45
+
+  const extension = format === 'excel' ? 'xlsx' : format;
+  return `${tableName}_${timestamp}.${extension}`;
+};
 
 interface TableDataBrowserProps {
     connectionId: string;
@@ -44,11 +298,24 @@ interface DataRow {
     [key: string]: any;
 }
 
+// 列数据类型
+type ColumnDataType = 'string' | 'number' | 'time' | 'boolean';
+
+// 筛选操作符
+type FilterOperator =
+    // 字符串操作符
+    | 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with'
+    // 数字操作符
+    | 'gt' | 'gte' | 'lt' | 'lte' | 'between'
+    // 时间操作符
+    | 'time_range';
+
 interface ColumnFilter {
     column: string;
-    operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'gt' | 'lt' | 'between';
+    operator: FilterOperator;
     value: string;
-    value2?: string; // for between operator
+    value2?: string; // for between operator and time range end
+    dataType: ColumnDataType;
 }
 
 const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
@@ -58,7 +325,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                            }) => {
     // 状态管理
     const [data, setData] = useState<DataRow[]>([]);
+    const [rawData, setRawData] = useState<DataRow[]>([]); // 存储原始数据用于客户端排序
     const [columns, setColumns] = useState<string[]>([]);
+    const [columnOrder, setColumnOrder] = useState<string[]>([]); // 列的显示顺序
+    const [selectedColumns, setSelectedColumns] = useState<string[]>([]); // 选中的列
     const [loading, setLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -67,6 +337,110 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [sortColumn, setSortColumn] = useState<string>('');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [searchText, setSearchText] = useState<string>('');
+    const [showExportDialog, setShowExportDialog] = useState(false);
+
+    // 拖拽传感器
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // 检测列的数据类型
+    const detectColumnDataType = useCallback((column: string, sampleData: DataRow[]): ColumnDataType => {
+        if (column === 'time') return 'time';
+
+        // 取样本数据进行类型检测
+        const samples = sampleData.slice(0, 10).map(row => row[column]).filter(val => val != null && val !== '');
+        if (samples.length === 0) return 'string';
+
+        // 检测是否为数字
+        const numericSamples = samples.filter(val => {
+            const num = parseFloat(String(val));
+            return !isNaN(num) && isFinite(num);
+        });
+
+        if (numericSamples.length / samples.length > 0.8) {
+            return 'number';
+        }
+
+        // 检测是否为时间格式
+        const timeSamples = samples.filter(val => {
+            const dateVal = new Date(String(val));
+            return !isNaN(dateVal.getTime());
+        });
+
+        if (timeSamples.length / samples.length > 0.8) {
+            return 'time';
+        }
+
+        return 'string';
+    }, []);
+
+    // 根据数据类型获取可用的操作符
+    const getAvailableOperators = useCallback((dataType: ColumnDataType): { value: FilterOperator; label: string }[] => {
+        switch (dataType) {
+            case 'string':
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                    { value: 'contains', label: '包含' },
+                    { value: 'not_contains', label: '不包含' },
+                    { value: 'starts_with', label: '开始于' },
+                    { value: 'ends_with', label: '结束于' },
+                ];
+            case 'number':
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                    { value: 'gt', label: '大于' },
+                    { value: 'gte', label: '大于等于' },
+                    { value: 'lt', label: '小于' },
+                    { value: 'lte', label: '小于等于' },
+                    { value: 'between', label: '介于' },
+                ];
+            case 'time':
+                return [
+                    { value: 'time_range', label: '时间范围' },
+                    { value: 'equals', label: '等于' },
+                    { value: 'gt', label: '晚于' },
+                    { value: 'lt', label: '早于' },
+                ];
+            default:
+                return [
+                    { value: 'equals', label: '等于' },
+                    { value: 'not_equals', label: '不等于' },
+                ];
+        }
+    }, []);
+
+    // 处理拖拽结束
+    const handleDragEnd = useCallback((event: any) => {
+        const { active, over } = event;
+
+        if (active.id !== over?.id) {
+            setColumnOrder((items) => {
+                // 序号列不能被拖拽移动
+                if (active.id === '#' || over.id === '#') {
+                    return items;
+                }
+
+                const oldIndex = items.indexOf(active.id);
+                const newIndex = items.indexOf(over.id);
+                const newOrder = arrayMove(items, oldIndex, newIndex);
+
+                // 确保序号列始终在第一位
+                const sequenceIndex = newOrder.indexOf('#');
+                if (sequenceIndex > 0) {
+                    newOrder.splice(sequenceIndex, 1);
+                    newOrder.unshift('#');
+                }
+
+                return newOrder;
+            });
+        }
+    }, []);
 
     // 生成查询语句
     const generateQuery = useCallback(() => {
@@ -78,7 +452,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 搜索条件
         if (searchText.trim()) {
-            const searchConditions = columns.filter(col => col !== 'time').map(col => 
+            const searchConditions = columns.filter(col => col !== 'time' && col !== '#').map(col =>
                 `"${col}" =~ /.*${searchText.trim()}.*/`
             );
             if (searchConditions.length > 0) {
@@ -88,27 +462,54 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 过滤条件
         filters.forEach(filter => {
+            if (!filter.value.trim() && filter.operator !== 'time_range') return;
+
+            // 根据数据类型决定是否需要引号
+            const formatValue = (value: string) => {
+                if (filter.dataType === 'number') {
+                    return value; // 数字不需要引号
+                }
+                return `'${value}'`; // 字符串和时间需要引号
+            };
+
             switch (filter.operator) {
                 case 'equals':
-                    whereConditions.push(`"${filter.column}" = '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" = ${formatValue(filter.value)}`);
+                    break;
+                case 'not_equals':
+                    whereConditions.push(`"${filter.column}" != ${formatValue(filter.value)}`);
                     break;
                 case 'contains':
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}.*/`);
                     break;
-                case 'startsWith':
+                case 'not_contains':
+                    whereConditions.push(`"${filter.column}" !~ /.*${filter.value}.*/`);
+                    break;
+                case 'starts_with':
                     whereConditions.push(`"${filter.column}" =~ /^${filter.value}.*/`);
                     break;
-                case 'endsWith':
+                case 'ends_with':
                     whereConditions.push(`"${filter.column}" =~ /.*${filter.value}$/`);
                     break;
                 case 'gt':
-                    whereConditions.push(`"${filter.column}" > '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" > ${formatValue(filter.value)}`);
+                    break;
+                case 'gte':
+                    whereConditions.push(`"${filter.column}" >= ${formatValue(filter.value)}`);
                     break;
                 case 'lt':
-                    whereConditions.push(`"${filter.column}" < '${filter.value}'`);
+                    whereConditions.push(`"${filter.column}" < ${formatValue(filter.value)}`);
+                    break;
+                case 'lte':
+                    whereConditions.push(`"${filter.column}" <= ${formatValue(filter.value)}`);
                     break;
                 case 'between':
                     if (filter.value2) {
+                        whereConditions.push(`"${filter.column}" >= ${formatValue(filter.value)} AND "${filter.column}" <= ${formatValue(filter.value2)}`);
+                    }
+                    break;
+                case 'time_range':
+                    if (filter.value && filter.value2) {
                         whereConditions.push(`"${filter.column}" >= '${filter.value}' AND "${filter.column}" <= '${filter.value2}'`);
                     }
                     break;
@@ -119,11 +520,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             query += ` WHERE ${whereConditions.join(' AND ')}`;
         }
 
-        // 添加排序
-        if (sortColumn) {
-            query += ` ORDER BY "${sortColumn}" ${sortDirection.toUpperCase()}`;
+        // 添加排序 - InfluxDB只支持按时间排序
+        if (sortColumn === 'time') {
+            query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
         } else {
-            // 默认按时间排序
+            // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
             query += ` ORDER BY time DESC`;
         }
 
@@ -137,19 +538,50 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // 获取表结构信息
     const fetchTableSchema = useCallback(async () => {
         try {
-            const schemaQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
-            const result = await safeTauriInvoke<QueryResult>('execute_query', {
+            // 获取字段键
+            const fieldKeysQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
+            const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
                 request: {
                     connection_id: connectionId,
                     database,
-                    query: schemaQuery,
+                    query: fieldKeysQuery,
                 }
             });
 
-            if (result.results?.[0]?.series?.[0]?.values) {
-                const fieldKeys = result.results[0].series[0].values.map(row => row[0] as string);
-                setColumns(['time', ...fieldKeys]); // InfluxDB 总是有 time 列
+            // 获取标签键
+            const tagKeysQuery = `SHOW TAG KEYS FROM "${tableName}"`;
+            const tagResult = await safeTauriInvoke<QueryResult>('execute_query', {
+                request: {
+                    connection_id: connectionId,
+                    database,
+                    query: tagKeysQuery,
+                }
+            });
+
+            const fieldKeys: string[] = [];
+            const tagKeys: string[] = [];
+
+            // 处理字段键结果
+            if (fieldResult.results?.[0]?.series?.[0]?.values) {
+                fieldKeys.push(...fieldResult.results[0].series[0].values.map(row => row[0] as string));
             }
+
+            // 处理标签键结果
+            if (tagResult.results?.[0]?.series?.[0]?.values) {
+                tagKeys.push(...tagResult.results[0].series[0].values.map(row => row[0] as string));
+            }
+
+            // 合并所有列：序号、时间、标签键、字段键
+            const allColumns = ['#', 'time', ...tagKeys, ...fieldKeys];
+            setColumns(allColumns);
+
+            console.log('📊 获取表结构完成:', {
+                tableName,
+                fieldKeys: fieldKeys.length,
+                tagKeys: tagKeys.length,
+                totalColumns: allColumns.length,
+                columns: allColumns
+            });
         } catch (error) {
             console.error('获取表结构失败:', error);
             showMessage.error('获取表结构失败');
@@ -177,6 +609,36 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [connectionId, database, tableName]);
 
+    // 客户端排序函数
+    const sortDataClientSide = useCallback((dataToSort: DataRow[], column: string, direction: 'asc' | 'desc') => {
+        return [...dataToSort].sort((a, b) => {
+            let aVal = a[column];
+            let bVal = b[column];
+
+            // 处理时间列
+            if (column === 'time') {
+                aVal = new Date(aVal).getTime();
+                bVal = new Date(bVal).getTime();
+            } else {
+                // 尝试转换为数字进行比较
+                const aNum = parseFloat(String(aVal));
+                const bNum = parseFloat(String(bVal));
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    aVal = aNum;
+                    bVal = bNum;
+                } else {
+                    // 字符串比较
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+            }
+
+            if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, []);
+
     // 加载数据
     const loadData = useCallback(async () => {
         if (columns.length === 0) return;
@@ -201,15 +663,31 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 if (resultColumns && values) {
                     const formattedData: DataRow[] = values.map((row, index) => {
                         const record: DataRow = {_id: index};
+
+                        // 添加序号列
+                        const offset = (currentPage - 1) * pageSize;
+                        record['#'] = offset + index + 1;
+
+                        // 添加其他列数据
                         resultColumns.forEach((col, colIndex) => {
                             record[col] = row[colIndex];
                         });
                         return record;
                     });
 
-                    setData(formattedData);
+                    // 存储原始数据
+                    setRawData(formattedData);
+
+                    // 应用客户端排序（如果需要）
+                    if (sortColumn && sortColumn !== 'time' && sortColumn !== '#') {
+                        const sortedData = sortDataClientSide(formattedData, sortColumn, sortDirection);
+                        setData(sortedData);
+                    } else {
+                        setData(formattedData);
+                    }
                 }
             } else {
+                setRawData([]);
                 setData([]);
             }
         } catch (error) {
@@ -233,6 +711,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [columns, loadData, fetchTotalCount]);
 
+    // 处理时间列排序变化
+    useEffect(() => {
+        if (sortColumn === 'time' && columns.length > 0) {
+            loadData();
+        }
+    }, [sortColumn, sortDirection, loadData, columns.length]);
+
+    // 初始化选中的列（默认全选）
+    useEffect(() => {
+        if (columns.length > 0) {
+            setSelectedColumns(columns);
+            setColumnOrder(columns); // 同时初始化列顺序
+        }
+    }, [columns]);
+
     // 处理页面变化
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -252,23 +745,45 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 处理排序
     const handleSort = (column: string) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('desc');
-        }
+        const newDirection = sortColumn === column ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'desc';
+
+        setSortColumn(column);
+        setSortDirection(newDirection);
         setCurrentPage(1);
+
+        // 如果是时间列，重新查询数据（服务器端排序）
+        if (column === 'time') {
+            // 时间列排序会触发 loadData 通过 useEffect
+            return;
+        }
+
+        // 非时间列使用客户端排序
+        if (rawData.length > 0) {
+            const sortedData = sortDataClientSide(rawData, column, newDirection);
+            setData(sortedData);
+        }
     };
 
     // 添加过滤器
     const addFilter = (column: string) => {
+        const dataType = detectColumnDataType(column, rawData);
+        const availableOperators = getAvailableOperators(dataType);
+        const defaultOperator = availableOperators[0]?.value || 'equals';
+
         const newFilter: ColumnFilter = {
             column,
-            operator: 'equals',
+            operator: defaultOperator,
             value: '',
+            dataType,
         };
         setFilters([...filters, newFilter]);
+    };
+
+    // 更新过滤器
+    const updateFilter = (index: number, updatedFilter: ColumnFilter) => {
+        const newFilters = [...filters];
+        newFilters[index] = updatedFilter;
+        setFilters(newFilters);
     };
 
     // 移除过滤器
@@ -276,42 +791,80 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setFilters(filters.filter((_, i) => i !== index));
     };
 
+    // 处理列选择
+    const handleColumnToggle = (column: string) => {
+        setSelectedColumns(prev => {
+            if (prev.includes(column)) {
+                // 如果已选中，则取消选中（但至少保留一列）
+                if (prev.length > 1) {
+                    return prev.filter(col => col !== column);
+                }
+                return prev; // 至少保留一列
+            } else {
+                // 如果未选中，则添加到选中列表
+                return [...prev, column];
+            }
+        });
+    };
+
+    // 全选/取消全选
+    const handleSelectAll = () => {
+        if (selectedColumns.length === columns.length) {
+            // 当前全选，取消全选（但保留第一列）
+            setSelectedColumns([columns[0]]);
+        } else {
+            // 当前非全选，全选
+            setSelectedColumns(columns);
+        }
+    };
+
     // 导出数据
-    const exportData = async () => {
+    const exportData = async (options: ExportOptions) => {
         if (data.length === 0) {
             showMessage.warning('没有可导出的数据');
             return;
         }
 
         try {
-            // 构造符合 QueryResult 格式的数据
+            // 构造符合 QueryResult 格式的数据（只包含选中的列，按columnOrder排序）
+            const orderedSelectedColumns = columnOrder.filter(column => selectedColumns.includes(column));
             const queryResult: QueryResult = {
                 results: [{
                     series: [{
                         name: tableName,
-                        columns,
-                        values: data.map(row => columns.map(col => row[col]))
+                        columns: orderedSelectedColumns,
+                        values: data.map(row => orderedSelectedColumns.map(col => row[col]))
                     }]
                 }],
-                data: data.map(row => columns.map(col => row[col])), // 转换为正确的格式
+                data: data.map(row => orderedSelectedColumns.map(col => row[col])), // 转换为正确的格式
                 executionTime: 0
             };
 
             // 使用原生导出对话框
             const success = await exportWithNativeDialog(queryResult, {
-                format: 'csv',
-                includeHeaders: true,
-                delimiter: ',',
-                defaultFilename: `${tableName}_data`
+                format: options.format,
+                includeHeaders: options.includeHeaders,
+                delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
+                defaultFilename: options.filename || generateTimestampedFilename(tableName, options.format),
+                tableName: options.tableName || tableName
             });
 
             if (success) {
-                showMessage.success('数据导出成功');
+                showMessage.success(`数据已导出为 ${options.format.toUpperCase()} 格式`);
+                setShowExportDialog(false);
             }
         } catch (error) {
             console.error('导出数据失败:', error);
             showMessage.error('导出数据失败');
         }
+    };
+
+    // 快速导出（CSV格式）
+    const quickExportCSV = async () => {
+        await exportData({
+            format: 'csv',
+            includeHeaders: true
+        });
     };
 
     // 计算分页信息
@@ -333,6 +886,60 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             </Badge>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* 列选择下拉菜单 */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3"
+                                    >
+                                        <span className="text-xs">
+                                            列 ({selectedColumns.length}/{columns.length})
+                                        </span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto">
+                                    <div className="p-2">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium">列显示设置</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleSelectAll}
+                                                className="h-6 text-xs"
+                                            >
+                                                {selectedColumns.length === columns.length ? '取消全选' : '全选'}
+                                            </Button>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mb-2">
+                                            拖拽调整顺序，勾选显示列
+                                        </div>
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={columnOrder}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-1">
+                                                    {columnOrder.map((column) => (
+                                                        <SortableColumnItem
+                                                            key={column}
+                                                            column={column}
+                                                            isSelected={selectedColumns.includes(column)}
+                                                            onToggle={handleColumnToggle}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                    </div>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -347,20 +954,30 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                 </TooltipTrigger>
                                 <TooltipContent>刷新数据</TooltipContent>
                             </Tooltip>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={exportData}
                                         disabled={data.length === 0}
                                         className="h-8 px-2"
                                     >
-                                        <Download className="w-3 h-3"/>
+                                        <Download className="w-3 h-3 mr-1"/>
+                                        <ChevronDown className="w-3 h-3"/>
                                     </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>导出数据</TooltipContent>
-                            </Tooltip>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={quickExportCSV}>
+                                        <FileText className="w-4 h-4 mr-2"/>
+                                        快速导出 CSV
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator/>
+                                    <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
+                                        <Download className="w-4 h-4 mr-2"/>
+                                        更多导出选项...
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </CardHeader>
@@ -368,20 +985,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 {/* 过滤栏 */}
                 {filters.length > 0 && (
                     <CardContent className="pt-0 pb-3">
-                        <div className="flex flex-wrap gap-2">
-                            {filters.map((filter, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                    {filter.column} {filter.operator} {filter.value}
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="ml-1 h-4 w-4 p-0"
-                                        onClick={() => removeFilter(index)}
-                                    >
-                                        ×
-                                    </Button>
-                                </Badge>
-                            ))}
+                        <div className="space-y-2">
+                            <div className="text-sm font-medium text-muted-foreground">
+                                筛选条件 ({filters.length})
+                            </div>
+                            <div className="space-y-2">
+                                {filters.map((filter, index) => (
+                                    <FilterEditor
+                                        key={index}
+                                        filter={filter}
+                                        onUpdate={(updatedFilter) => updateFilter(index, updatedFilter)}
+                                        onRemove={() => removeFilter(index)}
+                                        availableOperators={getAvailableOperators(filter.dataType)}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </CardContent>
                 )}
@@ -400,57 +1018,92 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <table className="w-full caption-bottom text-sm">
                                 <thead className="sticky top-0 bg-background z-10 border-b">
                                     <tr className="border-b transition-colors hover:bg-muted/50">
-                                        {columns.map((column) => (
+                                        {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
                                             <th
                                                 key={column}
-                                                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer hover:bg-muted/50"
-                                                onClick={() => handleSort(column)}
+                                                className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${
+                                                    column === '#' ? 'w-16' : 'cursor-pointer hover:bg-muted/50'
+                                                }`}
+                                                onClick={() => column !== '#' && handleSort(column)}
                                             >
                                                 <div className="flex items-center gap-1">
-                                                    <span>{column}</span>
-                                                    {sortColumn === column && (
+                                                    <span>{column === '#' ? '序号' : column}</span>
+                                                    {column === 'time' && (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            时间
+                                                        </Badge>
+                                                    )}
+                                                    {column === '#' && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            #
+                                                        </Badge>
+                                                    )}
+                                                    {column !== 'time' && column !== '#' && (
+                                                        <span className="text-xs text-muted-foreground/60" title="客户端排序">
+                                                            ⚡
+                                                        </span>
+                                                    )}
+                                                    {sortColumn === column && column !== '#' && (
                                                         <span className="text-xs">
                                                             {sortDirection === 'asc' ? '↑' : '↓'}
                                                         </span>
                                                     )}
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-4 w-4 p-0 ml-1"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <Filter className="w-3 h-3"/>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent>
-                                                            <DropdownMenuItem onClick={() => addFilter(column)}>
-                                                                添加过滤器
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                    {column !== '#' && (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-4 w-4 p-0 ml-1"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <Filter className="w-3 h-3"/>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent>
+                                                                <DropdownMenuItem onClick={() => addFilter(column)}>
+                                                                    添加过滤器
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    )}
                                                 </div>
                                             </th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody className="[&_tr:last-child]:border-0">
-                                    {data.map((row, index) => (
-                                        <tr
-                                            key={row._id || index}
-                                            className="border-b transition-colors hover:bg-muted/50"
-                                        >
-                                            {columns.map((column) => (
-                                                <td key={column} className="p-4 align-middle text-xs font-mono">
-                                                    {column === 'time'
+                                    {data.map((row, index) => {
+                                        // 创建更健壮的唯一key，避免重复
+                                        const uniqueKey = row._id !== undefined
+                                            ? `row_${row._id}_${index}`
+                                            : `row_index_${index}_${currentPage}_${pageSize}`;
+
+                                        return (
+                                            <tr
+                                                key={uniqueKey}
+                                                className="border-b transition-colors hover:bg-muted/50"
+                                            >
+                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
+                                                <td
+                                                    key={column}
+                                                    className={`p-4 align-middle text-xs ${
+                                                        column === '#'
+                                                            ? 'font-medium text-muted-foreground bg-muted/20 text-center'
+                                                            : 'font-mono'
+                                                    }`}
+                                                >
+                                                    {column === '#'
+                                                        ? row[column]
+                                                        : column === 'time'
                                                         ? new Date(row[column]).toLocaleString()
                                                         : String(row[column] || '-')
                                                     }
                                                 </td>
                                             ))}
-                                        </tr>
-                                    ))}
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -517,6 +1170,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* 导出选项对话框 */}
+            <ExportOptionsDialog
+                open={showExportDialog}
+                onClose={() => setShowExportDialog(false)}
+                onExport={exportData}
+                defaultTableName={tableName}
+                rowCount={data.length}
+                columnCount={selectedColumns.length}
+            />
         </div>
     );
 };

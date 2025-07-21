@@ -399,9 +399,13 @@ const AntParagraph = React.forwardRef<HTMLParagraphElement, AntParagraphProps>(
         {copyable && (
           <button
             className='ml-2 text-xs text-muted-foreground hover:text-foreground transition-colors'
-            onClick={() => {
+            onClick={async () => {
               if (typeof children === 'string') {
-                navigator.clipboard.writeText(children);
+                const { writeToClipboard } = await import('@/utils/clipboard');
+                await writeToClipboard(children, {
+                  successMessage: '已复制到剪贴板',
+                  showSuccess: false
+                });
               }
             }}
             type='button'

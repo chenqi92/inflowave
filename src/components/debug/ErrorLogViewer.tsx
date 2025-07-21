@@ -41,33 +41,118 @@ import {
   Eye,
   ChevronDown,
   Copy,
+  Terminal,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { FileOperations } from '@/utils/fileOperations';
 import { errorLogger, type ErrorLogEntry } from '@/utils/errorLogger';
+import { consoleLogger, type ConsoleLogEntry } from '@/utils/consoleLogger';
+
+// 统一的错误日志类型
+interface UnifiedErrorLog {
+  id: string;
+  timestamp: string;
+  type: string;
+  level: string;
+  message: string;
+  source: 'app' | 'console';
+  stack?: string;
+  url?: string;
+  lineNumber?: number;
+  columnNumber?: number;
+  componentStack?: string;
+  userAgent?: string;
+  pathname?: string;
+  additional?: any;
+}
 
 const ErrorLogViewer: React.FC = () => {
   const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<ErrorLogEntry[]>([]);
+  const [unifiedLogs, setUnifiedLogs] = useState<UnifiedErrorLog[]>([]);
+  const [filteredLogs, setFilteredLogs] = useState<UnifiedErrorLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<ErrorLogEntry | null>(null);
+  const [selectedLog, setSelectedLog] = useState<UnifiedErrorLog | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50); // 每页显示50条记录
+
+  // 合并应用日志和控制台日志
+  const mergeErrorLogs = (appLogs: ErrorLogEntry[], consoleLogs: ConsoleLogEntry[]): UnifiedErrorLog[] => {
+    const unified: UnifiedErrorLog[] = [];
+
+    // 转换应用日志
+    appLogs.forEach(log => {
+      unified.push({
+        id: log.id,
+        timestamp: log.timestamp,
+        type: log.type,
+        level: log.level,
+        message: log.message,
+        source: 'app',
+        stack: log.stack,
+        url: log.url,
+        lineNumber: log.lineNumber,
+        columnNumber: log.columnNumber,
+        componentStack: log.componentStack,
+        userAgent: log.userAgent,
+        pathname: log.pathname,
+        additional: log.additional,
+      });
+    });
+
+    // 转换控制台错误日志
+    consoleLogs
+      .filter(log => log.level === 'error' || log.level === 'warn')
+      .forEach(log => {
+        unified.push({
+          id: log.id,
+          timestamp: log.timestamp.toISOString(),
+          type: 'console',
+          level: log.level,
+          message: log.message,
+          source: 'console',
+          stack: log.stack,
+          url: log.source,
+          additional: { args: log.args },
+        });
+      });
+
+    // 按时间排序
+    return unified.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  };
 
   // 加载错误日志
   const loadErrorLogs = async () => {
     setLoading(true);
     try {
+      // 加载应用日志
       const logContent = await FileOperations.readFile('logs/error.log');
       const parsedLogs = parseLogContent(logContent);
       setLogs(parsedLogs);
-      setFilteredLogs(parsedLogs);
-      showMessage.success(`已加载 ${parsedLogs.length} 条错误日志`);
+      
+      // 获取控制台错误日志
+      const consoleErrors = consoleLogger.getErrorLogs();
+      
+      // 合并日志
+      const merged = mergeErrorLogs(parsedLogs, consoleErrors);
+      setUnifiedLogs(merged);
+      setFilteredLogs(merged);
+      
+      showMessage.success(`已加载 ${merged.length} 条错误日志 (应用: ${parsedLogs.length}, 控制台: ${consoleErrors.length})`);
     } catch (error) {
       console.error('加载错误日志失败:', error);
       showMessage.error('加载错误日志失败');
       setLogs([]);
+      setUnifiedLogs([]);
       setFilteredLogs([]);
     } finally {
       setLoading(false);
@@ -168,7 +253,7 @@ const ErrorLogViewer: React.FC = () => {
 
   // 应用过滤器
   useEffect(() => {
-    let filtered = logs;
+    let filtered = unifiedLogs;
 
     // 搜索过滤
     if (searchText) {
@@ -190,15 +275,40 @@ const ErrorLogViewer: React.FC = () => {
       filtered = filtered.filter(log => log.type === typeFilter);
     }
 
+    // 来源过滤
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter(log => log.source === sourceFilter);
+    }
+
     setFilteredLogs(filtered);
-  }, [logs, searchText, levelFilter, typeFilter]);
+    // 重置到第一页当过滤条件改变时
+    setCurrentPage(1);
+  }, [unifiedLogs, searchText, levelFilter, typeFilter, sourceFilter]);
+
+  // 计算分页数据
+  const totalPages = Math.ceil(filteredLogs.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+  // 分页控制函数
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToPrevPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
 
   // 清除错误日志
   const clearLogs = async () => {
     if (window.confirm('确认清除所有错误日志？此操作不可恢复。')) {
       try {
         await FileOperations.deleteFile('logs/error.log');
+        consoleLogger.clearLogs();
         setLogs([]);
+        setUnifiedLogs([]);
         setFilteredLogs([]);
         showMessage.success('错误日志已清除');
       } catch (error) {
@@ -228,19 +338,17 @@ const ErrorLogViewer: React.FC = () => {
     }
   };
 
-  // 获取级别显示信息
-  const getLevelBadgeVariant = (
-    level: string
-  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  // 获取级别显示信息 - 使用固定颜色，不跟随系统主题
+  const getLevelBadgeStyle = (level: string) => {
     switch (level) {
       case 'error':
-        return 'destructive';
+        return { backgroundColor: '#dc2626', color: 'white' }; // 红色
       case 'warn':
-        return 'default';
+        return { backgroundColor: '#d97706', color: 'white' }; // 黄色
       case 'info':
-        return 'secondary';
+        return { backgroundColor: '#6b7280', color: 'white' }; // 灰色
       default:
-        return 'outline';
+        return { backgroundColor: '#9ca3af', color: 'white' }; // 默认灰色
     }
   };
 
@@ -274,13 +382,29 @@ const ErrorLogViewer: React.FC = () => {
     }
   };
 
+  // 获取级别显示颜色
+  const getLevelBadgeVariant = (
+    level: string
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (level) {
+      case 'error':
+        return 'destructive';
+      case 'warn':
+        return 'secondary';
+      case 'info':
+        return 'default';
+      default:
+        return 'outline';
+    }
+  };
+
   // 组件挂载时加载日志
   useEffect(() => {
     loadErrorLogs();
   }, []);
 
   return (
-    <div className='space-y-6'>
+    <div className='h-full flex flex-col space-y-6'>
       {/* 头部统计和操作 */}
       <Card>
         <CardHeader className='pb-3'>
@@ -288,18 +412,30 @@ const ErrorLogViewer: React.FC = () => {
             <div className='flex items-center gap-6'>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>总日志数:</span>
-                <Badge variant='secondary'>{logs.length}</Badge>
+                <Badge variant='secondary'>{unifiedLogs.length}</Badge>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>错误:</span>
                 <Badge variant='destructive'>
-                  {logs.filter(log => log.level === 'error').length}
+                  {unifiedLogs.filter(log => log.level === 'error').length}
                 </Badge>
               </div>
               <div className='flex items-center gap-2'>
                 <span className='text-sm font-medium'>警告:</span>
                 <Badge variant='default'>
-                  {logs.filter(log => log.level === 'warn').length}
+                  {unifiedLogs.filter(log => log.level === 'warn').length}
+                </Badge>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm font-medium'>应用:</span>
+                <Badge variant='outline'>
+                  {unifiedLogs.filter(log => log.source === 'app').length}
+                </Badge>
+              </div>
+              <div className='flex items-center gap-2'>
+                <span className='text-sm font-medium'>控制台:</span>
+                <Badge variant='outline'>
+                  {unifiedLogs.filter(log => log.source === 'console').length}
                 </Badge>
               </div>
               <div className='flex items-center gap-2'>
@@ -373,43 +509,67 @@ const ErrorLogViewer: React.FC = () => {
                 <SelectItem value='console'>控制台</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className='w-32'>
+                <SelectValue placeholder='来源' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>全部来源</SelectItem>
+                <SelectItem value='app'>应用日志</SelectItem>
+                <SelectItem value='console'>控制台日志</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
       {/* 错误日志表格 */}
-      <Card>
-        <CardHeader className='pb-3'>
+      <Card className='flex-1 flex flex-col overflow-hidden'>
+        <CardHeader className='pb-3 flex-shrink-0'>
           <CardTitle className='text-base'>
             错误日志 ({filteredLogs.length} 条)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className='h-[600px]'>
+        <CardContent className='flex-1 overflow-hidden'>
+          <ScrollArea className='h-full'>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className='w-[160px]'>时间</TableHead>
                   <TableHead className='w-[80px]'>级别</TableHead>
+                  <TableHead className='w-[120px]'>来源</TableHead>
                   <TableHead className='w-[100px]'>类型</TableHead>
                   <TableHead>消息</TableHead>
-                  <TableHead className='w-[200px]'>来源</TableHead>
+                  <TableHead className='w-[200px]'>位置</TableHead>
                   <TableHead className='w-[80px]'>操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.map(log => (
+                {paginatedLogs.map(log => (
                   <TableRow key={log.id}>
                     <TableCell className='text-xs'>
                       {new Date(log.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={getLevelBadgeVariant(log.level)}
-                        className='text-xs'
+                      <div
+                        className='inline-flex items-center px-2 py-1 rounded text-xs font-medium'
+                        style={getLevelBadgeStyle(log.level)}
                       >
                         {getLevelIcon(log.level)}
                         <span className='ml-1'>{log.level.toUpperCase()}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={log.source === 'app' ? 'default' : 'secondary'}
+                        className='text-xs whitespace-nowrap'
+                      >
+                        {log.source === 'app' ? (
+                          <Bug className='w-3 h-3 mr-1' />
+                        ) : (
+                          <Terminal className='w-3 h-3 mr-1' />
+                        )}
+                        {log.source === 'app' ? '应用日志' : '控制台日志'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -458,6 +618,120 @@ const ErrorLogViewer: React.FC = () => {
             </Table>
           </ScrollArea>
         </CardContent>
+
+        {/* 分页控件 */}
+        {filteredLogs.length > 0 && (
+          <div className='flex items-center justify-between px-6 py-4 border-t'>
+            <div className='flex items-center gap-4'>
+              <span className='text-sm text-muted-foreground'>
+                显示 {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} 条，共 {filteredLogs.length} 条
+              </span>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className='w-20'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='25'>25</SelectItem>
+                  <SelectItem value='50'>50</SelectItem>
+                  <SelectItem value='100'>100</SelectItem>
+                  <SelectItem value='200'>200</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className='text-sm text-muted-foreground'>条/页</span>
+            </div>
+
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={goToPrevPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className='w-4 h-4' />
+                上一页
+              </Button>
+
+              <div className='flex items-center gap-1'>
+                {/* 页码显示逻辑 */}
+                {totalPages <= 7 ? (
+                  // 总页数少于等于7页，显示所有页码
+                  Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))
+                ) : (
+                  // 总页数大于7页，显示省略号
+                  <>
+                    <Button
+                      variant={currentPage === 1 ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(1)}
+                    >
+                      1
+                    </Button>
+
+                    {currentPage > 4 && <span className='px-2'>...</span>}
+
+                    {Array.from(
+                      { length: Math.min(5, totalPages - 2) },
+                      (_, i) => {
+                        const page = Math.max(2, Math.min(currentPage - 2, totalPages - 4)) + i;
+                        return page;
+                      }
+                    )
+                      .filter(page => page > 1 && page < totalPages)
+                      .map(page => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size='sm'
+                          className='w-8 h-8 p-0'
+                          onClick={() => goToPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+
+                    {currentPage < totalPages - 3 && <span className='px-2'>...</span>}
+
+                    <Button
+                      variant={currentPage === totalPages ? 'default' : 'outline'}
+                      size='sm'
+                      className='w-8 h-8 p-0'
+                      onClick={() => goToPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                下一页
+                <ChevronRight className='w-4 h-4' />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* 错误详情对话框 */}
@@ -535,9 +809,12 @@ const ErrorLogViewer: React.FC = () => {
                       size='sm'
                       variant='ghost'
                       className='absolute top-2 right-2'
-                      onClick={() =>
-                        navigator.clipboard.writeText(selectedLog.message)
-                      }
+                      onClick={async () => {
+                        const { writeToClipboard } = await import('@/utils/clipboard');
+                        await writeToClipboard(selectedLog.message, {
+                          successMessage: '错误消息已复制到剪贴板'
+                        });
+                      }}
                     >
                       <Copy className='w-3 h-3' />
                     </Button>
@@ -561,9 +838,12 @@ const ErrorLogViewer: React.FC = () => {
                         size='sm'
                         variant='ghost'
                         className='absolute top-2 right-2'
-                        onClick={() =>
-                          navigator.clipboard.writeText(selectedLog.stack || '')
-                        }
+                        onClick={async () => {
+                          const { writeToClipboard } = await import('@/utils/clipboard');
+                          await writeToClipboard(selectedLog.stack || '', {
+                            successMessage: '错误堆栈已复制到剪贴板'
+                          });
+                        }}
                       >
                         <Copy className='w-3 h-3' />
                       </Button>
@@ -588,11 +868,15 @@ const ErrorLogViewer: React.FC = () => {
                         size='sm'
                         variant='ghost'
                         className='absolute top-2 right-2'
-                        onClick={() =>
-                          navigator.clipboard.writeText(
-                            selectedLog.componentStack || ''
-                          )
-                        }
+                        onClick={async () => {
+                          const { writeToClipboard } = await import('@/utils/clipboard');
+                          await writeToClipboard(
+                            selectedLog.componentStack || '',
+                            {
+                              successMessage: '组件堆栈已复制到剪贴板'
+                            }
+                          );
+                        }}
                       >
                         <Copy className='w-3 h-3' />
                       </Button>
@@ -618,11 +902,15 @@ const ErrorLogViewer: React.FC = () => {
                           size='sm'
                           variant='ghost'
                           className='absolute top-2 right-2'
-                          onClick={() =>
-                            navigator.clipboard.writeText(
-                              JSON.stringify(selectedLog.additional, null, 2)
-                            )
-                          }
+                          onClick={async () => {
+                            const { writeToClipboard } = await import('@/utils/clipboard');
+                            await writeToClipboard(
+                              JSON.stringify(selectedLog.additional, null, 2),
+                              {
+                                successMessage: '附加信息已复制到剪贴板'
+                              }
+                            );
+                          }}
                         >
                           <Copy className='w-3 h-3' />
                         </Button>

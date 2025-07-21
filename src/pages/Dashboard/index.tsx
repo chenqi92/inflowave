@@ -246,13 +246,32 @@ const Dashboard: React.FC = () => {
                       <div className='space-y-3'>
                         {connections.map(connection => {
                           const status = connectionStatuses[connection.id!];
-                          const statusColor = {
-                            connected: '#52c41a',
-                            connecting: '#faad14',
-                            disconnected: '#ff4d4f',
-                            error: '#ff4d4f',
-                          }[status?.status || 'disconnected'];
+                          const getStatusConfig = () => {
+                            switch (status?.status || 'disconnected') {
+                              case 'connected':
+                                return {
+                                  className: 'text-success',
+                                  dotClassName: 'bg-success',
+                                };
+                              case 'connecting':
+                                return {
+                                  className: 'text-warning',
+                                  dotClassName: 'bg-warning',
+                                };
+                              case 'error':
+                                return {
+                                  className: 'text-destructive',
+                                  dotClassName: 'bg-destructive',
+                                };
+                              default:
+                                return {
+                                  className: 'text-muted-foreground',
+                                  dotClassName: 'bg-muted-foreground',
+                                };
+                            }
+                          };
 
+                          const statusConfig = getStatusConfig();
                           const statusText = {
                             connected: '已连接',
                             connecting: '连接中',
@@ -267,8 +286,7 @@ const Dashboard: React.FC = () => {
                             >
                               <div className='flex gap-2'>
                                 <div
-                                  className='w-2 h-2 rounded-full'
-                                  style={{ backgroundColor: statusColor }}
+                                  className={`w-2 h-2 rounded-full ${statusConfig.dotClassName}`}
                                 />
                                 <div>
                                   <div className='font-medium text-sm'>
@@ -282,8 +300,7 @@ const Dashboard: React.FC = () => {
 
                               <div className='flex gap-2'>
                                 <span
-                                  className='text-xs'
-                                  style={{ color: statusColor }}
+                                  className={`text-xs ${statusConfig.className}`}
                                 >
                                   {statusText}
                                 </span>

@@ -69,7 +69,7 @@ const ControllerSettings: React.FC = () => {
     setLoading(true);
     try {
       await safeTauriInvoke('update_controller_settings', {
-        controller_settings: values,
+        controllerSettings: values,
       });
 
       setSettings(values);
@@ -321,7 +321,7 @@ const ControllerSettings: React.FC = () => {
         </Button>
 
         <Button
-          onClick={() => form.handleSubmit(saveSettings)()}
+          onClick={form.handleSubmit(saveSettings)}
           disabled={loading}
         >
           <Save className='w-4 h-4 mr-2' />

@@ -261,6 +261,50 @@ export class FormatUtils {
   }
 
   /**
+   * 格式化网络流量速率
+   */
+  static formatNetworkSpeed(bytesPerSecond: number, decimals = 1): { value: number; unit: string; formatted: string } {
+    if (bytesPerSecond === 0) {
+      return { value: 0, unit: 'B/s', formatted: '0 B/s' };
+    }
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s'];
+
+    const i = Math.floor(Math.log(Math.abs(bytesPerSecond)) / Math.log(k));
+    const clampedIndex = Math.min(i, sizes.length - 1);
+    
+    const value = parseFloat((bytesPerSecond / Math.pow(k, clampedIndex)).toFixed(dm));
+    const unit = sizes[clampedIndex];
+    const formatted = `${value} ${unit}`;
+
+    return { value, unit, formatted };
+  }
+
+  /**
+   * 格式化网络数据传输量
+   */
+  static formatNetworkData(bytes: number, decimals = 1): { value: number; unit: string; formatted: string } {
+    if (bytes === 0) {
+      return { value: 0, unit: 'B', formatted: '0 B' };
+    }
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+    const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
+    const clampedIndex = Math.min(i, sizes.length - 1);
+    
+    const value = parseFloat((bytes / Math.pow(k, clampedIndex)).toFixed(dm));
+    const unit = sizes[clampedIndex];
+    const formatted = `${value} ${unit}`;
+
+    return { value, unit, formatted };
+  }
+
+  /**
    * 格式化列表
    */
   static formatList(

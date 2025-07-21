@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import * as monaco from 'monaco-editor';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
 import {
   Card,
@@ -8,6 +9,7 @@ import {
   CardTitle,
   Button,
   Badge,
+  Popconfirm,
 } from '@/components/ui';
 import {
   ArrowLeft,
@@ -20,6 +22,8 @@ import {
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
+import { showMessage } from '@/utils/message';
 
 interface DetachedTab {
   id: string;
@@ -47,6 +51,8 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   const [isMaximized, setIsMaximized] = useState(false);
   const [content, setContent] = useState(tab.content);
   const [modified, setModified] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showReattachConfirm, setShowReattachConfirm] = useState(false);
 
   // 处理内容变化
   const handleContentChange = (value: string | undefined) => {
@@ -55,6 +61,10 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       setModified(value !== tab.content);
     }
   };
+
+
+
+
 
   // 处理窗口控制
   const handleMinimize = async () => {
@@ -74,25 +84,170 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   const handleClose = async () => {
     if (modified) {
-      // 这里可以显示保存确认对话框
-      const shouldClose = window.confirm('内容已修改，确定要关闭吗？');
-      if (!shouldClose) return;
+      setShowCloseConfirm(true);
+      return;
     }
-    
+
+    await performClose();
+  };
+
+  const performClose = async () => {
     onClose?.();
     const currentWindow = getCurrentWindow();
     await currentWindow.close();
   };
 
+  const handleSaveAndClose = async () => {
+    // 保存逻辑
+    if (modified) {
+      await safeTauriInvoke('save_tab_content', { tabId: tab.id, content });
+    }
+    setShowCloseConfirm(false);
+    await performClose();
+  };
+
+  const handleCloseWithoutSaving = async () => {
+    setShowCloseConfirm(false);
+    await performClose();
+  };
+
+  // 自定义复制处理函数
+  const handleCustomCopy = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      const selection = editor.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = editor.getModel()?.getValueInRange(selection);
+        if (selectedText) {
+          await writeToClipboard(selectedText, {
+            successMessage: '已复制到剪贴板',
+            showSuccess: false
+          });
+          return;
+        }
+      }
+
+      // 如果没有选中内容，复制当前行
+      const position = editor.getPosition();
+      if (position) {
+        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+        if (lineContent) {
+          await writeToClipboard(lineContent, {
+            successMessage: '已复制当前行',
+            showSuccess: false
+          });
+        }
+      }
+    } catch (error) {
+      console.error('复制操作失败:', error);
+      showMessage.error('复制失败');
+    }
+  };
+
+  // 自定义剪切处理函数
+  const handleCustomCut = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      const selection = editor.getSelection();
+      if (selection && !selection.isEmpty()) {
+        const selectedText = editor.getModel()?.getValueInRange(selection);
+        if (selectedText) {
+          await writeToClipboard(selectedText, {
+            successMessage: '已剪切到剪贴板',
+            showSuccess: false
+          });
+
+          editor.executeEdits('cut', [{
+            range: selection,
+            text: '',
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+          return;
+        }
+      }
+
+      // 如果没有选中内容，剪切当前行
+      const position = editor.getPosition();
+      if (position) {
+        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+        if (lineContent) {
+          await writeToClipboard(lineContent, {
+            successMessage: '已剪切当前行',
+            showSuccess: false
+          });
+
+          const lineRange = {
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber + 1,
+            endColumn: 1
+          };
+          editor.executeEdits('cut', [{
+            range: lineRange,
+            text: '',
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+        }
+      }
+    } catch (error) {
+      console.error('剪切操作失败:', error);
+      showMessage.error('剪切失败');
+    }
+  };
+
+  // 自定义粘贴处理函数
+  const handleCustomPaste = async (editor: monaco.editor.IStandaloneCodeEditor) => {
+    try {
+      // 桌面应用：使用Tauri剪贴板服务
+      const clipboardText = await readFromClipboard({ showError: false });
+      if (clipboardText) {
+        const selection = editor.getSelection();
+        if (selection) {
+          editor.executeEdits('paste', [{
+            range: selection,
+            text: clipboardText,
+            forceMoveMarkers: true
+          }]);
+          editor.focus();
+          return;
+        }
+      }
+
+      // 如果Tauri剪贴板失败，显示提示而不是使用浏览器剪贴板
+      showMessage.warning('剪贴板读取失败，请手动输入内容');
+    } catch (error) {
+      console.error('粘贴操作失败:', error);
+      // 不再降级到Monaco原生粘贴，避免触发浏览器剪贴板权限
+      showMessage.error('粘贴操作失败，请手动输入内容');
+    }
+  };
+
   const handleReattach = () => {
     if (modified) {
-      // 同步修改的内容
-      const updatedTab = { ...tab, content, modified };
-      // 这里可以通过IPC通知主窗口更新tab内容
-      safeTauriInvoke('sync_tab_content', { tabId: tab.id, content });
+      setShowReattachConfirm(true);
+      return;
     }
-    
+
+    performReattach();
+  };
+
+  const performReattach = () => {
     onReattach?.();
+  };
+
+  const handleSaveAndReattach = async () => {
+    // 保存并同步修改的内容
+    if (modified) {
+      await safeTauriInvoke('save_tab_content', { tabId: tab.id, content });
+      await safeTauriInvoke('sync_tab_content', { tabId: tab.id, content });
+    }
+    setShowReattachConfirm(false);
+    performReattach();
+  };
+
+  const handleReattachWithoutSaving = () => {
+    setShowReattachConfirm(false);
+    performReattach();
   };
 
   // 获取tab类型图标
@@ -129,6 +284,16 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // 不要阻止系统级的复制粘贴快捷键
+      const isSystemClipboard = (
+        (event.ctrlKey || event.metaKey) &&
+        ['c', 'v', 'x', 'a'].includes(event.key.toLowerCase())
+      );
+
+      if (isSystemClipboard) {
+        return; // 让系统处理复制粘贴
+      }
+
       // Ctrl+S 保存
       if (event.ctrlKey && event.key === 's') {
         event.preventDefault();
@@ -138,7 +303,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
           setModified(false);
         }
       }
-      
+
       // Ctrl+W 关闭窗口
       if (event.ctrlKey && event.key === 'w') {
         event.preventDefault();
@@ -175,14 +340,27 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
             
             {/* 窗口控制按钮 */}
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReattach}
-                title="重新附加到主窗口 (Ctrl+D)"
+              <Popconfirm
+                title="保存更改"
+                description={`"${tab.title}" 已修改，是否保存更改？`}
+                open={showReattachConfirm}
+                onConfirm={handleSaveAndReattach}
+                onOpenChange={(open) => {
+                  if (!open) handleReattachWithoutSaving();
+                }}
+                okText="保存"
+                cancelText="不保存"
+                placement="bottom"
               >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReattach}
+                  title="重新附加到主窗口 (Ctrl+D)"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Popconfirm>
               <Button
                 variant="ghost"
                 size="sm"
@@ -199,14 +377,27 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               >
                 <Maximize2 className="w-4 h-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                title="关闭窗口 (Ctrl+W)"
+              <Popconfirm
+                title="保存更改"
+                description={`"${tab.title}" 已修改，是否保存更改？`}
+                open={showCloseConfirm}
+                onConfirm={handleSaveAndClose}
+                onOpenChange={(open) => {
+                  if (!open) handleCloseWithoutSaving();
+                }}
+                okText="保存"
+                cancelText="不保存"
+                placement="bottom"
               >
-                <X className="w-4 h-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClose}
+                  title="关闭窗口 (Ctrl+W)"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </Popconfirm>
             </div>
           </div>
         </CardHeader>
@@ -224,10 +415,50 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
           <div className="h-full p-0">
             <Editor
               height="100%"
-              language="influxql"
+              language="sql"
               theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
               value={content}
               onChange={handleContentChange}
+              onMount={(editor, monaco) => {
+                // 将编辑器转换为独立编辑器类型以支持命令添加
+                const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
+
+                // 添加快捷键支持（不使用右键菜单）
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                  // 将当前查询内容发送到主窗口执行
+                  const currentQuery = standaloneEditor.getValue();
+                  if (currentQuery.trim()) {
+                    // 通过postMessage与主窗口通信
+                    if (window.opener) {
+                      window.opener.postMessage({
+                        type: 'execute-query-from-detached',
+                        query: currentQuery,
+                        tabId: tab.id
+                      }, '*');
+                    }
+                  }
+                });
+
+                // 保留基本的编辑快捷键，使用自定义剪贴板处理避免权限问题
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+                  handleCustomCopy(standaloneEditor);
+                });
+
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+                  handleCustomCut(standaloneEditor);
+                });
+
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+                  handleCustomPaste(standaloneEditor);
+                });
+
+                standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+                  standaloneEditor.trigger('keyboard', 'editor.action.selectAll', null);
+                });
+
+                console.log('✅ DetachedTabWindow 中文右键菜单已添加（包含执行查询）');
+              }}
+              key={resolvedTheme} // 强制重新渲染以应用主题
               options={{
                 minimap: { enabled: false },
                 scrollBeyondLastLine: false,
@@ -255,6 +486,18 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 quickSuggestionsDelay: 50,
                 suggestSelection: 'first',
                 wordBasedSuggestions: 'allDocuments',
+                // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+                contextmenu: false,
+                copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
+                // 禁用所有可能触发剪贴板权限的功能
+                links: false, // 禁用链接检测，避免触发剪贴板权限
+                dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
+                selectionClipboard: false, // 禁用选择自动复制到剪贴板
+                find: {
+                  addExtraSpaceOnTop: false,
+                  autoFindInSelection: 'never',
+                  seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
+                },
               }}
             />
           </div>

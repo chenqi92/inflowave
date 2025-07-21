@@ -33,36 +33,36 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
     switch (status.status) {
       case 'connected':
         return {
-          badgeStatus: 'success' as const,
-          icon: <Wifi className='w-4 h-4' style={{ color: '#52c41a' }} />,
+          badgeVariant: 'default' as const,
+          badgeClassName: 'bg-success text-success-foreground',
+          icon: <Wifi className='w-4 h-4 text-success' />,
           text: '已连接',
-          color: '#52c41a',
-          tagColor: 'success',
+          textClassName: 'text-success',
         };
       case 'connecting':
         return {
-          badgeStatus: 'processing' as const,
-          icon: <Loader2 className='w-4 h-4' style={{ color: '#1890ff' }} />,
+          badgeVariant: 'secondary' as const,
+          badgeClassName: 'bg-warning text-warning-foreground',
+          icon: <Loader2 className='w-4 h-4 text-warning' />,
           text: '连接中',
-          color: '#1890ff',
-          tagColor: 'processing',
+          textClassName: 'text-warning',
         };
       case 'error':
         return {
-          badgeStatus: 'error' as const,
-          icon: <AlertCircle style={{ color: '#ff4d4f' }} />,
+          badgeVariant: 'destructive' as const,
+          badgeClassName: '',
+          icon: <AlertCircle className='w-4 h-4 text-destructive' />,
           text: '连接错误',
-          color: '#ff4d4f',
-          tagColor: 'error',
+          textClassName: 'text-destructive',
         };
       case 'disconnected':
       default:
         return {
-          badgeStatus: 'default' as const,
-          icon: <Unlink className='w-4 h-4' style={{ color: '#d9d9d9' }} />,
+          badgeVariant: 'secondary' as const,
+          badgeClassName: 'bg-muted text-muted-foreground',
+          icon: <Unlink className='w-4 h-4 text-muted-foreground' />,
           text: '已断开',
-          color: '#d9d9d9',
-          tagColor: 'default',
+          textClassName: 'text-muted-foreground',
         };
     }
   };
@@ -95,7 +95,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
     if (size === 'small') {
       return (
         <Tooltip title={getTooltipContent()}>
-          <Badge variant={config.badgeStatus === 'success' ? 'default' : config.badgeStatus === 'error' ? 'destructive' : 'secondary'}>{config.text}</Badge>
+          <Badge variant={config.badgeVariant} className={config.badgeClassName}>{config.text}</Badge>
         </Tooltip>
       );
     }
@@ -106,7 +106,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
           <div className='flex gap-2'>
             {config.icon}
             {showText && (
-              <Text strong style={{ color: config.color }}>
+              <Text strong className={config.textClassName}>
                 {config.text}
               </Text>
             )}
@@ -135,11 +135,11 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
     return (
       <Tooltip title={getTooltipContent()}>
         <div className='flex gap-2'>
-          <Badge variant={config.badgeStatus === 'success' ? 'default' : config.badgeStatus === 'error' ? 'destructive' : 'secondary'}>{config.text}</Badge>
+          <Badge variant={config.badgeVariant} className={config.badgeClassName}>{config.text}</Badge>
           {showText && (
-            <Tag color={config.tagColor} style={{ margin: 0 }}>
+            <span className={`text-sm ${config.textClassName}`}>
               {config.text}
-            </Tag>
+            </span>
           )}
           {showLatency && status.latency && (
             <Text type='secondary' style={{ fontSize: '12px' }}>

@@ -553,14 +553,15 @@ const Database: React.FC = () => {
                                   console.log('表操作:', action, tableName);
                                   // 根据操作类型执行相应的处理
                                   if (action === 'view_data') {
-                                    // 跳转到查询页面并执行查看数据的查询
-                                    navigate('/query', {
-                                      state: {
-                                        query: `SELECT *
-                                                FROM "${tableName}" LIMIT 100`,
+                                    // 触发表查询事件，让主布局处理
+                                    const query = `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 500`;
+                                    window.dispatchEvent(new CustomEvent('table-query', {
+                                      detail: {
+                                        query,
                                         database: selectedDatabase,
-                                      },
-                                    });
+                                        tableName
+                                      }
+                                    }));
                                   } else if (action === 'refresh_table') {
                                     loadDatabaseDetails(selectedDatabase);
                                   }

@@ -197,7 +197,7 @@ export const PortStatus: React.FC<PortStatusProps> = ({
                 {Object.entries(portStats).map(([serviceName, info]) => (
                   <div key={serviceName} className="flex items-center justify-between p-2 bg-muted rounded">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${info.is_available ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className={`w-2 h-2 rounded-full ${info.is_available ? 'bg-success' : 'bg-destructive'}`} />
                       <span className="text-sm font-medium">{serviceName}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

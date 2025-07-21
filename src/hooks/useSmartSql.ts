@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { smartSqlService, type SqlGenerationRequest, type SqlGenerationResult } from '@/services/smartSqlService';
 import { useConnectionStore } from '@/store/connection';
 import { toast } from 'sonner';
+import { writeToClipboard } from '@/utils/clipboard';
 
 export interface UseSmartSqlOptions {
   database?: string;
@@ -234,13 +235,10 @@ export function useSmartSql(options: UseSmartSqlOptions = {}) {
    * 复制 SQL 到剪贴板
    */
   const copySqlToClipboard = useCallback(async (sql: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(sql);
-      toast.success('SQL 已复制到剪贴板');
-    } catch (err) {
-      console.error('Failed to copy SQL:', err);
-      toast.error('复制失败');
-    }
+    const success = await writeToClipboard(sql, {
+      successMessage: 'SQL 已复制到剪贴板',
+      errorMessage: '复制失败'
+    });
   }, []);
 
   /**

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui';
 import { Bug, RefreshCw, FileText, AlertTriangle, Copy } from 'lucide-react';
 import { errorLogger } from '@/utils/errorLogger';
+import { writeToClipboard } from '@/utils/clipboard';
 
 interface Props {
   children: ReactNode;
@@ -297,24 +298,10 @@ class ErrorBoundary extends Component<Props, State> {
                                   size='sm'
                                   className='h-6 w-6 p-0'
                                   onClick={async () => {
-                                    try {
-                                      await navigator.clipboard.writeText(
-                                        error.message
-                                      );
-                                    } catch (err) {
-                                      console.warn(
-                                        '复制到剪贴板失败，使用备用方法:',
-                                        err
-                                      );
-                                      // 备用方法：创建临时文本区域
-                                      const textArea =
-                                        document.createElement('textarea');
-                                      textArea.value = error.message;
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand('copy');
-                                      document.body.removeChild(textArea);
-                                    }
+                                    await writeToClipboard(error.message, {
+                                      successMessage: '错误信息已复制到剪贴板',
+                                      errorMessage: '复制失败'
+                                    });
                                   }}
                                 >
                                   <Copy className='h-3 w-3' />
@@ -335,23 +322,10 @@ class ErrorBoundary extends Component<Props, State> {
                                   size='sm'
                                   className='h-6 w-6 p-0'
                                   onClick={async () => {
-                                    try {
-                                      await navigator.clipboard.writeText(
-                                        error.stack || ''
-                                      );
-                                    } catch (err) {
-                                      console.warn(
-                                        '复制到剪贴板失败，使用备用方法:',
-                                        err
-                                      );
-                                      const textArea =
-                                        document.createElement('textarea');
-                                      textArea.value = error.stack || '';
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand('copy');
-                                      document.body.removeChild(textArea);
-                                    }
+                                    await writeToClipboard(error.stack || '', {
+                                      successMessage: '错误堆栈已复制到剪贴板',
+                                      errorMessage: '复制失败'
+                                    });
                                   }}
                                 >
                                   <Copy className='h-3 w-3' />
@@ -374,24 +348,10 @@ class ErrorBoundary extends Component<Props, State> {
                                   size='sm'
                                   className='h-6 w-6 p-0'
                                   onClick={async () => {
-                                    try {
-                                      await navigator.clipboard.writeText(
-                                        errorInfo.componentStack || ''
-                                      );
-                                    } catch (err) {
-                                      console.warn(
-                                        '复制到剪贴板失败，使用备用方法:',
-                                        err
-                                      );
-                                      const textArea =
-                                        document.createElement('textarea');
-                                      textArea.value =
-                                        errorInfo.componentStack || '';
-                                      document.body.appendChild(textArea);
-                                      textArea.select();
-                                      document.execCommand('copy');
-                                      document.body.removeChild(textArea);
-                                    }
+                                    await writeToClipboard(errorInfo.componentStack || '', {
+                                      successMessage: '组件堆栈已复制到剪贴板',
+                                      errorMessage: '复制失败'
+                                    });
                                   }}
                                 >
                                   <Copy className='h-3 w-3' />

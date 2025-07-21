@@ -4,9 +4,10 @@
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS } from '@/types/updater';
+import { getAppVersion } from '@/utils/version';
 
 class UpdaterService {
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private settings: UpdaterSettings = { ...DEFAULT_UPDATER_SETTINGS };
 
   /**
@@ -212,8 +213,13 @@ class UpdaterService {
    * 获取当前版本信息
    */
   getCurrentVersion(): string {
-    // 从 package.json 或应用配置中获取版本
-    return '1.0.6'; // 这里应该从配置或构建时注入
+    // 从版本工具类获取实际版本号
+    try {
+      return getAppVersion();
+    } catch (error) {
+      console.warn('无法获取应用版本，使用默认值:', error);
+      return '0.1.3'; // 默认版本，与package.json保持一致
+    }
   }
 
   /**

@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import SimpleChart from '@/components/common/SimpleChart';
+import { DEFAULT_PERFORMANCE_CONFIG } from '@/config/defaults';
+import { FormatUtils } from '@/utils/format';
 import {
   Card,
   CardContent,
@@ -65,6 +68,8 @@ import {
   Eye,
   Database,
   Zap,
+  PlayCircle,
+  PauseCircle,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import {
@@ -236,6 +241,37 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       mostBlockedTable: string;
       recommendations: string[];
     };
+  }>({
+    locks: [],
+    summary: {
+      totalLocks: 0,
+      avgWaitTime: 0,
+      maxWaitTime: 0,
+      mostBlockedTable: '',
+      recommendations: []
+    }
+  });
+
+  // 连接池统计状态
+  const [connectionPoolStats, setConnectionPoolStats] = useState<{
+    stats: {
+      timestamp: Date;
+      totalConnections: number;
+      activeConnections: number;
+      idleConnections: number;
+      waitingRequests: number;
+      connectionErrors: number;
+      avgConnectionTime: number;
+      maxConnectionTime: number;
+    }[];
+    summary: {
+      avgUtilization: number;
+      maxUtilization: number;
+      avgWaitTime: number;
+      maxWaitTime: number;
+      errorRate: number;
+      recommendations: string[];
+    };
   } | null>(null);
   const [performanceReport, setPerformanceReport] = useState<{
     summary: {
@@ -299,10 +335,29 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     };
   } | null>(null);
 
+  // 格式化网络数据单位的函数
+  // 转换时间范围格式的函数
+  const normalizeTimeRange = useCallback((range: { from: Date; to: Date } | null) => {
+    if (!range) {
+      return {
+        start: new Date(Date.now() - 60 * 60 * 1000), // 1小时前
+        end: new Date(),
+      };
+    }
+    return {
+      start: range.from,
+      end: range.to,
+    };
+  }, []);
+
+  const formatNetworkData = useCallback((bytes: number) => {
+    return FormatUtils.formatNetworkSpeed(bytes);
+  }, []);
+
   const [detailsDrawerVisible, setDetailsDrawerVisible] = useState(false);
   const [diagnosticsModalVisible, setDiagnosticsModalVisible] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [refreshInterval, setRefreshInterval] = useState(DEFAULT_PERFORMANCE_CONFIG.connectionMonitorInterval);
   const [realTimeMode, setRealTimeMode] = useState(false);
   const [alertThresholds, setAlertThresholds] = useState({
     cpuUsage: 80,
@@ -313,19 +368,86 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     connectionCount: 100,
   });
 
-  // 获取基础性能指标
+  // 监控模式状态
+  const [monitoringMode, setMonitoringMode] = useState<'local' | 'remote'>('remote'); // 默认远程监控
+
+  // 清理数据状态的函数
+  const clearAllData = useCallback(() => {
+    console.log('🧹 开始清理所有性能监控数据...');
+    setBottlenecks([]);
+    setSystemMetrics(null);
+    setSlowQueries(null);
+    setLockWaits({
+      locks: [],
+      summary: {
+        totalLocks: 0,
+        avgWaitTime: 0,
+        maxWaitTime: 0,
+        mostBlockedTable: '',
+        recommendations: []
+      }
+    });
+    setConnectionPoolStats(null);
+    setPerformanceReport(null);
+    setBasicMetrics(null);
+    setLoading(false);
+    console.log('✅ 所有性能监控数据已清理完成');
+  }, []);
+
+  // 监控模式变化时清理数据
+  useEffect(() => {
+    console.log(`🔄 监控模式已变更为: ${monitoringMode}`);
+    // 不在这里清理数据，由切换函数负责
+  }, [monitoringMode]);
+
+  // 从设置中加载监控模式
+  useEffect(() => {
+    const loadMonitoringSettings = async () => {
+      try {
+        const settings = await safeTauriInvoke<{
+          default_mode: string;
+          auto_refresh_interval: number;
+          enable_auto_refresh: boolean;
+          remote_metrics_timeout: number;
+          fallback_to_local: boolean;
+        }>('get_monitoring_settings');
+        setMonitoringMode(settings.default_mode as 'local' | 'remote');
+      } catch (error) {
+        console.warn('Failed to load monitoring settings, using default:', error);
+      }
+    };
+    loadMonitoringSettings();
+  }, []);
+
+  // 获取基础性能指标（使用真实数据）
   const getBasicMetrics = useCallback(async () => {
     if (!activeConnectionId) return;
 
     try {
+      console.log(`📊 开始获取${monitoringMode}监控模式的性能指标...`, { activeConnectionId, monitoringMode });
+      
       const [metricsResult, _slowQueryResult] = await Promise.all([
-        safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics', {
+        safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
           connectionId: activeConnectionId,
+          monitoringMode,
         }),
         safeTauriInvoke<SlowQueryAnalysisResult>('get_slow_query_analysis', {
           connectionId: activeConnectionId,
         }),
       ]);
+
+      console.log('获取到的指标结果:', {
+        hasQueryTime: !!metricsResult.queryExecutionTime && metricsResult.queryExecutionTime.length > 0,
+        hasMemoryUsage: !!metricsResult.memoryUsage && metricsResult.memoryUsage.length > 0,
+        hasCpuUsage: !!metricsResult.cpuUsage && metricsResult.cpuUsage.length > 0,
+        diskIO: metricsResult.diskIO,
+        networkIO: metricsResult.networkIO,
+        dataLength: {
+          cpu: metricsResult.cpuUsage?.length || 0,
+          memory: metricsResult.memoryUsage?.length || 0,
+          queryTime: metricsResult.queryExecutionTime?.length || 0
+        }
+      });
 
       setBasicMetrics({
         queryExecutionTime: Array.isArray(metricsResult.queryExecutionTime) && metricsResult.queryExecutionTime.length > 0 && typeof metricsResult.queryExecutionTime[0] === 'object' 
@@ -372,8 +494,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       });
     } catch (error) {
       console.error('获取基础性能指标失败:', error);
+      showMessage.error('获取基础性能指标失败，请检查连接状态');
+      // 清空指标数据以避免显示过期信息
+      setBasicMetrics(null);
     }
-  }, [activeConnectionId]);
+  }, [activeConnectionId, monitoringMode]);
+
+
 
   // 获取性能瓶颈数据
   const getBottlenecks = useCallback(async () => {
@@ -381,12 +508,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
     setLoading(true);
     try {
-      const range = timeRange
-        ? {
-            start: timeRange.from,
-            end: timeRange.to,
-          }
-        : undefined;
+      console.log(`🔍 开始获取${monitoringMode}监控模式的性能瓶颈数据...`, { activeConnectionId, monitoringMode });
+      const range = normalizeTimeRange(timeRange);
 
       const [
         bottlenecksData,
@@ -396,29 +519,53 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         _connectionPoolData,
         performanceReportData,
       ] = await Promise.all([
-        PerformanceBottleneckService.detectPerformanceBottlenecks(
+        PerformanceBottleneckService.detectPerformanceBottlenecksWithMode(
           activeConnectionId,
+          monitoringMode,
           range
         ),
-        PerformanceBottleneckService.getSystemPerformanceMetrics(
-          activeConnectionId,
-          range
-        ),
-        PerformanceBottleneckService.getSlowQueryLog(activeConnectionId, {
-          limit: 50,
+        // 根据监控模式获取系统性能指标
+        safeTauriInvoke('get_system_performance_metrics', {
+          connectionId: activeConnectionId,
+          timeRange: range,
+          monitoringMode,
         }),
-        PerformanceBottleneckService.analyzeLockWaits(
-          activeConnectionId,
-          range
-        ),
+        // 只有远程监控才获取慢查询
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.getSlowQueryLog(activeConnectionId, {
+              limit: 50,
+            }).then(queries => {
+              if (Array.isArray(queries)) {
+                return { queries, total: queries.length };
+              } else if (queries && typeof queries === 'object' && 'queries' in queries) {
+                return queries as { queries: any[], total: number };
+              } else {
+                return { queries: [], total: 0 };
+              }
+            })
+          : Promise.resolve({ queries: [], total: 0 }),
+        // 只有远程监控才分析锁等待
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.analyzeLockWaits(
+              activeConnectionId,
+              range
+            )
+          : Promise.resolve({ locks: [], summary: { totalLocks: 0, avgWaitTime: 0, maxWaitTime: 0, mostBlockedTable: '', recommendations: [] } }),
         PerformanceBottleneckService.getConnectionPoolStats(
           activeConnectionId,
           range
         ),
-        PerformanceBottleneckService.generatePerformanceReport(
-          activeConnectionId,
-          range
-        ),
+        // 根据监控模式获取性能报告
+        monitoringMode === 'remote'
+          ? PerformanceBottleneckService.generatePerformanceReport(
+              activeConnectionId,
+              range
+            )
+          : safeTauriInvoke('generate_local_performance_report', {
+              connectionId: activeConnectionId,
+              timeRange: range,
+              monitoringMode,
+            }),
       ]);
 
       // 同时获取基础性能指标
@@ -428,28 +575,115 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       setSystemMetrics(systemMetricsData);
       setSlowQueries(slowQueriesData);
       setLockWaits(lockWaitsData);
-      // setConnectionPoolStats(connectionPoolData);
+      setConnectionPoolStats(_connectionPoolData);
       setPerformanceReport(performanceReportData);
     } catch (error) {
-      console.error('获取性能瓶颈数据失败:', error);
-      showMessage.error('获取性能瓶颈数据失败');
+      console.error(`❌ 获取${monitoringMode}监控模式的性能瓶颈数据失败:`, error);
+      showMessage.error(`获取${monitoringMode === 'local' ? '本地' : '远程'}监控数据失败`);
+      // 清理可能的脏数据
+      clearAllData();
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, timeRange, getBasicMetrics]);
+  }, [activeConnectionId, timeRange, getBasicMetrics, monitoringMode]);
 
-  // 自动刷新
+
+
+  // 自动刷新 - 支持本地和远程监控
   useEffect(() => {
     if (autoRefresh) {
-      const interval = setInterval(getBottlenecks, refreshInterval * 1000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, refreshInterval, getBottlenecks]);
+      // 根据监控模式设置不同的刷新间隔
+      const interval = monitoringMode === 'local'
+        ? Math.max(refreshInterval * 1000, 10000) // 本地监控最少10秒
+        : Math.max(refreshInterval * 1000, 30000); // 远程监控最少30秒
 
-  // 暂时禁用自动加载以避免Tauri命令错误
-  // useEffect(() => {
-  //   getBottlenecks();
-  // }, [getBottlenecks]);
+      const refreshTimer = setInterval(() => {
+        getBottlenecks();
+        getBasicMetrics(); // 同时刷新基础指标
+      }, interval);
+
+      return () => clearInterval(refreshTimer);
+    }
+  }, [autoRefresh, refreshInterval, getBottlenecks, getBasicMetrics, monitoringMode]);
+
+  // 实时监控 - 更频繁的数据更新
+  useEffect(() => {
+    if (realTimeMode) {
+      // 实时监控每5秒更新一次
+      const realTimeTimer = setInterval(() => {
+        getBasicMetrics(); // 实时监控主要更新基础指标
+      }, 5000);
+
+      return () => clearInterval(realTimeTimer);
+    }
+  }, [realTimeMode, getBasicMetrics]);
+
+
+
+  // 监控状态管理
+  const [isMonitoringActive, setIsMonitoringActive] = useState(false);
+
+  // 同步监控状态
+  const syncMonitoringStatus = useCallback(async () => {
+    try {
+      const status = await safeTauriInvoke<boolean>('get_system_monitoring_status');
+      setIsMonitoringActive(status);
+    } catch (error) {
+      console.error('获取监控状态失败:', error);
+    }
+  }, []);
+
+  // 启动监控的函数
+  const startMonitoring = useCallback(async () => {
+    try {
+      await safeTauriInvoke<void>('start_system_monitoring', {});
+      await syncMonitoringStatus(); // 同步状态
+      console.log('系统监控已启动');
+    } catch (error) {
+      console.error('启动系统监控失败:', error);
+      showMessage.error('启动系统监控失败');
+    }
+  }, [syncMonitoringStatus]);
+
+  // 停止监控的函数
+  const stopMonitoring = useCallback(async () => {
+    try {
+      await safeTauriInvoke<void>('stop_system_monitoring', {});
+      await syncMonitoringStatus(); // 同步状态
+      console.log('系统监控已停止');
+    } catch (error) {
+      console.error('停止系统监控失败:', error);
+    }
+  }, [syncMonitoringStatus]);
+
+  // 初始化监控状态
+  useEffect(() => {
+    syncMonitoringStatus();
+  }, [syncMonitoringStatus]);
+
+  // 初始加载性能数据并启动监控
+  useEffect(() => {
+    if (activeConnectionId) {
+      // 根据监控模式决定是否启动系统监控
+      if (monitoringMode === 'local') {
+        startMonitoring().then(() => {
+          getBottlenecks();
+          getBasicMetrics(); // 确保获取基础指标
+        });
+      } else {
+        // 远程监控模式不需要启动本地系统监控
+        getBottlenecks();
+        getBasicMetrics(); // 确保获取基础指标
+      }
+    }
+
+    // 组件卸载时停止监控
+    return () => {
+      if (monitoringMode === 'local' && isMonitoringActive) {
+        stopMonitoring();
+      }
+    };
+  }, [activeConnectionId, monitoringMode, startMonitoring, stopMonitoring, getBottlenecks, getBasicMetrics, isMonitoringActive]);
 
   // 获取严重程度颜色
   const getSeverityVariant = (severity: string) => {
@@ -505,6 +739,94 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     if (ms < 1000) return `${ms}ms`;
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
     return `${(ms / 60000).toFixed(1)}m`;
+  };
+
+  // 生成基于真实数据的系统监控图表数据
+  const generateSystemChartData = (type: 'cpu-memory' | 'disk-network') => {
+    if (!basicMetrics) {
+      // 如果没有真实数据，显示提示信息而不是空图表
+      return {
+        timeColumn: '时间',
+        valueColumns: type === 'cpu-memory'
+          ? ['CPU使用率(%)', '内存使用率(%)']
+          : ['磁盘读取(MB)', '磁盘写入(MB)', '网络入站(B/s)', '网络出站(B/s)'],
+        data: [{
+          时间: '暂无数据',
+          ...(type === 'cpu-memory'
+            ? { 'CPU使用率(%)': 0, '内存使用率(%)': 0 }
+            : { '磁盘读取(MB)': 0, '磁盘写入(MB)': 0, '网络入站(B/s)': 0, '网络出站(B/s)': 0 })
+        }],
+      };
+    }
+    
+    if (type === 'cpu-memory') {
+      // 使用真实的CPU和内存数据
+      const combinedData = basicMetrics.cpuUsage.map((cpuPoint, index) => {
+        const memoryPoint = basicMetrics.memoryUsage[index];
+        return {
+          时间: new Date(cpuPoint.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          'CPU使用率(%)': Math.round(cpuPoint.value * 10) / 10,
+          '内存使用率(%)': memoryPoint ? Math.round(memoryPoint.value * 10) / 10 : 0,
+        };
+      });
+      
+      return {
+        timeColumn: '时间',
+        valueColumns: ['CPU使用率(%)', '内存使用率(%)'],
+        data: combinedData,
+      };
+    } else {
+      // 使用真实的磁盘和网络数据
+      const diskIO = basicMetrics.diskIO;
+      const networkIO = basicMetrics.networkIO;
+      
+      // 基于真实数据创建时间序列，避免硬编码的时间循环
+      if (basicMetrics.cpuUsage.length > 0) {
+        // 使用已有的时间序列数据
+        const data = basicMetrics.cpuUsage.map((point, index) => {
+          // 将字节转换为合适的单位
+          const readMBps = Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10; // 转换为MB
+          const writeMBps = Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10;
+          // 网络数据自动转换单位
+          const netInFormatted = formatNetworkData(networkIO.bytesIn);
+          const netOutFormatted = formatNetworkData(networkIO.bytesOut);
+
+          return {
+            时间: new Date(point.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            '磁盘读取(MB)': readMBps,
+            '磁盘写入(MB)': writeMBps,
+            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
+            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
+          };
+        });
+        
+        // 获取网络数据的单位（使用第一个数据点的单位）
+        const firstNetInUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络入站')) || '网络入站(B/s)' : '网络入站(B/s)';
+        const firstNetOutUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络出站')) || '网络出站(B/s)' : '网络出站(B/s)';
+
+        return {
+          timeColumn: '时间',
+          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', firstNetInUnit, firstNetOutUnit],
+          data,
+        };
+      } else {
+        // 如果没有时间序列数据，显示当前值
+        const netInFormatted = formatNetworkData(networkIO.bytesIn);
+        const netOutFormatted = formatNetworkData(networkIO.bytesOut);
+
+        return {
+          timeColumn: '时间',
+          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', `网络入站(${netInFormatted.unit})`, `网络出站(${netOutFormatted.unit})`],
+          data: [{
+            时间: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            '磁盘读取(MB)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
+            '磁盘写入(MB)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
+            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
+            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
+          }],
+        };
+      }
+    }
   };
 
   // 格式化文件大小
@@ -684,7 +1006,23 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染概览
   const renderOverview = () => {
     if (!bottlenecks.length) {
-      return <Empty description='没有检测到性能瓶颈' />;
+      return (
+        <div className='text-center py-12'>
+          <div className='flex flex-col items-center gap-4'>
+            <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center'>
+              <CheckCircle className='w-8 h-8 text-green-600' />
+            </div>
+            <div>
+              <Text className='text-lg font-semibold mb-2'>系统运行良好</Text>
+              <Text className='text-muted-foreground'>
+                {monitoringMode === 'local'
+                  ? '本地系统监控未检测到性能瓶颈'
+                  : '远程监控未检测到性能瓶颈'}
+              </Text>
+            </div>
+          </div>
+        </div>
+      );
     }
 
     const activeBottlenecks = bottlenecks.filter(b => b.status === 'active');
@@ -944,7 +1282,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络I/O'
-                value={`${networkBytes.toFixed(1)} KB/s`}
+                value={FormatUtils.formatNetworkSpeed(networkBytes).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
               />
@@ -958,11 +1296,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>CPU和内存使用率趋势</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='h-[200px] flex items-center justify-center bg-muted/20 rounded'>
-                <Text className='text-muted-foreground'>
-                  CPU和内存使用率趋势图
-                </Text>
-              </div>
+              <SimpleChart
+                data={generateSystemChartData('cpu-memory')}
+                type="line"
+                height={200}
+              />
             </CardContent>
           </Card>
           <Card>
@@ -970,11 +1308,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>磁盘和网络I/O趋势</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='h-[200px] flex items-center justify-center bg-muted/20 rounded'>
-                <Text className='text-muted-foreground'>
-                  磁盘和网络I/O趋势图
-                </Text>
-              </div>
+              <SimpleChart
+                data={generateSystemChartData('disk-network')}
+                type="line"
+                height={200}
+              />
             </CardContent>
           </Card>
         </div>
@@ -1191,7 +1529,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络输入'
-                value={formatBytes(networkIO.bytesIn)}
+                value={FormatUtils.formatNetworkSpeed(networkIO.bytesIn).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
               />
@@ -1204,7 +1542,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardContent className='p-4'>
               <Statistic
                 title='网络输出'
-                value={formatBytes(networkIO.bytesOut)}
+                value={FormatUtils.formatNetworkSpeed(networkIO.bytesOut).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-orange-500'
               />
@@ -1304,38 +1642,74 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                       : 'text-red-500'
                 }
               />
+              <Text className='text-xs text-muted-foreground mt-1'>
+                基于系统资源和查询性能的综合评估
+              </Text>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='平均查询时间'
-                value={`${summary.avgQueryTime.toFixed(2)} ms`}
-                icon={<Clock className='w-4 h-4' />}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='错误率'
-                value={`${summary.errorRate.toFixed(2)}%`}
-                icon={<Bug className='w-4 h-4' />}
-                valueClassName={
-                  summary.errorRate > 5 ? 'text-red-500' : 'text-green-500'
-                }
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='p-4'>
-              <Statistic
-                title='吞吐量'
-                value={`${summary.throughput.toFixed(1)} QPS`}
-                icon={<Rocket className='w-4 h-4' />}
-              />
-            </CardContent>
-          </Card>
+          {monitoringMode === 'remote' && (
+            <>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='平均查询时间'
+                    value={`${summary.avgQueryTime.toFixed(2)} ms`}
+                    icon={<Clock className='w-4 h-4' />}
+                    valueClassName={
+                      summary.avgQueryTime > 1000 ? 'text-red-500' : 'text-green-500'
+                    }
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    SQL查询的平均响应时间
+                  </Text>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='慢查询率'
+                    value={`${summary.errorRate.toFixed(2)}%`}
+                    icon={<Bug className='w-4 h-4' />}
+                    valueClassName={
+                      summary.errorRate > 5 ? 'text-red-500' : 'text-green-500'
+                    }
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    执行时间超过5秒的查询占比
+                  </Text>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className='p-4'>
+                  <Statistic
+                    title='查询吞吐量'
+                    value={`${summary.throughput.toFixed(1)} QPS`}
+                    icon={<Rocket className='w-4 h-4' />}
+                  />
+                  <Text className='text-xs text-muted-foreground mt-1'>
+                    每秒处理的查询数量
+                  </Text>
+                </CardContent>
+              </Card>
+            </>
+          )}
+          {monitoringMode === 'local' && (
+            <Card>
+              <CardContent className='p-4'>
+                <Statistic
+                  title='系统负载'
+                  value={`${((metrics.cpu + metrics.memory) / 2).toFixed(1)}%`}
+                  icon={<Rocket className='w-4 h-4' />}
+                  valueClassName={
+                    ((metrics.cpu + metrics.memory) / 2) > 80 ? 'text-red-500' : 'text-green-500'
+                  }
+                />
+                <Text className='text-xs text-muted-foreground mt-1'>
+                  CPU和内存的平均使用率
+                </Text>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
@@ -1348,48 +1722,48 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>CPU使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.cpu}%
+                    {(metrics.cpu || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.cpu}
-                  className={`h-2 ${metrics.cpu > 80 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.cpu || 0))}
+                  className={`h-2 ${(metrics.cpu || 0) > 80 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>内存使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.memory}%
+                    {(metrics.memory || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.memory}
-                  className={`h-2 ${metrics.memory > 85 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.memory || 0))}
+                  className={`h-2 ${(metrics.memory || 0) > 85 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>磁盘I/O</Text>
+                  <Text className='font-semibold'>磁盘使用率</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.disk}%
+                    {(metrics.disk || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.disk}
-                  className={`h-2 ${metrics.disk > 90 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.disk || 0))}
+                  className={`h-2 ${(metrics.disk || 0) > 90 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>网络I/O</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {metrics.network}%
+                    {(metrics.network || 0).toFixed(2)}%
                   </Text>
                 </div>
                 <Progress
-                  value={metrics.network}
-                  className={`h-2 ${metrics.network > 95 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
+                  value={Math.min(100, Math.max(0, metrics.network || 0))}
+                  className={`h-2 ${(metrics.network || 0) > 95 ? '[&>div]:bg-red-500' : '[&>div]:bg-green-500'}`}
                 />
               </div>
             </CardContent>
@@ -1400,39 +1774,54 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CardTitle className='text-sm'>性能优化建议</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className='space-y-3'>
-                {recommendations
-                  .slice(0, 5)
-                  .map((recommendation: Recommendation, index: number) => (
-                    <div
-                      key={index}
-                      className='flex items-start gap-3 p-3 bg-muted/20 rounded'
-                    >
-                      <Badge
-                        variant={
-                          recommendation.priority === 'critical'
-                            ? 'destructive'
-                            : recommendation.priority === 'high'
-                              ? 'outline'
-                              : recommendation.priority === 'medium'
-                                ? 'secondary'
-                                : 'default'
-                        }
-                        className='mt-0.5'
+              {recommendations && recommendations.length > 0 ? (
+                <div className='space-y-3'>
+                  {recommendations
+                    .slice(0, 5)
+                    .map((recommendation: Recommendation, index: number) => (
+                      <div
+                        key={index}
+                        className='flex items-start gap-3 p-3 bg-muted/20 rounded'
                       >
-                        {recommendation.priority}
-                      </Badge>
-                      <div className='flex-1'>
-                        <Text className='font-semibold text-sm'>
-                          {recommendation.title}
-                        </Text>
-                        <Text className='text-sm text-muted-foreground mt-1'>
-                          {recommendation.description}
-                        </Text>
+                        <Badge
+                          variant={
+                            recommendation.priority === 'critical'
+                              ? 'destructive'
+                              : recommendation.priority === 'high'
+                                ? 'outline'
+                                : recommendation.priority === 'medium'
+                                  ? 'secondary'
+                                  : 'default'
+                          }
+                          className='mt-0.5'
+                        >
+                          {recommendation.priority}
+                        </Badge>
+                        <div className='flex-1'>
+                          <Text className='font-semibold text-sm'>
+                            {recommendation.title}
+                          </Text>
+                          <Text className='text-sm text-muted-foreground mt-1'>
+                            {recommendation.description}
+                          </Text>
+                          {recommendation.implementation && (
+                            <Text className='text-xs text-blue-600 mt-1'>
+                              建议措施: {recommendation.implementation}
+                            </Text>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              ) : (
+                <div className='text-center py-8'>
+                  <Text className='text-muted-foreground'>
+                    {monitoringMode === 'local'
+                      ? '系统运行良好，暂无优化建议'
+                      : '正在分析性能数据，请稍候...'}
+                  </Text>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1448,17 +1837,108 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardTitle className='flex items-center gap-2'>
               <Monitor className='w-5 h-5' />
               性能瓶颈诊断
+              <div className='flex items-center gap-2 ml-4'>
+                <div className={`w-2 h-2 rounded-full ${
+                  monitoringMode === 'local'
+                    ? (isMonitoringActive ? 'bg-green-500' : 'bg-gray-400')
+                    : 'bg-blue-500'
+                }`} />
+                <span className='text-sm text-muted-foreground'>
+                  {monitoringMode === 'local'
+                    ? (isMonitoringActive ? '本地监控运行中' : '本地监控已停止')
+                    : '远程监控模式'
+                  }
+                </span>
+              </div>
             </CardTitle>
             <div className='flex gap-2'>
+              <Select
+                value={monitoringMode}
+                onValueChange={async (value: 'local' | 'remote') => {
+                  console.log(`🔄 切换监控模式: ${monitoringMode} -> ${value}`);
+
+                  // 先停止当前监控
+                  if (isMonitoringActive) {
+                    await stopMonitoring();
+                  }
+
+                  // 清理所有现有数据，避免数据混乱
+                  clearAllData();
+
+                  setMonitoringMode(value);
+
+                  // 根据新模式启动相应监控
+                  if (value === 'local') {
+                    await startMonitoring();
+                  }
+
+                  // 保存到设置
+                  try {
+                    const settings = await safeTauriInvoke<{
+                      default_mode: string;
+                      auto_refresh_interval: number;
+                      enable_auto_refresh: boolean;
+                      remote_metrics_timeout: number;
+                      fallback_to_local: boolean;
+                    }>('get_monitoring_settings');
+                    await safeTauriInvoke('update_monitoring_settings', {
+                      monitoringSettings: {
+                        ...settings,
+                        default_mode: value,
+                      },
+                    });
+
+                    showMessage.success(`已切换到${value === 'local' ? '本地' : '远程'}监控模式`);
+                  } catch (error) {
+                    console.warn('Failed to save monitoring mode:', error);
+                    showMessage.error('保存监控设置失败');
+                  }
+
+                  // 延迟加载新模式的数据，确保状态切换完成
+                  setTimeout(() => {
+                    console.log(`📊 开始加载${value === 'local' ? '本地' : '远程'}监控数据`);
+                    getBottlenecks();
+                    getBasicMetrics();
+                  }, 500); // 增加延迟确保状态更新完成
+                }}
+              >
+                <SelectTrigger className='w-[120px]'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='remote'>远程监控</SelectItem>
+                  <SelectItem value='local'>本地监控</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 size='sm'
                 variant='outline'
                 onClick={getBottlenecks}
                 disabled={loading}
               >
-                <RefreshCw className='w-4 h-4 mr-2' />
-                刷新
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                刷新数据
               </Button>
+              {monitoringMode === 'local' && (
+                <Button
+                  size='sm'
+                  variant={isMonitoringActive ? 'destructive' : 'default'}
+                  onClick={isMonitoringActive ? stopMonitoring : startMonitoring}
+                  disabled={loading}
+                >
+                  {isMonitoringActive ? (
+                    <>
+                      <PauseCircle className='w-4 h-4 mr-2' />
+                      停止监控
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className='w-4 h-4 mr-2' />
+                      启动监控
+                    </>
+                  )}
+                </Button>
+              )}
               <Button
                 size='sm'
                 variant='outline'
@@ -1511,29 +1991,55 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className='grid w-full grid-cols-6'>
+              <TabsList className={`grid w-full ${monitoringMode === 'local' ? 'grid-cols-4' : 'grid-cols-6'}`}>
                 <TabsTrigger value='overview'>瓶颈概览</TabsTrigger>
                 <TabsTrigger value='basic'>基础监控</TabsTrigger>
                 <TabsTrigger value='metrics'>系统指标</TabsTrigger>
-                <TabsTrigger value='slow-queries'>慢查询</TabsTrigger>
-                <TabsTrigger value='lock-waits'>锁等待</TabsTrigger>
+                {monitoringMode === 'remote' && (
+                  <TabsTrigger value='slow-queries'>慢查询</TabsTrigger>
+                )}
+                {monitoringMode === 'remote' && (
+                  <TabsTrigger value='lock-waits'>锁等待</TabsTrigger>
+                )}
                 <TabsTrigger value='report'>性能报告</TabsTrigger>
               </TabsList>
               <TabsContent value='overview' className='mt-6'>
                 {renderOverview()}
               </TabsContent>
               <TabsContent value='basic' className='mt-6'>
+                <div className='mb-4 p-4 bg-muted/50 rounded-lg'>
+                  <div className='flex items-center gap-2 mb-2'>
+                    <div className={`w-3 h-3 rounded-full ${
+                      monitoringMode === 'local'
+                        ? (isMonitoringActive ? 'bg-green-500' : 'bg-gray-400')
+                        : 'bg-blue-500'
+                    }`} />
+                    <Text className='font-medium'>
+                      当前监控模式：{monitoringMode === 'local' ? '本地监控' : '远程监控'}
+                    </Text>
+                  </div>
+                  <Text className='text-sm text-muted-foreground'>
+                    {monitoringMode === 'local'
+                      ? '正在监控本地系统资源使用情况，包括CPU、内存、磁盘和网络'
+                      : '正在监控远程InfluxDB服务器的性能指标和系统状态'
+                    }
+                  </Text>
+                </div>
                 {renderBasicMonitoring()}
               </TabsContent>
               <TabsContent value='metrics' className='mt-6'>
                 {renderSystemMetrics()}
               </TabsContent>
-              <TabsContent value='slow-queries' className='mt-6'>
-                {renderSlowQueries()}
-              </TabsContent>
-              <TabsContent value='lock-waits' className='mt-6'>
-                {renderLockWaits()}
-              </TabsContent>
+              {monitoringMode === 'remote' && (
+                <TabsContent value='slow-queries' className='mt-6'>
+                  {renderSlowQueries()}
+                </TabsContent>
+              )}
+              {monitoringMode === 'remote' && (
+                <TabsContent value='lock-waits' className='mt-6'>
+                  {renderLockWaits()}
+                </TabsContent>
+              )}
               <TabsContent value='report' className='mt-6'>
                 {renderPerformanceReport()}
               </TabsContent>
@@ -1701,19 +2207,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </Text>
                 </div>
                 <div>
-                  <div className='relative'>
-                    <InputNumber
-                      value={refreshInterval}
-                      onChange={value => setRefreshInterval(value || 30)}
-                      min={10}
-                      max={300}
-                      disabled={!autoRefresh}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      秒
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={refreshInterval}
+                    onChange={value => setRefreshInterval(value || 30)}
+                    min={10}
+                    max={300}
+                    disabled={!autoRefresh}
+                    addonAfter="秒"
+                    className='w-full'
+                  />
                 </div>
               </div>
             </div>
@@ -1725,83 +2227,67 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <div className='grid grid-cols-2 gap-4'>
                 <div>
                   <Text className='text-sm mb-2 block'>CPU使用率</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.cpuUsage}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          cpuUsage: value || 80,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.cpuUsage}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        cpuUsage: value || 80,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>内存使用率</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.memoryUsage}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          memoryUsage: value || 85,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.memoryUsage}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        memoryUsage: value || 85,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>磁盘I/O</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.diskIo}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          diskIo: value || 90,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.diskIo}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        diskIo: value || 90,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
                 <div>
                   <Text className='text-sm mb-2 block'>网络I/O</Text>
-                  <div className='relative'>
-                    <InputNumber
-                      value={alertThresholds.networkIo}
-                      onChange={value =>
-                        setAlertThresholds({
-                          ...alertThresholds,
-                          networkIo: value || 95,
-                        })
-                      }
-                      min={0}
-                      max={100}
-                      className='w-full'
-                    />
-                    <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground'>
-                      %
-                    </span>
-                  </div>
+                  <InputNumber
+                    value={alertThresholds.networkIo}
+                    onChange={value =>
+                      setAlertThresholds({
+                        ...alertThresholds,
+                        networkIo: value || 95,
+                      })
+                    }
+                    min={0}
+                    max={100}
+                    addonAfter="%"
+                    className='w-full'
+                  />
                 </div>
               </div>
             </div>

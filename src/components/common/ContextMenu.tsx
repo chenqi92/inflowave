@@ -22,7 +22,10 @@ import {
     Hash,
     Calculator,
     Clock,
-    TrendingUp
+    TrendingUp,
+    RefreshCw,
+    Settings,
+    Unplug,
 } from 'lucide-react';
 
 export interface ContextMenuItem {
@@ -70,6 +73,226 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         if (!target) return [];
 
         switch (target.type) {
+            case 'connection':
+                return [
+                    {
+                        id: 'refresh_connection',
+                        label: '刷新连接',
+                        icon: <RefreshCw className="w-4 h-4"/>,
+                        action: {type: 'refresh_connection'}
+                    },
+                    {
+                        id: 'sep1', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'connection_properties',
+                        label: '连接属性',
+                        icon: <Info className="w-4 h-4"/>,
+                        action: {type: 'connection_properties'}
+                    },
+                    {
+                        id: 'sep2', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'disconnect',
+                        label: '断开连接',
+                        icon: <Unplug className="w-4 h-4"/>,
+                        action: {type: 'disconnect'},
+                        danger: true
+                    }
+                ];
+
+            case 'database_node':
+                return [
+                    {
+                        id: 'refresh_database',
+                        label: '刷新数据库',
+                        icon: <RefreshCw className="w-4 h-4"/>,
+                        action: {type: 'refresh_database'}
+                    },
+                    {
+                        id: 'sep1', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'create_measurement',
+                        label: '创建测量',
+                        icon: <Plus className="w-4 h-4"/>,
+                        action: {type: 'create_measurement'}
+                    },
+                    {
+                        id: 'database_info',
+                        label: '数据库信息',
+                        icon: <Info className="w-4 h-4"/>,
+                        action: {type: 'database_info'}
+                    },
+                    {
+                        id: 'sep2', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'export_database',
+                        label: '导出数据库',
+                        icon: <FileDown className="w-4 h-4"/>,
+                        action: {type: 'export_database'}
+                    },
+                    {
+                        id: 'sep3', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'drop_database',
+                        label: '删除数据库',
+                        icon: <Trash2 className="w-4 h-4"/>,
+                        action: {type: 'drop_database'},
+                        danger: true
+                    }
+                ];
+
+            case 'table':
+                return [
+                    {
+                        id: 'query_table',
+                        label: '查询数据',
+                        icon: <Search className="w-4 h-4"/>,
+                        action: {type: 'query_table'}
+                    },
+                    {
+                        id: 'table_designer',
+                        label: '表设计器',
+                        icon: <Settings className="w-4 h-4"/>,
+                        action: {type: 'table_designer'}
+                    },
+                    {
+                        id: 'sep1', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'table_info',
+                        label: '表信息',
+                        icon: <Info className="w-4 h-4"/>,
+                        action: {type: 'table_info'}
+                    },
+                    {
+                        id: 'export_table',
+                        label: '导出数据',
+                        icon: <FileDown className="w-4 h-4"/>,
+                        children: [
+                            {
+                                id: 'export_csv',
+                                label: '导出为 CSV',
+                                action: {type: 'export_table', format: 'csv'}
+                            },
+                            {
+                                id: 'export_json',
+                                label: '导出为 JSON',
+                                action: {type: 'export_table', format: 'json'}
+                            }
+                        ]
+                    },
+                    {
+                        id: 'sep2', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'drop_table',
+                        label: '删除表',
+                        icon: <Trash2 className="w-4 h-4"/>,
+                        action: {type: 'drop_table'},
+                        danger: true
+                    }
+                ];
+
+            case 'field':
+                return [
+                    {
+                        id: 'copy_field_name',
+                        label: '复制字段名',
+                        icon: <Copy className="w-4 h-4"/>,
+                        action: {type: 'copy_field_name'}
+                    },
+                    {
+                        id: 'field_stats',
+                        label: '字段统计',
+                        icon: <BarChart className="w-4 h-4"/>,
+                        action: {type: 'field_stats'}
+                    }
+                ];
+
+            case 'connection_row':
+                const isConnected = target.status?.status === 'connected';
+                return [
+                    {
+                        id: isConnected ? 'disconnect' : 'connect',
+                        label: isConnected ? '断开连接' : '连接',
+                        icon: isConnected ? <Unplug className="w-4 h-4"/> : <Database className="w-4 h-4"/>,
+                        action: {type: isConnected ? 'disconnect' : 'connect'}
+                    },
+                    {
+                        id: 'test_connection',
+                        label: '测试连接',
+                        icon: <Search className="w-4 h-4"/>,
+                        action: {type: 'test_connection'}
+                    },
+                    {
+                        id: 'refresh_status',
+                        label: '刷新状态',
+                        icon: <RefreshCw className="w-4 h-4"/>,
+                        action: {type: 'refresh_status'}
+                    },
+                    {
+                        id: 'sep1', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'edit_connection',
+                        label: '编辑连接',
+                        icon: <Edit className="w-4 h-4"/>,
+                        action: {type: 'edit_connection'}
+                    },
+                    {
+                        id: 'duplicate_connection',
+                        label: '复制连接',
+                        icon: <Copy className="w-4 h-4"/>,
+                        action: {type: 'duplicate_connection'}
+                    },
+                    {
+                        id: 'sep2', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'copy_connection_string',
+                        label: '复制连接字符串',
+                        icon: <Copy className="w-4 h-4"/>,
+                        action: {type: 'copy_connection_string'}
+                    },
+                    {
+                        id: 'copy_connection_info',
+                        label: '复制连接信息',
+                        icon: <Copy className="w-4 h-4"/>,
+                        action: {type: 'copy_connection_info'}
+                    },
+                    {
+                        id: 'view_pool_stats',
+                        label: '查看连接池统计',
+                        icon: <BarChart className="w-4 h-4"/>,
+                        action: {type: 'view_pool_stats'}
+                    },
+                    {
+                        id: 'sep3', type: 'separator',
+                        label: ''
+                    },
+                    {
+                        id: 'delete_connection',
+                        label: '删除连接',
+                        icon: <Trash2 className="w-4 h-4"/>,
+                        action: {type: 'delete_connection'},
+                        danger: true
+                    }
+                ];
+
             case 'database':
                 return [
                     {
@@ -232,7 +455,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     }
                 ];
 
-            case 'field':
+            case 'field_advanced':
                 return [
                     {
                         id: 'select_field',

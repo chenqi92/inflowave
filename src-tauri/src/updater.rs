@@ -36,7 +36,7 @@ pub struct UpdateInfo {
 }
 
 const GITHUB_API_URL: &str = "https://api.github.com/repos/chenqi92/inflowave/releases";
-const USER_AGENT: &str = "InfloWave-Updater/1.0";
+const USER_AGENT: &str = "InfloWave-Updater/0.1";
 
 /// 获取当前应用版本
 pub fn get_current_version() -> String {
@@ -74,28 +74,61 @@ pub fn compare_versions(current: &str, latest: &str) -> Result<i32> {
 /// 从GitHub API获取最新版本信息
 async fn fetch_latest_release() -> Result<GitHubRelease> {
     let client = reqwest::Client::new();
-    
-    let response = client
+
+    // 首先尝试获取 latest release
+    let latest_response = client
         .get(&format!("{}/latest", GITHUB_API_URL))
         .header("User-Agent", USER_AGENT)
         .header("Accept", "application/vnd.github.v3+json")
         .send()
         .await
-        .context("Failed to fetch release information")?;
+        .context("Failed to fetch latest release information")?;
 
-    if !response.status().is_success() {
-        return Err(anyhow::anyhow!(
-            "GitHub API request failed with status: {}", 
-            response.status()
-        ));
+    if latest_response.status().is_success() {
+        let release: GitHubRelease = latest_response
+            .json()
+            .await
+            .context("Failed to parse latest release JSON")?;
+        return Ok(release);
     }
 
-    let release: GitHubRelease = response
-        .json()
-        .await
-        .context("Failed to parse release JSON")?;
+    // 如果 latest 端点失败（404），尝试获取所有 releases 并选择最新的
+    if latest_response.status() == 404 {
+        let all_releases_response = client
+            .get(GITHUB_API_URL)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/vnd.github.v3+json")
+            .send()
+            .await
+            .context("Failed to fetch all releases")?;
 
-    Ok(release)
+        if !all_releases_response.status().is_success() {
+            return Err(anyhow::anyhow!(
+                "GitHub API request failed with status: {}",
+                all_releases_response.status()
+            ));
+        }
+
+        let releases: Vec<GitHubRelease> = all_releases_response
+            .json()
+            .await
+            .context("Failed to parse releases JSON")?;
+
+        // 找到最新的非预发布版本
+        let latest_release = releases
+            .into_iter()
+            .filter(|r| !r.prerelease && !r.draft)
+            .max_by(|a, b| a.published_at.cmp(&b.published_at))
+            .ok_or_else(|| anyhow::anyhow!("No stable releases found"))?;
+
+        return Ok(latest_release);
+    }
+
+    // 其他错误
+    Err(anyhow::anyhow!(
+        "GitHub API request failed with status: {}",
+        latest_response.status()
+    ))
 }
 
 /// 检查是否有可用更新
@@ -161,37 +194,135 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
     let platform = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
     
-    // 定义平台特定的文件扩展名和标识符
+    // 定义平台特定的文件扩展名和标识符，按优先级排序
     let platform_patterns = match platform {
         "windows" => match arch {
-            "x86_64" => vec!["x64.msi", "x64.exe", "win64", "windows-x64"],
-            "x86" => vec!["x86.msi", "x86.exe", "win32", "windows-x86"],
-            _ => vec!["msi", "exe", "windows"],
+            "x86_64" => vec![
+                "_x64.msi",      // 标准格式: InfloWave_0.1.3_x64.msi
+                "_x64_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
+                "_x64-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x64-setup.exe
+                "x64.msi", 
+                "x64.exe", 
+                "win64", 
+                "windows-x64",
+                ".msi",          // 通用备选
+                ".exe"
+            ],
+            "x86" => vec![
+                "_x86.msi",      // 标准格式: InfloWave_0.1.3_x86.msi
+                "_x86_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
+                "_x86-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x86-setup.exe
+                "x86.msi", 
+                "x86.exe", 
+                "win32", 
+                "windows-x86",
+                ".msi",          // 通用备选
+                ".exe"
+            ],
+            _ => vec![".msi", ".exe", "windows"],
         },
         "macos" => match arch {
-            "aarch64" => vec!["aarch64.dmg", "arm64.dmg", "macos-arm64"],
-            "x86_64" => vec!["x64.dmg", "intel.dmg", "macos-x64"],
-            _ => vec!["dmg", "macos"],
+            "aarch64" => vec![
+                "_aarch64.dmg",  // DMG 格式: InfloWave_0.1.3_aarch64.dmg
+                "_aarch64.app.tar.gz", // App bundle 格式: InfloWave_aarch64.app.tar.gz
+                "_arm64.dmg",
+                "aarch64.dmg", 
+                "arm64.dmg", 
+                "macos-arm64",
+                ".dmg",          // 通用备选
+                ".app.tar.gz"
+            ],
+            "x86_64" => vec![
+                "_x64.dmg",      // DMG 格式: InfloWave_0.1.3_x64.dmg  
+                "_x64.app.tar.gz", // App bundle 格式: InfloWave_x64.app.tar.gz
+                "_intel.dmg",
+                "x64.dmg", 
+                "intel.dmg", 
+                "macos-x64",
+                ".dmg",          // 通用备选
+                ".app.tar.gz"
+            ],
+            _ => vec![".dmg", ".app.tar.gz", "macos"],
         },
         "linux" => match arch {
-            "x86_64" => vec!["x86_64.AppImage", "x64.AppImage", "amd64.deb", "x86_64.rpm"],
-            "aarch64" => vec!["aarch64.AppImage", "arm64.AppImage", "arm64.deb", "aarch64.rpm"],
-            _ => vec!["AppImage", "deb", "rpm"],
+            "x86_64" => vec![
+                "_amd64.deb",    // DEB 格式: InfloWave_0.1.3_amd64.deb (注意：实际可能是小写inflowave)
+                "_amd64.AppImage", // AppImage 格式: InfloWave_0.1.3_amd64.AppImage
+                "_x86_64.AppImage",
+                "_x86_64.rpm",   // RPM 格式: InfloWave-0.1.3-1.x86_64.rpm
+                "amd64.deb",
+                "x86_64.AppImage", 
+                "x64.AppImage", 
+                "x86_64.rpm",
+                ".deb",          // 通用备选
+                ".AppImage",
+                ".rpm"
+            ],
+            "aarch64" => vec![
+                "_arm64.deb",
+                "_aarch64.AppImage",
+                "_aarch64.rpm",
+                "aarch64.AppImage", 
+                "arm64.AppImage", 
+                "arm64.deb", 
+                "aarch64.rpm",
+                ".deb",          // 通用备选
+                ".AppImage",
+                ".rpm"
+            ],
+            _ => vec![".AppImage", ".deb", ".rpm"],
         },
         _ => vec![],
     };
 
-    // 查找匹配的资源
+    // 查找匹配的资源，使用更精确的匹配逻辑
     for pattern in platform_patterns {
         if let Some(asset) = assets.iter().find(|asset| {
-            asset.name.to_lowercase().contains(&pattern.to_lowercase())
+            let asset_name = asset.name.to_lowercase();
+            let pattern_lower = pattern.to_lowercase();
+            
+            // 对于以 _ 开头的模式，使用精确匹配以避免误匹配
+            if pattern_lower.starts_with('_') {
+                asset_name.contains(&pattern_lower)
+            } else if pattern_lower.starts_with('.') {
+                // 对于文件扩展名，确保以该扩展名结尾
+                asset_name.ends_with(&pattern_lower)
+            } else {
+                // 对于其他模式，使用包含匹配
+                asset_name.contains(&pattern_lower)
+            }
         }) {
+            log::info!("Found matching asset for platform {}: {} -> {}", platform, pattern, asset.name);
             return Some(asset.browser_download_url.clone());
         }
     }
 
-    // 如果没有找到特定平台的资源，返回第一个资源
-    assets.first().map(|asset| asset.browser_download_url.clone())
+    // 如果没有找到特定平台的资源，尝试更宽松的匹配
+    let fallback_patterns = match platform {
+        "windows" => vec![".msi", ".exe"],
+        "macos" => vec![".dmg", ".app"],
+        "linux" => vec![".deb", ".AppImage", ".rpm"],
+        _ => vec![],
+    };
+    
+    for pattern in fallback_patterns {
+        if let Some(asset) = assets.iter().find(|asset| {
+            asset.name.to_lowercase().ends_with(pattern)
+        }) {
+            log::warn!("Using fallback asset matching for platform {}: {}", platform, asset.name);
+            return Some(asset.browser_download_url.clone());
+        }
+    }
+    
+    // 最后的备选方案：返回第一个资源，并记录警告
+    if let Some(first_asset) = assets.first() {
+        log::warn!("No platform-specific asset found for {} {}, using first available: {}", 
+                   platform, arch, first_asset.name);
+        Some(first_asset.browser_download_url.clone())
+    } else {
+        log::error!("No assets found in release");
+        None
+    }
 }
 
 /// 检查用户是否跳过了特定版本
@@ -392,22 +523,61 @@ mod tests {
 
     #[test]
     fn test_find_platform_asset() {
+        // 使用真实的文件名格式进行测试
         let assets = vec![
             GitHubAsset {
-                name: "inflowave-windows-x64.msi".to_string(),
-                browser_download_url: "https://example.com/windows.msi".to_string(),
+                name: "InfloWave_0.1.3_x64_zh-CN.msi".to_string(),
+                browser_download_url: "https://example.com/windows-zh.msi".to_string(),
                 size: 1024,
                 content_type: "application/x-msi".to_string(),
             },
             GitHubAsset {
-                name: "inflowave-macos-arm64.dmg".to_string(),
-                browser_download_url: "https://example.com/macos.dmg".to_string(),
+                name: "InfloWave_0.1.3_x64-setup.exe".to_string(),
+                browser_download_url: "https://example.com/windows-setup.exe".to_string(),
+                size: 1536,
+                content_type: "application/x-executable".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_aarch64.dmg".to_string(),
+                browser_download_url: "https://example.com/macos-arm.dmg".to_string(),
                 size: 2048,
                 content_type: "application/x-apple-diskimage".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_x64.dmg".to_string(),
+                browser_download_url: "https://example.com/macos-intel.dmg".to_string(),
+                size: 2560,
+                content_type: "application/x-apple-diskimage".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_amd64.deb".to_string(),
+                browser_download_url: "https://example.com/linux.deb".to_string(),
+                size: 3072,
+                content_type: "application/vnd.debian.binary-package".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave_0.1.3_amd64.AppImage".to_string(),
+                browser_download_url: "https://example.com/linux.AppImage".to_string(),
+                size: 4096,
+                content_type: "application/x-executable".to_string(),
+            },
+            GitHubAsset {
+                name: "InfloWave-0.1.3-1.x86_64.rpm".to_string(),
+                browser_download_url: "https://example.com/linux.rpm".to_string(),
+                size: 4608,
+                content_type: "application/x-rpm".to_string(),
             },
         ];
 
         let result = find_platform_asset(&assets);
         assert!(result.is_some());
+        
+        // 测试应该找到与当前平台匹配的资源
+        let result_url = result.unwrap();
+        println!("Found asset URL: {}", result_url);
+        
+        // 验证 URL 不为空且是有效的下载链接
+        assert!(result_url.starts_with("https://"));
+        assert!(result_url.contains("example.com"));
     }
 }

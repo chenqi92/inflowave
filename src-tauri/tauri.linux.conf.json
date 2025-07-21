@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "app": {
+    "windows": [
+      {
+        "decorations": true,
+        "titleBarStyle": "Visible"
+      }
+    ],
+    "security": {
+      "capabilities": [
+        "default",
+        "linux"
+      ]
+    }
+  }
+}

@@ -186,6 +186,22 @@ export const useUserPreferences = () => {
     loadPreferences();
   }, [loadPreferences]);
 
+  // 监听用户偏好设置更新事件
+  useEffect(() => {
+    const handlePreferencesUpdate = (event: CustomEvent) => {
+      console.log('收到用户偏好设置更新事件:', event.detail);
+      setPreferences(event.detail);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('userPreferencesUpdated', handlePreferencesUpdate as EventListener);
+
+      return () => {
+        window.removeEventListener('userPreferencesUpdated', handlePreferencesUpdate as EventListener);
+      };
+    }
+  }, []);
+
   return {
     preferences,
     loading,

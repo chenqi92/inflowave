@@ -28,9 +28,9 @@ import DatabasePage from '../../pages/Database';
 import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';
+import QueryHistoryPage from '../../pages/QueryHistory';
 import DevTools from '../../pages/DevTools';
 import Extensions from '../../pages/Extensions';
-import Settings from '../../pages/Settings';
 import QueryHistory from '../query/QueryHistory';
 
 export interface DataGripStyleLayoutProps {
@@ -54,12 +54,12 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     if (pathname === '/connections') return 'datasource';
     if (pathname === '/database') return 'database';
     if (pathname === '/query') return 'query';
+    if (pathname === '/query-history') return 'query-history';
     if (pathname === '/visualization') return 'visualization';
     if (pathname === '/performance') return 'performance';
     if (pathname === '/extensions') return 'extensions';
     if (pathname === '/dev-tools') return 'dev-tools';
-    if (pathname === '/settings') return 'settings';
-    return 'query'; // 默认视图
+    return 'datasource'; // 默认视图改为数据源视图
   };
 
   // 从用户偏好中获取初始状态，如果没有则使用默认值
@@ -76,10 +76,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     );
   });
   const [currentView, setCurrentView] = useState(() => {
-    // 优先使用路径映射的视图，其次是用户偏好，最后默认为数据源视图
-    return getViewFromPath(location.pathname) !== 'query'
-      ? getViewFromPath(location.pathname)
-      : preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
+    // 如果是特定的路径（如 /query, /visualization 等），使用对应的视图
+    const pathView = getViewFromPath(location.pathname);
+    if (location.pathname !== '/' && pathView !== 'datasource') {
+      return pathView;
+    }
+    // 否则优先使用用户偏好，最后默认为数据源视图
+    return preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
   });
 
   // 面板尺寸状态
@@ -90,41 +93,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
   });
 
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
-  const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
-  const [executedQueries, setExecutedQueries] = useState<string[]>([]);
-  const [executionTime, setExecutionTime] = useState<number>(0);
-  const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
-  const [showQueryHistory, setShowQueryHistory] = useState(false);
-
-  // 手动打开查询历史的方法
-  const openQueryHistory = useCallback(() => {
-    setShowQueryHistory(true);
-  }, []);
-  const [currentTimeRange, setCurrentTimeRange] = useState<{
-    label: string;
-    value: string;
-    start: string;
-    end: string;
-  }>({
-    label: '不限制时间',
-    value: 'none',
-    start: '',
-    end: '',
-  });
-  const tabEditorRef = useRef<{
-    executeQueryWithContent?: (query: string, database: string) => void;
-    createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
-    createNewTab?: (type?: 'query' | 'table' | 'database') => void;
-    createQueryTabWithDatabase?: (database: string, query?: string) => void;
-    setSelectedDatabase?: (database: string) => void;
-  } | null>(null);
-
-  // 刷新数据源面板的方法
-  const refreshDataExplorer = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  // 拖拽状态跟踪
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // 保存工作区设置到用户偏好
   const saveWorkspaceSettings = useCallback(async () => {
@@ -159,6 +130,109 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     bottomPanelSize,
     updateWorkspaceSettings,
   ]);
+
+  // 使用 ref 来存储 saveWorkspaceSettings 函数，避免依赖问题
+  const saveWorkspaceSettingsRef = useRef(saveWorkspaceSettings);
+  saveWorkspaceSettingsRef.current = saveWorkspaceSettings;
+
+  // 智能面板大小处理函数
+  const handleLeftPanelResize = useCallback((size: number) => {
+    setLeftPanelSize(size);
+    setIsResizing(true);
+
+    // 清除之前的定时器
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
+    }
+
+    // 设置新的定时器，拖拽结束后保存
+    resizeTimerRef.current = setTimeout(() => {
+      setIsResizing(false);
+      saveWorkspaceSettingsRef.current();
+    }, 1000);
+  }, []);
+
+  const handleBottomPanelResize = useCallback((size: number) => {
+    setBottomPanelSize(size);
+    setIsResizing(true);
+
+    // 清除之前的定时器
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
+    }
+
+    // 设置新的定时器，拖拽结束后保存
+    resizeTimerRef.current = setTimeout(() => {
+      setIsResizing(false);
+      saveWorkspaceSettingsRef.current();
+    }, 1000);
+  }, []);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
+  const [executedQueries, setExecutedQueries] = useState<string[]>([]);
+  const [executionTime, setExecutionTime] = useState<number>(0);
+  const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
+  const [showQueryHistory, setShowQueryHistory] = useState(false);
+  const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]);
+
+  // 调试：监听 expandedDatabases 变化
+  useEffect(() => {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+      console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', {
+        expandedDatabases: JSON.stringify(expandedDatabases), // 显示具体内容
+        length: expandedDatabases.length,
+        timestamp: new Date().toISOString()
+      });
+
+      // 强制触发 TabEditor 的重新渲染
+      if (tabEditorRef.current) {
+        console.log('🔄 强制更新 TabEditor 组件');
+        // 这里可以调用 TabEditor 的方法来强制更新
+      }
+    }
+  }, [expandedDatabases]);
+
+  // 智能视图切换：当在查询视图但没有展开数据库时，提示用户先展开数据库
+  useEffect(() => {
+    if (currentView === 'query' && expandedDatabases.length === 0) {
+      console.log('💡 检测到查询视图但没有展开数据库，建议切换到数据源视图');
+      // 可以选择自动切换到数据源视图，或者显示提示
+      // setCurrentView('datasource'); // 取消注释以启用自动切换
+    }
+  }, [currentView, expandedDatabases]);
+
+  // 手动打开查询历史的方法
+  const openQueryHistory = useCallback(() => {
+    console.log('Opening query history...');
+    setShowQueryHistory(true);
+  }, []);
+  const [currentTimeRange, setCurrentTimeRange] = useState<{
+    label: string;
+    value: string;
+    start: string;
+    end: string;
+  }>({
+    label: '不限制时间',
+    value: 'none',
+    start: '',
+    end: '',
+  });
+  const tabEditorRef = useRef<{
+    executeQueryWithContent?: (query: string, database: string) => void;
+    createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
+    createNewTab?: (type?: 'query' | 'table' | 'database') => void;
+    createQueryTabWithDatabase?: (database: string, query?: string) => void;
+    setSelectedDatabase?: (database: string) => void;
+  } | null>(null);
+
+  // 刷新数据源面板的方法
+  const refreshDataExplorer = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+
 
   // 监听路径变化，自动切换视图
   useEffect(() => {
@@ -197,7 +271,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }
   }, [preferences, location.pathname]);
 
-  // 当布局状态改变时自动保存
+  // 当布局状态改变时自动保存（排除面板大小变化）
   useEffect(() => {
     const timer = setTimeout(() => {
       saveWorkspaceSettings();
@@ -208,10 +282,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     leftPanelCollapsed,
     bottomPanelCollapsed,
     currentView,
-    leftPanelSize,
-    bottomPanelSize,
     saveWorkspaceSettings,
   ]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (resizeTimerRef.current) {
+        clearTimeout(resizeTimerRef.current);
+      }
+    };
+  }, []);
 
   // 监听全局刷新事件
   useEffect(() => {
@@ -226,15 +307,36 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       refreshDataExplorer();
     };
 
+    const handleTableQuery = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { query, database, tableName } = customEvent.detail;
+      console.log('📥 DataGripStyleLayout收到表查询事件:', { query, database, tableName });
+
+      // 切换到查询视图并执行查询
+      setCurrentView('query');
+      if (tabEditorRef.current?.executeQueryWithContent) {
+        tabEditorRef.current.executeQueryWithContent(query, database);
+      }
+    };
+
     document.addEventListener(
       'refresh-database-tree',
       handleRefreshDatabaseTree
+    );
+
+    document.addEventListener(
+      'table-query',
+      handleTableQuery
     );
 
     return () => {
       document.removeEventListener(
         'refresh-database-tree',
         handleRefreshDatabaseTree
+      );
+      document.removeEventListener(
+        'table-query',
+        handleTableQuery
       );
     };
   }, []);
@@ -299,6 +401,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         const pathMap: Record<string, string> = {
           datasource: '/connections',
           query: '/query',
+          'query-history': '/query-history',
           visualization: '/visualization',
           performance: '/performance',
         };
@@ -369,11 +472,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             </div>
           </div>
         );
-      case 'settings':
+      case 'query-history':
         return (
           <div className='h-full'>
             <div className='p-0 h-full'>
-              <Settings />
+              <QueryHistoryPage />
             </div>
           </div>
         );
@@ -382,19 +485,17 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return (
           <div className='h-full'>
             {/* 查询历史模态框 */}
-            {showQueryHistory && (
-              <QueryHistory
-                visible={showQueryHistory}
-                onClose={() => setShowQueryHistory(false)}
-                onQuerySelect={(query, database) => {
-                  // 执行选中的查询
-                  if (tabEditorRef.current?.executeQueryWithContent) {
-                    tabEditorRef.current.executeQueryWithContent(query, database || '');
-                  }
-                  setShowQueryHistory(false);
-                }}
-              />
-            )}
+            <QueryHistory
+              visible={showQueryHistory}
+              onClose={() => setShowQueryHistory(false)}
+              onQuerySelect={(query, database) => {
+                // 执行选中的查询
+                if (tabEditorRef.current?.executeQueryWithContent) {
+                  tabEditorRef.current.executeQueryWithContent(query, database || '');
+                }
+                setShowQueryHistory(false);
+              }}
+            />
             
             <ResizablePanelGroup direction='vertical'>
               {/* 上半部分：编辑器 */}
@@ -404,6 +505,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 className='bg-background overflow-hidden'
               >
                 <TabEditor
+                  key="main-tab-editor" // 添加稳定的 key 防止重新挂载
                   onQueryResult={setQueryResult}
                   onBatchQueryResults={(results, queries, executionTime) => {
                     setQueryResults(results);
@@ -415,6 +517,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     }
                   }}
                   onActiveTabTypeChange={setActiveTabType}
+                  expandedDatabases={expandedDatabases}
                   currentTimeRange={currentTimeRange}
                   ref={tabEditorRef as any}
                 />
@@ -434,7 +537,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     defaultSize={bottomPanelSize}
                     minSize={25}
                     maxSize={70}
-                    onResize={size => setBottomPanelSize(size)}
+                    onResize={handleBottomPanelResize}
                   >
                     <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
                       <EnhancedResultPanel
@@ -495,7 +598,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             maxSize={40}
             collapsible={true}
             collapsedSize={3}
-            onResize={size => setLeftPanelSize(size)}
+            onResize={handleLeftPanelResize}
             className={cn(
               'bg-background border-r border-border transition-all duration-200',
               leftPanelCollapsed && 'min-w-12'
@@ -510,6 +613,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 onCreateQueryTab={handleCreateQueryTab}
                 onViewChange={handleViewChange}
                 onGetCurrentView={getCurrentView}
+                onExpandedDatabasesChange={setExpandedDatabases}
                 currentTimeRange={currentTimeRange}
               />
             </div>

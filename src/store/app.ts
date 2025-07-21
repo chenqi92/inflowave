@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppConfig, Theme, Language } from '@/types';
+import { DEFAULT_APP_CONFIG } from '@/config/defaults';
 
 interface AppState {
   // 应用配置
@@ -27,11 +28,12 @@ interface AppState {
 const defaultConfig: AppConfig = {
   theme: 'auto',
   language: 'zh-CN',
-  queryTimeout: 30000,
-  maxQueryResults: 10000,
-  autoSave: true,
-  autoConnect: false,
-  logLevel: 'info',
+  queryTimeout: DEFAULT_APP_CONFIG.queryTimeout,
+  maxQueryResults: DEFAULT_APP_CONFIG.maxQueryResults,
+  autoSave: DEFAULT_APP_CONFIG.autoSave,
+  autoConnect: DEFAULT_APP_CONFIG.autoConnect,
+  logLevel: DEFAULT_APP_CONFIG.logLevel,
+  showInternalDatabases: false,
 };
 
 export const useAppStore = create<AppState>()(
@@ -50,29 +52,12 @@ export const useAppStore = create<AppState>()(
         }));
       },
 
-      // 设置主题
+      // 设置主题 - 已移除，使用 ThemeProvider 统一管理
       setTheme: theme => {
         set(state => ({
           config: { ...state.config, theme },
         }));
-
-        // 更新 HTML 类名以支持 CSS 主题切换
-        const root = document.documentElement;
-        if (theme === 'dark') {
-          root.classList.add('dark');
-        } else if (theme === 'light') {
-          root.classList.remove('dark');
-        } else {
-          // auto 模式，根据系统偏好设置
-          const isDark = window.matchMedia(
-            '(prefers-color-scheme: dark)'
-          ).matches;
-          if (isDark) {
-            root.classList.add('dark');
-          } else {
-            root.classList.remove('dark');
-          }
-        }
+        // 主题切换逻辑已移至 ThemeProvider，避免冲突
       },
 
       // 设置语言
@@ -113,20 +98,4 @@ export const useAppStore = create<AppState>()(
   )
 );
 
-// 监听系统主题变化
-if (typeof window !== 'undefined') {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-  const handleThemeChange = () => {
-    const { config, setTheme } = useAppStore.getState();
-    if (config.theme === 'auto') {
-      setTheme('auto'); // 触发主题更新
-    }
-  };
-
-  mediaQuery.addEventListener('change', handleThemeChange);
-
-  // 初始化主题
-  const { config, setTheme } = useAppStore.getState();
-  setTheme(config.theme);
-}
+// 主题监听已移至 ThemeProvider，避免冲突

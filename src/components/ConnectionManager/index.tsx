@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { generateUniqueId } from '@/utils/idGenerator';
 import {
   DataTable,
   Button,
@@ -6,8 +7,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Progress,
-  Typography,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -16,13 +15,9 @@ import {
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import type { Column } from '@/components/ui/DataTable';
 import {
-  Settings,
   Trash2,
   Edit,
-  Eye,
   Wifi,
-  PlayCircle,
-  PauseCircle,
   RefreshCw,
   Plus,
   CheckCircle,
@@ -31,6 +26,9 @@ import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { useConnectionStore } from '@/store/connection';
 // import {safeTauriInvoke} from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { writeToClipboard } from '@/utils/clipboard';
+import { dialog } from '@/utils/dialog';
+import ContextMenu from '@/components/common/ContextMenu';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -41,7 +39,6 @@ interface ConnectionManagerProps {
 
 interface ConnectionWithStatus extends ConnectionConfig {
   status?: ConnectionStatus;
-  poolStats?: any;
 }
 
 // interface ColumnType<T = any> {
@@ -66,7 +63,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     activeConnectionId,
     monitoringActive,
     monitoringInterval,
-    poolStats,
     connectToDatabase,
     disconnectFromDatabase,
     testConnection,
@@ -74,7 +70,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     stopMonitoring,
     refreshAllStatuses,
     refreshConnectionStatus,
-    getPoolStats,
     removeConnection,
     testAllConnections,
     getTableConnectionStatus,
@@ -83,14 +78,23 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   // 刷新状态按钮的加载状态
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
 
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    target: any;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    target: null,
+  });
+
   // const [loading, setLoading] = useState(false);
   const [connectionLoadingStates, setConnectionLoadingStates] = useState<
     Map<string, boolean>
   >(new Map());
-  const [poolStatsModalVisible, setPoolStatsModalVisible] = useState(false);
-  const [selectedConnectionId, setSelectedConnectionId] = useState<
-    string | null
-  >(null);
 
   // 自动刷新状态 - 仅在用户手动启动监控时执行
   useEffect(() => {
@@ -205,19 +209,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     }
   }, [connections, testAllConnections, tableConnectionStatuses]);
 
-  // 查看连接池统计
-  const handleViewPoolStats = useCallback(
-    async (connectionId: string) => {
-      try {
-        await getPoolStats(connectionId);
-        setSelectedConnectionId(connectionId);
-        setPoolStatsModalVisible(true);
-      } catch (error) {
-        showMessage.error(`获取连接池统计失败: ${error}`);
-      }
-    },
-    [getPoolStats]
-  );
 
   // 获取状态标签
   const getStatusTag = (status?: ConnectionStatus) => {
@@ -276,17 +267,135 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     );
   };
 
+  // 处理行右键菜单
+  const handleRowContextMenu = (event: React.MouseEvent, record: ConnectionWithStatus) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = {
+      type: 'connection_row',
+      connection: record,
+      connectionId: record.id,
+      name: record.name,
+      status: record.id ? connectionStatuses[record.id] : undefined,
+    };
+
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      target,
+    });
+  };
+
+  // 隐藏右键菜单
+  const hideContextMenu = () => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      target: null,
+    });
+  };
+
+  // 处理右键菜单动作
+  const handleContextMenuAction = async (action: string, params?: any) => {
+    const { target } = contextMenu;
+    if (!target || target.type !== 'connection_row') return;
+
+    const connection = target.connection;
+
+    try {
+      switch (action) {
+        case 'connect':
+          await connectToDatabase(connection.id);
+          showMessage.success(`已连接到 ${connection.name}`);
+          break;
+
+        case 'disconnect':
+          await disconnectFromDatabase(connection.id);
+          showMessage.success(`已断开 ${connection.name}`);
+          break;
+
+        case 'test_connection':
+          await testConnection(connection.id);
+          showMessage.success(`连接测试完成: ${connection.name}`);
+          break;
+
+        case 'refresh_status':
+          await refreshConnectionStatus(connection.id);
+          showMessage.success(`状态已刷新: ${connection.name}`);
+          break;
+
+        case 'edit_connection':
+          if (onEditConnection) {
+            onEditConnection(connection);
+          }
+          break;
+
+        case 'duplicate_connection': {
+          // 复制连接配置
+          const duplicatedConnection = {
+            ...connection,
+            id: generateUniqueId(`${connection.id}_copy`),
+            name: `${connection.name} (副本)`,
+          };
+          showMessage.info(`连接复制功能开发中: ${duplicatedConnection.name}`);
+          break;
+        }
+
+        case 'copy_connection_string': {
+          const connectionString = `${connection.host}:${connection.port}`;
+          await writeToClipboard(connectionString, {
+            successMessage: `已复制连接字符串: ${connectionString}`,
+          });
+          break;
+        }
+
+        case 'copy_connection_info': {
+          const connectionInfo = JSON.stringify(connection, null, 2);
+          await writeToClipboard(connectionInfo, {
+            successMessage: '已复制连接信息到剪贴板',
+          });
+          break;
+        }
+
+
+        case 'delete_connection': {
+          const confirmed = await dialog.confirm(
+            `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`
+          );
+          if (confirmed) {
+            await removeConnection(connection.id);
+            showMessage.success(`连接 ${connection.name} 已删除`);
+          }
+          break;
+        }
+
+        default:
+          console.warn('未处理的右键菜单动作:', action);
+          break;
+      }
+    } catch (error) {
+      console.error('执行右键菜单动作失败:', error);
+      showMessage.error(`操作失败: ${error}`);
+    }
+
+    hideContextMenu();
+  };
+
   // 表格列定义
   const columns: Column[] = [
     {
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
+      width: '25%',
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
 
-        // 确定状态点的颜色
+        // 确定状态点的颜色 - 使用CSS变量
         const getStatusColor = () => {
           if (!status) return 'bg-muted-foreground';
 
@@ -330,6 +439,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '连接信息',
       dataIndex: 'connectionInfo',
       key: 'connectionInfo',
+      width: '20%',
       render: (_, record) => (
         <div className='space-y-1'>
           <div className='text-sm'>
@@ -357,6 +467,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: '15%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         return (
@@ -372,66 +483,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '连接池统计',
-      dataIndex: 'poolStats',
-      key: 'poolStats',
-      render: (_, record) => {
-        const status = tableConnectionStatuses[record.id!];
-        const isTestFailed = status?.status === 'error';
-        const isTestSuccessful = status?.status === 'connected' && !status?.error;
-        const stats = poolStats[record.id!];
-
-        // 如果测试失败，显示失败信息
-        if (isTestFailed) {
-          return <span className='text-destructive text-sm'>连接失败，无法获取</span>;
-        }
-
-        // 如果未测试或测试中，显示相应状态
-        if (!isTestSuccessful) {
-          const statusText = status?.status === 'connecting' ? '测试中...' : '未测试';
-          return <span className='text-muted-foreground text-sm'>{statusText}</span>;
-        }
-
-        // 测试成功但没有统计数据时，显示查看按钮
-        if (!stats) {
-          return (
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => handleViewPoolStats(record.id!)}
-            >
-              <Eye className='w-3 h-3 mr-1' />
-              查看统计
-            </Button>
-          );
-        }
-        
-        return (
-          <div className='space-y-1'>
-            <div className='text-sm'>
-              <span className='text-muted-foreground'>活跃/总数：</span>
-              <span className='text-foreground font-medium'>
-                {stats.active_connections}/{stats.total_connections}
-              </span>
-            </div>
-            <div className='text-sm'>
-              <span className='text-muted-foreground'>空闲：</span>
-              <span className='text-foreground font-medium'>
-                {stats.idle_connections}
-              </span>
-              <span className='text-muted-foreground ml-2'>最大：</span>
-              <span className='text-foreground font-medium'>
-                {stats.max_connections}
-              </span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
       title: '最后测试',
       dataIndex: 'lastTested',
       key: 'lastTested',
+      width: '15%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         return status?.lastConnected ? (
@@ -447,6 +502,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '操作',
       dataIndex: 'actions',
       key: 'actions',
+      width: '25%',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         const isLoading = connectionLoadingStates.get(record.id!);
@@ -509,7 +565,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   const dataSource: ConnectionWithStatus[] = connections.map(conn => ({
     ...conn,
     status: tableConnectionStatuses[conn.id!],
-    poolStats: poolStats[conn.id!],
   }));
 
   return (
@@ -540,55 +595,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             </div>
           </div>
 
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <Settings className='w-4 h-4 text-muted-foreground' />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>总连接</p>
-                <p className='font-semibold'>{connections.length}</p>
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <Wifi className='w-4 h-4 text-success' />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>已连接</p>
-                <p className='font-semibold text-success'>
-                  {
-                    Object.values(connectionStatuses).filter(
-                      s => s.status === 'connected'
-                    ).length
-                  }
-                </p>
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <div
-                className={`w-4 h-4 rounded-full ${monitoringActive ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`}
-              />
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>监控状态</p>
-                <p
-                  className={`font-semibold ${monitoringActive ? 'text-success' : 'text-muted-foreground'}`}
-                >
-                  {monitoringActive ? '运行中' : '已停止'}
-                </p>
-                {monitoringActive && (
-                  <p className='text-xs text-success'>自动检查连接状态</p>
-                )}
-              </div>
-            </div>
-            <div className='flex items-center space-x-2 p-3 bg-muted/50 rounded-lg'>
-              <div className='w-4 h-4 rounded bg-primary/10 flex items-center justify-center'>
-                <span className='text-xs text-primary font-medium'>
-                  {monitoringInterval}
-                </span>
-              </div>
-              <div className='text-sm'>
-                <p className='text-muted-foreground'>监控间隔</p>
-                <p className='font-semibold'>{monitoringInterval}秒</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -605,85 +611,28 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             }}
             size='middle'
             className='w-full h-full connection-table'
-            rowClassName={record =>
+            rowClassName={(record: ConnectionWithStatus) =>
               activeConnectionId === record.id
-                ? 'bg-primary/10 dark:bg-primary/20'
+                ? 'bg-accent'
                 : ''
             }
+            onRow={(record: ConnectionWithStatus) => ({
+              onContextMenu: (event: React.MouseEvent) => handleRowContextMenu(event, record),
+            })}
           />
         </div>
       </div>
 
-      {/* 连接池统计模态框 */}
-      <Dialog
-        open={poolStatsModalVisible}
-        onOpenChange={setPoolStatsModalVisible}
-      >
-        <DialogContent className='max-w-2xl'>
-          <DialogHeader>
-            <DialogTitle>连接池统计信息</DialogTitle>
-          </DialogHeader>
-          {selectedConnectionId && poolStats[selectedConnectionId] && (
-            <div className='space-y-6'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      总连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].total_connections}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      活跃连接数
-                    </div>
-                    <div className='text-2xl font-bold text-success'>
-                      {poolStats[selectedConnectionId].active_connections}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      空闲连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].idle_connections}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className='p-4'>
-                    <div className='text-sm text-muted-foreground'>
-                      最大连接数
-                    </div>
-                    <div className='text-2xl font-bold'>
-                      {poolStats[selectedConnectionId].max_connections}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <Typography.Title level={4}>连接池使用率</Typography.Title>
-                <Progress
-                  value={Math.round(
-                    (poolStats[selectedConnectionId].active_connections /
-                      poolStats[selectedConnectionId].max_connections) *
-                      100
-                  )}
-                  className='mt-2'
-                />
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+      {/* 右键菜单 */}
+      <ContextMenu
+        open={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        target={contextMenu.target}
+        onClose={hideContextMenu}
+        onAction={handleContextMenuAction}
+      />
     </div>
   );
 };

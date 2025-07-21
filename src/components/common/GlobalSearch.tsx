@@ -18,6 +18,8 @@ import {
   FileText,
   Zap,
 } from 'lucide-react';
+import { useConnectionStore } from '@/store/connection';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface SearchResult {
   id: string;
@@ -49,6 +51,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
   onNavigate,
   onExecuteQuery,
 }) => {
+  const { connections, activeConnectionId } = useConnectionStore();
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,6 +102,117 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
     }
   };
 
+  // 真实搜索函数
+  const searchRealData = async (query: string): Promise<SearchResult[]> => {
+    const results: SearchResult[] = [];
+    
+    try {
+      // 搜索连接
+      const matchingConnections = connections.filter(conn =>
+        conn.name.toLowerCase().includes(query.toLowerCase()) ||
+        conn.host.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      matchingConnections.forEach(conn => {
+        results.push({
+          id: `conn-${conn.id}`,
+          type: 'connection',
+          title: conn.name,
+          description: `${conn.host}:${conn.port}`,
+          category: '连接',
+          action: () => onNavigate?.('/connections', { select: conn.id }),
+        });
+      });
+      
+      // 如果有活跃连接，搜索数据库和测量
+      if (activeConnectionId) {
+        try {
+          // 搜索数据库
+          const databases = await safeTauriInvoke<string[]>('get_databases', {
+            connectionId: activeConnectionId,
+          });
+          
+          const matchingDatabases = databases.filter(db =>
+            db.toLowerCase().includes(query.toLowerCase())
+          );
+          
+          matchingDatabases.forEach(db => {
+            results.push({
+              id: `db-${db}`,
+              type: 'database',
+              title: db,
+              description: `数据库`,
+              category: '数据库',
+              action: () => onNavigate?.('/database', { database: db }),
+            });
+          });
+          
+          // 搜索测量（从已选数据库）
+          for (const db of matchingDatabases.slice(0, 3)) { // 限制搜索前3个数据库
+            try {
+              const measurements = await safeTauriInvoke<string[]>('get_measurements', {
+                connectionId: activeConnectionId,
+                database: db,
+              });
+              
+              const matchingMeasurements = measurements.filter(m =>
+                m.toLowerCase().includes(query.toLowerCase())
+              );
+              
+              matchingMeasurements.slice(0, 5).forEach(measurement => {
+                results.push({
+                  id: `measure-${db}-${measurement}`,
+                  type: 'measurement',
+                  title: measurement,
+                  description: `测量 (${db})`,
+                  category: '测量',
+                  metadata: { database: db },
+                  action: () => onNavigate?.('/query', { database: db, measurement }),
+                });
+              });
+            } catch (error) {
+              console.debug('搜索测量失败:', error);
+            }
+          }
+        } catch (error) {
+          console.debug('搜索数据库失败:', error);
+        }
+      }
+      
+      // 添加通用命令和功能
+      const commands: SearchResult[] = [
+        {
+          id: 'cmd-new-connection',
+          type: 'command' as const,
+          title: '新建连接',
+          description: '创建新的数据库连接',
+          category: '命令',
+          action: () => onNavigate?.('/connections', { action: 'create' }),
+        },
+        {
+          id: 'cmd-settings',
+          type: 'setting' as const,
+          title: '应用设置',
+          description: '配置应用程序选项',
+          category: '设置',
+          action: () => onNavigate?.('/settings'),
+        },
+      ];
+      
+      const matchingCommands = commands.filter(cmd =>
+        cmd.title.toLowerCase().includes(query.toLowerCase()) ||
+        (cmd.description && cmd.description.toLowerCase().includes(query.toLowerCase()))
+      );
+      
+      results.push(...matchingCommands);
+      
+    } catch (error) {
+      console.error('搜索失败:', error);
+    }
+    
+    return results.slice(0, 20); // 限制结果数量
+  };
+
   // 执行搜索
   const performSearch = async (query: string) => {
     if (!query.trim()) {
@@ -108,86 +222,35 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
     setLoading(true);
     try {
-      // 模拟搜索结果，实际应该调用后端API
-      const mockResults: SearchResult[] = [
-        // 数据库搜索结果
+      // 尝试从真实数据源搜索
+      const realResults = await searchRealData(query);
+      
+      if (realResults.length > 0) {
+        setResults(realResults);
+        setSelectedIndex(0);
+        setLoading(false);
+        return;
+      }
+      
+      // 如果没有找到真实数据，显示提示信息  
+      const noResultsInfo: SearchResult[] = [
         {
-          id: 'db1',
-          type: 'database',
-          title: 'myapp_production',
-          description: '生产环境数据库',
-          category: '数据库',
-          action: () =>
-            onNavigate?.('/database', { database: 'myapp_production' }),
-        },
-        // 测量搜索结果
-        {
-          id: 'measurement1',
-          type: 'measurement',
-          title: 'cpu_usage',
-          description: 'CPU 使用率监控数据',
-          category: '测量',
-          metadata: { database: 'monitoring' },
-          action: () => onNavigate?.('/query', { measurement: 'cpu_usage' }),
-        },
-        // 字段搜索结果
-        {
-          id: 'field1',
-          type: 'field',
-          title: 'usage_percent',
-          description: 'CPU 使用百分比字段',
-          category: '字段',
-          metadata: { measurement: 'cpu_usage', type: 'field' },
-        },
-        // 保存的查询
-        {
-          id: 'query1',
-          type: 'query',
-          title: '系统性能监控',
-          description: 'SELECT mean(usage_percent) FROM cpu_usage...',
-          category: '保存的查询',
-          action: () =>
-            onExecuteQuery?.(
-              'SELECT mean(usage_percent) FROM cpu_usage WHERE time > now() - 1h GROUP BY time(5m)'
-            ),
-        },
-        // 连接
-        {
-          id: 'conn1',
-          type: 'connection',
-          title: 'Production InfluxDB',
-          description: 'influxdb.prod.example.com:8086',
-          category: '连接',
-          action: () => onNavigate?.('/connections'),
-        },
-        // 设置
-        {
-          id: 'setting1',
-          type: 'setting',
-          title: '编辑器设置',
-          description: '配置查询编辑器选项',
-          category: '设置',
-          action: () => onNavigate?.('/settings', { tab: 'editor' }),
-        },
-        // 命令
-        {
-          id: 'cmd1',
+          id: 'no-connection',
           type: 'command',
-          title: '新建连接',
-          description: '创建新的数据库连接',
-          category: '命令',
-          action: () => onNavigate?.('/connections', { action: 'create' }),
+          title: activeConnectionId ? '未找到匹配项' : '未连接到数据库',
+          description: activeConnectionId 
+            ? `没有找到与 "${query}" 匹配的数据库、测量或连接`
+            : '请先连接到 InfluxDB 数据库以搜索数据',
+          category: '提示',
+          action: () => {
+            if (!activeConnectionId) {
+              onNavigate?.('/connections');
+            }
+          },
         },
       ];
 
-      // 过滤搜索结果
-      const filtered = mockResults.filter(
-        result =>
-          result.title.toLowerCase().includes(query.toLowerCase()) ||
-          result.description?.toLowerCase().includes(query.toLowerCase())
-      );
-
-      setResults(filtered);
+      setResults(noResultsInfo);
       setSelectedIndex(0);
     } catch (error) {
       console.error('搜索失败:', error);

@@ -36,19 +36,24 @@ import {
   Monitor,
   User,
   Shield,
+  Info,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
-import { Info } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { saveJsonFile } from '@/utils/nativeDownload';
 import { useAppStore } from '@/store/app';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
-import ErrorLogViewer from '@/components/debug/ErrorLogViewer';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
+import { UpdateSettings } from '@/components/updater/UpdateSettings';
+import { open } from '@tauri-apps/plugin-shell';
+import { dataExplorerRefresh } from '@/utils/refreshEvents';
+import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
 
 interface SettingsModalProps {
@@ -63,7 +68,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const [userGuideVisible, setUserGuideVisible] = useState(false);
   const { config, setConfig, setLanguage, resetConfig } = useAppStore();
   const { clearConnections } = useConnectionStore();
-  const { resetNoticeSettings } = useNoticeStore();
+  const { resetNoticeSettings, browserModeNoticeDismissed } = useNoticeStore();
   const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
 
   // 初始化表单值
@@ -82,7 +87,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
       // 应用主题设置 - 使用新的主题系统
       if (values.theme) {
-        setTheme(values.theme as 'light' | 'dark' | 'system');
+        setTheme(values.theme as 'light' | 'dark' | 'system' | 'auto');
       }
 
       // 应用语言设置
@@ -152,33 +157,60 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   };
 
   // 重置设置
-  const handleResetSettings = () => {
-    resetConfig();
-    // 延迟设置表单值，确保 store 状态已更新
-    setTimeout(() => {
-      const latestConfig = useAppStore.getState().config;
-      form.reset(latestConfig);
-    }, 0);
-    showMessage.success('设置已重置为默认值');
+  const handleResetSettings = async () => {
+    try {
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：只重置前端配置
+        resetConfig();
+        setTimeout(() => {
+          const latestConfig = useAppStore.getState().config;
+          form.reset(latestConfig);
+        }, 0);
+        showMessage.success('设置已重置为默认值');
+      } else {
+        // Tauri 环境：调用后端重置命令
+        const defaultSettings = await safeTauriInvoke('reset_all_settings');
+        if (defaultSettings) {
+          // 更新前端配置
+          setConfig(defaultSettings);
+          form.reset(defaultSettings);
+
+          // 触发全局刷新事件
+          window.dispatchEvent(new CustomEvent('refresh-connections'));
+          window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
+            detail: null // 表示重置
+          }));
+
+          showMessage.success('所有配置已重置为默认值');
+        }
+      }
+    } catch (error) {
+      console.error('重置配置失败:', error);
+      showMessage.error(`重置配置失败: ${error}`);
+    }
   };
 
-  // 导出设置
+  // 导出配置
   const exportSettings = async () => {
     try {
-      const settings = {
-        appConfig: config,
-        connections: useConnectionStore.getState().connections,
-        exportTime: new Date().toISOString(),
-        version: '1.0.0',
-      };
-
       if (isBrowserEnvironment()) {
-        // 浏览器环境：显示文件保存对话框
+        // 浏览器环境：使用浏览器API导出
+        const settings = {
+          version: '1.0.0',
+          exportTime: new Date().toISOString(),
+          appSettings: config,
+          connections: useConnectionStore.getState().connections,
+          metadata: {
+            application: 'InfloWave',
+            description: 'InfloWave应用配置文件'
+          }
+        };
+
         try {
           // 尝试使用现代浏览器的文件系统访问API
           if ('showSaveFilePicker' in window) {
             const fileHandle = await (window as any).showSaveFilePicker({
-              suggestedName: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
+              suggestedName: `inflowave-config-${new Date().toISOString().split('T')[0]}.json`,
               types: [
                 {
                   description: 'JSON files',
@@ -189,19 +221,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             const writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(settings, null, 2));
             await writable.close();
-            showMessage.success('设置已导出到指定位置');
+            showMessage.success('配置已导出到指定位置');
           } else {
             // 使用原生文件保存对话框作为降级方案
             const success = await saveJsonFile(settings, {
-              filename: `inflowave-settings-${new Date().toISOString().split('T')[0]}.json`,
+              filename: `inflowave-config-${new Date().toISOString().split('T')[0]}.json`,
               filters: [
                 { name: '配置文件', extensions: ['json'] },
                 { name: '所有文件', extensions: ['*'] }
               ]
             });
-            
+
             if (success) {
-              showMessage.success('设置已导出');
+              showMessage.success('配置已导出');
             }
           }
         } catch (exportError) {
@@ -212,48 +244,57 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           }
         }
       } else {
-        // Tauri 环境：调用原生文件保存对话框
-        await safeTauriInvoke('export_settings', { settings });
-        showMessage.success('设置已导出');
+        // Tauri 环境：调用后端导出命令
+        await safeTauriInvoke('export_settings');
+        showMessage.success('配置已导出');
       }
     } catch (error) {
-      console.error('导出设置失败:', error);
-      showMessage.error(`导出设置失败: ${error}`);
+      console.error('导出配置失败:', error);
+      if (String(error).includes('取消')) {
+        showMessage.info('导出已取消');
+      } else {
+        showMessage.error(`导出配置失败: ${error}`);
+      }
     }
   };
 
-  // 导入设置
+  // 导入配置
   const importSettings = async () => {
     try {
-      // 使用原生文件选择对话框
-      const settings = await safeTauriInvoke('import_settings');
-      if (settings) {
-        setConfig(settings.appConfig);
-        form.reset(settings.appConfig);
-        showMessage.success('设置已导入');
+      if (isBrowserEnvironment()) {
+        // 浏览器环境：使用文件输入
+        showMessage.info('浏览器环境下的配置导入功能开发中...');
+        return;
+      }
+
+      // Tauri 环境：调用后端导入命令
+      const importedSettings = await safeTauriInvoke('import_settings');
+      if (importedSettings) {
+        // 更新应用配置
+        setConfig(importedSettings);
+        form.reset(importedSettings);
+
+        // 刷新连接列表（因为后端已经处理了连接配置的导入）
+        try {
+          // 触发连接列表刷新
+          window.dispatchEvent(new CustomEvent('refresh-connections'));
+          showMessage.success('配置已导入并应用，连接配置已更新');
+        } catch (refreshError) {
+          console.warn('刷新连接列表失败:', refreshError);
+          showMessage.success('配置已导入并应用');
+        }
       }
     } catch (error) {
-      console.error('导入设置失败:', error);
-      showMessage.error(`导入设置失败: ${error}`);
+      console.error('导入配置失败:', error);
+      if (String(error).includes('取消')) {
+        showMessage.info('导入已取消');
+      } else {
+        showMessage.error(`导入配置失败: ${error}`);
+      }
     }
   };
 
-  // 清除所有数据
-  const clearAllData = () => {
-    clearConnections();
-    resetConfig();
-    setTimeout(() => {
-      const latestConfig = useAppStore.getState().config;
-      form.reset(latestConfig);
-    }, 0);
-    showMessage.success('所有数据已清除');
-  };
 
-  // 清除连接配置（带确认）
-  const clearConnectionsWithConfirm = () => {
-    clearConnections();
-    showMessage.success('连接配置已清除');
-  };
 
   const tabItems = [
     {
@@ -279,7 +320,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   <Select
                     value={theme}
                     onValueChange={value =>
-                      setTheme(value as 'light' | 'dark' | 'system')
+                      setTheme(value as 'light' | 'dark' | 'system' | 'auto')
                     }
                   >
                     <SelectTrigger>
@@ -289,6 +330,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                       <SelectItem value='light'>浅色主题</SelectItem>
                       <SelectItem value='dark'>深色主题</SelectItem>
                       <SelectItem value='system'>跟随系统</SelectItem>
+                      <SelectItem value='auto'>跟随系统</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -343,6 +385,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                     }
                   />
                   <Label htmlFor='autoConnect'>自动连接</Label>
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='flex items-center space-x-2'>
+                  <Switch
+                    checked={form.watch('showInternalDatabases') ?? config.showInternalDatabases}
+                    onCheckedChange={checked => {
+                      form.setValue('showInternalDatabases', checked);
+
+                      // 立即保存设置并刷新数据库列表
+                      const currentConfig = form.getValues();
+                      const updatedConfig = { ...currentConfig, showInternalDatabases: checked };
+
+                      // 保存设置
+                      saveSettings(updatedConfig as AppConfig).then(() => {
+                        // 触发数据库列表刷新
+                        dataExplorerRefresh.trigger();
+
+                        // 提供即时反馈
+                        if (checked) {
+                          showMessage.success('已开启内部数据库显示并刷新列表');
+                        } else {
+                          showMessage.success('已关闭内部数据库显示并刷新列表');
+                        }
+                      }).catch(error => {
+                        console.error('保存设置失败:', error);
+                        showMessage.error('保存设置失败');
+                        // 回滚设置
+                        form.setValue('showInternalDatabases', !checked);
+                      });
+                    }}
+                  />
+                  <Label htmlFor='showInternalDatabases'>显示内部数据库</Label>
+                </div>
+                <div className='text-sm text-muted-foreground'>
+                  <p>是否在数据源树中显示 _internal 等系统数据库</p>
+                  <p className='text-xs mt-1 text-amber-600'>
+                    注意：监控功能始终可用，无论此设置如何
+                  </p>
                 </div>
               </div>
 
@@ -413,6 +495,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   />
                 </div>
               </div>
+
+              {/* 系统健康检查 */}
+              <div className='space-y-4'>
+                <div>
+                  <Label className='text-base font-medium'>系统健康检查</Label>
+                  <p className='text-sm text-muted-foreground'>
+                    检查性能监控系统的运行状态
+                  </p>
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const result = await performHealthCheck();
+                        if (result) {
+                          showMessage.success('健康检查完成，系统运行正常');
+                        }
+                      } catch (error) {
+                        showMessage.error(`健康检查失败: ${error}`);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <Monitor className='w-4 h-4 mr-2' />
+                    执行健康检查
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -446,21 +561,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
       children: <UserPreferencesComponent />,
     },
     {
-      key: 'data',
+      key: 'config',
       icon: <Database className='w-4 h-4' />,
-      label: '数据管理',
+      label: '配置管理',
       children: (
         <div className='space-y-6'>
           <div>
-            <h4 className='text-sm font-medium mb-3'>数据备份与恢复</h4>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            <h4 className='text-sm font-medium mb-3'>配置备份与恢复</h4>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
               <Button
                 variant='outline'
                 onClick={exportSettings}
                 className='w-full justify-start'
               >
                 <FileDown className='w-4 h-4 mr-2' />
-                导出设置
+                导出配置
               </Button>
               <Button
                 variant='outline'
@@ -468,152 +583,33 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                 className='w-full justify-start'
               >
                 <FileUp className='w-4 h-4 mr-2' />
-                导入设置
+                导入配置
+              </Button>
+              <Button
+                variant='outline'
+                onClick={handleResetSettings}
+                className='w-full justify-start'
+              >
+                <RefreshCw className='w-4 h-4 mr-2' />
+                重置所有配置
               </Button>
             </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h4 className='text-sm font-medium mb-2 text-destructive'>
-              危险操作区域
-            </h4>
-            <Alert className='mb-4'>
+            <Alert className='mt-4'>
               <Info className='h-4 w-4' />
-              <h5 className='font-medium'>注意</h5>
-              <p className='text-sm text-muted-foreground'>
-                以下操作将永久删除数据，请谨慎操作。建议在执行前先导出设置备份。
-              </p>
+              <div>
+                <h5 className='font-medium'>配置说明</h5>
+                <p className='text-sm text-muted-foreground mt-1'>
+                  • <strong>导出配置</strong>：将当前所有应用设置、连接配置、用户偏好保存到文件<br/>
+                  • <strong>导入配置</strong>：从配置文件恢复应用设置、连接配置、用户偏好<br/>
+                  • <strong>重置配置</strong>：将所有设置恢复为默认值（不影响连接配置）
+                </p>
+              </div>
             </Alert>
-
-            <div className='space-y-4'>
-              <div className='p-4 border rounded-lg'>
-                <div className='mb-2'>
-                  <p className='font-medium text-sm'>清除所有连接配置</p>
-                  <p className='text-sm text-muted-foreground'>
-                    删除所有保存的数据库连接配置
-                  </p>
-                </div>
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={async () => {
-                    const confirmed = await dialog.confirm(
-                      '此操作将删除所有保存的数据库连接配置，且无法恢复。您确定要继续吗？'
-                    );
-                    if (confirmed) {
-                      clearConnectionsWithConfirm();
-                    }
-                  }}
-                >
-                  <Trash2 className='w-4 h-4 mr-2' />
-                  清除连接配置
-                </Button>
-              </div>
-
-              <div className='p-4 border rounded-lg'>
-                <div className='mb-2'>
-                  <p className='font-medium text-sm'>重置所有设置</p>
-                  <p className='text-sm text-muted-foreground'>
-                    将所有设置恢复为默认值，并清除所有用户数据
-                  </p>
-                </div>
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={async () => {
-                    const confirmed = await dialog.confirm(
-                      '此操作将删除所有连接配置和应用设置，且无法恢复。您确定要继续吗？'
-                    );
-                    if (confirmed) {
-                      clearAllData();
-                    }
-                  }}
-                >
-                  <Trash2 className='w-4 h-4 mr-2' />
-                  重置所有设置
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       ),
     },
-    {
-      key: 'about',
-      icon: <Info className='w-4 h-4' />,
-      label: '关于',
-      children: (
-        <div className='space-y-6'>
-          {/* 页面标题 */}
-          <div className='flex items-center gap-3 mb-4'>
-            <Info className='w-6 h-6 text-blue-600' />
-            <div>
-              <h2 className='text-2xl font-bold'>关于应用</h2>
-              <p className='text-muted-foreground'>应用信息和版本详情</p>
-            </div>
-          </div>
 
-          <div className='grid grid-cols-2 gap-6'>
-            <div className='space-y-4'>
-              <div>
-                <p className='font-medium text-sm mb-1'>版本信息</p>
-                <p className='text-sm text-muted-foreground'>v0.1.0-alpha</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>构建时间</p>
-                <p className='text-sm text-muted-foreground'>
-                  {new Date().toLocaleDateString()}
-                </p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>技术栈</p>
-                <p className='text-sm text-muted-foreground'>
-                  React + TypeScript + Rust + Tauri
-                </p>
-              </div>
-            </div>
-
-            <div className='space-y-4'>
-              <div>
-                <p className='font-medium text-sm mb-1'>支持的 InfluxDB 版本</p>
-                <p className='text-sm text-muted-foreground'>InfluxDB 1.x</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>开源协议</p>
-                <p className='text-sm text-muted-foreground'>MIT License</p>
-              </div>
-
-              <div>
-                <p className='font-medium text-sm mb-1'>项目地址</p>
-                <p className='text-sm text-primary hover:text-blue-800 cursor-pointer'>
-                  GitHub Repository
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          <Alert>
-            <Info className='h-4 w-4' />
-            <h5 className='font-medium mb-2'>功能特性</h5>
-            <ul className='space-y-1 text-sm text-muted-foreground'>
-              <li>• 现代化的用户界面设计</li>
-              <li>• 安全的连接管理和密码加密</li>
-              <li>• 强大的查询编辑器和结果展示</li>
-              <li>• 灵活的数据可视化功能</li>
-              <li>• 便捷的数据写入和导入工具</li>
-              <li>• 跨平台支持 (Windows, macOS, Linux)</li>
-            </ul>
-          </Alert>
-        </div>
-      ),
-    },
     {
       key: 'user-guide',
       icon: <Bell className='w-4 h-4' />,
@@ -629,99 +625,153 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
             </div>
           </div>
 
-          <div>
-            <h4 className='text-sm font-medium mb-2'>预览模式说明</h4>
-            <p className='text-sm text-muted-foreground'>
-              管理在浏览器环境中运行时显示的功能说明提醒。
-            </p>
-          </div>
-
-          {isBrowserEnvironment() && (
-            <div className='space-y-4'>
-              <Alert>
-                <Info className='h-4 w-4' />
-                <h5 className='font-medium'>当前运行在浏览器预览模式</h5>
+          {/* 用户引导设置 */}
+          <div className='space-y-4'>
+            <div className='p-4 border rounded-lg'>
+              <div className='mb-4'>
+                <h4 className='text-base font-medium'>启动时展示用户引导</h4>
                 <p className='text-sm text-muted-foreground'>
-                  您可以重新查看功能说明，或者重置提醒设置。
+                  控制应用启动时是否自动显示用户引导
                 </p>
-              </Alert>
-
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                <Button
-                  onClick={() => setUserGuideVisible(true)}
-                  className='w-full justify-start'
-                >
-                  <Info className='w-4 h-4 mr-2' />
-                  查看用户指引
-                </Button>
-                <Button
-                  variant='outline'
-                  onClick={() => {
-                    resetNoticeSettings();
-                    showMessage.success(
-                      '提醒设置已重置，下次启动时会再次显示功能说明'
-                    );
+              </div>
+              <div className='flex items-center justify-between'>
+                <div className='space-y-0.5'>
+                  <Label className='text-sm'>启用启动引导</Label>
+                  <p className='text-xs text-muted-foreground'>
+                    开启后，每次启动应用时会显示用户引导
+                  </p>
+                </div>
+                <Switch
+                  checked={!browserModeNoticeDismissed}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      resetNoticeSettings();
+                      showMessage.success('已启用启动引导，下次启动时会显示用户引导');
+                    } else {
+                      useNoticeStore.getState().dismissBrowserModeNotice();
+                      showMessage.success('已关闭启动引导');
+                    }
                   }}
-                  className='w-full justify-start'
-                >
-                  <RefreshCw className='w-4 h-4 mr-2' />
-                  重置提醒设置
-                </Button>
+                />
               </div>
             </div>
-          )}
 
-          {!isBrowserEnvironment() && (
-            <Alert>
-              <Info className='h-4 w-4' />
-              <h5 className='font-medium'>当前运行在桌面应用模式</h5>
-              <p className='text-sm text-muted-foreground'>
-                桌面应用环境中不需要显示浏览器模式提醒。
-              </p>
-            </Alert>
-          )}
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              <Button
+                onClick={() => setUserGuideVisible(true)}
+                className='w-full justify-start'
+              >
+                <Info className='w-4 h-4 mr-2' />
+                查看用户引导
+              </Button>
+              <Button
+                variant='outline'
+                onClick={() => {
+                  resetNoticeSettings();
+                  showMessage.success(
+                    '引导设置已重置，下次启动时会再次显示用户引导'
+                  );
+                }}
+                className='w-full justify-start'
+              >
+                <RefreshCw className='w-4 h-4 mr-2' />
+                重置引导设置
+              </Button>
+            </div>
+          </div>
         </div>
       ),
     },
     {
-      key: 'developer',
-      icon: <Bug className='w-4 h-4' />,
-      label: '开发者工具',
+      key: 'updates',
+      icon: <Download className='w-4 h-4' />,
+      label: '更新设置',
+      children: <UpdateSettings />,
+    },
+    {
+      key: 'about-app',
+      icon: <Info className='w-4 h-4' />,
+      label: '关于',
       children: (
         <div className='space-y-6'>
-          {/* 页面标题 */}
-          <div className='flex items-center gap-3 mb-4'>
-            <Bug className='w-6 h-6 text-blue-600' />
-            <div>
-              <h2 className='text-2xl font-bold'>开发者工具</h2>
-              <p className='text-muted-foreground'>调试和诊断工具</p>
+          <div>
+            <div className='flex items-center gap-3 mb-4'>
+              <Info className='w-6 h-6 text-blue-600' />
+              <div>
+                <h2 className='text-2xl font-bold'>关于 InfloWave</h2>
+                <p className='text-muted-foreground'>
+                  现代化的 InfluxDB 数据库管理工具
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* 错误测试工具 - 仅开发环境显示 */}
-          {(import.meta as any).env?.DEV && (
-            <div>
-              <h4 className='text-sm font-medium mb-2'>错误测试工具</h4>
+          <div className='space-y-4'>
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>应用信息</h4>
+              <div className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>应用名称:</span>
+                  <span>InfloWave</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>版本:</span>
+                  <span>1.1.1</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>构建时间:</span>
+                  <span>{new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
             </div>
-          )}
 
-          <div>
-            <h4 className='text-sm font-medium mb-2'>应用错误日志</h4>
-            <p className='text-sm text-muted-foreground mb-3'>
-              查看和分析应用程序运行时的错误日志，帮助诊断问题和改进应用性能。
-            </p>
-            <div className='p-3 bg-muted/50 border rounded-lg min-h-[200px]'>
-              {isBrowserEnvironment() ? (
-                <Alert>
-                  <Info className='h-4 w-4' />
-                  <h5 className='font-medium'>浏览器环境提示</h5>
-                  <p className='text-sm text-muted-foreground'>
-                    在浏览器环境中，错误日志将显示在开发者工具的控制台中。请按F12打开开发者工具查看详细日志。
-                  </p>
-                </Alert>
-              ) : (
-                <ErrorLogViewer />
-              )}
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>开源项目</h4>
+              <p className='text-sm text-muted-foreground mb-3'>
+                InfloWave 是一个开源项目，欢迎贡献代码和反馈问题。
+              </p>
+              <Button
+                variant='outline'
+                onClick={async () => {
+                  try {
+                    if (isBrowserEnvironment()) {
+                      window.open('https://github.com/chenqi92/inflowave', '_blank');
+                    } else {
+                      await open('https://github.com/chenqi92/inflowave');
+                    }
+                    showMessage.success('正在打开GitHub项目页面');
+                  } catch (error) {
+                    console.error('打开GitHub页面失败:', error);
+                    showMessage.error('打开GitHub页面失败');
+                  }
+                }}
+                className='w-full justify-start'
+              >
+                <ExternalLink className='w-4 h-4 mr-2' />
+                访问 GitHub 项目
+              </Button>
+            </div>
+
+            <div className='p-4 border rounded-lg'>
+              <h4 className='font-medium mb-2'>技术栈</h4>
+              <div className='grid grid-cols-2 gap-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>前端:</span>
+                  <span>React + TypeScript</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>后端:</span>
+                  <span>Rust + Tauri</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>UI框架:</span>
+                  <span>Shadcn/ui</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>数据库:</span>
+                  <span>InfluxDB</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -737,14 +787,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           if (!open) onClose();
         }}
       >
-        <DialogContent className='max-w-5xl w-full h-[90vh] p-0 flex flex-col settings-modal'>
-          <DialogHeader className='px-6 py-3 border-b shrink-0'>
+        <DialogContent className='max-w-5xl w-full h-[90vh] p-0 flex flex-col gap-0 settings-modal'>
+          <DialogHeader className='px-6 py-3 border-b shrink-0 space-y-0'>
             <DialogTitle className='flex items-center gap-2'>
               <Settings className='w-5 h-5' />
               偏好设置
             </DialogTitle>
           </DialogHeader>
-
           <div className='flex flex-1 min-h-0'>
             <Tabs
               defaultValue='general'

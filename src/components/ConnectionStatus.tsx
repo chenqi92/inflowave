@@ -119,11 +119,11 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   const getStatusIcon = () => {
     if (connectionState.isReconnecting) {
-      return <RefreshCw className='h-4 w-4 animate-spin text-yellow-500' />;
+      return <RefreshCw className='h-4 w-4 animate-spin text-warning' />;
     } else if (connectionState.isConnected) {
-      return <Wifi className='h-4 w-4 text-green-500' />;
+      return <Wifi className='h-4 w-4 text-success' />;
     } else {
-      return <WifiOff className='h-4 w-4 text-red-500' />;
+      return <WifiOff className='h-4 w-4 text-destructive' />;
     }
   };
 
@@ -139,11 +139,11 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   const getStatusColor = () => {
     if (connectionState.isReconnecting) {
-      return 'text-yellow-600';
+      return 'text-warning';
     } else if (connectionState.isConnected) {
-      return 'text-green-600';
+      return 'text-success';
     } else {
-      return 'text-red-600';
+      return 'text-destructive';
     }
   };
 

@@ -40,6 +40,7 @@ import { AreaChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import type { QueryResult } from '@/types';
 import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
@@ -65,11 +66,28 @@ interface CreateChartFormData {
 
 const Visualization: React.FC = () => {
   const { activeConnectionId } = useConnectionStore();
+  const { resolvedTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [databases, setDatabases] = useState<string[]>([]);
   const [charts, setCharts] = useState<ChartConfig[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const form = useForm<CreateChartFormData>();
+
+  // 主题配置生成函数
+  const getThemeConfig = useCallback(() => {
+    const isDark = resolvedTheme === 'dark';
+    return {
+      textColor: isDark ? '#e4e4e7' : '#09090b',
+      backgroundColor: isDark ? '#020817' : '#ffffff',
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      gridColor: isDark ? '#27272a' : '#f1f5f9',
+      tooltipBgColor: isDark ? '#1f2937' : '#ffffff',
+      colors: [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+        '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+      ],
+    };
+  }, [resolvedTheme]);
 
   // 加载数据库列表
   const loadDatabases = useCallback(async () => {
@@ -119,6 +137,7 @@ const Visualization: React.FC = () => {
       return null;
     }
 
+    const themeConfig = getThemeConfig();
     const series = firstResult.series[0];
     const timeIndex = series.columns.findIndex(col =>
       col.toLowerCase().includes('time')
@@ -131,19 +150,27 @@ const Visualization: React.FC = () => {
       case 'line':
       case 'area':
         return {
+          backgroundColor: themeConfig.backgroundColor,
+          textStyle: { color: themeConfig.textColor },
+          color: themeConfig.colors,
           title: {
             text: chartConfig.title,
             left: 'center',
+            textStyle: { color: themeConfig.textColor },
           },
           tooltip: {
             trigger: 'axis',
             axisPointer: {
               type: 'cross',
             },
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.borderColor,
+            textStyle: { color: themeConfig.textColor },
           },
           legend: {
             data: valueColumns,
             bottom: 0,
+            textStyle: { color: themeConfig.textColor },
           },
           xAxis: {
             type: 'category',
@@ -154,6 +181,8 @@ const Visualization: React.FC = () => {
               }
               return new Date(timeValue as string | number).toLocaleTimeString();
             }),
+            axisLabel: { color: themeConfig.textColor },
+            axisLine: { lineStyle: { color: themeConfig.borderColor } },
           },
           yAxis: {
             type: 'value',
@@ -318,6 +347,29 @@ const Visualization: React.FC = () => {
     }
   };
 
+  // 主题变化时刷新所有图表
+  useEffect(() => {
+    const refreshAllCharts = async () => {
+      if (charts.length > 0) {
+        const updatedCharts = await Promise.all(
+          charts.map(async (chart) => {
+            const result = await executeQueryForChart(chart);
+            if (result) {
+              const option = convertToEChartsOption(result, chart);
+              if (option) {
+                return { ...chart, options: option };
+              }
+            }
+            return chart;
+          })
+        );
+        setCharts(updatedCharts);
+      }
+    };
+    
+    refreshAllCharts();
+  }, [resolvedTheme]); // 依赖主题变化
+
   // 删除图表
   const deleteChart = (chartId: string) => {
     setCharts(prev => prev.filter(chart => chart.id !== chartId));
@@ -428,6 +480,7 @@ const Visualization: React.FC = () => {
                           option={chart.options}
                           style={{ height: '280px' }}
                           opts={{ renderer: 'canvas' }}
+                          theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
                         />
                       ) : (
                         <div className='flex items-center justify-center h-64'>

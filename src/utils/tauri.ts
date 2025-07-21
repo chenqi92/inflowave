@@ -13,12 +13,30 @@ declare global {
 
 // 检查是否在 Tauri 环境中运行
 export const isTauriEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+  // 多重检查确保在 Tauri 环境中
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // 检查 Tauri 特有的全局对象
+  return (
+    window.__TAURI__ !== undefined ||
+    // 检查 Tauri API 是否可用
+    (typeof window !== 'undefined' &&
+     (window as any).__TAURI_INTERNALS__ !== undefined) ||
+    // 检查用户代理字符串
+    (typeof navigator !== 'undefined' &&
+     navigator.userAgent.includes('Tauri')) ||
+    // 检查是否在桌面应用环境中（非浏览器）
+    (typeof window !== 'undefined' &&
+     window.location.protocol === 'tauri:')
+  );
 };
 
-// 检查是否在浏览器开发环境中
+// 检查是否在浏览器开发环境中 - 桌面应用专用，始终返回false
 export const isBrowserEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && window.__TAURI__ === undefined;
+  // 桌面应用专用，不支持浏览器环境
+  return false;
 };
 
 // 定义返回 void 的命令列表
@@ -41,12 +59,17 @@ const VOID_COMMANDS = new Set([
   'update_query_settings',
   'update_visualization_settings',
   'update_security_settings',
+  'update_controller_settings',
+  'update_monitoring_settings',
   'reset_settings',
   'save_app_config',
   'clear_query_history',
   'clear_optimization_history',
   'save_query_history',
   'save_optimization_history',
+  'start_system_monitoring',
+  'stop_system_monitoring',
+  'record_query_performance',
 ]);
 
 // 类型安全的 Tauri API 调用包装器 - 使用函数重载
@@ -127,22 +150,37 @@ export const safeTauriListen = async <T = any>(
   event: string,
   handler: (event: { payload: T }) => void
 ): Promise<() => void> => {
-  if (!isTauriEnvironment()) {
-    console.warn(
-      `Tauri event listener "${event}" called in browser environment, using mock handler`
-    );
-    // 返回一个空的取消监听函数
-    return () => {};
-  }
+  console.log(`🎧 尝试设置事件监听器: "${event}"`);
+  console.log(`🔍 Tauri环境检查:`, {
+    isTauri: isTauriEnvironment(),
+    hasWindow: typeof window !== 'undefined',
+    hasTauriGlobal: typeof window !== 'undefined' && window.__TAURI__ !== undefined,
+    hasTauriInternals: typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__ !== undefined,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+    protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+  });
 
+  // 强制尝试设置事件监听器，即使环境检测失败
   try {
+    console.log(`📡 正在导入 Tauri 事件 API...`);
     const { listen } = await import('@tauri-apps/api/event');
+    console.log(`✅ Tauri 事件 API 导入成功，设置监听器: "${event}"`);
     const unlisten = await listen<T>(event, handler);
+    console.log(`🎯 事件监听器 "${event}" 设置成功`);
     return unlisten;
   } catch (error) {
-    console.error(`Tauri event listener error for event "${event}":`, error);
-    // 返回一个空的取消监听函数
-    return () => {};
+    console.error(`❌ Tauri event listener error for event "${event}":`, error);
+
+    // 如果不在 Tauri 环境中，返回空函数
+    if (!isTauriEnvironment()) {
+      console.warn(
+        `⚠️ Tauri event listener "${event}" failed, likely in browser environment`
+      );
+      return () => {};
+    }
+
+    // 在 Tauri 环境中但失败了，重新抛出错误
+    throw error;
   }
 };
 
@@ -167,24 +205,18 @@ export const getEnvironmentInfo = () => {
   };
 };
 
-// 显示环境警告
+// 显示环境警告 - 桌面应用专用，无需警告
 export const showEnvironmentWarning = () => {
-  if (isBrowserEnvironment()) {
-    console.warn(
-      '%c🌐 浏览器开发模式',
-      'color: #ff9800; font-size: 14px; font-weight: bold;',
-      '\n当前在浏览器中运行，Tauri API 不可用。\n正在使用模拟数据进行开发。\n要体验完整功能，请使用 `npm run tauri:dev` 启动。'
-    );
-  }
+  // 桌面应用专用，无需显示浏览器环境警告
+  console.log('🖥️ 桌面应用环境已初始化');
 };
 
-// 初始化环境检测
+// 初始化环境检测 - 桌面应用专用
 export const initializeEnvironment = () => {
   const envInfo = getEnvironmentInfo();
 
-  if (envInfo.isBrowser) {
-    showEnvironmentWarning();
-  }
+  // 桌面应用专用，始终显示桌面环境信息
+  showEnvironmentWarning();
 
   return envInfo;
 };

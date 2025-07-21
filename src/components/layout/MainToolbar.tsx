@@ -1,10 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
 } from '@/components/ui';
 import {
   Database,
@@ -85,41 +81,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   // 启用全局快捷键 - 暂时注释掉以修复键盘快捷键对话框意外显示的问题
   // useGlobalShortcuts();
 
-  const handleToolsMenuClick = ({ key }: { key: string }) => {
-    switch (key) {
-      case 'query-history':
-        // 查询历史 - 先导航到查询页面，然后手动打开历史面板
-        navigate('/query');
-        // 确保先切换到查询视图
-        onViewChange?.('query');
-        // 延迟打开查询历史，确保组件已经渲染
-        setTimeout(() => {
-          onOpenQueryHistory?.();
-        }, 100);
-        showMessage.info('正在打开查询历史...');
-        break;
-      case 'dev-tools':
-        // 开发者工具 - 特殊处理：先导航再更新视图状态
-        navigate('/dev-tools');
-        setTimeout(() => onViewChange?.('dev-tools'), 100);
-        break;
-      default:
-        console.log('未处理的工具菜单项:', key);
-    }
-  };
 
-  const toolsMenuItems = [
-    {
-      key: 'query-history',
-      label: '查询历史',
-      icon: <History className='w-4 h-4' />,
-    },
-    {
-      key: 'dev-tools',
-      label: '开发者工具',
-      icon: <Wrench className='w-4 h-4' />,
-    },
-  ];
 
   const handleTimeRangeChange = (range: TimeRange) => {
     setSelectedTimeRange(range);
@@ -277,6 +239,42 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
         />
 
+        {/* 查询历史按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-10 w-16 p-1 flex flex-col items-center justify-center gap-1'
+          onClick={() => {
+            // 直接切换到查询历史视图
+            onViewChange?.('query-history');
+            showMessage.info('正在打开查询历史页面...');
+          }}
+          title='查询历史'
+        >
+          <History className='w-4 h-4' />
+          <span className='text-xs'>历史</span>
+        </Button>
+
+        {/* 开发者工具按钮 */}
+        <Button
+          variant={currentView === 'dev-tools' ? 'default' : 'ghost'}
+          size='sm'
+          className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+            currentView === 'dev-tools'
+              ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
+              : 'hover:bg-accent hover:text-accent-foreground'
+          }`}
+          onClick={() => {
+            // 开发者工具 - 特殊处理：先导航再更新视图状态
+            navigate('/dev-tools');
+            setTimeout(() => onViewChange?.('dev-tools'), 100);
+          }}
+          title='开发者工具'
+        >
+          <Wrench className='w-4 h-4' />
+          <span className='text-xs'>工具</span>
+        </Button>
+
         {/* 设置按钮 */}
         <Button
           variant='ghost'
@@ -288,32 +286,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           <Settings className='w-4 h-4' />
           <span className='text-xs'>设置</span>
         </Button>
-
-        {/* 工具菜单 */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant='ghost'
-              size='sm'
-              className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
-              title='更多工具'
-            >
-              <Wrench className='w-4 h-4' />
-              <span className='text-xs'>工具</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end'>
-            {toolsMenuItems.map(item => (
-              <DropdownMenuItem
-                key={item.key}
-                onClick={() => handleToolsMenuClick({ key: item.key })}
-              >
-                {item.icon}
-                <span className='ml-2'>{item.label}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       {/* 设置模态框 */}

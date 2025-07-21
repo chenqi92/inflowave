@@ -50,15 +50,13 @@
     background: rgba(0, 0, 0, 0.3);
   }
 
-  /* 深色模式下的滚动条 */
-  @media (prefers-color-scheme: dark) {
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-    }
+  /* 深色模式下的滚动条 - 使用类选择器 */
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 
   /* 按钮和表单元素优化 */
@@ -163,12 +161,10 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .dropdown-menu,
-    .select-content {
-      background-color: rgba(30, 30, 30, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+  .dark .dropdown-menu,
+  .dark .select-content {
+    background-color: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   /* 工具栏按钮优化 */
@@ -182,15 +178,13 @@
     background-color: rgba(255, 255, 255, 0.2);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .toolbar-button {
-      background-color: rgba(30, 30, 30, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+  .dark .toolbar-button {
+    background-color: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 
-    .toolbar-button:hover {
-      background-color: rgba(30, 30, 30, 0.8);
-    }
+  .dark .toolbar-button:hover {
+    background-color: rgba(30, 30, 30, 0.8);
   }
 }
 

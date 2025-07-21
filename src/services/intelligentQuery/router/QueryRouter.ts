@@ -104,7 +104,7 @@ export class QueryRouter {
   private routingRules: RoutingRule[] = [];
   private loadBalancingConfig: LoadBalancingConfig;
   private routingStatistics: RoutingStatistics;
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ReturnType<typeof setInterval>;
   private routingHistory: RoutingHistoryEntry[] = [];
 
   constructor(config?: Partial<LoadBalancingConfig>) {

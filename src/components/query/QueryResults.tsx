@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {AdvancedDataTable, type ColumnConfig, type DataRow} from '@/components/ui/AdvancedDataTable';
 import {
     DataTable,
     Tabs,
@@ -43,6 +44,13 @@ import {
     AreaChart,
     Table,
     FileText,
+    CheckCircle,
+    AlertCircle,
+    Database,
+    Settings,
+    Trash2,
+    Plus,
+    Shield,
 } from 'lucide-react';
 import {useContextMenu} from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
@@ -51,16 +59,88 @@ import type {QueryResult} from '@/types';
 import {safeTauriInvoke} from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
 
+// SQL语句类型检测工具函数
+const detectQueryType = (query?: string): string => {
+    if (!query) return 'UNKNOWN';
+
+    const trimmed = query.trim().toUpperCase();
+
+    if (trimmed.startsWith('SELECT')) return 'SELECT';
+    if (trimmed.startsWith('INSERT')) return 'INSERT';
+    if (trimmed.startsWith('DELETE')) return 'DELETE';
+    if (trimmed.startsWith('UPDATE')) return 'UPDATE';
+    if (trimmed.startsWith('CREATE')) return 'CREATE';
+    if (trimmed.startsWith('DROP')) return 'DROP';
+    if (trimmed.startsWith('ALTER')) return 'ALTER';
+    if (trimmed.startsWith('SHOW')) return 'SHOW';
+    if (trimmed.startsWith('EXPLAIN')) return 'EXPLAIN';
+    if (trimmed.startsWith('GRANT')) return 'GRANT';
+    if (trimmed.startsWith('REVOKE')) return 'REVOKE';
+
+    return 'UNKNOWN';
+};
+
+// 获取语句类型的分类
+const getStatementCategory = (queryType: string): 'query' | 'write' | 'delete' | 'ddl' | 'permission' | 'unknown' => {
+    switch (queryType) {
+        case 'SELECT':
+        case 'SHOW':
+        case 'EXPLAIN':
+            return 'query';
+        case 'INSERT':
+            return 'write';
+        case 'DELETE':
+            return 'delete';
+        case 'CREATE':
+        case 'DROP':
+        case 'ALTER':
+            return 'ddl';
+        case 'GRANT':
+        case 'REVOKE':
+            return 'permission';
+        default:
+            return 'unknown';
+    }
+};
+
 interface QueryResultsProps {
     result?: QueryResult | null;
     loading?: boolean;
+    executedQuery?: string; // 执行的SQL语句
+    queryType?: string; // SQL语句类型
 }
 
 const QueryResults: React.FC<QueryResultsProps> = ({
                                                        result,
                                                        loading = false,
+                                                       executedQuery,
+                                                       queryType,
                                                    }) => {
-    const [activeTab, setActiveTab] = useState('table');
+    // 检测SQL语句类型
+    const detectedQueryType = queryType || detectQueryType(executedQuery);
+    const statementCategory = getStatementCategory(detectedQueryType);
+
+    // 根据语句类型设置默认tab
+    const getDefaultTab = (category: string) => {
+        switch (category) {
+            case 'query':
+                return 'table';
+            case 'write':
+            case 'delete':
+            case 'ddl':
+            case 'permission':
+                return 'status';
+            default:
+                return 'json';
+        }
+    };
+
+    const [activeTab, setActiveTab] = useState(() => getDefaultTab(statementCategory));
+
+    // 当语句类型改变时，重置activeTab
+    React.useEffect(() => {
+        setActiveTab(getDefaultTab(statementCategory));
+    }, [statementCategory]);
     const [exportModalVisible, setExportModalVisible] = useState(false);
     const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'excel'>(
         'csv'
@@ -68,6 +148,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     const [chartType, setChartType] = useState<'line' | 'bar' | 'area' | 'pie'>(
         'line'
     );
+
+
 
     // 初始化右键菜单
     const {
@@ -111,7 +193,68 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         showContextMenu(event, target);
     };
 
-    // 格式化查询结果为表格数据
+    // 格式化查询结果为高级表格数据
+    const formatResultForAdvancedTable = (queryResult: QueryResult) => {
+        if (
+            !queryResult ||
+            !queryResult.results ||
+            queryResult.results.length === 0 ||
+            !queryResult.results[0].series ||
+            queryResult.results[0].series.length === 0
+        ) {
+            return {columns: [], dataSource: []};
+        }
+
+        const series = queryResult.results[0].series[0];
+
+        // 创建列配置
+        const columns: ColumnConfig[] = series.columns.map((col: string) => {
+            // 检测数据类型
+            let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
+            if (col === 'time') {
+                dataType = 'date';
+            } else {
+                // 检查前几行数据来推断类型
+                for (let i = 0; i < Math.min(5, series.values.length); i++) {
+                    const colIndex = series.columns.indexOf(col);
+                    const value = series.values[i][colIndex];
+                    if (value !== null && value !== undefined) {
+                        if (typeof value === 'number') {
+                            dataType = 'number';
+                            break;
+                        }
+                        if (typeof value === 'boolean') {
+                            dataType = 'boolean';
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return {
+                key: col,
+                title: col,
+                dataType,
+                width: col === 'time' ? 180 : 120,
+                sortable: true,
+                filterable: true,
+                visible: true,
+            };
+        });
+
+        // 创建数据源
+        const dataSource: DataRow[] = series.values.map((row: unknown[], index: number) => {
+            const record: DataRow = {_id: index};
+            series.columns.forEach((col: string, colIndex: number) => {
+                record[col] = row[colIndex];
+            });
+            return record;
+        });
+
+        return {columns, dataSource};
+    };
+
+    // 格式化查询结果为表格数据（保留原有的DataTable格式）
     const formatResultForTable = (queryResult: QueryResult) => {
         if (
             !queryResult ||
@@ -132,6 +275,32 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 width: index === 0 ? 200 : 120, // 时间列宽一些
                 ellipsis: true,
                 align: 'left' as const,
+                sortable: true, // 启用排序
+                sorter: (a: any, b: any) => {
+                    const aValue = a[col];
+                    const bValue = b[col];
+
+                    // 处理null/undefined值
+                    if (aValue === null || aValue === undefined) return 1;
+                    if (bValue === null || bValue === undefined) return -1;
+
+                    // 时间列特殊排序
+                    if (col === 'time' || (typeof aValue === 'string' && aValue.includes('T') && aValue.includes('Z'))) {
+                        const aTime = new Date(aValue).getTime();
+                        const bTime = new Date(bValue).getTime();
+                        if (!isNaN(aTime) && !isNaN(bTime)) {
+                            return aTime - bTime;
+                        }
+                    }
+
+                    // 数字排序
+                    if (typeof aValue === 'number' && typeof bValue === 'number') {
+                        return aValue - bValue;
+                    }
+
+                    // 字符串排序
+                    return String(aValue).localeCompare(String(bValue));
+                },
                 render: (value: any, record: any, _index: number) => {
                     const cellContent = (() => {
                         if (value === null || value === undefined) {
@@ -268,26 +437,50 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         };
     };
 
+    // 为高级表格准备数据
+    const {columns: advancedColumns, dataSource: advancedDataSource} = result
+        ? formatResultForAdvancedTable(result)
+        : {columns: [], dataSource: []};
+
+    // 为原有DataTable准备数据（保持兼容性）
     const {columns, dataSource} = result
         ? formatResultForTable(result)
         : {columns: [], dataSource: []};
     const stats = result ? getResultStats(result) : null;
 
     const renderTableTab = () => (
-        <ScrollArea className="h-full">
+        <div className="h-full">
             {result ? (
-                <DataTable
-                    columns={columns}
-                    dataSource={dataSource}
-                    scroll={{x: 'max-content', y: 'calc(100vh - 300px)'}}
-                    size='small'
-                    bordered
-                    className="bg-background"
+                <AdvancedDataTable
+                    data={advancedDataSource}
+                    columns={advancedColumns}
+                    loading={false}
+                    pagination={{
+                        current: 1,
+                        pageSize: 50,
+                        total: advancedDataSource.length,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['20', '50', '100', '200', '500'],
+                    }}
+                    searchable={true}
+                    filterable={true}
+                    sortable={true}
+                    exportable={true}
+                    columnManagement={true}
+                    className="h-full"
+                    onExport={(format) => {
+                        // 使用查询结果的名称作为默认文件名
+                        const defaultName = `query_result_${Date.now()}`;
+                        console.log(`导出格式: ${format}, 默认文件名: ${defaultName}`);
+                        // 这里可以添加自定义导出逻辑
+                    }}
                 />
             ) : (
-                <Empty description='暂无查询结果'/>
+                <div className="h-full flex items-center justify-center">
+                    <Empty description='暂无查询结果'/>
+                </div>
             )}
-        </ScrollArea>
+        </div>
     );
 
     const renderJsonTab = () => (
@@ -359,13 +552,165 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         </ScrollArea>
     );
 
+    // 渲染写入操作结果
+    const renderWriteResultTab = () => (
+        <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <Text className="font-medium text-green-700">写入操作执行成功</Text>
+                </div>
+
+                {stats && (
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">执行时间:</span>
+                            <span className="font-mono">{stats.executionTime}ms</span>
+                        </div>
+                        {result?.rowCount !== undefined && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">影响行数:</span>
+                                <span className="font-mono">{result.rowCount}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {executedQuery && (
+                    <div>
+                        <Text className="font-medium mb-2">执行的语句:</Text>
+                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
+                            {executedQuery}
+                        </pre>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
+    );
+
+    // 渲染删除操作结果
+    const renderDeleteResultTab = () => (
+        <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                    <Trash2 className="w-5 h-5 text-orange-500" />
+                    <Text className="font-medium text-orange-700">删除操作执行成功</Text>
+                </div>
+
+                {stats && (
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">执行时间:</span>
+                            <span className="font-mono">{stats.executionTime}ms</span>
+                        </div>
+                        {result?.rowCount !== undefined && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">删除行数:</span>
+                                <span className="font-mono text-orange-600">{result.rowCount}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {executedQuery && (
+                    <div>
+                        <Text className="font-medium mb-2">执行的语句:</Text>
+                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
+                            {executedQuery}
+                        </pre>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
+    );
+
+    // 渲染DDL操作结果
+    const renderDDLResultTab = () => (
+        <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5 text-blue-500" />
+                    <Text className="font-medium text-blue-700">结构操作执行成功</Text>
+                </div>
+
+                {stats && (
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">执行时间:</span>
+                            <span className="font-mono">{stats.executionTime}ms</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">操作类型:</span>
+                            <span className="font-mono">{detectedQueryType}</span>
+                        </div>
+                    </div>
+                )}
+
+                {executedQuery && (
+                    <div>
+                        <Text className="font-medium mb-2">执行的语句:</Text>
+                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
+                            {executedQuery}
+                        </pre>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
+    );
+
+    // 渲染权限操作结果
+    const renderPermissionResultTab = () => (
+        <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-purple-500" />
+                    <Text className="font-medium text-purple-700">权限操作执行成功</Text>
+                </div>
+
+                {stats && (
+                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">执行时间:</span>
+                            <span className="font-mono">{stats.executionTime}ms</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">操作类型:</span>
+                            <span className="font-mono">{detectedQueryType}</span>
+                        </div>
+                    </div>
+                )}
+
+                {executedQuery && (
+                    <div>
+                        <Text className="font-medium mb-2">执行的语句:</Text>
+                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
+                            {executedQuery}
+                        </pre>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
+    );
+
     return (
         <Card className="h-full border-none">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-lg">
-                        <Table className='w-5 h-5'/>
-                        <span>查询结果</span>
+                        {statementCategory === 'query' && <Table className='w-5 h-5'/>}
+                        {statementCategory === 'write' && <CheckCircle className='w-5 h-5'/>}
+                        {statementCategory === 'delete' && <Trash2 className='w-5 h-5'/>}
+                        {statementCategory === 'ddl' && <Database className='w-5 h-5'/>}
+                        {statementCategory === 'permission' && <Shield className='w-5 h-5'/>}
+                        {statementCategory === 'unknown' && <FileText className='w-5 h-5'/>}
+                        <span>
+                            {statementCategory === 'query' && '查询结果'}
+                            {statementCategory === 'write' && '写入结果'}
+                            {statementCategory === 'delete' && '删除结果'}
+                            {statementCategory === 'ddl' && '操作结果'}
+                            {statementCategory === 'permission' && '权限结果'}
+                            {statementCategory === 'unknown' && '执行结果'}
+                        </span>
                         {stats && (
                             <div className='flex items-center gap-2 ml-4'>
                                 <Badge variant="secondary">{stats.totalRows} 行</Badge>
@@ -458,32 +803,159 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 ) : (
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
                         <TabsList className="mx-4 mb-2">
-                            <TabsTrigger value="table" className="flex items-center gap-2">
-                                <Table className='w-4 h-4'/>
-                                表格视图
-                                {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
-                            </TabsTrigger>
-                            <TabsTrigger value="json" className="flex items-center gap-2">
-                                <FileText className='w-4 h-4'/>
-                                JSON 视图
-                            </TabsTrigger>
-                            <TabsTrigger value="chart" className="flex items-center gap-2">
-                                <BarChart className='w-4 h-4'/>
-                                图表视图
-                            </TabsTrigger>
+                            {/* 查询类语句显示传统的表格、JSON、图表视图 */}
+                            {statementCategory === 'query' && (
+                                <>
+                                    <TabsTrigger value="table" className="flex items-center gap-2">
+                                        <Table className='w-4 h-4'/>
+                                        表格视图
+                                        {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="json" className="flex items-center gap-2">
+                                        <FileText className='w-4 h-4'/>
+                                        JSON 视图
+                                    </TabsTrigger>
+                                    <TabsTrigger value="chart" className="flex items-center gap-2">
+                                        <BarChart className='w-4 h-4'/>
+                                        图表视图
+                                    </TabsTrigger>
+                                </>
+                            )}
+
+                            {/* 写入类语句显示执行状态 */}
+                            {statementCategory === 'write' && (
+                                <>
+                                    <TabsTrigger value="status" className="flex items-center gap-2">
+                                        <CheckCircle className='w-4 h-4'/>
+                                        执行状态
+                                    </TabsTrigger>
+                                    <TabsTrigger value="json" className="flex items-center gap-2">
+                                        <FileText className='w-4 h-4'/>
+                                        JSON 视图
+                                    </TabsTrigger>
+                                </>
+                            )}
+
+                            {/* 删除类语句显示删除状态 */}
+                            {statementCategory === 'delete' && (
+                                <>
+                                    <TabsTrigger value="status" className="flex items-center gap-2">
+                                        <Trash2 className='w-4 h-4'/>
+                                        删除状态
+                                    </TabsTrigger>
+                                    <TabsTrigger value="json" className="flex items-center gap-2">
+                                        <FileText className='w-4 h-4'/>
+                                        JSON 视图
+                                    </TabsTrigger>
+                                </>
+                            )}
+
+                            {/* DDL类语句显示结构操作状态 */}
+                            {statementCategory === 'ddl' && (
+                                <>
+                                    <TabsTrigger value="status" className="flex items-center gap-2">
+                                        <Database className='w-4 h-4'/>
+                                        操作状态
+                                    </TabsTrigger>
+                                    <TabsTrigger value="json" className="flex items-center gap-2">
+                                        <FileText className='w-4 h-4'/>
+                                        JSON 视图
+                                    </TabsTrigger>
+                                </>
+                            )}
+
+                            {/* 权限类语句显示权限操作状态 */}
+                            {statementCategory === 'permission' && (
+                                <>
+                                    <TabsTrigger value="status" className="flex items-center gap-2">
+                                        <Shield className='w-4 h-4'/>
+                                        权限状态
+                                    </TabsTrigger>
+                                    <TabsTrigger value="json" className="flex items-center gap-2">
+                                        <FileText className='w-4 h-4'/>
+                                        JSON 视图
+                                    </TabsTrigger>
+                                </>
+                            )}
+
+                            {/* 未知类型默认显示JSON视图 */}
+                            {statementCategory === 'unknown' && (
+                                <TabsTrigger value="json" className="flex items-center gap-2">
+                                    <FileText className='w-4 h-4'/>
+                                    JSON 视图
+                                </TabsTrigger>
+                            )}
                         </TabsList>
 
-                        <TabsContent value="table" className="flex-1 m-0 px-4">
-                            {renderTableTab()}
-                        </TabsContent>
+                        {/* 查询类语句的内容 */}
+                        {statementCategory === 'query' && (
+                            <>
+                                <TabsContent value="table" className="flex-1 m-0 px-4">
+                                    {renderTableTab()}
+                                </TabsContent>
+                                <TabsContent value="json" className="flex-1 m-0 px-4">
+                                    {renderJsonTab()}
+                                </TabsContent>
+                                <TabsContent value="chart" className="flex-1 m-0 px-4">
+                                    {renderChartTab()}
+                                </TabsContent>
+                            </>
+                        )}
 
-                        <TabsContent value="json" className="flex-1 m-0 px-4">
-                            {renderJsonTab()}
-                        </TabsContent>
+                        {/* 写入类语句的内容 */}
+                        {statementCategory === 'write' && (
+                            <>
+                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                    {renderWriteResultTab()}
+                                </TabsContent>
+                                <TabsContent value="json" className="flex-1 m-0 px-4">
+                                    {renderJsonTab()}
+                                </TabsContent>
+                            </>
+                        )}
 
-                        <TabsContent value="chart" className="flex-1 m-0 px-4">
-                            {renderChartTab()}
-                        </TabsContent>
+                        {/* 删除类语句的内容 */}
+                        {statementCategory === 'delete' && (
+                            <>
+                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                    {renderDeleteResultTab()}
+                                </TabsContent>
+                                <TabsContent value="json" className="flex-1 m-0 px-4">
+                                    {renderJsonTab()}
+                                </TabsContent>
+                            </>
+                        )}
+
+                        {/* DDL类语句的内容 */}
+                        {statementCategory === 'ddl' && (
+                            <>
+                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                    {renderDDLResultTab()}
+                                </TabsContent>
+                                <TabsContent value="json" className="flex-1 m-0 px-4">
+                                    {renderJsonTab()}
+                                </TabsContent>
+                            </>
+                        )}
+
+                        {/* 权限类语句的内容 */}
+                        {statementCategory === 'permission' && (
+                            <>
+                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                    {renderPermissionResultTab()}
+                                </TabsContent>
+                                <TabsContent value="json" className="flex-1 m-0 px-4">
+                                    {renderJsonTab()}
+                                </TabsContent>
+                            </>
+                        )}
+
+                        {/* 未知类型的内容 */}
+                        {statementCategory === 'unknown' && (
+                            <TabsContent value="json" className="flex-1 m-0 px-4">
+                                {renderJsonTab()}
+                            </TabsContent>
+                        )}
                     </Tabs>
                 )}
             </CardContent>

@@ -57,6 +57,8 @@ export {
   showNotification,
   specialMessage,
   toastControl,
+  systemMessage,
+  smartMessage,
 } from '@/utils/message';
 
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
@@ -201,7 +203,7 @@ export { Timeline, TimelineItem } from './Timeline';
 export type {
   TimelineProps,
   TimelineItemProps,
-  TimelineItemType,
+  TimelineItemData,
 } from './Timeline';
 
 export { Tree } from './Tree';

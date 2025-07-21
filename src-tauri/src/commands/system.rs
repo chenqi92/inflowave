@@ -3,6 +3,7 @@ use crate::services::ConnectionService;
 use tauri::{State, Manager, AppHandle};
 use log::{debug, error, info};
 use std::path::Path;
+use anyhow::Error;
 
 /// 获取系统信息
 #[tauri::command]
@@ -72,7 +73,7 @@ fn get_network_stats() -> NetworkStats {
 async fn get_series_count(
     client: &crate::database::InfluxClient,
     database: &str,
-) -> Result<u64, anyhow::Error> {
+) -> Result<u64, Error> {
     let query = format!("SHOW SERIES ON \"{}\"", database);
     let result = client.execute_query(&query).await?;
     Ok(result.row_count.unwrap_or(0) as u64)
@@ -194,24 +195,7 @@ pub async fn toggle_devtools(app: AppHandle) -> Result<(), String> {
     }
 }
 
-/// 检查更新
-#[tauri::command]
-pub async fn check_for_updates() -> Result<serde_json::Value, String> {
-    debug!("检查应用更新");
 
-    // 这里应该实现真正的更新检查逻辑
-    // 目前返回模拟数据
-    let update_info = serde_json::json!({
-        "has_update": false,
-        "current_version": env!("CARGO_PKG_VERSION"),
-        "latest_version": env!("CARGO_PKG_VERSION"),
-        "update_url": env!("CARGO_PKG_REPOSITORY"),
-        "release_notes": "当前已是最新版本",
-        "checked_at": chrono::Utc::now()
-    });
-
-    Ok(update_info)
-}
 
 /// 文件对话框结果结构
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -221,33 +205,104 @@ pub struct FileDialogResult {
 }
 
 /// 文件对话框过滤器
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct FileFilter {
     pub name: String,
     pub extensions: Vec<String>,
 }
 
+#[derive(serde::Deserialize, Debug)]
+pub struct SaveFileDialogParams {
+    pub default_path: Option<String>,
+    pub filters: Option<Vec<FileFilter>>,
+}
+
 /// 打开文件对话框
 #[tauri::command]
 pub async fn open_file_dialog(
-    _filters: Option<Vec<FileFilter>>,
+    app: tauri::AppHandle,
+    title: Option<String>,
+    filters: Option<Vec<FileFilter>>,
+    multiple: Option<bool>,
 ) -> Result<Option<FileDialogResult>, String> {
     debug!("打开文件对话框");
-    
-    // 简化实现，返回模拟结果
-    // 在实际应用中，这里应该调用系统文件对话框
-    info!("文件对话框功能开发中");
-    Ok(None)
+
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut dialog = app.dialog().file();
+
+    // 设置标题
+    if let Some(title_text) = title {
+        dialog = dialog.set_title(&title_text);
+    }
+
+    // 设置文件过滤器
+    if let Some(filter_list) = filters {
+        for filter in filter_list {
+            let extensions: Vec<&str> = filter.extensions.iter().map(|s| s.as_str()).collect();
+            dialog = dialog.add_filter(&filter.name, &extensions);
+        }
+    }
+
+    // 显示打开对话框
+    let result = if multiple.unwrap_or(false) {
+        // 多选文件
+        match dialog.blocking_pick_files() {
+            Some(file_paths) => {
+                if let Some(first_path) = file_paths.first() {
+                    let path_buf = first_path.as_path().unwrap_or_else(|| std::path::Path::new(""));
+                    let result = FileDialogResult {
+                        path: path_buf.to_string_lossy().to_string(),
+                        name: path_buf.file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default(),
+                    };
+                    info!("文件打开对话框结果: {:?}", result);
+                    Some(result)
+                } else {
+                    None
+                }
+            }
+            None => {
+                info!("用户取消了文件打开对话框");
+                None
+            }
+        }
+    } else {
+        // 单选文件
+        match dialog.blocking_pick_file() {
+            Some(file_path) => {
+                let path_buf = file_path.as_path().unwrap_or_else(|| std::path::Path::new(""));
+                let result = FileDialogResult {
+                    path: path_buf.to_string_lossy().to_string(),
+                    name: path_buf.file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_default(),
+                };
+                info!("文件打开对话框结果: {:?}", result);
+                Some(result)
+            }
+            None => {
+                info!("用户取消了文件打开对话框");
+                None
+            }
+        }
+    };
+
+    Ok(result)
 }
 
 /// 保存文件对话框
 #[tauri::command]
 pub async fn save_file_dialog(
     app: tauri::AppHandle,
-    default_path: Option<String>,
-    filters: Option<Vec<FileFilter>>,
+    params: SaveFileDialogParams,
 ) -> Result<Option<FileDialogResult>, String> {
     debug!("保存文件对话框");
+    debug!("接收到的参数结构体: {:?}", params);
+
+    let default_path = params.default_path;
+    let filters = params.filters;
 
     use tauri_plugin_dialog::DialogExt;
 
@@ -255,12 +310,25 @@ pub async fn save_file_dialog(
 
     // 设置默认路径
     if let Some(path) = default_path {
-        if let Some(parent) = std::path::Path::new(&path).parent() {
+        info!("设置默认路径: {}", path);
+        let path_obj = std::path::Path::new(&path);
+
+        if let Some(parent) = path_obj.parent() {
+            info!("设置目录: {:?}", parent);
             dialog = dialog.set_directory(parent);
+        } else {
+            info!("没有父目录，使用纯文件名");
         }
-        if let Some(filename) = std::path::Path::new(&path).file_name() {
-            dialog = dialog.set_file_name(filename.to_string_lossy().as_ref());
+
+        if let Some(filename) = path_obj.file_name() {
+            let filename_str = filename.to_string_lossy();
+            info!("设置文件名: {}", filename_str);
+            dialog = dialog.set_file_name(filename_str.as_ref());
+        } else {
+            info!("无法提取文件名");
         }
+    } else {
+        info!("没有提供默认路径");
     }
 
     // 设置文件过滤器
@@ -369,11 +437,25 @@ pub async fn write_binary_file(path: String, data: String) -> Result<(), String>
     }
 }
 
+/// 创建目录
+#[tauri::command]
+pub async fn create_dir(path: String) -> Result<(), String> {
+    debug!("创建目录: {}", path);
+
+    std::fs::create_dir_all(&path).map_err(|e| {
+        error!("创建目录失败: {}: {}", path, e);
+        format!("创建目录失败: {}", e)
+    })?;
+
+    info!("成功创建目录: {}", path);
+    Ok(())
+}
+
 /// 获取用户下载目录
 #[tauri::command]
 pub async fn get_downloads_dir() -> Result<String, String> {
     debug!("获取下载目录");
-    
+
     match dirs::download_dir() {
         Some(dir) => {
             let path = dir.to_string_lossy().to_string();
@@ -385,7 +467,7 @@ pub async fn get_downloads_dir() -> Result<String, String> {
                 .map(|p| p.join("Downloads"))
                 .or_else(|| dirs::desktop_dir())
                 .unwrap_or_else(|| std::path::PathBuf::from("."));
-            
+
             let path = fallback.to_string_lossy().to_string();
             info!("使用备用下载目录: {}", path);
             Ok(path)

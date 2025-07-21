@@ -483,6 +483,11 @@ impl ConnectionService {
             pools.insert(connection_id.to_string(), pool);
         }
 
+        // 连接成功后，尝试检查并连接到 _internal 数据库以获取监控数据
+        if let Err(e) = self.check_and_connect_internal_database(connection_id).await {
+            warn!("连接到 _internal 数据库失败: {}", e);
+        }
+
         info!("成功连接到数据库: {}", connection_id);
         Ok(())
     }
@@ -500,6 +505,56 @@ impl ConnectionService {
         }
 
         info!("成功断开数据库连接: {}", connection_id);
+        Ok(())
+    }
+
+    /// 检查并连接到 _internal 数据库以获取监控数据
+    async fn check_and_connect_internal_database(&self, connection_id: &str) -> Result<()> {
+        debug!("检查 _internal 数据库: {}", connection_id);
+
+        // 获取数据库列表
+        let manager = self.get_manager();
+        let client = manager.get_connection(connection_id).await
+            .context("获取连接失败")?;
+
+        // 使用超时机制避免长时间等待
+        let timeout_duration = std::time::Duration::from_secs(10);
+
+        match tokio::time::timeout(timeout_duration, client.get_databases()).await {
+            Ok(Ok(databases)) => {
+                debug!("成功获取数据库列表，共 {} 个数据库", databases.len());
+
+                // 检查是否存在 _internal 数据库
+                if databases.iter().any(|db| db == "_internal") {
+                    info!("发现 _internal 数据库，用于监控数据收集: {}", connection_id);
+
+                    // 尝试执行一个简单的查询来验证 _internal 数据库的可用性
+                    match tokio::time::timeout(
+                        timeout_duration,
+                        client.execute_query_with_database("SHOW MEASUREMENTS", Some("_internal"))
+                    ).await {
+                        Ok(Ok(_)) => {
+                            info!("_internal 数据库连接验证成功: {}", connection_id);
+                        }
+                        Ok(Err(e)) => {
+                            warn!("_internal 数据库查询失败，但不影响主连接: {}", e);
+                        }
+                        Err(_) => {
+                            warn!("_internal 数据库查询超时，但不影响主连接");
+                        }
+                    }
+                } else {
+                    debug!("未发现 _internal 数据库，可能是较旧版本的 InfluxDB: {}", connection_id);
+                }
+            }
+            Ok(Err(e)) => {
+                warn!("获取数据库列表失败，无法检查 _internal 数据库: {}", e);
+            }
+            Err(_) => {
+                warn!("获取数据库列表超时，跳过 _internal 数据库检查: {}", connection_id);
+            }
+        }
+
         Ok(())
     }
 
@@ -578,5 +633,54 @@ impl ConnectionService {
         } else {
             Err(anyhow::anyhow!("连接池不存在: {}", connection_id))
         }
+    }
+
+    /// 获取所有连接配置
+    pub async fn get_all_connections(&self) -> Result<Vec<crate::models::ConnectionConfig>> {
+        debug!("获取所有连接配置");
+
+        let configs = self.configs.read().await;
+        let connections: Vec<crate::models::ConnectionConfig> = configs.values().cloned().collect();
+
+        info!("返回 {} 个连接配置", connections.len());
+        Ok(connections)
+    }
+
+    /// 清除所有连接配置
+    pub async fn clear_all_connections(&self) -> Result<()> {
+        debug!("清除所有连接配置");
+
+        // 获取所有连接ID
+        let connection_ids: Vec<String> = {
+            let configs = self.configs.read().await;
+            configs.keys().cloned().collect()
+        };
+
+        // 逐个删除连接
+        for connection_id in connection_ids {
+            if let Err(e) = self.manager.remove_connection(&connection_id).await {
+                error!("从管理器移除连接失败: {} - {}", connection_id, e);
+            }
+        }
+
+        // 清空配置存储
+        {
+            let mut configs = self.configs.write().await;
+            configs.clear();
+        }
+
+        // 清空连接池
+        {
+            let mut pools = self.pools.write().await;
+            pools.clear();
+        }
+
+        // 保存到文件（空配置）
+        if let Err(e) = self.save_to_storage().await {
+            error!("保存清空后的连接配置失败: {}", e);
+        }
+
+        info!("所有连接配置已清除");
+        Ok(())
     }
 }

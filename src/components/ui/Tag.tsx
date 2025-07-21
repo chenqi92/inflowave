@@ -19,7 +19,7 @@ const tagVariants = cva(
         success:
           'border-transparent bg-success/20 text-success hover:bg-success/30 dark:bg-success/20 dark:text-success',
         warning:
-          'border-transparent bg-yellow-100/80 text-yellow-700 hover:bg-yellow-200/80 dark:bg-yellow-900/30 dark:text-yellow-300',
+          'border-transparent bg-warning/20 text-warning hover:bg-warning/30',
         processing:
           'border-transparent bg-primary/20 text-primary hover:bg-primary/30 dark:bg-primary/20 dark:text-primary',
       },

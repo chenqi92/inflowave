@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "1.1.1",
+  "version": "0.1.5",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -50,10 +50,23 @@
     "version:bump": "node scripts/sync-version.cjs bump",
     "version:bump:patch": "node scripts/sync-version.cjs bump patch --tag",
     "version:bump:minor": "node scripts/sync-version.cjs bump minor --tag",
-    "version:bump:major": "node scripts/sync-version.cjs bump major --tag"
+    "version:bump:major": "node scripts/sync-version.cjs bump major --tag",
+    "clean": "npm run clean:cache && npm run clean:build && npm run clean:deps",
+    "clean:cache": "rm -rf node_modules/.cache && rm -rf node_modules/.vite && rm -rf .vite && rm -rf dist/.vite",
+    "clean:build": "rm -rf dist && rm -rf src-tauri/target",
+    "clean:deps": "rm -rf node_modules && npm install",
+    "clean:all": "npm run clean:build && npm run clean:deps && npm run clean:tauri",
+    "clean:tauri": "cd src-tauri && cargo clean && cd .. && rm -rf src-tauri/target",
+    "reset": "npm run clean:all && npm run build",
+    "release:notes": "node scripts/generate-release-notes.cjs",
+    "release:notes:dev": "node scripts/generate-release-notes.cjs --dev",
+    "release:notes:save": "node scripts/generate-release-notes.cjs --output=release-notes-output.md",
+    "release:notes:dev:save": "node scripts/generate-release-notes.cjs --dev --output=release-notes-dev.md"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.1.1",
     "@influxdata/influxdb-client": "^1.35.0",
     "@monaco-editor/react": "^4.6.0",
@@ -79,6 +92,7 @@
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.3.2",
@@ -131,6 +145,7 @@
     "jsdom": "^23.0.1",
     "postcss": "^8.4.32",
     "prettier": "^3.1.1",
+    "sharp": "^0.34.3",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",

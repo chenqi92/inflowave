@@ -438,6 +438,24 @@ export class PerformanceBottleneckService {
   }
 
   /**
+   * 检测性能瓶颈（支持监控模式）
+   */
+  static async detectPerformanceBottlenecksWithMode(
+    connectionId: string,
+    monitoringMode: 'local' | 'remote',
+    timeRange?: { start: Date; end: Date }
+  ): Promise<PerformanceBottleneck[]> {
+    return safeTauriInvoke<PerformanceBottleneck[]>(
+      'detect_performance_bottlenecks_with_mode',
+      {
+        connectionId,
+        monitoringMode,
+        timeRange,
+      }
+    );
+  }
+
+  /**
    * 获取系统性能指标
    */
   static async getSystemPerformanceMetrics(
@@ -644,7 +662,7 @@ export class PerformanceBottleneckService {
         errorRate: number;
         recommendations: string[];
       };
-    }>('get_connection_pool_stats', {
+    }>('get_connection_pool_stats_perf', {
       connectionId,
       timeRange,
     });

@@ -13,9 +13,12 @@ import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
+import { useUserPreferences } from './hooks/useUserPreferences';
+import { consoleLogger } from './utils/consoleLogger';
+import { initializeHealthCheck } from './utils/healthCheck';
 
 // 更新组件
-import { UpdateNotification } from './components/updater/UpdateNotification';
+import { UpdateNotification } from '@components/updater';
 import { useUpdater } from './hooks/useUpdater';
 
 // 页面组件
@@ -43,6 +46,8 @@ const MainLayout: React.FC = () => {
     skipVersion: _skipVersion,
   } = useUpdater();
 
+
+
   // 检查是否显示用户指引
   useEffect(() => {
     if (!browserModeNoticeDismissed) {
@@ -57,6 +62,16 @@ const MainLayout: React.FC = () => {
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 不要阻止系统级的复制粘贴快捷键
+      const isSystemClipboard = (
+        (e.ctrlKey || e.metaKey) &&
+        ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())
+      );
+
+      if (isSystemClipboard) {
+        return; // 让系统处理复制粘贴
+      }
+
       // Ctrl+Shift+P 打开全局搜索
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();
@@ -121,7 +136,7 @@ const MainLayout: React.FC = () => {
         <Route path='/performance' element={<DataGripStyleLayout />} />
         <Route path='/extensions' element={<DataGripStyleLayout />} />
         <Route path='/dev-tools' element={<DataGripStyleLayout />} />
-        <Route path='/settings' element={<DataGripStyleLayout />} />
+        <Route path='/query-history' element={<DataGripStyleLayout />} />
 
         {/* 连接管理页面 */}
         <Route path='/connections' element={<DataGripStyleLayout />} />
@@ -145,12 +160,16 @@ const MainLayout: React.FC = () => {
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const { preferences } = useUserPreferences();
 
   // 初始化应用
   useEffect(() => {
     const initApp = async () => {
       try {
         console.log('InfloWave 启动中...');
+        
+        // 初始化控制台日志拦截器
+        console.log('初始化控制台日志拦截器...');
 
         // 初始化错误日志系统
         console.log('初始化错误日志系统...');
@@ -177,6 +196,14 @@ const App: React.FC = () => {
           console.log('前端连接状态初始化完成');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
+        }
+
+        // 初始化性能监控健康检查
+        try {
+          initializeHealthCheck();
+          console.log('性能监控健康检查初始化成功');
+        } catch (healthError) {
+          console.warn('性能监控健康检查初始化失败:', healthError);
         }
 
         showMessage.success('应用启动成功');
@@ -235,12 +262,35 @@ const App: React.FC = () => {
     );
   }
 
+  // 获取通知位置设置，如果没有设置则使用默认值
+  const getToasterPosition = () => {
+    console.log('获取Toaster位置，当前preferences:', preferences);
+    if (!preferences?.notifications?.position) {
+      console.log('使用默认位置: bottom-right');
+      return 'bottom-right'; // 默认位置
+    }
+
+    // 转换用户偏好中的位置值为 Sonner 支持的格式
+    const positionMap: Record<string, string> = {
+      'topLeft': 'top-left',
+      'topCenter': 'top-center',
+      'topRight': 'top-right',
+      'bottomLeft': 'bottom-left',
+      'bottomCenter': 'bottom-center',
+      'bottomRight': 'bottom-right',
+    };
+
+    const position = positionMap[preferences.notifications.position] || 'bottom-right';
+    console.log('计算出的位置:', position, '原始值:', preferences.notifications.position);
+    return position;
+  };
+
   return (
     <DialogProvider>
       <ErrorBoundary>
         <MainLayout />
         <DialogManager />
-        <Toaster />
+        <Toaster position={getToasterPosition() as any} />
       </ErrorBoundary>
     </DialogProvider>
   );

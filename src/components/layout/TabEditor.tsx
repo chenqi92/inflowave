@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   forwardRef,
+  useMemo,
 } from 'react';
 import {
   Button,
@@ -34,12 +35,17 @@ import {
   ChevronDown,
   ChevronUp,
   Code,
+  Copy,
+  Search,
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { useConnectionStore, connectionUtils } from '@/store/connection';
+import { useConnectionStore } from '@/store/connection';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
+import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
@@ -71,16 +77,22 @@ interface EditorTab {
   connectionId?: string;
   database?: string;
   tableName?: string;
+  // 查询结果相关属性
+  queryResult?: QueryResult | null;
+  queryResults?: QueryResult[];
+  executedQueries?: string[];
+  executionTime?: number;
 }
 
 interface TabEditorProps {
-  onQueryResult?: (result: QueryResult) => void;
+  onQueryResult?: (result: QueryResult | null) => void;
   onBatchQueryResults?: (
     results: QueryResult[],
     queries: string[],
     executionTime: number
   ) => void;
   onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser') => void;
+  expandedDatabases?: string[]; // 新增：已展开的数据库列表
   currentTimeRange?: {
     label: string;
     value: string;
@@ -98,9 +110,61 @@ interface TabEditorRef {
 }
 
 const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
-  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, currentTimeRange }, ref) => {
-    const { activeConnectionId, connections } = useConnectionStore();
-    const hasAnyConnectedInfluxDB = connectionUtils.hasAnyConnectedInfluxDB();
+  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
+    const { activeConnectionId, connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
+
+    // 直接使用全局 store 管理已打开的数据库
+    const { openedDatabasesList } = useOpenedDatabasesStore();
+
+    // 渲染状态日志（仅在开发模式下显示）
+    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+      console.log('🔄 TabEditor 渲染，当前状态:', {
+        expandedDatabases: JSON.stringify(expandedDatabases),
+        openedDatabasesList: JSON.stringify(openedDatabasesList),
+        length: openedDatabasesList.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // 调试：监听组件挂载/卸载
+    useEffect(() => {
+      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+        console.log('🚀 TabEditor 组件挂载');
+        return () => {
+          console.log('💀 TabEditor 组件卸载');
+        };
+      }
+    }, []);
+
+    // 调试：监听 props 变化
+    useEffect(() => {
+      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
+        console.log('🔄 TabEditor props expandedDatabases 变化:', {
+          expandedDatabases,
+          length: expandedDatabases.length,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }, [expandedDatabases]);
+
+    // 响应式计算是否有已连接的InfluxDB
+    const hasAnyConnectedInfluxDB = useMemo(() => {
+      // 优先检查connectionStatuses中是否有连接状态为connected的连接
+      const hasConnectedByStatus = connections.some(conn => {
+        if (!conn.id) return false;
+        const status = connectionStatuses[conn.id];
+        return status?.status === 'connected';
+      });
+
+      // 如果connectionStatuses中找到了连接，直接返回true
+      if (hasConnectedByStatus) {
+        return true;
+      }
+
+      // 如果没有找到，检查connectedConnectionIds数组作为备用
+      return connectedConnectionIds.length > 0;
+    }, [connections, connectionStatuses, connectedConnectionIds]);
+
     const { resolvedTheme } = useTheme();
     const [activeKey, setActiveKey] = useState<string>('1');
     const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -121,7 +185,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]); // 实际执行的查询
     const [showExecutedQueries, setShowExecutedQueries] = useState(false); // 是否显示实际执行的查询
-    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const editorRef = useRef<monaco.editor.ICodeEditor | null>(null);
 
     // 拖拽功能
     const {
@@ -136,6 +200,195 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       handleTabMove,
       showTabInPopup,
     } = useSimpleTabDrag();
+
+    // 自定义右键菜单状态
+    const [customContextMenu, setCustomContextMenu] = useState<{
+      visible: boolean;
+      x: number;
+      y: number;
+      editor: monaco.editor.ICodeEditor | null;
+    }>({
+      visible: false,
+      x: 0,
+      y: 0,
+      editor: null,
+    });
+
+    // 显示自定义右键菜单
+    const showCustomContextMenu = (event: MouseEvent, editor: monaco.editor.ICodeEditor) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      setCustomContextMenu({
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        editor,
+      });
+    };
+
+    // 自定义复制处理函数
+    const handleCustomCopy = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        const selection = editor.getSelection();
+        if (selection && !selection.isEmpty()) {
+          const selectedText = editor.getModel()?.getValueInRange(selection);
+          if (selectedText) {
+            await writeToClipboard(selectedText, {
+              successMessage: '已复制到剪贴板',
+              showSuccess: false // 避免过多提示
+            });
+            return;
+          }
+        }
+
+        // 如果没有选中内容，复制当前行
+        const position = editor.getPosition();
+        if (position) {
+          const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+          if (lineContent) {
+            await writeToClipboard(lineContent, {
+              successMessage: '已复制当前行',
+              showSuccess: false
+            });
+          }
+        }
+      } catch (error) {
+        console.error('复制操作失败:', error);
+        showMessage.error('复制失败');
+      }
+    };
+
+    // 自定义剪切处理函数
+    const handleCustomCut = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        const selection = editor.getSelection();
+        if (selection && !selection.isEmpty()) {
+          const selectedText = editor.getModel()?.getValueInRange(selection);
+          if (selectedText) {
+            // 先复制到剪贴板
+            await writeToClipboard(selectedText, {
+              successMessage: '已剪切到剪贴板',
+              showSuccess: false
+            });
+
+            // 然后删除选中的文本
+            editor.executeEdits('cut', [{
+              range: selection,
+              text: '',
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+            return;
+          }
+        }
+
+        // 如果没有选中内容，剪切当前行
+        const position = editor.getPosition();
+        if (position) {
+          const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
+          if (lineContent) {
+            await writeToClipboard(lineContent, {
+              successMessage: '已剪切当前行',
+              showSuccess: false
+            });
+
+            // 删除整行
+            const lineRange = {
+              startLineNumber: position.lineNumber,
+              startColumn: 1,
+              endLineNumber: position.lineNumber + 1,
+              endColumn: 1
+            };
+            editor.executeEdits('cut', [{
+              range: lineRange,
+              text: '',
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+          }
+        }
+      } catch (error) {
+        console.error('剪切操作失败:', error);
+        showMessage.error('剪切失败');
+      }
+    };
+
+    // 自定义粘贴处理函数
+    const handleCustomPaste = async (editor: monaco.editor.ICodeEditor) => {
+      try {
+        // 桌面应用：使用Tauri剪贴板服务
+        const clipboardText = await readFromClipboard({ showError: false });
+        if (clipboardText) {
+          const selection = editor.getSelection();
+          if (selection) {
+            editor.executeEdits('paste', [{
+              range: selection,
+              text: clipboardText,
+              forceMoveMarkers: true
+            }]);
+            editor.focus();
+            return;
+          }
+        }
+
+        // 如果Tauri剪贴板失败，显示提示而不是使用浏览器剪贴板
+        showMessage.warning('剪贴板读取失败，请手动输入内容');
+      } catch (error) {
+        console.error('粘贴操作失败:', error);
+        // 不再降级到Monaco原生粘贴，避免触发浏览器剪贴板权限
+        showMessage.error('粘贴操作失败，请手动输入内容');
+      }
+    };
+
+    // 隐藏自定义右键菜单
+    const hideCustomContextMenu = () => {
+      setCustomContextMenu({
+        visible: false,
+        x: 0,
+        y: 0,
+        editor: null,
+      });
+    };
+
+    // 处理右键菜单操作
+    const handleContextMenuAction = async (action: string, editor: monaco.editor.ICodeEditor) => {
+      switch (action) {
+        case 'execute-query':
+          executeQuery();
+          break;
+        case 'copy':
+          // 使用自定义复制逻辑，避免浏览器权限问题
+          await handleCustomCopy(editor);
+          break;
+        case 'cut':
+          // 使用自定义剪切逻辑，避免浏览器权限问题
+          await handleCustomCut(editor);
+          break;
+        case 'paste':
+          // 使用自定义粘贴逻辑，避免浏览器权限问题
+          await handleCustomPaste(editor);
+          break;
+        case 'select-all':
+          editor.trigger('keyboard', 'editor.action.selectAll', null);
+          break;
+        case 'undo':
+          editor.trigger('keyboard', 'undo', null);
+          break;
+        case 'redo':
+          editor.trigger('keyboard', 'redo', null);
+          break;
+        case 'find':
+          editor.trigger('keyboard', 'actions.find', null);
+          break;
+        case 'replace':
+          editor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
+          break;
+        default:
+          console.warn('未知的右键菜单操作:', action);
+      }
+      hideCustomContextMenu();
+    };
 
     // 前端查询处理函数
     const processQueryForExecution = (
@@ -344,10 +597,14 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         return;
       }
 
+      // 从查询中提取表名用于标题
+      const tableMatch = query.match(/FROM\s+"([^"]+)"/i);
+      const tableName = tableMatch ? tableMatch[1] : '未知表';
+
       // 创建新标签或更新当前标签
       const newTab: EditorTab = {
-        id: Date.now().toString(),
-        title: `表查询-${tabs.length + 1}`,
+        id: generateUniqueId('tab'),
+        title: `${tableName} - 查询`,
         content: query,
         type: 'query',
         modified: false,
@@ -373,9 +630,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           return;
         }
 
-        // 使用前端查询处理
-        const queryProcessResult = processQueryForExecution(query, currentTimeRange);
-        const processedQuery = queryProcessResult.processedQueries[0] || query;
+        // 对于表查询，直接使用生成的查询语句，不再进行时间范围处理
+        // 因为 generateQueryWithTimeFilter 已经处理了时间范围
+        const processedQuery = query.trim();
 
         // 保存实际执行的查询
         setActualExecutedQueries([processedQuery]);
@@ -393,7 +650,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         console.log('✅ 查询结果:', result);
 
         if (result) {
+          // 将查询结果保存到当前tab
+          setTabs(prevTabs => prevTabs.map(tab =>
+            tab.id === newTab.id
+              ? {
+                  ...tab,
+                  queryResult: result,
+                  queryResults: [result],
+                  executedQueries: [processedQuery],
+                  executionTime: result.executionTime || 0
+                }
+              : tab
+          ));
+
+          // 同时调用回调以更新全局状态（用于结果面板显示）
           onQueryResult?.(result);
+          onBatchQueryResults?.([result], [processedQuery], result.executionTime || 0);
           showMessage.success(
             `表查询执行成功，返回 ${result.data?.length || 0} 行数据`
           );
@@ -508,6 +780,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('✅ 批量查询结果:', results);
 
           if (results && results.length > 0) {
+            // 将批量查询结果保存到当前tab
+            setTabs(prevTabs => prevTabs.map(tab =>
+              tab.id === activeKey
+                ? {
+                    ...tab,
+                    queryResult: results[0], // 第一个结果作为主要结果
+                    queryResults: results,
+                    executedQueries: statements,
+                    executionTime
+                  }
+                : tab
+            ));
+
             // 调用批量查询回调
             onBatchQueryResults?.(results, statements, executionTime);
 
@@ -560,6 +845,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           console.log('✅ 单条查询结果:', result);
 
           if (result) {
+            // 将查询结果保存到当前tab
+            setTabs(prevTabs => prevTabs.map(tab =>
+              tab.id === activeKey
+                ? {
+                    ...tab,
+                    queryResult: result,
+                    queryResults: [result],
+                    executedQueries: statements,
+                    executionTime
+                  }
+                : tab
+            ));
+
             onQueryResult?.(result);
             // 也调用批量查询回调，但只有一个结果
             onBatchQueryResults?.([result], statements, executionTime);
@@ -583,16 +881,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 打开文件
     const openFile = async () => {
       try {
+        console.log('🔍 TabEditor: 尝试打开文件对话框...');
         // 使用 Tauri 的文件对话框
         const result = await safeTauriInvoke<{ path?: string }>('open_file_dialog', {
+          title: '打开查询文件',
           filters: [
             { name: 'SQL Files', extensions: ['sql'] },
             { name: 'Text Files', extensions: ['txt'] },
             { name: 'All Files', extensions: ['*'] },
           ],
+          multiple: false,
         });
 
+        console.log('📁 TabEditor: 文件对话框结果:', result);
+
         if (result?.path) {
+          console.log('📖 TabEditor: 读取文件内容:', result.path);
           // 读取文件内容
           const content = await safeTauriInvoke<string>('read_file', {
             path: result.path,
@@ -605,7 +909,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               result.path.split('\\').pop() ||
               '未命名';
             const newTab: EditorTab = {
-              id: Date.now().toString(),
+              id: generateUniqueId('tab'),
               title: filename,
               content,
               type: 'query',
@@ -617,9 +921,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             setActiveKey(newTab.id);
             showMessage.success(`文件 "${filename}" 已打开`);
           }
+        } else {
+          console.log('❌ TabEditor: 用户取消了文件选择或没有选择文件');
         }
       } catch (error) {
-        console.error('打开文件失败:', error);
+        console.error('❌ TabEditor: 打开文件失败:', error);
         showMessage.error(`打开文件失败: ${error}`);
       }
     };
@@ -711,7 +1017,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建新标签
     const createNewTab = (type: 'query' | 'table' | 'database' = 'query') => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
         content: type === 'query' ? 'SELECT * FROM ' : '',
         type,
@@ -720,12 +1026,16 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       setTabs([...tabs, newTab]);
       setActiveKey(newTab.id);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
     };
 
     // 创建数据浏览标签
     const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `${tableName}`,
         content: '', // 数据浏览不需要content
         type: 'data-browser',
@@ -737,12 +1047,16 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       setTabs([...tabs, newTab]);
       setActiveKey(newTab.id);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
     };
 
     // 创建带数据库选择的查询标签页
     const createQueryTabWithDatabase = (database: string, query?: string) => {
       const newTab: EditorTab = {
-        id: Date.now().toString(),
+        id: generateUniqueId('tab'),
         title: `查询-${tabs.length + 1}`,
         content: query || 'SELECT * FROM ',
         type: 'query',
@@ -754,6 +1068,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       // 立即设置数据库选择
       setSelectedDatabase(database);
+
+      // 清空查询结果，因为这是一个新的tab
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
 
       console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
     };
@@ -771,23 +1089,82 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       [executeQueryWithContent, createDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
     );
 
-    // 组件加载时加载数据库列表
+    // 组件加载时不再自动加载数据库列表，改为使用 expandedDatabases
     useEffect(() => {
-      if (activeConnectionId) {
-        loadDatabases();
-      } else {
+      if (!activeConnectionId) {
         setDatabases([]);
         setSelectedDatabase('');
       }
+      // 注释掉自动加载，现在使用 expandedDatabases
+      // if (activeConnectionId) {
+      //   loadDatabases();
+      // }
     }, [activeConnectionId]);
 
-    // 监听当前活动标签类型变化
+    // 监听已打开数据库变化，更新数据库列表和选择
+    useEffect(() => {
+      console.log('🔄 TabEditor openedDatabasesList 变化:', {
+        openedDatabasesList: JSON.stringify(openedDatabasesList), // 显示具体内容
+        selectedDatabase,
+        hasAnyConnectedInfluxDB,
+        activeConnectionId,
+        openedDatabasesLength: openedDatabasesList.length,
+        isDisabled: !hasAnyConnectedInfluxDB || openedDatabasesList.length === 0,
+        timestamp: new Date().toISOString()
+      });
+
+      console.log('🧪 使用 store 数据库列表:', openedDatabasesList);
+      console.log('🎯 下拉框状态检查:', {
+        openedDatabasesList,
+        selectedDatabase,
+        hasAnyConnectedInfluxDB,
+        isDisabled: !hasAnyConnectedInfluxDB || openedDatabasesList.length === 0
+      });
+
+      // 直接使用 store 中的已打开数据库作为数据库列表
+      setDatabases(openedDatabasesList);
+
+      if (openedDatabasesList.length > 0) {
+        // 如果当前选中的数据库不在已打开列表中，选择第一个已打开的数据库
+        if (!selectedDatabase || !openedDatabasesList.includes(selectedDatabase)) {
+          setSelectedDatabase(openedDatabasesList[0]);
+          console.log('🔄 自动选择已打开的数据库:', openedDatabasesList[0]);
+        }
+      } else {
+        // 如果没有已打开的数据库，清空选择
+        if (selectedDatabase) {
+          setSelectedDatabase('');
+          console.log('🔄 清空数据库选择，因为没有已打开的数据库');
+        }
+      }
+    }, [openedDatabasesList, selectedDatabase, hasAnyConnectedInfluxDB]);
+
+    // 监听当前活动标签类型变化，并更新查询结果
     useEffect(() => {
       const currentTab = tabs.find(tab => tab.id === activeKey);
       if (currentTab && onActiveTabTypeChange) {
         onActiveTabTypeChange(currentTab.type);
+
+        // 更新全局查询结果状态
+        if (currentTab.queryResult || currentTab.queryResults) {
+          // 如果当前tab有查询结果，显示它们
+          if (currentTab.queryResult) {
+            onQueryResult?.(currentTab.queryResult);
+          }
+          if (currentTab.queryResults && currentTab.executedQueries) {
+            onBatchQueryResults?.(
+              currentTab.queryResults,
+              currentTab.executedQueries,
+              currentTab.executionTime || 0
+            );
+          }
+        } else {
+          // 如果当前tab没有查询结果，清空全局查询结果
+          onQueryResult?.(null);
+          onBatchQueryResults?.([], [], 0);
+        }
       }
-    }, [activeKey, tabs, onActiveTabTypeChange]);
+    }, [activeKey, tabs, onActiveTabTypeChange, onQueryResult, onBatchQueryResults]);
 
     // 监听菜单事件
     useEffect(() => {
@@ -797,7 +1174,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
         // 创建新标签页
         const newTab: EditorTab = {
-          id: Date.now().toString(),
+          id: generateUniqueId('tab'),
           title: filename,
           content,
           type: 'query',
@@ -806,6 +1183,10 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
         setTabs(prevTabs => [...prevTabs, newTab]);
         setActiveKey(newTab.id);
+
+        // 清空查询结果，因为这是一个新的tab
+        onQueryResult?.(null);
+        onBatchQueryResults?.([], [], 0);
       };
 
       const handleSaveCurrentQuery = () => {
@@ -833,7 +1214,34 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       const handleRefreshDatabaseTree = () => {
         console.log('📥 收到刷新数据库树事件');
-        loadDatabases();
+        // 注释掉自动加载，现在使用 expandedDatabases
+        // loadDatabases();
+      };
+
+      const handleMessageFromDetached = (event: MessageEvent) => {
+        // 处理来自独立窗口的消息
+        if (event.data && event.data.type === 'execute-query-from-detached') {
+          const { query, tabId } = event.data;
+          console.log('📥 收到来自独立窗口的执行查询请求:', { query: `${query.substring(0, 50)  }...`, tabId });
+
+          // 找到对应的tab并更新内容
+          const targetTab = tabs.find(tab => tab.id === tabId);
+          if (targetTab) {
+            // 更新tab内容
+            const updatedTabs = tabs.map(tab =>
+              tab.id === tabId ? { ...tab, content: query } : tab
+            );
+            setTabs(updatedTabs);
+
+            // 切换到该tab
+            setActiveKey(tabId);
+
+            // 执行查询
+            setTimeout(() => {
+              executeQuery();
+            }, 100); // 稍微延迟以确保状态更新完成
+          }
+        }
       };
 
       // 添加事件监听
@@ -844,6 +1252,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       document.addEventListener('show-import-dialog', handleShowImportDialog);
       document.addEventListener('execute-query', handleExecuteQuery);
       document.addEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+      window.addEventListener('message', handleMessageFromDetached);
 
       // 清理事件监听
       return () => {
@@ -854,6 +1263,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         document.removeEventListener('show-import-dialog', handleShowImportDialog);
         document.removeEventListener('execute-query', handleExecuteQuery);
         document.removeEventListener('refresh-database-tree', handleRefreshDatabaseTree);
+        window.removeEventListener('message', handleMessageFromDetached);
       };
     }, [activeConnectionId, selectedDatabase, tabs, activeKey]);
 
@@ -905,7 +1315,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     };
 
     // 关闭标签
-    const closeTab = (targetKey: string) => {
+    const closeTab = (targetKey: string, event?: React.MouseEvent) => {
       const tab = tabs.find(t => t.id === targetKey);
 
       if (tab?.modified) {
@@ -916,12 +1326,76 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     };
 
     // 保存并关闭标签
-    const saveAndCloseTab = () => {
-      if (closingTab) {
-        // 保存逻辑
-        removeTab(closingTab.id);
+    const saveAndCloseTab = async (tabId: string) => {
+      const tab = tabs.find(t => t.id === tabId);
+      if (!tab || !editorRef.current) {
+        removeTab(tabId);
         setClosingTab(null);
+        return;
       }
+
+      const content = editorRef.current.getValue();
+
+      // 如果已有文件路径，直接保存
+      if (tab.filePath) {
+        try {
+          await safeTauriInvoke('write_file', {
+            path: tab.filePath,
+            content,
+          });
+          updateTabContent(tabId, content, false);
+          showMessage.success(`文件已保存`);
+        } catch (error) {
+          console.error('保存文件失败:', error);
+          showMessage.error(`保存文件失败: ${error}`);
+        }
+      } else {
+        // 没有文件路径，需要另存为
+        try {
+          const result = await safeTauriInvoke('save_file_dialog', {
+            defaultPath: `${tab.title}.sql`,
+            filters: [
+              { name: 'SQL Files', extensions: ['sql'] },
+              { name: 'Text Files', extensions: ['txt'] },
+              { name: 'All Files', extensions: ['*'] },
+            ],
+          });
+
+          if (result?.path) {
+            await safeTauriInvoke('write_file', {
+              path: result.path,
+              content,
+            });
+
+            const filename =
+              result.path.split('/').pop() ||
+              result.path.split('\\').pop() ||
+              '未命名';
+
+            // 更新标签信息
+            setTabs(tabs.map(t =>
+              t.id === tabId
+                ? { ...t, title: filename, filePath: result.path, modified: false }
+                : t
+            ));
+
+            showMessage.success(`文件已保存到 "${result.path}"`);
+          } else {
+            // 用户取消了保存，不关闭标签
+            setClosingTab(null);
+            return;
+          }
+        } catch (error) {
+          console.error('保存文件失败:', error);
+          showMessage.error(`保存文件失败: ${error}`);
+          setClosingTab(null);
+          return;
+        }
+      }
+
+      // 保存成功后关闭标签
+      removeTab(tabId);
+      setClosingTab(null);
     };
 
     // 不保存直接关闭标签
@@ -997,51 +1471,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       // 注册语言
       monaco.languages.register({ id: 'influxql' });
 
-      // 设置语法高亮
-      monaco.languages.setMonarchTokensProvider('influxql', {
-        tokenizer: {
-          root: [
-            // 关键字
-            [
-              /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|INTO|VALUES|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE)\b/i,
-              'keyword',
-            ],
-            [/\b(AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE)\b/i, 'keyword'],
-            // 函数
-            [
-              /\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM)\b/i,
-              'function',
-            ],
-            // InfluxQL特定关键字
-            [
-              /\b(TIME|NOW|AGO|DURATION|FILL|SLIMIT|SOFFSET|MEASUREMENTS|FIELD|TAG|KEYS|SERIES|DATABASES|RETENTION|POLICIES|STATS|DIAGNOSTICS)\b/i,
-              'keyword',
-            ],
-            // 字符串
-            [/'([^'\\]|\\.)*'/, 'string'],
-            [/"([^"\\]|\\.)*"/, 'string'],
-            // 数字
-            [/\d+(\.\d+)?(ns|u|µ|ms|s|m|h|d|w)?/, 'number'],
-            // 标识符
-            [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
-            // 括号
-            [/[{}()[\]]/, '@brackets'],
-            // 操作符
-            [/[<>]=?|[!=]=|<>/, 'operator'],
-            [/[+\-*/=]/, 'operator'],
-            // 分隔符
-            [/[,;]/, 'delimiter'],
-            // 注释
-            [/--.*$/, 'comment'],
-            [/\/\*/, 'comment', '@comment'],
-          ],
-          comment: [
-            [/[^/*]+/, 'comment'],
-            [/\*\//, 'comment', '@pop'],
-            [/[/*]/, 'comment'],
-          ],
-        },
-      });
+      // 使用SQL语言而不是自定义的influxql，确保语法高亮正确工作
+      // SQL语言已经内置了完善的语法高亮规则
+      console.log('🎨 使用SQL语言进行语法高亮');
 
       // 设置自动补全
       monaco.languages.registerCompletionItemProvider('influxql', {
@@ -1356,126 +1788,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       };
     };
 
-    // 应用注释样式
-    const applyCommentStyles = (editor: monaco.editor.IStandaloneCodeEditor) => {
-      const applyStyles = () => {
-        try {
-          const editorElement = editor.getDomNode();
-          if (!editorElement) return;
 
-          const lines = editorElement.querySelectorAll('.view-line');
-          const colors = getThemeColors();
-
-          lines.forEach((line: Element) => {
-            const text = line.textContent || '';
-
-            // 检查是否是注释行
-            if (text.trim().startsWith('--') || text.trim().startsWith('#')) {
-              // 找到所有span元素并直接设置样式
-              const spans = line.querySelectorAll('span');
-              spans.forEach((span: HTMLElement) => {
-                span.style.setProperty('color', '#BBBBBB', 'important');
-                span.style.setProperty('font-style', 'italic', 'important');
-              });
-            } else {
-              // 分析SQL关键词和其他元素
-              const spans = line.querySelectorAll('span');
-              spans.forEach((span: HTMLElement) => {
-                const spanText = span.textContent || '';
-
-                // 重置样式
-                span.style.removeProperty('color');
-                span.style.removeProperty('font-weight');
-                span.style.removeProperty('font-style');
-
-                // SQL主要关键词 - 黑色
-                if (/\b(SELECT|FROM|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|SHOW|DESCRIBE|EXPLAIN)\b/i.test(spanText)) {
-                  span.style.setProperty('color', '#000000', 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
-                }
-                // 筛选条件关键词 - 配套颜色
-                else if (/\b(WHERE|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE|GROUP\s+BY|ORDER\s+BY|HAVING)\b/i.test(spanText)) {
-                  span.style.setProperty('color', colors.filter, 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
-                }
-                // SQL函数 - 橙色
-                else if (/\b(COUNT|SUM|AVG|MIN|MAX|FIRST|LAST|MEAN|MEDIAN|MODE|STDDEV|SPREAD|PERCENTILE|TIME|NOW|AGO|DURATION|FILL)\b/i.test(spanText)) {
-                  span.style.setProperty('color', '#F97316', 'important');
-                  span.style.setProperty('font-weight', 'bold', 'important');
-                }
-                // 表名/测量值 - 主题色
-                else if (/\b[a-zA-Z_][a-zA-Z0-9_]*\b/.test(spanText) &&
-                         !/(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText) &&
-                         !/^(LIMIT|OFFSET|ASC|DESC|DISTINCT|AS)$/i.test(spanText)) {
-                  // 检查是否在FROM后面或者看起来像表名
-                  const lineText = line.textContent || '';
-                  if (/FROM\s+[^,\s]*$/i.test(lineText.substring(0, lineText.indexOf(spanText) + spanText.length))) {
-                    span.style.setProperty('color', colors.primary, 'important');
-                    span.style.setProperty('font-weight', '500', 'important');
-                  }
-                }
-                // 字符串 - 绿色
-                else if (spanText.includes('"') || spanText.includes("'")) {
-                  span.style.setProperty('color', '#10B981', 'important');
-                }
-                // 数字 - 蓝色
-                else if (/\b\d+(\.\d+)?\b/.test(spanText)) {
-                  span.style.setProperty('color', '#3B82F6', 'important');
-                }
-              });
-            }
-          });
-        } catch (error) {
-          // 静默处理错误，避免控制台噪音
-        }
-      };
-
-      // 立即执行一次
-      setTimeout(applyStyles, 100);
-
-      // 只在内容变化时重新应用样式
-      const model = editor.getModel();
-      if (model) {
-        const disposable = model.onDidChangeContent(() => {
-          setTimeout(applyStyles, 50);
-        });
-
-        return () => {
-          disposable.dispose();
-        };
-      }
-    };
 
     // 编辑器挂载
     const handleEditorDidMount = (
-      editor: monaco.editor.IStandaloneCodeEditor
+      editor: monaco.editor.ICodeEditor
     ) => {
       editorRef.current = editor;
 
-      // 应用注释样式
-      const styleDisposable = applyCommentStyles(editor);
+      // 将编辑器转换为独立编辑器类型以支持命令添加
+      const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
 
       // 设置智能自动补全
-      setupInfluxQLAutoComplete(monaco, editor, selectedDatabase);
+      setupInfluxQLAutoComplete(monaco, standaloneEditor, selectedDatabase);
 
-      // 监听主题变化
-      const observer = new MutationObserver(() => {
-        // 主题变化时重新应用样式
-        setTimeout(() => {
-          const styleDisposable2 = applyCommentStyles(editor);
-        }, 100);
-      });
-
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['style', 'class', 'data-theme']
-      });
-
-      // 清理函数
-      return () => {
-        if (styleDisposable) styleDisposable();
-        observer.disconnect();
-      };
+      console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
       // 注册InfluxQL语言支持（只注册一次）
       try {
@@ -1518,7 +1845,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         // 增加更多提示配置
         quickSuggestionsDelay: 50, // 减少延迟到50ms
         suggestSelection: 'first', // 默认选择第一个建议
-        wordBasedSuggestions: 'currentDocument', // 基于单词的建议
+        // wordBasedSuggestions 属性在当前Monaco版本中不存在，已移除
         // 自动触发提示的字符
         autoIndent: 'full',
         // 更敏感的提示设置
@@ -1526,24 +1853,26 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       });
 
       // 添加快捷键
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         // 执行查询
         executeQuery();
       });
 
       // 添加手动触发智能提示的快捷键
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
-        editor.trigger('manual', 'editor.action.triggerSuggest', {});
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+        standaloneEditor.trigger('manual', 'editor.action.triggerSuggest', {});
       });
 
       // 添加焦点事件监听，确保智能提示正常工作
       editor.onDidFocusEditorText(() => {
-        console.log('👁️ 编辑器获得焦点，智能提示已启用');
-        console.log('📊 当前数据库状态:', {
-          selectedDatabase,
-          databases: databases.length,
-          activeConnectionId,
-        });
+        if (import.meta.env.DEV) {
+          console.log('👁️ 编辑器获得焦点，智能提示已启用');
+          console.log('📊 当前数据库状态:', {
+            selectedDatabase,
+            databases: databases.length,
+            activeConnectionId,
+          });
+        }
       });
 
       // 添加输入事件监听，增强智能提示
@@ -1577,30 +1906,136 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         }
       });
 
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         saveCurrentTab();
       });
 
       // 添加执行查询快捷键 (Ctrl+Enter)
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
         executeQuery();
       });
 
       // 添加测试智能提示的快捷键 (Ctrl+K)
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
         console.log('🧪 测试智能提示功能...');
         console.log('📊 当前状态:', {
           activeConnectionId,
           selectedDatabase,
           databases: databases.length,
-          cursorPosition: editor.getPosition(),
+          cursorPosition: standaloneEditor.getPosition(),
         });
 
         // 手动触发智能提示
-        editor.trigger('test', 'editor.action.triggerSuggest', {});
+        standaloneEditor.trigger('test', 'editor.action.triggerSuggest', {});
         showMessage.info('已触发智能提示，请查看控制台日志');
-        editor.getAction('editor.action.formatDocument')?.run();
+        standaloneEditor.getAction('editor.action.formatDocument')?.run();
       });
+
+      // 监听主题变化
+      const observer = new MutationObserver((mutations) => {
+        const hasThemeChange = mutations.some(mutation =>
+          mutation.type === 'attributes' &&
+          (mutation.attributeName === 'data-theme' ||
+           mutation.attributeName === 'class')
+        );
+
+        if (hasThemeChange) {
+          // 获取当前主题 - 优先使用类名检测
+          const isDark = document.documentElement.classList.contains('dark');
+          const currentResolvedTheme = isDark ? 'dark' : 'light';
+
+          const newTheme = currentResolvedTheme === 'dark' ? 'vs-dark' : 'vs-light';
+
+          // 立即更新Monaco编辑器主题
+          setTimeout(() => {
+            monaco.editor.setTheme(newTheme);
+            console.log('🔄 主题已切换到:', newTheme);
+          }, 50);
+        }
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'class']
+      });
+
+      // 禁用默认右键菜单，使用自定义中文菜单
+      // 监听右键事件
+      standaloneEditor.onContextMenu((e) => {
+        e.event.preventDefault();
+        e.event.stopPropagation();
+
+        // 显示自定义右键菜单
+        showCustomContextMenu(e.event.browserEvent, standaloneEditor);
+      });
+
+      // 保留快捷键绑定，使用自定义剪贴板处理避免权限问题
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+        handleCustomCopy(standaloneEditor);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+        handleCustomCut(standaloneEditor);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+        handleCustomPaste(standaloneEditor);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.selectAll', null);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
+        standaloneEditor.trigger('keyboard', 'undo', null);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
+        standaloneEditor.trigger('keyboard', 'redo', null);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
+        standaloneEditor.trigger('keyboard', 'actions.find', null);
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyH, () => {
+        standaloneEditor.trigger('keyboard', 'editor.action.startFindReplaceAction', null);
+      });
+
+      // 完全禁用Monaco内部的剪贴板相关命令，避免浏览器权限错误
+      try {
+        // 移除Monaco内部的剪贴板命令，防止它们调用浏览器API
+        const commands = [
+          'editor.action.clipboardCopyAction',
+          'editor.action.clipboardCutAction',
+          'editor.action.clipboardPasteAction',
+          'editor.action.clipboardCopyWithSyntaxHighlightingAction'
+        ];
+
+        commands.forEach(commandId => {
+          try {
+            // 尝试移除内部命令（如果存在）
+            standaloneEditor.addCommand(monaco.KeyCode.Unknown, () => {
+              // 空操作，覆盖默认行为
+            }, commandId);
+          } catch (error) {
+            // 忽略移除失败的错误
+            console.debug(`无法移除命令 ${commandId}:`, error);
+          }
+        });
+
+        console.log('🚫 已禁用Monaco内部剪贴板命令，使用Tauri剪贴板服务');
+      } catch (error) {
+        console.warn('禁用Monaco剪贴板命令时出错:', error);
+      }
+
+      console.log('✅ 中文右键菜单已添加（包含执行查询）');
+
+      // 清理函数
+      return () => {
+        observer.disconnect();
+        console.log('🧹 Monaco编辑器清理完成');
+      };
     };
 
     // 标签页右键菜单
@@ -1716,17 +2151,47 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                         *
                       </span>
                     )}
-                    <Button
-                      variant='ghost'
-                      size='sm'
-                      onClick={e => {
-                        e.stopPropagation();
-                        closeTab(tab.id);
-                      }}
-                      className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
-                    >
-                      <X className='w-3 h-3' />
-                    </Button>
+                    {tab.modified ? (
+                      <Popconfirm
+                        title='保存更改'
+                        description={`"${tab.title}" 已修改，是否保存更改？`}
+                        open={closingTab?.id === tab.id}
+                        onConfirm={() => saveAndCloseTab(tab.id)}
+                        onOpenChange={open => {
+                          if (!open && closingTab?.id === tab.id) {
+                            removeTab(tab.id);
+                            setClosingTab(null);
+                          }
+                        }}
+                        okText='保存'
+                        cancelText='不保存'
+                        placement='bottom'
+                      >
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={e => {
+                            e.stopPropagation();
+                            closeTab(tab.id);
+                          }}
+                          className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
+                        >
+                          <X className='w-3 h-3' />
+                        </Button>
+                      </Popconfirm>
+                    ) : (
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={e => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        className='ml-1 p-0 h-4 w-4 flex-shrink-0 opacity-60 hover:opacity-100'
+                      >
+                        <X className='w-3 h-3' />
+                      </Button>
+                    )}
                   </div>
                 ))}
                 <Button
@@ -1745,14 +2210,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             <div className='flex items-center gap-2 px-3 flex-shrink-0'>
               <Select
                 value={selectedDatabase}
-                onValueChange={setSelectedDatabase}
-                disabled={!hasAnyConnectedInfluxDB || databases.length === 0}
+                onValueChange={(value) => {
+                  console.log('🔄 数据库选择变化:', value);
+                  setSelectedDatabase(value);
+                }}
+                disabled={!hasAnyConnectedInfluxDB || openedDatabasesList.length === 0}
               >
                 <SelectTrigger className='w-[140px] h-10'>
-                  <SelectValue placeholder='选择数据库' />
+                  <SelectValue placeholder={
+                    openedDatabasesList.length === 0
+                      ? '请先打开数据库'
+                      : '选择数据库'
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {databases.map(db => (
+                  {openedDatabasesList.map(db => (
                     <SelectItem key={db} value={db}>
                       {db}
                     </SelectItem>
@@ -1768,9 +2240,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 }
                 className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
                 title={
-                  hasAnyConnectedInfluxDB
-                    ? '执行查询 (Ctrl+Enter)'
-                    : '执行查询 (需要连接InfluxDB)'
+                  !hasAnyConnectedInfluxDB
+                    ? '执行查询 (需要连接InfluxDB)'
+                    : openedDatabasesList.length === 0
+                    ? '执行查询 (需要先打开数据库)'
+                    : !selectedDatabase
+                    ? '执行查询 (需要选择数据库)'
+                    : '执行查询 (Ctrl+Enter)'
                 }
               >
                 <PlayCircle className='w-4 h-4' />
@@ -1843,11 +2319,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                   <div className="flex-1">
                     <Editor
                       height='100%'
-                      language='influxql'
+                      language='sql'
                       theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
                       value={currentTab.content}
                       onChange={handleEditorChange}
                       onMount={handleEditorDidMount}
+                      key={`${currentTab.id}-${resolvedTheme}`} // 强制重新渲染以应用主题
                       options={{
                         minimap: { enabled: false },
                         scrollBeyondLastLine: false,
@@ -1876,6 +2353,24 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       quickSuggestionsDelay: 50,
                       suggestSelection: 'first',
                       wordBasedSuggestions: 'currentDocument',
+                      // 桌面应用：禁用默认右键菜单，只使用自定义中文菜单
+                      contextmenu: false,
+                      copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
+                      // 禁用默认的剪贴板操作，使用自定义的Tauri剪贴板服务
+                      links: false, // 禁用链接检测，避免触发剪贴板权限
+                      find: {
+                        addExtraSpaceOnTop: false,
+                        autoFindInSelection: 'never',
+                        seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
+                      },
+                      // 禁用所有可能触发剪贴板权限的功能
+                      dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
+                      selectionClipboard: false, // 禁用选择自动复制到剪贴板
+                      // 完全禁用Monaco内部剪贴板操作，避免浏览器权限错误
+                      useTabStops: false, // 禁用Tab停止，避免某些剪贴板相关操作
+                      multiCursorModifier: 'alt', // 使用Alt键进行多光标操作，避免Ctrl+Click触发剪贴板
+                      // 禁用所有可能调用浏览器剪贴板API的功能
+                      accessibilitySupport: 'off', // 禁用辅助功能支持，避免剪贴板相关操作
                       }}
                     />
                   </div>
@@ -1936,22 +2431,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             )}
           </div>
 
-          {/* 关闭标签确认对话框 */}
-          {closingTab && (
-            <Popconfirm
-              title='保存更改'
-              description={`"${closingTab.title}" 已修改，是否保存更改？`}
-              open={!!closingTab}
-              onConfirm={saveAndCloseTab}
-              onOpenChange={open => {
-                if (!open) closeTabWithoutSaving();
-              }}
-              okText='保存'
-              cancelText='不保存'
-            >
-              <div />
-            </Popconfirm>
-          )}
+
 
           {/* 数据导出对话框 */}
           <DataExportDialog
@@ -1970,6 +2450,101 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           {/* 拖拽提示覆盖层 */}
           <SimpleDragOverlay active={dropZoneActive} />
         </div>
+
+        {/* 自定义右键菜单 */}
+        {customContextMenu.visible && customContextMenu.editor && (
+          <div
+            className="fixed inset-0 z-50"
+            onClick={hideCustomContextMenu}
+          >
+            <div
+              className="absolute z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+              style={{
+                left: Math.min(customContextMenu.x, window.innerWidth - 200),
+                top: Math.min(customContextMenu.y, window.innerHeight - 300),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('execute-query', customContextMenu.editor!)}
+              >
+                <span className="text-blue-500">▶</span>
+                执行查询
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('copy', customContextMenu.editor!)}
+              >
+                <Copy className="w-4 h-4" />
+                复制
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('cut', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">✂</span>
+                剪切
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('paste', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">📋</span>
+                粘贴
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('select-all', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">🔘</span>
+                全选
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('undo', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">↶</span>
+                撤销
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('redo', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">↷</span>
+                重做
+              </button>
+
+              <div className="my-1 h-px bg-border" />
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('find', customContextMenu.editor!)}
+              >
+                <Search className="w-4 h-4" />
+                查找
+              </button>
+
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleContextMenuAction('replace', customContextMenu.editor!)}
+              >
+                <span className="w-4 h-4 flex items-center justify-center">🔄</span>
+                替换
+              </button>
+            </div>
+          </div>
+        )}
       </TooltipProvider>
     );
   }

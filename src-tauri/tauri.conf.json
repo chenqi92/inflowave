@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "InfloWave",
-  "version": "1.1.1",
+  "version": "0.1.5",
   "identifier": "com.kkape.inflowave",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,10 +14,10 @@
       {
         "label": "main",
         "title": "InfloWave",
-        "width": 1600,
-        "height": 1000,
-        "minWidth": 1200,
-        "minHeight": 800,
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
         "center": true,
         "resizable": true,
         "fullscreen": false,
@@ -25,12 +25,9 @@
         "alwaysOnTop": false,
         "skipTaskbar": false,
         "theme": null,
+        "titleBarStyle": "Visible",
         "maximized": false,
-        "visible": true,
-        "titleBarStyle": "Transparent",
-        "hiddenTitle": false,
-        "acceptFirstMouse": true,
-        "tabbingIdentifier": "main",
+        "visible": false,
         "shadow": true
       }
     ],
@@ -75,7 +72,16 @@
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": ""
+      "timestampUrl": "",
+      "wix": {
+        "template": null,
+        "fragmentPaths": [],
+        "componentGroupRefs": [],
+        "componentRefs": [],
+        "featureGroupRefs": [],
+        "featureRefs": [],
+        "mergeRefs": []
+      }
     },
     "macOS": {
       "frameworks": [],
@@ -94,7 +100,7 @@
         ]
       },
       "appimage": {
-        "bundleMediaFramework": true,
+        "bundleMediaFramework": false,
         "files": {}
       }
     }

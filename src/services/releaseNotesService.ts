@@ -4,6 +4,7 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
+import { getAppVersion } from '@/utils/version';
 
 export interface ReleaseNote {
   version: string;
@@ -33,7 +34,14 @@ class ReleaseNotesService {
         return this.cache.get(version)!;
       }
 
-      // 尝试读取本地发布说明文件
+      // 优先从 GitHub 获取发布说明
+      const remoteNote = await this.fetchRemoteReleaseNotes(version);
+      if (remoteNote) {
+        this.cache.set(version, remoteNote);
+        return remoteNote;
+      }
+
+      // 如果 GitHub 获取失败，尝试读取本地发布说明文件作为备选
       const noteContent = await this.loadLocalReleaseNotes(version);
       if (noteContent) {
         const releaseNote = this.parseMarkdown(version, noteContent);
@@ -41,11 +49,11 @@ class ReleaseNotesService {
         return releaseNote;
       }
 
-      // 如果本地没有，尝试从 GitHub 获取
-      const remoteNote = await this.fetchRemoteReleaseNotes(version);
-      if (remoteNote) {
-        this.cache.set(version, remoteNote);
-        return remoteNote;
+      // 如果都失败了，为当前版本提供默认内容
+      if (version === getAppVersion()) {
+        const defaultNote = this.getDefaultReleaseNote(version);
+        this.cache.set(version, defaultNote);
+        return defaultNote;
       }
 
       return null;
@@ -53,6 +61,31 @@ class ReleaseNotesService {
       console.error(`Failed to get release notes for version ${version}:`, error);
       return null;
     }
+  }
+
+  /**
+   * 获取默认发布说明（当GitHub和本地都获取失败时使用）
+   */
+  private getDefaultReleaseNote(version: string): ReleaseNote {
+    return {
+      version,
+      title: `InfloWave v${version}`,
+      content: `# InfloWave v${version}
+
+这是当前版本的发布说明。
+
+## 主要功能
+
+- 数据库连接管理
+- 数据查询和可视化  
+- 实时监控和分析
+- 性能优化工具
+
+---
+
+*注意：无法从GitHub获取详细的发布说明，显示默认内容。请检查网络连接或稍后重试。*`,
+      date: new Date().toLocaleDateString('zh-CN')
+    };
   }
 
   /**
@@ -82,12 +115,17 @@ class ReleaseNotesService {
         {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'InfloWave-App/1.0'
+            'User-Agent': 'InfloWave-App/0.1.3',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         }
       );
 
       if (!response.ok) {
+        console.warn(`GitHub API请求失败，状态码: ${response.status}`);
+        if (response.status === 403) {
+          console.warn('GitHub API访问频率受限，请稍后再试');
+        }
         return null;
       }
 
@@ -216,15 +254,63 @@ class ReleaseNotesService {
    */
   async getAvailableVersions(): Promise<string[]> {
     try {
-      // 尝试列出本地发布说明文件
+      // 优先从GitHub API获取版本列表
+      const githubVersions = await this.fetchGitHubVersions();
+      if (githubVersions.length > 0) {
+        return githubVersions;
+      }
+      
+      // 如果GitHub API失败，尝试列出本地发布说明文件作为备选
       const files = await safeTauriInvoke<string[]>('list_release_notes_files');
-      return files
-        .filter(file => file.endsWith('.md'))
-        .map(file => file.replace('.md', ''))
-        .sort((a, b) => this.compareVersions(b, a)); // 降序排列
+      if (files && files.length > 0) {
+        return files
+          .filter(file => file.endsWith('.md'))
+          .map(file => file.replace('.md', ''))
+          .sort((a, b) => this.compareVersions(b, a)); // 降序排列
+      }
+      
+      // 如果都失败了，返回当前版本
+      return [getAppVersion()];
     } catch (error) {
-      // 如果无法列出文件，返回预设的版本
-      return ['1.0.8', '1.0.7', '1.0.6'];
+      console.error('Failed to get available versions:', error);
+      // 如果所有方法都失败，返回当前版本作为默认值
+      return [getAppVersion()];
+    }
+  }
+
+  /**
+   * 从GitHub API获取可用版本列表
+   */
+  private async fetchGitHubVersions(): Promise<string[]> {
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/chenqi92/inflowave/releases',
+        {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'InfloWave-App/0.1.3',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(`GitHub API请求失败，状态码: ${response.status}`);
+        if (response.status === 403) {
+          console.warn('GitHub API访问频率受限，请稍后再试');
+        }
+        return [];
+      }
+
+      const releases = await response.json();
+      return releases
+        .filter((release: any) => !release.prerelease && !release.draft)
+        .map((release: any) => release.tag_name.replace(/^v/, ''))
+        .sort((a: string, b: string) => this.compareVersions(b, a))
+        .slice(0, 10); // 最多返回10个版本
+    } catch (error) {
+      console.error('Failed to fetch GitHub versions:', error);
+      return [];
     }
   }
 

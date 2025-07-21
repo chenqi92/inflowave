@@ -177,7 +177,7 @@ class ConnectionPool {
     reject: (error: Error) => void;
     timestamp: number;
   }> = [];
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ReturnType<typeof setInterval>;
   private stats: ConnectionPoolStats = {
     totalConnections: 0,
     activeConnections: 0,
