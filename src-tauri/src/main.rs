@@ -304,7 +304,7 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "extensions" => emit_menu_action(&window, "navigate:/extensions"),
         "theme_settings" => emit_menu_action(&window, "theme_settings"),
         "language_settings" => emit_menu_action(&window, "language_settings"),
-        "preferences" => emit_menu_action(&window, "navigate:/settings"),
+        "preferences" => emit_menu_action(&window, "preferences"),
 
         // 帮助菜单
         "user_manual" => emit_menu_action(&window, "user_manual"),
