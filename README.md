@@ -40,20 +40,88 @@
 
 #### 方式一：下载预构建版本 (推荐)
 
-1. 访问 [Releases 页面](https://github.com/chenqi92/inflowave/releases)
-2. 根据您的系统选择合适的安装包：
+访问 [Releases 页面](https://github.com/chenqi92/inflowave/releases/latest) 下载最新版本。
 
-   **Windows**
-   - x64: `InfloWave_x.x.x_x64.msi`
-   - x86: `InfloWave_x.x.x_x86.msi`
+### 🔍 如何选择适合的版本
 
-   **macOS**
-   - Intel: `InfloWave_x.x.x_x64.dmg`
-   - Apple Silicon: `InfloWave_x.x.x_aarch64.dmg`
+#### Windows 用户
+- **推荐**: 📥 **[InfloWave_0.1.5_x64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x64.msi)** 
+  - ✅ 适用于 Windows 10/11 (64位系统)
+  - ✅ 支持大部分现代 Windows 系统
+  - ✅ MSI 格式，安装简单可靠
 
-   **Linux**
-   - x64: `inflowave_x.x.x_amd64.deb` / `inflowave_x.x.x_amd64.AppImage`
-   - ARM64: `inflowave_x.x.x_arm64.deb` / `inflowave_x.x.x_aarch64.AppImage`
+- **兼容版**: 📥 **[InfloWave_0.1.5_x86.msi](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x86.msi)**
+  - ✅ 适用于较老的32位 Windows 系统
+  - ⚠️ 仅在无法运行64位版本时使用
+
+#### macOS 用户
+
+**如何判断你的 Mac 类型？**
+- 🍎 点击屏幕左上角苹果图标 → 关于本机
+- 💻 查看「处理器」或「芯片」信息
+
+**Apple Silicon Mac (M1/M2/M3/M4 芯片)**
+- 📥 **[InfloWave_0.1.5_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_aarch64.dmg)**
+  - ✅ 2020年11月后发布的 Mac
+  - ✅ 性能最优，原生支持
+  - ✅ 更低的电量消耗
+  - ⚠️ **无法在 Intel Mac 上运行**
+
+**Intel Mac (Intel 处理器)**
+- 📥 **[InfloWave_0.1.5_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x64.dmg)**
+  - ✅ 2020年前发布的 Mac
+  - ✅ 兼容 macOS 10.15 或更高版本
+  - ⚠️ 不支持 Apple Silicon 芯片
+
+#### Linux 用户
+
+**如何判断你的 Linux 发行版？**
+- 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
+
+**Debian/Ubuntu 系列 (推荐)**
+- 📥 **[InfloWave_0.1.5_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_amd64.deb)**
+  - ✅ Ubuntu 18.04+, Debian 10+
+  - ✅ 系统集成度高，支持自动更新
+  - 📋 安装命令: `sudo dpkg -i InfloWave_0.1.5_amd64.deb`
+  - 🔧 依赖修复: `sudo apt-get install -f`
+
+**通用 Linux (万能选择)**
+- 📥 **[InfloWave_0.1.5_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_amd64.AppImage)**
+  - ✅ 适用于大部分 x64 Linux 发行版
+  - ✅ 免安装，下载后直接运行
+  - ✅ 便携版，不影响系统
+  - 📋 使用方法: `chmod +x InfloWave_0.1.5_amd64.AppImage && ./InfloWave_0.1.5_amd64.AppImage`
+
+**RPM 系列 (CentOS/RHEL/Fedora)**
+- 📥 **[InfloWave-0.1.5-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave-0.1.5-1.x86_64.rpm)**
+  - ✅ CentOS 7+, RHEL 7+, Fedora 30+
+  - 📋 安装命令: `sudo rpm -i InfloWave-0.1.5-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install InfloWave-0.1.5-1.x86_64.rpm`
+
+### 📝 详细安装步骤
+
+#### Windows 安装
+1. 下载对应的 `.msi` 文件
+2. 双击运行安装程序
+3. 按照安装向导完成安装
+4. 从开始菜单启动 InfloWave
+
+#### macOS 安装
+1. 下载对应的 `.dmg` 文件
+2. 双击打开 DMG 镜像
+3. 将 InfloWave.app 拖入 Applications 文件夹
+4. 首次运行时，可能需要在「系统偏好设置 → 安全性与隐私」中允许运行
+
+#### Linux 安装
+- **DEB 包**: `sudo dpkg -i 文件名.deb`
+- **AppImage**: `chmod +x 文件名.AppImage && ./文件名.AppImage`
+- **RPM 包**: `sudo rpm -i 文件名.rpm`
+
+### ⚠️ 系统要求
+
+- **Windows**: Windows 10 或更高版本 (推荐 Windows 11)
+- **macOS**: macOS 10.15 (Catalina) 或更高版本
+- **Linux**: 支持 GTK 3.0 的现代 Linux 发行版
 
 #### 方式二：从源码构建
 

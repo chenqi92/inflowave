@@ -4,14 +4,21 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * 版本管理脚本
- * 同步 package.json、tauri.conf.json 和 Cargo.toml 的版本号
+ * 统一版本管理脚本
+ * 一次性更新所有文件中的版本号:
+ * - package.json
+ * - tauri.conf.json  
+ * - Cargo.toml
+ * - README.md (中文)
+ * - README-en.md (英文)
  */
 
 const rootDir = path.join(__dirname, '..');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
+const readmeCnPath = path.join(rootDir, 'README.md');
+const readmeEnPath = path.join(rootDir, 'README-en.md');
 
 /**
  * 读取当前版本号
@@ -49,6 +56,76 @@ function updateCargoToml(version) {
     cargoContent = cargoContent.replace(/^version\s*=\s*"[^"]*"/m, `version = "${version}"`);
     fs.writeFileSync(cargoTomlPath, cargoContent);
     console.log(`✅ 更新 Cargo.toml 版本为: ${version}`);
+}
+
+/**
+ * 更新README文件中的版本号
+ */
+function updateReadmeVersion(filePath, version) {
+    if (!fs.existsSync(filePath)) {
+        console.warn(`⚠️ 文件不存在: ${filePath}`);
+        return false;
+    }
+
+    try {
+        let content = fs.readFileSync(filePath, 'utf8');
+        
+        // 替换下载链接中的版本号
+        const versionPattern = /InfloWave[_-](\d+\.\d+\.\d+)/g;
+        const downloadLinkPattern = /https:\/\/github\.com\/chenqi92\/inflowave\/releases\/download\/v(\d+\.\d+\.\d+)\//g;
+        
+        // 记录替换次数
+        let replacements = 0;
+        
+        // 替换下载链接中的版本号
+        content = content.replace(downloadLinkPattern, (match, oldVersion) => {
+            replacements++;
+            return match.replace(`v${oldVersion}`, `v${version}`);
+        });
+        
+        // 替换文件名中的版本号
+        content = content.replace(versionPattern, (match, oldVersion) => {
+            replacements++;
+            return match.replace(oldVersion, version);
+        });
+        
+        // 写回文件
+        fs.writeFileSync(filePath, content, 'utf8');
+        
+        const fileName = path.basename(filePath);
+        console.log(`✅ 更新 ${fileName} 版本号: ${replacements} 处替换`);
+        return true;
+    } catch (error) {
+        console.error(`❌ 更新文件失败 ${filePath}:`, error.message);
+        return false;
+    }
+}
+
+/**
+ * 更新所有README文件
+ */
+function updateAllReadmes(version) {
+    console.log('📝 更新README文件中的版本号...');
+    
+    const readmeFiles = [
+        { path: readmeCnPath, name: 'README.md (中文)' },
+        { path: readmeEnPath, name: 'README-en.md (英文)' }
+    ];
+    
+    let successCount = 0;
+    readmeFiles.forEach(file => {
+        if (updateReadmeVersion(file.path, version)) {
+            successCount++;
+        }
+    });
+    
+    if (successCount === readmeFiles.length) {
+        console.log(`✅ 所有README文件更新完成`);
+    } else {
+        console.warn(`⚠️ 部分README文件更新失败 (${successCount}/${readmeFiles.length})`);
+    }
+    
+    return successCount === readmeFiles.length;
 }
 
 /**
@@ -116,12 +193,26 @@ function syncVersions(targetVersion = null) {
     }
     
     console.log(`🔄 同步版本到: ${finalVersion}`);
+    console.log('');
     
+    // 更新配置文件
+    console.log('📦 更新配置文件...');
     updatePackageJson(finalVersion);
     updateTauriConfig(finalVersion);
     updateCargoToml(finalVersion);
     
+    console.log('');
+    
+    // 更新README文件
+    const readmeSuccess = updateAllReadmes(finalVersion);
+    
+    console.log('');
     console.log(`🎉 版本同步完成: ${finalVersion}`);
+    
+    if (!readmeSuccess) {
+        console.log('💡 提示: 如果README更新有问题，请检查文件格式或手动运行: npm run readme:update');
+    }
+    
     return finalVersion;
 }
 
@@ -235,17 +326,37 @@ function main() {
             
         default:
             console.log(`
-📦 版本管理工具
+📦 统一版本管理工具
 
-使用方法:
+🎯 功能:
+  一次性更新所有文件中的版本号，包括:
+  • package.json
+  • tauri.conf.json  
+  • Cargo.toml
+  • README.md (中文)
+  • README-en.md (英文)
+
+📋 使用方法:
   node scripts/sync-version.cjs [command] [options]
 
-命令:
-  check           检查版本一致性
-  sync [version]  同步版本号（可选指定版本）
-  bump [type]     增加版本号 (major|minor|patch)
-  bump [type] --tag  增加版本号并创建Git标签
-  tag             为当前版本创建Git标签
+🛠️ 命令:
+  check               检查所有文件版本一致性
+  sync [version]      同步版本号到指定版本（默认使用package.json版本）
+  bump [type]         增加版本号 (major|minor|patch，默认patch)
+  bump [type] --tag   增加版本号并创建Git标签
+  tag                 为当前版本创建Git标签
+
+✨ 特点:
+  • 智能版本检测和验证
+  • 安全的正则表达式替换
+  • 详细的操作日志
+  • 错误处理和回滚建议
+
+💡 NPM快捷方式:
+  npm run version:sync        # 同步版本
+  npm run version:bump        # 升级patch版本
+  npm run version:bump:minor  # 升级minor版本  
+  npm run version:bump:major  # 升级major版本
 
 示例:
   node scripts/sync-version.cjs                    # 同步版本

@@ -40,20 +40,88 @@ Cross-platform desktop application built with Tauri + React + TypeScript + Rust
 
 #### Method 1: Download Pre-built Binaries (Recommended)
 
-1. Visit the [Releases page](https://github.com/chenqi92/inflowave/releases)
-2. Choose the appropriate installer for your system:
+Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest) to download the latest version.
 
-   **Windows**
-   - x64: `InfloWave_x.x.x_x64.msi`
-   - x86: `InfloWave_x.x.x_x86.msi`
+### 🔍 How to Choose the Right Version
 
-   **macOS**
-   - Intel: `InfloWave_x.x.x_x64.dmg`
-   - Apple Silicon: `InfloWave_x.x.x_aarch64.dmg`
+#### Windows Users
+- **Recommended**: 📥 **[InfloWave_0.1.5_x64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x64.msi)** 
+  - ✅ For Windows 10/11 (64-bit systems)
+  - ✅ Supports most modern Windows systems
+  - ✅ MSI format, simple and reliable installation
 
-   **Linux**
-   - x64: `inflowave_x.x.x_amd64.deb` / `inflowave_x.x.x_amd64.AppImage`
-   - ARM64: `inflowave_x.x.x_arm64.deb` / `inflowave_x.x.x_aarch64.AppImage`
+- **Legacy**: 📥 **[InfloWave_0.1.5_x86.msi](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x86.msi)**
+  - ✅ For older 32-bit Windows systems
+  - ⚠️ Use only if 64-bit version doesn't work
+
+#### macOS Users
+
+**How to Identify Your Mac Type?**
+- 🍎 Click the Apple logo in the top-left corner → About This Mac
+- 💻 Check the "Processor" or "Chip" information
+
+**Apple Silicon Mac (M1/M2/M3/M4 chips)**
+- 📥 **[InfloWave_0.1.5_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_aarch64.dmg)**
+  - ✅ Macs released after November 2020
+  - ✅ Optimal performance with native support
+  - ✅ Lower power consumption
+  - ⚠️ **Will NOT run on Intel Macs**
+
+**Intel Mac (Intel processors)**
+- 📥 **[InfloWave_0.1.5_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_x64.dmg)**
+  - ✅ Macs released before 2020
+  - ✅ Compatible with macOS 10.15 or higher
+  - ⚠️ Not compatible with Apple Silicon chips
+
+#### Linux Users
+
+**How to Identify Your Linux Distribution?**
+- Run command: `cat /etc/os-release` or `lsb_release -a`
+
+**Debian/Ubuntu Family (Recommended)**
+- 📥 **[InfloWave_0.1.5_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_amd64.deb)**
+  - ✅ Ubuntu 18.04+, Debian 10+
+  - ✅ Better system integration, supports auto-updates
+  - 📋 Install command: `sudo dpkg -i InfloWave_0.1.5_amd64.deb`
+  - 🔧 Fix dependencies: `sudo apt-get install -f`
+
+**Universal Linux (Works Everywhere)**
+- 📥 **[InfloWave_0.1.5_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave_0.1.5_amd64.AppImage)**
+  - ✅ Works on most x64 Linux distributions
+  - ✅ No installation required, run directly
+  - ✅ Portable version, doesn't affect system
+  - 📋 Usage: `chmod +x InfloWave_0.1.5_amd64.AppImage && ./InfloWave_0.1.5_amd64.AppImage`
+
+**RPM Family (CentOS/RHEL/Fedora)**
+- 📥 **[InfloWave-0.1.5-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.1.5/InfloWave-0.1.5-1.x86_64.rpm)**
+  - ✅ CentOS 7+, RHEL 7+, Fedora 30+
+  - 📋 Install command: `sudo rpm -i InfloWave-0.1.5-1.x86_64.rpm`
+  - 📋 Or use: `sudo dnf install InfloWave-0.1.5-1.x86_64.rpm`
+
+### 📝 Detailed Installation Steps
+
+#### Windows Installation
+1. Download the corresponding `.msi` file
+2. Double-click to run the installer
+3. Follow the installation wizard to complete
+4. Launch InfloWave from the Start menu
+
+#### macOS Installation
+1. Download the corresponding `.dmg` file
+2. Double-click to open the DMG image
+3. Drag InfloWave.app to the Applications folder
+4. On first run, you may need to allow it in "System Preferences → Security & Privacy"
+
+#### Linux Installation
+- **DEB package**: `sudo dpkg -i filename.deb`
+- **AppImage**: `chmod +x filename.AppImage && ./filename.AppImage`
+- **RPM package**: `sudo rpm -i filename.rpm`
+
+### ⚠️ System Requirements
+
+- **Windows**: Windows 10 or higher (Windows 11 recommended)
+- **macOS**: macOS 10.15 (Catalina) or higher
+- **Linux**: Modern Linux distributions supporting GTK 3.0
 
 #### Method 2: Build from Source
 
