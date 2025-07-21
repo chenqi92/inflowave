@@ -24,9 +24,9 @@ export async function performHealthCheck(): Promise<HealthCheckResult | null> {
     console.log('✅ 健康检查完成:', result);
     
     // 检查是否有警告
-    if (result.overflow_risk) {
-      showMessage.warning(`内存使用量较高: ${result.memory_usage_mb}MB，建议关注系统性能`);
-    }
+    // if (result.overflow_risk) {
+    //   showMessage.warning(`内存使用量较高: ${result.memory_usage_mb}MB，建议关注系统性能`);
+    // }
     
     if (!result.system_monitoring) {
       showMessage.error('系统监控功能异常，请检查系统状态');
