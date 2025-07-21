@@ -18,41 +18,84 @@
       rel="stylesheet"
     />
 
-    <!-- Prevent FOUC -->
+    <!-- Prevent FOUC and improve startup experience -->
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       html {
         font-family: 'Inter', system-ui, sans-serif;
+        height: 100%;
       }
 
       body {
         margin: 0;
         padding: 0;
-        background-color: #f5f5f5;
-        color: #333;
+        background-color: #ffffff;
+        color: #1f2937;
         overflow: hidden;
+        height: 100vh;
+        transition: background-color 0.2s ease, color 0.2s ease;
       }
 
       #root {
         height: 100vh;
         width: 100vw;
+        position: relative;
       }
 
-      /* Loading spinner */
+      /* Enhanced loading experience */
       .loading-container {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #f5f5f5;
+        width: 100vw;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+      }
+
+      .loading-brand {
+        margin-bottom: 2rem;
+        text-align: center;
+      }
+
+      .loading-logo {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #3b82f6;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+      }
+
+      .loading-tagline {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 400;
       }
 
       .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #e5e7eb;
-        border-top: 4px solid #3b82f6;
+        width: 32px;
+        height: 32px;
+        border: 3px solid #e5e7eb;
+        border-top: 3px solid #3b82f6;
         border-radius: 50%;
         animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+
+      .loading-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 400;
+        animation: pulse 2s ease-in-out infinite;
       }
 
       @keyframes spin {
@@ -64,24 +107,117 @@
         }
       }
 
-      /* Dark theme support - 使用类选择器 */
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* Dark theme support - automatic detection */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #0f172a;
+          color: #f1f5f9;
+        }
+
+        .loading-container {
+          background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .loading-spinner {
+          border-color: #374151;
+          border-top-color: #60a5fa;
+        }
+
+        .loading-logo {
+          color: #60a5fa;
+        }
+
+        .loading-tagline,
+        .loading-text {
+          color: #94a3b8;
+        }
+      }
+
+      /* Manual dark theme class override */
       .dark body {
-        background-color: #1f2937;
-        color: #f9fafb;
+        background-color: #0f172a !important;
+        color: #f1f5f9 !important;
       }
 
       .dark .loading-container {
-        background-color: #1f2937;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+      }
+
+      .dark .loading-spinner {
+        border-color: #374151 !important;
+        border-top-color: #60a5fa !important;
+      }
+
+      .dark .loading-logo {
+        color: #60a5fa !important;
+      }
+
+      .dark .loading-tagline,
+      .dark .loading-text {
+        color: #94a3b8 !important;
+      }
+
+      /* Fade out animation for smooth transition */
+      .loading-container.fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+
+      /* Prevent flash of unstyled content */
+      #root:empty::before {
+        content: '';
+        display: block;
+        height: 100vh;
       }
     </style>
   </head>
   <body>
     <div id="root">
-      <!-- Loading fallback -->
-      <div class="loading-container">
+      <!-- Enhanced loading fallback -->
+      <div class="loading-container" id="loading-screen">
+        <div class="loading-brand">
+          <div class="loading-logo">InfloWave</div>
+          <div class="loading-tagline">现代化时序数据库管理工具</div>
+        </div>
         <div class="loading-spinner"></div>
+        <div class="loading-text">正在启动应用程序...</div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Remove loading screen when app is ready -->
+    <script>
+      // Listen for app ready signal
+      window.addEventListener('app-ready', function() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          loadingScreen.classList.add('fade-out');
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 400);
+        }
+      });
+
+      // Auto-remove loading screen if it takes too long (fallback)
+      setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen && loadingScreen.style.display !== 'none') {
+          loadingScreen.classList.add('fade-out');
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 400);
+        }
+      }, 8000); // 8 second fallback
+    </script>
   </body>
 </html>

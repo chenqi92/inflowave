@@ -24,11 +24,12 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": null,
+        "theme": "Auto",
         "titleBarStyle": "Visible",
         "maximized": false,
-        "visible": false,
-        "shadow": true
+        "visible": true,
+        "shadow": true,
+        "backgroundColor": "#ffffff"
       }
     ],
     "security": {

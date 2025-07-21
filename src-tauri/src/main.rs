@@ -460,13 +460,6 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
                 info!("窗口已使用系统方法居中显示");
             }
             
-            // 显示窗口
-            if let Err(e) = window.show() {
-                warn!("显示窗口失败: {}", e);
-            } else {
-                info!("窗口已显示");
-            }
-            
             info!("响应式窗口大小设置完成: {}x{}", target_width, target_height);
         }
         Ok(None) => {
@@ -488,10 +481,6 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
                 info!("默认窗口已居中显示");
             }
             
-            // 显示窗口
-            if let Err(e) = window.show() {
-                warn!("显示窗口失败: {}", e);
-            }
         }
         Err(e) => {
             error!("获取显示器信息失败: {}, 使用错误恢复模式", e);
@@ -512,10 +501,6 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
                 info!("错误恢复模式下窗口已居中显示");
             }
             
-            // 显示窗口
-            if let Err(e) = window.show() {
-                warn!("显示窗口失败: {}", e);
-            }
         }
     }
     

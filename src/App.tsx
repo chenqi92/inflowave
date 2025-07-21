@@ -421,6 +421,12 @@ const App: React.FC = () => {
       } finally {
         setLoading(false);
 
+        // 通知加载屏幕应用已准备就绪
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('app-ready'));
+          console.log('✅ 应用启动完成，已发送ready信号');
+        }, 300); // 稍微延迟一下确保UI已渲染
+
         // 在开发模式下加载测试工具
         if ((import.meta as any).env?.DEV) {
           try {
