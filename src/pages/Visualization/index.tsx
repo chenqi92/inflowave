@@ -42,7 +42,6 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import type { QueryResult } from '@/types';
-import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
 // Remove Option destructuring as we'll use SelectItem instead
 
@@ -410,39 +409,61 @@ const Visualization: React.FC = () => {
 
   if (!activeConnectionId) {
     return (
-      <DesktopPageWrapper
-        title='数据可视化'
-        description='创建图表和仪表板来可视化您的时序数据'
-        toolbar={toolbar}
-      >
-        <Alert className='border-yellow-200 bg-yellow-50'>
-          <AlertCircle className='h-4 w-4 text-yellow-600' />
-          <div className='ml-2'>
-            <h4 className='text-sm font-medium text-yellow-800'>
-              请先连接到 InfluxDB
-            </h4>
-            <AlertDescription className='text-sm text-yellow-700'>
-              在连接管理页面选择一个连接并激活后，才能创建数据可视化。
-            </AlertDescription>
-            <div className='mt-2'>
-              <Button size='sm' variant='outline' className='text-yellow-800 border-yellow-300 hover:bg-yellow-100'>
-                去连接
-              </Button>
-            </div>
+      <div className='h-full bg-background flex flex-col'>
+        {/* 页面标题 */}
+        <div className='border-b bg-background'>
+          <div className='p-6'>
+            <h1 className='text-2xl font-semibold text-foreground'>数据可视化</h1>
+            <p className='text-sm text-muted-foreground mt-1'>
+              创建图表和仪表板来可视化您的时序数据
+            </p>
           </div>
-        </Alert>
-      </DesktopPageWrapper>
+        </div>
+
+        {/* 内容区域 */}
+        <div className='flex-1 overflow-hidden bg-background'>
+          <div className='p-6'>
+            <Alert className='border-yellow-200 bg-yellow-50'>
+              <AlertCircle className='h-4 w-4 text-yellow-600' />
+              <div className='ml-2'>
+                <h4 className='text-sm font-medium text-yellow-800'>
+                  请先连接到 InfluxDB
+                </h4>
+                <AlertDescription className='text-sm text-yellow-700'>
+                  在连接管理页面选择一个连接并激活后，才能创建数据可视化。
+                </AlertDescription>
+                <div className='mt-2'>
+                  <Button size='sm' variant='outline' className='text-yellow-800 border-yellow-300 hover:bg-yellow-100'>
+                    去连接
+                  </Button>
+                </div>
+              </div>
+            </Alert>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <DesktopPageWrapper
-      title='数据可视化'
-      description='创建图表和仪表板来可视化您的时序数据'
-      toolbar={toolbar}
-    >
-      {/* 图表网格 */}
-      <div className='desktop-panel'>
+    <div className='h-full bg-background flex flex-col'>
+      {/* 页面标题 */}
+      <div className='border-b bg-background'>
+        <div className='p-6 flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-semibold text-foreground'>数据可视化</h1>
+            <p className='text-sm text-muted-foreground mt-1'>
+              创建图表和仪表板来可视化您的时序数据
+            </p>
+          </div>
+          {toolbar}
+        </div>
+      </div>
+
+      {/* 内容区域 */}
+      <div className='flex-1 overflow-hidden bg-background'>
+        {/* 图表网格 */}
+        <div className='desktop-panel'>
         <div className='desktop-panel-header'>图表列表 ({charts.length})</div>
         <div className='desktop-panel-content'>
           {charts.length > 0 ? (
@@ -643,7 +664,8 @@ const Visualization: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </DesktopPageWrapper>
+      </div>
+    </div>
   );
 };
 

@@ -1,42 +1,51 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Alert } from '@/components/ui';
-import { Database, Wrench, Terminal, Bell, Info } from 'lucide-react';
-import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
+import { Database, Terminal, Bell, Info } from 'lucide-react';
 import DataGenerator from '@/components/tools/DataGenerator';
 import DebugConsole from '@/components/debug/DebugConsole';
 import NotificationTest from '@/components/debug/NotificationTest';
 
 const DevTools: React.FC = () => {
   return (
-    <DesktopPageWrapper
-      title='开发者工具'
-      description='数据生成、调试和开发辅助工具'
-      toolbar={
-        <div className='flex items-center gap-2'>
-          <Wrench className='w-4 h-4' />
-          <span className='text-sm text-muted-foreground'>开发测试工具集</span>
+    <div className='h-full bg-background flex flex-col'>
+      {/* 页面标题 */}
+      <div className='border-b bg-background'>
+        <div className='p-6'>
+          <h1 className='text-2xl font-semibold text-foreground'>开发者工具</h1>
+          <p className='text-sm text-muted-foreground mt-1'>
+            数据生成、调试和开发辅助工具
+          </p>
         </div>
-      }
-    >
-      <div className='h-full'>
+      </div>
+
+      {/* 内容区域 */}
+      <div className='flex-1 overflow-hidden bg-background'>
+        <div className='h-full flex flex-col'>
         <Tabs defaultValue='data-generator' className='h-full flex flex-col'>
-          <TabsList className='grid w-full grid-cols-3'>
-            <TabsTrigger
-              value='data-generator'
-              className='flex items-center gap-2'
-            >
-              <Database className='w-4 h-4' />
-              数据生成器
-            </TabsTrigger>
-            <TabsTrigger value='notification-test' className='flex items-center gap-2'>
-              <Bell className='w-4 h-4' />
-              通知测试
-            </TabsTrigger>
-            <TabsTrigger value='debug-console' className='flex items-center gap-2'>
-              <Terminal className='w-4 h-4' />
-              调试控制台
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between p-4 border-b">
+            <TabsList className="grid w-96 grid-cols-3">
+              <TabsTrigger
+                value='data-generator'
+                className='flex items-center gap-2'
+              >
+                <Database className='w-4 h-4' />
+                数据生成器
+              </TabsTrigger>
+              <TabsTrigger value='notification-test' className='flex items-center gap-2'>
+                <Bell className='w-4 h-4' />
+                通知测试
+              </TabsTrigger>
+              <TabsTrigger value='debug-console' className='flex items-center gap-2'>
+                <Terminal className='w-4 h-4' />
+                调试控制台
+              </TabsTrigger>
+            </TabsList>
+
+            {/* 工具栏占位，保持布局一致 */}
+            <div className="flex items-center gap-2">
+              {/* 可以在这里添加开发者工具的通用操作按钮 */}
+            </div>
+          </div>
 
           <TabsContent
             value='data-generator'
@@ -94,8 +103,9 @@ const DevTools: React.FC = () => {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </DesktopPageWrapper>
+    </div>
   );
 };
 

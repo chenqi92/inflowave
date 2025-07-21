@@ -29,7 +29,6 @@ import {
   Upload
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui';
-import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 import { useConnectionStore } from '@/store/connection';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -265,17 +264,20 @@ const QueryHistoryPage: React.FC = () => {
   };
 
   return (
-    <DesktopPageWrapper
-      title="查询历史"
-      description="查看和管理您的查询历史记录与保存的查询"
-      toolbar={
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4" />
-          <span className="text-sm text-muted-foreground">历史记录管理</span>
+    <div className='h-full bg-background flex flex-col'>
+      {/* 页面标题 */}
+      <div className='border-b bg-background'>
+        <div className='p-6'>
+          <h1 className='text-2xl font-semibold text-foreground'>查询历史</h1>
+          <p className='text-sm text-muted-foreground mt-1'>
+            查看和管理您的查询历史记录与保存的查询
+          </p>
         </div>
-      }
-    >
-      <div className="h-full flex flex-col">
+      </div>
+
+      {/* 内容区域 */}
+      <div className='flex-1 overflow-hidden bg-background'>
+        <div className="h-full flex flex-col">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'history' | 'saved')} className="h-full flex flex-col">
           <div className="flex items-center justify-between p-4 border-b">
             <TabsList className="grid w-64 grid-cols-2">
@@ -581,8 +583,9 @@ const QueryHistoryPage: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </DesktopPageWrapper>
+    </div>
   );
 };
 

@@ -1419,8 +1419,9 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
   return (
     <div className='space-y-4'>
-      {/* 操作区域 - 所有控制元素在同一行 */}
-      <div className='flex flex-wrap items-center gap-3 p-4 border rounded-lg bg-muted/30'>
+      {/* 操作区域 - 所有控制元素在同一行，仅在已连接时显示 */}
+      {activeConnectionId && (
+        <div className='flex flex-wrap items-center gap-3 p-4 border rounded-lg bg-muted/30'>
         {/* 目标数据库 */}
         <div className='flex items-center gap-2'>
           <span className='text-sm font-medium whitespace-nowrap'>目标数据库:</span>
@@ -1594,7 +1595,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             清空数据
           </Button>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* 内容区域 */}
       <div className='space-y-4'>
