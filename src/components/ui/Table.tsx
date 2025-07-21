@@ -26,17 +26,15 @@ const Table = React.forwardRef<
     zebraType?: 'default' | 'data' | 'query' | 'database' | 'settings' | 'debug' | 'performance' | 'connection' | 'error' | 'compact' | 'large';
   }
 >(({ className, zebra = true, zebraType = 'default', ...props }, ref) => (
-  <div className='relative w-full overflow-auto'>
-    <table
-      ref={ref}
-      className={cn(
-        'w-full caption-bottom text-sm',
-        zebra && getZebraClass(zebraType),
-        className
-      )}
-      {...props}
-    />
-  </div>
+  <table
+    ref={ref}
+    className={cn(
+      'w-full caption-bottom text-sm',
+      zebra && getZebraClass(zebraType),
+      className
+    )}
+    {...props}
+  />
 ));
 Table.displayName = 'Table';
 

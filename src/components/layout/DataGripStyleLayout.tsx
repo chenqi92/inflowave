@@ -277,11 +277,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }
   }, [preferences]);
 
-  // 监听布局偏好设置变化，应用到当前视图
+  // 监听布局偏好设置变化，应用到当前视图（仅单向）
   useEffect(() => {
     if (preferences?.workspace.layout) {
-      const pathView = getViewFromPath(location.pathname);
-      
       // 如果是根路径或者仪表板路径，应用用户偏好的布局
       if (location.pathname === '/' || location.pathname === '/dashboard') {
         const userLayout = preferences.workspace.layout;
@@ -291,27 +289,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           console.log('应用用户偏好布局:', layout);
         }
       }
-      // 对于特定路径，保持路径对应的视图，但记录偏好设置
-      else {
-        console.log('当前在特定路径:', location.pathname, '使用路径视图:', pathView, '用户偏好:', preferences.workspace.layout);
-      }
     }
-  }, [preferences?.workspace.layout, location.pathname, currentView]);
-
-  // 当视图变化时，如果在主要路径上，同步更新偏好设置
-  useEffect(() => {
-    if ((location.pathname === '/' || location.pathname === '/dashboard') && 
-        preferences?.workspace.layout !== currentView && 
-        isValidLayout(currentView) && 
-        preferences?.workspace) {
-      console.log('同步布局偏好设置:', currentView);
-      const updatedWorkspaceSettings = {
-        ...preferences.workspace,
-        layout: currentView
-      };
-      updateWorkspaceSettings(updatedWorkspaceSettings);
-    }
-  }, [currentView, location.pathname, preferences?.workspace, updateWorkspaceSettings]);
+  }, [preferences?.workspace.layout, location.pathname]);
 
   // 当布局状态改变时自动保存（排除面板大小变化）
   useEffect(() => {
@@ -433,7 +412,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   // 获取当前视图
   const getCurrentView = (): string => currentView;
 
-  // 处理视图变化 - 特殊处理开发者工具
+  // 处理视图变化 - 特殊处理开发者工具和偏好设置同步
   const handleViewChange = useCallback(
     (newView: string) => {
       // 如果当前在开发者工具页面，并且要切换到其他视图，需要同时导航
@@ -453,8 +432,21 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       } else {
         setCurrentView(newView);
       }
+
+      // 如果在主页或仪表板，并且视图切换是有效的布局，则更新偏好设置
+      if ((location.pathname === '/' || location.pathname === '/dashboard') && 
+          isValidLayout(newView) && 
+          preferences?.workspace && 
+          preferences.workspace.layout !== newView) {
+        console.log('手动切换视图，更新偏好设置:', newView);
+        const updatedWorkspaceSettings = {
+          ...preferences.workspace,
+          layout: newView
+        };
+        updateWorkspaceSettings(updatedWorkspaceSettings);
+      }
     },
-    [currentView, navigate]
+    [currentView, navigate, location.pathname, preferences?.workspace, updateWorkspaceSettings]
   );
 
   // 根据当前视图渲染主要内容 - 使用 useMemo 优化性能

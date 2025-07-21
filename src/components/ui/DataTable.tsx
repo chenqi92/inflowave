@@ -276,7 +276,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
         <div className="flex-1 min-h-0">
           <div
             className={cn(
-              'w-full h-full',
+              'relative w-full h-full overflow-auto',
               scroll?.x && 'overflow-x-auto',
               scroll?.y && 'overflow-y-auto'
             )}
@@ -289,7 +289,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
               zebra={true}
               zebraType="data"
               className={cn(
-                'w-full table-fixed border-collapse',
+                'min-w-full border-collapse',
                 size === 'small' && 'text-xs',
                 size === 'large' && 'text-base',
                 bordered && 'border border-border'

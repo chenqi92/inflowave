@@ -38,101 +38,149 @@
   background-color: hsl(0, 0%, 15%) !important;
 }
 
-/* 字体大小设置 */
+/* 字体大小设置 - 使用根级CSS变量和高优先级选择器 */
 .font-small {
-  font-size: 12px;
+  --base-font-size: 12px;
+  font-size: 12px !important;
+}
+
+.font-small,
+.font-small p,
+.font-small div,
+.font-small span,
+.font-small button,
+.font-small input,
+.font-small textarea,
+.font-small label {
+  font-size: 12px !important;
 }
 
 .font-small .text-sm {
-  font-size: 10px;
+  font-size: 10px !important;
 }
 
 .font-small .text-base {
-  font-size: 12px;
+  font-size: 12px !important;
 }
 
 .font-small .text-lg {
-  font-size: 14px;
+  font-size: 14px !important;
 }
 
 .font-small .text-xl {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 .font-small .text-2xl {
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 .font-medium {
-  font-size: 14px;
+  --base-font-size: 14px;
+  font-size: 14px !important;
+}
+
+.font-medium,
+.font-medium p,
+.font-medium div,
+.font-medium span,
+.font-medium button,
+.font-medium input,
+.font-medium textarea,
+.font-medium label {
+  font-size: 14px !important;
 }
 
 .font-medium .text-sm {
-  font-size: 12px;
+  font-size: 12px !important;
 }
 
 .font-medium .text-base {
-  font-size: 14px;
+  font-size: 14px !important;
 }
 
 .font-medium .text-lg {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 .font-medium .text-xl {
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 .font-medium .text-2xl {
-  font-size: 20px;
+  font-size: 20px !important;
 }
 
 .font-large {
-  font-size: 16px;
+  --base-font-size: 16px;
+  font-size: 16px !important;
+}
+
+.font-large,
+.font-large p,
+.font-large div,
+.font-large span,
+.font-large button,
+.font-large input,
+.font-large textarea,
+.font-large label {
+  font-size: 16px !important;
 }
 
 .font-large .text-sm {
-  font-size: 14px;
+  font-size: 14px !important;
 }
 
 .font-large .text-base {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 .font-large .text-lg {
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 .font-large .text-xl {
-  font-size: 20px;
+  font-size: 20px !important;
 }
 
 .font-large .text-2xl {
-  font-size: 24px;
+  font-size: 24px !important;
 }
 
 .font-xlarge {
-  font-size: 18px;
+  --base-font-size: 18px;
+  font-size: 18px !important;
+}
+
+.font-xlarge,
+.font-xlarge p,
+.font-xlarge div,
+.font-xlarge span,
+.font-xlarge button,
+.font-xlarge input,
+.font-xlarge textarea,
+.font-xlarge label {
+  font-size: 18px !important;
 }
 
 .font-xlarge .text-sm {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 .font-xlarge .text-base {
-  font-size: 18px;
+  font-size: 18px !important;
 }
 
 .font-xlarge .text-lg {
-  font-size: 20px;
+  font-size: 20px !important;
 }
 
 .font-xlarge .text-xl {
-  font-size: 24px;
+  font-size: 24px !important;
 }
 
 .font-xlarge .text-2xl {
-  font-size: 28px;
+  font-size: 28px !important;
 }
 
 /* 减少动画 */

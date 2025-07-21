@@ -834,7 +834,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormLabel>布局模式</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -842,9 +842,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value='default'>默认</SelectItem>
-                            <SelectItem value='compact'>紧凑</SelectItem>
-                            <SelectItem value='wide'>宽屏</SelectItem>
+                            <SelectItem value='datasource'>数据源视图</SelectItem>
+                            <SelectItem value='query'>查询视图</SelectItem>
+                            <SelectItem value='visualization'>可视化视图</SelectItem>
+                            <SelectItem value='query-history'>查询历史视图</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
