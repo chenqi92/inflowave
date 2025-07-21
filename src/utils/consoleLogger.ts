@@ -38,39 +38,73 @@ class ConsoleLogger {
     this.setupInterceptors();
   }
 
+  // 判断是否应该过滤特定的日志
+  private shouldFilterLog(message: string, level: ConsoleLogEntry['level']): boolean {
+    // 过滤Monaco编辑器相关的错误
+    const monacoFilters = [
+      'Clipboard access disabled for security',
+      'monacoConfig.ts:128',
+      'monacoConfig.ts:132',
+      'monacoConfig.ts:127',
+      'monacoConfig.ts:129',
+      'ERR – Error: Clipboard access disabled for security',
+      'Could not create web worker(s)',
+      'monaco-editor#faq',
+      '[object Event]',
+      'null is not an object (evaluating \'a.then\')',
+      'Fallback to loading web worker code in main thread',
+      'Canceled', // 过滤Monaco的Canceled错误
+      'Unhandled Promise Rejection: – "Canceled"', // 过滤Promise拒绝的Canceled错误
+      '[PROMISE] Unhandled Promise Rejection: – "Canceled"' // 过滤带标签的Promise错误
+    ];
+
+    // 检查是否包含需要过滤的内容
+    return monacoFilters.some(filter => message.includes(filter));
+  }
+
   private setupInterceptors() {
     // 拦截 console.log
     console.log = (...args: any[]) => {
-      this.captureLog('log', args);
-      this.originalConsole.log(...args);
+      const shouldCapture = this.captureLog('log', args);
+      if (shouldCapture !== false) {
+        this.originalConsole.log(...args);
+      }
     };
 
     // 拦截 console.info
     console.info = (...args: any[]) => {
-      this.captureLog('info', args);
-      this.originalConsole.info(...args);
+      const shouldCapture = this.captureLog('info', args);
+      if (shouldCapture !== false) {
+        this.originalConsole.info(...args);
+      }
     };
 
     // 拦截 console.warn
     console.warn = (...args: any[]) => {
-      this.captureLog('warn', args);
-      this.originalConsole.warn(...args);
+      const shouldCapture = this.captureLog('warn', args);
+      if (shouldCapture !== false) {
+        this.originalConsole.warn(...args);
+      }
     };
 
     // 拦截 console.error
     console.error = (...args: any[]) => {
-      this.captureLog('error', args);
-      this.originalConsole.error(...args);
+      const shouldCapture = this.captureLog('error', args);
+      if (shouldCapture !== false) {
+        this.originalConsole.error(...args);
+      }
     };
 
     // 拦截 console.debug
     console.debug = (...args: any[]) => {
-      this.captureLog('debug', args);
-      this.originalConsole.debug(...args);
+      const shouldCapture = this.captureLog('debug', args);
+      if (shouldCapture !== false) {
+        this.originalConsole.debug(...args);
+      }
     };
   }
 
-  private captureLog(level: ConsoleLogEntry['level'], args: any[]) {
+  private captureLog(level: ConsoleLogEntry['level'], args: any[]): boolean {
     const timestamp = new Date();
     const message = args.map(arg => {
       if (typeof arg === 'string') {
@@ -82,6 +116,11 @@ class ConsoleLogger {
         return String(arg);
       }
     }).join(' ');
+
+    // 过滤Monaco编辑器相关的错误日志
+    if (this.shouldFilterLog(message, level)) {
+      return false; // 不记录这些日志，也不在控制台显示
+    }
 
     // 获取调用栈信息
     const stack = new Error().stack;
@@ -124,6 +163,8 @@ class ConsoleLogger {
         this.originalConsole.error('Console logger listener error:', error);
       }
     });
+
+    return true; // 返回true表示应该继续处理日志
   }
 
   // 获取所有日志

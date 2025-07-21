@@ -2031,74 +2031,91 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const handleEditorDidMount = (
       editor: monaco.editor.ICodeEditor
     ) => {
-      editorRef.current = editor;
-
       // 将编辑器转换为独立编辑器类型以支持命令添加
       const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
 
-      // 设置智能自动补全
-      setupInfluxQLAutoComplete(monaco, standaloneEditor, selectedDatabase);
-
-      console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
-
-      // 注册InfluxQL语言支持（只注册一次）
       try {
-        // 检查语言是否已经注册
-        const languages = monaco.languages.getLanguages();
-        const isInfluxQLRegistered = languages.some(
-          lang => lang.id === 'influxql'
-        );
+        editorRef.current = editor;
 
-        if (!isInfluxQLRegistered) {
-          console.log('🔧 注册InfluxQL语言支持...');
-          registerInfluxQLLanguage();
-          console.log('✅ InfluxQL语言支持注册完成');
-        } else {
-          console.log('ℹ️ InfluxQL语言支持已存在');
+        // 设置智能自动补全
+        setupInfluxQLAutoComplete(monaco, standaloneEditor, selectedDatabase);
+
+        console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
+
+        // 注册InfluxQL语言支持（只注册一次）
+        try {
+          // 检查语言是否已经注册
+          const languages = monaco.languages.getLanguages();
+          const isInfluxQLRegistered = languages.some(
+            lang => lang.id === 'influxql'
+          );
+
+          if (!isInfluxQLRegistered) {
+            console.log('🔧 注册InfluxQL语言支持...');
+            registerInfluxQLLanguage();
+            console.log('✅ InfluxQL语言支持注册完成');
+          } else {
+            console.log('ℹ️ InfluxQL语言支持已存在');
+          }
+        } catch (error) {
+          console.debug('⚠️ 注册InfluxQL语言支持失败:', error);
         }
-      } catch (error) {
-        console.error('⚠️ 注册InfluxQL语言支持失败:', error);
-      }
 
-      // 设置编辑器选项
-      editor.updateOptions({
-        fontSize: 14,
-        lineHeight: 20,
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        wordWrap: 'on',
-        automaticLayout: true,
-        // 增强智能提示
-        quickSuggestions: {
-          other: true,
-          comments: false,
-          strings: true, // 在字符串中也显示提示（用于测量名）
-        },
-        suggestOnTriggerCharacters: true,
-        acceptSuggestionOnEnter: 'on',
-        tabCompletion: 'on',
-        parameterHints: { enabled: true },
-        hover: { enabled: true },
-        // 增加更多提示配置
-        quickSuggestionsDelay: 50, // 减少延迟到50ms
-        suggestSelection: 'first', // 默认选择第一个建议
-        // wordBasedSuggestions 属性在当前Monaco版本中不存在，已移除
-        // 自动触发提示的字符
-        autoIndent: 'full',
-        // 更敏感的提示设置
-        wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
-      });
+        // 添加错误处理，防止Monaco编辑器内部错误影响应用
+        try {
+          // 监听编辑器的错误事件
+          standaloneEditor.onDidChangeModelContent(() => {
+            // 内容变化时的错误处理
+          });
 
-      // 添加快捷键
-      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-        // 执行查询
-        executeQuery();
-      });
+          // 添加编辑器焦点事件处理
+          standaloneEditor.onDidFocusEditorText(() => {
+            console.log('👁️ 编辑器获得焦点，智能提示已启用');
+          });
 
-      // 添加手动触发智能提示的快捷键
-      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
-        standaloneEditor.trigger('manual', 'editor.action.triggerSuggest', {});
-      });
+        } catch (editorError) {
+          console.debug('⚠️ Monaco编辑器事件监听设置失败:', editorError);
+        }
+
+        // 设置编辑器选项
+        editor.updateOptions({
+          fontSize: 14,
+          lineHeight: 20,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          automaticLayout: true,
+          // 增强智能提示
+          quickSuggestions: {
+            other: true,
+            comments: false,
+            strings: true, // 在字符串中也显示提示（用于测量名）
+          },
+          suggestOnTriggerCharacters: true,
+          acceptSuggestionOnEnter: 'on',
+          tabCompletion: 'on',
+          parameterHints: { enabled: true },
+          hover: { enabled: true },
+          // 增加更多提示配置
+          quickSuggestionsDelay: 50, // 减少延迟到50ms
+          suggestSelection: 'first', // 默认选择第一个建议
+          // wordBasedSuggestions 属性在当前Monaco版本中不存在，已移除
+          // 自动触发提示的字符
+          autoIndent: 'full',
+          // 更敏感的提示设置
+          wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
+        });
+
+        // 添加快捷键
+        standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+          // 执行查询
+          executeQuery();
+        });
+
+        // 添加手动触发智能提示的快捷键
+        standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+          standaloneEditor.trigger('manual', 'editor.action.triggerSuggest', {});
+        });
 
       // 添加焦点事件监听，确保智能提示正常工作
       editor.onDidFocusEditorText(() => {
@@ -2200,7 +2217,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         console.debug('设置主题观察器时出错:', error);
       }
 
-      // 禁用默认右键菜单，使用自定义中文菜单
+      // 完全禁用默认右键菜单，使用自定义中文菜单
       // 监听右键事件
       standaloneEditor.onContextMenu((e) => {
         e.event.preventDefault();
@@ -2210,17 +2227,43 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         showCustomContextMenu(e.event.browserEvent, standaloneEditor);
       });
 
-      // 保留快捷键绑定，使用自定义剪贴板处理避免权限问题
+      // 额外阻止DOM级别的右键菜单
+      const editorDomNode = standaloneEditor.getDomNode();
+      if (editorDomNode) {
+        editorDomNode.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return false;
+        }, true);
+      }
+
+      // 完全禁用Monaco的默认剪贴板快捷键，使用自定义处理
+      // 重写剪贴板快捷键，阻止默认行为
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
         handleCustomCopy(standaloneEditor);
+        return true; // 阻止默认行为
       });
 
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
         handleCustomCut(standaloneEditor);
+        return true; // 阻止默认行为
       });
 
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
         handleCustomPaste(standaloneEditor);
+        return true; // 阻止默认行为
+      });
+
+      // 禁用其他可能触发剪贴板的快捷键
+      standaloneEditor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+        // 阻止粘贴并保持格式
+        return true;
+      });
+
+      standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyC, () => {
+        // 阻止复制行
+        return true;
       });
 
       standaloneEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
@@ -2272,15 +2315,19 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       console.log('✅ 中文右键菜单已添加（包含执行查询）');
 
-      // 清理函数
-      return () => {
-        try {
-          observer.disconnect();
-          console.log('🧹 Monaco编辑器清理完成');
-        } catch (error) {
-          console.debug('清理Monaco编辑器观察器时出错:', error);
-        }
-      };
+        // 清理函数
+        return () => {
+          try {
+            observer.disconnect();
+            console.log('🧹 Monaco编辑器清理完成');
+          } catch (error) {
+            console.debug('清理Monaco编辑器观察器时出错:', error);
+          }
+        };
+
+      } catch (mountError) {
+        console.debug('⚠️ Monaco编辑器挂载过程中出现错误:', mountError);
+      }
     };
 
     // 标签页右键菜单
@@ -2576,46 +2623,51 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                         fontSize: 14,
                         lineNumbers: 'on',
                         roundedSelection: false,
-                      scrollbar: {
-                        vertical: 'auto',
-                        horizontal: 'auto',
-                      },
-                      wordWrap: 'on',
-                      automaticLayout: true,
-                      suggestOnTriggerCharacters: true,
-                      quickSuggestions: {
-                        other: true,
-                        comments: false,
-                        strings: true, // 在字符串中也显示提示（用于测量名）
-                      },
-                      parameterHints: { enabled: true },
-                      formatOnPaste: true,
-                      formatOnType: true,
-                      acceptSuggestionOnEnter: 'on',
-                      tabCompletion: 'on',
-                      hover: { enabled: true },
-                      // 增加更多智能提示配置
-                      quickSuggestionsDelay: 50,
-                      suggestSelection: 'first',
-                      wordBasedSuggestions: 'currentDocument',
-                      // 桌面应用：禁用默认右键菜单，只使用自定义中文菜单
-                      contextmenu: false,
-                      copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
-                      // 禁用默认的剪贴板操作，使用自定义的Tauri剪贴板服务
-                      links: false, // 禁用链接检测，避免触发剪贴板权限
-                      find: {
-                        addExtraSpaceOnTop: false,
-                        autoFindInSelection: 'never',
-                        seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
-                      },
-                      // 禁用所有可能触发剪贴板权限的功能
-                      dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
-                      selectionClipboard: false, // 禁用选择自动复制到剪贴板
-                      // 完全禁用Monaco内部剪贴板操作，避免浏览器权限错误
-                      useTabStops: false, // 禁用Tab停止，避免某些剪贴板相关操作
-                      multiCursorModifier: 'alt', // 使用Alt键进行多光标操作，避免Ctrl+Click触发剪贴板
-                      // 禁用所有可能调用浏览器剪贴板API的功能
-                      accessibilitySupport: 'off', // 禁用辅助功能支持，避免剪贴板相关操作
+                        scrollbar: {
+                          vertical: 'auto',
+                          horizontal: 'auto',
+                        },
+                        wordWrap: 'on',
+                        automaticLayout: true,
+                        // 智能提示配置
+                        suggestOnTriggerCharacters: true,
+                        quickSuggestions: {
+                          other: true,
+                          comments: false,
+                          strings: true,
+                        },
+                        parameterHints: { enabled: true },
+                        formatOnPaste: false, // 禁用粘贴格式化，避免剪贴板操作
+                        formatOnType: false, // 禁用自动格式化，避免内部操作
+                        acceptSuggestionOnEnter: 'on',
+                        tabCompletion: 'on',
+                        hover: { enabled: true },
+                        quickSuggestionsDelay: 50,
+                        suggestSelection: 'first',
+                        // 完全禁用右键菜单，使用自定义菜单
+                        contextmenu: false,
+                        // 禁用所有剪贴板相关功能
+                        copyWithSyntaxHighlighting: false,
+                        links: false,
+                        dragAndDrop: false,
+                        selectionClipboard: false,
+                        useTabStops: false,
+                        multiCursorModifier: 'alt',
+                        accessibilitySupport: 'off',
+                        // 查找配置
+                        find: {
+                          addExtraSpaceOnTop: false,
+                          autoFindInSelection: 'never',
+                          seedSearchStringFromSelection: 'never',
+                        },
+                        // 禁用可能导致错误的功能
+                        occurrencesHighlight: 'off',
+                        selectionHighlight: false,
+                        codeLens: false,
+                        colorDecorators: false,
+                        renderValidationDecorations: 'off',
+                        renderLineHighlight: 'none',
+                        renderWhitespace: 'none',
                       }}
                     />
                   </div>

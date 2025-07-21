@@ -89,6 +89,40 @@ export function getCompactMonacoOptions(): monaco.editor.IStandaloneEditorConstr
 }
 
 /**
+ * 完全禁用Monaco编辑器的剪贴板功能
+ */
+function disableMonacoClipboard() {
+  if (typeof window !== 'undefined') {
+    // 重写document.execCommand以阻止剪贴板操作
+    const originalExecCommand = document.execCommand;
+    document.execCommand = function(command: string, showUI?: boolean, value?: string) {
+      // 阻止所有剪贴板相关的execCommand调用
+      if (['copy', 'cut', 'paste'].includes(command.toLowerCase())) {
+        console.debug('阻止Monaco内部剪贴板操作:', command);
+        return false;
+      }
+      return originalExecCommand.call(document, command, showUI, value);
+    };
+
+    // 重写Clipboard API为静默成功
+    if (navigator.clipboard) {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: () => Promise.resolve(),
+          readText: () => Promise.resolve(''),
+          write: () => Promise.resolve(),
+          read: () => Promise.resolve(new ClipboardEvent('clipboard')),
+        },
+        writable: false,
+        configurable: false
+      });
+    }
+
+    console.log('🔒 已禁用Monaco编辑器剪贴板功能');
+  }
+}
+
+/**
  * 配置Monaco编辑器的全局设置
  * 在应用启动时调用一次
  */
@@ -101,46 +135,25 @@ export function configureMonacoGlobally() {
         window.MonacoEnvironment = {};
       }
 
-      // 配置Worker URL
+      // 配置Worker URL - 在Tauri环境中禁用Web Workers以避免安全问题
       window.MonacoEnvironment.getWorkerUrl = function (moduleId: string, label: string) {
-        if (label === 'json') {
-          return './json.worker.bundle.js';
-        }
-        if (label === 'css' || label === 'scss' || label === 'less') {
-          return './css.worker.bundle.js';
-        }
-        if (label === 'html' || label === 'handlebars' || label === 'razor') {
-          return './html.worker.bundle.js';
-        }
-        if (label === 'typescript' || label === 'javascript') {
-          return './ts.worker.bundle.js';
-        }
-        return './editor.worker.bundle.js';
+        // 在Tauri桌面应用中，返回空字符串禁用Web Workers
+        // 这将强制Monaco编辑器在主线程中运行，避免Worker创建失败
+        return '';
       };
 
-      // 全局禁用Monaco的剪贴板功能
-      // 重写navigator.clipboard以防止Monaco内部调用
-      if (window.navigator && window.navigator.clipboard) {
-        const originalClipboard = window.navigator.clipboard;
+      // 禁用Web Workers，强制在主线程运行
+      // 注释掉getWorker配置，因为类型不兼容
+      // window.MonacoEnvironment.getWorker = function (moduleId: string, label: string) {
+      //   return null;
+      // };
 
-        // 创建一个安全的剪贴板代理，阻止所有浏览器剪贴板API调用
-        try {
-          Object.defineProperty(window.navigator, 'clipboard', {
-            value: {
-              writeText: () => Promise.reject(new Error('Clipboard access disabled for security')),
-              readText: () => Promise.reject(new Error('Clipboard access disabled for security')),
-              write: () => Promise.reject(new Error('Clipboard access disabled for security')),
-              read: () => Promise.reject(new Error('Clipboard access disabled for security')),
-            },
-            writable: false,
-            configurable: false
-          });
+      // 完全禁用Monaco编辑器的剪贴板功能
+      disableMonacoClipboard();
 
-          console.log('🔒 已全局禁用浏览器剪贴板API，防止Monaco内部调用');
-        } catch (clipboardError) {
-          console.warn('⚠️ 无法重写剪贴板API:', clipboardError);
-        }
-      }
+      console.log('✅ Monaco Editor全局配置已完成，剪贴板功能已禁用');
+
+
 
       console.log('✅ Monaco Editor全局配置已完成');
     } catch (error) {

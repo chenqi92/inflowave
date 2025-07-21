@@ -56,6 +56,7 @@ const VOID_COMMANDS = new Set([
   'write_file',
   'write_binary_file',
   'create_dir',
+  'delete_file',
   'close_app',
 
   // Settings
@@ -110,6 +111,7 @@ const VOID_COMMANDS = new Set([
 ]);
 
 // 类型安全的 Tauri API 调用包装器 - 使用函数重载
+/* eslint-disable no-redeclare */
 export function safeTauriInvoke<K extends keyof TauriCommandMap>(
   command: K,
   args?: Record<string, any>
@@ -122,7 +124,6 @@ export async function safeTauriInvoke<T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T> {
-
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');
@@ -145,13 +146,13 @@ export async function safeTauriInvoke<T = any>(
     throw error;
   }
 }
+/* eslint-enable no-redeclare */
 
 // 可选的 Tauri API 调用包装器 - 允许返回 null
 export const safeTauriInvokeOptional = async <T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T | null> => {
-
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');

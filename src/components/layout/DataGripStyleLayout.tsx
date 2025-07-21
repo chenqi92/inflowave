@@ -318,6 +318,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       if (resizeTimerRef.current) {
         clearTimeout(resizeTimerRef.current);
       }
+      if (viewChangeTimeoutRef.current) {
+        clearTimeout(viewChangeTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -418,6 +421,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   // 获取当前视图
   const getCurrentView = (): string => currentView;
 
+  // 防抖处理视图切换，避免快速切换导致的问题
+  const viewChangeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
   // 处理视图变化 - 特殊处理路径导航和偏好设置同步
   const handleViewChange = useCallback(
     (newView: string) => {
@@ -426,26 +432,34 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return;
       }
 
-      // 定义视图到路径的映射
-      const pathMap: Record<string, string> = {
-        datasource: '/connections',
-        query: '/query',
-        'query-history': '/query-history',
-        visualization: '/visualization',
-        performance: '/performance',
-        extensions: '/extensions',
-        'dev-tools': '/dev-tools',
-      };
-
-      // 对于需要特定路径的视图，先导航再设置视图状态
-      if (pathMap[newView] && location.pathname !== pathMap[newView]) {
-        // 对于所有有特定路径的视图，都先导航再让路径监听器处理状态更新
-        // 这样可以确保路径和视图状态的同步
-        navigate(pathMap[newView]);
-        // 不立即设置 currentView，让 useEffect 监听路径变化来处理
-      } else {
-        setCurrentView(newView);
+      // 清除之前的定时器
+      if (viewChangeTimeoutRef.current) {
+        clearTimeout(viewChangeTimeoutRef.current);
       }
+
+      // 使用防抖机制，避免快速切换导致的问题
+      viewChangeTimeoutRef.current = setTimeout(() => {
+        // 定义视图到路径的映射
+        const pathMap: Record<string, string> = {
+          datasource: '/connections',
+          query: '/query',
+          'query-history': '/query-history',
+          visualization: '/visualization',
+          performance: '/performance',
+          extensions: '/extensions',
+          'dev-tools': '/dev-tools',
+        };
+
+        // 对于需要特定路径的视图，先导航再设置视图状态
+        if (pathMap[newView] && location.pathname !== pathMap[newView]) {
+          // 对于所有有特定路径的视图，都先导航再让路径监听器处理状态更新
+          // 这样可以确保路径和视图状态的同步
+          navigate(pathMap[newView]);
+          // 不立即设置 currentView，让 useEffect 监听路径变化来处理
+        } else {
+          setCurrentView(newView);
+        }
+      }, 50); // 50ms防抖延迟
 
       // 如果在主页或仪表板，并且视图切换是有效的布局，则更新偏好设置
       if ((location.pathname === '/' || location.pathname === '/dashboard') &&
@@ -544,7 +558,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 setShowQueryHistory(false);
               }}
             />
-            
+
             <ResizablePanelGroup direction='vertical'>
               {/* 上半部分：编辑器 */}
               <ResizablePanel
@@ -553,7 +567,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 className='bg-background overflow-hidden'
               >
                 <TabEditor
-                  key="main-tab-editor" // 添加稳定的 key 防止重新挂载
+                  key="main-tab-editor-stable" // 使用更稳定的 key 防止重新挂载
                   onQueryResult={setQueryResult}
                   onBatchQueryResults={(results, queries, executionTime) => {
                     setQueryResults(results);
@@ -677,8 +691,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
             <main className='h-full bg-background flex flex-col'>
               <div
-                key={currentView}
+                key={`view-${currentView}`}
                 className='h-full transition-all duration-200 ease-in-out'
+                style={{
+                  // 确保内容在视图切换时保持稳定
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
               >
                 {mainContent}
               </div>

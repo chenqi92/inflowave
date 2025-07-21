@@ -22,8 +22,11 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('zh-cn');
 
+// Monaco剪贴板禁用将在monacoConfig中处理
+
 // 配置 Monaco Editor 全局设置
 configureMonacoGlobally();
+
 
 // 内部应用组件
 const InnerApp: React.FC = () => {
