@@ -89,21 +89,10 @@ export function getCompactMonacoOptions(): monaco.editor.IStandaloneEditorConstr
 }
 
 /**
- * 完全禁用Monaco编辑器的剪贴板功能
+ * 禁用Monaco编辑器的剪贴板功能
  */
 function disableMonacoClipboard() {
   if (typeof window !== 'undefined') {
-    // 重写document.execCommand以阻止剪贴板操作
-    const originalExecCommand = document.execCommand;
-    document.execCommand = function(command: string, showUI?: boolean, value?: string) {
-      // 阻止所有剪贴板相关的execCommand调用
-      if (['copy', 'cut', 'paste'].includes(command.toLowerCase())) {
-        console.debug('阻止Monaco内部剪贴板操作:', command);
-        return false;
-      }
-      return originalExecCommand.call(document, command, showUI, value);
-    };
-
     // 重写Clipboard API为静默成功
     if (navigator.clipboard) {
       Object.defineProperty(navigator, 'clipboard', {
@@ -135,18 +124,10 @@ export function configureMonacoGlobally() {
         window.MonacoEnvironment = {};
       }
 
-      // 配置Worker URL - 在Tauri环境中禁用Web Workers以避免安全问题
+      // 禁用Web Workers，在主线程运行
       window.MonacoEnvironment.getWorkerUrl = function (moduleId: string, label: string) {
-        // 在Tauri桌面应用中，返回空字符串禁用Web Workers
-        // 这将强制Monaco编辑器在主线程中运行，避免Worker创建失败
         return '';
       };
-
-      // 禁用Web Workers，强制在主线程运行
-      // 注释掉getWorker配置，因为类型不兼容
-      // window.MonacoEnvironment.getWorker = function (moduleId: string, label: string) {
-      //   return null;
-      // };
 
       // 完全禁用Monaco编辑器的剪贴板功能
       disableMonacoClipboard();

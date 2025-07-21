@@ -6,6 +6,7 @@ import React, {
   forwardRef,
   useMemo,
 } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Button,
   DropdownMenu,
@@ -216,12 +217,21 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]); // 实际执行的查询
     const [showExecutedQueries, setShowExecutedQueries] = useState(false); // 是否显示实际执行的查询
     const editorRef = useRef<monaco.editor.ICodeEditor | null>(null);
+    const isNavigatingRef = useRef(false); // 标记是否正在进行应用内导航
+    const location = useLocation(); // 获取当前路由位置
 
     // 监听窗口关闭事件，提醒保存未保存的标签页
+    // 注意：只在真正的窗口关闭时触发，不阻止应用内的路由导航
     useEffect(() => {
-      const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        // 如果正在进行应用内导航，不阻止
+        if (isNavigatingRef.current) {
+          return;
+        }
+
+        // 只在有未保存标签页且是真正的窗口关闭时才提示
         if (hasUnsavedTabs()) {
-          event.preventDefault();
+          // 设置提示信息，现代浏览器会显示标准的确认对话框
           event.returnValue = '您有未保存的查询标签页，确定要关闭吗？';
           return '您有未保存的查询标签页，确定要关闭吗？';
         }
@@ -281,6 +291,22 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         }
       };
     }, [tabs]); // 依赖tabs数组，当标签页变化时重新设置监听器
+
+    // 监听路由变化，自动管理导航状态
+    useEffect(() => {
+      // 路由开始变化时设置导航标记
+      isNavigatingRef.current = true;
+
+      // 短暂延迟后清除导航标记，确保beforeunload不会在路由切换时触发
+      const timer = setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 200); // 200ms应该足够完成路由切换
+
+      return () => {
+        clearTimeout(timer);
+        isNavigatingRef.current = false;
+      };
+    }, [location.pathname]); // 监听路径变化
 
     // 拖拽功能
     const {
@@ -2034,6 +2060,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       // 将编辑器转换为独立编辑器类型以支持命令添加
       const standaloneEditor = editor as monaco.editor.IStandaloneCodeEditor;
 
+
+
       try {
         editorRef.current = editor;
 
@@ -2616,6 +2644,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                       value={currentTab.content}
                       onChange={handleEditorChange}
                       onMount={handleEditorDidMount}
+
                       key={`${currentTab.id}-${resolvedTheme}`} // 强制重新渲染以应用主题
                       options={{
                         minimap: { enabled: false },
@@ -2644,30 +2673,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                         hover: { enabled: true },
                         quickSuggestionsDelay: 50,
                         suggestSelection: 'first',
-                        // 完全禁用右键菜单，使用自定义菜单
+                        // 禁用右键菜单，使用自定义菜单
                         contextmenu: false,
-                        // 禁用所有剪贴板相关功能
+                        // 基本剪贴板配置
                         copyWithSyntaxHighlighting: false,
-                        links: false,
-                        dragAndDrop: false,
                         selectionClipboard: false,
-                        useTabStops: false,
-                        multiCursorModifier: 'alt',
-                        accessibilitySupport: 'off',
-                        // 查找配置
-                        find: {
-                          addExtraSpaceOnTop: false,
-                          autoFindInSelection: 'never',
-                          seedSearchStringFromSelection: 'never',
-                        },
-                        // 禁用可能导致错误的功能
-                        occurrencesHighlight: 'off',
-                        selectionHighlight: false,
-                        codeLens: false,
-                        colorDecorators: false,
-                        renderValidationDecorations: 'off',
-                        renderLineHighlight: 'none',
-                        renderWhitespace: 'none',
                       }}
                     />
                   </div>

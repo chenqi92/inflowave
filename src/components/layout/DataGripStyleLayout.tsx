@@ -432,6 +432,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return;
       }
 
+
+
       // 清除之前的定时器
       if (viewChangeTimeoutRef.current) {
         clearTimeout(viewChangeTimeoutRef.current);

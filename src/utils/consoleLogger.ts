@@ -40,26 +40,8 @@ class ConsoleLogger {
 
   // 判断是否应该过滤特定的日志
   private shouldFilterLog(message: string, level: ConsoleLogEntry['level']): boolean {
-    // 过滤Monaco编辑器相关的错误
-    const monacoFilters = [
-      'Clipboard access disabled for security',
-      'monacoConfig.ts:128',
-      'monacoConfig.ts:132',
-      'monacoConfig.ts:127',
-      'monacoConfig.ts:129',
-      'ERR – Error: Clipboard access disabled for security',
-      'Could not create web worker(s)',
-      'monaco-editor#faq',
-      '[object Event]',
-      'null is not an object (evaluating \'a.then\')',
-      'Fallback to loading web worker code in main thread',
-      'Canceled', // 过滤Monaco的Canceled错误
-      'Unhandled Promise Rejection: – "Canceled"', // 过滤Promise拒绝的Canceled错误
-      '[PROMISE] Unhandled Promise Rejection: – "Canceled"' // 过滤带标签的Promise错误
-    ];
-
-    // 检查是否包含需要过滤的内容
-    return monacoFilters.some(filter => message.includes(filter));
+    // 暂时不过滤任何日志，让错误正常显示以便调试
+    return false;
   }
 
   private setupInterceptors() {
