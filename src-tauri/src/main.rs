@@ -29,6 +29,7 @@ use commands::extensions::*;
 use commands::optimization_history::*;
 use commands::port_manager::*;
 use commands::embedded_server::*;
+use commands::workspace::*;
 
 // Updater commands
 use updater::*;
@@ -383,13 +384,13 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
             // 根据缩放因子调整窗口大小策略
             let (target_width, target_height) = if scale_factor >= 1.5 {
                 // 高DPI显示器：使用固定的合理尺寸，避免窗口过大
-                let ideal_width = 1400.0;
-                let ideal_height = 900.0;
-                
+                let ideal_width: f64 = 1400.0;
+                let ideal_height: f64 = 900.0;
+
                 // 确保窗口不会超过屏幕的70%
                 let max_width = screen_size.width as f64 * 0.7;
                 let max_height = screen_size.height as f64 * 0.7;
-                
+
                 let width = ideal_width.min(max_width).max(1000.0);
                 let height = ideal_height.min(max_height).max(700.0);
                 
@@ -665,6 +666,15 @@ async fn main() {
             update_saved_query,
             delete_saved_query,
 
+            // Workspace operations
+            save_tab_to_workspace,
+            remove_tab_from_workspace,
+            get_workspace_tabs,
+            set_active_workspace_tab,
+            get_active_workspace_tab,
+            clear_workspace,
+            save_tabs_to_workspace,
+
             // Settings operations
             get_app_settings,
             update_app_settings,
@@ -881,6 +891,9 @@ async fn main() {
 
             // Initialize optimization history storage
             app.manage(std::sync::Mutex::new(Vec::<commands::optimization_history::OptimizationHistoryEntry>::new()));
+
+            // Initialize workspace storage
+            app.manage(commands::workspace::WorkspaceStorage::new(commands::workspace::WorkspaceData::default()));
 
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {

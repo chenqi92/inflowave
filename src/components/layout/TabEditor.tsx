@@ -72,7 +72,9 @@ interface EditorTab {
   content: string;
   type: 'query' | 'table' | 'database' | 'data-browser';
   modified: boolean;
-  filePath?: string;
+  saved: boolean; // 是否已保存到工作区
+  filePath?: string; // 外部文件路径（另存为功能）
+  workspacePath?: string; // 工作区内部路径
   // 数据浏览相关属性
   connectionId?: string;
   database?: string;
@@ -136,6 +138,18 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, []);
 
+    // 组件挂载时恢复工作区标签页
+    useEffect(() => {
+      const initializeWorkspace = async () => {
+        // 只在没有标签页时才恢复工作区
+        if (tabs.length === 0) {
+          await restoreWorkspaceTabs();
+        }
+      };
+
+      initializeWorkspace();
+    }, []); // 只在组件挂载时执行一次
+
     // 调试：监听 props 变化
     useEffect(() => {
       if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
@@ -177,7 +191,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         content:
           '-- 在此输入 InfluxQL 查询语句\nSELECT * FROM "measurement_name" LIMIT 10',
         type: 'query',
-        modified: false,
+        modified: true,  // 默认标签页为未保存状态
+        saved: false,    // 未保存到工作区
       },
     ]);
     const [closingTab, setClosingTab] = useState<EditorTab | null>(null);
@@ -607,7 +622,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         title: `${tableName} - 查询`,
         content: query,
         type: 'query',
-        modified: false,
+        modified: true, // 从外部创建的查询标签为未保存状态
+        saved: false,   // 未保存到工作区
       };
 
       setTabs(prevTabs => [...prevTabs, newTab]);
@@ -913,8 +929,9 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
               title: filename,
               content,
               type: 'query',
-              modified: false,
-              filePath: result.path,
+              modified: true,  // 从外部文件打开的内容为未保存状态
+              saved: false,    // 未保存到工作区
+              filePath: result.path, // 保留原始文件路径用于另存为功能
             };
 
             setTabs([...tabs, newTab]);
@@ -930,18 +947,18 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     };
 
-    // 保存文件到指定路径
+    // 另存为文件（导出功能）
     const saveFileAs = async () => {
       const currentTab = tabs.find(tab => tab.id === activeKey);
       if (!currentTab || !editorRef.current) {
-        showMessage.warning('没有要保存的内容');
+        showMessage.warning('没有要导出的内容');
         return;
       }
 
       try {
         const content = editorRef.current.getValue();
         const result = await safeTauriInvoke('save_file_dialog', {
-          defaultPath: currentTab.filePath || `${currentTab.title}.sql`,
+          defaultPath: `${currentTab.title}.sql`,
           filters: [
             { name: 'SQL Files', extensions: ['sql'] },
             { name: 'Text Files', extensions: ['txt'] },
@@ -959,49 +976,94 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
             result.path.split('/').pop() ||
             result.path.split('\\').pop() ||
             '未命名';
-          updateTabContent(activeKey, content, false);
 
-          // 更新标签标题和文件路径
-          setTabs(
-            tabs.map(tab =>
-              tab.id === activeKey
-                ? {
-                    ...tab,
-                    title: filename,
-                    filePath: result.path,
-                    modified: false,
-                  }
-                : tab
-            )
-          );
-
-          showMessage.success(`文件已保存到 "${result.path}"`);
+          showMessage.success(`查询已导出到 "${filename}"`);
         }
       } catch (error) {
-        console.error('保存文件失败:', error);
-        showMessage.error(`保存文件失败: ${error}`);
+        console.error('导出文件失败:', error);
+        showMessage.error(`导出失败: ${error}`);
       }
     };
 
-    // 导入数据
-    const importData = async () => {
+    // 导出工作区
+    const exportWorkspace = async () => {
       try {
-        const result = await safeTauriInvoke('open_file_dialog', {
+        const workspaceTabs = await safeTauriInvoke<any[]>('get_workspace_tabs');
+        const activeTabId = await safeTauriInvoke<string | null>('get_active_workspace_tab');
+
+        const workspaceData = {
+          tabs: workspaceTabs,
+          activeTabId,
+          exportedAt: new Date().toISOString(),
+          version: '1.0'
+        };
+
+        const result = await safeTauriInvoke('save_file_dialog', {
+          defaultPath: `workspace_${new Date().toISOString().slice(0, 10)}.json`,
           filters: [
-            { name: 'CSV Files', extensions: ['csv'] },
-            { name: 'JSON Files', extensions: ['json'] },
-            { name: 'SQL Files', extensions: ['sql'] },
+            { name: 'Workspace Files', extensions: ['json'] },
             { name: 'All Files', extensions: ['*'] },
           ],
         });
 
         if (result?.path) {
-          setShowImportDialog(true);
-          showMessage.info('导入数据功能正在开发中...');
+          await safeTauriInvoke('write_file', {
+            path: result.path,
+            content: JSON.stringify(workspaceData, null, 2),
+          });
+          showMessage.success('工作区已导出');
         }
       } catch (error) {
-        console.error('选择导入文件失败:', error);
-        showMessage.error(`选择导入文件失败: ${error}`);
+        console.error('导出工作区失败:', error);
+        showMessage.error(`导出工作区失败: ${error}`);
+      }
+    };
+
+    // 导入工作区
+    const importWorkspace = async () => {
+      try {
+        const result = await safeTauriInvoke('open_file_dialog', {
+          filters: [
+            { name: 'Workspace Files', extensions: ['json'] },
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        });
+
+        if (result?.path) {
+          const content = await safeTauriInvoke<string>('read_file', {
+            path: result.path,
+          });
+
+          const workspaceData = JSON.parse(content);
+
+          if (workspaceData.tabs && Array.isArray(workspaceData.tabs)) {
+            // 清空当前工作区
+            await safeTauriInvoke('clear_workspace');
+
+            // 导入新的标签页
+            await safeTauriInvoke('save_tabs_to_workspace', {
+              tabs: workspaceData.tabs.map((tab: any) => ({
+                id: tab.id,
+                title: tab.title,
+                content: tab.content,
+                type: tab.tab_type || tab.type,
+                database: tab.database,
+                connectionId: tab.connection_id || tab.connectionId,
+                tableName: tab.table_name || tab.tableName,
+              })),
+              activeTabId: workspaceData.activeTabId,
+            });
+
+            // 重新加载工作区
+            await restoreWorkspaceTabs();
+            showMessage.success('工作区已导入');
+          } else {
+            showMessage.error('无效的工作区文件格式');
+          }
+        }
+      } catch (error) {
+        console.error('导入工作区失败:', error);
+        showMessage.error(`导入工作区失败: ${error}`);
       }
     };
 
@@ -1021,7 +1083,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
         content: type === 'query' ? 'SELECT * FROM ' : '',
         type,
-        modified: false,
+        modified: true, // 新建标签页为未保存状态
+        saved: false,   // 未保存到工作区
       };
 
       setTabs([...tabs, newTab]);
@@ -1039,7 +1102,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         title: `${tableName}`,
         content: '', // 数据浏览不需要content
         type: 'data-browser',
-        modified: false,
+        modified: false, // 数据浏览标签不需要保存
+        saved: true,     // 数据浏览标签默认为已保存状态
         connectionId,
         database,
         tableName,
@@ -1060,7 +1124,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         title: `查询-${tabs.length + 1}`,
         content: query || 'SELECT * FROM ',
         type: 'query',
-        modified: false,
+        modified: true,  // 新建查询标签为未保存状态
+        saved: false,    // 未保存到工作区
       };
 
       setTabs([...tabs, newTab]);
@@ -1164,6 +1229,13 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           onBatchQueryResults?.([], [], 0);
         }
       }
+
+      // 保存活跃标签页ID到工作区
+      if (activeKey) {
+        safeTauriInvoke('set_active_workspace_tab', { tabId: activeKey }).catch(error => {
+          console.error('保存活跃标签页失败:', error);
+        });
+      }
     }, [activeKey, tabs, onActiveTabTypeChange, onQueryResult, onBatchQueryResults]);
 
     // 监听菜单事件
@@ -1178,7 +1250,8 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
           title: filename,
           content,
           type: 'query',
-          modified: false,
+          modified: true, // 从外部文件导入的内容为未保存状态
+          saved: false,   // 未保存到工作区
         };
 
         setTabs(prevTabs => [...prevTabs, newTab]);
@@ -1198,11 +1271,11 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       };
 
       const handleShowExportDialog = () => {
-        exportData();
+        exportWorkspace();
       };
 
       const handleShowImportDialog = () => {
-        importData();
+        importWorkspace();
       };
 
       const handleExecuteQuery = (event: Event) => {
@@ -1295,6 +1368,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
         content: detachedTab.content,
         type: detachedTab.type,
         modified: detachedTab.modified || false,
+        saved: detachedTab.saved || false, // 保持原有的保存状态
         connectionId: detachedTab.connectionId,
         database: detachedTab.database,
         tableName: detachedTab.tableName,
@@ -1325,6 +1399,53 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     };
 
+    // 生成带保存状态的标签页标题
+    const getTabDisplayTitle = (tab: EditorTab) => {
+      let title = tab.title;
+      if (tab.modified && !tab.saved) {
+        title += ' *'; // 未保存的修改
+      } else if (!tab.saved) {
+        title += ' (未保存)'; // 从未保存过
+      }
+      return title;
+    };
+
+    // 从工作区恢复标签页
+    const restoreWorkspaceTabs = async () => {
+      try {
+        const workspaceTabs = await safeTauriInvoke<any[]>('get_workspace_tabs');
+        const activeTabId = await safeTauriInvoke<string | null>('get_active_workspace_tab');
+
+        if (workspaceTabs && workspaceTabs.length > 0) {
+          const restoredTabs: EditorTab[] = workspaceTabs.map(wTab => ({
+            id: wTab.id,
+            title: wTab.title,
+            content: wTab.content,
+            type: wTab.tab_type as 'query' | 'table' | 'database' | 'data-browser',
+            modified: false, // 从工作区恢复的标签页为已保存状态
+            saved: true,     // 已保存到工作区
+            connectionId: wTab.connection_id,
+            database: wTab.database,
+            tableName: wTab.table_name,
+          }));
+
+          setTabs(restoredTabs);
+
+          // 恢复活跃标签页
+          if (activeTabId && restoredTabs.some(tab => tab.id === activeTabId)) {
+            setActiveKey(activeTabId);
+          } else if (restoredTabs.length > 0) {
+            setActiveKey(restoredTabs[0].id);
+          }
+
+          console.log(`从工作区恢复了 ${restoredTabs.length} 个标签页`);
+        }
+      } catch (error) {
+        console.error('恢复工作区标签页失败:', error);
+        // 恢复失败不影响应用启动，只记录错误
+      }
+    };
+
     // 保存并关闭标签
     const saveAndCloseTab = async (tabId: string) => {
       const tab = tabs.find(t => t.id === tabId);
@@ -1336,61 +1457,24 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       const content = editorRef.current.getValue();
 
-      // 如果已有文件路径，直接保存
-      if (tab.filePath) {
-        try {
-          await safeTauriInvoke('write_file', {
-            path: tab.filePath,
-            content,
-          });
-          updateTabContent(tabId, content, false);
-          showMessage.success(`文件已保存`);
-        } catch (error) {
-          console.error('保存文件失败:', error);
-          showMessage.error(`保存文件失败: ${error}`);
-        }
-      } else {
-        // 没有文件路径，需要另存为
-        try {
-          const result = await safeTauriInvoke('save_file_dialog', {
-            defaultPath: `${tab.title}.sql`,
-            filters: [
-              { name: 'SQL Files', extensions: ['sql'] },
-              { name: 'Text Files', extensions: ['txt'] },
-              { name: 'All Files', extensions: ['*'] },
-            ],
-          });
+      try {
+        // 保存到工作区
+        await safeTauriInvoke('save_tab_to_workspace', {
+          tabId: tab.id,
+          title: tab.title,
+          content,
+          tabType: tab.type,
+          database: tab.database,
+          connectionId: tab.connectionId,
+          tableName: tab.tableName,
+        });
 
-          if (result?.path) {
-            await safeTauriInvoke('write_file', {
-              path: result.path,
-              content,
-            });
-
-            const filename =
-              result.path.split('/').pop() ||
-              result.path.split('\\').pop() ||
-              '未命名';
-
-            // 更新标签信息
-            setTabs(tabs.map(t =>
-              t.id === tabId
-                ? { ...t, title: filename, filePath: result.path, modified: false }
-                : t
-            ));
-
-            showMessage.success(`文件已保存到 "${result.path}"`);
-          } else {
-            // 用户取消了保存，不关闭标签
-            setClosingTab(null);
-            return;
-          }
-        } catch (error) {
-          console.error('保存文件失败:', error);
-          showMessage.error(`保存文件失败: ${error}`);
-          setClosingTab(null);
-          return;
-        }
+        showMessage.success('查询已保存到工作区');
+      } catch (error) {
+        console.error('保存到工作区失败:', error);
+        showMessage.error(`保存失败: ${error}`);
+        setClosingTab(null);
+        return;
       }
 
       // 保存成功后关闭标签
@@ -1417,7 +1501,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     };
 
-    // 保存当前标签
+    // 保存当前标签到工作区
     const saveCurrentTab = async () => {
       const currentTab = tabs.find(tab => tab.id === activeKey);
       if (!currentTab || !editorRef.current) {
@@ -1427,22 +1511,29 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
 
       const content = editorRef.current.getValue();
 
-      // 如果已有文件路径，直接保存
-      if (currentTab.filePath) {
-        try {
-          await safeTauriInvoke('write_file', {
-            path: currentTab.filePath,
-            content,
-          });
-          updateTabContent(activeKey, content, false);
-          showMessage.success(`文件已保存`);
-        } catch (error) {
-          console.error('保存文件失败:', error);
-          showMessage.error(`保存文件失败: ${error}`);
-        }
-      } else {
-        // 没有文件路径，调用另存为
-        saveFileAs();
+      try {
+        // 保存到工作区
+        await safeTauriInvoke('save_tab_to_workspace', {
+          tabId: currentTab.id,
+          title: currentTab.title,
+          content,
+          tabType: currentTab.type,
+          database: currentTab.database,
+          connectionId: currentTab.connectionId,
+          tableName: currentTab.tableName,
+        });
+
+        // 更新标签状态
+        setTabs(tabs.map(tab =>
+          tab.id === activeKey
+            ? { ...tab, content, modified: false, saved: true }
+            : tab
+        ));
+
+        showMessage.success('查询已保存到工作区');
+      } catch (error) {
+        console.error('保存到工作区失败:', error);
+        showMessage.error(`保存失败: ${error}`);
       }
     };
 
@@ -1454,7 +1545,12 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     ) => {
       setTabs(
         tabs.map(tab =>
-          tab.id === tabId ? { ...tab, content, modified } : tab
+          tab.id === tabId ? {
+            ...tab,
+            content,
+            modified,
+            saved: modified ? false : tab.saved // 如果内容被修改，则标记为未保存
+          } : tab
         )
       );
     };
@@ -2145,7 +2241,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                     {tab.type === 'data-browser' && (
                       <Table className='w-4 h-4 flex-shrink-0 text-blue-600' />
                     )}
-                    <span className='text-sm truncate flex-1'>{tab.title}</span>
+                    <span className='text-sm truncate flex-1'>{getTabDisplayTitle(tab)}</span>
                     {tab.modified && (
                       <span className='text-orange-500 text-xs flex-shrink-0'>
                         *
@@ -2258,7 +2354,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 size='sm'
                 onClick={saveCurrentTab}
                 className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
-                title='保存查询 (Ctrl+S)'
+                title='保存到工作区 (Ctrl+S) - 重启应用时自动恢复'
               >
                 <Save className='w-4 h-4' />
                 <span className='text-xs'>保存</span>
@@ -2269,7 +2365,7 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 size='sm'
                 onClick={openFile}
                 className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
-                title='打开文件'
+                title='从文件导入查询'
               >
                 <FolderOpen className='w-4 h-4' />
                 <span className='text-xs'>打开</span>
@@ -2290,15 +2386,15 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem onClick={saveFileAs}>
                     <Save className='w-4 h-4 mr-2' />
-                    另存为
+                    导出查询
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={importData}>
-                    <Upload className='w-4 h-4 mr-2' />
-                    导入数据
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportData}>
+                  <DropdownMenuItem onClick={exportWorkspace}>
                     <Download className='w-4 h-4 mr-2' />
-                    导出数据
+                    导出工作区
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={importWorkspace}>
+                    <Upload className='w-4 h-4 mr-2' />
+                    导入工作区
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
