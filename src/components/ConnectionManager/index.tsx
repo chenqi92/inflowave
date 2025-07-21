@@ -391,6 +391,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       dataIndex: 'name',
       key: 'name',
       width: '25%',
+      minWidth: 180,
+      fixed: 'left',
       render: (name: string, record) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
@@ -413,61 +415,261 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         };
 
         return (
-          <div className='flex items-center space-x-3'>
-            <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-            <div className='min-w-0 flex-1'>
-              <div className='font-medium text-foreground truncate flex items-center gap-2'>
-                {name}
-                {isLoading && (
-                  <RefreshCw className='w-3 h-3 text-muted-foreground animate-spin' />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='space-y-1'>
+                {/* 连接名称和状态 */}
+                <div className='flex items-center space-x-2'>
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusColor()}`} />
+                  <div className='font-medium text-foreground truncate flex items-center gap-1 flex-1'>
+                    {name}
+                    {isLoading && (
+                      <RefreshCw className='w-3 h-3 text-muted-foreground animate-spin' />
+                    )}
+                  </div>
+                  {activeConnectionId === record.id && (
+                    <Badge variant='default' className='text-xs px-1 py-0 flex-shrink-0'>
+                      活跃
+                    </Badge>
+                  )}
+                </div>
+
+                {/* 连接地址 */}
+                <div className='text-sm text-muted-foreground truncate'>
+                  {record.host}:{record.port}
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className='max-w-sm'>
+              <div className='space-y-1 p-1'>
+                {record.description && (
+                  <div className='text-sm'>
+                    <span className='text-muted-foreground font-medium'>描述：</span>
+                    <span className='text-foreground'>{record.description}</span>
+                  </div>
+                )}
+                <div className='text-sm'>
+                  <span className='text-muted-foreground font-medium'>地址：</span>
+                  <span className='text-foreground'>{record.host}:{record.port}</span>
+                </div>
+                {record.username && (
+                  <div className='text-sm'>
+                    <span className='text-muted-foreground font-medium'>用户：</span>
+                    <span className='text-foreground'>{record.username}</span>
+                  </div>
                 )}
               </div>
-              <div className='text-sm text-muted-foreground truncate'>
-                {record.host}:{record.port}
-              </div>
-            </div>
-            {activeConnectionId === record.id && (
-              <Badge variant='default' className='ml-2 flex-shrink-0'>
-                活跃
-              </Badge>
-            )}
-          </div>
+            </TooltipContent>
+          </Tooltip>
         );
       },
     },
     {
-      title: '连接信息',
-      dataIndex: 'connectionInfo',
-      key: 'connectionInfo',
+      title: '数据库类型',
+      dataIndex: 'dbType',
+      key: 'dbType',
+      width: '15%',
+      minWidth: 120,
+      render: (_, record) => {
+        const dbName = record.dbType === 'influxdb' ? 'InfluxDB' : record.dbType || 'InfluxDB';
+        const configVersion = record.version || '1.x';
+        const status = tableConnectionStatuses[record.id!];
+        const detectedVersion = status?.serverVersion;
+
+        // 优先显示检测到的版本，否则显示配置的版本
+        const displayVersion = detectedVersion || configVersion;
+        const isDetected = !!detectedVersion;
+
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='relative inline-flex items-baseline'>
+                <span className='font-medium text-foreground'>{dbName}</span>
+                {displayVersion && (
+                  <sup className={`ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium ${
+                    isDetected
+                      ? 'text-green-700 bg-green-100 border border-green-200'
+                      : 'text-blue-700 bg-blue-100 border border-blue-200'
+                  }`}>
+                    {displayVersion}
+                  </sup>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start">
+              <div className='space-y-1 p-1'>
+                <div className='text-sm'>
+                  <span className='text-muted-foreground font-medium'>数据库：</span>
+                  <span className='text-foreground'>{dbName}</span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-muted-foreground font-medium'>配置版本：</span>
+                  <span className='text-foreground'>{configVersion}</span>
+                </div>
+                {detectedVersion && (
+                  <div className='text-sm'>
+                    <span className='text-muted-foreground font-medium'>检测版本：</span>
+                    <span className='text-success'>{detectedVersion}</span>
+                  </div>
+                )}
+                {!detectedVersion && (
+                  <div className='text-xs text-muted-foreground'>
+                    测试连接后可检测实际版本
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: '数据库信息',
+      dataIndex: 'databaseInfo',
+      key: 'databaseInfo',
       width: '20%',
-      render: (_, record) => (
-        <div className='space-y-1'>
-          <div className='text-sm'>
-            <span className='text-muted-foreground'>用户：</span>
-            <span className='text-foreground font-medium'>
-              {record.username || '无'}
-            </span>
-          </div>
-          <div className='text-sm'>
-            <span className='text-muted-foreground'>SSL：</span>
-            <span
-              className={
-                record.ssl
-                  ? 'text-success font-medium'
-                  : 'text-muted-foreground'
-              }
-            >
-              {record.ssl ? '已启用' : '未启用'}
-            </span>
-          </div>
-        </div>
-      ),
+      minWidth: 160,
+      render: (_, record) => {
+        const status = tableConnectionStatuses[record.id!];
+        const isConnected = status?.status === 'connected';
+
+        // 根据版本显示不同的数据库信息
+        const primaryInfo = record.version === '1.x'
+          ? (record.database || '默认数据库')
+          : (record.v2Config?.bucket || '未配置桶');
+
+        const secondaryInfo = record.version === '1.x'
+          ? record.retentionPolicy
+          : record.v2Config?.organization;
+
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='space-y-1'>
+                <div className='text-sm font-medium text-foreground truncate'>
+                  {primaryInfo}
+                </div>
+                {secondaryInfo && (
+                  <div className='text-xs text-muted-foreground truncate'>
+                    {record.version === '1.x' ? `策略: ${secondaryInfo}` : `组织: ${secondaryInfo}`}
+                  </div>
+                )}
+                {record.v2Config?.v1CompatibilityApi && (
+                  <div className='flex items-center gap-1'>
+                    <span className='text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded'>V1兼容</span>
+                  </div>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className='max-w-sm'>
+              <div className='space-y-1 p-1'>
+                {record.version === '1.x' ? (
+                  <>
+                    <div className='text-sm'>
+                      <span className='text-muted-foreground font-medium'>数据库：</span>
+                      <span className='text-foreground'>{record.database || '默认'}</span>
+                    </div>
+                    {record.retentionPolicy && (
+                      <div className='text-sm'>
+                        <span className='text-muted-foreground font-medium'>保留策略：</span>
+                        <span className='text-foreground'>{record.retentionPolicy}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className='text-sm'>
+                      <span className='text-muted-foreground font-medium'>桶：</span>
+                      <span className='text-foreground'>{record.v2Config?.bucket || '未配置'}</span>
+                    </div>
+                    <div className='text-sm'>
+                      <span className='text-muted-foreground font-medium'>组织：</span>
+                      <span className='text-foreground'>{record.v2Config?.organization || '未配置'}</span>
+                    </div>
+                    {record.v2Config?.v1CompatibilityApi && (
+                      <div className='text-sm'>
+                        <span className='text-blue-600'>启用 V1 兼容 API</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {isConnected && status?.serverVersion && (
+                  <div className='text-sm border-t pt-1 mt-1'>
+                    <span className='text-muted-foreground font-medium'>服务器版本：</span>
+                    <span className='text-success'>{status.serverVersion}</span>
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: '认证信息',
+      dataIndex: 'authInfo',
+      key: 'authInfo',
+      width: '18%',
+      minWidth: 140,
+      render: (_, record) => {
+        const authInfo = record.version === '1.x'
+          ? (record.username || '无认证')
+          : '令牌认证';
+
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className='space-y-1'>
+                <div className='text-sm font-medium text-foreground truncate'>
+                  {authInfo}
+                </div>
+                <div className='flex items-center gap-1'>
+                  {record.ssl && (
+                    <span className='text-xs text-green-600 bg-green-50 px-1 py-0.5 rounded'>SSL</span>
+                  )}
+                  {record.timeout && record.timeout !== 30000 && (
+                    <span className='text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded'>
+                      {record.timeout / 1000}s
+                    </span>
+                  )}
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" className='max-w-sm'>
+              <div className='space-y-1 p-1'>
+                {record.version === '1.x' ? (
+                  <div className='text-sm'>
+                    <span className='text-muted-foreground font-medium'>用户名：</span>
+                    <span className='text-foreground'>{record.username || '无'}</span>
+                  </div>
+                ) : (
+                  <div className='text-sm'>
+                    <span className='text-muted-foreground font-medium'>认证方式：</span>
+                    <span className='text-foreground'>API Token</span>
+                  </div>
+                )}
+                <div className='text-sm'>
+                  <span className='text-muted-foreground font-medium'>SSL：</span>
+                  <span className={record.ssl ? 'text-success' : 'text-muted-foreground'}>
+                    {record.ssl ? '已启用' : '未启用'}
+                  </span>
+                </div>
+                <div className='text-sm'>
+                  <span className='text-muted-foreground font-medium'>超时：</span>
+                  <span className='text-foreground'>{(record.timeout || 30000) / 1000}秒</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: '15%',
+      width: '10%',
+      minWidth: 90,
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         return (
@@ -475,86 +677,94 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             {getStatusTag(status)}
             {status?.latency && (
               <div className='text-xs text-muted-foreground'>
-                延迟: {status.latency}ms
+                {status.latency}ms
               </div>
             )}
           </div>
         );
       },
     },
-    {
-      title: '最后测试',
-      dataIndex: 'lastTested',
-      key: 'lastTested',
-      width: '15%',
-      render: (_, record) => {
-        const status = tableConnectionStatuses[record.id!];
-        return status?.lastConnected ? (
-          <div className='text-sm text-muted-foreground'>
-            {new Date(status.lastConnected).toLocaleString()}
-          </div>
-        ) : (
-          <span className='text-muted-foreground'>从未测试</span>
-        );
-      },
-    },
+
     {
       title: '操作',
       dataIndex: 'actions',
       key: 'actions',
-      width: '25%',
+      width: '12%',
+      minWidth: 120,
+      fixed: 'right',
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         const isLoading = connectionLoadingStates.get(record.id!);
         const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
 
         return (
-          <div className='flex items-center space-x-2'>
-            <Button
-              variant={isTestSuccessful ? 'secondary' : 'default'}
-              size='sm'
-              disabled={isLoading}
-              onClick={() => handleTestConnection(record.id!)}
-            >
-              {isLoading ? (
-                <RefreshCw className='w-4 h-4 mr-1 animate-spin' />
-              ) : isTestSuccessful ? (
-                <CheckCircle className='w-4 h-4 mr-1' />
-              ) : (
-                <Wifi className='w-4 h-4 mr-1' />
-              )}
-              {isLoading ? '测试中...' : '测试连接'}
-            </Button>
+          <div className='flex items-center gap-1'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isTestSuccessful ? 'secondary' : 'default'}
+                  size='sm'
+                  disabled={isLoading}
+                  onClick={() => handleTestConnection(record.id!)}
+                  className='px-2'
+                >
+                  {isLoading ? (
+                    <RefreshCw className='w-4 h-4 animate-spin' />
+                  ) : isTestSuccessful ? (
+                    <CheckCircle className='w-4 h-4' />
+                  ) : (
+                    <Wifi className='w-4 h-4' />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isLoading ? '测试中...' : '测试连接'}
+              </TooltipContent>
+            </Tooltip>
 
-            <Button
-              variant='outline'
-              size='sm'
-              disabled={isLoading}
-              onClick={() => {
-                console.log('编辑连接:', record);
-                onEditConnection?.(record);
-              }}
-            >
-              <Edit className='w-4 h-4 mr-1' />
-              编辑
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={isLoading}
+                  onClick={() => {
+                    console.log('编辑连接:', record);
+                    onEditConnection?.(record);
+                  }}
+                  className='px-2'
+                >
+                  <Edit className='w-4 h-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                编辑连接
+              </TooltipContent>
+            </Tooltip>
 
-            <Button
-              variant='outline'
-              size='sm'
-              disabled={isLoading}
-              onClick={async () => {
-                const confirmed = await dialog.confirm(
-                  `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
-                );
-                if (confirmed) {
-                  removeConnection(record.id!);
-                }
-              }}
-            >
-              <Trash2 className='w-4 h-4 mr-1' />
-              删除
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  disabled={isLoading}
+                  onClick={async () => {
+                    const confirmed = await dialog.confirm(
+                      `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
+                    );
+                    if (confirmed) {
+                      removeConnection(record.id!);
+                    }
+                  }}
+                  className='px-2'
+                >
+                  <Trash2 className='w-4 h-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                删除连接
+              </TooltipContent>
+            </Tooltip>
           </div>
         );
       },
@@ -600,17 +810,19 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
       {/* 连接表格 */}
       <div className='flex-1 overflow-hidden p-4'>
-        <div className='h-full rounded-lg border'>
+        <div className='h-full rounded-lg border overflow-hidden'>
           <DataTable
             columns={columns}
             dataSource={dataSource}
             rowKey='id'
             loading={false}
             scroll={{
+              x: 'max-content', // 自适应内容宽度
               y: 'calc(100vh - 400px)',
             }}
             size='middle'
             className='w-full h-full connection-table'
+            tableLayout='fixed'
             rowClassName={(record: ConnectionWithStatus) =>
               activeConnectionId === record.id
                 ? 'bg-accent'

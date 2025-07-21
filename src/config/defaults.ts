@@ -10,6 +10,11 @@ interface DefaultConnectionConfig {
   password: string;
   ssl: boolean;
   timeout: number;
+  connectionTimeout: number;
+  queryTimeout: number;
+  defaultQueryLanguage: string;
+  dbType: 'influxdb';
+  version: '1.x' | '2.x' | '3.x';
 }
 
 interface DefaultAppConfig {
@@ -59,6 +64,11 @@ export const DEFAULT_CONNECTION_CONFIG: DefaultConnectionConfig = {
   password: getEnvValue('VITE_DEFAULT_INFLUXDB_PASSWORD', ''),
   ssl: getEnvValue('VITE_DEFAULT_INFLUXDB_SSL', false, (v) => v.toLowerCase() === 'true'),
   timeout: getEnvValue('VITE_DEFAULT_INFLUXDB_TIMEOUT', 60, parseInt),
+  connectionTimeout: getEnvValue('VITE_DEFAULT_CONNECTION_TIMEOUT', 30, parseInt),
+  queryTimeout: getEnvValue('VITE_DEFAULT_QUERY_TIMEOUT', 60, parseInt),
+  defaultQueryLanguage: getEnvValue('VITE_DEFAULT_QUERY_LANGUAGE', 'InfluxQL'),
+  dbType: 'influxdb' as const,
+  version: getEnvValue('VITE_DEFAULT_INFLUXDB_VERSION', '1.x') as '1.x' | '2.x' | '3.x',
 };
 
 /**
@@ -92,12 +102,18 @@ export const DEFAULT_PERFORMANCE_CONFIG: DefaultPerformanceConfig = {
 export function createDefaultConnectionConfig() {
   return {
     name: '',
+    description: '',
+    dbType: DEFAULT_CONNECTION_CONFIG.dbType,
+    version: DEFAULT_CONNECTION_CONFIG.version,
     host: DEFAULT_CONNECTION_CONFIG.host,
     port: DEFAULT_CONNECTION_CONFIG.port,
     username: DEFAULT_CONNECTION_CONFIG.username,
     password: DEFAULT_CONNECTION_CONFIG.password,
     ssl: DEFAULT_CONNECTION_CONFIG.ssl,
     timeout: DEFAULT_CONNECTION_CONFIG.timeout,
+    connectionTimeout: DEFAULT_CONNECTION_CONFIG.connectionTimeout,
+    queryTimeout: DEFAULT_CONNECTION_CONFIG.queryTimeout,
+    defaultQueryLanguage: DEFAULT_CONNECTION_CONFIG.defaultQueryLanguage,
   };
 }
 
@@ -107,12 +123,17 @@ export function createDefaultConnectionConfig() {
 export function getFilledConnectionConfig(config: any): any {
   return {
     ...config,
+    dbType: config.dbType || DEFAULT_CONNECTION_CONFIG.dbType,
+    version: config.version || DEFAULT_CONNECTION_CONFIG.version,
     host: config.host || DEFAULT_CONNECTION_CONFIG.host,
     port: config.port || DEFAULT_CONNECTION_CONFIG.port,
     username: config.username || DEFAULT_CONNECTION_CONFIG.username,
     password: config.password || DEFAULT_CONNECTION_CONFIG.password,
     ssl: config.ssl !== undefined ? config.ssl : DEFAULT_CONNECTION_CONFIG.ssl,
     timeout: config.timeout || DEFAULT_CONNECTION_CONFIG.timeout,
+    connectionTimeout: config.connectionTimeout || DEFAULT_CONNECTION_CONFIG.connectionTimeout,
+    queryTimeout: config.queryTimeout || DEFAULT_CONNECTION_CONFIG.queryTimeout,
+    defaultQueryLanguage: config.defaultQueryLanguage || DEFAULT_CONNECTION_CONFIG.defaultQueryLanguage,
   };
 }
 

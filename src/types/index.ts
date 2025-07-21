@@ -1,17 +1,54 @@
 import React from 'react';
 
+// 数据库类型
+export type DatabaseType = 'influxdb';
+
+// InfluxDB 版本
+export type InfluxDBVersion = '1.x' | '2.x' | '3.x';
+
+// 代理类型
+export type ProxyType = 'http' | 'https' | 'socks5';
+
+// 代理配置
+export interface ProxyConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+  proxyType: ProxyType;
+}
+
+// InfluxDB 2.x/3.x 特有配置
+export interface InfluxDBV2Config {
+  apiToken: string;
+  organization: string;
+  bucket?: string;
+  v1CompatibilityApi: boolean;
+}
+
 // 连接相关类型
 export interface ConnectionConfig {
   id?: string;
   name: string;
+  description?: string;
+  dbType: DatabaseType;
+  version?: InfluxDBVersion;
   host: string;
   port: number;
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
   database?: string;
   ssl: boolean;
   timeout: number;
-  version?: string; // InfluxDB版本，支持自动补全的版本兼容
+  connectionTimeout: number;
+  queryTimeout: number;
+  defaultQueryLanguage?: string;
+  proxyConfig?: ProxyConfig;
+  // InfluxDB 1.x 特有
+  retentionPolicy?: string;
+  // InfluxDB 2.x/3.x 特有
+  v2Config?: InfluxDBV2Config;
   created_at?: string;
   updated_at?: string;
   // 保持向后兼容性
@@ -27,6 +64,7 @@ export interface ConnectionStatus {
   latency?: number;
   poolSize?: number;
   activeConnections?: number;
+  serverVersion?: string; // 检测到的服务器版本
 }
 
 export interface ConnectionTestResult {

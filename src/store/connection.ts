@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
+import { generateUniqueId } from '@/utils/idGenerator';
 
 interface ConnectionState {
   // 连接配置列表
@@ -64,6 +65,21 @@ interface ConnectionState {
   initializeConnectionStates: () => void;
 }
 
+// 辅助函数：解析 InfluxDB 版本字符串，返回主版本号（1.x, 2.x, 3.x）
+const parseInfluxDBVersion = (versionString: string): '1.x' | '2.x' | '3.x' | undefined => {
+  // 尝试从版本字符串中提取主版本号
+  if (versionString.includes('v1.') || versionString.startsWith('1.') || versionString.includes('InfluxDB/1.')) {
+    return '1.x';
+  } else if (versionString.includes('v2.') || versionString.startsWith('2.') || versionString.includes('InfluxDB/2.')) {
+    return '2.x';
+  } else if (versionString.includes('v3.') || versionString.startsWith('3.') || versionString.includes('InfluxDB/3.')) {
+    return '3.x';
+  }
+
+  // 如果无法确定版本，返回 undefined
+  return undefined;
+};
+
 export const useConnectionStore = create<ConnectionState>()(
   persist(
     (set, get) => ({
@@ -79,7 +95,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
       // 添加连接
       addConnection: config => {
-        const id = config.id || generateConnectionId();
+        const id = config.id || generateUniqueId('conn');
         const newConnection: ConnectionConfig = {
           ...config,
           id,
@@ -411,7 +427,7 @@ export const useConnectionStore = create<ConnectionState>()(
           }));
 
           // 调用后端测试连接API - 使用新的返回类型
-          const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string}>('test_connection', { connectionId: id });
+          const result = await safeTauriInvoke<{success: boolean, latency?: number, error?: string, serverVersion?: string}>('test_connection', { connectionId: id });
           console.log(`✅ 测试连接结果: ${id}`, result);
 
           // 更新表格状态为测试结果，不影响数据源树连接状态
@@ -425,9 +441,32 @@ export const useConnectionStore = create<ConnectionState>()(
                   lastConnected: new Date(),
                   error: undefined,
                   latency: result.latency,
+                  serverVersion: result.serverVersion,
                 },
               },
             }));
+
+            // 如果检测到服务器版本，且与配置的版本不同，则更新连接配置
+            if (result.serverVersion) {
+              const currentState = get();
+              const connection = currentState.connections.find((conn: ConnectionConfig) => conn.id === id);
+              if (connection) {
+                // 解析服务器版本，确定主版本号
+                const detectedVersion = parseInfluxDBVersion(result.serverVersion);
+                if (detectedVersion && detectedVersion !== connection.version) {
+                  console.log(`🔄 检测到版本变更: ${connection.version} -> ${detectedVersion}`);
+
+                  // 更新连接配置中的版本
+                  set(state => ({
+                    connections: state.connections.map((conn: ConnectionConfig) =>
+                      conn.id === id
+                        ? { ...conn, version: detectedVersion, updatedAt: new Date() }
+                        : conn
+                    ),
+                  }));
+                }
+              }
+            }
           } else {
             set(state => ({
               tableConnectionStatuses: {
@@ -775,9 +814,9 @@ export const useConnectionStore = create<ConnectionState>()(
   )
 );
 
-// 生成连接ID
+// 生成连接ID (备用函数，优先使用 generateUniqueId)
 function generateConnectionId(): string {
-  return `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return generateUniqueId('conn');
 }
 
 // 连接状态工具函数

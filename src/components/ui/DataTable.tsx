@@ -41,6 +41,8 @@ interface Column {
   key: string;
   ellipsis?: boolean;
   width?: number | string;
+  minWidth?: number; // 最小宽度
+  fixed?: 'left' | 'right'; // 固定列
   render?: (value: any, record: any, index: number) => React.ReactNode;
   align?: 'left' | 'center' | 'right';
   sortable?: boolean; // 是否支持排序
@@ -61,6 +63,7 @@ interface DataTableProps {
   pagination?: PaginationConfig | false; // 分页配置，false表示不分页
   onRow?: (record: any, index?: number) => { [key: string]: (event: any) => void };
   onChange?: (pagination: PaginationConfig, sorter: SortConfig) => void; // 分页和排序变化回调
+  tableLayout?: 'auto' | 'fixed'; // 表格布局
 }
 
 const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
@@ -79,6 +82,7 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
       pagination = { current: 1, pageSize: 50, total: 0 }, // 默认分页配置
       onRow,
       onChange,
+      tableLayout = 'auto',
       ...props
     },
     ref
