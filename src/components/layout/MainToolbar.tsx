@@ -230,7 +230,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           onClick={() => {
             // 直接切换到查询历史视图
             onViewChange?.('query-history');
-            showMessage.info('正在打开查询历史页面...');
           }}
           title='查询历史'
         >

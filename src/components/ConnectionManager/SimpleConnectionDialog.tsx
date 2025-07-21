@@ -396,7 +396,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
   const renderConnectionForm = () => (
     <div className='space-y-6'>
-      {/* 基本信息 */}
+      {/* 基本信息 - 始终显示 */}
       <div className='space-y-4'>
         <h3 className='text-lg font-medium text-foreground border-b pb-2'>基本信息</h3>
 
@@ -483,381 +483,67 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </div>
       </div>
 
-      {/* 连接配置 */}
-      <div className='space-y-4'>
-        <h3 className='text-lg font-medium text-foreground border-b pb-2'>连接配置</h3>
+      {/* Tab 配置区域 */}
+      <Tabs defaultValue="server" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="server">服务器配置</TabsTrigger>
+          <TabsTrigger value="advanced">高级配置</TabsTrigger>
+          <TabsTrigger value="proxy">代理配置</TabsTrigger>
+        </TabsList>
 
-        <div className='grid grid-cols-3 gap-4'>
-          <div className='col-span-2 space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              主机地址 <span className='text-destructive'>*</span>
-            </Label>
-            <Input
-              placeholder='localhost 或 192.168.1.100'
-              value={formData.host}
-              onChange={e => handleInputChange('host', e.target.value)}
-              autoCapitalize='off'
-              autoCorrect='off'
-              className={
-                errors.host
-                  ? 'border-destructive focus-visible:ring-destructive'
-                  : ''
-              }
-            />
-            {errors.host && (
-              <div className='text-xs text-destructive mt-1'>{errors.host}</div>
-            )}
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              端口 <span className='text-destructive'>*</span>
-            </Label>
-            <InputNumber
-              placeholder='8086'
-              value={formData.port}
-              onChange={value => handleInputChange('port', value || createDefaultConnectionConfig().port)}
-              className={`w-full ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-              min={1}
-              max={65535}
-              controls={false}
-            />
-            {errors.port && (
-              <div className='text-xs text-destructive mt-1'>{errors.port}</div>
-            )}
-          </div>
-        </div>
-
-        {/* 认证配置 */}
-        {formData.version === '1.x' && (
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1'>
+        {/* 服务器配置 Tab */}
+        <TabsContent value="server" className="space-y-6 mt-6">
+          <div className='grid grid-cols-3 gap-4'>
+            <div className='col-span-2 space-y-1'>
               <Label className='block text-sm font-medium text-foreground'>
-                用户名
+                主机地址 <span className='text-destructive'>*</span>
               </Label>
               <Input
-                placeholder='可选'
-                value={formData.username}
-                onChange={e => handleInputChange('username', e.target.value)}
+                placeholder='localhost 或 192.168.1.100'
+                value={formData.host}
+                onChange={e => handleInputChange('host', e.target.value)}
                 autoCapitalize='off'
                 autoCorrect='off'
-              />
-            </div>
-
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                密码
-              </Label>
-              <Input
-                type='password'
-                placeholder='可选'
-                value={formData.password}
-                onChange={e => handleInputChange('password', e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {(formData.version === '2.x' || formData.version === '3.x') && (
-          <div className='space-y-4'>
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                API 令牌 <span className='text-destructive'>*</span>
-              </Label>
-              <Input
-                type='password'
-                placeholder='请输入 API Token'
-                value={formData.apiToken}
-                onChange={e => handleInputChange('apiToken', e.target.value)}
                 className={
-                  errors.apiToken
+                  errors.host
                     ? 'border-destructive focus-visible:ring-destructive'
                     : ''
                 }
               />
-              {errors.apiToken && (
-                <div className='text-xs text-destructive mt-1'>{errors.apiToken}</div>
+              {errors.host && (
+                <div className='text-xs text-destructive mt-1'>{errors.host}</div>
               )}
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  组织 ID/名称 <span className='text-destructive'>*</span>
-                </Label>
-                <Input
-                  placeholder='组织 ID 或名称'
-                  value={formData.organization}
-                  onChange={e => handleInputChange('organization', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                  className={
-                    errors.organization
-                      ? 'border-destructive focus-visible:ring-destructive'
-                      : ''
-                  }
-                />
-                {errors.organization && (
-                  <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
-                )}
-              </div>
-
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  桶名称
-                </Label>
-                <Input
-                  placeholder='可选，默认桶'
-                  value={formData.bucket}
-                  onChange={e => handleInputChange('bucket', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                />
-              </div>
-            </div>
-
             <div className='space-y-1'>
               <Label className='block text-sm font-medium text-foreground'>
-                V1 兼容 API
+                端口 <span className='text-destructive'>*</span>
               </Label>
-              <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                <Switch
-                  id='v1-compat-switch'
-                  checked={formData.v1CompatibilityApi}
-                  onCheckedChange={checked => handleInputChange('v1CompatibilityApi', checked)}
-                />
-                <Label
-                  htmlFor='v1-compat-switch'
-                  className='text-sm font-medium cursor-pointer'
-                >
-                  {formData.v1CompatibilityApi ? '已启用 V1 兼容 API' : '启用 V1 兼容 API'}
-                </Label>
-              </div>
+              <InputNumber
+                placeholder='8086'
+                value={formData.port}
+                onChange={value => handleInputChange('port', value || createDefaultConnectionConfig().port)}
+                className={`w-full ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                min={1}
+                max={65535}
+                controls={false}
+              />
+              {errors.port && (
+                <div className='text-xs text-destructive mt-1'>{errors.port}</div>
+              )}
             </div>
-          </div>
-        )}
-
-        {/* 数据库配置 */}
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              {formData.version === '1.x' ? '默认数据库' : '默认数据库'}
-            </Label>
-            <Input
-              placeholder={formData.version === '1.x' ? '可选，连接后默认选择的数据库' : '可选'}
-              value={formData.database}
-              onChange={e => handleInputChange('database', e.target.value)}
-              autoCapitalize='off'
-              autoCorrect='off'
-            />
           </div>
 
           {formData.version === '1.x' && (
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                默认保留策略
-              </Label>
-              <Input
-                placeholder='可选，如 autogen'
-                value={formData.retentionPolicy}
-                onChange={e => handleInputChange('retentionPolicy', e.target.value)}
-                autoCapitalize='off'
-                autoCorrect='off'
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 高级配置 */}
-      <div className='space-y-4'>
-        <h3 className='text-lg font-medium text-foreground border-b pb-2'>高级配置</h3>
-
-        <div className='grid grid-cols-3 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              连接超时(秒)
-            </Label>
-            <InputNumber
-              placeholder='30'
-              value={formData.connectionTimeout}
-              onChange={value => handleInputChange('connectionTimeout', value || 30)}
-              className={`w-full ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-              min={5}
-              max={300}
-              controls={false}
-            />
-            {errors.connectionTimeout && (
-              <div className='text-xs text-destructive mt-1'>
-                {errors.connectionTimeout}
-              </div>
-            )}
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              查询超时(秒)
-            </Label>
-            <InputNumber
-              placeholder='60'
-              value={formData.queryTimeout}
-              onChange={value => handleInputChange('queryTimeout', value || 60)}
-              className={`w-full ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-              min={10}
-              max={3600}
-              controls={false}
-            />
-            {errors.queryTimeout && (
-              <div className='text-xs text-destructive mt-1'>
-                {errors.queryTimeout}
-              </div>
-            )}
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              超时时间(秒)
-            </Label>
-            <InputNumber
-              placeholder='30'
-              value={formData.timeout}
-              onChange={value => handleInputChange('timeout', value || 30)}
-              className={`w-full ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-              min={5}
-              max={300}
-              controls={false}
-            />
-            {errors.timeout && (
-              <div className='text-xs text-destructive mt-1'>
-                {errors.timeout}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              默认查询语言
-            </Label>
-            <Select
-              value={formData.defaultQueryLanguage}
-              onValueChange={value => handleInputChange('defaultQueryLanguage', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder='选择查询语言' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
-                <SelectItem value='Flux'>Flux</SelectItem>
-                {formData.version === '3.x' && <SelectItem value='SQL'>SQL</SelectItem>}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              启用SSL
-            </Label>
-            <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-              <Switch
-                id='ssl-switch'
-                checked={formData.ssl}
-                onCheckedChange={checked => handleInputChange('ssl', checked)}
-              />
-              <Label
-                htmlFor='ssl-switch'
-                className='text-sm font-medium cursor-pointer'
-              >
-                {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
-              </Label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 代理配置 */}
-      <div className='space-y-4'>
-        <div className='flex items-center space-x-3'>
-          <h3 className='text-lg font-medium text-foreground border-b pb-2 flex-1'>代理配置</h3>
-          <Switch
-            id='proxy-switch'
-            checked={formData.proxyEnabled}
-            onCheckedChange={checked => handleInputChange('proxyEnabled', checked)}
-          />
-        </div>
-
-        {formData.proxyEnabled && (
-          <div className='space-y-4 p-4 rounded-lg border bg-muted/20'>
-            <div className='grid grid-cols-3 gap-4'>
-              <div className='col-span-2 space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  代理服务器地址 <span className='text-destructive'>*</span>
-                </Label>
-                <Input
-                  placeholder='127.0.0.1'
-                  value={formData.proxyHost}
-                  onChange={e => handleInputChange('proxyHost', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                  className={
-                    errors.proxyHost
-                      ? 'border-destructive focus-visible:ring-destructive'
-                      : ''
-                  }
-                />
-                {errors.proxyHost && (
-                  <div className='text-xs text-destructive mt-1'>{errors.proxyHost}</div>
-                )}
-              </div>
-
+            <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-1'>
                 <Label className='block text-sm font-medium text-foreground'>
-                  代理端口 <span className='text-destructive'>*</span>
-                </Label>
-                <InputNumber
-                  placeholder='8080'
-                  value={formData.proxyPort}
-                  onChange={value => handleInputChange('proxyPort', value || 8080)}
-                  className={`w-full ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  min={1}
-                  max={65535}
-                  controls={false}
-                />
-                {errors.proxyPort && (
-                  <div className='text-xs text-destructive mt-1'>{errors.proxyPort}</div>
-                )}
-              </div>
-            </div>
-
-            <div className='grid grid-cols-3 gap-4'>
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  代理类型
-                </Label>
-                <Select
-                  value={formData.proxyType}
-                  onValueChange={value => handleInputChange('proxyType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='选择代理类型' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='http'>HTTP</SelectItem>
-                    <SelectItem value='https'>HTTPS</SelectItem>
-                    <SelectItem value='socks5'>SOCKS5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  代理用户名
+                  用户名
                 </Label>
                 <Input
                   placeholder='可选'
-                  value={formData.proxyUsername}
-                  onChange={e => handleInputChange('proxyUsername', e.target.value)}
+                  value={formData.username}
+                  onChange={e => handleInputChange('username', e.target.value)}
                   autoCapitalize='off'
                   autoCorrect='off'
                 />
@@ -865,19 +551,342 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
               <div className='space-y-1'>
                 <Label className='block text-sm font-medium text-foreground'>
-                  代理密码
+                  密码
                 </Label>
                 <Input
                   type='password'
                   placeholder='可选'
-                  value={formData.proxyPassword}
-                  onChange={e => handleInputChange('proxyPassword', e.target.value)}
+                  value={formData.password}
+                  onChange={e => handleInputChange('password', e.target.value)}
                 />
               </div>
             </div>
+          )}
+
+          {(formData.version === '2.x' || formData.version === '3.x') && (
+            <div className='space-y-4'>
+              <div className='space-y-1'>
+                <Label className='block text-sm font-medium text-foreground'>
+                  API 令牌 <span className='text-destructive'>*</span>
+                </Label>
+                <Input
+                  type='password'
+                  placeholder='请输入 API Token'
+                  value={formData.apiToken}
+                  onChange={e => handleInputChange('apiToken', e.target.value)}
+                  className={
+                    errors.apiToken
+                      ? 'border-destructive focus-visible:ring-destructive'
+                      : ''
+                  }
+                />
+                {errors.apiToken && (
+                  <div className='text-xs text-destructive mt-1'>{errors.apiToken}</div>
+                )}
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    组织 ID/名称 <span className='text-destructive'>*</span>
+                  </Label>
+                  <Input
+                    placeholder='组织 ID 或名称'
+                    value={formData.organization}
+                    onChange={e => handleInputChange('organization', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                    className={
+                      errors.organization
+                        ? 'border-destructive focus-visible:ring-destructive'
+                        : ''
+                    }
+                  />
+                  {errors.organization && (
+                    <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
+                  )}
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    桶名称
+                  </Label>
+                  <Input
+                    placeholder='可选，默认桶'
+                    value={formData.bucket}
+                    onChange={e => handleInputChange('bucket', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 数据库配置和V1兼容API合并为一行 */}
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                {formData.version === '1.x' ? '默认数据库' : '默认数据库'}
+              </Label>
+              <Input
+                placeholder={formData.version === '1.x' ? '可选，连接后默认选择的数据库' : '可选'}
+                value={formData.database}
+                onChange={e => handleInputChange('database', e.target.value)}
+                autoCapitalize='off'
+                autoCorrect='off'
+              />
+            </div>
+
+            {formData.version === '1.x' ? (
+              <div className='space-y-1'>
+                <Label className='block text-sm font-medium text-foreground'>
+                  默认保留策略
+                </Label>
+                <Input
+                  placeholder='可选，如 autogen'
+                  value={formData.retentionPolicy}
+                  onChange={e => handleInputChange('retentionPolicy', e.target.value)}
+                  autoCapitalize='off'
+                  autoCorrect='off'
+                />
+              </div>
+            ) : (
+              <div className='space-y-1'>
+                <Label className='block text-sm font-medium text-foreground'>
+                  V1 兼容 API
+                </Label>
+                <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                  <Switch
+                    id='v1-compat-switch'
+                    checked={formData.v1CompatibilityApi}
+                    onCheckedChange={checked => handleInputChange('v1CompatibilityApi', checked)}
+                  />
+                  <Label
+                    htmlFor='v1-compat-switch'
+                    className='text-sm font-medium cursor-pointer'
+                  >
+                    {formData.v1CompatibilityApi ? '已启用 V1 兼容 API' : '启用 V1 兼容 API'}
+                  </Label>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* 高级配置 Tab */}
+        <TabsContent value="advanced" className="space-y-6 mt-6">
+          <div className='grid grid-cols-3 gap-4'>
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                连接超时(秒)
+              </Label>
+              <InputNumber
+                placeholder='30'
+                value={formData.connectionTimeout}
+                onChange={value => handleInputChange('connectionTimeout', value || 30)}
+                className={`w-full ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                min={5}
+                max={300}
+                controls={false}
+              />
+              {errors.connectionTimeout && (
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.connectionTimeout}
+                </div>
+              )}
+            </div>
+
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                查询超时(秒)
+              </Label>
+              <InputNumber
+                placeholder='60'
+                value={formData.queryTimeout}
+                onChange={value => handleInputChange('queryTimeout', value || 60)}
+                className={`w-full ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                min={10}
+                max={3600}
+                controls={false}
+              />
+              {errors.queryTimeout && (
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.queryTimeout}
+                </div>
+              )}
+            </div>
+
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                超时时间(秒)
+              </Label>
+              <InputNumber
+                placeholder='30'
+                value={formData.timeout}
+                onChange={value => handleInputChange('timeout', value || 30)}
+                className={`w-full ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                min={5}
+                max={300}
+                controls={false}
+              />
+              {errors.timeout && (
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.timeout}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 查询语言和SSL配置合并为一行 */}
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                默认查询语言
+              </Label>
+              <Select
+                value={formData.defaultQueryLanguage}
+                onValueChange={value => handleInputChange('defaultQueryLanguage', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder='选择查询语言' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
+                  <SelectItem value='Flux'>Flux</SelectItem>
+                  {formData.version === '3.x' && <SelectItem value='SQL'>SQL</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                启用SSL
+              </Label>
+              <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                <Switch
+                  id='ssl-switch'
+                  checked={formData.ssl}
+                  onCheckedChange={checked => handleInputChange('ssl', checked)}
+                />
+                <Label
+                  htmlFor='ssl-switch'
+                  className='text-sm font-medium cursor-pointer'
+                >
+                  {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                </Label>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* 代理配置 Tab */}
+        <TabsContent value="proxy" className="space-y-6 mt-6">
+          {/* 启用代理开关 */}
+          <div className='flex items-center justify-between p-4 rounded-lg border bg-muted/20'>
+            <div>
+              <Label htmlFor='proxy-switch' className='text-sm font-medium cursor-pointer'>
+                启用代理
+              </Label>
+              <p className='text-xs text-muted-foreground mt-1'>
+                启用后将通过代理服务器连接到InfluxDB
+              </p>
+            </div>
+            <Switch
+              id='proxy-switch'
+              checked={formData.proxyEnabled}
+              onCheckedChange={checked => handleInputChange('proxyEnabled', checked)}
+            />
+          </div>
+
+          <div className='grid grid-cols-3 gap-4'>
+            <div className='col-span-2 space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                代理服务器地址 <span className='text-destructive'>*</span>
+              </Label>
+              <Input
+                placeholder='127.0.0.1'
+                value={formData.proxyHost}
+                onChange={e => handleInputChange('proxyHost', e.target.value)}
+                autoCapitalize='off'
+                autoCorrect='off'
+                className={
+                  errors.proxyHost
+                    ? 'border-destructive focus-visible:ring-destructive'
+                    : ''
+                }
+              />
+              {errors.proxyHost && (
+                <div className='text-xs text-destructive mt-1'>{errors.proxyHost}</div>
+              )}
+            </div>
+
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                代理端口 <span className='text-destructive'>*</span>
+              </Label>
+              <InputNumber
+                placeholder='8080'
+                value={formData.proxyPort}
+                onChange={value => handleInputChange('proxyPort', value || 8080)}
+                className={`w-full ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                min={1}
+                max={65535}
+                controls={false}
+              />
+              {errors.proxyPort && (
+                <div className='text-xs text-destructive mt-1'>{errors.proxyPort}</div>
+              )}
+            </div>
+          </div>
+
+          <div className='space-y-1'>
+            <Label className='block text-sm font-medium text-foreground'>
+              代理类型
+            </Label>
+            <Select
+              value={formData.proxyType}
+              onValueChange={value => handleInputChange('proxyType', value)}
+            >
+              <SelectTrigger className='w-full max-w-xs'>
+                <SelectValue placeholder='选择代理类型' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='http'>HTTP</SelectItem>
+                <SelectItem value='https'>HTTPS</SelectItem>
+                <SelectItem value='socks5'>SOCKS5</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                代理用户名
+              </Label>
+              <Input
+                placeholder='可选'
+                value={formData.proxyUsername}
+                onChange={e => handleInputChange('proxyUsername', e.target.value)}
+                autoCapitalize='off'
+                autoCorrect='off'
+              />
+            </div>
+
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                代理密码
+              </Label>
+              <Input
+                type='password'
+                placeholder='可选'
+                value={formData.proxyPassword}
+                onChange={e => handleInputChange('proxyPassword', e.target.value)}
+              />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 

@@ -427,11 +427,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                       <RefreshCw className='w-3 h-3 text-muted-foreground animate-spin' />
                     )}
                   </div>
-                  {activeConnectionId === record.id && (
-                    <Badge variant='default' className='text-xs px-1 py-0 flex-shrink-0'>
-                      活跃
-                    </Badge>
-                  )}
                 </div>
 
                 {/* 连接地址 */}
@@ -672,11 +667,20 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       minWidth: 90,
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
+        const isActive = activeConnectionId === record.id;
+
         return (
-          <div className='space-y-1'>
-            {getStatusTag(status)}
+          <div className='flex flex-col items-start gap-1'>
+            <div className='flex items-center gap-2'>
+              {getStatusTag(status)}
+              {isActive && (
+                <Badge variant='default' className='text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 border-blue-200'>
+                  活跃
+                </Badge>
+              )}
+            </div>
             {status?.latency && (
-              <div className='text-xs text-muted-foreground'>
+              <div className='text-xs text-muted-foreground font-mono'>
                 {status.latency}ms
               </div>
             )}
@@ -774,43 +778,46 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   // 合并连接数据和状态
   const dataSource: ConnectionWithStatus[] = connections.map(conn => ({
     ...conn,
+    // 确保 dbType 字段存在，如果不存在则设置默认值
+    dbType: conn.dbType || 'influxdb',
     status: tableConnectionStatuses[conn.id!],
   }));
 
   return (
     <div className='h-full flex flex-col'>
-      {/* 统计信息和工具栏 */}
-      <div className='border-b'>
-        <div className='p-4'>
-          <div className='flex items-center justify-between mb-4'>
-            <h3 className='text-lg font-medium'>连接管理</h3>
-            <div className='flex gap-2'>
-              <Button
-                variant='default'
-                onClick={() => onCreateConnection?.()}
-                size='sm'
-              >
-                <Plus className='w-4 h-4 mr-1' />
-                新建连接
-              </Button>
+      {/* 页面头部 - 标题和操作按钮在同一行 */}
+      <div className='border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+        <div className='px-6 py-4'>
+          <div className='flex items-center justify-between'>
+            <h1 className='text-2xl font-semibold tracking-tight'></h1>
+            <div className='flex items-center gap-3'>
               <Button
                 variant='outline'
                 onClick={handleRefreshAllConnectionStatuses}
                 disabled={isRefreshingAll}
                 size='sm'
+                className='h-9'
               >
-                <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshingAll ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
                 {isRefreshingAll ? '测试中...' : '刷新状态'}
+              </Button>
+              <Button
+                variant='default'
+                onClick={() => onCreateConnection?.()}
+                size='sm'
+                className='h-9'
+              >
+                <Plus className='w-4 h-4 mr-2' />
+                新建连接
               </Button>
             </div>
           </div>
-
         </div>
       </div>
 
       {/* 连接表格 */}
-      <div className='flex-1 overflow-hidden p-4'>
-        <div className='h-full rounded-lg border overflow-hidden'>
+      <div className='flex-1 overflow-hidden px-6 pb-6'>
+        <div className='h-full rounded-lg border overflow-hidden bg-background'>
           <DataTable
             columns={columns}
             dataSource={dataSource}
@@ -818,14 +825,14 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             loading={false}
             scroll={{
               x: 'max-content', // 自适应内容宽度
-              y: 'calc(100vh - 400px)',
+              y: 'calc(100vh - 200px)', // 调整高度以适应新的头部布局
             }}
             size='middle'
             className='w-full h-full connection-table'
             tableLayout='fixed'
             rowClassName={(record: ConnectionWithStatus) =>
               activeConnectionId === record.id
-                ? 'bg-accent'
+                ? 'bg-accent/50'
                 : ''
             }
             onRow={(record: ConnectionWithStatus) => ({
