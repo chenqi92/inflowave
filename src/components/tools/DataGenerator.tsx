@@ -827,24 +827,31 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
           console.log('字段查询结果:', fieldResult.data);
           fieldResult.data.forEach((row: any) => {
-            if (row.fieldKey) {
+            // 兼容不同版本的InfluxDB字段名称
+            const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
+            if (fieldName && typeof fieldName === 'string') {
               let type: FieldInfo['type'] = 'string';
-              if (row.fieldType) {
-                switch (row.fieldType.toLowerCase()) {
+              const fieldType = row.fieldType || row.type;
+              if (fieldType) {
+                switch (fieldType.toLowerCase()) {
                   case 'integer':
+                  case 'int':
                     type = 'int';
                     break;
                   case 'float':
+                  case 'double':
+                  case 'number':
                     type = 'float';
                     break;
                   case 'boolean':
+                  case 'bool':
                     type = 'boolean';
                     break;
                   default:
                     type = 'string';
                 }
               }
-              fields.push({ name: row.fieldKey, type });
+              fields.push({ name: fieldName, type });
             }
           });
         }
@@ -861,8 +868,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
           console.log('标签查询结果:', tagResult.data);
           tagResult.data.forEach((row: any) => {
-            if (row.tagKey) {
-              tags.push({ name: row.tagKey, type: 'string' });
+            // 兼容不同版本的InfluxDB字段名称
+            const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
+            if (tagName && typeof tagName === 'string') {
+              tags.push({ name: tagName, type: 'string' });
             }
           });
         }
@@ -872,6 +881,41 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
       // 方法2：如果SHOW语句失败，回退到采样数据方法
       if (fields.length === 0 && tags.length === 0) {
+        console.log('尝试使用采样数据方法分析表结构...');
+        
+        // 首先尝试使用SHOW SERIES获取tag信息
+        try {
+          const seriesResult = await safeTauriInvoke<any>('execute_query', {
+            request: {
+              connectionId: activeConnectionId,
+              database: selectedDatabase,
+              query: `SHOW SERIES FROM "${tableName}" LIMIT 1`,
+            },
+          });
+          
+          if (seriesResult.success && seriesResult.data && seriesResult.data.length > 0) {
+            console.log('SHOW SERIES结果:', seriesResult.data[0]);
+            // 从series信息中解析tag结构
+            const seriesInfo = seriesResult.data[0];
+            const seriesKey = seriesInfo.key || seriesInfo.series || Object.values(seriesInfo)[0];
+            if (seriesKey && typeof seriesKey === 'string') {
+              const parts = seriesKey.split(',');
+              if (parts.length > 1) {
+                for (let i = 1; i < parts.length; i++) {
+                  const tagPart = parts[i];
+                  const tagName = tagPart.split('=')[0];
+                  if (tagName && !tags.find(t => t.name === tagName)) {
+                    tags.push({ name: tagName, type: 'string' });
+                  }
+                }
+              }
+            }
+          }
+        } catch (seriesError) {
+          console.log('SHOW SERIES查询失败:', seriesError);
+        }
+        
+        // 然后采样数据来获取字段信息
         const sampleResult = await safeTauriInvoke<any>('execute_query', {
           request: {
             connectionId: activeConnectionId,
@@ -886,6 +930,9 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
           Object.entries(sample).forEach(([key, value]) => {
             if (key === 'time') return; // 跳过时间字段
+            
+            // 如果已经被识别为tag，跳过
+            if (tags.find(t => t.name === key)) return;
 
             let type: FieldInfo['type'] = 'string';
             if (typeof value === 'number') {
@@ -894,13 +941,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               type = 'boolean';
             }
 
-            // 改进的tag/field判断逻辑
-            // 在InfluxDB中，通常数值型字段是fields，字符串型可能是tags
-            if (typeof value === 'string' && value.length < 100) {
-              tags.push({ name: key, type, lastValue: value });
-            } else {
-              fields.push({ name: key, type, lastValue: value });
-            }
+            // 剩下的字段都当作fields处理
+            fields.push({ name: key, type });
           });
         }
       }
@@ -1597,7 +1639,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                     <Checkbox
                       id={`task-${index}`}
                       checked={selectedTasks.includes(task.name)}
-                      onCheckedChange={(checked) => handleTaskSelection(task.name, checked)}
+                      onCheckedChange={(checked) => handleTaskSelection(task.name, !!checked)}
                     />
                     <div className='flex-1'>
                       <CardTitle className='text-base'>{task.name}</CardTitle>
