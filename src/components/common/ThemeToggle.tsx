@@ -25,7 +25,7 @@ export function ThemeToggle({
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const getCurrentIcon = () => {
-    if (theme === 'system' || theme === 'auto') {
+    if (theme === 'system') {
       return <Monitor className='h-4 w-4' />;
     }
     return resolvedTheme === 'dark' ? (
@@ -76,7 +76,7 @@ export function ThemeToggle({
         <DropdownMenuItem onClick={() => setTheme('system')}>
           <Monitor className='mr-2 h-4 w-4' />
           <span>跟随系统</span>
-          {(theme === 'system' || theme === 'auto') && <span className='ml-auto'>✓</span>}
+          {theme === 'system' && <span className='ml-auto'>✓</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

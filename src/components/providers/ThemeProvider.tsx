@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { applyThemeColors } from '@/lib/theme-colors';
 import { useAppStore } from '@/store/app';
 
-type Theme = 'dark' | 'light' | 'system' | 'auto';
+type Theme = 'dark' | 'light' | 'system';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -76,7 +76,7 @@ export function ThemeProvider({
 
     let currentTheme: 'light' | 'dark' = 'light';
 
-    if (theme === 'system' || theme === 'auto') {
+    if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
@@ -90,7 +90,7 @@ export function ThemeProvider({
       // 监听系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => {
-        if (theme === 'system' || theme === 'auto') {
+        if (theme === 'system') {
           const newSystemTheme = mediaQuery.matches ? 'dark' : 'light';
           root.classList.remove('light', 'dark');
           root.classList.add(newSystemTheme);

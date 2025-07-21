@@ -87,7 +87,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
 
       // 应用主题设置 - 使用新的主题系统
       if (values.theme) {
-        setTheme(values.theme as 'light' | 'dark' | 'system' | 'auto');
+        setTheme(values.theme as 'light' | 'dark' | 'system');
       }
 
       // 应用语言设置
@@ -98,7 +98,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
         // 构建符合后端期望的设置结构
         const appSettings = {
           general: {
-            theme: values.theme || 'auto',
+            theme: values.theme || 'system',
             language: values.language || 'zh-CN',
             auto_save: values.autoSave || false,
             auto_connect: values.autoConnect || false,
@@ -320,7 +320,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                   <Select
                     value={theme}
                     onValueChange={value =>
-                      setTheme(value as 'light' | 'dark' | 'system' | 'auto')
+                      setTheme(value as 'light' | 'dark' | 'system')
                     }
                   >
                     <SelectTrigger>
@@ -330,7 +330,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
                       <SelectItem value='light'>浅色主题</SelectItem>
                       <SelectItem value='dark'>深色主题</SelectItem>
                       <SelectItem value='system'>跟随系统</SelectItem>
-                      <SelectItem value='auto'>跟随系统</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

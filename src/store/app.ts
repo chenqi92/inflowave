@@ -26,7 +26,7 @@ interface AppState {
 
 // 默认配置
 const defaultConfig: AppConfig = {
-  theme: 'auto',
+  theme: 'system',
   language: 'zh-CN',
   queryTimeout: DEFAULT_APP_CONFIG.queryTimeout,
   maxQueryResults: DEFAULT_APP_CONFIG.maxQueryResults,

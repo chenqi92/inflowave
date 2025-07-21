@@ -82,7 +82,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             general: GeneralSettings {
-                theme: "auto".to_string(),
+                theme: "system".to_string(),
                 language: "zh-CN".to_string(),
                 auto_save: true,
                 auto_connect: false,
@@ -476,7 +476,7 @@ pub async fn get_settings_schema() -> Result<serde_json::Value, String> {
     debug!("获取设置模式");
     
     let schema = serde_json::json!({
-        "themes": ["light", "dark", "auto"],
+        "themes": ["light", "dark", "system"],
         "languages": ["zh-CN", "en-US"],
         "chart_types": ["line", "bar", "pie", "area", "scatter"],
         "color_schemes": ["default", "blue", "green", "purple", "orange"],
