@@ -380,27 +380,53 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
             info!("检测到屏幕大小: {}x{}, 缩放因子: {}", 
                   screen_size.width, screen_size.height, scale_factor);
             
-            // 计算合适的窗口大小（屏幕的80%，但不超过最大合理尺寸）
-            let max_width = 1800.0;
-            let max_height = 1200.0;
-            let min_width = 1000.0;
-            let min_height = 700.0;
-            
-            // 计算目标尺寸（屏幕的80%）
-            let target_width = (screen_size.width as f64 * 0.8).min(max_width).max(min_width);
-            let target_height = (screen_size.height as f64 * 0.8).min(max_height).max(min_height);
+            // 根据缩放因子调整窗口大小策略
+            let (target_width, target_height) = if scale_factor >= 1.5 {
+                // 高DPI显示器：使用固定的合理尺寸，避免窗口过大
+                let ideal_width = 1400.0;
+                let ideal_height = 900.0;
+                
+                // 确保窗口不会超过屏幕的70%
+                let max_width = screen_size.width as f64 * 0.7;
+                let max_height = screen_size.height as f64 * 0.7;
+                
+                let width = ideal_width.min(max_width).max(1000.0);
+                let height = ideal_height.min(max_height).max(700.0);
+                
+                info!("高DPI模式: 使用固定尺寸 {}x{}", width, height);
+                (width, height)
+            } else {
+                // 标准显示器：使用屏幕比例
+                let max_width = 1600.0;
+                let max_height = 1000.0;
+                let min_width = 1000.0;
+                let min_height = 700.0;
+                
+                // 计算目标尺寸（屏幕的75%，避免过大）
+                let width = (screen_size.width as f64 * 0.75).min(max_width).max(min_width);
+                let height = (screen_size.height as f64 * 0.75).min(max_height).max(min_height);
+                
+                info!("标准DPI模式: 使用屏幕比例 {}x{}", width, height);
+                (width, height)
+            };
             
             info!("计算出的窗口大小: {}x{}", target_width, target_height);
             
-            // 计算屏幕正中心位置
-            let center_x = (screen_size.width as f64 - target_width) / 2.0;
-            let center_y = (screen_size.height as f64 - target_height) / 2.0;
+            // 获取显示器位置和尺寸
+            let monitor_position = monitor.position();
+            let screen_width = screen_size.width as f64;
+            let screen_height = screen_size.height as f64;
             
-            // 确保位置不为负数
-            let center_x = center_x.max(0.0);
-            let center_y = center_y.max(0.0);
+            // 计算窗口在显示器中的居中位置
+            let center_x = monitor_position.x as f64 + (screen_width - target_width) / 2.0;
+            let center_y = monitor_position.y as f64 + (screen_height - target_height) / 2.0;
             
-            info!("计算出的中心位置: ({}, {})", center_x, center_y);
+            // 确保位置不会超出显示器边界
+            let center_x = center_x.max(monitor_position.x as f64);
+            let center_y = center_y.max(monitor_position.y as f64);
+            
+            info!("显示器位置: ({}, {}), 计算出的中心位置: ({}, {})", 
+                  monitor_position.x, monitor_position.y, center_x, center_y);
             
             // 设置窗口大小
             let logical_size = LogicalSize::new(target_width, target_height);
@@ -410,16 +436,18 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
                 info!("窗口大小已设置: {}x{}", target_width, target_height);
             }
             
-            // 直接设置窗口位置到计算出的中心点
-            let center_position = LogicalPosition::new(center_x, center_y);
-            if let Err(e) = window.set_position(center_position) {
-                warn!("设置窗口位置失败: {}", e);
-                // 如果手动设置位置失败，则使用系统的居中方法作为备用
-                if let Err(e) = window.center() {
-                    warn!("备用居中方法也失败: {}", e);
+            // 使用系统的center()方法，它能更好地处理不同的DPI和多显示器环境
+            if let Err(e) = window.center() {
+                warn!("系统居中方法失败: {}，尝试手动设置位置", e);
+                // 如果系统居中失败，则使用手动计算的位置作为备用
+                let center_position = LogicalPosition::new(center_x, center_y);
+                if let Err(e) = window.set_position(center_position) {
+                    warn!("手动设置窗口位置也失败: {}", e);
+                } else {
+                    info!("窗口已手动定位到计算位置: ({}, {})", center_x, center_y);
                 }
             } else {
-                info!("窗口已精确定位到屏幕中心: ({}, {})", center_x, center_y);
+                info!("窗口已使用系统方法居中显示");
             }
             
             // 显示窗口
