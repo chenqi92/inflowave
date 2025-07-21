@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import '@/styles/datagrip.css';
 import '@/styles/accessibility.css';
+import '@/styles/zebra-tables.css';
 
 // 错误处理
 import ErrorBoundary from '@/components/common/ErrorBoundary';

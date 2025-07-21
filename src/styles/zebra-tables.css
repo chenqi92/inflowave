@@ -1,0 +1,201 @@
+/**
+ * 斑马纹表格样式
+ * 为所有表格提供统一的斑马纹效果
+ */
+
+/* 基础斑马纹样式 */
+.zebra-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.zebra-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+/* hover 效果保持原有逻辑 */
+.zebra-table tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.5) !important;
+}
+
+/* 选中状态 */
+.zebra-table tbody tr[data-state="selected"] {
+  background-color: hsl(var(--primary) / 0.1) !important;
+}
+
+/* 高对比度模式下的斑马纹 */
+.high-contrast .zebra-table tbody tr:nth-child(odd) {
+  background-color: hsl(0, 0%, 12%) !important;
+}
+
+.high-contrast .zebra-table tbody tr:nth-child(even) {
+  background-color: hsl(0, 0%, 5%) !important;
+}
+
+.high-contrast .zebra-table tbody tr:hover {
+  background-color: hsl(0, 0%, 20%) !important;
+}
+
+.high-contrast .zebra-table tbody tr[data-state="selected"] {
+  background-color: hsl(210, 100%, 15%) !important;
+}
+
+/* 暗黑主题优化 */
+.dark .zebra-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.4);
+}
+
+.dark .zebra-table tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.6) !important;
+}
+
+/* 数据表格专用斑马纹 */
+.data-table-zebra tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.25);
+}
+
+.data-table-zebra tbody tr:nth-child(even) {
+  background-color: hsl(var(--background));
+}
+
+.data-table-zebra tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.45) !important;
+}
+
+/* 查询结果表格的斑马纹 */
+.query-results-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.2);
+}
+
+.query-results-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.query-results-table tbody tr:hover {
+  background-color: hsl(var(--accent) / 0.1) !important;
+}
+
+/* 数据库浏览器表格斑马纹 */
+.database-browser-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.database-browser-table tbody tr:nth-child(even) {
+  background-color: hsl(var(--card));
+}
+
+.database-browser-table tbody tr:hover {
+  background-color: hsl(var(--accent) / 0.15) !important;
+}
+
+/* 设置面板表格斑马纹 */
+.settings-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.15);
+}
+
+.settings-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.settings-table tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.35) !important;
+}
+
+/* 调试信息表格斑马纹 */
+.debug-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.2);
+}
+
+.debug-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.debug-table tbody tr:hover {
+  background-color: hsl(var(--destructive) / 0.1) !important;
+}
+
+/* 性能监控表格斑马纹 */
+.performance-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.25);
+}
+
+.performance-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.performance-table tbody tr:hover {
+  background-color: hsl(var(--chart-1) / 0.1) !important;
+}
+
+/* 连接管理表格斑马纹 */
+.connection-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.2);
+}
+
+.connection-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.connection-table tbody tr:hover {
+  background-color: hsl(var(--primary) / 0.1) !important;
+}
+
+/* 错误日志表格斑马纹 */
+.error-log-table tbody tr:nth-child(odd) {
+  background-color: hsl(var(--destructive) / 0.05);
+}
+
+.error-log-table tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.error-log-table tbody tr:hover {
+  background-color: hsl(var(--destructive) / 0.1) !important;
+}
+
+/* 无障碍增强：减少动画模式下的过渡效果 */
+.reduced-motion .zebra-table tbody tr,
+.reduced-motion .data-table-zebra tbody tr,
+.reduced-motion .query-results-table tbody tr,
+.reduced-motion .database-browser-table tbody tr,
+.reduced-motion .settings-table tbody tr,
+.reduced-motion .debug-table tbody tr,
+.reduced-motion .performance-table tbody tr,
+.reduced-motion .connection-table tbody tr,
+.reduced-motion .error-log-table tbody tr {
+  transition: none !important;
+}
+
+/* 表格边框增强（可选） */
+.bordered-zebra tbody tr {
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.bordered-zebra tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* 紧凑模式斑马纹 */
+.compact-zebra tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.15);
+}
+
+.compact-zebra tbody tr:nth-child(even) {
+  background-color: transparent;
+}
+
+.compact-zebra tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.3) !important;
+}
+
+/* 大型表格斑马纹 */
+.large-zebra tbody tr:nth-child(odd) {
+  background-color: hsl(var(--muted) / 0.35);
+}
+
+.large-zebra tbody tr:nth-child(even) {
+  background-color: hsl(var(--background));
+}
+
+.large-zebra tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.55) !important;
+}

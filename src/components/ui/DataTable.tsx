@@ -286,6 +286,8 @@ const DataTable = React.forwardRef<HTMLDivElement, DataTableProps>(
             }}
           >
             <Table
+              zebra={true}
+              zebraType="data"
               className={cn(
                 'w-full table-fixed border-collapse',
                 size === 'small' && 'text-xs',

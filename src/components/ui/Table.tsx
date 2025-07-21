@@ -1,14 +1,39 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
+// 获取斑马纹样式类名的辅助函数
+const getZebraClass = (zebraType: string): string => {
+  const zebraMap: Record<string, string> = {
+    default: 'zebra-table',
+    data: 'data-table-zebra',
+    query: 'query-results-table',
+    database: 'database-browser-table',
+    settings: 'settings-table',
+    debug: 'debug-table',
+    performance: 'performance-table',
+    connection: 'connection-table',
+    error: 'error-log-table',
+    compact: 'compact-zebra',
+    large: 'large-zebra',
+  };
+  return zebraMap[zebraType] || 'zebra-table';
+};
+
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLTableElement> & {
+    zebra?: boolean;
+    zebraType?: 'default' | 'data' | 'query' | 'database' | 'settings' | 'debug' | 'performance' | 'connection' | 'error' | 'compact' | 'large';
+  }
+>(({ className, zebra = true, zebraType = 'default', ...props }, ref) => (
   <div className='relative w-full overflow-auto'>
     <table
       ref={ref}
-      className={cn('w-full caption-bottom text-sm', className)}
+      className={cn(
+        'w-full caption-bottom text-sm',
+        zebra && getZebraClass(zebraType),
+        className
+      )}
       {...props}
     />
   </div>
