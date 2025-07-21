@@ -102,7 +102,17 @@ export const useUserPreferences = () => {
         'get_user_preferences'
       );
       if (result) {
-        setPreferences(result);
+        // 确保所有字段都有默认值，特别是 layout 字段
+        const mergedPreferences: UserPreferences = {
+          ...defaultPreferences,
+          ...result,
+          workspace: {
+            ...defaultPreferences.workspace,
+            ...result.workspace,
+            layout: result.workspace?.layout || defaultPreferences.workspace.layout,
+          },
+        };
+        setPreferences(mergedPreferences);
       } else {
         // 如果没有用户偏好，使用默认值
         setPreferences(defaultPreferences);

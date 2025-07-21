@@ -44,15 +44,6 @@ const DevTools: React.FC = () => {
           >
             <div className='h-full overflow-y-auto'>
               <div className='max-w-6xl mx-auto space-y-6'>
-                {/* 页面标题 */}
-                <div className='flex items-center gap-3 mb-6'>
-                  <Database className='w-6 h-6 text-purple-600' />
-                  <div>
-                    <h2 className='text-2xl font-bold'>测试数据生成器</h2>
-                    <p className='text-muted-foreground'>生成各种类型的InfluxDB测试数据</p>
-                  </div>
-                </div>
-
                 {/* 数据生成器内容 */}
                 <div className='bg-card border rounded-lg p-6'>
                   <DataGenerator />
@@ -67,15 +58,6 @@ const DevTools: React.FC = () => {
           >
             <div className='h-full overflow-y-auto'>
               <div className='max-w-4xl mx-auto space-y-6'>
-                {/* 页面标题 */}
-                <div className='flex items-center gap-3 mb-6'>
-                  <Bell className='w-6 h-6 text-blue-600' />
-                  <div>
-                    <h2 className='text-2xl font-bold'>通知功能测试</h2>
-                    <p className='text-muted-foreground'>测试各种通知功能是否正常工作</p>
-                  </div>
-                </div>
-
                 {/* 开发环境提示 */}
                 {(import.meta as any).env?.DEV && (
                   <Alert>
@@ -104,15 +86,6 @@ const DevTools: React.FC = () => {
           >
             <div className='h-full overflow-y-auto'>
               <div className='max-w-6xl mx-auto space-y-6'>
-                {/* 页面标题 */}
-                <div className='flex items-center gap-3 mb-6'>
-                  <Terminal className='w-6 h-6 text-green-600' />
-                  <div>
-                    <h2 className='text-2xl font-bold'>调试控制台</h2>
-                    <p className='text-muted-foreground'>系统信息和应用日志监控</p>
-                  </div>
-                </div>
-
                 {/* 调试控制台内容 */}
                 <div className='bg-card border rounded-lg p-6 min-h-[500px]'>
                   <DebugConsole />

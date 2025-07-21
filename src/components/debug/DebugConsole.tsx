@@ -198,23 +198,9 @@ const DebugConsole: React.FC = () => {
     }
   };
 
-  // 复制日志到剪贴板
-  const copyLogsToClipboard = async () => {
-    let logText = '';
-    
-    if (activeTab === 'system') {
-      logText = systemLogs.map(log => 
-        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
-      ).join('\n');
-    } else if (activeTab === 'app') {
-      logText = getCurrentPageLogs().map(log => 
-        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
-      ).join('\n');
-    } else if (activeTab === 'browser') {
-      logText = getCurrentPageConsoleLogs().map(log => 
-        `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`
-      ).join('\n');
-    }
+  // 复制单个日志条目到剪贴板
+  const copyLogToClipboard = async (log: SystemLogEntry | ConsoleLogEntry) => {
+    const logText = `[${log.timestamp.toLocaleString()}] ${log.level.toUpperCase()} ${log.source ? `[${log.source}]` : ''} ${log.message}`;
     
     const success = await writeToClipboard(logText, {
       successMessage: '日志已复制到剪贴板',
@@ -222,23 +208,6 @@ const DebugConsole: React.FC = () => {
     });
   };
 
-  // 触发浏览器控制台
-  const openBrowserConsole = () => {
-    if (typeof window !== 'undefined' && window.console) {
-      console.log(
-        '%c=== InfloWave Debug Console ===%c',
-        'color: #2196F3; font-size: 16px; font-weight: bold;',
-        'color: normal;'
-      );
-      console.log('当前时间:', new Date().toLocaleString());
-      console.log('应用版本: v0.1.3');
-      console.log('活跃连接:', activeConnectionId || '无');
-      console.log('连接详情:', activeConnection);
-      showMessage.info('请查看浏览器控制台（F12）获取详细信息');
-    } else {
-      showMessage.warning('浏览器控制台不可用');
-    }
-  };
 
   // 获取过滤后的应用日志
   const getFilteredAppLogs = () => {
@@ -319,6 +288,7 @@ const DebugConsole: React.FC = () => {
 
   // 刷新系统信息
   const refreshSystemInfo = () => {
+    // 刷新系统信息日志
     addSystemLog('info', '=== 系统信息刷新 ===', '系统');
     addSystemLog('info', `当前时间: ${new Date().toLocaleString()}`, '系统');
     addSystemLog('info', `内存使用: ${(performance as any).memory ? `${Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024)  }MB` : '未知'}`, '系统');
@@ -328,11 +298,18 @@ const DebugConsole: React.FC = () => {
       addSystemLog('info', `连接状态: 已连接到 ${activeConnection.name}`, '连接');
     }
 
-    // 模拟应用日志事件
+    // 刷新应用日志
     if (activeTab === 'app') {
       addAppLog('info', '手动刷新系统信息', '用户操作');
       addAppLog('debug', `页面可见性: ${document.visibilityState}`, '页面');
       addAppLog('debug', `在线状态: ${navigator.onLine ? '在线' : '离线'}`, '网络');
+    }
+
+    // 刷新浏览器控制台日志
+    if (activeTab === 'browser') {
+      // 重新获取最新的控制台日志
+      setConsoleLogs(consoleLogger.getLogs());
+      addSystemLog('info', '浏览器控制台日志已刷新', '系统');
     }
   };
 
@@ -439,7 +416,7 @@ const DebugConsole: React.FC = () => {
           <ScrollArea className='h-[300px]'>
             <div className='space-y-2'>
               {systemLogs.map(log => (
-                <div key={log.id} className='flex items-start gap-2 p-2 rounded-lg bg-muted/50'>
+                <div key={log.id} className='group relative flex items-start gap-2 p-2 rounded-lg bg-muted/50'>
                   <div className='flex-shrink-0 mt-0.5'>
                     {getLevelIcon(log.level)}
                   </div>
@@ -458,6 +435,14 @@ const DebugConsole: React.FC = () => {
                     </div>
                     <p className='text-sm break-words font-mono'>{log.message}</p>
                   </div>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'
+                    onClick={() => copyLogToClipboard(log)}
+                  >
+                    <Copy className='w-3 h-3' />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -486,14 +471,6 @@ const DebugConsole: React.FC = () => {
           <Button
             variant='outline'
             size='sm'
-            onClick={copyLogsToClipboard}
-          >
-            <Copy className='w-4 h-4 mr-2' />
-            复制日志
-          </Button>
-          <Button
-            variant='outline'
-            size='sm'
             onClick={clearLogs}
           >
             <Trash2 className='w-4 h-4 mr-2' />
@@ -515,7 +492,7 @@ const DebugConsole: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value='browser' className='flex items-center gap-2'>
               <Info className='w-4 h-4' />
-              浏览器控制台
+              视图日志
             </TabsTrigger>
           </TabsList>
 
@@ -571,7 +548,7 @@ const DebugConsole: React.FC = () => {
                   <ScrollArea className='flex-1'>
                     <div className='space-y-2'>
                       {getCurrentPageLogs().map(log => (
-                        <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
+                        <div key={log.id} className='group relative flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
                           <div className='flex-shrink-0 mt-0.5'>
                             {getLevelIcon(log.level)}
                           </div>
@@ -590,6 +567,14 @@ const DebugConsole: React.FC = () => {
                             </div>
                             <pre className='text-sm break-words font-mono whitespace-pre-wrap'>{log.message}</pre>
                           </div>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'
+                            onClick={() => copyLogToClipboard(log)}
+                          >
+                            <Copy className='w-3 h-3' />
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -659,15 +644,11 @@ const DebugConsole: React.FC = () => {
               <Card className='h-full flex flex-col'>
                 <CardHeader>
                   <CardTitle className='text-sm flex items-center justify-between'>
-                    <span>浏览器控制台日志</span>
+                    <span>视图日志</span>
                     <div className='flex items-center gap-2'>
                       <Badge variant='outline' className='text-xs'>
                         {getFilteredConsoleLogs().length} 条日志
                       </Badge>
-                      <Button variant='outline' size='sm' onClick={openBrowserConsole}>
-                        <Terminal className='w-4 h-4 mr-2' />
-                        打开浏览器控制台
-                      </Button>
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -702,7 +683,7 @@ const DebugConsole: React.FC = () => {
                   <ScrollArea className='flex-1'>
                     <div className='space-y-2'>
                       {getCurrentPageConsoleLogs().map(log => (
-                        <div key={log.id} className='flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
+                        <div key={log.id} className='group relative flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
                           <div className='flex-shrink-0 mt-0.5'>
                             {getLevelIcon(log.level)}
                           </div>
@@ -751,6 +732,14 @@ const DebugConsole: React.FC = () => {
                               </details>
                             )}
                           </div>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'
+                            onClick={() => copyLogToClipboard(log)}
+                          >
+                            <Copy className='w-3 h-3' />
+                          </Button>
                         </div>
                       ))}
                     </div>

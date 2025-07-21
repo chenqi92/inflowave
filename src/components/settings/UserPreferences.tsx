@@ -357,12 +357,17 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       
       if (result) {
         // 确保快捷键数据完整，如果没有快捷键数据，使用系统默认的
+        // 确保布局模式有默认值
         const preferences = {
           ...result,
           shortcuts:
             result.shortcuts && result.shortcuts.length > 0
               ? result.shortcuts
               : getAllSystemShortcuts(),
+          workspace: {
+            ...result.workspace,
+            layout: result.workspace?.layout || 'comfortable',
+          },
         };
         console.log('最终设置的偏好数据:', preferences);
         console.log('通知设置enabled状态:', preferences.notifications?.enabled);
@@ -902,7 +907,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormLabel>布局模式</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value}
+                          value={field.value || "comfortable"}
                           defaultValue="comfortable"
                         >
                           <FormControl>
