@@ -311,7 +311,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         keyboard_navigation: true,
       },
       workspace: {
-        layout: 'default',
+        layout: 'datasource',
         panel_sizes: {},
         open_tabs: [],
         pinned_queries: [],
@@ -385,7 +385,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             keyboard_navigation: true,
           },
           workspace: {
-            layout: 'default',
+            layout: 'datasource',
             panel_sizes: {},
             open_tabs: [],
             pinned_queries: [],
@@ -420,7 +420,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           keyboard_navigation: true,
         },
         workspace: {
-          layout: 'default',
+          layout: 'datasource',
           panel_sizes: {},
           open_tabs: [],
           pinned_queries: [],

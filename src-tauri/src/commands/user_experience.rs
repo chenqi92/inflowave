@@ -459,7 +459,7 @@ impl Default for UserPreferences {
                 keyboard_navigation: true,
             },
             workspace: WorkspaceSettings {
-                layout: "default".to_string(),
+                layout: "datasource".to_string(),
                 panel_sizes: HashMap::new(),
                 open_tabs: vec![],
                 pinned_queries: vec![],

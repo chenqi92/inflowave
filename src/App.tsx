@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import '@/styles/datagrip.css';
+import '@/styles/accessibility.css';
 
 // 错误处理
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -162,6 +163,47 @@ const MainLayout: React.FC = () => {
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { preferences } = useUserPreferences();
+
+  // 应用无障碍设置到 DOM
+  useEffect(() => {
+    if (!preferences?.accessibility) return;
+    
+    const { high_contrast, font_size, reduced_motion } = preferences.accessibility;
+    const body = document.body;
+    
+    // 高对比度设置
+    if (high_contrast) {
+      body.classList.add('high-contrast');
+    } else {
+      body.classList.remove('high-contrast');
+    }
+    
+    // 字体大小设置
+    body.classList.remove('font-small', 'font-medium', 'font-large', 'font-xlarge');
+    switch (font_size) {
+      case 'small':
+        body.classList.add('font-small');
+        break;
+      case 'large':
+        body.classList.add('font-large');
+        break;
+      case 'xlarge':
+        body.classList.add('font-xlarge');
+        break;
+      default: // medium
+        body.classList.add('font-medium');
+        break;
+    }
+    
+    // 减少动画设置
+    if (reduced_motion) {
+      body.classList.add('reduced-motion');
+    } else {
+      body.classList.remove('reduced-motion');
+    }
+    
+    console.log('已应用无障碍设置:', { high_contrast, font_size, reduced_motion });
+  }, [preferences?.accessibility]);
 
   // 初始化应用
   useEffect(() => {

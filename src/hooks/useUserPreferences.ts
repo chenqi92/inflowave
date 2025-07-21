@@ -69,7 +69,7 @@ const defaultPreferences: UserPreferences = {
     keyboard_navigation: true,
   },
   workspace: {
-    layout: 'default',
+    layout: 'datasource',
     panel_sizes: {},
     panel_positions: {
       'left-panel': 25, // 左侧面板默认25%宽度

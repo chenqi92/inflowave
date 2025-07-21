@@ -49,6 +49,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
 
+  // 有效的布局类型
+  const validLayouts = ['datasource', 'query', 'visualization', 'query-history'] as const;
+  type ValidLayout = typeof validLayouts[number];
+
+  // 类型守卫：检查是否为有效布局
+  const isValidLayout = (layout: string | undefined): layout is ValidLayout => {
+    return validLayouts.includes(layout as ValidLayout);
+  };
+
   // 路径到视图的映射
   const getViewFromPath = (pathname: string): string => {
     if (pathname === '/connections') return 'datasource';
@@ -75,14 +84,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       false
     );
   });
-  const [currentView, setCurrentView] = useState(() => {
+  const [currentView, setCurrentView] = useState<string>(() => {
     // 如果是特定的路径（如 /query, /visualization 等），使用对应的视图
     const pathView = getViewFromPath(location.pathname);
     if (location.pathname !== '/' && pathView !== 'datasource') {
       return pathView;
     }
-    // 否则优先使用用户偏好，最后默认为数据源视图
-    return preferences?.workspace.layout || 'datasource'; // 软件启动时默认显示数据源视图
+    // 否则优先使用用户偏好，如果是无效值则默认为数据源视图
+    const userLayout = preferences?.workspace.layout;
+    return isValidLayout(userLayout) ? userLayout : 'datasource';
   });
 
   // 面板尺寸状态
@@ -258,9 +268,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] === 1 ||
           false
       );
-      // 只有在非特殊路径时才使用偏好设置的布局
-      if (getViewFromPath(location.pathname) === 'query') {
-        setCurrentView(preferences.workspace.layout || 'datasource'); // 默认为数据源视图
+      // 只有在根路径时才使用偏好设置的布局
+      if (location.pathname === '/') {
+        const userLayout = preferences.workspace.layout;
+        const layout = isValidLayout(userLayout) ? userLayout : 'datasource';
+        setCurrentView(layout);
       }
       setLeftPanelSize(
         preferences.workspace.panel_positions?.['left-panel'] || 25
@@ -389,7 +401,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   };
 
   // 获取当前视图
-  const getCurrentView = () => currentView;
+  const getCurrentView = (): string => currentView;
 
   // 处理视图变化 - 特殊处理开发者工具
   const handleViewChange = useCallback(

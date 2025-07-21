@@ -1,0 +1,252 @@
+/**
+ * 无障碍样式设置
+ * 支持高对比度、字体大小调节、减少动画等功能
+ */
+
+/* 高对比度模式 */
+.high-contrast {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 85%);
+  --card: hsl(0, 0%, 5%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --popover: hsl(0, 0%, 5%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(0, 0%, 98%);
+  --primary-foreground: hsl(0, 0%, 0%);
+  --secondary: hsl(0, 0%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(0, 0%, 15%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 15%);
+  --ring: hsl(0, 0%, 83%);
+}
+
+.high-contrast * {
+  border-color: hsl(0, 0%, 30%) !important;
+}
+
+.high-contrast .text-muted-foreground {
+  color: hsl(0, 0%, 85%) !important;
+}
+
+.high-contrast .bg-muted {
+  background-color: hsl(0, 0%, 15%) !important;
+}
+
+/* 字体大小设置 */
+.font-small {
+  font-size: 12px;
+}
+
+.font-small .text-sm {
+  font-size: 10px;
+}
+
+.font-small .text-base {
+  font-size: 12px;
+}
+
+.font-small .text-lg {
+  font-size: 14px;
+}
+
+.font-small .text-xl {
+  font-size: 16px;
+}
+
+.font-small .text-2xl {
+  font-size: 18px;
+}
+
+.font-medium {
+  font-size: 14px;
+}
+
+.font-medium .text-sm {
+  font-size: 12px;
+}
+
+.font-medium .text-base {
+  font-size: 14px;
+}
+
+.font-medium .text-lg {
+  font-size: 16px;
+}
+
+.font-medium .text-xl {
+  font-size: 18px;
+}
+
+.font-medium .text-2xl {
+  font-size: 20px;
+}
+
+.font-large {
+  font-size: 16px;
+}
+
+.font-large .text-sm {
+  font-size: 14px;
+}
+
+.font-large .text-base {
+  font-size: 16px;
+}
+
+.font-large .text-lg {
+  font-size: 18px;
+}
+
+.font-large .text-xl {
+  font-size: 20px;
+}
+
+.font-large .text-2xl {
+  font-size: 24px;
+}
+
+.font-xlarge {
+  font-size: 18px;
+}
+
+.font-xlarge .text-sm {
+  font-size: 16px;
+}
+
+.font-xlarge .text-base {
+  font-size: 18px;
+}
+
+.font-xlarge .text-lg {
+  font-size: 20px;
+}
+
+.font-xlarge .text-xl {
+  font-size: 24px;
+}
+
+.font-xlarge .text-2xl {
+  font-size: 28px;
+}
+
+/* 减少动画 */
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* 焦点增强（针对键盘导航） */
+.high-contrast *:focus-visible,
+.high-contrast *:focus {
+  outline: 3px solid hsl(0, 0%, 98%) !important;
+  outline-offset: 2px !important;
+}
+
+/* 按钮和交互元素增强 */
+.high-contrast button,
+.high-contrast .button,
+.high-contrast [role="button"] {
+  border: 2px solid hsl(0, 0%, 50%) !important;
+}
+
+.high-contrast button:hover,
+.high-contrast .button:hover,
+.high-contrast [role="button"]:hover {
+  border-color: hsl(0, 0%, 80%) !important;
+  background-color: hsl(0, 0%, 20%) !important;
+}
+
+/* 链接增强 */
+.high-contrast a {
+  color: hsl(210, 100%, 80%) !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast a:visited {
+  color: hsl(270, 100%, 80%) !important;
+}
+
+.high-contrast a:hover {
+  color: hsl(210, 100%, 90%) !important;
+}
+
+/* 表单元素增强 */
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select {
+  border: 2px solid hsl(0, 0%, 50%) !important;
+  background-color: hsl(0, 0%, 10%) !important;
+  color: hsl(0, 0%, 95%) !important;
+}
+
+.high-contrast input:focus,
+.high-contrast textarea:focus,
+.high-contrast select:focus {
+  border-color: hsl(0, 0%, 80%) !important;
+  box-shadow: 0 0 0 2px hsl(0, 0%, 60%) !important;
+}
+
+/* 代码编辑器增强 */
+.high-contrast .monaco-editor,
+.high-contrast .monaco-editor .margin,
+.high-contrast .monaco-editor-background {
+  background-color: hsl(0, 0%, 5%) !important;
+  color: hsl(0, 0%, 95%) !important;
+}
+
+.high-contrast .monaco-editor .current-line {
+  background-color: hsl(0, 0%, 15%) !important;
+}
+
+/* 表格增强 */
+.high-contrast table,
+.high-contrast th,
+.high-contrast td {
+  border: 1px solid hsl(0, 0%, 40%) !important;
+}
+
+.high-contrast th {
+  background-color: hsl(0, 0%, 15%) !important;
+  color: hsl(0, 0%, 95%) !important;
+}
+
+.high-contrast tr:nth-child(even) {
+  background-color: hsl(0, 0%, 8%) !important;
+}
+
+/* 滚动条增强 */
+.high-contrast ::-webkit-scrollbar {
+  background-color: hsl(0, 0%, 10%) !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb {
+  background-color: hsl(0, 0%, 40%) !important;
+  border: 2px solid hsl(0, 0%, 20%) !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(0, 0%, 60%) !important;
+}
+
+/* 工具提示增强 */
+.high-contrast [role="tooltip"],
+.high-contrast .tooltip {
+  background-color: hsl(0, 0%, 95%) !important;
+  color: hsl(0, 0%, 5%) !important;
+  border: 2px solid hsl(0, 0%, 40%) !important;
+}
