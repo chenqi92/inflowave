@@ -307,9 +307,16 @@ const DebugConsole: React.FC = () => {
 
     // 刷新浏览器控制台日志
     if (activeTab === 'browser') {
-      // 重新获取最新的控制台日志
-      setConsoleLogs(consoleLogger.getLogs());
-      addSystemLog('info', '浏览器控制台日志已刷新', '系统');
+      // 重新获取最新的控制台日志并强制更新状态
+      const latestLogs = consoleLogger.getLogs();
+      setConsoleLogs([...latestLogs]); // 使用展开操作符强制重新渲染
+      
+      // 添加测试日志来验证刷新功能
+      console.info(`视图日志已刷新 - ${new Date().toLocaleTimeString()}`);
+      console.debug(`当前日志总数: ${latestLogs.length}`);
+      
+      addSystemLog('info', '视图日志已刷新', '系统');
+      addSystemLog('debug', `当前控制台日志总数: ${latestLogs.length}`, '系统');
     }
   };
 
