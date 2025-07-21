@@ -51,6 +51,7 @@ pub struct WorkspaceSettings {
     pub open_tabs: Vec<String>,
     pub pinned_queries: Vec<String>,
     pub recent_files: Vec<String>,
+    pub restore_tabs_on_startup: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -463,6 +464,7 @@ impl Default for UserPreferences {
                 open_tabs: vec![],
                 pinned_queries: vec![],
                 recent_files: vec![],
+                restore_tabs_on_startup: true,
             },
         }
     }

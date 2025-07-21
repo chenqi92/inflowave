@@ -390,6 +390,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             open_tabs: [],
             pinned_queries: [],
             recent_files: [],
+            restore_tabs_on_startup: true,
           },
         };
         setPreferences(defaultPreferences);
@@ -424,6 +425,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           open_tabs: [],
           pinned_queries: [],
           recent_files: [],
+          restore_tabs_on_startup: true,
         },
       };
       setPreferences(defaultPreferences);
@@ -851,7 +853,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
                   <FormField
                     control={form.control}
-                    name='workspace.open_tabs'
+                    name={'workspace.restore_tabs_on_startup' as any}
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
@@ -862,8 +864,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         </div>
                         <FormControl>
                           <Switch
-                            checked={Array.isArray(field.value) ? field.value.length > 0 : false}
-                            onCheckedChange={(checked) => field.onChange(checked ? ['default'] : [])}
+                            checked={field.value as boolean}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
                       </FormItem>

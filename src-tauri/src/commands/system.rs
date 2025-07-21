@@ -1,7 +1,8 @@
 use crate::models::{SystemInfo, DiskUsage, NetworkStats};
 use crate::services::ConnectionService;
 use tauri::{State, Manager, AppHandle};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
+use tauri::Emitter;
 use std::path::Path;
 use anyhow::Error;
 
@@ -473,4 +474,61 @@ pub async fn get_downloads_dir() -> Result<String, String> {
             Ok(path)
         }
     }
+}
+
+/// 显示消息对话框
+#[tauri::command]
+pub async fn show_message_dialog(
+    app: tauri::AppHandle,
+    title: String,
+    message: String,
+    buttons: Vec<String>,
+    _default_button: Option<usize>,
+) -> Result<usize, String> {
+    debug!("显示消息对话框: {}", title);
+
+    use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+
+    let dialog = app.dialog().message(&message).title(&title);
+
+    // 根据按钮数量选择对话框类型
+    let result = match buttons.len() {
+        1 => {
+            // 单按钮：信息对话框
+            dialog.kind(MessageDialogKind::Info).blocking_show();
+            0 // 总是返回第一个按钮
+        }
+        2 => {
+            // 双按钮：确认对话框
+            let confirmed = dialog.kind(MessageDialogKind::Warning).blocking_show();
+            if confirmed { 0 } else { 1 }
+        }
+        _ => {
+            // 多按钮：使用自定义实现
+            // 这里简化处理，实际应用中可能需要更复杂的对话框
+            let confirmed = dialog.kind(MessageDialogKind::Warning).blocking_show();
+            if confirmed { 0 } else { 2 } // 0=确认, 2=取消
+        }
+    };
+
+    info!("对话框结果: {}", result);
+    Ok(result)
+}
+
+/// 关闭应用
+#[tauri::command]
+pub async fn close_app(app: tauri::AppHandle) -> Result<(), String> {
+    debug!("关闭应用");
+
+    // 发送关闭事件给前端，让前端有机会清理资源
+    if let Err(e) = app.emit("app-closing", ()) {
+        warn!("发送应用关闭事件失败: {}", e);
+    }
+
+    // 延迟一点时间让前端处理关闭事件
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+    // 关闭应用
+    app.exit(0);
+    Ok(())
 }

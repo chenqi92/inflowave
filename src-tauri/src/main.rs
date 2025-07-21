@@ -649,6 +649,8 @@ async fn main() {
             write_binary_file,
             create_dir,
             get_downloads_dir,
+            show_message_dialog,
+            close_app,
 
             // Data write operations
             write_data,

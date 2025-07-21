@@ -28,6 +28,7 @@ export interface WorkspaceSettings {
   open_tabs: string[];
   pinned_queries: string[];
   recent_files: string[];
+  restore_tabs_on_startup: boolean; // 启动时恢复标签页
 }
 
 export interface KeyboardShortcut {
@@ -77,6 +78,7 @@ const defaultPreferences: UserPreferences = {
     open_tabs: [],
     pinned_queries: [],
     recent_files: [],
+    restore_tabs_on_startup: true, // 默认启用启动时恢复标签页
   },
 };
 

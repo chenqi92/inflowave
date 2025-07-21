@@ -138,17 +138,32 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, []);
 
-    // 组件挂载时恢复工作区标签页
+    // 组件挂载时根据用户偏好恢复工作区标签页
     useEffect(() => {
       const initializeWorkspace = async () => {
         // 只在没有标签页时才恢复工作区
         if (tabs.length === 0) {
-          await restoreWorkspaceTabs();
+          try {
+            // 获取用户偏好设置
+            const userPreferences = await safeTauriInvoke<any>('get_user_preferences');
+            const shouldRestore = userPreferences?.workspace?.restore_tabs_on_startup ?? true;
+
+            if (shouldRestore) {
+              await restoreWorkspaceTabs();
+            } else {
+              console.log('用户偏好设置：不恢复标签页');
+            }
+          } catch (error) {
+            console.error('获取用户偏好失败，使用默认行为恢复标签页:', error);
+            await restoreWorkspaceTabs();
+          }
         }
       };
 
       initializeWorkspace();
     }, []); // 只在组件挂载时执行一次
+
+
 
     // 调试：监听 props 变化
     useEffect(() => {
@@ -201,6 +216,71 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]); // 实际执行的查询
     const [showExecutedQueries, setShowExecutedQueries] = useState(false); // 是否显示实际执行的查询
     const editorRef = useRef<monaco.editor.ICodeEditor | null>(null);
+
+    // 监听窗口关闭事件，提醒保存未保存的标签页
+    useEffect(() => {
+      const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+        if (hasUnsavedTabs()) {
+          event.preventDefault();
+          event.returnValue = '您有未保存的查询标签页，确定要关闭吗？';
+          return '您有未保存的查询标签页，确定要关闭吗？';
+        }
+      };
+
+      const handleTauriCloseRequested = async () => {
+        if (hasUnsavedTabs()) {
+          const unsavedTabs = getUnsavedTabs();
+          const tabNames = unsavedTabs.map(tab => tab.title).join('、');
+
+          try {
+            const confirmed = await safeTauriInvoke<number>('show_message_dialog', {
+              title: '保存提醒',
+              message: `您有 ${unsavedTabs.length} 个未保存的标签页：${tabNames}\n\n是否要保存这些标签页？`,
+              buttons: ['保存并关闭', '不保存直接关闭', '取消'],
+              defaultButton: 0,
+            });
+
+            if (confirmed === 0) {
+              // 保存并关闭
+              const saveSuccess = await saveAllUnsavedTabs();
+              if (saveSuccess) {
+                await safeTauriInvoke('close_app');
+              }
+            } else if (confirmed === 1) {
+              // 不保存直接关闭
+              await safeTauriInvoke('close_app');
+            }
+            // confirmed === 2 或其他值：取消关闭，不做任何操作
+          } catch (error) {
+            console.error('处理关闭请求失败:', error);
+          }
+        }
+      };
+
+      // 监听浏览器的beforeunload事件
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      // 监听Tauri的关闭请求事件
+      let unlistenCloseRequested: (() => void) | null = null;
+
+      const setupTauriListener = async () => {
+        try {
+          const { listen } = await import('@tauri-apps/api/event');
+          unlistenCloseRequested = await listen('tauri://close-requested', handleTauriCloseRequested);
+        } catch (error) {
+          console.error('设置Tauri关闭监听器失败:', error);
+        }
+      };
+
+      setupTauriListener();
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        if (unlistenCloseRequested) {
+          unlistenCloseRequested();
+        }
+      };
+    }, [tabs]); // 依赖tabs数组，当标签页变化时重新设置监听器
 
     // 拖拽功能
     const {
@@ -1402,12 +1482,59 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
     // 生成带保存状态的标签页标题
     const getTabDisplayTitle = (tab: EditorTab) => {
       let title = tab.title;
-      if (tab.modified && !tab.saved) {
-        title += ' *'; // 未保存的修改
-      } else if (!tab.saved) {
-        title += ' (未保存)'; // 从未保存过
+      if (!tab.saved && !tab.modified) {
+        title += ' (未保存)'; // 从未保存过且未修改
       }
       return title;
+    };
+
+    // 检查是否有未保存的标签页
+    const hasUnsavedTabs = () => {
+      return tabs.some(tab => tab.modified || !tab.saved);
+    };
+
+    // 获取未保存的标签页列表
+    const getUnsavedTabs = () => {
+      return tabs.filter(tab => tab.modified || !tab.saved);
+    };
+
+    // 保存所有未保存的标签页到工作区
+    const saveAllUnsavedTabs = async () => {
+      const unsavedTabs = getUnsavedTabs();
+      const savePromises = unsavedTabs.map(async (tab) => {
+        try {
+          await safeTauriInvoke('save_tab_to_workspace', {
+            tabId: tab.id,
+            title: tab.title,
+            content: tab.content,
+            tabType: tab.type,
+            database: tab.database,
+            connectionId: tab.connectionId,
+            tableName: tab.tableName,
+          });
+          return { success: true, tabId: tab.id };
+        } catch (error) {
+          console.error(`保存标签页 ${tab.title} 失败:`, error);
+          return { success: false, tabId: tab.id, error };
+        }
+      });
+
+      const results = await Promise.all(savePromises);
+      const failedSaves = results.filter(r => !r.success);
+
+      if (failedSaves.length === 0) {
+        // 更新所有标签页状态为已保存
+        setTabs(tabs.map(tab => ({
+          ...tab,
+          modified: false,
+          saved: true
+        })));
+        showMessage.success(`已保存 ${unsavedTabs.length} 个标签页到工作区`);
+        return true;
+      } else {
+        showMessage.error(`保存失败：${failedSaves.length} 个标签页保存失败`);
+        return false;
+      }
     };
 
     // 从工作区恢复标签页
@@ -1495,9 +1622,23 @@ const TabEditor = forwardRef<TabEditorRef, TabEditorProps>(
       setTabs(newTabs);
 
       if (activeKey === targetKey) {
-        const newActiveKey =
-          newTabs.length > 0 ? newTabs[newTabs.length - 1].id : '';
-        setActiveKey(newActiveKey);
+        if (newTabs.length > 0) {
+          // 如果还有其他标签页，选择最后一个
+          const newActiveKey = newTabs[newTabs.length - 1].id;
+          setActiveKey(newActiveKey);
+        } else {
+          // 如果没有标签页了，创建一个新的
+          const newTab: EditorTab = {
+            id: generateUniqueId('tab'),
+            title: '查询-1',
+            content: '-- 在此输入 InfluxQL 查询语句\nSELECT * FROM "measurement_name" LIMIT 10',
+            type: 'query',
+            modified: true,
+            saved: false,
+          };
+          setTabs([newTab]);
+          setActiveKey(newTab.id);
+        }
       }
     };
 
