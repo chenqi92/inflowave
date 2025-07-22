@@ -18,10 +18,11 @@ import type { DatabaseType } from '@/utils/sqlFormatter';
 import type { TimeRange } from '@/components/common/TimeRangeSelector';
 
 // 导入拆分的模块
-import { TabManager, EditorTab, useTabManager } from '@/components/editor/TabManager';
+import { TabManager, EditorTab } from '@/components/editor/TabManager';
 import { EditorManager } from '@/components/editor/EditorManager';
 import { useQueryExecutor } from '@/components/editor/QueryExecutor';
 import { useFileOperations } from '@/components/editor/FileOperations';
+import { useTabStore, useCurrentTab, useTabOperations } from '@/stores/tabStore';
 import { QueryToolbar } from '@/components/query/QueryToolbar';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
@@ -56,11 +57,30 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     const { activeConnectionId, connections, setActiveConnection } = useConnectionStore();
     const { openedDatabasesList } = useOpenedDatabasesStore();
 
-    // Tab管理
-    const { tabs, activeKey, setTabs, setActiveKey, handleTabContentChange } = useTabManager();
-    const [selectedDatabase, setSelectedDatabase] = useState<string>('');
+    // Tab管理 - 使用全局store
+    const {
+      tabs,
+      activeKey,
+      selectedDatabase,
+      selectedTimeRange,
+      setTabs,
+      setActiveKey,
+      setSelectedDatabase,
+      setSelectedTimeRange,
+      updateTabContent
+    } = useTabStore();
+
+    const currentTab = useCurrentTab();
+    const { createQueryTab, createDataBrowserTab, saveTab, removeTab, updateTab } = useTabOperations();
+
     const [databases, setDatabases] = useState<string[]>([]);
-    const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | undefined>(currentTimeRange);
+
+    // 初始化时间范围
+    React.useEffect(() => {
+      if (currentTimeRange && !selectedTimeRange) {
+        setSelectedTimeRange(currentTimeRange);
+      }
+    }, [currentTimeRange, selectedTimeRange, setSelectedTimeRange]);
 
     // 拖拽功能
     const {
@@ -75,29 +95,11 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       showTabInPopup,
     } = useSimpleTabDrag();
 
-    // 当前标签页
-    const currentTab = tabs.find(tab => tab.id === activeKey) || null;
-
-    // 更新标签页内容
-    const updateTabContent = useCallback((tabId: string, content: string) => {
-      const newTabs = tabs.map(tab =>
-        tab.id === tabId
-          ? { ...tab, content, modified: true }
-          : tab
-      );
-      setTabs(newTabs);
-      handleTabContentChange(tabId, content);
-    }, [tabs, setTabs, handleTabContentChange]);
-
-    // 更新标签页
-    const updateTab = useCallback((tabId: string, updates: Partial<EditorTab>) => {
-      const newTabs = tabs.map(tab =>
-        tab.id === tabId
-          ? { ...tab, ...updates }
-          : tab
-      );
-      setTabs(newTabs);
-    }, [tabs, setTabs]);
+    // 更新标签页内容的包装函数
+    const handleTabContentChange = useCallback((tabId: string, content: string) => {
+      updateTabContent(tabId, content);
+      console.log(`Tab ${tabId} content changed`);
+    }, [updateTabContent]);
 
     // 查询执行器
     const {
@@ -158,58 +160,40 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 创建新标签
     const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
-      const newTab: EditorTab = {
-        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
-        content: type === 'query' ? 'SELECT * FROM ' : '',
-        type,
-        modified: true,
-        saved: false,
-      };
+      if (type === 'query') {
+        createQueryTab(selectedDatabase);
+      } else {
+        // 对于其他类型，使用原有逻辑
+        const newTab: EditorTab = {
+          id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          title: `${type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
+          content: '',
+          type,
+          modified: true,
+          saved: false,
+        };
 
-      setTabs([...tabs, newTab]);
-      setActiveKey(newTab.id);
-
-      // 清空查询结果
-      onQueryResult?.(null);
-      onBatchQueryResults?.([], [], 0);
-    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
-
-    // 创建数据浏览标签
-    const createDataBrowserTab = useCallback((connectionId: string, database: string, tableName: string) => {
-      const newTab: EditorTab = {
-        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        title: `${tableName}`,
-        content: '',
-        type: 'data-browser',
-        modified: false,
-        saved: true,
-        connectionId,
-        database,
-        tableName,
-      };
-
-      setTabs([...tabs, newTab]);
-      setActiveKey(newTab.id);
+        setTabs([...tabs, newTab]);
+        setActiveKey(newTab.id);
+      }
 
       // 清空查询结果
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
-    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+    }, [createQueryTab, selectedDatabase, tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+
+    // 创建数据浏览标签 - 使用store中的方法
+    const handleCreateDataBrowserTab = useCallback((connectionId: string, database: string, tableName: string) => {
+      createDataBrowserTab(connectionId, database, tableName);
+
+      // 清空查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+    }, [createDataBrowserTab, onQueryResult, onBatchQueryResults]);
 
     // 创建带数据库选择的查询标签页
     const createQueryTabWithDatabase = useCallback((database: string, query?: string) => {
-      const newTab: EditorTab = {
-        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        title: `查询-${tabs.length + 1}`,
-        content: query || 'SELECT * FROM ',
-        type: 'query',
-        modified: true,
-        saved: false,
-      };
-
-      setTabs([...tabs, newTab]);
-      setActiveKey(newTab.id);
+      const newTab = createQueryTab(database, query);
       setSelectedDatabase(database);
 
       // 清空查询结果
@@ -217,19 +201,19 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       onBatchQueryResults?.([], [], 0);
 
       console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
-    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+    }, [createQueryTab, setSelectedDatabase, onQueryResult, onBatchQueryResults]);
 
     // 暴露方法给父组件
     useImperativeHandle(
       ref,
       () => ({
         executeQueryWithContent,
-        createDataBrowserTab,
+        createDataBrowserTab: handleCreateDataBrowserTab,
         createNewTab,
         createQueryTabWithDatabase,
         setSelectedDatabase,
       }),
-      [executeQueryWithContent, createDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
+      [executeQueryWithContent, handleCreateDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
     );
 
     // 监听活跃标签类型变化
@@ -262,7 +246,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                 activeKey={activeKey}
                 onTabsChange={setTabs}
                 onActiveKeyChange={setActiveKey}
-                onTabContentChange={updateTabContent}
+                onTabContentChange={handleTabContentChange}
                 onSaveTab={saveCurrentTab}
                 isDragging={isDragging}
                 draggedTab={draggedTab}
@@ -316,7 +300,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                       currentTab={currentTab}
                       selectedDatabase={selectedDatabase}
                       databases={databases}
-                      onContentChange={(content) => updateTabContent(currentTab.id, content)}
+                      onContentChange={(content) => handleTabContentChange(currentTab.id, content)}
                       onExecuteQuery={executeQuery}
                     />
                   </div>
