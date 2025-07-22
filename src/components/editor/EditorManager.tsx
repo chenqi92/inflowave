@@ -24,7 +24,7 @@ import {
   Play
 } from 'lucide-react';
 import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
-import { customSyntaxManager } from '@/utils/customSyntaxHighlight';
+import { unifiedSyntaxManager } from '@/utils/unifiedSyntaxHighlight';
 import { versionToLanguageType, type DatabaseLanguageType } from '@/types/database';
 
 
@@ -125,12 +125,12 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       // 延迟执行，确保连接状态已稳定
       const timer = setTimeout(() => {
         try {
-          // 使用自定义语法高亮系统
+          // 使用简化语法高亮系统
           const languageType = getDatabaseLanguageType();
-          const currentLanguage = customSyntaxManager.getLanguageId(languageType);
-          const currentTheme = customSyntaxManager.getThemeName(resolvedTheme === 'dark');
+          const currentLanguage = unifiedSyntaxManager.getLanguageId(languageType);
+          const currentTheme = unifiedSyntaxManager.getThemeName(languageType, resolvedTheme === 'dark');
 
-          console.log('🔧 连接状态变化后重新应用自定义语言和主题:', {
+          console.log('🔧 连接状态变化后重新应用简化语言和主题:', {
             languageType: languageType,
             language: currentLanguage,
             theme: currentTheme,
@@ -148,7 +148,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
           // 验证语法高亮
           setTimeout(() => {
-            customSyntaxManager.validateSyntaxHighlight(editor);
+            unifiedSyntaxManager.validateSyntaxHighlight(editor);
           }, 300);
 
           console.log('✅ 连接状态变化后语法高亮刷新完成');
@@ -195,23 +195,25 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   // 获取编辑器语言ID
   const getEditorLanguage = useCallback(() => {
     const languageType = getDatabaseLanguageType();
-    return customSyntaxManager.getLanguageId(languageType);
+    return unifiedSyntaxManager.getLanguageId(languageType);
   }, [getDatabaseLanguageType]);
 
   // 获取编辑器主题
   const getEditorTheme = useCallback(() => {
+    const languageType = getDatabaseLanguageType();
     const isDark = resolvedTheme === 'dark';
-    const themeName = customSyntaxManager.getThemeName(isDark);
+    const themeName = unifiedSyntaxManager.getThemeName(languageType, isDark);
 
     console.log('🎨 getEditorTheme调用:', {
+      languageType,
       resolvedTheme,
       isDark,
       themeName
     });
 
-    console.log('🎨 选择的自定义主题:', themeName);
+    console.log('🎨 选择的简化主题:', themeName);
     return themeName;
-  }, [resolvedTheme]);
+  }, [getDatabaseLanguageType, resolvedTheme]);
 
   // 处理编辑器内容变化
   const handleEditorChange = useCallback((value: string | undefined) => {
@@ -480,11 +482,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         };
       }
 
-      // 确保自定义语法高亮已注册（在编辑器挂载后）
+      // 确保统一语法高亮已注册（在编辑器挂载后）
       try {
-        console.log('🔧 在编辑器挂载后注册自定义语法高亮...');
-        customSyntaxManager.registerAll();
-        console.log('✅ 自定义语法高亮注册完成');
+        console.log('🔧 在编辑器挂载后注册统一语法高亮...');
+        unifiedSyntaxManager.registerAll();
+        console.log('✅ 统一语法高亮注册完成');
 
         // 立即设置正确的语言和主题
         const targetLanguage = getEditorLanguage();
@@ -498,10 +500,10 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           console.log('🎨 应用编辑器主题:', currentTheme);
           monaco.editor.setTheme(currentTheme);
 
-          console.log('✅ 自定义语言和主题设置完成');
+          console.log('✅ 统一语言和主题设置完成');
         }
       } catch (langError) {
-        console.error('❌ 自定义语法高亮注册失败:', langError);
+        console.error('❌ 统一语法高亮注册失败:', langError);
       }
 
       // 完全禁用Monaco编辑器的剪贴板功能，防止权限错误
@@ -735,16 +737,17 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
         // 应用自定义主题
         const isDark = resolvedTheme === 'dark';
-        const themeName = customSyntaxManager.getThemeName(isDark);
+        const languageType = getDatabaseLanguageType();
+        const themeName = unifiedSyntaxManager.getThemeName(languageType, isDark);
 
-        console.log('🔍 自定义主题选择参数:', {
+        console.log('🔍 统一主题选择参数:', {
           currentLanguage,
           resolvedTheme,
           isDark,
           themeName
         });
 
-        console.log('🎨 应用自定义编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
+        console.log('🎨 应用统一编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
 
         try {
           monaco.editor.setTheme(themeName);
@@ -842,7 +845,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
                       // 使用自定义语法高亮验证
                       setTimeout(() => {
-                        customSyntaxManager.validateSyntaxHighlight(editor);
+                        unifiedSyntaxManager.validateSyntaxHighlight(editor);
                       }, 500);
                     } catch (renderError) {
                       console.warn('⚠️ 编辑器重新渲染失败:', renderError);
@@ -1105,9 +1108,9 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   useEffect(() => {
     if (currentTab?.type === 'query') {
       const languageType = getDatabaseLanguageType();
-      const languageId = customSyntaxManager.getLanguageId(languageType);
+      const languageId = unifiedSyntaxManager.getLanguageId(languageType);
 
-      console.log('🔄 数据源变化，当前语言类型:', languageType, '自定义语言ID:', languageId);
+      console.log('🔄 数据源变化，当前语言类型:', languageType, '统一语言ID:', languageId);
       // 语言更新由Editor组件的key属性变化自动处理
     }
   }, [activeConnectionId, connections, currentTab?.type, getDatabaseLanguageType]);
