@@ -25,8 +25,20 @@ export const influxqlLanguageConfig: LanguageConfig = {
   mimetypes: ['text/x-influxql']
 };
 
-// InfluxQL 语法规则
+// InfluxQL 语法规则 - 使用关键字列表和cases匹配
 export const influxqlMonarchLanguage: monaco.languages.IMonarchLanguage = {
+  // 添加关键字列表
+  keywords: [
+    'SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'ORDER', 'LIMIT', 'OFFSET', 'INTO', 'FILL', 'TIME', 'AS', 'AND', 'OR', 'NOT', 'LIKE', 'REGEXP', 'RLIKE', 'IN', 'BETWEEN', 'IS', 'NULL', 'TRUE', 'FALSE', 'ASC', 'DESC', 'DISTINCT',
+    'SHOW', 'CREATE', 'DROP', 'ALTER', 'INSERT', 'UPDATE', 'DELETE', 'GRANT', 'REVOKE', 'EXPLAIN', 'ANALYZE', 'BEGIN', 'COMMIT', 'ROLLBACK',
+    'DATABASES', 'MEASUREMENTS', 'SERIES', 'FIELD', 'KEYS', 'TAG', 'VALUES', 'USERS', 'QUERIES', 'STATS', 'DIAGNOSTICS', 'SHARDS', 'SHARD', 'GROUPS', 'SUBSCRIPTIONS', 'RETENTION', 'POLICIES', 'CONTINUOUS'
+  ],
+
+  // 函数列表
+  builtins: [
+    'COUNT', 'SUM', 'MEAN', 'MEDIAN', 'MODE', 'SPREAD', 'STDDEV', 'SAMPLE', 'FIRST', 'LAST', 'MAX', 'MIN', 'PERCENTILE', 'DERIVATIVE', 'DIFFERENCE', 'ELAPSED_TIME', 'MOVING_AVERAGE', 'CUMULATIVE_SUM', 'HOLT_WINTERS', 'HOLT_WINTERS_WITH_FIT', 'TOP', 'BOTTOM', 'INTEGRAL', 'NON_NEGATIVE_DERIVATIVE', 'NON_NEGATIVE_DIFFERENCE', 'ABS', 'ACOS', 'ASIN', 'ATAN', 'ATAN2', 'CEIL', 'COS', 'EXP', 'FLOOR', 'LN', 'LOG', 'LOG2', 'LOG10', 'POW', 'ROUND', 'SIN', 'SQRT', 'TAN'
+  ],
+
   tokenizer: {
     root: [
       // 注释（优先级最高）
@@ -39,13 +51,14 @@ export const influxqlMonarchLanguage: monaco.languages.IMonarchLanguage = {
       [/"([^"\\]|\\.)*$/, 'string.invalid'],
       [/"/, 'string', '@dblstring'],
 
-      // 关键字（必须在标识符之前）- 简化正则表达式
-      [/\b(?:SELECT|FROM|WHERE|GROUP|BY|ORDER|LIMIT|OFFSET|INTO|FILL|TIME|AS|AND|OR|NOT|LIKE|REGEXP|RLIKE|IN|BETWEEN|IS|NULL|TRUE|FALSE|ASC|DESC|DISTINCT)\b/i, 'keyword'],
-      [/\b(?:SHOW|CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|GRANT|REVOKE|EXPLAIN|ANALYZE|BEGIN|COMMIT|ROLLBACK)\b/i, 'keyword'],
-      [/\b(?:DATABASES|MEASUREMENTS|SERIES|FIELD|KEYS|TAG|VALUES|USERS|QUERIES|STATS|DIAGNOSTICS|SHARDS|SHARD|GROUPS|SUBSCRIPTIONS|RETENTION|POLICIES|CONTINUOUS)\b/i, 'keyword'],
-
-      // InfluxQL函数（在关键字之后，标识符之前）
-      [/\b(?:COUNT|SUM|MEAN|MEDIAN|MODE|SPREAD|STDDEV|SAMPLE|FIRST|LAST|MAX|MIN|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM|HOLT_WINTERS|HOLT_WINTERS_WITH_FIT|TOP|BOTTOM|INTEGRAL|NON_NEGATIVE_DERIVATIVE|NON_NEGATIVE_DIFFERENCE|ABS|ACOS|ASIN|ATAN|ATAN2|CEIL|COS|EXP|FLOOR|LN|LOG|LOG2|LOG10|POW|ROUND|SIN|SQRT|TAN)\b/i, 'keyword.function'],
+      // 使用关键字列表进行匹配（更可靠的方式）
+      [/[a-zA-Z_]\w*/, {
+        cases: {
+          '@keywords': 'keyword',
+          '@builtins': 'keyword.function',
+          '@default': 'identifier'
+        }
+      }],
 
       // 数字
       [/\d*\.\d+([eE][+\-]?\d+)?/, 'number.float'],
@@ -61,25 +74,22 @@ export const influxqlMonarchLanguage: monaco.languages.IMonarchLanguage = {
       [/[(){}[\]]/, 'bracket'],
       [/[,;]/, 'delimiter'],
 
-      // 标识符（最后匹配）
-      [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
-
       // 空白字符
       [/\s+/, 'white'],
     ],
-    
+
     comment: [
       [/[^/*]+/, 'comment'],
       [/\*\//, 'comment', '@pop'],
       [/[/*]/, 'comment']
     ],
-    
+
     string: [
       [/[^\\']+/, 'string'],
       [/\\./, 'string.escape'],
       [/'/, 'string', '@pop']
     ],
-    
+
     dblstring: [
       [/[^\\"]+/, 'string'],
       [/\\./, 'string.escape'],

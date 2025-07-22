@@ -215,9 +215,14 @@ export const TabManager: React.FC<TabManagerProps> = ({
               description={`"${tab.title}" 已修改，是否保存更改？`}
               open={closingTab?.id === tab.id}
               onConfirm={() => saveAndCloseTab(tab.id)}
+              onCancel={() => {
+                // 用户点击"不保存"按钮时，直接关闭tab
+                removeTab(tab.id);
+                setClosingTab(null);
+              }}
               onOpenChange={open => {
+                // 当弹框关闭时，只重置状态，不删除tab
                 if (!open && closingTab?.id === tab.id) {
-                  removeTab(tab.id);
                   setClosingTab(null);
                 }
               }}

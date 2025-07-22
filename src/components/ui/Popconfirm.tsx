@@ -121,6 +121,7 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
                   size='sm'
                   onClick={handleCancel}
                   disabled={loading}
+                  className='h-7 px-3 text-xs'
                 >
                   {cancelText}
                 </Button>
@@ -129,6 +130,7 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
                   size='sm'
                   onClick={handleConfirm}
                   disabled={loading}
+                  className='h-7 px-3 text-xs'
                 >
                   {okText}
                 </Button>

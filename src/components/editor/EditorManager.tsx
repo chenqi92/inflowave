@@ -4,7 +4,7 @@ import * as monaco from 'monaco-editor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
 import {
-  setEditorLanguageByDatabaseType,
+  setEditorLanguageByDatabaseVersion,
   createDatabaseSpecificCompletions
 } from '@/utils/sqlIntelliSense';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -24,7 +24,8 @@ import {
   Play
 } from 'lucide-react';
 import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
-import { registerAllLanguagesAndThemes } from '@/utils/monacoLanguages';
+import { customSyntaxManager } from '@/utils/customSyntaxHighlight';
+import { versionToLanguageType, type DatabaseLanguageType } from '@/types/database';
 
 
 
@@ -124,26 +125,13 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       // 延迟执行，确保连接状态已稳定
       const timer = setTimeout(() => {
         try {
-          // 在 useEffect 内部重新计算语言和主题
-          const currentLanguage = (() => {
-            if (!activeConnectionId) return 'sql';
-            const connection = connections.find(c => c.id === activeConnectionId);
-            if (!connection) return 'sql';
-            return connection.version === '1.x' ? 'influxql' : 'flux';
-          })();
+          // 使用自定义语法高亮系统
+          const languageType = getDatabaseLanguageType();
+          const currentLanguage = customSyntaxManager.getLanguageId(languageType);
+          const currentTheme = customSyntaxManager.getThemeName(resolvedTheme === 'dark');
 
-          const currentTheme = (() => {
-            const isDark = resolvedTheme === 'dark';
-            if (currentLanguage === 'influxql') {
-              return isDark ? 'influxql-dark' : 'influxql-light';
-            } else if (currentLanguage === 'flux') {
-              return isDark ? 'flux-dark' : 'flux-light';
-            } else {
-              return isDark ? 'sql-dark' : 'sql-light';
-            }
-          })();
-
-          console.log('🔧 连接状态变化后重新应用语言和主题:', {
+          console.log('🔧 连接状态变化后重新应用自定义语言和主题:', {
+            languageType: languageType,
             language: currentLanguage,
             theme: currentTheme,
             connectionId: activeConnectionId
@@ -157,6 +145,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
           // 触发重新渲染
           editor.render(true);
+
+          // 验证语法高亮
+          setTimeout(() => {
+            customSyntaxManager.validateSyntaxHighlight(editor);
+          }, 300);
 
           console.log('✅ 连接状态变化后语法高亮刷新完成');
         } catch (error) {
@@ -179,8 +172,8 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     };
   }, []);
 
-  // 获取编辑器语言类型
-  const getEditorLanguage = useCallback(() => {
+  // 获取数据库语言类型
+  const getDatabaseLanguageType = useCallback((): DatabaseLanguageType => {
     // 如果没有活动连接，默认使用SQL
     if (!activeConnectionId) {
       console.log('没有活动连接，使用SQL语言');
@@ -193,48 +186,32 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       return 'sql';
     }
 
-    const databaseType = connection.version;
-    console.log('数据库类型:', databaseType, '连接ID:', activeConnectionId);
+    const languageType = versionToLanguageType(connection.version || 'unknown');
+    console.log('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', activeConnectionId);
 
-    switch (databaseType) {
-      case '1.x':
-        console.log('使用InfluxQL语言');
-        return 'influxql';
-      case '2.x':
-      case '3.x':
-        console.log('使用Flux语言');
-        return 'flux';
-      default:
-        console.log('使用SQL语言');
-        return 'sql';
-    }
+    return languageType;
   }, [connections, activeConnectionId]);
+
+  // 获取编辑器语言ID
+  const getEditorLanguage = useCallback(() => {
+    const languageType = getDatabaseLanguageType();
+    return customSyntaxManager.getLanguageId(languageType);
+  }, [getDatabaseLanguageType]);
 
   // 获取编辑器主题
   const getEditorTheme = useCallback(() => {
-    const currentLanguage = getEditorLanguage();
     const isDark = resolvedTheme === 'dark';
+    const themeName = customSyntaxManager.getThemeName(isDark);
 
     console.log('🎨 getEditorTheme调用:', {
-      currentLanguage,
       resolvedTheme,
-      isDark
+      isDark,
+      themeName
     });
 
-    let selectedTheme;
-    if (currentLanguage === 'influxql') {
-      selectedTheme = isDark ? 'influxql-dark' : 'influxql-light';
-    } else if (currentLanguage === 'flux') {
-      selectedTheme = isDark ? 'flux-dark' : 'flux-light';
-    } else if (currentLanguage === 'sql') {
-      selectedTheme = isDark ? 'sql-dark' : 'sql-light';
-    } else {
-      selectedTheme = isDark ? 'vs-dark' : 'vs';
-    }
-
-    console.log('🎨 选择的主题:', selectedTheme);
-    return selectedTheme;
-  }, [getEditorLanguage, resolvedTheme]);
+    console.log('🎨 选择的自定义主题:', themeName);
+    return themeName;
+  }, [resolvedTheme]);
 
   // 处理编辑器内容变化
   const handleEditorChange = useCallback((value: string | undefined) => {
@@ -503,11 +480,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         };
       }
 
-      // 确保语言和主题已注册（在编辑器挂载后）
+      // 确保自定义语法高亮已注册（在编辑器挂载后）
       try {
-        console.log('🔧 在编辑器挂载后注册语言和主题...');
-        registerAllLanguagesAndThemes();
-        console.log('✅ 语言和主题注册完成');
+        console.log('🔧 在编辑器挂载后注册自定义语法高亮...');
+        customSyntaxManager.registerAll();
+        console.log('✅ 自定义语法高亮注册完成');
 
         // 立即设置正确的语言和主题
         const targetLanguage = getEditorLanguage();
@@ -521,10 +498,10 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           console.log('🎨 应用编辑器主题:', currentTheme);
           monaco.editor.setTheme(currentTheme);
 
-          console.log('✅ 语言和主题设置完成');
+          console.log('✅ 自定义语言和主题设置完成');
         }
       } catch (langError) {
-        console.error('❌ 语言和主题注册失败:', langError);
+        console.error('❌ 自定义语法高亮注册失败:', langError);
       }
 
       // 完全禁用Monaco编辑器的剪贴板功能，防止权限错误
@@ -756,31 +733,18 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           console.error('❌ 检查语言时出错:', error);
         }
 
-        // 根据语言和主题设置对应的编辑器主题
+        // 应用自定义主题
         const isDark = resolvedTheme === 'dark';
-        let themeName = isDark ? 'vs-dark' : 'vs';
+        const themeName = customSyntaxManager.getThemeName(isDark);
 
-        console.log('🔍 主题选择参数:', {
+        console.log('🔍 自定义主题选择参数:', {
           currentLanguage,
           resolvedTheme,
-          isDark
+          isDark,
+          themeName
         });
 
-        if (currentLanguage === 'influxql') {
-          themeName = isDark ? 'influxql-dark' : 'influxql-light';
-          console.log('🔧 选择InfluxQL主题:', themeName);
-        } else if (currentLanguage === 'flux') {
-          themeName = isDark ? 'flux-dark' : 'flux-light';
-          console.log('🔧 选择Flux主题:', themeName);
-        } else if (currentLanguage === 'sql') {
-          // 为SQL语言也设置专门的主题
-          themeName = isDark ? 'sql-dark' : 'sql-light';
-          console.log('🔧 选择SQL专用主题:', themeName);
-        } else {
-          console.log('🔧 选择默认主题:', themeName);
-        }
-
-        console.log('🎨 应用编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
+        console.log('🎨 应用自定义编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
 
         try {
           monaco.editor.setTheme(themeName);
@@ -876,66 +840,10 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                       editor.render(true);
                       console.log('✅ 编辑器重新渲染完成');
 
-                      // 验证语法高亮是否生效
+                      // 使用自定义语法高亮验证
                       setTimeout(() => {
-                        console.log('🔍 验证语法高亮状态...');
-                        const editorDom = editor.getDomNode();
-                        if (editorDom) {
-                          // 检查更多的token类型
-                          const allTokenSelectors = [
-                            '.mtk1', '.mtk2', '.mtk3', '.mtk4', '.mtk5', '.mtk6', '.mtk7', '.mtk8', '.mtk9', '.mtk10',
-                            '.mtki', '.mtkb', '.mtku', '.mtks', // 斜体、粗体、下划线、删除线
-                            '.keyword', '.string', '.comment', '.number', '.operator'
-                          ];
-                          const tokenElements = editorDom.querySelectorAll(allTokenSelectors.join(', '));
-                          console.log('🎨 找到的语法高亮元素数量:', tokenElements.length);
-
-                          // 详细分析token类型
-                          if (tokenElements.length > 0) {
-                            const tokenStats: Record<string, number> = {};
-                            Array.from(tokenElements).forEach(el => {
-                              const className = el.className;
-                              tokenStats[className] = (tokenStats[className] || 0) + 1;
-                            });
-                            console.log('🎨 语法高亮元素统计:', tokenStats);
-
-                            // 检查是否有关键字高亮
-                            const keywordElements = editorDom.querySelectorAll('.mtk4, .keyword');
-                            const stringElements = editorDom.querySelectorAll('.mtk6, .string');
-                            console.log('🔍 特定元素检查:', {
-                              keywords: keywordElements.length,
-                              strings: stringElements.length,
-                              total: tokenElements.length
-                            });
-
-                            // 如果只有mtk1，说明语法高亮没有正确工作
-                            if (Object.keys(tokenStats).length === 1 && tokenStats['mtk1']) {
-                              console.warn('⚠️ 只检测到mtk1，语法高亮可能未正确工作');
-                              console.log('🔄 尝试强制重新tokenize...');
-
-                              // 强制重新设置语言
-                              const model = editor.getModel();
-                              if (model) {
-                                const currentLanguage = model.getLanguageId();
-                                console.log('🔧 当前语言:', currentLanguage);
-
-                                // 临时切换到其他语言再切换回来
-                                monaco.editor.setModelLanguage(model, 'plaintext');
-                                setTimeout(() => {
-                                  monaco.editor.setModelLanguage(model, currentLanguage);
-                                  console.log('🔄 语言重新设置完成:', currentLanguage);
-                                }, 100);
-                              }
-                            } else {
-                              console.log('✅ 语法高亮验证成功');
-                            }
-                          } else {
-                            console.warn('⚠️ 语法高亮可能未生效，尝试额外刷新...');
-                            // 额外的刷新尝试
-                            editor.trigger('editor', 'editor.action.reindentlines', {});
-                          }
-                        }
-                      }, 500); // 增加延迟，确保DOM更新完成
+                        customSyntaxManager.validateSyntaxHighlight(editor);
+                      }, 500);
                     } catch (renderError) {
                       console.warn('⚠️ 编辑器重新渲染失败:', renderError);
                     }
@@ -1196,13 +1104,13 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   // 监听数据源变化，记录日志
   useEffect(() => {
     if (currentTab?.type === 'query') {
-      const connection = connections.find(c => c.id === activeConnectionId);
-      const databaseType: string = connection?.version || 'unknown';
+      const languageType = getDatabaseLanguageType();
+      const languageId = customSyntaxManager.getLanguageId(languageType);
 
-      console.log('🔄 数据源变化，当前数据库类型:', databaseType, '语言:', getEditorLanguage());
+      console.log('🔄 数据源变化，当前语言类型:', languageType, '自定义语言ID:', languageId);
       // 语言更新由Editor组件的key属性变化自动处理
     }
-  }, [activeConnectionId, connections, currentTab?.type, getEditorLanguage]);
+  }, [activeConnectionId, connections, currentTab?.type, getDatabaseLanguageType]);
 
   if (!currentTab) {
     return null;

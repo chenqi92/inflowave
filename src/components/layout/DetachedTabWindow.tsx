@@ -345,8 +345,10 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 description={`"${tab.title}" 已修改，是否保存更改？`}
                 open={showReattachConfirm}
                 onConfirm={handleSaveAndReattach}
+                onCancel={handleReattachWithoutSaving}
                 onOpenChange={(open) => {
-                  if (!open) handleReattachWithoutSaving();
+                  // 当弹框关闭时，只重置状态
+                  if (!open) setShowReattachConfirm(false);
                 }}
                 okText="保存"
                 cancelText="不保存"
@@ -382,8 +384,10 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
                 description={`"${tab.title}" 已修改，是否保存更改？`}
                 open={showCloseConfirm}
                 onConfirm={handleSaveAndClose}
+                onCancel={handleCloseWithoutSaving}
                 onOpenChange={(open) => {
-                  if (!open) handleCloseWithoutSaving();
+                  // 当弹框关闭时，只重置状态
+                  if (!open) setShowCloseConfirm(false);
                 }}
                 okText="保存"
                 cancelText="不保存"
