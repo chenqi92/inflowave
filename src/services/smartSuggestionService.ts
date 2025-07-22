@@ -324,9 +324,11 @@ export class SmartSuggestionService {
       // 最后的备用方案：直接执行查询
       try {
         const queryResult = await safeTauriInvoke<any>('execute_query', {
-          connectionId,
-          database,
-          query: 'SHOW MEASUREMENTS',
+          request: {
+            connectionId,
+            database,
+            query: 'SHOW MEASUREMENTS',
+          }
         });
 
         if (queryResult && queryResult.data && Array.isArray(queryResult.data)) {
@@ -516,9 +518,11 @@ export class SmartSuggestionService {
       // 尝试执行SHOW FIELD KEYS查询
       try {
         const fieldResult = await safeTauriInvoke<any>('execute_query', {
-          connectionId,
-          database,
-          query: `SHOW FIELD KEYS FROM "${tableName}"`,
+          request: {
+            connectionId,
+            database,
+            query: `SHOW FIELD KEYS FROM "${tableName}"`,
+          }
         });
 
         if (fieldResult && fieldResult.data && Array.isArray(fieldResult.data)) {
@@ -535,9 +539,11 @@ export class SmartSuggestionService {
       // 尝试执行SHOW TAG KEYS查询
       try {
         const tagResult = await safeTauriInvoke<any>('execute_query', {
-          connectionId,
-          database,
-          query: `SHOW TAG KEYS FROM "${tableName}"`,
+          request: {
+            connectionId,
+            database,
+            query: `SHOW TAG KEYS FROM "${tableName}"`,
+          }
         });
 
         if (tagResult && tagResult.data && Array.isArray(tagResult.data)) {

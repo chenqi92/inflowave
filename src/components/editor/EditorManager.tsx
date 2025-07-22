@@ -531,12 +531,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       try {
         console.log('🚫 禁用Monaco编辑器剪贴板功能...');
 
-        // 重写navigator.clipboard以阻止Monaco使用它
-        const originalClipboard = (window as any).navigator.clipboard;
-        if (originalClipboard) {
-          console.log('🔒 重写navigator.clipboard API...');
+        // 检查是否可以重写剪贴板API
+        if (navigator.clipboard) {
+          console.log('🔒 尝试重写navigator.clipboard API...');
 
-          // 创建一个安全的剪贴板代理
+          // 定义安全剪贴板对象（在外层作用域）
           const safeClipboard = {
             writeText: async (text: string) => {
               console.log('🔄 Monaco尝试写入剪贴板，重定向到安全API:', `${text.substring(0, 50)  }...`);
@@ -609,14 +608,32 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
             }
           };
 
-          // 替换navigator.clipboard
-          Object.defineProperty((window as any).navigator, 'clipboard', {
-            value: safeClipboard,
-            writable: false,
-            configurable: false
-          });
+          // 尝试使用 Object.defineProperty 重写
+          try {
+            // 尝试替换navigator.clipboard
+            Object.defineProperty(navigator, 'clipboard', {
+              value: safeClipboard,
+              writable: false,
+              configurable: true
+            });
 
-          console.log('✅ Monaco编辑器剪贴板功能已安全重写');
+            console.log('✅ Monaco编辑器剪贴板功能已安全重写');
+          } catch (defineError) {
+            console.warn('⚠️ 无法重写clipboard属性，尝试替换方法:', defineError);
+
+            // 如果无法重写整个对象，尝试替换方法
+            try {
+              if (typeof navigator.clipboard.writeText === 'function') {
+                (navigator.clipboard as any).writeText = safeClipboard.writeText;
+              }
+              if (typeof navigator.clipboard.readText === 'function') {
+                (navigator.clipboard as any).readText = safeClipboard.readText;
+              }
+              console.log('✅ 剪贴板方法替换成功');
+            } catch (methodError) {
+              console.warn('⚠️ 剪贴板方法替换失败:', methodError);
+            }
+          }
         }
       } catch (clipboardError) {
         console.warn('⚠️ 重写剪贴板功能失败:', clipboardError);
@@ -686,6 +703,29 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
             isRegistered: isLanguageRegistered,
             totalLanguages: registeredLanguages.length
           });
+
+          // 检查tokenization provider是否正确设置
+          console.log('🔍 跳过tokenization支持检查（API不可用）');
+
+          // 直接测试语法高亮是否工作
+          try {
+            const testText = 'SELECT COUNT(*) FROM measurement';
+            console.log('🧪 测试语法高亮:', testText);
+
+            // 创建一个临时模型来测试tokenization
+            const tempModel = monaco.editor.createModel(testText, actualLanguage);
+            console.log('🔍 临时模型创建成功:', {
+              language: tempModel.getLanguageId(),
+              lineCount: tempModel.getLineCount(),
+              value: tempModel.getValue()
+            });
+
+            // 清理临时模型
+            tempModel.dispose();
+            console.log('✅ 语法高亮测试完成');
+          } catch (tokenError) {
+            console.warn('⚠️ 语法高亮测试失败:', tokenError);
+          }
 
           // 如果语言未注册，强制重新注册
           if (!isLanguageRegistered && (actualLanguage === 'influxql' || actualLanguage === 'sql')) {
@@ -868,14 +908,34 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                               total: tokenElements.length
                             });
 
-                            console.log('✅ 语法高亮验证成功');
+                            // 如果只有mtk1，说明语法高亮没有正确工作
+                            if (Object.keys(tokenStats).length === 1 && tokenStats['mtk1']) {
+                              console.warn('⚠️ 只检测到mtk1，语法高亮可能未正确工作');
+                              console.log('🔄 尝试强制重新tokenize...');
+
+                              // 强制重新设置语言
+                              const model = editor.getModel();
+                              if (model) {
+                                const currentLanguage = model.getLanguageId();
+                                console.log('🔧 当前语言:', currentLanguage);
+
+                                // 临时切换到其他语言再切换回来
+                                monaco.editor.setModelLanguage(model, 'plaintext');
+                                setTimeout(() => {
+                                  monaco.editor.setModelLanguage(model, currentLanguage);
+                                  console.log('🔄 语言重新设置完成:', currentLanguage);
+                                }, 100);
+                              }
+                            } else {
+                              console.log('✅ 语法高亮验证成功');
+                            }
                           } else {
                             console.warn('⚠️ 语法高亮可能未生效，尝试额外刷新...');
                             // 额外的刷新尝试
                             editor.trigger('editor', 'editor.action.reindentlines', {});
                           }
                         }
-                      }, 200);
+                      }, 500); // 增加延迟，确保DOM更新完成
                     } catch (renderError) {
                       console.warn('⚠️ 编辑器重新渲染失败:', renderError);
                     }
