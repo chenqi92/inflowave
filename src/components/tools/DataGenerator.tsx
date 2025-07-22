@@ -1430,7 +1430,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             onValueChange={setSelectedDatabase}
             disabled={!activeConnectionId || databases.length === 0}
           >
-            <SelectTrigger className='w-[160px]'>
+            <SelectTrigger className='w-[160px] h-8 text-sm'>
               <SelectValue 
                 placeholder={
                   !activeConnectionId 
@@ -1460,6 +1460,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             disabled={!activeConnectionId}
             variant='outline'
             size='sm'
+            className='h-8 px-2'
           >
             <RefreshCw className='w-4 h-4' />
           </Button>
@@ -1472,7 +1473,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             setMode(value);
             setSelectedTasks([]);
           }}>
-            <SelectTrigger className='w-[120px]'>
+            <SelectTrigger className='w-[120px] h-8 text-sm'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1492,7 +1493,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 onValueChange={setSelectedTable}
                 disabled={!selectedDatabase || tables.length === 0}
               >
-                <SelectTrigger className='w-[160px]'>
+                <SelectTrigger className='w-[160px] h-8 text-sm'>
                   <SelectValue 
                     placeholder={
                       !selectedDatabase 
@@ -1522,6 +1523,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 disabled={!selectedDatabase}
                 variant='outline'
                 size='sm'
+                className='h-8 px-2'
                 title="刷新表列表"
               >
                 <RefreshCw className='w-4 h-4' />
@@ -1532,6 +1534,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   disabled={!selectedTable}
                   variant='outline'
                   size='sm'
+                  className='h-8 px-2'
                   title="刷新表结构"
                 >
                   <Database className='w-4 h-4' />
@@ -1548,7 +1551,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 type="number"
                 value={recordCount}
                 onChange={(e) => setRecordCount(Number(e.target.value))}
-                className='w-20'
+                className='w-20 h-8 text-sm'
                 min={1}
                 max={10000}
               />
@@ -1567,6 +1570,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 (mode === 'custom' && (!selectedTable || !tableInfo)) ||
                 (mode === 'predefined' && selectedTasks.length === 0)
               }
+              className='h-8 text-sm'
             >
               <PlayCircle className='w-4 h-4 mr-2' />
               生成数据
@@ -1576,6 +1580,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               onClick={stopGeneration}
               disabled={isStopping}
               variant='destructive'
+              className='h-8 text-sm'
             >
               <Square className='w-4 h-4 mr-2' />
               {isStopping ? '正在停止...' : '停止生成'}
@@ -1590,6 +1595,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               (mode === 'custom' && !selectedTable)
             }
             variant='outline'
+            className='h-8 text-sm'
           >
             <RefreshCw className='w-4 h-4 mr-2' />
             清空数据

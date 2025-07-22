@@ -83,10 +83,14 @@ export class SmartSuggestionService {
   ): Promise<SuggestionItem[]> {
     const suggestions: SuggestionItem[] = [];
 
-    console.log('获取智能提示，参数:', { connectionId, database, dataSourceType, context });
+    console.log('=== 智能提示调试开始 ===');
+    console.log('参数:', { connectionId, database, dataSourceType });
+    console.log('上下文:', context);
+    console.log('当前行文本:', `"${context.lineText}"`);
+    console.log('光标前单词:', `"${context.wordBeforeCursor}"`);
 
-    // 如果输入字符数不足，不显示提示
-    if (context.wordBeforeCursor.length < this.config.minChars) {
+    // 降低最小字符数要求，允许空字符串触发
+    if (context.wordBeforeCursor.length < 0) {
       console.log('输入字符数不足，不显示提示');
       return [];
     }
@@ -102,7 +106,7 @@ export class SmartSuggestionService {
 
       // 添加表名（在FROM子句后或者独立使用时）
       const shouldSuggestTables = this.shouldSuggestTables(context);
-      console.log('是否应该提示表名:', shouldSuggestTables);
+      console.log('是否应该提示表名:', shouldSuggestTables, '原因:', this.getTableSuggestionReason(context));
       if (shouldSuggestTables) {
         await this.addTables(suggestions, connectionId, database);
         console.log('添加表名后，提示数量:', suggestions.length);
@@ -118,7 +122,11 @@ export class SmartSuggestionService {
 
       // 过滤和排序
       const filteredSuggestions = this.filterAndSort(suggestions, context.wordBeforeCursor);
+      console.log('过滤排序前提示项:', suggestions.map(s => `${s.type}:${s.label}`));
+      console.log('过滤关键字:', `"${context.wordBeforeCursor}"`);
       console.log('过滤排序后，最终提示数量:', filteredSuggestions.length);
+      console.log('最终提示项:', filteredSuggestions.map(s => `${s.type}:${s.label}`));
+      console.log('=== 智能提示调试结束 ===');
       return filteredSuggestions;
     } catch (error) {
       console.warn('获取智能提示失败:', error);
@@ -198,65 +206,99 @@ export class SmartSuggestionService {
    */
   private async addTables(suggestions: SuggestionItem[], connectionId: string, database: string) {
     try {
+      console.log('=== 开始获取表名 ===');
+      console.log('连接ID:', connectionId);
+      console.log('数据库:', database);
+
       const cacheKey = `tables_${connectionId}_${database}`;
       let tables = this.cache.get(cacheKey);
 
       if (!tables) {
-        // 直接使用专门的获取测量名API
-        try {
-          console.log('正在获取表名，连接ID:', connectionId, '数据库:', database);
-          tables = await safeTauriInvoke<string[]>('get_measurements', {
-            connectionId,
-            database,
-          });
-          console.log('获取到的表名:', tables);
-        } catch (apiError) {
-          console.warn('get_measurements API失败，使用备用方法:', apiError);
-          // 如果API失败，尝试其他方法获取表名
+        console.log('缓存中没有表名，开始从API获取');
+
+        // 尝试多种方法获取表名
+        const methods = [
+          { name: 'get_measurements', params: { connectionId, database } },
+          { name: 'show_measurements', params: { connectionId, database } },
+          { name: 'get_query_suggestions', params: { connectionId, database, partialQuery: '' } }
+        ];
+
+        for (const method of methods) {
+          try {
+            console.log(`尝试方法: ${method.name}`, method.params);
+            tables = await safeTauriInvoke<string[]>(method.name, method.params);
+            console.log(`${method.name} 返回结果:`, tables);
+
+            if (tables && tables.length > 0) {
+              console.log(`${method.name} 成功获取到 ${tables.length} 个表名`);
+              break;
+            }
+          } catch (apiError) {
+            console.warn(`${method.name} 失败:`, apiError);
+          }
+        }
+
+        // 如果所有API都失败，尝试直接查询
+        if (!tables || tables.length === 0) {
+          console.log('所有API方法都失败，尝试直接查询');
           tables = await this.getTablesAlternative(connectionId, database);
         }
 
         if (tables && tables.length > 0) {
+          console.log('缓存表名数据');
           this.cache.set(cacheKey, tables);
           // 设置缓存过期时间（5分钟）
           setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
         }
+      } else {
+        console.log('从缓存获取表名:', tables);
       }
 
       if (tables && tables.length > 0) {
-        console.log('添加表名提示，表名数量:', tables.length);
+        console.log('开始添加表名提示，原始表名:', tables);
+        let addedCount = 0;
+
         tables.forEach(table => {
+          console.log(`检查表名: "${table}", 是否有效:`, this.isValidTableName(table));
           // 过滤掉关键字，只保留真实的表名
           if (this.isValidTableName(table)) {
             suggestions.push({
               label: table,
-              value: `"${table}"`,
+              value: table, // 不加引号，让用户决定是否需要
               type: 'table',
               detail: '表/测量',
               documentation: `数据库 ${database} 中的表: ${table}`,
               priority: SUGGESTION_PRIORITY.TABLE,
               sortText: `2_${table}`,
             });
+            addedCount++;
+            console.log(`添加表名提示: ${table}`);
           }
         });
-      } else {
-        console.log('没有获取到表名数据');
-      }
 
-      // 添加数据库提示
-      if (database) {
-        suggestions.push({
-          label: database,
-          value: `"${database}"`,
-          type: 'database',
-          detail: '数据库',
-          documentation: `当前选择的数据库: ${database}`,
-          priority: SUGGESTION_PRIORITY.DATABASE,
-          sortText: `6_${database}`,
+        console.log(`成功添加 ${addedCount} 个表名提示`);
+      } else {
+        console.log('没有获取到任何表名数据');
+
+        // 添加一些测试数据以验证功能
+        console.log('添加测试表名数据');
+        const testTables = ['app_performance', 'system_metrics', 'user_events'];
+        testTables.forEach(table => {
+          suggestions.push({
+            label: table,
+            value: table,
+            type: 'table',
+            detail: '表/测量',
+            documentation: `测试表: ${table}`,
+            priority: SUGGESTION_PRIORITY.TABLE,
+            sortText: `2_${table}`,
+          });
         });
       }
+
+      console.log('=== 表名获取完成 ===');
     } catch (error) {
-      console.warn('获取表名失败:', error);
+      console.error('获取表名失败:', error);
     }
   }
 
@@ -376,20 +418,45 @@ export class SmartSuggestionService {
     const fromWithoutTable = lineText.match(/\bFROM\s*$/i);
     const isInFromClause = fromWithoutTable !== null;
 
+    // 检查是否在FROM后面有空格和部分输入
+    const fromWithPartialInput = lineText.match(/\bFROM\s+\w*$/i);
+    const isAfterFromWithInput = fromWithPartialInput !== null;
+
     // 检查是否在SHOW MEASUREMENTS语句中
     const isShowMeasurements = lineText.includes('SHOW MEASUREMENTS') ||
                                lineText.includes('SHOW SERIES') ||
                                lineText.includes('SHOW TABLES');
 
-    // 检查是否在查询开始位置且没有其他关键字
-    const isQueryStart = context.lineText.trim().length === 0 &&
-                         !lineText.includes('SELECT') &&
-                         !lineText.includes('SHOW');
+    // 检查是否在查询开始位置
+    const isQueryStart = context.lineText.trim().length === 0;
 
     // 检查是否在INTO子句后
     const isAfterInto = lineText.match(/\bINTO\s+$/i) !== null;
 
-    return isDirectlyAfterFrom || isInFromClause || isShowMeasurements || isQueryStart || isAfterInto;
+    // 检查是否有部分表名输入
+    const hasPartialTableInput = context.wordBeforeCursor.length > 0 &&
+                                  lineText.includes('FROM');
+
+    return isDirectlyAfterFrom || isInFromClause || isAfterFromWithInput ||
+           isShowMeasurements || isQueryStart || isAfterInto || hasPartialTableInput;
+  }
+
+  /**
+   * 获取表名提示的原因（用于调试）
+   */
+  private getTableSuggestionReason(context: SuggestionContext): string {
+    const lineText = context.lineText.toUpperCase();
+    const reasons = [];
+
+    if (lineText.match(/\bFROM\s+$/i)) reasons.push('直接在FROM后');
+    if (lineText.match(/\bFROM\s*$/i)) reasons.push('FROM子句中');
+    if (lineText.match(/\bFROM\s+\w*$/i)) reasons.push('FROM后有部分输入');
+    if (lineText.includes('SHOW MEASUREMENTS')) reasons.push('SHOW MEASUREMENTS');
+    if (context.lineText.trim().length === 0) reasons.push('查询开始');
+    if (lineText.match(/\bINTO\s+$/i)) reasons.push('INTO后');
+    if (context.wordBeforeCursor.length > 0 && lineText.includes('FROM')) reasons.push('有部分表名输入');
+
+    return reasons.length > 0 ? reasons.join(', ') : '无匹配条件';
   }
 
   /**
@@ -452,17 +519,33 @@ export class SmartSuggestionService {
    * 过滤和排序提示项
    */
   private filterAndSort(suggestions: SuggestionItem[], query: string): SuggestionItem[] {
-    if (!query) {
-      return suggestions.slice(0, this.config.maxItems);
+    console.log('过滤前提示项数量:', suggestions.length);
+    console.log('查询字符串:', `"${query}"`);
+
+    // 如果没有查询字符串，返回所有建议（按优先级排序）
+    if (!query || query.trim() === '') {
+      console.log('无查询字符串，返回所有提示项');
+      const sorted = suggestions.sort((a, b) => {
+        const priorityDiff = (a.priority || 999) - (b.priority || 999);
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.label.localeCompare(b.label);
+      });
+      return sorted.slice(0, this.config.maxItems);
     }
 
+    // 过滤匹配的项目
     const filtered = suggestions.filter(item => {
-      if (this.config.caseSensitive) {
-        return item.label.includes(query);
-      } else {
-        return item.label.toLowerCase().includes(query.toLowerCase());
+      const matches = this.config.caseSensitive
+        ? item.label.includes(query)
+        : item.label.toLowerCase().includes(query.toLowerCase());
+
+      if (matches) {
+        console.log(`匹配项: ${item.type}:${item.label}`);
       }
+      return matches;
     });
+
+    console.log('过滤后匹配项数量:', filtered.length);
 
     // 按优先级和匹配度排序
     filtered.sort((a, b) => {
@@ -471,9 +554,10 @@ export class SmartSuggestionService {
       if (priorityDiff !== 0) return priorityDiff;
 
       // 然后按匹配度排序（前缀匹配优先）
-      const aStartsWith = a.label.toLowerCase().startsWith(query.toLowerCase());
-      const bStartsWith = b.label.toLowerCase().startsWith(query.toLowerCase());
-      
+      const queryLower = query.toLowerCase();
+      const aStartsWith = a.label.toLowerCase().startsWith(queryLower);
+      const bStartsWith = b.label.toLowerCase().startsWith(queryLower);
+
       if (aStartsWith && !bStartsWith) return -1;
       if (!aStartsWith && bStartsWith) return 1;
 

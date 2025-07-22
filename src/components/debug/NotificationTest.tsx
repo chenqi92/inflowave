@@ -131,7 +131,7 @@ const NotificationTest: React.FC = () => {
           <p className="text-xs text-muted-foreground mb-2">
             测试应用内Toast通知
           </p>
-          <Button size="sm" onClick={testToastNotifications} className="w-full">
+          <Button size="sm" onClick={testToastNotifications} className="w-full h-8 text-sm">
             测试 Toast
           </Button>
         </div>
@@ -145,7 +145,7 @@ const NotificationTest: React.FC = () => {
           <p className="text-xs text-muted-foreground mb-2">
             测试连接相关通知
           </p>
-          <Button size="sm" onClick={testConnectionNotifications} className="w-full">
+          <Button size="sm" onClick={testConnectionNotifications} className="w-full h-8 text-sm">
             测试连接
           </Button>
         </div>
@@ -159,7 +159,7 @@ const NotificationTest: React.FC = () => {
           <p className="text-xs text-muted-foreground mb-2">
             测试查询相关通知
           </p>
-          <Button size="sm" onClick={testQueryNotifications} className="w-full">
+          <Button size="sm" onClick={testQueryNotifications} className="w-full h-8 text-sm">
             测试查询
           </Button>
         </div>
@@ -173,7 +173,7 @@ const NotificationTest: React.FC = () => {
           <p className="text-xs text-muted-foreground mb-2">
             测试系统通知
           </p>
-          <Button size="sm" onClick={testSystemNotifications} className="w-full">
+          <Button size="sm" onClick={testSystemNotifications} className="w-full h-8 text-sm">
             测试系统
           </Button>
         </div>
@@ -188,7 +188,7 @@ const NotificationTest: React.FC = () => {
         <p className="text-xs text-muted-foreground mb-2">
           直接测试Tauri通知系统
         </p>
-        <Button size="sm" onClick={testTauriNotification} className="w-full">
+        <Button size="sm" onClick={testTauriNotification} className="w-full h-8 text-sm">
           测试Tauri通知
         </Button>
       </div>
@@ -202,7 +202,7 @@ const NotificationTest: React.FC = () => {
         <p className="text-xs text-muted-foreground mb-2">
           查看当前通知偏好设置
         </p>
-        <Button size="sm" onClick={debugNotificationSettings} className="w-full">
+        <Button size="sm" onClick={debugNotificationSettings} className="w-full h-8 text-sm">
           调试设置
         </Button>
       </div>
@@ -216,7 +216,7 @@ const NotificationTest: React.FC = () => {
         <p className="text-xs text-muted-foreground mb-2">
           测试浏览器桌面通知API（仅限浏览器）
         </p>
-        <Button size="sm" onClick={testDesktopNotification} className="w-full">
+        <Button size="sm" onClick={testDesktopNotification} className="w-full h-8 text-sm">
           测试浏览器通知
         </Button>
       </div>
