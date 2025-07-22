@@ -89,25 +89,15 @@ export function getCompactMonacoOptions(): monaco.editor.IStandaloneEditorConstr
 }
 
 /**
- * 禁用Monaco编辑器的剪贴板功能
+ * 安全地处理Monaco编辑器的剪贴板功能
+ * 不完全禁用剪贴板API，避免影响其他功能
  */
-function disableMonacoClipboard() {
+function configureMonacoClipboardSafely() {
   if (typeof window !== 'undefined') {
-    // 重写Clipboard API为静默成功
-    if (navigator.clipboard) {
-      Object.defineProperty(navigator, 'clipboard', {
-        value: {
-          writeText: () => Promise.resolve(),
-          readText: () => Promise.resolve(''),
-          write: () => Promise.resolve(),
-          read: () => Promise.resolve(new ClipboardEvent('clipboard')),
-        },
-        writable: false,
-        configurable: false
-      });
-    }
+    // 不再完全重写剪贴板API，而是让Monaco使用自定义处理器
+    // 这样不会影响其他组件和页面功能的正常使用
 
-    console.log('🔒 已禁用Monaco编辑器剪贴板功能');
+    console.log('✅ Monaco编辑器剪贴板配置已优化，不影响其他功能');
   }
 }
 
@@ -129,8 +119,8 @@ export function configureMonacoGlobally() {
         return '';
       };
 
-      // 完全禁用Monaco编辑器的剪贴板功能
-      disableMonacoClipboard();
+      // 安全配置Monaco编辑器的剪贴板功能
+      configureMonacoClipboardSafely();
 
       console.log('✅ Monaco Editor全局配置已完成，剪贴板功能已禁用');
 

@@ -1,0 +1,367 @@
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+  useCallback,
+} from 'react';
+import { useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/Button';
+import { TooltipProvider } from '@/components/ui/Tooltip';
+import { FileText, Plus } from 'lucide-react';
+import { useConnectionStore } from '@/store/connection';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { showMessage } from '@/utils/message';
+import { formatSQL } from '@/utils/sqlFormatter';
+import type { DatabaseType } from '@/utils/sqlFormatter';
+import type { TimeRange } from '@/components/common/TimeRangeSelector';
+
+// 导入拆分的模块
+import { TabManager, EditorTab, useTabManager } from '@/components/editor/TabManager';
+import { EditorManager } from '@/components/editor/EditorManager';
+import { useQueryExecutor } from '@/components/editor/QueryExecutor';
+import { useFileOperations } from '@/components/editor/FileOperations';
+import { QueryToolbar } from '@/components/query/QueryToolbar';
+import DataExportDialog from '@/components/common/DataExportDialog';
+import TableDataBrowser from '@/components/query/TableDataBrowser';
+import SimpleDragOverlay from '@/components/common/SimpleDragOverlay';
+import useSimpleTabDrag from '@/hooks/useSimpleTabDrag';
+
+import type { QueryResult } from '@/types';
+
+interface TabEditorProps {
+  onQueryResult?: (result: QueryResult | null) => void;
+  onBatchQueryResults?: (
+    results: QueryResult[],
+    queries: string[],
+    executionTime: number
+  ) => void;
+  onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser') => void;
+  expandedDatabases?: string[];
+  currentTimeRange?: TimeRange;
+}
+
+export interface TabEditorRef {
+  executeQueryWithContent: (query: string, database: string) => void;
+  createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
+  createNewTab: (type?: 'query' | 'table' | 'database') => void;
+  createQueryTabWithDatabase: (database: string, query?: string) => void;
+  setSelectedDatabase: (database: string) => void;
+}
+
+const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
+  ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
+    const location = useLocation();
+    const { activeConnectionId, connections, setActiveConnection } = useConnectionStore();
+    const { openedDatabasesList } = useOpenedDatabasesStore();
+
+    // Tab管理
+    const { tabs, activeKey, setTabs, setActiveKey, handleTabContentChange } = useTabManager();
+    const [selectedDatabase, setSelectedDatabase] = useState<string>('');
+    const [databases, setDatabases] = useState<string[]>([]);
+    const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | undefined>(currentTimeRange);
+
+    // 拖拽功能
+    const {
+      isDragging,
+      draggedTab,
+      dropZoneActive,
+      handleTabDragStart,
+      handleTabDrag,
+      handleTabDragEnd,
+      handleTabDrop,
+      handleTabDragOver,
+      showTabInPopup,
+    } = useSimpleTabDrag();
+
+    // 当前标签页
+    const currentTab = tabs.find(tab => tab.id === activeKey) || null;
+
+    // 更新标签页内容
+    const updateTabContent = useCallback((tabId: string, content: string) => {
+      const newTabs = tabs.map(tab =>
+        tab.id === tabId
+          ? { ...tab, content, modified: true }
+          : tab
+      );
+      setTabs(newTabs);
+      handleTabContentChange(tabId, content);
+    }, [tabs, setTabs, handleTabContentChange]);
+
+    // 更新标签页
+    const updateTab = useCallback((tabId: string, updates: Partial<EditorTab>) => {
+      const newTabs = tabs.map(tab =>
+        tab.id === tabId
+          ? { ...tab, ...updates }
+          : tab
+      );
+      setTabs(newTabs);
+    }, [tabs, setTabs]);
+
+    // 查询执行器
+    const {
+      loading,
+      actualExecutedQueries,
+      hasAnyConnectedInfluxDB,
+      executeQuery,
+      executeQueryWithContent,
+      testIntelligentHints,
+    } = useQueryExecutor({
+      currentTab,
+      selectedDatabase,
+      selectedTimeRange,
+      onQueryResult,
+      onBatchQueryResults,
+      onUpdateTab: updateTab,
+    });
+
+    // 文件操作
+    const {
+      showExportDialog,
+      setShowExportDialog,
+      saveCurrentTab,
+      saveFileAs,
+      openFile,
+      exportWorkspace,
+      importWorkspace,
+      exportData,
+      autoSave,
+      saveAllTabs,
+    } = useFileOperations({
+      tabs,
+      currentTab,
+      onTabsChange: setTabs,
+      onActiveKeyChange: setActiveKey,
+    });
+
+    // SQL格式化处理函数
+    const handleFormatSQL = useCallback(() => {
+      if (currentTab && currentTab.type === 'query') {
+        const currentContent = currentTab.content;
+        const connection = connections.find(c => c.id === activeConnectionId);
+        const databaseType = (connection?.version || 'unknown') as DatabaseType;
+        
+        try {
+          const formattedSQL = formatSQL(currentContent, databaseType);
+          
+          // 更新tab内容
+          updateTabContent(currentTab.id, formattedSQL);
+          
+          showMessage.success('SQL格式化完成');
+        } catch (error) {
+          console.error('SQL格式化失败:', error);
+          showMessage.error(`SQL格式化失败: ${error}`);
+        }
+      }
+    }, [currentTab, connections, activeConnectionId, updateTabContent]);
+
+    // 创建新标签
+    const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
+      const newTab: EditorTab = {
+        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
+        content: type === 'query' ? 'SELECT * FROM ' : '',
+        type,
+        modified: true,
+        saved: false,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+
+      // 清空查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+
+    // 创建数据浏览标签
+    const createDataBrowserTab = useCallback((connectionId: string, database: string, tableName: string) => {
+      const newTab: EditorTab = {
+        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: `${tableName}`,
+        content: '',
+        type: 'data-browser',
+        modified: false,
+        saved: true,
+        connectionId,
+        database,
+        tableName,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+
+      // 清空查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+
+    // 创建带数据库选择的查询标签页
+    const createQueryTabWithDatabase = useCallback((database: string, query?: string) => {
+      const newTab: EditorTab = {
+        id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: `查询-${tabs.length + 1}`,
+        content: query || 'SELECT * FROM ',
+        type: 'query',
+        modified: true,
+        saved: false,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(newTab.id);
+      setSelectedDatabase(database);
+
+      // 清空查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+
+      console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
+    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+
+    // 暴露方法给父组件
+    useImperativeHandle(
+      ref,
+      () => ({
+        executeQueryWithContent,
+        createDataBrowserTab,
+        createNewTab,
+        createQueryTabWithDatabase,
+        setSelectedDatabase,
+      }),
+      [executeQueryWithContent, createDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
+    );
+
+    // 监听活跃标签类型变化
+    useEffect(() => {
+      if (currentTab && onActiveTabTypeChange) {
+        onActiveTabTypeChange(currentTab.type);
+      }
+    }, [currentTab?.type, onActiveTabTypeChange]);
+
+    // 监听已打开数据库变化
+    useEffect(() => {
+      setDatabases(openedDatabasesList);
+      
+      if (openedDatabasesList.length > 0 && !selectedDatabase) {
+        setSelectedDatabase(openedDatabasesList[0]);
+      } else if (openedDatabasesList.length === 0) {
+        setSelectedDatabase('');
+      }
+    }, [openedDatabasesList, selectedDatabase]);
+
+    return (
+      <TooltipProvider>
+        <div className='h-full flex flex-col bg-background border-0 shadow-none'>
+          {/* 标签页头部 */}
+          <div className='flex items-center justify-between border-b border min-h-[48px] p-0'>
+            {/* 左侧标签区域 */}
+            <div className='flex-1 flex items-center min-w-0'>
+              <TabManager
+                tabs={tabs}
+                activeKey={activeKey}
+                onTabsChange={setTabs}
+                onActiveKeyChange={setActiveKey}
+                onTabContentChange={updateTabContent}
+                onSaveTab={saveCurrentTab}
+                isDragging={isDragging}
+                draggedTab={draggedTab}
+                onTabDragStart={handleTabDragStart}
+                onTabDrag={handleTabDrag}
+                onTabDragEnd={handleTabDragEnd}
+                onTabDrop={handleTabDrop}
+                onTabDragOver={handleTabDragOver}
+              />
+            </div>
+
+            {/* 右侧简化区域 */}
+            <div className='flex items-center gap-2 px-3 flex-shrink-0'>
+              {/* 查询相关功能已移至查询tab内部的工具栏 */}
+            </div>
+          </div>
+
+          {/* 编辑器内容 */}
+          <div className='flex-1 min-h-0 overflow-hidden'>
+            {currentTab ? (
+              currentTab.type === 'data-browser' ? (
+                <TableDataBrowser
+                  connectionId={currentTab.connectionId!}
+                  database={currentTab.database!}
+                  tableName={currentTab.tableName!}
+                />
+              ) : (
+                <div className="h-full flex flex-col">
+                  {/* 查询工具栏 - 仅在查询类型tab中显示 */}
+                  {currentTab.type === 'query' && (
+                    <QueryToolbar
+                      selectedConnectionId={activeConnectionId}
+                      selectedDatabase={selectedDatabase}
+                      selectedTimeRange={selectedTimeRange}
+                      onConnectionChange={(connectionId) => {
+                        setActiveConnection(connectionId);
+                        setSelectedDatabase('');
+                      }}
+                      onDatabaseChange={setSelectedDatabase}
+                      onTimeRangeChange={setSelectedTimeRange}
+                      onExecuteQuery={executeQuery}
+                      onSaveQuery={saveCurrentTab}
+                      onFormatSQL={handleFormatSQL}
+                      loading={loading}
+                      disabled={false}
+                    />
+                  )}
+                  
+                  <div className="flex-1">
+                    <EditorManager
+                      currentTab={currentTab}
+                      selectedDatabase={selectedDatabase}
+                      databases={databases}
+                      onContentChange={(content) => updateTabContent(currentTab.id, content)}
+                      onExecuteQuery={executeQuery}
+                    />
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
+                <div className='text-center'>
+                  <FileText className='w-12 h-12 mx-auto mb-4' />
+                  <p>暂无打开的文件</p>
+                  <Button
+                    variant='default'
+                    onClick={() => createNewTab()}
+                    className='mt-2'
+                  >
+                    <Plus className='w-4 h-4 mr-2' />
+                    新建查询
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 数据导出对话框 */}
+          <DataExportDialog
+            open={showExportDialog}
+            onClose={() => setShowExportDialog(false)}
+            connections={connections}
+            currentConnection={activeConnectionId || undefined}
+            currentDatabase={selectedDatabase}
+            query={currentTab?.content}
+            onSuccess={result => {
+              showMessage.success('数据导出成功');
+              setShowExportDialog(false);
+            }}
+          />
+
+          {/* 拖拽提示覆盖层 */}
+          <SimpleDragOverlay active={dropZoneActive} />
+        </div>
+      </TooltipProvider>
+    );
+  }
+);
+
+TabEditorRefactored.displayName = 'TabEditorRefactored';
+
+export default TabEditorRefactored;

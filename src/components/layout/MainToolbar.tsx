@@ -136,15 +136,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           </div>
         </div>
 
-        {/* 区域2: 时间范围选择器 - 固定位置，没有连接时保持空白 */}
+        {/* 区域2: 预留空间 - 时间范围选择器已移至查询工具栏 */}
         <div className='flex items-center gap-2 px-3 w-48'>
-          {activeConnection && (
-            <TimeRangeSelector
-              value={selectedTimeRange || currentTimeRange}
-              onChange={handleTimeRangeChange}
-              className='ml-1'
-            />
-          )}
+          {/* 时间范围选择器已移动到查询tab的工具栏中 */}
         </div>
 
         <div className='w-px h-6 bg-border mx-3' />
@@ -162,6 +156,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
               }`}
               onClick={handleDatasourceClick}
               title='数据源管理'
+
             >
               <Database className='w-4 h-4' />
               <span className='text-xs'>数据源</span>
@@ -182,6 +177,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? '查询编辑器'
                   : `查询编辑器 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
               }
+
             >
               <Edit className='w-4 h-4' />
               <span className='text-xs'>查询</span>
@@ -202,6 +198,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? '数据可视化'
                   : `数据可视化 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
               }
+
             >
               <BarChart className='w-4 h-4' />
               <span className='text-xs'>可视化</span>
@@ -222,6 +219,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                   ? '性能监控'
                   : `性能监控 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
               }
+
             >
               <Zap className='w-4 h-4' />
               <span className='text-xs'>监控</span>
@@ -254,6 +252,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           }`}
           onClick={handleQueryHistoryClick}
           title='查询历史'
+
         >
           <History className='w-4 h-4' />
           <span className='text-xs'>历史</span>
@@ -270,6 +269,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           }`}
           onClick={handleDevToolsClick}
           title='开发者工具'
+
         >
           <Wrench className='w-4 h-4' />
           <span className='text-xs'>工具</span>
@@ -282,6 +282,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
           onClick={() => setSettingsVisible(true)}
           title='应用设置'
+
         >
           <Settings className='w-4 h-4' />
           <span className='text-xs'>设置</span>

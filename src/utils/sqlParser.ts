@@ -16,7 +16,17 @@ export interface ParsedSQL {
 
 export class SQLParser {
   /**
-   * 解析多条SQL语句
+   * 解析多条SQL语句（实例方法）
+   * @param sqlText 包含多条SQL的文本
+   * @returns 解析后的SQL语句字符串数组
+   */
+  parseStatements(sqlText: string): string[] {
+    const parsed = SQLParser.parseMultipleSQL(sqlText);
+    return parsed.map(p => p.cleaned).filter(sql => sql.trim().length > 0);
+  }
+
+  /**
+   * 解析多条SQL语句（静态方法）
    * @param sqlText 包含多条SQL的文本
    * @returns 解析后的SQL语句数组
    */

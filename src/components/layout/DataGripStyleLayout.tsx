@@ -16,7 +16,7 @@ import {
 } from '@/components/ui';
 import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
-import TabEditor from './TabEditor';
+import TabEditorRefactored, { TabEditorRef } from './TabEditorRefactored';
 import EnhancedResultPanel from './EnhancedResultPanel';
 
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
@@ -234,13 +234,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     start: '',
     end: '',
   });
-  const tabEditorRef = useRef<{
-    executeQueryWithContent?: (query: string, database: string) => void;
-    createDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
-    createNewTab?: (type?: 'query' | 'table' | 'database') => void;
-    createQueryTabWithDatabase?: (database: string, query?: string) => void;
-    setSelectedDatabase?: (database: string) => void;
-  } | null>(null);
+  const tabEditorRef = useRef<TabEditorRef>(null);
 
   // 刷新数据源面板的方法
   const refreshDataExplorer = () => {
@@ -253,15 +247,22 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   useEffect(() => {
     const newView = getViewFromPath(location.pathname);
 
+    console.log('🔄 路径变化监听:', {
+      pathname: location.pathname,
+      currentView,
+      newView,
+      willUpdate: currentView !== newView
+    });
+
     // 只有当视图真的不同时才更新，避免不必要的重渲染
     if (currentView !== newView) {
-      console.log(`🔄 路径变化导致视图切换: ${currentView} -> ${newView} (路径: ${location.pathname})`);
+      console.log(`✅ 更新视图: ${currentView} → ${newView}`);
       setCurrentView(newView);
     }
 
     // 移除自动打开查询历史的逻辑，改为手动触发
     // 这样可以避免软件启动时自动弹出查询历史对话框
-  }, [location.pathname, currentView]); // 添加 currentView 依赖以避免循环
+  }, [location]); // 🔧 关键修复：只依赖 location 对象，不依赖 currentView
 
   // 当偏好设置加载后，更新本地状态
   useEffect(() => {
@@ -284,25 +285,33 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   }, [preferences]);
 
   // 监听布局偏好设置变化，应用到当前视图（仅单向）
+  // 🔧 修复：添加条件避免与路径变化监听器冲突
   useEffect(() => {
     if (preferences?.workspace.layout) {
-      // 如果是根路径或者仪表板路径，应用用户偏好的布局
-      if (location.pathname === '/' || location.pathname === '/dashboard') {
+      // 只在根路径或仪表板路径，且不是用户主动导航时，应用用户偏好的布局
+      if ((location.pathname === '/' || location.pathname === '/dashboard')) {
         const userLayout = preferences.workspace.layout;
         const layout = isValidLayout(userLayout) ? userLayout : 'datasource';
-        if (currentView !== layout) {
+        const expectedViewFromPath = getViewFromPath(location.pathname);
+
+        // 只有当路径对应的视图与偏好设置一致时才应用，避免冲突
+        if (expectedViewFromPath === 'datasource' && currentView !== layout) {
           setCurrentView(layout);
           console.log('应用用户偏好布局:', layout);
         }
       }
     }
-  }, [preferences?.workspace.layout, location.pathname]);
+  }, [preferences?.workspace.layout]); // 🔧 移除 location.pathname 依赖，避免循环
 
   // 当布局状态改变时自动保存（排除面板大小变化）
+  // 🔧 修复：增加防抖时间，减少保存频率，避免与导航冲突
   useEffect(() => {
     const timer = setTimeout(() => {
-      saveWorkspaceSettings();
-    }, 500); // 防抖，500ms后保存
+      // 只在非导航页面时保存视图状态，避免干扰路由导航
+      if (location.pathname === '/' || location.pathname === '/dashboard') {
+        saveWorkspaceSettings();
+      }
+    }, 1000); // 增加到1000ms，减少保存频率
 
     return () => clearTimeout(timer);
   }, [
@@ -310,6 +319,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     bottomPanelCollapsed,
     currentView,
     saveWorkspaceSettings,
+    location.pathname, // 添加路径依赖，确保在正确的页面保存
   ]);
 
   // 清理定时器
@@ -432,8 +442,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return;
       }
 
-
-
       // 清除之前的定时器
       if (viewChangeTimeoutRef.current) {
         clearTimeout(viewChangeTimeoutRef.current);
@@ -463,18 +471,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         }
       }, 50); // 50ms防抖延迟
 
-      // 如果在主页或仪表板，并且视图切换是有效的布局，则更新偏好设置
-      if ((location.pathname === '/' || location.pathname === '/dashboard') &&
-          isValidLayout(newView) &&
-          preferences?.workspace &&
-          preferences.workspace.layout !== newView) {
-        console.log('手动切换视图，更新偏好设置:', newView);
-        const updatedWorkspaceSettings = {
-          ...preferences.workspace,
-          layout: newView
-        };
-        updateWorkspaceSettings(updatedWorkspaceSettings);
-      }
+      // 🔧 修复：移除立即更新偏好设置的逻辑，避免与路径导航冲突
+      // 偏好设置的更新由自动保存机制处理，避免在导航过程中产生状态冲突
     },
     [currentView, navigate, location.pathname, preferences?.workspace, updateWorkspaceSettings]
   );
@@ -568,7 +566,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 minSize={30}
                 className='bg-background overflow-hidden'
               >
-                <TabEditor
+                <TabEditorRefactored
                   key="main-tab-editor-stable" // 使用更稳定的 key 防止重新挂载
                   onQueryResult={setQueryResult}
                   onBatchQueryResults={(results, queries, executionTime) => {
@@ -583,7 +581,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                   onActiveTabTypeChange={setActiveTabType}
                   expandedDatabases={expandedDatabases}
                   currentTimeRange={currentTimeRange}
-                  ref={tabEditorRef as any}
+                  ref={tabEditorRef}
                 />
               </ResizablePanel>
 
