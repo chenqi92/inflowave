@@ -60,7 +60,7 @@ const defaultPreferences: UserPreferences = {
     export_completion: true,
     sound: false,
     desktop: true,
-    position: 'topRight',
+    position: 'bottomRight',
   },
   accessibility: {
     high_contrast: false,

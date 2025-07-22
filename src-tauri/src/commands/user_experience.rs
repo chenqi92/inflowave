@@ -452,7 +452,7 @@ impl Default for UserPreferences {
                 export_completion: true,
                 sound: false,
                 desktop: true,
-                position: "topRight".to_string(),
+                position: "bottomRight".to_string(),
             },
             accessibility: AccessibilitySettings {
                 high_contrast: false,
