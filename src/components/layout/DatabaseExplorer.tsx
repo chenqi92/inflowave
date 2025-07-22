@@ -470,7 +470,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           connectionNode.children = databases.map(db => {
             const dbPath = `${connection.id}/${db}`;
             const isFav = isFavorite(dbPath);
-            const databaseKey = `database-${connection.id}-${db}`;
+            const databaseKey = `database|${connection.id}|${db}`;
             const isExpanded = expandedKeys.includes(databaseKey);
             const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
 
@@ -491,7 +491,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             if (isOpened) {
               // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
               nodeData.isLeaf = false;
-              nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
+              nodeData.children = []; // 空数组表示有子节点但未加载
             } else {
               // 未打开的数据库：设置为叶子节点，无展开按钮
               nodeData.isLeaf = true;
@@ -552,9 +552,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       }, 30000); // 30秒超时
 
       try {
-        if (String(key).startsWith('database-')) {
+        if (String(key).startsWith('database|')) {
           // 加载表列表
-          const [, connectionId, database] = String(key).split('-', 3);
+          const [, connectionId, database] = String(key).split('|', 3);
           console.log(
             `📋 加载数据库表列表: connectionId=${connectionId}, database=${database}`
           );
@@ -575,7 +575,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   </span>
                 </div>
               ),
-              key: `table-${connectionId}-${database}-${table}`,
+              key: `table|${connectionId}|${database}|${table}`,
               icon: <Table className='w-4 h-4 text-success' />,
               isLeaf: false,
               children: [], // 空数组表示有子节点但未加载
@@ -597,9 +597,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             };
             return updateNode(prevData);
           });
-        } else if (String(key).startsWith('table-')) {
+        } else if (String(key).startsWith('table|')) {
           // 加载表的字段和标签
-          const [, connectionId, database, table] = String(key).split('-', 4);
+          const [, connectionId, database, table] = String(key).split('|', 4);
           const { tags, fields } = await loadTableSchema(
             connectionId,
             database,
@@ -627,7 +627,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   </span>
                 </div>
               ),
-              key: `tag-${connectionId}-${database}-${table}-${tag}`,
+              key: `tag|${connectionId}|${database}|${table}|${tag}`,
               icon: <Tags className='w-4 h-4 text-orange-500' />,
               isLeaf: true,
             });
@@ -673,7 +673,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   </span>
                 </div>
               ),
-              key: `field-${connectionId}-${database}-${table}-${field.name}`,
+              key: `field|${connectionId}|${database}|${table}|${field.name}`,
               icon: getFieldIcon(field.type),
               isLeaf: true,
             });
@@ -749,19 +749,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const paths = {
         connection: (key: string) => key.replace('connection-', ''),
         database: (key: string) => {
-          const [, connectionId, database] = key.split('-');
+          const [, connectionId, database] = key.split('|');
           return `${connectionId}/${database}`;
         },
         table: (key: string) => {
-          const [, connectionId, database, table] = key.split('-');
+          const [, connectionId, database, table] = key.split('|');
           return `${connectionId}/${database}/${table}`;
         },
         field: (key: string) => {
-          const [, connectionId, database, table, field] = key.split('-');
+          const [, connectionId, database, table, field] = key.split('|');
           return `${connectionId}/${database}/${table}/${field}`;
         },
         tag: (key: string) => {
-          const [, connectionId, database, table, tag] = key.split('-');
+          const [, connectionId, database, table, tag] = key.split('|');
           return `${connectionId}/${database}/${table}/tags/${tag}`;
         },
       };
@@ -772,20 +772,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       if (String(nodeKey).startsWith('connection-')) {
         connectionId = String(nodeKey).replace('connection-', '');
         path = paths.connection(String(nodeKey));
-      } else if (String(nodeKey).startsWith('database-')) {
-        const [, connId] = String(nodeKey).split('-');
+      } else if (String(nodeKey).startsWith('database|')) {
+        const [, connId] = String(nodeKey).split('|');
         connectionId = connId;
         path = paths.database(String(nodeKey));
-      } else if (String(nodeKey).startsWith('table-')) {
-        const [, connId] = String(nodeKey).split('-');
+      } else if (String(nodeKey).startsWith('table|')) {
+        const [, connId] = String(nodeKey).split('|');
         connectionId = connId;
         path = paths.table(String(nodeKey));
-      } else if (String(nodeKey).startsWith('field-')) {
-        const [, connId] = String(nodeKey).split('-');
+      } else if (String(nodeKey).startsWith('field|')) {
+        const [, connId] = String(nodeKey).split('|');
         connectionId = connId;
         path = paths.field(String(nodeKey));
-      } else if (String(nodeKey).startsWith('tag-')) {
-        const [, connId] = String(nodeKey).split('-');
+      } else if (String(nodeKey).startsWith('tag|')) {
+        const [, connId] = String(nodeKey).split('|');
         connectionId = connId;
         path = paths.tag(String(nodeKey));
       }
@@ -817,29 +817,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const paths = {
       connection: () => key.replace('connection-', ''),
       database: () => {
-        const [, connectionId, database] = key.split('-');
+        const [, connectionId, database] = key.split('|');
         return `${connectionId}/${database}`;
       },
       table: () => {
-        const [, connectionId, database, table] = key.split('-');
+        const [, connectionId, database, table] = key.split('|');
         return `${connectionId}/${database}/${table}`;
       },
       field: () => {
-        const [, connectionId, database, table, field] = key.split('-');
+        const [, connectionId, database, table, field] = key.split('|');
         return `${connectionId}/${database}/${table}/${field}`;
       },
       tag: () => {
-        const [, connectionId, database, table, tag] = key.split('-');
+        const [, connectionId, database, table, tag] = key.split('|');
         return `${connectionId}/${database}/${table}/tags/${tag}`;
       },
     };
 
     let path = '';
     if (String(key).startsWith('connection-')) path = paths.connection();
-    else if (String(key).startsWith('database-')) path = paths.database();
-    else if (String(key).startsWith('table-')) path = paths.table();
-    else if (String(key).startsWith('field-')) path = paths.field();
-    else if (String(key).startsWith('tag-')) path = paths.tag();
+    else if (String(key).startsWith('database|')) path = paths.database();
+    else if (String(key).startsWith('table|')) path = paths.table();
+    else if (String(key).startsWith('field|')) path = paths.field();
+    else if (String(key).startsWith('tag|')) path = paths.tag();
 
     const isFav = isFavorite(path);
 
@@ -854,7 +854,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       onClick: () => handleToggleFavorite(key),
     };
 
-    if (String(key).startsWith('database-')) {
+    if (String(key).startsWith('database|')) {
       return [
         favoriteMenuItem,
         { key: 'divider-db-1', type: 'divider' },
@@ -877,7 +877,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       ];
     }
 
-    if (String(key).startsWith('table-')) {
+    if (String(key).startsWith('table|')) {
       return [
         favoriteMenuItem,
         { key: 'divider-table-1', type: 'divider' },
@@ -900,7 +900,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       ];
     }
 
-    if (String(key).startsWith('field-') || String(key).startsWith('tag-')) {
+    if (String(key).startsWith('field|') || String(key).startsWith('tag|')) {
       return [
         favoriteMenuItem,
         { key: 'divider-field-1', type: 'divider' },
@@ -1054,7 +1054,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const { node } = info;
     const key = node.key;
 
-    console.log(`🖱️ 双击节点: ${key}`, { nodeTitle: node.title });
+    console.log(`🖱️ 双击节点: ${key}`, { nodeTitle: node.title, nodeType: typeof key, keyString: String(key) });
 
     // 双击时立即关闭右键菜单，避免菜单状态冲突
     if (contextMenuOpen) {
@@ -1101,14 +1101,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           showMessage.info(`已展开连接 "${connection.name}"`);
         }
       }
-    } else if (String(key).startsWith('database-')) {
+    } else if (String(key).startsWith('database|')) {
       // 数据库节点被双击
-      const parts = String(key).split('-');
+      const parts = String(key).split('|');
       if (parts.length >= 3) {
         const connectionId = parts[1];
-        // 处理数据库名称可能包含连字符的情况
-        const database = parts.slice(2).join('-');
-        const databaseKey = `database-${connectionId}-${database}`;
+        // 处理数据库名称可能包含分隔符的情况
+        const database = parts.slice(2).join('|');
+        const databaseKey = `database|${connectionId}|${database}`;
+
+        // 首先检查连接状态
+        const isConnected = isConnectionConnected(connectionId);
+        if (!isConnected) {
+          console.warn(`⚠️ 连接 ${connectionId} 未建立，无法打开数据库 "${database}"`);
+          showMessage.warning(`请先建立连接后再打开数据库 "${database}"`);
+          return;
+        }
 
         // 检查数据库是否已经打开
         const isOpened = isDatabaseOpened(connectionId, database);
@@ -1117,6 +1125,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(`🖱️ 双击数据库 "${database}":`, {
           connectionId,
           database,
+          isConnected,
           isOpened,
           isDatabaseExpanded,
           openedDatabasesList
@@ -1156,7 +1165,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 )}
                               </div>
                             ),
-                            key: `table-${connectionId}-${database}-${table}`,
+                            key: `table|${connectionId}|${database}|${table}`,
                             icon: <Table className='w-4 h-4 text-blue-600' />,
                             isLeaf: false, // 表应该有展开按钮以显示tags和fields
                             children: [], // 空数组表示有子节点但未加载
@@ -1223,7 +1232,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 )}
                               </div>
                             ),
-                            key: `table-${connectionId}-${database}-${table}`,
+                            key: `table|${connectionId}|${database}|${table}`,
                             icon: <Table className='w-4 h-4 text-blue-600' />,
                             isLeaf: false, // 修复：表应该有展开按钮以显示tags和fields
                             children: [], // 空数组表示有子节点但未加载
@@ -1261,13 +1270,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           showMessage.info(`已收起数据库 "${database}"`);
         }
       }
-    } else if (String(key).startsWith('table-')) {
+    } else if (String(key).startsWith('table|')) {
       // 表节点被双击，确保在查询面板中处理
-      const parts = String(key).split('-');
+      const parts = String(key).split('|');
       if (parts.length >= 4) {
         const connectionId = parts[1];
         const database = parts[2];
-        const table = parts.slice(3).join('-'); // 处理表名包含连字符的情况
+        const table = parts.slice(3).join('|'); // 处理表名包含分隔符的情况
 
         // 如果当前不在查询面板，先切换到查询面板
         if (onViewChange && onGetCurrentView && onGetCurrentView() !== 'query') {
@@ -1349,9 +1358,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         connectionId,
         title: node.title,
       };
-    } else if (String(key).startsWith('database-')) {
+    } else if (String(key).startsWith('database|')) {
       // 数据库节点
-      const parts = String(key).split('-');
+      const parts = String(key).split('|');
       if (parts.length >= 3) {
         const connectionId = parts[1];
         const database = parts[2];
@@ -1362,13 +1371,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           title: node.title,
         };
       }
-    } else if (String(key).startsWith('table-')) {
+    } else if (String(key).startsWith('table|')) {
       // 表节点
-      const parts = String(key).split('-');
+      const parts = String(key).split('|');
       if (parts.length >= 4) {
         const connectionId = parts[1];
         const database = parts[2];
-        const table = parts.slice(3).join('-');
+        const table = parts.slice(3).join('|');
         target = {
           type: 'table',
           connectionId,
@@ -1377,14 +1386,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           title: node.title,
         };
       }
-    } else if (String(key).startsWith('field-')) {
+    } else if (String(key).startsWith('field|')) {
       // 字段节点
-      const parts = String(key).split('-');
+      const parts = String(key).split('|');
       if (parts.length >= 5) {
         const connectionId = parts[1];
         const database = parts[2];
         const table = parts[3];
-        const field = parts.slice(4).join('-');
+        const field = parts.slice(4).join('|');
         target = {
           type: 'field',
           connectionId,
@@ -1468,7 +1477,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   const updatedConnectionNode = { ...connectionNode };
                   if (updatedConnectionNode.children) {
                     updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
-                      if (dbNode.key === `database-${contextMenuTarget.connectionId}-${contextMenuTarget.database}`) {
+                      if (dbNode.key === `database|${contextMenuTarget.connectionId}|${contextMenuTarget.database}`) {
                         return {
                           ...dbNode,
                           icon: <Database className='w-4 h-4 text-muted-foreground' />,
@@ -1486,7 +1495,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             });
 
             // 同时收起该数据库的展开状态
-            const databaseKey = `database-${contextMenuTarget.connectionId}-${contextMenuTarget.database}`;
+            const databaseKey = `database|${contextMenuTarget.connectionId}|${contextMenuTarget.database}`;
             setExpandedKeys(prev => prev.filter(key => key !== databaseKey));
           }
           break;
@@ -1648,13 +1657,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     const nodeKey = String(node.key);
     // 根据选中的节点类型执行相应操作
-    if (nodeKey.startsWith('database-')) {
+    if (nodeKey.startsWith('database|')) {
       // 数据库节点被选中
       console.log('选中数据库:', node.title);
-    } else if (nodeKey.startsWith('table-')) {
+    } else if (nodeKey.startsWith('table|')) {
       // 表节点被选中
       console.log('选中表:', node.title);
-    } else if (nodeKey.startsWith('field-') || nodeKey.startsWith('tag-')) {
+    } else if (nodeKey.startsWith('field|') || nodeKey.startsWith('tag|')) {
       // 字段或标签节点被选中
       console.log('选中字段/标签:', node.title);
     }
@@ -1669,17 +1678,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const connectionId = key.replace('connection-', '');
       const connection = getConnection(connectionId);
       return connection?.name || '';
-    } else if (key.startsWith('database-')) {
+    } else if (key.startsWith('database|')) {
       // 提取数据库名称
-      const parts = key.split('-');
+      const parts = key.split('|');
       return parts[2] || '';
-    } else if (key.startsWith('table-')) {
+    } else if (key.startsWith('table|')) {
       // 提取表名称
-      const parts = key.split('-');
+      const parts = key.split('|');
       return parts[3] || '';
-    } else if (key.startsWith('field-') || key.startsWith('tag-')) {
+    } else if (key.startsWith('field|') || key.startsWith('tag|')) {
       // 提取字段/标签名称
-      const parts = key.split('-');
+      const parts = key.split('|');
       return parts[4] || '';
     }
     return '';
@@ -1766,7 +1775,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             children: databases.map(db => {
                               const dbPath = `${connection_id}/${db}`;
                               const isFav = isFavorite(dbPath);
-                              const databaseKey = `database-${connection_id}-${db}`;
+                              const databaseKey = `database|${connection_id}|${db}`;
                               const isExpanded = expandedKeys.includes(databaseKey);
                               const isOpened = isDatabaseOpened(connection_id, db);
 
@@ -1787,7 +1796,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               if (isOpened) {
                                 // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
                                 nodeData.isLeaf = false;
-                                nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
+                                nodeData.children = []; // 空数组表示有子节点但未加载
                               } else {
                                 // 未打开的数据库：设置为叶子节点，无展开按钮
                                 nodeData.isLeaf = true;
@@ -2012,7 +2021,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 databaseName => {
                   const dbPath = `${connection_id}/${databaseName}`;
                   const isFav = isFavorite(dbPath);
-                  const databaseKey = `database-${connection_id}-${databaseName}`;
+                  const databaseKey = `database|${connection_id}|${databaseName}`;
                   const isExpanded = expandedKeys.includes(databaseKey);
                   const isOpened = isDatabaseOpened(connection_id, databaseName);
 
@@ -2033,7 +2042,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   if (isOpened) {
                     // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
                     nodeData.isLeaf = false;
-                    nodeData.children = isExpanded ? [] : []; // 空数组表示有子节点但未加载
+                    nodeData.children = []; // 空数组表示有子节点但未加载
                   } else {
                     // 未打开的数据库：设置为叶子节点，无展开按钮
                     nodeData.isLeaf = true;
@@ -2082,8 +2091,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       setExpandedKeys(prev => {
         const filtered = prev.filter(
           key =>
-            !String(key).startsWith(`database-${connection_id}`) &&
-            !String(key).startsWith(`table-${connection_id}`)
+            !String(key).startsWith(`database|${connection_id}|`) &&
+            !String(key).startsWith(`table|${connection_id}|`)
         );
         return filtered;
       });
@@ -2093,8 +2102,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const newSet = new Set(prev);
         Array.from(newSet).forEach(key => {
           if (
-            String(key).startsWith(`database-${connection_id}`) ||
-            String(key).startsWith(`table-${connection_id}`)
+            String(key).startsWith(`database|${connection_id}|`) ||
+            String(key).startsWith(`table|${connection_id}|`)
           ) {
             newSet.delete(key);
           }
