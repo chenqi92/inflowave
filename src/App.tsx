@@ -423,8 +423,22 @@ const App: React.FC = () => {
 
         // 通知加载屏幕应用已准备就绪
         setTimeout(() => {
+          // 确保窗口标题正确设置
+          document.title = 'InfloWave';
+          
+          // 如果是Tauri环境，也通过Tauri API设置标题
+          if ((window as any).__TAURI__) {
+            import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
+              getCurrentWebviewWindow().setTitle('InfloWave').catch(err => {
+                console.warn('无法通过Tauri API设置窗口标题:', err);
+              });
+            }).catch(err => {
+              console.warn('无法导入Tauri webviewWindow模块:', err);
+            });
+          }
+          
           window.dispatchEvent(new CustomEvent('app-ready'));
-          console.log('✅ 应用启动完成，已发送ready信号');
+          console.log('✅ 应用启动完成，窗口标题已设置，已发送ready信号');
         }, 300); // 稍微延迟一下确保UI已渲染
 
         // 在开发模式下加载测试工具

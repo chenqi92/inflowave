@@ -813,8 +813,15 @@ async fn main() {
         .setup(|app| {
             info!("Application setup started");
 
-            // 设置响应式窗口大小
+            // 设置响应式窗口大小和标题
             if let Some(window) = app.get_webview_window("main") {
+                // 显式设置窗口标题
+                if let Err(e) = window.set_title("InfloWave") {
+                    error!("设置窗口标题失败: {}", e);
+                } else {
+                    info!("窗口标题已设置为: InfloWave");
+                }
+                
                 if let Err(e) = setup_responsive_window_size(&window) {
                     error!("设置响应式窗口大小失败: {}", e);
                 }
