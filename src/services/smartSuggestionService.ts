@@ -83,21 +83,29 @@ export class SmartSuggestionService {
   ): Promise<SuggestionItem[]> {
     const suggestions: SuggestionItem[] = [];
 
+    console.log('获取智能提示，参数:', { connectionId, database, dataSourceType, context });
+
     // 如果输入字符数不足，不显示提示
     if (context.wordBeforeCursor.length < this.config.minChars) {
+      console.log('输入字符数不足，不显示提示');
       return [];
     }
 
     try {
       // 添加关键字
       this.addKeywords(suggestions, dataSourceType);
+      console.log('添加关键字后，提示数量:', suggestions.length);
 
       // 添加函数
       this.addFunctions(suggestions, dataSourceType);
+      console.log('添加函数后，提示数量:', suggestions.length);
 
       // 添加表名（在FROM子句后或者独立使用时）
-      if (this.shouldSuggestTables(context)) {
+      const shouldSuggestTables = this.shouldSuggestTables(context);
+      console.log('是否应该提示表名:', shouldSuggestTables);
+      if (shouldSuggestTables) {
         await this.addTables(suggestions, connectionId, database);
+        console.log('添加表名后，提示数量:', suggestions.length);
       }
 
       // 添加字段和标签（在SELECT子句或WHERE子句中）
@@ -109,7 +117,9 @@ export class SmartSuggestionService {
       }
 
       // 过滤和排序
-      return this.filterAndSort(suggestions, context.wordBeforeCursor);
+      const filteredSuggestions = this.filterAndSort(suggestions, context.wordBeforeCursor);
+      console.log('过滤排序后，最终提示数量:', filteredSuggestions.length);
+      return filteredSuggestions;
     } catch (error) {
       console.warn('获取智能提示失败:', error);
       return [];
@@ -175,7 +185,7 @@ export class SmartSuggestionService {
         type: 'function',
         detail: '函数',
         documentation: this.getFunctionDocumentation(func, dataSourceType),
-        insertText: insertText,
+        insertText,
         insertTextRules: insertText.includes('$') ? INSERT_TEXT_RULES.INSERT_AS_SNIPPET : INSERT_TEXT_RULES.NONE,
         priority: SUGGESTION_PRIORITY.FUNCTION,
         sortText: `1_${func}`,
@@ -192,15 +202,16 @@ export class SmartSuggestionService {
       let tables = this.cache.get(cacheKey);
 
       if (!tables) {
-        // 尝试获取表名/测量名
+        // 直接使用专门的获取测量名API
         try {
-          tables = await safeTauriInvoke<string[]>('get_query_suggestions', {
+          console.log('正在获取表名，连接ID:', connectionId, '数据库:', database);
+          tables = await safeTauriInvoke<string[]>('get_measurements', {
             connectionId,
             database,
-            partialQuery: '',
           });
+          console.log('获取到的表名:', tables);
         } catch (apiError) {
-          console.warn('API获取表名失败，使用备用方法:', apiError);
+          console.warn('get_measurements API失败，使用备用方法:', apiError);
           // 如果API失败，尝试其他方法获取表名
           tables = await this.getTablesAlternative(connectionId, database);
         }
@@ -213,6 +224,7 @@ export class SmartSuggestionService {
       }
 
       if (tables && tables.length > 0) {
+        console.log('添加表名提示，表名数量:', tables.length);
         tables.forEach(table => {
           // 过滤掉关键字，只保留真实的表名
           if (this.isValidTableName(table)) {
@@ -227,6 +239,8 @@ export class SmartSuggestionService {
             });
           }
         });
+      } else {
+        console.log('没有获取到表名数据');
       }
 
       // 添加数据库提示
@@ -251,18 +265,39 @@ export class SmartSuggestionService {
    */
   private async getTablesAlternative(connectionId: string, database: string): Promise<string[]> {
     try {
-      // 尝试执行SHOW MEASUREMENTS查询获取表名
-      const result = await safeTauriInvoke<any>('execute_query', {
+      console.log('使用备用方法获取表名');
+      // 尝试使用show_measurements命令
+      const result = await safeTauriInvoke<string[]>('show_measurements', {
         connectionId,
         database,
-        query: 'SHOW MEASUREMENTS',
       });
 
-      if (result && result.data && Array.isArray(result.data)) {
-        return result.data.map((row: any) => row.name || row.measurement || row[0]).filter(Boolean);
+      if (result && Array.isArray(result)) {
+        console.log('备用方法获取到表名:', result);
+        return result;
       }
     } catch (error) {
-      console.warn('备用方法获取表名失败:', error);
+      console.warn('show_measurements备用方法失败，尝试执行查询:', error);
+
+      // 最后的备用方案：直接执行查询
+      try {
+        const queryResult = await safeTauriInvoke<any>('execute_query', {
+          connectionId,
+          database,
+          query: 'SHOW MEASUREMENTS',
+        });
+
+        if (queryResult && queryResult.data && Array.isArray(queryResult.data)) {
+          const measurements = queryResult.data.map((row: any) => {
+            // 尝试不同的字段名
+            return row.name || row.measurement || row._measurement || row[0];
+          }).filter(Boolean);
+          console.log('查询方法获取到表名:', measurements);
+          return measurements;
+        }
+      } catch (queryError) {
+        console.warn('查询备用方法也失败:', queryError);
+      }
     }
     return [];
   }
@@ -379,7 +414,7 @@ export class SmartSuggestionService {
    */
   private getFunctionInsertText(func: string, dataSourceType: DataSourceType): string {
     // 为常用函数添加参数占位符
-    const functionsWithParams = {
+    const functionsWithParams: Record<string, string> = {
       'COUNT': 'COUNT($1)',
       'SUM': 'SUM($1)',
       'AVG': 'AVG($1)',
@@ -398,7 +433,7 @@ export class SmartSuggestionService {
    * 获取函数文档
    */
   private getFunctionDocumentation(func: string, dataSourceType: DataSourceType): string {
-    const docs = {
+    const docs: Record<string, string> = {
       'COUNT': '计算非空值的数量',
       'SUM': '计算数值字段的总和',
       'AVG': '计算数值字段的平均值',
