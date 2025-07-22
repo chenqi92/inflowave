@@ -359,7 +359,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
               </div>
               <Sheet open={settingsVisible} onOpenChange={setSettingsVisible}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="h-8 text-sm">
                     <Settings className="w-4 h-4 mr-2" />
                     设置
                   </Button>
@@ -372,7 +372,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-1">
               <Select value={database} onValueChange={setDatabase}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-8 text-sm">
                   <SelectValue placeholder="选择数据库" />
                 </SelectTrigger>
                 <SelectContent>
@@ -387,7 +387,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 <Button
                   onClick={optimizeQuery}
                   disabled={loading}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-8 text-sm"
                 >
                   <Rocket className="w-4 h-4" />
                   优化查询
@@ -395,7 +395,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 <Button
                   variant="outline"
                   onClick={clearCache}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-8 text-sm"
                 >
                   <RefreshCw className="w-4 h-4" />
                   清空缓存
@@ -419,7 +419,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     }
                   }}
                   disabled={!optimizationResult}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 h-8 text-sm"
                 >
                   <Download className="w-4 h-4" />
                   导出结果
@@ -933,7 +933,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => setOptimizationResult(item)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 h-8 text-sm"
                   >
                     <Eye className="w-4 h-4" />
                     查看
@@ -942,8 +942,8 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => setQuery(item.optimizedQuery)}
-                    className="flex items-center gap-2"
-                  >
+                    className="flex items-center gap-2 h-8 text-sm"
+                >
                     <Share className="w-4 h-4" />
                     使用
                   </Button>
@@ -970,7 +970,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={getQueryStats}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 text-sm"
               >
                 <RefreshCw className="w-4 h-4" />
                 刷新
@@ -1010,7 +1010,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                     ),
                   });
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-8 text-sm"
               >
                 <Info className="w-4 h-4" />
                 帮助
@@ -1130,7 +1130,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-8 text-sm">
                 <SelectValue placeholder="选择优化级别" />
               </SelectTrigger>
               <SelectContent>
@@ -1154,7 +1154,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                 }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-8 text-sm">
                 <SelectValue placeholder="选择最大优化时间" />
               </SelectTrigger>
               <SelectContent>

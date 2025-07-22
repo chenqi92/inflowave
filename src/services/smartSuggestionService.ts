@@ -63,7 +63,7 @@ const COMMON_SQL_KEYWORDS = [
 ];
 
 export class SmartSuggestionService {
-  private cache: Map<string, string[]> = new Map();
+  private cache: Map<string, any> = new Map();
   private config: SuggestionConfig = DEFAULT_SUGGESTION_CONFIG;
 
   constructor(config?: Partial<SuggestionConfig>) {
@@ -258,7 +258,7 @@ export class SmartSuggestionService {
         console.log('开始添加表名提示，原始表名:', tables);
         let addedCount = 0;
 
-        tables.forEach(table => {
+        tables.forEach((table: string) => {
           console.log(`检查表名: "${table}", 是否有效:`, this.isValidTableName(table));
           // 过滤掉关键字，只保留真实的表名
           if (this.isValidTableName(table)) {
@@ -364,43 +364,197 @@ export class SmartSuggestionService {
    * 添加字段和标签提示
    */
   private async addFieldsAndTags(
-    suggestions: SuggestionItem[], 
-    connectionId: string, 
-    database: string, 
+    suggestions: SuggestionItem[],
+    connectionId: string,
+    database: string,
     tableName: string
   ) {
     try {
-      // 这里可以调用后端API获取字段和标签信息
-      // 暂时添加一些常见的字段名
-      const commonFields = ['time', 'value', 'host', 'region', 'cpu', 'memory', 'disk'];
-      const commonTags = ['host', 'region', 'datacenter', 'environment', 'service'];
+      console.log('=== 开始获取字段和标签 ===');
+      console.log('表名:', tableName);
 
-      commonFields.forEach(field => {
-        suggestions.push({
-          label: field,
-          value: field,
-          type: 'field',
-          detail: '字段',
-          documentation: `字段: ${field}`,
-          priority: SUGGESTION_PRIORITY.FIELD,
-          sortText: `3_${field}`,
-        });
-      });
+      const cacheKey = `fields_${connectionId}_${database}_${tableName}`;
+      let fieldsAndTags = this.cache.get(cacheKey) as { fields: string[], tags: string[] } | undefined;
 
-      commonTags.forEach(tag => {
-        suggestions.push({
-          label: tag,
-          value: tag,
-          type: 'tag',
-          detail: '标签',
-          documentation: `标签: ${tag}`,
-          priority: SUGGESTION_PRIORITY.TAG,
-          sortText: `4_${tag}`,
+      if (!fieldsAndTags) {
+        console.log('缓存中没有字段数据，开始从API获取');
+
+        // 尝试多种方法获取字段和标签
+        const methods = [
+          { name: 'get_field_keys', params: { connectionId, database, measurement: tableName } },
+          { name: 'get_tag_keys', params: { connectionId, database, measurement: tableName } },
+          { name: 'show_field_keys', params: { connectionId, database, measurement: tableName } },
+          { name: 'show_tag_keys', params: { connectionId, database, measurement: tableName } }
+        ];
+
+        const fields: string[] = [];
+        const tags: string[] = [];
+
+        for (const method of methods) {
+          try {
+            console.log(`尝试方法: ${method.name}`, method.params);
+            const result = await safeTauriInvoke<string[]>(method.name, method.params);
+            console.log(`${method.name} 返回结果:`, result);
+
+            if (result && Array.isArray(result) && result.length > 0) {
+              if (method.name.includes('field')) {
+                fields.push(...result);
+              } else if (method.name.includes('tag')) {
+                tags.push(...result);
+              }
+            }
+          } catch (apiError) {
+            console.warn(`${method.name} 失败:`, apiError);
+          }
+        }
+
+        // 如果API方法都失败，尝试直接查询
+        if (fields.length === 0 && tags.length === 0) {
+          console.log('所有API方法都失败，尝试直接查询');
+          const queryResults = await this.getFieldsAndTagsAlternative(connectionId, database, tableName);
+          fields.push(...queryResults.fields);
+          tags.push(...queryResults.tags);
+        }
+
+        fieldsAndTags = { fields: [...new Set(fields)], tags: [...new Set(tags)] };
+
+        if (fieldsAndTags.fields.length > 0 || fieldsAndTags.tags.length > 0) {
+          console.log('缓存字段和标签数据');
+          this.cache.set(cacheKey, fieldsAndTags);
+          // 设置缓存过期时间（5分钟）
+          setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
+        }
+      } else {
+        console.log('从缓存获取字段和标签:', fieldsAndTags);
+      }
+
+      // 添加字段提示
+      if (fieldsAndTags && fieldsAndTags.fields && fieldsAndTags.fields.length > 0) {
+        console.log('添加字段提示，字段数量:', fieldsAndTags.fields.length);
+        fieldsAndTags.fields.forEach((field: string) => {
+          suggestions.push({
+            label: field,
+            value: field,
+            type: 'field',
+            detail: '字段',
+            documentation: `表 ${tableName} 的字段: ${field}`,
+            priority: SUGGESTION_PRIORITY.FIELD,
+            sortText: `3_${field}`,
+          });
         });
-      });
+      }
+
+      // 添加标签提示
+      if (fieldsAndTags && fieldsAndTags.tags && fieldsAndTags.tags.length > 0) {
+        console.log('添加标签提示，标签数量:', fieldsAndTags.tags.length);
+        fieldsAndTags.tags.forEach((tag: string) => {
+          suggestions.push({
+            label: tag,
+            value: tag,
+            type: 'tag',
+            detail: '标签',
+            documentation: `表 ${tableName} 的标签: ${tag}`,
+            priority: SUGGESTION_PRIORITY.TAG,
+            sortText: `4_${tag}`,
+          });
+        });
+      }
+
+      // 如果没有获取到任何字段和标签，添加一些通用的
+      if (!fieldsAndTags ||
+          (!fieldsAndTags.fields || fieldsAndTags.fields.length === 0) &&
+          (!fieldsAndTags.tags || fieldsAndTags.tags.length === 0)) {
+        console.log('没有获取到字段和标签，添加通用字段');
+        const commonFields = ['time', 'value', '_time', '_value', '_field', '_measurement'];
+        const commonTags = ['host', 'region', 'datacenter', 'environment'];
+
+        commonFields.forEach(field => {
+          suggestions.push({
+            label: field,
+            value: field,
+            type: 'field',
+            detail: '通用字段',
+            documentation: `通用字段: ${field}`,
+            priority: SUGGESTION_PRIORITY.FIELD,
+            sortText: `3_${field}`,
+          });
+        });
+
+        commonTags.forEach(tag => {
+          suggestions.push({
+            label: tag,
+            value: tag,
+            type: 'tag',
+            detail: '通用标签',
+            documentation: `通用标签: ${tag}`,
+            priority: SUGGESTION_PRIORITY.TAG,
+            sortText: `4_${tag}`,
+          });
+        });
+      }
+
+      console.log('=== 字段和标签获取完成 ===');
     } catch (error) {
-      console.warn('获取字段和标签失败:', error);
+      console.error('获取字段和标签失败:', error);
     }
+  }
+
+  /**
+   * 备用方法获取字段和标签
+   */
+  private async getFieldsAndTagsAlternative(
+    connectionId: string,
+    database: string,
+    tableName: string
+  ): Promise<{ fields: string[], tags: string[] }> {
+    const fields: string[] = [];
+    const tags: string[] = [];
+
+    try {
+      console.log('使用备用方法获取字段和标签');
+
+      // 尝试执行SHOW FIELD KEYS查询
+      try {
+        const fieldResult = await safeTauriInvoke<any>('execute_query', {
+          connectionId,
+          database,
+          query: `SHOW FIELD KEYS FROM "${tableName}"`,
+        });
+
+        if (fieldResult && fieldResult.data && Array.isArray(fieldResult.data)) {
+          const fieldNames = fieldResult.data.map((row: any) =>
+            row.fieldKey || row.field_key || row.name || row[0]
+          ).filter(Boolean);
+          fields.push(...fieldNames);
+          console.log('查询方法获取到字段:', fieldNames);
+        }
+      } catch (error) {
+        console.warn('SHOW FIELD KEYS查询失败:', error);
+      }
+
+      // 尝试执行SHOW TAG KEYS查询
+      try {
+        const tagResult = await safeTauriInvoke<any>('execute_query', {
+          connectionId,
+          database,
+          query: `SHOW TAG KEYS FROM "${tableName}"`,
+        });
+
+        if (tagResult && tagResult.data && Array.isArray(tagResult.data)) {
+          const tagNames = tagResult.data.map((row: any) =>
+            row.tagKey || row.tag_key || row.name || row[0]
+          ).filter(Boolean);
+          tags.push(...tagNames);
+          console.log('查询方法获取到标签:', tagNames);
+        }
+      } catch (error) {
+        console.warn('SHOW TAG KEYS查询失败:', error);
+      }
+    } catch (error) {
+      console.warn('备用方法获取字段和标签失败:', error);
+    }
+
+    return { fields, tags };
   }
 
   /**
@@ -464,16 +618,79 @@ export class SmartSuggestionService {
    */
   private shouldSuggestFieldsOrTags(context: SuggestionContext): boolean {
     const lineText = context.lineText.toUpperCase();
-    return lineText.includes('SELECT') || lineText.includes('WHERE') || lineText.includes('GROUP BY');
+    const text = context.text.toUpperCase();
+
+    console.log('检查是否应该提示字段或标签');
+    console.log('当前行:', lineText);
+
+    // 检查是否在SELECT和FROM之间
+    const hasSelect = text.includes('SELECT');
+    const hasFrom = text.includes('FROM');
+
+    // 检查当前位置是否在SELECT和FROM之间
+    let isInSelectClause = false;
+    if (hasSelect && hasFrom) {
+      const selectPos = text.indexOf('SELECT');
+      const fromPos = text.indexOf('FROM');
+      const cursorPos = context.position;
+      isInSelectClause = cursorPos > selectPos && cursorPos < fromPos;
+      console.log('光标位置:', cursorPos, 'SELECT位置:', selectPos, 'FROM位置:', fromPos);
+      console.log('是否在SELECT子句中:', isInSelectClause);
+    }
+
+    // 检查是否在WHERE子句中
+    const isInWhereClause = lineText.includes('WHERE') ||
+                           (text.includes('WHERE') && context.position > text.indexOf('WHERE'));
+
+    // 检查是否在GROUP BY子句中
+    const isInGroupByClause = lineText.includes('GROUP BY') ||
+                             (text.includes('GROUP BY') && context.position > text.indexOf('GROUP BY'));
+
+    // 检查是否在HAVING子句中
+    const isInHavingClause = lineText.includes('HAVING') ||
+                            (text.includes('HAVING') && context.position > text.indexOf('HAVING'));
+
+    // 检查是否在ORDER BY子句中
+    const isInOrderByClause = lineText.includes('ORDER BY') ||
+                             (text.includes('ORDER BY') && context.position > text.indexOf('ORDER BY'));
+
+    const shouldSuggest = isInSelectClause || isInWhereClause || isInGroupByClause ||
+                         isInHavingClause || isInOrderByClause;
+
+    console.log('是否应该提示字段或标签:', shouldSuggest);
+    return shouldSuggest;
   }
 
   /**
    * 从上下文中提取表名
    */
   private extractTableName(context: SuggestionContext): string | null {
-    const text = context.text.toUpperCase();
-    const fromMatch = text.match(/FROM\s+["`]?(\w+)["`]?/);
-    return fromMatch ? fromMatch[1] : null;
+    const text = context.text;
+    console.log('提取表名，完整文本:', text);
+
+    // 尝试多种正则表达式匹配表名
+    const patterns = [
+      // 标准FROM子句，支持引号和无引号
+      /FROM\s+["'`]?([a-zA-Z0-9_]+)["'`]?/i,
+      // 支持带点的表名（数据库.表名）
+      /FROM\s+["'`]?([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)["'`]?/i,
+      // 支持别名
+      /FROM\s+["'`]?([a-zA-Z0-9_]+)["'`]?\s+AS\s+\w+/i,
+      // 支持JOIN
+      /JOIN\s+["'`]?([a-zA-Z0-9_]+)["'`]?/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) {
+        const tableName = match[1];
+        console.log('找到表名:', tableName);
+        return tableName;
+      }
+    }
+
+    console.log('未找到表名');
+    return null;
   }
 
   /**

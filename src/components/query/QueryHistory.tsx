@@ -222,11 +222,11 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
         case 'today':
           return itemDate.toDateString() === now.toDateString();
         case 'week':
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return itemDate >= weekAgo;
+          { const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return itemDate >= weekAgo; }
         case 'month':
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          return itemDate >= monthAgo;
+          { const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          return itemDate >= monthAgo; }
         default:
           return true;
       }
@@ -311,6 +311,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-8 px-2"
                   onClick={() => onQuerySelect?.(item.query, item.database)}
                 >
                   <PlayCircle className="w-4 h-4" />
@@ -327,7 +328,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="h-8 px-2">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
@@ -374,6 +375,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-8 px-2"
                   onClick={() => onQuerySelect?.(query.query, query.database)}
                 >
                   <PlayCircle className="w-4 h-4" />
@@ -386,6 +388,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-8 px-2"
                   onClick={() => handleEditSavedQuery(query)}
                 >
                   <Edit className="w-4 h-4" />
@@ -402,7 +405,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             >
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="h-8 px-2">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
@@ -427,13 +430,13 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 placeholder="搜索查询..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-8 text-sm"
               />
             </div>
           </div>
           <div className="col-span-3">
             <Select value={filterDatabase} onValueChange={setFilterDatabase}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8 text-sm">
                 <SelectValue placeholder="筛选数据库" />
               </SelectTrigger>
               <SelectContent>
@@ -454,7 +457,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 setFilterDatabase('__all__');
                 setFilterDateRange('__all__');
               }}
-              className="w-full"
+              className="w-full h-8 text-sm"
             >
               <X className="w-4 h-4 mr-2" />
               清空筛选
@@ -466,7 +469,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
           <div className="grid grid-cols-12 gap-2">
             <div className="col-span-6">
               <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="时间范围" />
                 </SelectTrigger>
                 <SelectContent>
@@ -486,7 +489,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 cancelText="取消"
                 okType="danger"
               >
-                <Button variant="destructive">
+                <Button variant="destructive" className="h-8 text-sm">
                   <Trash2 className="w-4 h-4 mr-2" />
                   清空历史
                 </Button>
@@ -582,7 +585,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                 <FormItem>
                   <FormLabel>查询名称</FormLabel>
                   <FormControl>
-                    <Input placeholder="输入查询名称" {...field} />
+                    <Input placeholder="输入查询名称" className="h-8 text-sm" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -599,6 +602,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                     <Textarea
                       placeholder="输入查询描述（可选）"
                       rows={2}
+                      className="text-sm"
                       {...field}
                     />
                   </FormControl>
@@ -618,7 +622,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                     <Textarea
                       placeholder="输入 InfluxQL 查询语句"
                       rows={6}
-                      className="font-mono"
+                      className="font-mono text-sm"
                       {...field}
                     />
                   </FormControl>
@@ -636,7 +640,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                     <FormLabel>数据库</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-8 text-sm">
                           <SelectValue placeholder="选择数据库（可选）" />
                         </SelectTrigger>
                       </FormControl>
@@ -663,6 +667,7 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
                     <FormControl>
                       <Input
                         placeholder="输入标签，用逗号分隔"
+                        className="h-8 text-sm"
                         value={field.value?.join(', ') || ''}
                         onChange={(e) => {
                           const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
@@ -677,10 +682,10 @@ const QueryHistory: React.FC<QueryHistoryProps> = ({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCancelEdit}>
+              <Button type="button" variant="outline" className="h-8 text-sm" onClick={handleCancelEdit}>
                 取消
               </Button>
-              <Button type="submit">
+              <Button type="submit" className="h-8 text-sm">
                 <Save className="w-4 h-4 mr-2" />
                 保存更改
               </Button>
