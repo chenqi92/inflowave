@@ -972,7 +972,7 @@ export const connectionUtils = {
       errors.push('用户名不能为空');
     }
 
-    if (config.timeout && (config.timeout < 1000 || config.timeout > 300000)) {
+    if (config.timeout && (config.timeout < 1 || config.timeout > 300)) {
       errors.push('超时时间必须在 1-300 秒之间');
     }
 

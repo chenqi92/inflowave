@@ -327,7 +327,10 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
         "report_issue" => emit_menu_action(&window, "report_issue"),
         "about" => emit_menu_action(&window, "about"),
 
-        _ => {}
+        _ => {
+            log::warn!("🚫 未处理的菜单事件ID: {}", event.id().as_ref());
+            log::warn!("📋 所有可用窗口: {:?}", app.webview_windows().keys().collect::<Vec<_>>());
+        }
     }
 }
 

@@ -684,6 +684,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           new CustomEvent('stop-query', { detail: { source: 'menu' } })
         );
         showMessage.info('已停止查询');
+        handled = true;
         break;
 
       case 'query_history':
@@ -691,6 +692,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         document.dispatchEvent(
           new CustomEvent('show-query-history', { detail: { source: 'menu' } })
         );
+        handled = true;
         break;
 
       case 'save_query':
@@ -698,14 +700,17 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         document.dispatchEvent(
           new CustomEvent('save-query', { detail: { source: 'menu' } })
         );
+        handled = true;
         break;
 
       case 'query_favorites':
         handleQueryFavorites();
+        handled = true;
         break;
 
       case 'format_query':
         handleFormatQuery();
+        handled = true;
         break;
 
       case 'explain_query':
@@ -730,6 +735,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'keyboard_shortcuts':
       case 'shortcuts':
         setShortcutsVisible(true);
+        handled = true;
         break;
 
       case 'console':
@@ -741,22 +747,26 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           // 通用方法
           document.dispatchEvent(new CustomEvent('open-console'));
         }
+        handled = true;
         break;
 
       case 'dev_tools':
       case 'dev-tools':
         navigate('/dev-tools');
         showMessage.success('切换到开发者工具');
+        handled = true;
         break;
 
       case 'query_performance':
         navigate('/performance');
         showMessage.success('切换到性能分析');
+        handled = true;
         break;
 
       case 'extensions':
         navigate('/extensions');
         showMessage.success('切换到扩展管理');
+        handled = true;
         break;
 
       case 'theme_settings':
@@ -788,44 +798,53 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'user_manual':
       case 'user-manual':
         handleUserManual();
+        handled = true;
         break;
 
       case 'quick_start':
       case 'quick-start':
         handleQuickStart();
+        handled = true;
         break;
 
       case 'shortcuts_help':
       case 'shortcuts-help':
         setShortcutsVisible(true);
+        handled = true;
         break;
 
       case 'check_updates':
       case 'check-updates':
         handleCheckUpdates();
+        handled = true;
         break;
 
       case 'report_issue':
       case 'report-issue':
         handleReportIssue();
+        handled = true;
         break;
 
       case 'about':
         setAboutVisible(true);
+        handled = true;
         break;
 
       case 'sample_queries':
         document.dispatchEvent(
           new CustomEvent('show-sample-queries', { detail: { source: 'menu' } })
         );
+        handled = true;
         break;
 
       case 'api_docs':
         window.open('https://docs.influxdata.com/influxdb/v1.8/tools/api/', '_blank');
+        handled = true;
         break;
 
       case 'influxdb_docs':
         window.open('https://docs.influxdata.com/', '_blank');
+        handled = true;
         break;
 
       // 风格切换菜单 - 恢复风格切换功能

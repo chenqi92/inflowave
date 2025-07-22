@@ -627,9 +627,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                   {record.ssl && (
                     <span className='text-xs text-green-600 bg-green-50 px-1 py-0.5 rounded'>SSL</span>
                   )}
-                  {record.timeout && record.timeout !== 30000 && (
+                  {record.timeout && record.timeout !== 30 && (
                     <span className='text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded'>
-                      {record.timeout / 1000}s
+                      {record.timeout}s
                     </span>
                   )}
                 </div>
@@ -656,7 +656,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </div>
                 <div className='text-sm'>
                   <span className='text-muted-foreground font-medium'>超时：</span>
-                  <span className='text-foreground'>{(record.timeout || 30000) / 1000}秒</span>
+                  <span className='text-foreground'>{record.timeout || 30}秒</span>
                 </div>
               </div>
             </TooltipContent>
@@ -675,7 +675,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         const isActive = activeConnectionId === record.id;
 
         return (
-          <div className='flex flex-col items-start gap-1'>
+          <div className='flex flex-col items-start gap-1.5'>
             <div className='flex items-center gap-2'>
               {getStatusTag(status)}
               {isActive && (
@@ -685,8 +685,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               )}
             </div>
             {status?.latency && (
-              <div className='text-xs text-muted-foreground font-mono'>
-                {status.latency}ms
+              <div className='flex items-center gap-1 text-xs text-muted-foreground'>
+                <div className='w-1 h-1 bg-muted-foreground/30 rounded-full'></div>
+                <span className='font-mono'>{status.latency}ms</span>
               </div>
             )}
           </div>
@@ -821,7 +822,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       </div>
 
       {/* 连接表格 */}
-      <div className='flex-1 overflow-hidden px-6 pb-6'>
+      <div className='flex-1 overflow-hidden px-6 py-6'>
         <div className='h-full rounded-lg border overflow-hidden bg-background'>
           <DataTable
             columns={columns}
