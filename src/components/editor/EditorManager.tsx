@@ -178,6 +178,43 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         });
         console.log('✅ SQL语法高亮设置完成');
 
+        // 为SQL定义专门的主题颜色
+        console.log('🎨 定义SQL主题颜色...');
+        monaco.editor.defineTheme('sql-light', {
+          base: 'vs',
+          inherit: true,
+          rules: [
+            { token: 'comment', foreground: '008000', fontStyle: 'italic' },
+            { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
+            { token: 'keyword.function', foreground: 'FF0000', fontStyle: 'bold' },
+            { token: 'string', foreground: 'A31515' },
+            { token: 'number', foreground: '098658' },
+            { token: 'operator', foreground: '000000' },
+            { token: 'identifier', foreground: '000000' },
+            { token: 'delimiter', foreground: '000000' },
+            { token: 'bracket', foreground: '000000' },
+          ],
+          colors: {}
+        });
+
+        monaco.editor.defineTheme('sql-dark', {
+          base: 'vs-dark',
+          inherit: true,
+          rules: [
+            { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
+            { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
+            { token: 'keyword.function', foreground: 'DCDCAA', fontStyle: 'bold' },
+            { token: 'string', foreground: 'CE9178' },
+            { token: 'number', foreground: 'B5CEA8' },
+            { token: 'operator', foreground: 'D4D4D4' },
+            { token: 'identifier', foreground: 'D4D4D4' },
+            { token: 'delimiter', foreground: 'D4D4D4' },
+            { token: 'bracket', foreground: 'FFD700' },
+          ],
+          colors: {}
+        });
+        console.log('✅ SQL主题颜色定义成功');
+
       } catch (error) {
         console.warn('⚠️ 注册语言支持失败:', error);
       }
@@ -216,6 +253,22 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         return 'sql';
     }
   }, [connections, activeConnectionId]);
+
+  // 获取编辑器主题
+  const getEditorTheme = useCallback(() => {
+    const currentLanguage = getEditorLanguage();
+    const isDark = resolvedTheme === 'dark';
+
+    if (currentLanguage === 'influxql') {
+      return isDark ? 'influxql-dark' : 'influxql-light';
+    } else if (currentLanguage === 'flux') {
+      return isDark ? 'flux-dark' : 'flux-light';
+    } else if (currentLanguage === 'sql') {
+      return isDark ? 'sql-dark' : 'sql-light';
+    }
+
+    return isDark ? 'vs-dark' : 'vs';
+  }, [getEditorLanguage, resolvedTheme]);
 
   // 处理编辑器内容变化
   const handleEditorChange = useCallback((value: string | undefined) => {
@@ -570,6 +623,9 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           themeName = isDark ? 'influxql-dark' : 'influxql-light';
         } else if (currentLanguage === 'flux') {
           themeName = isDark ? 'flux-dark' : 'flux-light';
+        } else if (currentLanguage === 'sql') {
+          // 为SQL语言也设置专门的主题
+          themeName = isDark ? 'sql-dark' : 'sql-light';
         }
 
         console.log('🎨 设置编辑器主题为:', themeName, '(当前主题模式:', resolvedTheme, ')');
@@ -669,6 +725,26 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                                 );
                               } else {
                                 console.warn('⚠️ 没有找到任何token元素，语法高亮可能没有应用');
+
+                                // 如果没有找到token元素，尝试强制刷新语法高亮
+                                console.log('🔄 尝试强制刷新语法高亮...');
+                                try {
+                                  // 方法1: 重新设置语言
+                                  const currentLang = model.getLanguageId();
+                                  monaco.editor.setModelLanguage(model, 'plaintext');
+                                  setTimeout(() => {
+                                    monaco.editor.setModelLanguage(model, currentLang);
+                                    console.log('✅ 语言重新设置完成');
+                                  }, 100);
+
+                                  // 方法2: 触发重新tokenization
+                                  setTimeout(() => {
+                                    editor.trigger('editor', 'editor.action.reindentlines', {});
+                                    console.log('✅ 重新tokenization触发完成');
+                                  }, 200);
+                                } catch (refreshError) {
+                                  console.error('❌ 强制刷新语法高亮失败:', refreshError);
+                                }
                               }
                             }
                           }, 200);
@@ -955,7 +1031,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       <Editor
       height='100%'
       language={getEditorLanguage()}
-      theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
+      theme={getEditorTheme()}
       value={currentTab.content}
       onChange={handleEditorChange}
       onMount={handleEditorDidMount}
