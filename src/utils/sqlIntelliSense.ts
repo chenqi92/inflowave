@@ -289,17 +289,195 @@ export function setEditorLanguageByDatabaseType(
 }
 
 /**
+ * 注册InfluxQL语言支持
+ */
+export function registerInfluxQLLanguage(): void {
+  console.log('🚀 开始注册InfluxQL语言...');
+
+  // 检查是否已经注册
+  const languages = monaco.languages.getLanguages();
+  const isAlreadyRegistered = languages.some(lang => lang.id === 'influxql');
+
+  console.log('🔍 InfluxQL语言注册状态检查:', {
+    totalLanguages: languages.length,
+    isAlreadyRegistered,
+    existingLanguages: languages.map(l => l.id).slice(0, 10) // 只显示前10个
+  });
+
+  if (isAlreadyRegistered) {
+    console.log('⏭️ InfluxQL语言已注册，跳过');
+    return;
+  }
+
+  try {
+    // 注册InfluxQL语言
+    console.log('📝 注册InfluxQL语言标识符...');
+    monaco.languages.register({ id: 'influxql' });
+    console.log('✅ InfluxQL语言标识符注册成功');
+  } catch (registerError) {
+    console.error('❌ InfluxQL语言标识符注册失败:', registerError);
+    return;
+  }
+
+  // 设置InfluxQL语法高亮
+  try {
+    console.log('🎨 设置InfluxQL语法高亮规则...');
+    monaco.languages.setMonarchTokensProvider('influxql', {
+    tokenizer: {
+      root: [
+        // 注释
+        [/--.*$/, 'comment'],
+        [/\/\*/, 'comment', '@comment'],
+
+        // 字符串
+        [/'([^'\\]|\\.)*$/, 'string.invalid'],
+        [/'/, 'string', '@string_single'],
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+        [/"/, 'string', '@string_double'],
+
+        // 数字
+        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+        [/\d+/, 'number'],
+
+        // InfluxQL关键字
+        [/\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|SLIMIT|SOFFSET)\b/i, 'keyword'],
+        [/\b(SHOW|CREATE|DROP|DELETE|INSERT|INTO|VALUES|UPDATE|SET)\b/i, 'keyword'],
+        [/\b(DATABASE|DATABASES|MEASUREMENT|MEASUREMENTS|SERIES|TAG|TAGS|FIELD|FIELDS)\b/i, 'keyword'],
+        [/\b(RETENTION|POLICY|POLICIES|USER|USERS|PRIVILEGE|PRIVILEGES|GRANT|REVOKE)\b/i, 'keyword'],
+        [/\b(AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|TRUE|FALSE|AS|ASC|DESC|DISTINCT)\b/i, 'keyword'],
+        [/\b(FILL|LINEAR|NONE|NULL|PREVIOUS|TIME|NOW|DURATION)\b/i, 'keyword'],
+
+        // InfluxQL聚合函数
+        [/\b(COUNT|SUM|MEAN|MEDIAN|MODE|SPREAD|STDDEV|FIRST|LAST|MAX|MIN)\b/i, 'keyword.function'],
+        [/\b(PERCENTILE|HISTOGRAM|TOP|BOTTOM|SAMPLE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME)\b/i, 'keyword.function'],
+        [/\b(MOVING_AVERAGE|CUMULATIVE_SUM|HOLT_WINTERS|HOLT_WINTERS_WITH_FIT)\b/i, 'keyword.function'],
+
+        // InfluxQL选择器函数
+        [/\b(FIRST|LAST|MAX|MIN|PERCENTILE|SAMPLE|TOP|BOTTOM)\b/i, 'keyword.function'],
+
+        // InfluxQL转换函数
+        [/\b(ABS|ACOS|ASIN|ATAN|ATAN2|CEIL|COS|CUMULATIVE_SUM|DERIVATIVE|DIFFERENCE)\b/i, 'keyword.function'],
+        [/\b(ELAPSED|EXP|FLOOR|HISTOGRAM|LN|LOG|LOG2|LOG10|MOVING_AVERAGE|POW|ROUND|SIN|SQRT|TAN)\b/i, 'keyword.function'],
+
+        // 时间函数
+        [/\b(time|now)\b/i, 'keyword.function'],
+
+        // 正则表达式
+        [/\/.*?\/[gimuy]*/, 'regexp'],
+
+        // 操作符
+        [/[=><!~?:&|+\-*\/\^%]+/, 'operator'],
+        [/[=><]=?/, 'operator'],
+
+        // 分隔符
+        [/[;,.]/, 'delimiter'],
+        [/[()[\]{}]/, 'bracket'],
+
+        // 标识符（可能是测量名、字段名、标签名）
+        [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
+
+        // 空白字符
+        [/[ \t\r\n]+/, 'white'],
+      ],
+
+      comment: [
+        [/[^\/*]+/, 'comment'],
+        [/\*\//, 'comment', '@pop'],
+        [/[\/*]/, 'comment']
+      ],
+
+      string_single: [
+        [/[^\\']+/, 'string'],
+        [/\\./, 'string.escape'],
+        [/'/, 'string', '@pop']
+      ],
+
+      string_double: [
+        [/[^\\"]+/, 'string'],
+        [/\\./, 'string.escape'],
+        [/"/, 'string', '@pop']
+      ],
+    },
+  });
+  console.log('✅ InfluxQL语法高亮规则设置成功');
+  } catch (tokensError) {
+    console.error('❌ InfluxQL语法高亮规则设置失败:', tokensError);
+    return;
+  }
+
+  // 为InfluxQL定义主题颜色
+  try {
+    console.log('🎨 定义InfluxQL主题颜色...');
+    monaco.editor.defineTheme('influxql-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '008000' },
+      { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'FF0000', fontStyle: 'bold' },
+      { token: 'string', foreground: 'A31515' },
+      { token: 'number', foreground: '098658' },
+      { token: 'operator', foreground: '000000' },
+      { token: 'identifier', foreground: '000000' },
+      { token: 'delimiter', foreground: '000000' },
+      { token: 'bracket', foreground: '000000' },
+    ],
+    colors: {}
+  });
+
+  monaco.editor.defineTheme('influxql-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '6A9955' },
+      { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'DCDCAA', fontStyle: 'bold' },
+      { token: 'string', foreground: 'CE9178' },
+      { token: 'number', foreground: 'B5CEA8' },
+      { token: 'operator', foreground: 'D4D4D4' },
+      { token: 'identifier', foreground: 'D4D4D4' },
+      { token: 'delimiter', foreground: 'D4D4D4' },
+      { token: 'bracket', foreground: 'FFD700' },
+    ],
+    colors: {}
+  });
+  console.log('✅ InfluxQL主题颜色定义成功');
+  } catch (themeError) {
+    console.error('❌ InfluxQL主题颜色定义失败:', themeError);
+  }
+
+  console.log('🎉 InfluxQL语言注册完全完成');
+}
+
+/**
  * 注册Flux语言支持
  */
 export function registerFluxLanguage(): void {
+  console.log('🚀 开始注册Flux语言...');
+
   // 检查是否已经注册
   const languages = monaco.languages.getLanguages();
-  if (languages.some(lang => lang.id === 'flux')) {
+  const isAlreadyRegistered = languages.some(lang => lang.id === 'flux');
+
+  console.log('🔍 Flux语言注册状态检查:', {
+    totalLanguages: languages.length,
+    isAlreadyRegistered
+  });
+
+  if (isAlreadyRegistered) {
+    console.log('⏭️ Flux语言已注册，跳过');
     return;
   }
-  
-  // 注册Flux语言
-  monaco.languages.register({ id: 'flux' });
+
+  try {
+    // 注册Flux语言
+    console.log('📝 注册Flux语言标识符...');
+    monaco.languages.register({ id: 'flux' });
+    console.log('✅ Flux语言标识符注册成功');
+  } catch (registerError) {
+    console.error('❌ Flux语言标识符注册失败:', registerError);
+    return;
+  }
   
   // 设置Flux语言的语法高亮
   monaco.languages.setMonarchTokensProvider('flux', {
@@ -370,5 +548,46 @@ export function registerFluxLanguage(): void {
         [/'/, 'string', '@pop']
       ],
     },
+  });
+
+  // 为Flux定义主题颜色
+  monaco.editor.defineTheme('flux-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '008000' },
+      { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'FF0000', fontStyle: 'bold' },
+      { token: 'string', foreground: 'A31515' },
+      { token: 'number', foreground: '098658' },
+      { token: 'operator', foreground: '000000' },
+      { token: 'operator.pipe', foreground: 'FF6600', fontStyle: 'bold' },
+      { token: 'type', foreground: '267F99', fontStyle: 'bold' },
+      { token: 'function', foreground: '795E26' },
+      { token: 'identifier', foreground: '000000' },
+      { token: 'delimiter', foreground: '000000' },
+      { token: 'bracket', foreground: '000000' },
+    ],
+    colors: {}
+  });
+
+  monaco.editor.defineTheme('flux-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '6A9955' },
+      { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'DCDCAA', fontStyle: 'bold' },
+      { token: 'string', foreground: 'CE9178' },
+      { token: 'number', foreground: 'B5CEA8' },
+      { token: 'operator', foreground: 'D4D4D4' },
+      { token: 'operator.pipe', foreground: 'FF8C00', fontStyle: 'bold' },
+      { token: 'type', foreground: '4EC9B0', fontStyle: 'bold' },
+      { token: 'function', foreground: 'DCDCAA' },
+      { token: 'identifier', foreground: 'D4D4D4' },
+      { token: 'delimiter', foreground: 'D4D4D4' },
+      { token: 'bracket', foreground: 'FFD700' },
+    ],
+    colors: {}
   });
 }

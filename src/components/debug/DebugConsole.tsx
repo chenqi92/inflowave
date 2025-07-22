@@ -470,6 +470,7 @@ const DebugConsole: React.FC = () => {
           <Button
             variant='outline'
             size='sm'
+            className='h-8 text-sm'
             onClick={refreshSystemInfo}
           >
             <RefreshCw className='w-4 h-4 mr-2' />
@@ -478,6 +479,7 @@ const DebugConsole: React.FC = () => {
           <Button
             variant='outline'
             size='sm'
+            className='h-8 text-sm'
             onClick={clearLogs}
           >
             <Trash2 className='w-4 h-4 mr-2' />
@@ -534,11 +536,11 @@ const DebugConsole: React.FC = () => {
                         placeholder='搜索应用日志...'
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
-                        className='w-48'
+                        className='w-48 h-8 text-sm'
                       />
                     </div>
                     <Select value={levelFilter} onValueChange={setLevelFilter}>
-                      <SelectTrigger className='w-32'>
+                      <SelectTrigger className='w-32 h-8 text-sm'>
                         <SelectValue placeholder='级别' />
                       </SelectTrigger>
                       <SelectContent>
@@ -598,7 +600,7 @@ const DebugConsole: React.FC = () => {
                           value={pageSize.toString()}
                           onValueChange={(value) => setPageSize(Number(value))}
                         >
-                          <SelectTrigger className='w-20'>
+                          <SelectTrigger className='w-20 h-8 text-sm'>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -614,6 +616,7 @@ const DebugConsole: React.FC = () => {
                         <Button
                           variant='outline'
                           size='sm'
+                          className='h-8 px-2'
                           onClick={() => goToPage(currentPage - 1)}
                           disabled={currentPage === 1}
                         >
@@ -625,6 +628,7 @@ const DebugConsole: React.FC = () => {
                         <Button
                           variant='outline'
                           size='sm'
+                          className='h-8 px-2'
                           onClick={() => goToPage(currentPage + 1)}
                           disabled={currentPage === getTotalPages()}
                         >
@@ -668,11 +672,11 @@ const DebugConsole: React.FC = () => {
                         placeholder='搜索日志...'
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
-                        className='w-48'
+                        className='w-48 h-8 text-sm'
                       />
                     </div>
                     <Select value={levelFilter} onValueChange={setLevelFilter}>
-                      <SelectTrigger className='w-32'>
+                      <SelectTrigger className='w-32 h-8 text-sm'>
                         <SelectValue placeholder='级别' />
                       </SelectTrigger>
                       <SelectContent>
@@ -763,7 +767,7 @@ const DebugConsole: React.FC = () => {
                           value={pageSize.toString()}
                           onValueChange={(value) => setPageSize(Number(value))}
                         >
-                          <SelectTrigger className='w-20'>
+                          <SelectTrigger className='w-20 h-8 text-sm'>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -779,6 +783,7 @@ const DebugConsole: React.FC = () => {
                         <Button
                           variant='outline'
                           size='sm'
+                          className='h-8 px-2'
                           onClick={() => goToPage(currentPage - 1)}
                           disabled={currentPage === 1}
                         >
@@ -790,6 +795,7 @@ const DebugConsole: React.FC = () => {
                         <Button
                           variant='outline'
                           size='sm'
+                          className='h-8 px-2'
                           onClick={() => goToPage(currentPage + 1)}
                           disabled={currentPage === getTotalPages()}
                         >
