@@ -763,7 +763,28 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                       `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
                     );
                     if (confirmed) {
-                      removeConnection(record.id!);
+                      try {
+                        console.log('🗑️ 开始删除连接:', record.id);
+
+                        // 先从后端删除
+                        await safeTauriInvoke('delete_connection', { connectionId: record.id });
+                        console.log('✅ 后端删除成功');
+
+                        // 再从前端状态删除
+                        removeConnection(record.id!);
+                        console.log('✅ 前端状态删除成功');
+
+                        showMessage.success(`连接 ${record.name} 已删除`);
+
+                        // 延迟刷新以确保状态同步
+                        setTimeout(() => {
+                          forceRefreshConnections();
+                        }, 100);
+
+                      } catch (error) {
+                        console.error('❌ 删除连接失败:', error);
+                        showMessage.error(`删除连接失败: ${error}`);
+                      }
                     }
                   }}
                   className='px-2'
