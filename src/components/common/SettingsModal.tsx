@@ -59,9 +59,10 @@ import type { AppConfig } from '@/types';
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
+  initialTab?: string;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initialTab = 'general' }) => {
   const dialog = useDialog();
   const [loading, setLoading] = useState(false);
   const form = useForm();
@@ -795,7 +796,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
           </DialogHeader>
           <div className='flex flex-1 min-h-0'>
             <Tabs
-              defaultValue='general'
+              defaultValue={initialTab}
               orientation='vertical'
               className='flex flex-1 h-full'
             >

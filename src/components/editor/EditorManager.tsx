@@ -44,6 +44,8 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   onExecuteQuery,
 }) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  // 键盘事件清理函数引用
+  const keyboardCleanupRef = useRef<(() => void) | null>(null);
   const { resolvedTheme } = useTheme();
   const { activeConnectionId, connections } = useConnectionStore();
 
@@ -109,6 +111,73 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
     registerAllLanguages();
   }, []); // 只在组件初始化时执行一次
+
+  // 监听连接状态变化，主动刷新语法高亮
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    console.log('🔄 连接状态变化，检查语法高亮...');
+    const editor = editorRef.current;
+    const model = editor.getModel();
+
+    if (model) {
+      // 延迟执行，确保连接状态已稳定
+      const timer = setTimeout(() => {
+        try {
+          // 在 useEffect 内部重新计算语言和主题
+          const currentLanguage = (() => {
+            if (!activeConnectionId) return 'sql';
+            const connection = connections.find(c => c.id === activeConnectionId);
+            if (!connection) return 'sql';
+            return connection.version === '1.x' ? 'influxql' : 'flux';
+          })();
+
+          const currentTheme = (() => {
+            const isDark = resolvedTheme === 'dark';
+            if (currentLanguage === 'influxql') {
+              return isDark ? 'influxql-dark' : 'influxql-light';
+            } else if (currentLanguage === 'flux') {
+              return isDark ? 'flux-dark' : 'flux-light';
+            } else {
+              return isDark ? 'sql-dark' : 'sql-light';
+            }
+          })();
+
+          console.log('🔧 连接状态变化后重新应用语言和主题:', {
+            language: currentLanguage,
+            theme: currentTheme,
+            connectionId: activeConnectionId
+          });
+
+          // 重新设置语言
+          monaco.editor.setModelLanguage(model, currentLanguage);
+
+          // 重新应用主题
+          monaco.editor.setTheme(currentTheme);
+
+          // 触发重新渲染
+          editor.render(true);
+
+          console.log('✅ 连接状态变化后语法高亮刷新完成');
+        } catch (error) {
+          console.warn('⚠️ 连接状态变化后语法高亮刷新失败:', error);
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeConnectionId]); // 依赖连接ID变化
+
+  // 组件卸载时清理键盘事件监听器
+  useEffect(() => {
+    return () => {
+      if (keyboardCleanupRef.current) {
+        console.log('🧹 清理键盘事件监听器');
+        keyboardCleanupRef.current();
+        keyboardCleanupRef.current = null;
+      }
+    };
+  }, []);
 
   // 获取编辑器语言类型
   const getEditorLanguage = useCallback(() => {
@@ -350,6 +419,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
   // 编辑器挂载处理
   const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, _monacoInstance: typeof monaco) => {
+    console.log('🚀🚀🚀 编辑器挂载开始 🚀🚀🚀');
     try {
       editorRef.current = editor;
 
@@ -375,7 +445,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
       // 根据选择的数据源类型设置智能提示
       const currentConnection = connections.find(c => c.id === activeConnectionId);
-      const databaseType = (currentConnection?.version || 'unknown') as DatabaseType;
+      const databaseType: DatabaseType = currentConnection?.version as DatabaseType || 'unknown';
 
       // 注意：不在这里设置编辑器语言，因为Editor组件已经通过language属性设置了
       // 语言设置由Editor组件的language属性和key属性的变化来控制
@@ -387,6 +457,51 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
       console.log('🎯 编辑器挂载完成，当前语言:', getEditorLanguage());
+
+      // 阻止浏览器默认的键盘行为（桌面应用专用）
+      console.log('🔒 设置桌面应用键盘行为...');
+
+      // 阻止 Backspace 键导致页面后退
+      const preventBrowserNavigation = (e: KeyboardEvent) => {
+        // 阻止 Backspace 键在非输入元素上的默认行为
+        if (e.key === 'Backspace') {
+          const target = e.target as HTMLElement;
+          const isEditable = target.isContentEditable ||
+                           target.tagName === 'INPUT' ||
+                           target.tagName === 'TEXTAREA' ||
+                           target.closest('.monaco-editor');
+
+          if (!isEditable) {
+            console.log('🚫 阻止 Backspace 键导致页面后退');
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+
+        // 阻止 F5 刷新页面
+        if (e.key === 'F5') {
+          console.log('🚫 阻止 F5 键刷新页面');
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // 阻止 Ctrl+R 刷新页面
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+          console.log('🚫 阻止 Ctrl+R 刷新页面');
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+
+      // 在捕获阶段添加事件监听器，确保优先处理
+      document.addEventListener('keydown', preventBrowserNavigation, true);
+
+      // 保存清理函数到 ref，在组件卸载时使用
+      if (!keyboardCleanupRef.current) {
+        keyboardCleanupRef.current = () => {
+          document.removeEventListener('keydown', preventBrowserNavigation, true);
+        };
+      }
 
       // 确保语言和主题已注册（在编辑器挂载后）
       try {
@@ -676,7 +791,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
             console.warn('⚠️ 格式化触发失败:', formatError);
           }
 
-          // 强制重新计算语法高亮
+          // 强制重新计算语法高亮（保留有效的刷新逻辑，但避免内容清除）
           setTimeout(() => {
             console.log('🎨 强制重新计算语法高亮...');
             const model = editor.getModel();
@@ -699,8 +814,78 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                 console.warn('⚠️ 强制tokenization失败:', tokenError);
               }
 
-              // 跳过可能导致内容闪烁的强制刷新
-              console.log('✅ 语法高亮检查完成，跳过强制刷新以避免内容闪烁');
+              // 方法2: 重新应用语言和主题（不清除内容）
+              setTimeout(() => {
+                console.log('🔄 方法2: 重新应用语言和主题...');
+                try {
+                  const currentLanguage = getEditorLanguage();
+                  const currentTheme = getEditorTheme();
+
+                  // 重新设置语言
+                  monaco.editor.setModelLanguage(model, currentLanguage);
+                  console.log('✅ 语言重新设置完成:', currentLanguage);
+
+                  // 重新应用主题
+                  monaco.editor.setTheme(currentTheme);
+                  console.log('✅ 主题重新应用完成:', currentTheme);
+
+                  // 方法3: 触发编辑器重新渲染
+                  setTimeout(() => {
+                    console.log('🔄 方法3: 触发编辑器重新渲染...');
+                    try {
+                      editor.render(true);
+                      console.log('✅ 编辑器重新渲染完成');
+
+                      // 验证语法高亮是否生效
+                      setTimeout(() => {
+                        console.log('🔍 验证语法高亮状态...');
+                        const editorDom = editor.getDomNode();
+                        if (editorDom) {
+                          // 检查更多的token类型
+                          const allTokenSelectors = [
+                            '.mtk1', '.mtk2', '.mtk3', '.mtk4', '.mtk5', '.mtk6', '.mtk7', '.mtk8', '.mtk9', '.mtk10',
+                            '.mtki', '.mtkb', '.mtku', '.mtks', // 斜体、粗体、下划线、删除线
+                            '.keyword', '.string', '.comment', '.number', '.operator'
+                          ];
+                          const tokenElements = editorDom.querySelectorAll(allTokenSelectors.join(', '));
+                          console.log('🎨 找到的语法高亮元素数量:', tokenElements.length);
+
+                          // 详细分析token类型
+                          if (tokenElements.length > 0) {
+                            const tokenStats: Record<string, number> = {};
+                            Array.from(tokenElements).forEach(el => {
+                              const className = el.className;
+                              tokenStats[className] = (tokenStats[className] || 0) + 1;
+                            });
+                            console.log('🎨 语法高亮元素统计:', tokenStats);
+
+                            // 检查是否有关键字高亮
+                            const keywordElements = editorDom.querySelectorAll('.mtk4, .keyword');
+                            const stringElements = editorDom.querySelectorAll('.mtk6, .string');
+                            console.log('🔍 特定元素检查:', {
+                              keywords: keywordElements.length,
+                              strings: stringElements.length,
+                              total: tokenElements.length
+                            });
+
+                            console.log('✅ 语法高亮验证成功');
+                          } else {
+                            console.warn('⚠️ 语法高亮可能未生效，尝试额外刷新...');
+                            // 额外的刷新尝试
+                            editor.trigger('editor', 'editor.action.reindentlines', {});
+                          }
+                        }
+                      }, 200);
+                    } catch (renderError) {
+                      console.warn('⚠️ 编辑器重新渲染失败:', renderError);
+                    }
+                  }, 100);
+                } catch (langThemeError) {
+                  console.warn('⚠️ 语言和主题重新应用失败:', langThemeError);
+                }
+              }, 50);
+
+              console.log('✅ 语法高亮强制刷新流程启动');
             } catch (refreshError) {
               console.warn('⚠️ 强制刷新失败:', refreshError);
             }
@@ -874,7 +1059,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           visible: true,
           x,
           y,
-          selectedText,
+          selectedText: selectedText || '',
           hasSelection: !!selectedText,
         });
       });
@@ -952,7 +1137,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   useEffect(() => {
     if (currentTab?.type === 'query') {
       const connection = connections.find(c => c.id === activeConnectionId);
-      const databaseType = connection?.version || 'unknown';
+      const databaseType: string = connection?.version || 'unknown';
 
       console.log('🔄 数据源变化，当前数据库类型:', databaseType, '语言:', getEditorLanguage());
       // 语言更新由Editor组件的key属性变化自动处理
@@ -972,7 +1157,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       value={currentTab.content}
       onChange={handleEditorChange}
       onMount={handleEditorDidMount}
-      key={`${currentTab.id}-${resolvedTheme}-${getEditorLanguage()}-${activeConnectionId || 'no-connection'}`} // 强制重新渲染以应用主题和语言
+      key={`${currentTab.id}-${resolvedTheme}-${getEditorLanguage()}`} // 移除时间戳避免频繁重新挂载
       options={{
         minimap: { enabled: false },
         scrollBeyondLastLine: false,

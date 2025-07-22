@@ -165,7 +165,6 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
     // 帮助菜单 - 使用平台特定的快捷键
     let help_menu = SubmenuBuilder::new(app, "帮助")
         .text("user_manual", "用户手册\tF1")
-        .text("quick_start", "快速入门")
         .text("shortcuts_help", &format!("键盘快捷键\t{}/", cmd_key))
         .separator()
         .text("sample_queries", "示例查询")
@@ -318,7 +317,6 @@ fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
 
         // 帮助菜单
         "user_manual" => emit_menu_action(&window, "user_manual"),
-        "quick_start" => emit_menu_action(&window, "quick_start"),
         "shortcuts_help" => emit_menu_action(&window, "shortcuts_help"),
         "sample_queries" => emit_menu_action(&window, "sample_queries"),
         "api_docs" => emit_menu_action(&window, "api_docs"),

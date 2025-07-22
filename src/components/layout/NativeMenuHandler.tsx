@@ -8,6 +8,7 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
+import SampleQueriesModal from '@/components/common/SampleQueriesModal';
 
 interface NativeMenuHandlerProps {
   onToggleSidebar?: () => void;
@@ -33,6 +34,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const [shortcutsVisible, setShortcutsVisible] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState('general');
+  const [sampleQueriesVisible, setSampleQueriesVisible] = useState(false);
   const setupRef = useRef(false);
 
   useEffect(() => {
@@ -80,6 +83,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     // 监听自定义设置弹框事件
     const handleOpenSettings = () => {
+      setSettingsInitialTab('general');
       setSettingsVisible(true);
       showMessage.success('打开应用设置');
     };
@@ -875,6 +879,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'theme_settings':
         // 打开设置弹框
+        setSettingsInitialTab('general');
         setSettingsVisible(true);
         showMessage.success('打开主题设置');
         handled = true;
@@ -893,6 +898,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'preferences':
         // 打开设置弹框
+        setSettingsInitialTab('general');
         setSettingsVisible(true);
         showMessage.success('打开偏好设置');
         handled = true;
@@ -905,15 +911,12 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         handled = true;
         break;
 
-      case 'quick_start':
-      case 'quick-start':
-        handleQuickStart();
-        handled = true;
-        break;
-
       case 'shortcuts_help':
       case 'shortcuts-help':
-        setShortcutsVisible(true);
+        // 打开设置弹框并导航到键盘快捷键部分
+        setSettingsInitialTab('preferences');
+        setSettingsVisible(true);
+        showMessage.success('打开偏好设置 - 键盘快捷键');
         handled = true;
         break;
 
@@ -935,9 +938,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'sample_queries':
-        document.dispatchEvent(
-          new CustomEvent('show-sample-queries', { detail: { source: 'menu' } })
-        );
+        setSampleQueriesVisible(true);
+        showMessage.success('打开查询示例');
         handled = true;
         break;
 
@@ -1053,7 +1055,18 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         onClose={() => setShortcutsVisible(false)}
       /> */}
       <AboutDialog visible={aboutVisible} onClose={() => setAboutVisible(false)} />
-      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
+      <SettingsModal 
+        visible={settingsVisible} 
+        onClose={() => {
+          setSettingsVisible(false);
+          setSettingsInitialTab('general'); // 重置为默认tab
+        }} 
+        initialTab={settingsInitialTab}
+      />
+      <SampleQueriesModal 
+        visible={sampleQueriesVisible} 
+        onClose={() => setSampleQueriesVisible(false)} 
+      />
     </>
   );
 };

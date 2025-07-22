@@ -336,7 +336,7 @@ export function registerInfluxQLLanguage(): void {
         [/"/, 'string', '@string_double'],
 
         // 数字
-        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+        [/\d*\.\d+([eE][-+]?\d+)?/, 'number.float'],
         [/\d+/, 'number'],
 
         // InfluxQL关键字
@@ -366,7 +366,7 @@ export function registerInfluxQLLanguage(): void {
         [/\/.*?\/[gimuy]*/, 'regexp'],
 
         // 操作符
-        [/[=><!~?:&|+\-*\/\^%]+/, 'operator'],
+        [/[=><!~?:&|+\-*/^%]+/, 'operator'],
         [/[=><]=?/, 'operator'],
 
         // 分隔符
@@ -381,9 +381,9 @@ export function registerInfluxQLLanguage(): void {
       ],
 
       comment: [
-        [/[^\/*]+/, 'comment'],
+        [/[^/*]+/, 'comment'],
         [/\*\//, 'comment', '@pop'],
-        [/[\/*]/, 'comment']
+        [/[/*]/, 'comment']
       ],
 
       string_single: [
@@ -494,7 +494,7 @@ export function registerFluxLanguage(): void {
         [/'/, 'string', '@string_single'],
 
         // 数字
-        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+        [/\d*\.\d+([eE][-+]?\d+)?/, 'number.float'],
         [/\d+/, 'number'],
 
         // 管道操作符
@@ -516,7 +516,7 @@ export function registerFluxLanguage(): void {
         [/[a-zA-Z_][a-zA-Z0-9_]*(?=\s*\()/, 'function'],
 
         // 操作符
-        [/[=><!~?:&|+\-*\/\^%]+/, 'operator'],
+        [/[=><!~?:&|+\-*/^%]+/, 'operator'],
         [/[=><]=?/, 'operator'],
 
         // 分隔符
@@ -531,9 +531,9 @@ export function registerFluxLanguage(): void {
       ],
 
       comment: [
-        [/[^\/*]+/, 'comment'],
+        [/[^/*]+/, 'comment'],
         [/\*\//, 'comment', '@pop'],
-        [/[\/*]/, 'comment']
+        [/[/*]/, 'comment']
       ],
 
       string_double: [

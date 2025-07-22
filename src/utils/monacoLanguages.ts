@@ -29,38 +29,41 @@ export const influxqlLanguageConfig: LanguageConfig = {
 export const influxqlMonarchLanguage: monaco.languages.IMonarchLanguage = {
   tokenizer: {
     root: [
-      // 注释
+      // 注释（优先级最高）
       [/--.*$/, 'comment'],
       [/\/\*/, 'comment', '@comment'],
-      
-      // 字符串
+
+      // 字符串（高优先级）
       [/'([^'\\]|\\.)*$/, 'string.invalid'],
       [/'/, 'string', '@string'],
       [/"([^"\\]|\\.)*$/, 'string.invalid'],
       [/"/, 'string', '@dblstring'],
-      
+
+      // 关键字（必须在标识符之前）
+      [/\b(?:SELECT|FROM|WHERE|GROUP\s+BY|ORDER\s+BY|LIMIT|OFFSET|INTO|FILL|TIME|AS|AND|OR|NOT|LIKE|REGEXP|RLIKE|IN|BETWEEN|IS|NULL|TRUE|FALSE|ASC|DESC|DISTINCT)\b/i, 'keyword'],
+      [/\b(?:SHOW|CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|GRANT|REVOKE|EXPLAIN|ANALYZE|BEGIN|COMMIT|ROLLBACK)\b/i, 'keyword'],
+      [/\b(?:DATABASES|MEASUREMENTS|SERIES|FIELD\s+KEYS|TAG\s+KEYS|TAG\s+VALUES|USERS|QUERIES|STATS|DIAGNOSTICS|SHARDS|SHARD\s+GROUPS|SUBSCRIPTIONS|RETENTION\s+POLICIES|CONTINUOUS\s+QUERIES)\b/i, 'keyword'],
+
+      // InfluxQL函数（在关键字之后，标识符之前）
+      [/\b(?:COUNT|SUM|MEAN|MEDIAN|MODE|SPREAD|STDDEV|SAMPLE|FIRST|LAST|MAX|MIN|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM|HOLT_WINTERS|HOLT_WINTERS_WITH_FIT|TOP|BOTTOM|INTEGRAL|NON_NEGATIVE_DERIVATIVE|NON_NEGATIVE_DIFFERENCE|ABS|ACOS|ASIN|ATAN|ATAN2|CEIL|COS|EXP|FLOOR|LN|LOG|LOG2|LOG10|POW|ROUND|SIN|SQRT|TAN)\b/i, 'keyword.function'],
+
       // 数字
       [/\d*\.\d+([eE][+\-]?\d+)?/, 'number.float'],
       [/\d+([eE][+\-]?\d+)?/, 'number'],
-      
-      // InfluxQL关键字
-      [/\b(?:SELECT|FROM|WHERE|GROUP BY|ORDER BY|LIMIT|OFFSET|INTO|FILL|TIME|AS|AND|OR|NOT|LIKE|REGEXP|RLIKE|IN|BETWEEN|IS|NULL|TRUE|FALSE|ASC|DESC|DISTINCT|SHOW|CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|GRANT|REVOKE|EXPLAIN|ANALYZE|BEGIN|COMMIT|ROLLBACK|DATABASES|MEASUREMENTS|SERIES|FIELD KEYS|TAG KEYS|TAG VALUES|USERS|QUERIES|STATS|DIAGNOSTICS|SHARDS|SHARD GROUPS|SUBSCRIPTIONS|RETENTION POLICIES|CONTINUOUS QUERIES)\b/i, 'keyword'],
-      
-      // InfluxQL函数
-      [/\b(?:COUNT|SUM|MEAN|MEDIAN|MODE|SPREAD|STDDEV|SAMPLE|FIRST|LAST|MAX|MIN|PERCENTILE|DERIVATIVE|DIFFERENCE|ELAPSED_TIME|MOVING_AVERAGE|CUMULATIVE_SUM|HOLT_WINTERS|HOLT_WINTERS_WITH_FIT|TOP|BOTTOM|DISTINCT|INTEGRAL|NON_NEGATIVE_DERIVATIVE|NON_NEGATIVE_DIFFERENCE|ABS|ACOS|ASIN|ATAN|ATAN2|CEIL|COS|CUMULATIVE_SUM|EXP|FLOOR|LN|LOG|LOG2|LOG10|POW|ROUND|SIN|SQRT|TAN)\b/i, 'keyword.function'],
-      
-      // 时间单位
+
+      // 时间单位（在数字之后）
+      [/\b\d+(?:ns|u|µ|ms|s|m|h|d|w)\b/, 'keyword.time'],
       [/\b(?:ns|u|µ|ms|s|m|h|d|w)\b/, 'keyword.time'],
-      
+
       // 操作符
       [/[=!<>]=?/, 'operator'],
       [/[+\-*/]/, 'operator'],
       [/[(){}[\]]/, 'bracket'],
       [/[,;]/, 'delimiter'],
-      
-      // 标识符
+
+      // 标识符（最后匹配）
       [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier'],
-      
+
       // 空白字符
       [/\s+/, 'white'],
     ],
@@ -94,16 +97,16 @@ export const influxqlThemes: ThemeConfig[] = [
     rules: [
       { token: 'comment', foreground: '008000', fontStyle: 'italic' },
       { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
-      { token: 'keyword.function', foreground: 'FF0000', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'DC143C', fontStyle: 'bold' },
       { token: 'keyword.time', foreground: 'FF6600', fontStyle: 'bold' },
       { token: 'string', foreground: 'A31515' },
       { token: 'string.escape', foreground: 'FF0000' },
       { token: 'number', foreground: '098658' },
       { token: 'number.float', foreground: '098658' },
-      { token: 'operator', foreground: '000000' },
+      { token: 'operator', foreground: '666666', fontStyle: 'bold' },
       { token: 'identifier', foreground: '000000' },
-      { token: 'delimiter', foreground: '000000' },
-      { token: 'bracket', foreground: '000000' },
+      { token: 'delimiter', foreground: '666666' },
+      { token: 'bracket', foreground: '8B4513', fontStyle: 'bold' },
     ],
     colors: {}
   },
@@ -114,16 +117,16 @@ export const influxqlThemes: ThemeConfig[] = [
     rules: [
       { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
       { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
-      { token: 'keyword.function', foreground: 'DCDCAA', fontStyle: 'bold' },
+      { token: 'keyword.function', foreground: 'FF6B6B', fontStyle: 'bold' },
       { token: 'keyword.time', foreground: 'FF9500', fontStyle: 'bold' },
       { token: 'string', foreground: 'CE9178' },
       { token: 'string.escape', foreground: 'D7BA7D' },
       { token: 'number', foreground: 'B5CEA8' },
       { token: 'number.float', foreground: 'B5CEA8' },
-      { token: 'operator', foreground: 'D4D4D4' },
+      { token: 'operator', foreground: 'CCCCCC', fontStyle: 'bold' },
       { token: 'identifier', foreground: 'D4D4D4' },
-      { token: 'delimiter', foreground: 'D4D4D4' },
-      { token: 'bracket', foreground: 'FFD700' },
+      { token: 'delimiter', foreground: 'CCCCCC' },
+      { token: 'bracket', foreground: 'FFD700', fontStyle: 'bold' },
     ],
     colors: {}
   }
@@ -226,17 +229,18 @@ export function registerLanguage(config: LanguageConfig, monarchLanguage?: monac
   // 检查语言是否已注册
   const existingLanguages = monaco.languages.getLanguages();
   const isRegistered = existingLanguages.some(lang => lang.id === config.id);
-  
+
   if (!isRegistered) {
     console.log(`📝 注册${config.id}语言...`);
     monaco.languages.register(config);
-    
-    if (monarchLanguage) {
-      monaco.languages.setMonarchTokensProvider(config.id, monarchLanguage);
-      console.log(`✅ ${config.id}语法高亮规则设置完成`);
-    }
   } else {
-    console.log(`✅ ${config.id}语言已存在`);
+    console.log(`✅ ${config.id}语言已存在，更新语法规则...`);
+  }
+
+  // 总是设置或更新语法高亮规则，确保最新规则生效
+  if (monarchLanguage) {
+    monaco.languages.setMonarchTokensProvider(config.id, monarchLanguage);
+    console.log(`✅ ${config.id}语法高亮规则设置完成`);
   }
 }
 
