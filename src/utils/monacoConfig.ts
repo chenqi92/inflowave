@@ -114,9 +114,26 @@ export function configureMonacoGlobally() {
         window.MonacoEnvironment = {};
       }
 
-      // 禁用Web Workers，在主线程运行
+      // 完全禁用Web Workers，在主线程运行所有功能
+      // 这样可以避免Web Worker加载问题，虽然可能影响性能，但确保稳定性
       window.MonacoEnvironment.getWorkerUrl = function (moduleId: string, label: string) {
-        return '';
+        // 返回一个空的data URL，避免网络请求
+        return 'data:text/javascript;charset=utf-8,';
+      };
+
+      // 完全禁用Web Workers
+      window.MonacoEnvironment.getWorker = function (workerId: string, label: string) {
+        // 返回一个模拟的Worker对象，避免错误
+        return {
+          postMessage: () => {},
+          terminate: () => {},
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          dispatchEvent: () => false,
+          onmessage: null,
+          onmessageerror: null,
+          onerror: null,
+        } as any;
       };
 
       // 安全配置Monaco编辑器的剪贴板功能

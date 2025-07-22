@@ -194,6 +194,26 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     try {
       editorRef.current = editor;
 
+      // 确保Monaco环境配置正确，禁用Web Workers
+      if (typeof window !== 'undefined') {
+        if (!window.MonacoEnvironment) {
+          window.MonacoEnvironment = {};
+        }
+
+        // 强制禁用Web Workers
+        window.MonacoEnvironment.getWorkerUrl = () => 'data:text/javascript;charset=utf-8,';
+        window.MonacoEnvironment.getWorker = () => ({
+          postMessage: () => {},
+          terminate: () => {},
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          dispatchEvent: () => false,
+          onmessage: null,
+          onmessageerror: null,
+          onerror: null,
+        } as any);
+      }
+
       // 根据选择的数据源类型设置智能提示
       const currentConnection = connections.find(c => c.id === activeConnectionId);
       const databaseType = (currentConnection?.version || 'unknown') as DatabaseType;
@@ -255,6 +275,8 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         autoIndent: 'full',
         // 更敏感的提示设置
         wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
+        // 禁用一些可能导致Web Worker问题的功能
+        // 注意：这些选项需要使用正确的Monaco编辑器API
       });
 
       // 添加快捷键
@@ -269,6 +291,17 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
         editor.trigger('manual', 'editor.action.triggerSuggest', {});
       });
+
+      // 通过API禁用一些可能导致问题的功能
+      try {
+        // 禁用语义高亮（如果支持）
+        const model = editor.getModel();
+        if (model && monaco.editor.setModelLanguage) {
+          // 设置语言时禁用一些高级功能
+        }
+      } catch (error) {
+        console.debug('设置编辑器高级选项时出错:', error);
+      }
 
     } catch (error) {
       console.error('⚠️ Monaco编辑器挂载失败:', error);

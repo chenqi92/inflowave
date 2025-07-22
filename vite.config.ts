@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 /// <reference types="vitest" />
 
+// 使用联合类型来支持Vitest配置
+interface ViteConfigWithTest {
+  test?: {
+    globals?: boolean;
+    environment?: string;
+    setupFiles?: string[];
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
@@ -106,4 +115,4 @@ export default defineConfig({
         ],
         force: true, // 强制重新构建依赖
     },
-});
+} as any); // 使用类型断言来支持Vitest配置
