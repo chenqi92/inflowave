@@ -432,37 +432,141 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       // 编辑菜单
       case 'undo':
-        document.execCommand('undo');
+        // 安全的撤销操作 - 避免使用execCommand
+        console.log('🎯 原生菜单触发撤销操作');
+        try {
+          // 检查当前焦点元素是否是Monaco编辑器
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.closest('.monaco-editor')) {
+            // 如果是Monaco编辑器，触发Ctrl+Z快捷键
+            const undoEvent = new KeyboardEvent('keydown', {
+              key: 'z',
+              ctrlKey: true,
+              bubbles: true
+            });
+            activeElement.dispatchEvent(undoEvent);
+          } else {
+            // 对于其他元素，尝试触发撤销快捷键
+            document.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'z',
+              ctrlKey: true,
+              bubbles: true
+            }));
+          }
+        } catch (error) {
+          console.warn('⚠️ 撤销操作失败:', error);
+        }
         handled = true;
         break;
 
       case 'redo':
-        document.execCommand('redo');
+        // 安全的重做操作 - 避免使用execCommand
+        console.log('🎯 原生菜单触发重做操作');
+        try {
+          // 检查当前焦点元素是否是Monaco编辑器
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.closest('.monaco-editor')) {
+            // 如果是Monaco编辑器，触发Ctrl+Y快捷键
+            const redoEvent = new KeyboardEvent('keydown', {
+              key: 'y',
+              ctrlKey: true,
+              bubbles: true
+            });
+            activeElement.dispatchEvent(redoEvent);
+          } else {
+            // 对于其他元素，尝试触发重做快捷键
+            document.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'y',
+              ctrlKey: true,
+              bubbles: true
+            }));
+          }
+        } catch (error) {
+          console.warn('⚠️ 重做操作失败:', error);
+        }
         handled = true;
         break;
 
       case 'cut':
-        document.execCommand('cut');
+        // 安全的剪切操作 - 避免使用execCommand
+        console.log('🎯 原生菜单触发剪切操作');
+        try {
+          // 检查当前焦点元素是否是Monaco编辑器
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.closest('.monaco-editor')) {
+            // 如果是Monaco编辑器，触发自定义剪切事件
+            const cutEvent = new CustomEvent('monaco-cut', { bubbles: true });
+            activeElement.dispatchEvent(cutEvent);
+          } else {
+            // 对于其他元素，尝试安全的剪切操作
+            const selection = window.getSelection();
+            if (selection && selection.toString()) {
+              // 使用安全的剪贴板API
+              import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                writeToClipboard(selection.toString(), { showSuccess: false });
+                // 删除选中的文本（如果可能）
+                selection.deleteFromDocument();
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ 剪切操作失败:', error);
+        }
         handled = true;
         break;
 
       case 'copy':
-        // 触发系统复制快捷键
-        document.dispatchEvent(new KeyboardEvent('keydown', {
-          key: 'c',
-          ctrlKey: true,
-          bubbles: true
-        }));
+        // 安全的复制操作 - 避免触发剪贴板权限
+        console.log('🎯 原生菜单触发复制操作');
+        try {
+          // 检查当前焦点元素是否是Monaco编辑器
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.closest('.monaco-editor')) {
+            // 如果是Monaco编辑器，触发自定义复制事件
+            const copyEvent = new CustomEvent('monaco-copy', { bubbles: true });
+            activeElement.dispatchEvent(copyEvent);
+          } else {
+            // 对于其他元素，尝试安全的复制操作
+            const selection = window.getSelection();
+            if (selection && selection.toString()) {
+              // 使用安全的剪贴板API
+              import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                writeToClipboard(selection.toString(), { showSuccess: false });
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ 复制操作失败:', error);
+        }
         handled = true;
         break;
 
       case 'paste':
-        // 触发系统粘贴快捷键
-        document.dispatchEvent(new KeyboardEvent('keydown', {
-          key: 'v',
-          ctrlKey: true,
-          bubbles: true
-        }));
+        // 安全的粘贴操作 - 避免触发剪贴板权限
+        console.log('🎯 原生菜单触发粘贴操作');
+        try {
+          // 检查当前焦点元素是否是Monaco编辑器
+          const activeElement = document.activeElement;
+          if (activeElement && activeElement.closest('.monaco-editor')) {
+            // 如果是Monaco编辑器，触发自定义粘贴事件
+            const pasteEvent = new CustomEvent('monaco-paste', { bubbles: true });
+            activeElement.dispatchEvent(pasteEvent);
+          } else {
+            // 对于其他元素，尝试安全的粘贴操作
+            import('@/utils/clipboard').then(({ readFromClipboard }) => {
+              readFromClipboard({ showError: false }).then(text => {
+                if (text && activeElement && 'value' in activeElement) {
+                  // 如果是输入元素，设置值
+                  (activeElement as HTMLInputElement).value = text;
+                  // 触发input事件
+                  activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+              });
+            });
+          }
+        } catch (error) {
+          console.warn('⚠️ 粘贴操作失败:', error);
+        }
         handled = true;
         break;
 

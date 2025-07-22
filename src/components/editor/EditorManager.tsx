@@ -25,6 +25,7 @@ import {
   Code,
   Play
 } from 'lucide-react';
+import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
 
 interface EditorManagerProps {
   currentTab: EditorTab | null;
@@ -306,6 +307,88 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     return () => disposable.dispose();
   }, [activeConnectionId, databases]);
 
+  // 右键菜单项处理函数（需要在handleEditorDidMount之前定义）
+  const handleContextMenuAction = useCallback(async (action: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    console.log('🎯 执行右键菜单操作:', action);
+
+    try {
+      switch (action) {
+        case 'cut':
+          // 使用安全的剪贴板操作
+          const selection = editor.getSelection();
+          if (selection) {
+            const selectedText = editor.getModel()?.getValueInRange(selection);
+            if (selectedText) {
+              await writeToClipboard(selectedText, {
+                successMessage: '已剪切到剪贴板',
+                showSuccess: false // 避免过多提示
+              });
+              // 删除选中的文本
+              editor.executeEdits('contextmenu', [{
+                range: selection,
+                text: '',
+                forceMoveMarkers: true
+              }]);
+            }
+          }
+          break;
+
+        case 'copy':
+          // 使用安全的剪贴板操作
+          const copySelection = editor.getSelection();
+          if (copySelection) {
+            const selectedText = editor.getModel()?.getValueInRange(copySelection);
+            if (selectedText) {
+              await writeToClipboard(selectedText, {
+                successMessage: '已复制到剪贴板',
+                showSuccess: false // 避免过多提示
+              });
+            }
+          }
+          break;
+
+        case 'paste':
+          // 使用安全的剪贴板操作
+          const clipboardText = await readFromClipboard({
+            showError: false // 避免过多错误提示
+          });
+          if (clipboardText) {
+            const position = editor.getPosition();
+            if (position) {
+              editor.executeEdits('contextmenu', [{
+                range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                text: clipboardText,
+                forceMoveMarkers: true
+              }]);
+            }
+          }
+          break;
+
+        case 'selectAll':
+          editor.trigger('keyboard', 'editor.action.selectAll', {});
+          break;
+
+        case 'format':
+          editor.trigger('editor', 'editor.action.formatDocument', {});
+          break;
+
+        case 'execute':
+          if (onExecuteQuery) {
+            onExecuteQuery();
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('❌ 右键菜单操作失败:', error);
+    }
+
+    // 隐藏菜单
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  }, [onExecuteQuery]);
+
   // 编辑器挂载处理
   const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, monaco: any) => {
     try {
@@ -347,11 +430,106 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       // 语言支持已在组件初始化时注册，这里不需要重复注册
       console.log('🎯 编辑器挂载完成，当前语言:', getEditorLanguage());
 
-      // 强制刷新语法高亮
+      // 完全禁用Monaco编辑器的剪贴板功能，防止权限错误
+      try {
+        console.log('🚫 禁用Monaco编辑器剪贴板功能...');
+
+        // 重写navigator.clipboard以阻止Monaco使用它
+        const originalClipboard = (window as any).navigator.clipboard;
+        if (originalClipboard) {
+          console.log('🔒 重写navigator.clipboard API...');
+
+          // 创建一个安全的剪贴板代理
+          const safeClipboard = {
+            writeText: async (text: string) => {
+              console.log('🔄 Monaco尝试写入剪贴板，重定向到安全API:', text.substring(0, 50) + '...');
+              try {
+                await writeToClipboard(text, { showSuccess: false });
+                return Promise.resolve();
+              } catch (error) {
+                console.warn('⚠️ 安全剪贴板写入失败:', error);
+                return Promise.reject(error);
+              }
+            },
+            readText: async () => {
+              console.log('🔄 Monaco尝试读取剪贴板，重定向到安全API...');
+              try {
+                const text = await readFromClipboard({ showError: false });
+                return Promise.resolve(text || '');
+              } catch (error) {
+                console.warn('⚠️ 安全剪贴板读取失败:', error);
+                return Promise.reject(error);
+              }
+            },
+            write: async (data: any) => {
+              console.log('🔄 Monaco尝试使用clipboard.write()，重定向到安全API');
+              try {
+                // 尝试从ClipboardItem中提取文本
+                if (data && data.length > 0) {
+                  const item = data[0];
+                  if (item && typeof item.getType === 'function') {
+                    try {
+                      const blob = await item.getType('text/plain');
+                      const text = await blob.text();
+                      await writeToClipboard(text, { showSuccess: false });
+                      return Promise.resolve();
+                    } catch (error) {
+                      console.warn('⚠️ 从ClipboardItem提取文本失败:', error);
+                    }
+                  }
+                }
+                // 如果无法提取，静默成功
+                return Promise.resolve();
+              } catch (error) {
+                console.warn('⚠️ 安全剪贴板写入失败:', error);
+                return Promise.resolve(); // 静默成功，避免Monaco报错
+              }
+            },
+            read: async () => {
+              console.log('🔄 Monaco尝试使用clipboard.read()，重定向到安全API');
+              try {
+                const text = await readFromClipboard({ showError: false });
+                if (text) {
+                  // 创建ClipboardItem格式的数据
+                  const blob = new Blob([text], { type: 'text/plain' });
+                  return Promise.resolve([
+                    {
+                      types: ['text/plain'],
+                      getType: async (type: string) => {
+                        if (type === 'text/plain') {
+                          return blob;
+                        }
+                        throw new Error('Type not supported');
+                      }
+                    }
+                  ]);
+                }
+                return Promise.resolve([]);
+              } catch (error) {
+                console.warn('⚠️ 安全剪贴板读取失败:', error);
+                return Promise.resolve([]);
+              }
+            }
+          };
+
+          // 替换navigator.clipboard
+          Object.defineProperty((window as any).navigator, 'clipboard', {
+            value: safeClipboard,
+            writable: false,
+            configurable: false
+          });
+
+          console.log('✅ Monaco编辑器剪贴板功能已安全重写');
+        }
+      } catch (clipboardError) {
+        console.warn('⚠️ 重写剪贴板功能失败:', clipboardError);
+      }
+
+      // 检查语法高亮状态（语言已通过Editor组件的language属性设置）
       const model = editor.getModel();
       if (model) {
         const currentLanguage = getEditorLanguage();
-        console.log('🔄 强制设置编辑器语言为:', currentLanguage);
+        console.log('🔍 检查编辑器语言设置:', currentLanguage);
 
         // 检查当前模型状态
         console.log('📋 当前模型信息:', {
@@ -361,23 +539,20 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           value: model.getValue().substring(0, 50) + '...'
         });
 
-        // 设置语言
-        monaco.editor.setModelLanguage(model, currentLanguage);
-
-        // 验证语言是否设置成功
+        // 验证语言是否正确设置（由Editor组件处理）
         const actualLanguage = model.getLanguageId();
-        console.log('✅ 语言设置结果:', {
+        console.log('✅ 语言设置状态:', {
           expected: currentLanguage,
           actual: actualLanguage,
-          success: actualLanguage === currentLanguage
+          isCorrect: actualLanguage === currentLanguage
         });
 
-        // 检查可用的主题
-        console.log('🎨 检查可用主题...');
+        // 检查语言注册状态
+        console.log('🎨 检查语言注册状态...');
         try {
           // 获取所有已注册的语言
           const languages = monaco.languages.getLanguages();
-          console.log('📝 已注册的语言:', languages.map(l => l.id));
+          console.log('📝 已注册的语言数量:', languages.length);
 
           // 检查我们的自定义语言是否在列表中
           const hasInfluxQL = languages.some(l => l.id === 'influxql');
@@ -520,35 +695,72 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         console.error('❌ 无法获取编辑器模型');
       }
 
-      // 设置编辑器选项（保持与Editor组件中的options一致）
-      editor.updateOptions({
-        fontSize: 14,
-        lineHeight: 20,
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        wordWrap: 'on',
-        automaticLayout: true,
-        // 禁用Monaco内置的智能提示，使用我们的自定义提示
-        quickSuggestions: false,
-        suggestOnTriggerCharacters: false,
-        parameterHints: { enabled: false },
-        formatOnPaste: true,
-        formatOnType: true,
-        acceptSuggestionOnEnter: 'off',
-        tabCompletion: 'off',
-        hover: { enabled: true },
-        wordBasedSuggestions: 'off',
-        autoIndent: 'full',
-        wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
-      });
+      // 编辑器选项已通过Editor组件的options属性设置，无需重复配置
 
       // 添加快捷键
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-        // 执行查询
+      console.log('🎯 注册Monaco编辑器快捷键...');
+
+      // 执行查询快捷键 (Ctrl+Enter)
+      const executeCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+        console.log('🚀 快捷键触发：执行查询 (Ctrl+Enter)');
         if (onExecuteQuery) {
           onExecuteQuery();
         }
       });
+      console.log('✅ 执行查询快捷键注册成功，ID:', executeCommandId);
+
+      // 格式化代码快捷键 (Shift+Alt+F)
+      const formatCommandId = editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+        console.log('🎨 快捷键触发：格式化代码 (Shift+Alt+F)');
+        editor.trigger('keyboard', 'editor.action.formatDocument', {});
+      });
+      console.log('✅ 格式化代码快捷键注册成功，ID:', formatCommandId);
+
+      // 注释/取消注释快捷键 (Ctrl+/)
+      const commentCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash, () => {
+        console.log('💬 快捷键触发：切换注释 (Ctrl+/)');
+        editor.trigger('keyboard', 'editor.action.commentLine', {});
+      });
+      console.log('✅ 注释切换快捷键注册成功，ID:', commentCommandId);
+
+      // 安全的剪贴板快捷键
+      const copyCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+        console.log('📋 快捷键触发：复制 (Ctrl+C)');
+        handleContextMenuAction('copy');
+      });
+      console.log('✅ 复制快捷键注册成功，ID:', copyCommandId);
+
+      const cutCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+        console.log('✂️ 快捷键触发：剪切 (Ctrl+X)');
+        handleContextMenuAction('cut');
+      });
+      console.log('✅ 剪切快捷键注册成功，ID:', cutCommandId);
+
+      const pasteCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+        console.log('📄 快捷键触发：粘贴 (Ctrl+V)');
+        handleContextMenuAction('paste');
+      });
+      console.log('✅ 粘贴快捷键注册成功，ID:', pasteCommandId);
+
+      // 撤销/重做快捷键
+      const undoCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
+        console.log('↶ 快捷键触发：撤销 (Ctrl+Z)');
+        editor.trigger('keyboard', 'undo', {});
+      });
+      console.log('✅ 撤销快捷键注册成功，ID:', undoCommandId);
+
+      const redoCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
+        console.log('↷ 快捷键触发：重做 (Ctrl+Y)');
+        editor.trigger('keyboard', 'redo', {});
+      });
+      console.log('✅ 重做快捷键注册成功，ID:', redoCommandId);
+
+      // 全选快捷键
+      const selectAllCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
+        console.log('🔘 快捷键触发：全选 (Ctrl+A)');
+        editor.trigger('keyboard', 'editor.action.selectAll', {});
+      });
+      console.log('✅ 全选快捷键注册成功，ID:', selectAllCommandId);
 
       // 添加自定义右键菜单
       editor.onContextMenu((e) => {
@@ -640,10 +852,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         // 显示自定义右键菜单
         console.log('🎯 应该显示自定义右键菜单，菜单项:', menuItems);
 
-        // 获取鼠标位置
-        const rect = editor.getDomNode()?.getBoundingClientRect();
-        const x = rect ? rect.left + e.event.posx : e.event.posx;
-        const y = rect ? rect.top + e.event.posy : e.event.posy;
+        // 获取鼠标位置 - 使用全局坐标
+        const x = e.event.browserEvent.clientX;
+        const y = e.event.browserEvent.clientY;
+
+        console.log('🖱️ 鼠标位置:', { x, y });
 
         setContextMenu({
           visible: true,
@@ -705,40 +918,6 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       console.error('⚠️ Monaco编辑器挂载失败:', error);
     }
   }, [connections, activeConnectionId, selectedDatabase, setupEnhancedAutoComplete, resolvedTheme, onExecuteQuery, showSuggestions, hideSuggestions, suggestionVisible]);
-
-  // 右键菜单项处理函数
-  const handleContextMenuAction = useCallback((action: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    console.log('🎯 执行右键菜单操作:', action);
-
-    switch (action) {
-      case 'cut':
-        editor.trigger('keyboard', 'editor.action.clipboardCutAction', {});
-        break;
-      case 'copy':
-        editor.trigger('keyboard', 'editor.action.clipboardCopyAction', {});
-        break;
-      case 'paste':
-        editor.trigger('keyboard', 'editor.action.clipboardPasteAction', {});
-        break;
-      case 'selectAll':
-        editor.trigger('keyboard', 'editor.action.selectAll', {});
-        break;
-      case 'format':
-        editor.trigger('editor', 'editor.action.formatDocument', {});
-        break;
-      case 'execute':
-        if (onExecuteQuery) {
-          onExecuteQuery();
-        }
-        break;
-    }
-
-    // 隐藏菜单
-    setContextMenu(prev => ({ ...prev, visible: false }));
-  }, [onExecuteQuery]);
 
   // 点击其他地方隐藏右键菜单
   useEffect(() => {
@@ -805,18 +984,20 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         wordBasedSuggestions: 'off',
         // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
         contextmenu: false,
-        // 关键：禁用所有可能触发剪贴板权限的功能，但保持语法高亮
-        copyWithSyntaxHighlighting: true,  // 保持语法高亮
+        // 关键：完全禁用所有可能触发剪贴板权限的功能
+        copyWithSyntaxHighlighting: false,  // 禁用语法高亮复制
         links: false,
         dragAndDrop: false,
         selectionClipboard: false,
+        // 禁用所有剪贴板相关的快捷键和操作
+        multiCursorModifier: 'alt',  // 避免Ctrl+C等快捷键冲突
         useTabStops: false,
-        multiCursorModifier: 'alt',
         accessibilitySupport: 'off',
+        // 禁用可能触发剪贴板的编辑器功能
         find: {
           addExtraSpaceOnTop: false,
           autoFindInSelection: 'never',
-          seedSearchStringFromSelection: 'never',
+          seedSearchStringFromSelection: 'never',  // 避免从选择中获取搜索字符串
         },
       }}
       />
@@ -846,6 +1027,14 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           <Card className="min-w-48 shadow-lg border">
             <CardContent className="p-1">
               <div className="space-y-1">
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm font-medium"
+                  onClick={() => handleContextMenuAction('execute')}
+                >
+                  <Play className="w-4 h-4" />
+                  执行查询 (Ctrl+Enter)
+                </button>
+                <Separator />
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!contextMenu.hasSelection}
@@ -877,20 +1066,12 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                   <MousePointer className="w-4 h-4" />
                   全选
                 </button>
-                <Separator />
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm"
                   onClick={() => handleContextMenuAction('format')}
                 >
                   <Code className="w-4 h-4" />
                   格式化代码
-                </button>
-                <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-sm"
-                  onClick={() => handleContextMenuAction('execute')}
-                >
-                  <Play className="w-4 h-4" />
-                  执行查询 (Ctrl+Enter)
                 </button>
               </div>
             </CardContent>
