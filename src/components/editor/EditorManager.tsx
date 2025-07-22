@@ -3,7 +3,7 @@ import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
-import { 
+import {
   setEditorLanguageByDatabaseType,
   registerFluxLanguage,
   createDatabaseSpecificCompletions
@@ -11,6 +11,9 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DatabaseType } from '@/utils/sqlFormatter';
 import type { EditorTab } from './TabManager';
+import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
+import { SmartSuggestionPopup } from './SmartSuggestionPopup';
+import type { DataSourceType } from '@/utils/suggestionTypes';
 
 interface EditorManagerProps {
   currentTab: EditorTab | null;
@@ -31,11 +34,31 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   const { resolvedTheme } = useTheme();
   const { activeConnectionId, connections } = useConnectionStore();
 
+  // 获取数据源类型
+  const getDataSourceType = useCallback((): DataSourceType => {
+    const connection = connections.find(c => c.id === activeConnectionId);
+    return (connection?.version as DataSourceType) || 'unknown';
+  }, [connections, activeConnectionId]);
+
+  // 智能提示Hook
+  const {
+    suggestions,
+    position,
+    visible: suggestionVisible,
+    showSuggestions,
+    hideSuggestions,
+    selectSuggestion,
+  } = useSmartSuggestion({
+    connectionId: activeConnectionId || '',
+    database: selectedDatabase || '',
+    dataSourceType: getDataSourceType(),
+  });
+
   // 获取编辑器语言类型
   const getEditorLanguage = useCallback(() => {
     const connection = connections.find(c => c.id === activeConnectionId);
     const databaseType = connection?.version || 'unknown';
-    
+
     switch (databaseType) {
       case '1.x':
         return 'influxql';
@@ -46,6 +69,22 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         return 'sql';
     }
   }, [connections, activeConnectionId]);
+
+  // 处理编辑器内容变化
+  const handleEditorChange = useCallback((value: string | undefined) => {
+    const content = value || '';
+    onContentChange(content);
+
+    // 触发智能提示
+    if (editorRef.current && content.length > 0) {
+      // 延迟触发，避免频繁调用
+      setTimeout(() => {
+        if (editorRef.current) {
+          showSuggestions(editorRef.current);
+        }
+      }, 100);
+    }
+  }, [onContentChange, showSuggestions]);
 
   // 注册InfluxQL语言支持
   const registerInfluxQLLanguage = useCallback(() => {
@@ -289,7 +328,38 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
       // 添加手动触发智能提示的快捷键
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
-        editor.trigger('manual', 'editor.action.triggerSuggest', {});
+        showSuggestions(editor, true);
+      });
+
+      // 监听光标位置变化
+      editor.onDidChangeCursorPosition(() => {
+        if (suggestionVisible) {
+          hideSuggestions();
+        }
+      });
+
+      // 监听内容变化
+      editor.onDidChangeModelContent((e) => {
+        // 检查是否输入了空格
+        const changes = e.changes;
+        const hasSpaceInput = changes.some(change =>
+          change.text === ' ' || change.text.includes(' ')
+        );
+
+        // 如果输入了空格，延迟触发提示（允许空格正常输入）
+        if (hasSpaceInput) {
+          setTimeout(() => showSuggestions(editor), 200);
+        } else {
+          showSuggestions(editor);
+        }
+      });
+
+      // 监听失去焦点
+      editor.onDidBlurEditorText(() => {
+        // 延迟隐藏，避免点击提示项时立即隐藏
+        setTimeout(() => {
+          hideSuggestions();
+        }, 150);
       });
 
       // 通过API禁用一些可能导致问题的功能
@@ -306,7 +376,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     } catch (error) {
       console.error('⚠️ Monaco编辑器挂载失败:', error);
     }
-  }, [connections, activeConnectionId, selectedDatabase, setupEnhancedAutoComplete, registerInfluxQLLanguage, resolvedTheme, onExecuteQuery]);
+  }, [connections, activeConnectionId, selectedDatabase, setupEnhancedAutoComplete, registerInfluxQLLanguage, resolvedTheme, onExecuteQuery, showSuggestions, hideSuggestions, suggestionVisible]);
 
   // 监听数据源变化，更新编辑器语言
   useEffect(() => {
@@ -326,12 +396,13 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   }
 
   return (
-    <Editor
+    <div className="relative h-full">
+      <Editor
       height='100%'
       language={getEditorLanguage()}
       theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
       value={currentTab.content}
-      onChange={(value) => onContentChange(value || '')}
+      onChange={handleEditorChange}
       onMount={handleEditorDidMount}
       key={`${currentTab.id}-${resolvedTheme}`} // 强制重新渲染以应用主题
       options={{
@@ -346,28 +417,47 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         },
         wordWrap: 'on',
         automaticLayout: true,
-        // 智能提示配置
-        suggestOnTriggerCharacters: true,
-        quickSuggestions: {
-          other: true,
-          comments: false,
-          strings: true,
-        },
-        parameterHints: { enabled: true },
-        formatOnPaste: false, // 禁用粘贴格式化，避免剪贴板操作
-        formatOnType: false, // 禁用自动格式化，避免内部操作
-        acceptSuggestionOnEnter: 'on',
-        tabCompletion: 'on',
+        // 禁用Monaco内置的智能提示，使用我们的自定义提示
+        quickSuggestions: false,
+        suggestOnTriggerCharacters: false,
+        parameterHints: { enabled: false },
+        formatOnPaste: true,
+        formatOnType: true,
+        acceptSuggestionOnEnter: 'off',
+        tabCompletion: 'off',
         hover: { enabled: true },
-        quickSuggestionsDelay: 50,
-        suggestSelection: 'first',
-        // 禁用右键菜单，使用自定义菜单
+        wordBasedSuggestions: 'off',
+        // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
         contextmenu: false,
-        // 基本剪贴板配置
+        // 关键：禁用所有可能触发剪贴板权限的功能
         copyWithSyntaxHighlighting: false,
+        links: false,
+        dragAndDrop: false,
         selectionClipboard: false,
+        useTabStops: false,
+        multiCursorModifier: 'alt',
+        accessibilitySupport: 'off',
+        find: {
+          addExtraSpaceOnTop: false,
+          autoFindInSelection: 'never',
+          seedSearchStringFromSelection: 'never',
+        },
       }}
-    />
+      />
+
+      {/* 智能提示弹框 */}
+      <SmartSuggestionPopup
+        suggestions={suggestions}
+        position={position}
+        visible={suggestionVisible}
+        onSelect={(item) => {
+          if (editorRef.current) {
+            selectSuggestion(item, editorRef.current);
+          }
+        }}
+        onClose={hideSuggestions}
+      />
+    </div>
   );
 };
 

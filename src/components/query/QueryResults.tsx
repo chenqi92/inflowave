@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {AdvancedDataTable, type ColumnConfig, type DataRow} from '@/components/ui/AdvancedDataTable';
 import {
     DataTable,
@@ -331,6 +331,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         <div
                             onContextMenu={(e) => handleCellRightClick(e, record, col, value)}
                             className="cursor-context-menu"
+                            title="右键查看更多操作"
                         >
                             {cellContent}
                         </div>
@@ -448,6 +449,16 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         : {columns: [], dataSource: []};
     const stats = result ? getResultStats(result) : null;
 
+    // 分页状态管理
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(50);
+
+    // 分页处理函数
+    const handlePageChange = useCallback((page: number, size: number) => {
+        setCurrentPage(page);
+        setPageSize(size);
+    }, []);
+
     const renderTableTab = () => (
         <div className="h-full">
             {result ? (
@@ -456,11 +467,11 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                     columns={advancedColumns}
                     loading={false}
                     pagination={{
-                        current: 1,
-                        pageSize: 50,
+                        current: currentPage,
+                        pageSize: pageSize,
                         total: advancedDataSource.length,
                         showSizeChanger: true,
-                        pageSizeOptions: ['20', '50', '100', '200', '500'],
+                        pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
                     }}
                     searchable={true}
                     filterable={true}
@@ -468,6 +479,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                     exportable={true}
                     columnManagement={true}
                     className="h-full"
+                    onPageChange={handlePageChange}
                     onExport={(format) => {
                         // 使用查询结果的名称作为默认文件名
                         const defaultName = `query_result_${Date.now()}`;

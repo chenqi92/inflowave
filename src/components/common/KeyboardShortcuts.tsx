@@ -133,7 +133,9 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
                         </span>
                       ))}
                     </TableCell>
-                    <TableCell>{shortcut.description}</TableCell>
+                    <TableCell>
+                      {shortcut.description}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

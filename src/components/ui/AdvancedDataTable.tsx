@@ -259,17 +259,28 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
-
-  // 初始化可见列
-  useEffect(() => {
-    const defaultVisible = columns.filter(col => col.visible !== false).map(col => col.key);
-    setVisibleColumns(defaultVisible);
-    setColumnOrder(columns.map(col => col.key));
-  }, [columns]);
+  
+  // 分页状态管理 - 内部状态用于处理分页逻辑
+  const [internalPagination, setInternalPagination] = useState<PaginationConfig>(() => {
+    const dataLength = data?.length || 0;
+    if (pagination === false) {
+      return { current: 1, pageSize: dataLength || 50, total: dataLength };
+    }
+    if (!pagination || typeof pagination !== 'object') {
+      return { current: 1, pageSize: 50, total: dataLength };
+    }
+    return {
+      current: pagination.current || 1,
+      pageSize: pagination.pageSize || 50,
+      total: pagination.total || dataLength,
+      showSizeChanger: pagination.showSizeChanger !== false,
+      pageSizeOptions: pagination.pageSizeOptions || ['20', '50', '100', '200', '500']
+    };
+  });
 
   // 数据处理：搜索、筛选、排序
   const processedData = useMemo(() => {
-    let result = [...data];
+    let result = [...(data || [])];
 
     // 搜索过滤
     if (searchText.trim()) {
@@ -352,20 +363,53 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
     return result;
   }, [data, searchText, filters, sortConfig]);
 
+  // 初始化可见列
+  useEffect(() => {
+    const defaultVisible = columns.filter(col => col.visible !== false).map(col => col.key);
+    setVisibleColumns(defaultVisible);
+    setColumnOrder(columns.map(col => col.key));
+  }, [columns]);
+
+  // 同步外部分页状态变化
+  useEffect(() => {
+    if (pagination !== false && pagination && typeof pagination === 'object') {
+      setInternalPagination(prev => ({
+        ...prev,
+        current: pagination.current || 1,
+        pageSize: pagination.pageSize || 50,
+        total: pagination.total || processedData.length,
+        showSizeChanger: pagination.showSizeChanger !== false,
+        pageSizeOptions: pagination.pageSizeOptions || ['20', '50', '100', '200', '500']
+      }));
+    }
+  }, [pagination, processedData.length]);
+
   // 分页数据
   const paginatedData = useMemo(() => {
     if (pagination === false) {
       return processedData;
     }
 
-    const startIndex = (pagination.current - 1) * pagination.pageSize;
-    const endIndex = startIndex + pagination.pageSize;
+    // 如果页面大小大于等于总数据量，返回所有数据（"全部"选项）
+    if (internalPagination.pageSize >= processedData.length) {
+      return processedData;
+    }
+
+    const startIndex = (internalPagination.current - 1) * internalPagination.pageSize;
+    const endIndex = startIndex + internalPagination.pageSize;
     return processedData.slice(startIndex, endIndex);
-  }, [processedData, pagination]);
+  }, [processedData, internalPagination.current, internalPagination.pageSize, pagination]);
 
   // 处理搜索
   const handleSearch = useCallback((value: string) => {
     setSearchText(value);
+    
+    // 搜索时重置到第一页
+    setInternalPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    
     if (onSearch) {
       onSearch(value);
     }
@@ -412,6 +456,12 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
     const newFilters = [...filters, newFilter];
     setFilters(newFilters);
     
+    // 添加筛选器时重置到第一页
+    setInternalPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    
     if (onFilter) {
       onFilter(newFilters);
     }
@@ -423,6 +473,12 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
     newFilters[index] = updatedFilter;
     setFilters(newFilters);
     
+    // 更新筛选器时重置到第一页
+    setInternalPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
+    
     if (onFilter) {
       onFilter(newFilters);
     }
@@ -432,6 +488,12 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
   const removeFilter = useCallback((index: number) => {
     const newFilters = filters.filter((_, i) => i !== index);
     setFilters(newFilters);
+    
+    // 移除筛选器时重置到第一页
+    setInternalPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
     
     if (onFilter) {
       onFilter(newFilters);
@@ -450,6 +512,36 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
       onColumnChange(newVisible, columnOrder);
     }
   }, [visibleColumns, columnOrder, onColumnChange]);
+
+  // 处理分页变化
+  const handlePageChange = useCallback((page: number, pageSize?: number) => {
+    const newPageSize = pageSize || internalPagination.pageSize;
+    let newPage = page;
+    
+    // 当页面大小改变时，重置到第一页
+    if (pageSize && pageSize !== internalPagination.pageSize) {
+      newPage = 1;
+    }
+    
+    const newPagination = {
+      ...internalPagination,
+      current: newPage,
+      pageSize: newPageSize,
+      total: processedData.length
+    };
+    
+    setInternalPagination(newPagination);
+    
+    // 调用外部回调
+    if (onPageChange) {
+      onPageChange(newPagination.current, newPagination.pageSize);
+    }
+  }, [internalPagination, processedData.length, onPageChange]);
+
+  // 处理页面大小变化
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    handlePageChange(1, newPageSize);
+  }, [handlePageChange]);
 
   // 渲染排序图标
   const renderSortIcon = (columnKey: string) => {
@@ -474,22 +566,24 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
         totalPages: 1,
         startIndex: 1,
         endIndex: processedData.length,
+        showSizeChanger: false,
+        pageSizeOptions: []
       };
     }
 
     const total = processedData.length; // 使用处理后的数据长度
-    const totalPages = Math.ceil(total / pagination.pageSize);
-    const startIndex = (pagination.current - 1) * pagination.pageSize + 1;
-    const endIndex = Math.min(pagination.current * pagination.pageSize, total);
+    const totalPages = Math.ceil(total / internalPagination.pageSize);
+    const startIndex = (internalPagination.current - 1) * internalPagination.pageSize + 1;
+    const endIndex = Math.min(internalPagination.current * internalPagination.pageSize, total);
 
     return {
-      ...pagination,
+      ...internalPagination,
       total, // 更新总数
       totalPages,
       startIndex,
       endIndex,
     };
-  }, [pagination, processedData.length]);
+  }, [internalPagination, processedData.length, pagination]);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -660,7 +754,7 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
                 <tbody className="[&_tr:last-child]:border-0">
                   {paginatedData.map((row, index) => (
                     <tr
-                      key={row._id || index}
+                      key={row._id ? `${row._id}-${index}` : `row-${index}`}
                       className="border-b transition-colors hover:bg-muted/50"
                     >
                       {columnOrder
@@ -710,25 +804,43 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                显示 {paginationInfo.startIndex}-{paginationInfo.endIndex} 条，共 {paginationInfo.total} 条
+                {paginationInfo.pageSize >= paginationInfo.total 
+                  ? `显示全部 ${paginationInfo.total} 条数据` 
+                  : `显示 ${paginationInfo.startIndex}-${paginationInfo.endIndex} 条，共 ${paginationInfo.total} 条`
+                }
               </span>
               
-              {pagination.showSizeChanger && (
+              {paginationInfo.showSizeChanger && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">每页显示</span>
                   <Select 
-                    value={paginationInfo.pageSize.toString()} 
-                    onValueChange={(value) => onPageChange?.(1, parseInt(value))}
+                    value={paginationInfo.pageSize === processedData.length && processedData.length > 500 ? 'all' : paginationInfo.pageSize.toString()} 
+                    onValueChange={(value) => {
+                      if (value === 'all') {
+                        handlePageSizeChange(processedData.length);
+                      } else {
+                        handlePageSizeChange(parseInt(value));
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(pagination.pageSizeOptions || ['20', '50', '100', '200', '500']).map(option => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
+                      {(paginationInfo.pageSizeOptions || ['20', '50', '100', '200', '500']).map(option => {
+                        if (option === '全部' || option === 'all') {
+                          return (
+                            <SelectItem key="all" value="all">
+                              全部
+                            </SelectItem>
+                          );
+                        }
+                        return (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <span className="text-sm text-muted-foreground">条</span>
@@ -736,33 +848,35 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange?.(paginationInfo.current - 1, paginationInfo.pageSize)}
-                disabled={paginationInfo.current <= 1 || loading}
-                className="h-8 px-3"
-              >
-                <ChevronLeft className="w-3 h-3" />
-                上一页
-              </Button>
+            {paginationInfo.pageSize < paginationInfo.total && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(paginationInfo.current - 1)}
+                  disabled={paginationInfo.current <= 1 || loading}
+                  className="h-8 px-3"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                  上一页
+                </Button>
 
-              <span className="text-sm text-muted-foreground px-2">
-                第 {paginationInfo.current} 页，共 {paginationInfo.totalPages} 页
-              </span>
+                <span className="text-sm text-muted-foreground px-2">
+                  第 {paginationInfo.current} 页，共 {paginationInfo.totalPages} 页
+                </span>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange?.(paginationInfo.current + 1, paginationInfo.pageSize)}
-                disabled={paginationInfo.current >= paginationInfo.totalPages || loading}
-                className="h-8 px-3"
-              >
-                下一页
-                <ChevronRight className="w-3 h-3" />
-              </Button>
-            </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(paginationInfo.current + 1)}
+                  disabled={paginationInfo.current >= paginationInfo.totalPages || loading}
+                  className="h-8 px-3"
+                >
+                  下一页
+                  <ChevronRight className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

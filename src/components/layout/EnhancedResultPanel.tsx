@@ -131,7 +131,19 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 导出状态
   const [showExportDialog, setShowExportDialog] = useState(false);
+  
+  // 分页状态管理
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  
   const { resolvedTheme } = useTheme();
+
+  // 分页处理函数
+  const handlePageChange = useCallback((page: number, size: number) => {
+    setCurrentPage(page);
+    setPageSize(size);
+    console.log(`Page changed to ${page}, size: ${size}`);
+  }, []);
 
   // 主题配置生成函数
   const getThemeConfig = useCallback(() => {
@@ -211,7 +223,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (!columns || !values) return null;
 
     const data = values.map((row, index) => {
-      const record: Record<string, any> = { _id: index };
+      const record: Record<string, any> = { _id: `query-${index}` };
       columns.forEach((col, colIndex) => {
         record[col] = row[colIndex];
       });
@@ -390,7 +402,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (!columns || !values) return null;
 
     let data = values.map((row, index) => {
-      const record: Record<string, any> = { _id: index };
+      const record: Record<string, any> = { _id: `data-${index}` };
       columns.forEach((col, colIndex) => {
         record[col] = row[colIndex];
       });
@@ -1274,7 +1286,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   <div className='flex-1 min-h-0'>
                     <AdvancedDataTable
                       data={parsedResult.data.map((row, rowIndex) => ({
-                        _id: rowIndex,
+                        _id: `result-${rowIndex}`,
                         ...row
                       }))}
                       columns={parsedResult.columns.map((column) => {
@@ -1310,13 +1322,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         };
                       })}
                       loading={false}
-                      pagination={{
-                        current: 1,
-                        pageSize: 50,
-                        total: parsedResult.data.length,
-                        showSizeChanger: true,
-                        pageSizeOptions: ['20', '50', '100', '200', '500'],
-                      }}
                       searchable={true}
                       filterable={true}
                       sortable={true}
@@ -1324,6 +1329,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       columnManagement={true}
                       showToolbar={false} // 禁用工具栏
                       className="h-full"
+                      pagination={{
+                        current: currentPage,
+                        pageSize: pageSize,
+                        total: parsedResult.data.length,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
+                      }}
+                      onPageChange={handlePageChange}
                     />
                   </div>
                 </div>
@@ -1735,7 +1748,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               <div className='flex-1 min-h-0'>
                 <AdvancedDataTable
                   data={parsedData.data.map((row, index) => ({
-                    _id: index,
+                    _id: `table-${index}`,
                     ...row
                   }))}
                   columns={parsedData.columns.map((column) => {
@@ -1772,11 +1785,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   })}
                   loading={false}
                   pagination={{
-                    current: 1,
-                    pageSize: 50,
+                    current: currentPage,
+                    pageSize: pageSize,
                     total: parsedData.data.length,
                     showSizeChanger: true,
-                    pageSizeOptions: ['20', '50', '100', '200', '500'],
+                    pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
                   }}
                   searchable={true}
                   filterable={true}
@@ -1784,6 +1797,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   exportable={true}
                   columnManagement={true}
                   className="h-full"
+                  onPageChange={handlePageChange}
                 />
               </div>
             </div>
