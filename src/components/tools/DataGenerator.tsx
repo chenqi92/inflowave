@@ -74,6 +74,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   const [isStopping, setIsStopping] = useState(false);
   const [shouldStop, setShouldStop] = useState(false);
   
+  // 新增性能优化状态
+  const [generatedCount, setGeneratedCount] = useState(0);
+  const [generationSpeed, setGenerationSpeed] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
+  
   // 新增状态
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [tables, setTables] = useState<string[]>([]);
@@ -811,9 +817,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 获取表结构信息
   const loadTableInfo = async (tableName: string) => {
     if (!activeConnectionId || !selectedDatabase || !tableName) {
-      console.log('loadTableInfo: 参数检查失败', { activeConnectionId, selectedDatabase, tableName });
+      console.log('❌ loadTableInfo: 参数检查失败', { activeConnectionId, selectedDatabase, tableName });
+      setTableInfo(null);
       return;
     }
+
+    console.log('🔄 开始加载表结构...', { tableName, database: selectedDatabase, connection: activeConnectionId });
 
     try {
       console.log(`开始分析表 "${tableName}" 的结构...`, { activeConnectionId, selectedDatabase });
@@ -834,7 +843,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         
         for (const query of fieldQueries) {
           try {
-            console.log('尝试字段查询:', query);
+            console.log('\ud83d\udd0e 尝试字段查询:', query);
             fieldResult = await safeTauriInvoke<any>('execute_query', {
               request: {
                 connectionId: activeConnectionId,
@@ -842,19 +851,25 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 query: query,
               },
             });
+            console.log('\ud83d\udce6 字段查询响应:', { 
+              success: fieldResult.success, 
+              dataLength: fieldResult.data?.length,
+              hasError: fieldResult.error,
+              query 
+            });
             if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
-              console.log('字段查询成功，使用查询:', query);
+              console.log('\u2705 字段查询成功，使用查询:', query);
               break;
             }
           } catch (queryError) {
-            console.log(`字段查询失败 "${query}":`, queryError);
+            console.log(`\u274c 字段查询失败 \"${query}\":`, queryError);
             continue;
           }
         }
 
-        if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
-          console.log('字段查询结果:', fieldResult.data);
-          console.log('字段查询第一行数据:', fieldResult.data[0]);
+        if (fieldResult && fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
+          console.log('\ud83d\udcc8 字段查询结果:', fieldResult.data);
+          console.log('\ud83d\udd0d 字段查询第一行数据:', fieldResult.data[0]);
           fieldResult.data.forEach((row: any) => {
             // 兼容不同版本的InfluxDB字段名称
             const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
@@ -885,7 +900,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
           });
         } else {
-          console.log('字段查询失败或无数据:', { success: fieldResult.success, dataLength: fieldResult.data?.length });
+          console.log('\u26a0\ufe0f 字段查询失败或无数据:', { 
+            hasResult: !!fieldResult,
+            success: fieldResult?.success, 
+            dataLength: fieldResult?.data?.length,
+            error: fieldResult?.error 
+          });
         }
 
         // 获取标签信息 - 尝试多种查询格式
@@ -899,7 +919,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         
         for (const query of tagQueries) {
           try {
-            console.log('尝试标签查询:', query);
+            console.log('\ud83c\udff7\ufe0f 尝试标签查询:', query);
             tagResult = await safeTauriInvoke<any>('execute_query', {
               request: {
                 connectionId: activeConnectionId,
@@ -907,19 +927,25 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 query: query,
               },
             });
+            console.log('\ud83d\udce6 标签查询响应:', { 
+              success: tagResult.success, 
+              dataLength: tagResult.data?.length,
+              hasError: tagResult.error,
+              query 
+            });
             if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
-              console.log('标签查询成功，使用查询:', query);
+              console.log('\u2705 标签查询成功，使用查询:', query);
               break;
             }
           } catch (queryError) {
-            console.log(`标签查询失败 "${query}":`, queryError);
+            console.log(`\u274c 标签查询失败 \"${query}\":`, queryError);
             continue;
           }
         }
 
-        if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
-          console.log('标签查询结果:', tagResult.data);
-          console.log('标签查询第一行数据:', tagResult.data[0]);
+        if (tagResult && tagResult.success && tagResult.data && tagResult.data.length > 0) {
+          console.log('\ud83c\udff7\ufe0f 标签查询结果:', tagResult.data);
+          console.log('\ud83d\udd0d 标签查询第一行数据:', tagResult.data[0]);
           tagResult.data.forEach((row: any) => {
             // 兼容不同版本的InfluxDB字段名称
             const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
@@ -929,7 +955,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
           });
         } else {
-          console.log('标签查询失败或无数据:', { success: tagResult.success, dataLength: tagResult.data?.length });
+          console.log('\u26a0\ufe0f 标签查询失败或无数据:', { 
+            hasResult: !!tagResult,
+            success: tagResult?.success, 
+            dataLength: tagResult?.data?.length,
+            error: tagResult?.error 
+          });
         }
       } catch (schemaError) {
         console.log('使用SHOW语句查询失败，尝试采样数据方法:', schemaError);
@@ -1087,7 +1118,58 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
     }
   };
 
-  // 为自定义表生成数据点
+  // 优化后的异步分批生成数据点
+  const generateCustomDataPointsBatch = async (batchIndex: number, batchSize: number): Promise<DataPoint[]> => {
+    if (!tableInfo) return [];
+
+    return new Promise((resolve) => {
+      // 使用 requestIdleCallback 避免阻塞 UI
+      const generateBatch = () => {
+        const data: DataPoint[] = [];
+        const now = Date.now();
+        const startIdx = batchIndex * batchSize;
+
+        for (let i = 0; i < batchSize; i++) {
+          // 生成时间戳（最近24小时内随机分布）
+          const timestamp = new Date(now - Math.random() * 24 * 60 * 60 * 1000);
+
+          // 生成标签
+          const tags: { [key: string]: string } = {};
+          tableInfo.tags.forEach(tag => {
+            const value = generateRandomValue(tag);
+            tags[tag.name] = String(value);
+          });
+
+          // 生成字段
+          const fields: { [key: string]: any } = {};
+          tableInfo.fields.forEach(field => {
+            const value = generateRandomValue(field);
+            fields[field.name] = value;
+          });
+
+          // 构建DataPoint对象
+          const dataPoint: DataPoint = {
+            measurement: tableInfo.name,
+            tags,
+            fields,
+            timestamp,
+          };
+          data.push(dataPoint);
+        }
+
+        resolve(data);
+      };
+
+      // 使用 setTimeout 让出控制权给其他任务
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(generateBatch);
+      } else {
+        setTimeout(generateBatch, 0);
+      }
+    });
+  };
+
+  // 保留原有的同步生成方法作为后备
   const generateCustomDataPoints = (count: number): DataPoint[] => {
     if (!tableInfo) return [];
 
@@ -1129,7 +1211,22 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   const stopGeneration = () => {
     setIsStopping(true);
     setShouldStop(true);
+    setIsPaused(false);
     showMessage.info('正在停止数据生成...');
+  };
+
+  // 暂停/恢复数据生成
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+    showMessage.info(isPaused ? '恢复数据生成' : '暂停数据生成');
+  };
+
+  // 计算生成速度
+  const updateGenerationSpeed = (currentCount: number, startTime: number) => {
+    const elapsed = (Date.now() - startTime) / 1000; // 秒
+    if (elapsed > 0) {
+      setGenerationSpeed(Math.round(currentCount / elapsed));
+    }
   };
 
   // 执行数据生成
@@ -1151,66 +1248,96 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
     try {
       if (mode === 'custom') {
-        // 自定义表数据生成
+        // 自定义表数据生成 - 优化后的流式生成
         if (!selectedTable || !tableInfo) {
           showMessage.error('请选择目标表');
           return;
         }
 
         setCurrentTask(`为表 "${selectedTable}" 生成数据`);
-        const dataPoints = generateCustomDataPoints(recordCount);
+        const startTimeStamp = Date.now();
+        setStartTime(startTimeStamp);
+        setGeneratedCount(0);
+        
+        // 动态计算批次大小，避免内存过大
+        const calculateBatchSize = (totalCount: number) => {
+          if (totalCount <= 1000) return Math.min(500, totalCount);
+          if (totalCount <= 10000) return 1000;
+          if (totalCount <= 50000) return 2000;
+          return 5000; // 大数据量时使用更大批次
+        };
 
-        if (dataPoints.length === 0) {
-          showMessage.error('无法生成数据，请检查表结构');
-          return;
-        }
+        const batchSize = calculateBatchSize(recordCount);
+        const totalBatches = Math.ceil(recordCount / batchSize);
+        let processedCount = 0;
 
-        // 分批写入数据
-        const batchSize = 500;
-        const batches = Math.ceil(dataPoints.length / batchSize);
+        for (let batchIndex = 0; batchIndex < totalBatches && !shouldStop; batchIndex++) {
+          // 检查暂停状态
+          while (isPaused && !shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
 
-        for (let j = 0; j < batches && !shouldStop; j++) {
           if (shouldStop) {
             showMessage.warning('数据生成已被用户停止');
             break;
           }
 
-          const batch = dataPoints.slice(j * batchSize, (j + 1) * batchSize);
-
-          const request: BatchWriteRequest = {
-            connectionId: activeConnectionId,
-            database: selectedDatabase,
-            points: batch,
-            precision: 'ms',
-          };
-
+          // 计算当前批次实际大小
+          const currentBatchSize = Math.min(batchSize, recordCount - processedCount);
+          
           try {
+            // 异步生成当前批次数据
+            const batchData = await generateCustomDataPointsBatch(batchIndex, currentBatchSize);
+            
+            if (batchData.length === 0) {
+              console.warn(`批次 ${batchIndex + 1} 生成的数据为空`);
+              continue;
+            }
+
+            // 写入数据
+            const request: BatchWriteRequest = {
+              connectionId: activeConnectionId,
+              database: selectedDatabase,
+              points: batchData,
+              precision: 'ms',
+            };
+
             const result = await safeTauriInvoke<WriteResult>(
               'write_data_points',
               { request }
             );
+            
             if (result.success) {
+              processedCount += currentBatchSize;
+              setGeneratedCount(processedCount);
+              updateGenerationSpeed(processedCount, startTimeStamp);
               console.log(
-                `成功写入批次 ${j + 1}/${batches} 到表 "${selectedTable}", 数据点: ${batch.length}`
+                `成功写入批次 ${batchIndex + 1}/${totalBatches} 到表 "${selectedTable}", 数据点: ${currentBatchSize}`
               );
             }
           } catch (error) {
-            console.error(`写入批次 ${j + 1} 失败:`, error);
-            showMessage.error(`写入批次 ${j + 1} 失败: ${error}`);
+            console.error(`批次 ${batchIndex + 1} 处理失败:`, error);
+            showMessage.error(`批次 ${batchIndex + 1} 处理失败: ${error}`);
+            // 继续处理下一批次，不中断整个过程
           }
 
-          // 更新进度
-          const batchProgress = (j + 1) / batches;
-          setProgress(Math.round(batchProgress * 100));
+          // 更新进度 (降低更新频率)
+          if (batchIndex % 5 === 0 || batchIndex === totalBatches - 1) {
+            const batchProgress = (batchIndex + 1) / totalBatches;
+            setProgress(Math.round(batchProgress * 100));
+          }
 
-          await new Promise(resolve => setTimeout(resolve, 50));
+          // 动态调整延迟时间
+          const delay = recordCount > 10000 ? 20 : 50;
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
 
         if (!shouldStop) {
           setProgress(100);
           setCurrentTask('');
+          const elapsed = (Date.now() - startTimeStamp) / 1000;
           showMessage.success(
-            `成功为表 "${selectedTable}" 生成 ${recordCount} 条数据！`
+            `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒`
           );
           
           setTimeout(() => {
@@ -1342,10 +1469,16 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
   // 当选择的表改变时加载表结构
   React.useEffect(() => {
-    if (selectedTable && mode === 'custom') {
+    if (selectedTable && mode === 'custom' && activeConnectionId && selectedDatabase) {
+      console.log('useEffect 触发 loadTableInfo:', { selectedTable, mode, activeConnectionId, selectedDatabase });
       loadTableInfo(selectedTable);
+    } else {
+      console.log('useEffect 未触发 loadTableInfo，条件不满足:', { selectedTable, mode, activeConnectionId, selectedDatabase });
+      if (!selectedTable && tableInfo) {
+        setTableInfo(null);
+      }
     }
-  }, [selectedTable, mode]);
+  }, [selectedTable, mode, activeConnectionId, selectedDatabase]);
 
   // 处理任务选择
   const handleTaskSelection = (taskName: string, checked: boolean) => {
@@ -1531,13 +1664,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               {selectedTable && (
                 <Button
                   onClick={() => loadTableInfo(selectedTable)}
-                  disabled={!selectedTable}
+                  disabled={!selectedTable || loading}
                   variant='outline'
                   size='sm'
-                  className='h-8 px-2'
-                  title="刷新表结构"
+                  className='h-8 px-3 flex items-center gap-1.5'
+                  title="刷新表结构信息"
                 >
                   <Database className='w-4 h-4' />
+                  <span className='text-xs hidden sm:inline'>刷新结构</span>
                 </Button>
               )}
             </div>
@@ -1576,15 +1710,34 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               生成数据
             </Button>
           ) : (
-            <Button
-              onClick={stopGeneration}
-              disabled={isStopping}
-              variant='destructive'
-              className='h-8 text-sm'
-            >
-              <Square className='w-4 h-4 mr-2' />
-              {isStopping ? '正在停止...' : '停止生成'}
-            </Button>
+            <div className='flex gap-2'>
+              <Button
+                onClick={togglePause}
+                variant='outline'
+                className='h-8 text-sm'
+              >
+                {isPaused ? (
+                  <>
+                    <PlayCircle className='w-4 h-4 mr-2' />
+                    恢复
+                  </>
+                ) : (
+                  <>
+                    <Square className='w-4 h-4 mr-2' />
+                    暂停
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={stopGeneration}
+                disabled={isStopping}
+                variant='destructive'
+                className='h-8 text-sm'
+              >
+                <Square className='w-4 h-4 mr-2' />
+                {isStopping ? '正在停止...' : '停止生成'}
+              </Button>
+            </div>
           )}
           <Button
             onClick={clearData}
@@ -1642,11 +1795,34 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         {loading && (
           <div className='mb-4'>
             <Progress value={progress} className='mb-2' />
-            {currentTask && (
-              <div className='text-sm text-muted-foreground'>
-                正在生成: {currentTask}
+            <div className='flex justify-between items-center text-sm text-muted-foreground mb-2'>
+              <span>{currentTask || '正在处理...'}</span>
+              <span>{progress}%</span>
+            </div>
+            
+            {/* 性能指标显示 */}
+            <div className='grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg text-sm'>
+              <div className='flex justify-between'>
+                <span>已生成:</span>
+                <span className='font-medium'>{generatedCount.toLocaleString()} 条</span>
               </div>
-            )}
+              <div className='flex justify-between'>
+                <span>生成速度:</span>
+                <span className='font-medium'>{generationSpeed} 条/秒</span>
+              </div>
+              <div className='flex justify-between'>
+                <span>状态:</span>
+                <span className={`font-medium ${isPaused ? 'text-yellow-600' : 'text-green-600'}`}>
+                  {isPaused ? '已暂停' : '生成中'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span>用时:</span>
+                <span className='font-medium'>
+                  {startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0} 秒
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
