@@ -5,6 +5,7 @@ import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { open } from '@tauri-apps/plugin-shell';
 // import KeyboardShortcuts from '@/components/common/KeyboardShortcuts';
 import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
@@ -318,11 +319,16 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     }
   };
 
-  const handleReportIssue = () => {
-    window.open('https://github.com/your-repo/issues', '_blank');
+  const handleReportIssue = async () => {
+    try {
+      await open('https://github.com/chenqi92/inflowave/issues');
+    } catch (error) {
+      console.error('Failed to open issue page:', error);
+      showMessage.error('无法打开反馈页面');
+    }
   };
 
-  const handleMenuAction = (action: string) => {
+  const handleMenuAction = async (action: string) => {
     console.log('🎯 处理菜单动作:', action);
     
     // 获取详细的连接状态信息
@@ -944,12 +950,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'api_docs':
-        window.open('https://docs.influxdata.com/influxdb/v1.8/tools/api/', '_blank');
+        try {
+          await open('https://docs.influxdata.com/influxdb/v1.8/tools/api/');
+        } catch (error) {
+          console.error('Failed to open API docs:', error);
+          showMessage.error('无法打开API文档');
+        }
         handled = true;
         break;
 
       case 'influxdb_docs':
-        window.open('https://docs.influxdata.com/', '_blank');
+        try {
+          await open('https://docs.influxdata.com/');
+        } catch (error) {
+          console.error('Failed to open InfluxDB docs:', error);
+          showMessage.error('无法打开InfluxDB文档');
+        }
         handled = true;
         break;
 
