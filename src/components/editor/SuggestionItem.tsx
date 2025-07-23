@@ -97,13 +97,16 @@ export const SuggestionItemComponent: React.FC<SuggestionItemComponentProps> = (
         {icon}
       </div>
 
-      {/* 内容区域 */}
+      {/* 内容区域 - 单行布局 */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* 主要标签 */}
           <div className="font-medium truncate text-xs">{item.label}</div>
+
+          {/* 详细信息标签 */}
           {item.detail && (
             <div className={cn(
-              'text-[10px] px-1 py-0.5 rounded text-right ml-1 flex-shrink-0',
+              'text-[10px] px-1 py-0.5 rounded text-right flex-shrink-0',
               selected
                 ? 'text-accent-foreground/70'
                 : 'text-muted-foreground'
@@ -111,19 +114,19 @@ export const SuggestionItemComponent: React.FC<SuggestionItemComponentProps> = (
               {item.detail}
             </div>
           )}
-        </div>
 
-        {/* 文档说明 */}
-        {item.documentation && (
-          <div className={cn(
-            'text-[10px] mt-0.5 truncate',
-            selected
-              ? 'text-accent-foreground/70'
-              : 'text-muted-foreground'
-          )}>
-            {item.documentation}
-          </div>
-        )}
+          {/* 文档说明 - 放在同一行 */}
+          {item.documentation && (
+            <div className={cn(
+              'text-[10px] truncate flex-1 ml-2',
+              selected
+                ? 'text-accent-foreground/70'
+                : 'text-muted-foreground'
+            )}>
+              {item.documentation}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -153,7 +153,7 @@ export const SmartSuggestionPopup: React.FC<SmartSuggestionPopupProps> = ({
         maxWidth: position.maxWidth || 384,
       }}
     >
-      {/* 建议列表 */}
+      {/* 建议列表 - 垂直布局 */}
       <div className="py-0.5">
         {suggestions.map((item, index) => (
           <div

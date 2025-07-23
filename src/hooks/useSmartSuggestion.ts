@@ -61,13 +61,8 @@ export function useSmartSuggestion(options: UseSmartSuggestionOptions): UseSmart
     let wordStartColumn = wordInfo.startColumn;
     let wordEndColumn = wordInfo.endColumn;
 
-    // 检查是否在空格后（用于上下文分析，但不影响当前单词的获取）
-    const isAfterSpace = position.column > 1 &&
-      lineText.charAt(position.column - 2) === ' ';
-
-    // 如果当前没有单词且在空格后，尝试获取更多上下文信息
-    if (!wordBeforeCursor && isAfterSpace) {
-      // 设置插入位置为当前光标位置
+    // 如果当前没有单词，设置插入位置为当前光标位置
+    if (!wordBeforeCursor) {
       wordStartColumn = position.column;
       wordEndColumn = position.column;
     }
@@ -164,10 +159,9 @@ export function useSmartSuggestion(options: UseSmartSuggestionOptions): UseSmart
       const context = getEditorContext(editor);
 
       // 检查是否需要显示提示
-      // 如果是强制触发或者有输入内容，则显示提示
+      // 只在强制触发或者有实际输入的单词时显示提示（不包括空格触发）
       const shouldShow = force ||
-        context.wordBeforeCursor.length >= minChars ||
-        context.lineText.trim().length > 0; // 即使没有当前单词，但行中有内容也可以显示提示
+        context.wordBeforeCursor.length >= minChars;
 
       if (!shouldShow) {
         hideSuggestions();
