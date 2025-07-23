@@ -50,6 +50,11 @@ import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
 // DropdownMenu相关组件已移除，使用自定义右键菜单
 
+// 导入弹框组件
+import TableStatsDialog from '@/components/database/TableStatsDialog';
+import TableDesignerDialog from '@/components/database/TableDesignerDialog';
+import TableInfoDialog from '@/components/database/TableInfoDialog';
+
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
 
@@ -166,6 +171,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     Map<string, number>
   >(new Map());
 
+  // 弹框状态管理
+  const [dialogStates, setDialogStates] = useState({
+    stats: { open: false, connectionId: '', database: '', tableName: '' },
+    designer: { open: false, connectionId: '', database: '', tableName: '' },
+    info: { open: false, connectionId: '', database: '', tableName: '' },
+  });
+
   const activeConnection = activeConnectionId
     ? getConnection(activeConnectionId)
     : null;
@@ -203,6 +215,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   };
 
   const displayConnectionInfo = getDisplayConnectionStatus();
+
+  // 弹框操作辅助函数
+  const openDialog = (type: 'stats' | 'designer' | 'info', connectionId: string, database: string, tableName: string) => {
+    setDialogStates(prev => ({
+      ...prev,
+      [type]: { open: true, connectionId, database, tableName }
+    }));
+  };
+
+  const closeDialog = (type: 'stats' | 'designer' | 'info') => {
+    setDialogStates(prev => ({
+      ...prev,
+      [type]: { open: false, connectionId: '', database: '', tableName: '' }
+    }));
+  };
 
   // 生成时间条件语句（使用当前选择的时间范围）
   const generateTimeCondition = (): string => {
@@ -1550,69 +1577,62 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         case 'query_table_count':
           if (contextMenuTarget.type === 'table') {
-            const countQuery = `SELECT COUNT(*) as total_records FROM "${contextMenuTarget.table}"`;
-            if (onCreateAndExecuteQuery) {
-              onCreateAndExecuteQuery(countQuery, contextMenuTarget.database);
-              showMessage.success(`正在统计表 "${contextMenuTarget.table}" 记录数`);
-            } else if (onCreateQueryTab) {
-              onCreateQueryTab(countQuery, contextMenuTarget.database);
-              showMessage.success(`已创建统计查询标签页，统计表 "${contextMenuTarget.table}" 记录数`);
-            } else {
-              const success = await writeToClipboard(countQuery, {
-                successMessage: `统计查询已复制到剪贴板: ${countQuery}`,
-                errorMessage: '复制失败',
-              });
-              if (!success) {
-                showMessage.info(`统计查询: ${countQuery}`);
-              }
-            }
-          }
-          break;
-
-        case 'query_table_structure':
-          if (contextMenuTarget.type === 'table') {
-            // InfluxDB 1.x 使用 SHOW FIELD KEYS 和 SHOW TAG KEYS 来查看表结构
-            const structureQuery = `-- 查看表 "${contextMenuTarget.table}" 的结构
-SHOW FIELD KEYS FROM "${contextMenuTarget.table}";
-SHOW TAG KEYS FROM "${contextMenuTarget.table}";`;
-            if (onCreateAndExecuteQuery) {
-              onCreateAndExecuteQuery(structureQuery, contextMenuTarget.database);
-              showMessage.success(`正在查看表 "${contextMenuTarget.table}" 结构`);
-            } else if (onCreateQueryTab) {
-              onCreateQueryTab(structureQuery, contextMenuTarget.database);
-              showMessage.success(`已创建结构查询标签页，查看表 "${contextMenuTarget.table}" 结构`);
-            } else {
-              const success = await writeToClipboard(structureQuery, {
-                successMessage: `结构查询已复制到剪贴板`,
-                errorMessage: '复制失败',
-              });
-              if (!success) {
-                showMessage.info(`结构查询: ${structureQuery}`);
-              }
-            }
+            // 打开统计记录数弹框
+            openDialog('stats', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
           }
           break;
 
         case 'table_designer':
           if (contextMenuTarget.type === 'table') {
-            openTableDesigner(contextMenuTarget);
+            // 打开表设计器弹框
+            openDialog('designer', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
           }
           break;
 
         case 'table_info':
           if (contextMenuTarget.type === 'table') {
-            showMessage.info(`表信息: ${contextMenuTarget.table}`);
+            // 打开表信息弹框
+            openDialog('info', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
           }
           break;
 
         case 'drop_table':
           if (contextMenuTarget.type === 'table') {
             const confirmed = await dialog.confirm({
-              title: '确认删除',
-              content: `确定要删除表 "${contextMenuTarget.table}" 吗？此操作不可撤销。`,
+              title: '确认删除表',
+              content: `确定要删除表 "${contextMenuTarget.table}" 吗？\n\n⚠️ 警告：此操作将永久删除表中的所有数据，无法恢复！`,
             });
             if (confirmed) {
-              showMessage.info(`删除表功能开发中: ${contextMenuTarget.table}`);
+              try {
+                setLoading(true);
+                console.log('🗑️ 删除表:', {
+                  connectionId: contextMenuTarget.connectionId,
+                  database: contextMenuTarget.database,
+                  table: contextMenuTarget.table
+                });
+
+                // 执行删除表的SQL命令
+                const dropQuery = `DROP MEASUREMENT "${contextMenuTarget.table}"`;
+                await safeTauriInvoke('execute_query', {
+                  request: {
+                    connectionId: contextMenuTarget.connectionId,
+                    database: contextMenuTarget.database,
+                    query: dropQuery,
+                  },
+                });
+
+                showMessage.success(`表 "${contextMenuTarget.table}" 已成功删除`);
+
+                // 刷新数据库树以反映删除操作
+                refreshTree();
+
+                console.log('✅ 表删除成功');
+              } catch (error) {
+                console.error('❌ 删除表失败:', error);
+                showMessage.error(`删除表失败: ${error}`);
+              } finally {
+                setLoading(false);
+              }
             }
           }
           break;
@@ -2499,16 +2519,7 @@ SHOW TAG KEYS FROM "${contextMenuTarget.table}";`;
                                 <Calculator className="w-4 h-4" />
                                 统计记录数
                               </button>
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
-                                  handleContextMenuAction('query_table_structure');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                <Table className="w-4 h-4" />
-                                查看表结构
-                              </button>
+
                               <div className="my-1 h-px bg-border" />
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作</div>
                               <button
@@ -2628,6 +2639,31 @@ SHOW TAG KEYS FROM "${contextMenuTarget.table}";`;
 
 
     </Card>
+
+    {/* 表相关弹框 */}
+    <TableStatsDialog
+      open={dialogStates.stats.open}
+      onClose={() => closeDialog('stats')}
+      connectionId={dialogStates.stats.connectionId}
+      database={dialogStates.stats.database}
+      tableName={dialogStates.stats.tableName}
+    />
+
+    <TableDesignerDialog
+      open={dialogStates.designer.open}
+      onClose={() => closeDialog('designer')}
+      connectionId={dialogStates.designer.connectionId}
+      database={dialogStates.designer.database}
+      tableName={dialogStates.designer.tableName}
+    />
+
+    <TableInfoDialog
+      open={dialogStates.info.open}
+      onClose={() => closeDialog('info')}
+      connectionId={dialogStates.info.connectionId}
+      database={dialogStates.info.database}
+      tableName={dialogStates.info.tableName}
+    />
     </>
   );
 };
