@@ -29,6 +29,7 @@ import {
     TooltipTrigger,
     TooltipContent,
 } from '@/components/ui';
+import {ScrollArea, ScrollBar} from '@/components/ui/scroll-area';
 import {
     DndContext,
     closestCenter,
@@ -270,6 +271,7 @@ import {
     Hash,
     ChevronDown,
 } from 'lucide-react';
+import {cn} from '@/lib/utils';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
@@ -1014,41 +1016,58 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <div className="h-full overflow-auto desktop-page-scroll-container">
-                            <table className="w-full caption-bottom text-sm">
-                                <thead className="sticky top-0 bg-background z-10 border-b">
-                                    <tr className="border-b transition-colors hover:bg-muted/50">
-                                        {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
-                                            <th
-                                                key={column}
-                                                className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${
-                                                    column === '#' ? 'w-16' : 'cursor-pointer hover:bg-muted/50'
-                                                }`}
-                                                onClick={() => column !== '#' && handleSort(column)}
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    <span>{column === '#' ? '序号' : column}</span>
-                                                    {column === 'time' && (
+                        <ScrollArea className="h-full">
+                            <div className="min-w-max">
+                                <table className="w-full caption-bottom text-sm">
+                                    <thead className="sticky top-0 bg-background z-10 border-b">
+                                        <tr className="border-b transition-colors hover:bg-muted/50">
+                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => {
+                                                // 计算列的最小宽度
+                                                const getColumnMinWidth = (col: string) => {
+                                                    if (col === '#') return '60px';
+                                                    if (col === 'time') return '180px';
+                                                    // 根据列名长度计算最小宽度，确保列名完整显示
+                                                    const colLength = col.length;
+                                                    return `${Math.max(120, colLength * 12)}px`;
+                                                };
+
+                                                const minWidth = getColumnMinWidth(column);
+
+                                                return (
+                                                    <th
+                                                        key={column}
+                                                        className={cn(
+                                                            'h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
+                                                            column === '#' ? '' : 'cursor-pointer hover:bg-muted/50'
+                                                        )}
+                                                        style={{ minWidth }}
+                                                        onClick={() => column !== '#' && handleSort(column)}
+                                                    >
+                                                        <div className="flex items-center gap-1 whitespace-nowrap">
+                                                            <span className="truncate" title={column === '#' ? '序号' : column}>
+                                                                {column === '#' ? '序号' : column}
+                                                            </span>
+                                                            {column === 'time' && (
                                                         <Badge variant="secondary" className="text-xs">
                                                             时间
                                                         </Badge>
-                                                    )}
-                                                    {column === '#' && (
+                                                            )}
+                                                            {column === '#' && (
                                                         <Badge variant="outline" className="text-xs">
                                                             #
                                                         </Badge>
-                                                    )}
-                                                    {column !== 'time' && column !== '#' && (
+                                                            )}
+                                                            {column !== 'time' && column !== '#' && (
                                                         <span className="text-xs text-muted-foreground/60" title="客户端排序">
                                                             ⚡
                                                         </span>
-                                                    )}
-                                                    {sortColumn === column && column !== '#' && (
+                                                            )}
+                                                            {sortColumn === column && column !== '#' && (
                                                         <span className="text-xs">
                                                             {sortDirection === 'asc' ? '↑' : '↓'}
                                                         </span>
-                                                    )}
-                                                    {column !== '#' && (
+                                                            )}
+                                                            {column !== '#' && (
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button
@@ -1066,11 +1085,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
-                                                    )}
-                                                </div>
-                                            </th>
-                                        ))}
-                                    </tr>
+                                                            )}
+                                                        </div>
+                                                    </th>
+                                                );
+                                            })}
+                                        </tr>
                                 </thead>
                                 <tbody className="[&_tr:last-child]:border-0">
                                     {data.map((row, index) => {
@@ -1084,29 +1104,47 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                 key={uniqueKey}
                                                 className="border-b transition-colors hover:bg-muted/50"
                                             >
-                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => (
-                                                <td
-                                                    key={column}
-                                                    className={`p-4 align-middle text-xs ${
-                                                        column === '#'
-                                                            ? 'font-medium text-muted-foreground bg-muted/20 text-center'
-                                                            : 'font-mono'
-                                                    }`}
-                                                >
-                                                    {column === '#'
-                                                        ? row[column]
-                                                        : column === 'time'
-                                                        ? new Date(row[column]).toLocaleString()
-                                                        : String(row[column] || '-')
-                                                    }
-                                                </td>
-                                            ))}
+                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => {
+                                                // 计算列的最小宽度（与表头保持一致）
+                                                const getColumnMinWidth = (col: string) => {
+                                                    if (col === '#') return '60px';
+                                                    if (col === 'time') return '180px';
+                                                    const colLength = col.length;
+                                                    return `${Math.max(120, colLength * 12)}px`;
+                                                };
+
+                                                const minWidth = getColumnMinWidth(column);
+
+                                                return (
+                                                    <td
+                                                        key={column}
+                                                        className={cn(
+                                                            'p-4 align-middle text-xs',
+                                                            column === '#'
+                                                                ? 'font-medium text-muted-foreground bg-muted/20 text-center'
+                                                                : 'font-mono'
+                                                        )}
+                                                        style={{ minWidth }}
+                                                    >
+                                                        <div className="truncate" title={String(row[column] || '-')}>
+                                                            {column === '#'
+                                                                ? row[column]
+                                                                : column === 'time'
+                                                                ? new Date(row[column]).toLocaleString()
+                                                                : String(row[column] || '-')
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                );
+                                            })}
                                             </tr>
                                         );
                                     })}
                                 </tbody>
                             </table>
                         </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
                             <Database className="w-8 h-8 mr-2"/>

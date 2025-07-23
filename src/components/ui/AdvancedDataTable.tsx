@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spin } from '@/components/ui/Spin';
 import {
   Search,
@@ -720,75 +721,108 @@ export const AdvancedDataTable: React.FC<AdvancedDataTableProps> = ({
               <span className="ml-2">加载中...</span>
             </div>
           ) : processedData.length > 0 ? (
-            <div className="h-full overflow-auto">
-              <table className="w-full caption-bottom text-sm">
-                <thead className="sticky top-0 bg-background z-10 border-b">
-                  <tr className="border-b transition-colors hover:bg-muted/50">
-                    {columnOrder
-                      .filter(columnKey => visibleColumns.includes(columnKey))
-                      .map((columnKey) => {
-                        const column = columns.find(col => col.key === columnKey);
-                        if (!column) return null;
-
-                        const canSort = sortable && (column.sortable !== false);
-
-                        return (
-                          <th
-                            key={columnKey}
-                            className={cn(
-                              'h-12 px-4 text-left align-middle font-medium text-muted-foreground group',
-                              canSort && 'cursor-pointer hover:bg-muted/50',
-                              column.width && `w-${column.width}`
-                            )}
-                            onClick={() => canSort && handleSort(columnKey)}
-                          >
-                            <div className="flex items-center">
-                              <span>{column.title}</span>
-                              {renderSortIcon(columnKey)}
-                            </div>
-                          </th>
-                        );
-                      })}
-                  </tr>
-                </thead>
-                <tbody className="[&_tr:last-child]:border-0">
-                  {paginatedData.map((row, index) => (
-                    <tr
-                      key={row._id ? `${row._id}-${index}` : `row-${index}`}
-                      className="border-b transition-colors hover:bg-muted/50"
-                    >
+            <ScrollArea className="h-full">
+              <div className="min-w-max">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="sticky top-0 bg-background z-10 border-b">
+                    <tr className="border-b transition-colors hover:bg-muted/50">
                       {columnOrder
                         .filter(columnKey => visibleColumns.includes(columnKey))
                         .map((columnKey) => {
                           const column = columns.find(col => col.key === columnKey);
                           if (!column) return null;
 
-                          const value = row[columnKey];
-                          
+                          const canSort = sortable && (column.sortable !== false);
+
+                          // 计算列的最小宽度
+                          const getColumnMinWidth = (key: string, title: string) => {
+                            if (key === '#') return '60px';
+                            if (key === 'time') return '180px';
+                            // 根据标题长度计算最小宽度，确保标题完整显示
+                            const titleLength = title.length;
+                            return `${Math.max(120, titleLength * 12)}px`;
+                          };
+
+                          const minWidth = getColumnMinWidth(columnKey, column.title);
+
                           return (
-                            <td
+                            <th
                               key={columnKey}
                               className={cn(
-                                'p-4 align-middle text-xs',
-                                columnKey === '#' 
-                                  ? 'font-medium text-muted-foreground bg-muted/20 text-center'
-                                  : 'font-mono'
+                                'h-12 px-4 text-left align-middle font-medium text-muted-foreground group whitespace-nowrap',
+                                canSort && 'cursor-pointer hover:bg-muted/50'
                               )}
+                              style={{
+                                minWidth,
+                                width: column.width ? `${column.width}px` : minWidth
+                              }}
+                              onClick={() => canSort && handleSort(columnKey)}
                             >
-                              {columnKey === '#' 
-                                ? value
-                                : columnKey === 'time' && value
-                                ? new Date(value).toLocaleString()
-                                : String(value || '-')
-                              }
-                            </td>
+                              <div className="flex items-center whitespace-nowrap">
+                                <span className="truncate" title={column.title}>{column.title}</span>
+                                {renderSortIcon(columnKey)}
+                              </div>
+                            </th>
                           );
                         })}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="[&_tr:last-child]:border-0">
+                    {paginatedData.map((row, index) => (
+                      <tr
+                        key={row._id ? `${row._id}-${index}` : `row-${index}`}
+                        className="border-b transition-colors hover:bg-muted/50"
+                      >
+                        {columnOrder
+                          .filter(columnKey => visibleColumns.includes(columnKey))
+                          .map((columnKey) => {
+                            const column = columns.find(col => col.key === columnKey);
+                            if (!column) return null;
+
+                            const value = row[columnKey];
+
+                            // 计算列的最小宽度（与表头保持一致）
+                            const getColumnMinWidth = (key: string, title: string) => {
+                              if (key === '#') return '60px';
+                              if (key === 'time') return '180px';
+                              const titleLength = title.length;
+                              return `${Math.max(120, titleLength * 12)}px`;
+                            };
+
+                            const minWidth = getColumnMinWidth(columnKey, column.title);
+
+                            return (
+                              <td
+                                key={columnKey}
+                                className={cn(
+                                  'p-4 align-middle text-xs',
+                                  columnKey === '#'
+                                    ? 'font-medium text-muted-foreground bg-muted/20 text-center'
+                                    : 'font-mono'
+                                )}
+                                style={{
+                                  minWidth,
+                                  width: column.width ? `${column.width}px` : minWidth
+                                }}
+                              >
+                                <div className="truncate" title={String(value || '-')}>
+                                  {columnKey === '#'
+                                    ? value
+                                    : columnKey === 'time' && value
+                                    ? new Date(value).toLocaleString()
+                                    : String(value || '-')
+                                  }
+                                </div>
+                              </td>
+                            );
+                          })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           ) : (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               <Database className="w-8 h-8 mr-2" />
