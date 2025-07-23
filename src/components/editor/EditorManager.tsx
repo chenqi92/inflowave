@@ -26,6 +26,7 @@ import {
 import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
 import { unifiedSyntaxManager } from '@/utils/unifiedSyntaxHighlight';
 import { versionToLanguageType, type DatabaseLanguageType } from '@/types/database';
+import { debugMonarchTokenizer, checkInfluxQLTokenizer, fixInfluxQLTokenizer, validateTokenizerFix } from '@/utils/debugSyntaxHighlight';
 
 
 
@@ -146,9 +147,29 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           // 触发重新渲染
           editor.render(true);
 
-          // 验证语法高亮
+          // 验证语法高亮并尝试修复
           setTimeout(() => {
             unifiedSyntaxManager.validateSyntaxHighlight(editor);
+
+            // 如果语法高亮不工作，尝试调试和修复
+            setTimeout(() => {
+              console.log('🔧 开始语法高亮调试和修复流程...');
+
+              // 1. 运行基础调试
+              debugMonarchTokenizer();
+
+              // 2. 检查InfluxQL tokenizer
+              checkInfluxQLTokenizer();
+
+              // 3. 修复InfluxQL tokenizer
+              fixInfluxQLTokenizer();
+
+              // 4. 验证修复效果
+              setTimeout(() => {
+                validateTokenizerFix(editor);
+              }, 200);
+
+            }, 500);
           }, 300);
 
           console.log('✅ 连接状态变化后语法高亮刷新完成');
@@ -846,6 +867,13 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                       // 使用自定义语法高亮验证
                       setTimeout(() => {
                         unifiedSyntaxManager.validateSyntaxHighlight(editor);
+
+                        // 如果语法高亮仍然不工作，尝试修复
+                        setTimeout(() => {
+                          console.log('🔧 编辑器挂载后语法高亮修复...');
+                          fixInfluxQLTokenizer();
+                          validateTokenizerFix(editor);
+                        }, 200);
                       }, 500);
                     } catch (renderError) {
                       console.warn('⚠️ 编辑器重新渲染失败:', renderError);
