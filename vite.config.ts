@@ -112,7 +112,23 @@ export default defineConfig({
             'lodash-es',
             '@tauri-apps/api',
             '@tauri-apps/plugin-shell',
+            'monaco-editor/esm/vs/editor/editor.worker',
+            'monaco-editor/esm/vs/language/typescript/ts.worker',
+            'monaco-editor/esm/vs/language/json/json.worker',
+            'monaco-editor/esm/vs/language/css/css.worker',
+            'monaco-editor/esm/vs/language/html/html.worker',
         ],
         force: true, // 强制重新构建依赖
+    },
+
+    // Worker配置
+    worker: {
+        format: 'es',
+        plugins: () => [react()],
+    },
+
+    // 定义全局变量
+    define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
 } as any); // 使用类型断言来支持Vitest配置

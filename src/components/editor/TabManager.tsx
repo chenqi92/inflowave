@@ -205,6 +205,23 @@ export const TabManager: React.FC<TabManagerProps> = ({
     setSaveConfirmDialog(prev => ({ ...prev, open: false }));
   }, []);
 
+  // 移除标签
+  const removeTab = useCallback((tabId: string) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === tabId);
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    onTabsChange(newTabs);
+
+    // 如果删除的是当前活跃标签，智能切换到其他标签
+    if (activeKey === tabId && newTabs.length > 0) {
+      // 优先选择右侧标签，如果没有则选择左侧标签
+      let nextActiveIndex = currentIndex;
+      if (nextActiveIndex >= newTabs.length) {
+        nextActiveIndex = newTabs.length - 1;
+      }
+      onActiveKeyChange(newTabs[nextActiveIndex].id);
+    }
+  }, [tabs, activeKey, onTabsChange, onActiveKeyChange]);
+
   // 右键菜单操作处理
   const handleCloseTab = useCallback((tabId: string) => {
     const tab = tabs.find(t => t.id === tabId);
@@ -213,21 +230,9 @@ export const TabManager: React.FC<TabManagerProps> = ({
     if (tab.modified) {
       setClosingTab({ id: tab.id, title: tab.title });
     } else {
-      const currentIndex = tabs.findIndex(t => t.id === tabId);
-      const newTabs = tabs.filter(t => t.id !== tabId);
-      onTabsChange(newTabs);
-
-      // 如果关闭的是当前活动标签，智能切换到其他标签
-      if (activeKey === tabId && newTabs.length > 0) {
-        // 优先选择右侧标签，如果没有则选择左侧标签
-        let nextActiveIndex = currentIndex;
-        if (nextActiveIndex >= newTabs.length) {
-          nextActiveIndex = newTabs.length - 1;
-        }
-        onActiveKeyChange(newTabs[nextActiveIndex].id);
-      }
+      removeTab(tabId);
     }
-  }, [tabs, activeKey, onTabsChange, onActiveKeyChange]);
+  }, [tabs, removeTab]);
 
   const handleCloseOtherTabs = useCallback((keepTabId: string) => {
     const result = closeOtherTabs(keepTabId);
@@ -357,23 +362,6 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
     console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
   }, [tabs, onTabsChange, onActiveKeyChange]);
-
-  // 移除标签
-  const removeTab = useCallback((tabId: string) => {
-    const currentIndex = tabs.findIndex(tab => tab.id === tabId);
-    const newTabs = tabs.filter(tab => tab.id !== tabId);
-    onTabsChange(newTabs);
-
-    // 如果删除的是当前活跃标签，智能切换到其他标签
-    if (activeKey === tabId && newTabs.length > 0) {
-      // 优先选择右侧标签，如果没有则选择左侧标签
-      let nextActiveIndex = currentIndex;
-      if (nextActiveIndex >= newTabs.length) {
-        nextActiveIndex = newTabs.length - 1;
-      }
-      onActiveKeyChange(newTabs[nextActiveIndex].id);
-    }
-  }, [tabs, activeKey, onTabsChange, onActiveKeyChange]);
 
   // 关闭标签
   const closeTab = useCallback((tabId: string) => {

@@ -9,7 +9,7 @@ import React, {
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { TooltipProvider } from '@/components/ui/Tooltip';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, FolderOpen } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { showMessage } from '@/utils/message';
@@ -226,13 +226,22 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     // 监听已打开数据库变化
     useEffect(() => {
       setDatabases(openedDatabasesList);
-      
+
       if (openedDatabasesList.length > 0 && !selectedDatabase) {
         setSelectedDatabase(openedDatabasesList[0]);
       } else if (openedDatabasesList.length === 0) {
         setSelectedDatabase('');
       }
     }, [openedDatabasesList, selectedDatabase]);
+
+    // 确保当有标签页但没有activeKey时，自动选择最后一个标签页
+    useEffect(() => {
+      if (tabs.length > 0 && (!activeKey || !tabs.find(tab => tab.id === activeKey))) {
+        const lastTab = tabs[tabs.length - 1];
+        setActiveKey(lastTab.id);
+        console.log(`🔄 自动切换到标签页: ${lastTab.title}`);
+      }
+    }, [tabs, activeKey, setActiveKey]);
 
     return (
       <TooltipProvider>
@@ -268,43 +277,60 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
           {/* 编辑器内容 */}
           <div className='flex-1 min-h-0 overflow-hidden'>
-            {currentTab ? (
-              currentTab.type === 'data-browser' ? (
-                <TableDataBrowser
-                  connectionId={currentTab.connectionId!}
-                  database={currentTab.database!}
-                  tableName={currentTab.tableName!}
-                />
+            {tabs.length > 0 ? (
+              currentTab ? (
+                currentTab.type === 'data-browser' ? (
+                  <TableDataBrowser
+                    connectionId={currentTab.connectionId!}
+                    database={currentTab.database!}
+                    tableName={currentTab.tableName!}
+                  />
+                ) : (
+                  <div className="h-full flex flex-col">
+                    {/* 查询工具栏 - 仅在查询类型tab中显示 */}
+                    {currentTab.type === 'query' && (
+                      <QueryToolbar
+                        selectedConnectionId={activeConnectionId}
+                        selectedDatabase={selectedDatabase}
+                        selectedTimeRange={selectedTimeRange}
+                        onConnectionChange={(connectionId) => {
+                          setActiveConnection(connectionId);
+                          setSelectedDatabase('');
+                        }}
+                        onDatabaseChange={setSelectedDatabase}
+                        onTimeRangeChange={setSelectedTimeRange}
+                        onExecuteQuery={executeQuery}
+                        onSaveQuery={saveCurrentTab}
+                        onFormatSQL={handleFormatSQL}
+                        loading={loading}
+                        disabled={false}
+                      />
+                    )}
+
+                    <div className="flex-1">
+                      <EditorManager
+                        currentTab={currentTab}
+                        selectedDatabase={selectedDatabase}
+                        databases={databases}
+                        onContentChange={(content) => handleTabContentChange(currentTab.id, content)}
+                        onExecuteQuery={executeQuery}
+                      />
+                    </div>
+                  </div>
+                )
               ) : (
-                <div className="h-full flex flex-col">
-                  {/* 查询工具栏 - 仅在查询类型tab中显示 */}
-                  {currentTab.type === 'query' && (
-                    <QueryToolbar
-                      selectedConnectionId={activeConnectionId}
-                      selectedDatabase={selectedDatabase}
-                      selectedTimeRange={selectedTimeRange}
-                      onConnectionChange={(connectionId) => {
-                        setActiveConnection(connectionId);
-                        setSelectedDatabase('');
-                      }}
-                      onDatabaseChange={setSelectedDatabase}
-                      onTimeRangeChange={setSelectedTimeRange}
-                      onExecuteQuery={executeQuery}
-                      onSaveQuery={saveCurrentTab}
-                      onFormatSQL={handleFormatSQL}
-                      loading={loading}
-                      disabled={false}
-                    />
-                  )}
-                  
-                  <div className="flex-1">
-                    <EditorManager
-                      currentTab={currentTab}
-                      selectedDatabase={selectedDatabase}
-                      databases={databases}
-                      onContentChange={(content) => handleTabContentChange(currentTab.id, content)}
-                      onExecuteQuery={executeQuery}
-                    />
+                <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
+                  <div className='text-center'>
+                    <FileText className='w-12 h-12 mx-auto mb-4' />
+                    <p className="mb-4">请选择一个标签页</p>
+                    <Button
+                      variant='default'
+                      onClick={() => setActiveKey(tabs[tabs.length - 1].id)}
+                      className='mt-2'
+                    >
+                      <FileText className='w-4 h-4 mr-2' />
+                      打开最后一个标签页
+                    </Button>
                   </div>
                 </div>
               )
@@ -312,15 +338,23 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
                 <div className='text-center'>
                   <FileText className='w-12 h-12 mx-auto mb-4' />
-                  <p>暂无打开的文件</p>
-                  <Button
-                    variant='default'
-                    onClick={() => createNewTab()}
-                    className='mt-2'
-                  >
-                    <Plus className='w-4 h-4 mr-2' />
-                    新建查询
-                  </Button>
+                  <p className="mb-4">暂无打开的文件</p>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant='default'
+                      onClick={() => createNewTab()}
+                    >
+                      <Plus className='w-4 h-4 mr-2' />
+                      新建查询
+                    </Button>
+                    <Button
+                      variant='outline'
+                      onClick={openFile}
+                    >
+                      <FolderOpen className='w-4 h-4 mr-2' />
+                      打开文件
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
