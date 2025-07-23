@@ -84,29 +84,30 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelec
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center p-2 hover:bg-accent rounded"
+            className="flex items-center px-2 py-1.5 hover:bg-accent rounded text-sm"
         >
-            <div className="flex items-center flex-1">
+            <div className="flex items-center flex-1 min-w-0">
                 <Checkbox
                     checked={isSelected}
                     onChange={handleToggle}
                     onClick={handleToggle}
                     disabled={column === '#'}
-                    className="mr-2"
+                    className="mr-2 h-4 w-4 flex-shrink-0"
                 />
                 <span
-                    className={`flex-1 ${column === '#' ? 'cursor-default' : 'cursor-pointer'}`}
+                    className={`flex-1 text-sm truncate ${column === '#' ? 'cursor-default' : 'cursor-pointer'}`}
                     onClick={handleToggle}
+                    title={column === '#' ? '序号' : column}
                 >
                     {column === '#' ? '序号' : column}
                 </span>
                 {column === 'time' && (
-                    <Badge variant="secondary" className="text-xs ml-2">
+                    <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
                         时间
                     </Badge>
                 )}
                 {column === '#' && (
-                    <Badge variant="outline" className="text-xs ml-2">
+                    <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">
                         必选
                     </Badge>
                 )}
@@ -114,7 +115,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelec
             <div
                 {...attributes}
                 {...listeners}
-                className="text-xs text-muted-foreground ml-2 cursor-move p-1"
+                className="text-xs text-muted-foreground ml-2 cursor-move p-1 flex-shrink-0"
                 title="拖拽排序"
             >
                 ⋮⋮
@@ -901,20 +902,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                         </span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto">
-                                    <div className="p-2">
-                                        <div className="flex items-center justify-between mb-2">
+                                <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
+                                    <div className="p-3">
+                                        <div className="flex items-center justify-between mb-3">
                                             <span className="text-sm font-medium">列显示设置</span>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={handleSelectAll}
-                                                className="h-6 text-xs"
+                                                className="h-7 px-2 text-xs"
                                             >
                                                 {selectedColumns.length === columns.length ? '取消全选' : '全选'}
                                             </Button>
                                         </div>
-                                        <div className="text-xs text-muted-foreground mb-2">
+                                        <div className="text-xs text-muted-foreground mb-3">
                                             拖拽调整顺序，勾选显示列
                                         </div>
                                         <DndContext

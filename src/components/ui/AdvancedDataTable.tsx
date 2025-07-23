@@ -165,17 +165,22 @@ const ColumnManager: React.FC<{
   onColumnOrderChange: (newOrder: string[]) => void;
 }> = ({ columns, visibleColumns, onColumnToggle }) => {
   return (
-    <div className="space-y-2 max-h-64 overflow-auto">
+    <div className="space-y-1 max-h-64 overflow-auto">
       {columns.map(column => (
-        <div key={column.key} className="flex items-center gap-2 p-2 hover:bg-accent rounded">
-          <Checkbox
-            checked={visibleColumns.includes(column.key)}
-            onCheckedChange={() => onColumnToggle(column.key)}
-          />
-          <span className="flex-1 text-sm">{column.title}</span>
-          {column.key === 'time' && (
-            <Badge variant="secondary" className="text-xs">时间</Badge>
-          )}
+        <div key={column.key} className="flex items-center px-2 py-1.5 hover:bg-accent rounded text-sm">
+          <div className="flex items-center flex-1 min-w-0">
+            <Checkbox
+              checked={visibleColumns.includes(column.key)}
+              onCheckedChange={() => onColumnToggle(column.key)}
+              className="mr-2 h-4 w-4 flex-shrink-0"
+            />
+            <span className="flex-1 text-sm truncate" title={column.title}>
+              {column.title}
+            </span>
+            {column.key === 'time' && (
+              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">时间</Badge>
+            )}
+          </div>
         </div>
       ))}
     </div>
