@@ -32,6 +32,7 @@ interface VirtualTableRowProps {
   index: number;
   columnOrder: string[];
   selectedColumns: string[];
+  columnWidths: Record<string, number>;
   isSelected: boolean;
   onRowSelect: (index: number) => void;
   onCopyRow: (index: number, format?: 'text' | 'json' | 'csv') => void;
@@ -44,6 +45,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
     index,
     columnOrder,
     selectedColumns,
+    columnWidths,
     isSelected,
     onRowSelect,
     onCopyRow,
@@ -75,11 +77,11 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
     return (
       <div
         className={cn(
-          'flex border-b transition-colors hover:bg-muted/50 cursor-pointer group relative min-h-[40px]',
+          'virtual-table-row flex border-b transition-colors hover:bg-muted/50 cursor-pointer group relative min-h-[40px]',
           isSelected && 'bg-blue-50 hover:bg-blue-100'
         )}
         onClick={handleRowClick}
-        style={{ display: 'flex', alignItems: 'center' }}
+        style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content' }}
       >
         {visibleColumns.map(column => {
           if (column === '_actions') {
@@ -134,26 +136,19 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
             );
           }
 
-          // 计算列的最小宽度
-          const getColumnMinWidth = (col: string) => {
-            if (col === '#') return '60px';
-            if (col === 'time') return '180px';
-            const colLength = col.length;
-            return `${Math.max(120, colLength * 12)}px`;
-          };
-
-          const minWidth = getColumnMinWidth(column);
+          // 使用统一的列宽度
+          const width = columnWidths[column] || 120;
 
           return (
             <div
               key={column}
               className={cn(
-                'px-3 py-2 text-xs flex items-center',
+                'virtual-table-column px-3 py-2 text-xs flex items-center',
                 column === '#'
                   ? 'font-medium text-muted-foreground bg-muted/20 justify-center'
                   : 'font-mono'
               )}
-              style={{ minWidth, flexShrink: 0 }}
+              style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, flexShrink: 0 }}
               onDoubleClick={() => onCopyCell(index, column)}
               title={`双击复制: ${String(row[column] || '-')}`}
             >
@@ -169,6 +164,17 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
         })}
       </div>
     );
+  },
+  (prevProps, nextProps) => {
+    // 优化的memo比较函数，只在必要时重新渲染
+    return (
+      prevProps.index === nextProps.index &&
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.row === nextProps.row &&
+      prevProps.columnOrder === nextProps.columnOrder &&
+      prevProps.selectedColumns === nextProps.selectedColumns &&
+      prevProps.columnWidths === nextProps.columnWidths
+    );
   }
 );
 
@@ -176,6 +182,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
 interface VirtualTableHeaderProps {
   columnOrder: string[];
   selectedColumns: string[];
+  columnWidths: Record<string, number>;
   sortColumn: string;
   sortDirection: 'asc' | 'desc';
   selectedRowsCount: number;
@@ -190,6 +197,7 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(
   ({
     columnOrder,
     selectedColumns,
+    columnWidths,
     sortColumn,
     sortDirection,
     selectedRowsCount,
@@ -212,7 +220,7 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(
       selectedRowsCount > 0 && selectedRowsCount === totalRowsCount;
 
     return (
-      <div className='flex border-b bg-muted/30 z-10 min-h-[40px] flex-shrink-0'>
+      <div className='virtual-table-header flex border-b bg-muted/30 z-10 min-h-[40px] flex-shrink-0' style={{ minWidth: 'max-content' }}>
         {visibleColumns.map(column => {
           if (column === '_actions') {
             return (
@@ -290,26 +298,19 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(
             );
           }
 
-          // 计算列的最小宽度
-          const getColumnMinWidth = (col: string) => {
-            if (col === '#') return '60px';
-            if (col === 'time') return '180px';
-            const colLength = col.length;
-            return `${Math.max(120, colLength * 12)}px`;
-          };
-
-          const minWidth = getColumnMinWidth(column);
+          // 使用统一的列宽度
+          const width = columnWidths[column] || 120;
 
           return (
             <div
               key={column}
               className={cn(
-                'px-3 py-2 text-left text-xs font-medium text-muted-foreground flex items-center',
+                'virtual-table-column px-3 py-2 text-left text-xs font-medium text-muted-foreground flex items-center',
                 column === '#'
                   ? 'justify-center'
                   : 'cursor-pointer hover:bg-muted/50'
               )}
-              style={{ minWidth, flexShrink: 0 }}
+              style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, flexShrink: 0 }}
               onClick={() => column !== '#' && onSort(column)}
             >
               <div className='flex items-center gap-1 w-full'>
@@ -358,6 +359,18 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(
           );
         })}
       </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // 优化的memo比较函数
+    return (
+      prevProps.sortColumn === nextProps.sortColumn &&
+      prevProps.sortDirection === nextProps.sortDirection &&
+      prevProps.selectedRowsCount === nextProps.selectedRowsCount &&
+      prevProps.totalRowsCount === nextProps.totalRowsCount &&
+      prevProps.columnOrder === nextProps.columnOrder &&
+      prevProps.selectedColumns === nextProps.selectedColumns &&
+      prevProps.columnWidths === nextProps.columnWidths
     );
   }
 );

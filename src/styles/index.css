@@ -1139,3 +1139,99 @@ pre,
 .dark .connection-table tbody tr:hover {
   background: hsl(var(--muted) / 0.2);
 }
+
+/* 表格对齐优化样式 */
+.table-header-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex-shrink: 0;
+}
+
+.table-header-container::-webkit-scrollbar {
+  display: none;
+}
+
+.table-content-container {
+  overflow: hidden;
+  flex: 1;
+}
+
+.virtual-table-header,
+.virtual-table-row {
+  min-width: max-content;
+  display: flex;
+}
+
+.virtual-table-column {
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* 确保表头和表格行的列宽度完全一致 */
+.virtual-table-header > div,
+.virtual-table-row > div {
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* 修复虚拟化表格的滚动同步问题 */
+.virtualized-table-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.virtualized-table-header {
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--background));
+}
+
+.virtualized-table-header::-webkit-scrollbar {
+  display: none;
+}
+
+.virtualized-table-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 确保表格行和表头完全对齐 */
+.virtual-table-header,
+.virtual-table-row {
+  display: flex;
+  min-width: max-content;
+  width: max-content;
+}
+
+.virtual-table-column {
+  flex-shrink: 0;
+  flex-grow: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 优化大数据量渲染性能 */
+.virtual-table-row {
+  will-change: transform;
+  contain: layout style paint;
+}
+
+/* 确保固定高度以提高虚拟化性能 */
+.virtual-table-row {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+}

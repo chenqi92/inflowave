@@ -619,13 +619,13 @@ const copyToClipboard = async (text: string): Promise<boolean> => {
 const formatRowData = (row: DataRow, columns: string[], format: 'text' | 'json' | 'csv' = 'text'): string => {
     switch (format) {
         case 'json':
-            const jsonData: Record<string, any> = {};
+            { const jsonData: Record<string, any> = {};
             columns.forEach((col: string) => {
                 if (col !== '#') {
                     jsonData[col] = row[col];
                 }
             });
-            return JSON.stringify(jsonData, null, 2);
+            return JSON.stringify(jsonData, null, 2); }
 
         case 'csv':
             return columns
@@ -653,7 +653,7 @@ const formatRowData = (row: DataRow, columns: string[], format: 'text' | 'json' 
 const formatMultipleRows = (rows: DataRow[], columns: string[], format: 'text' | 'json' | 'csv' = 'text'): string => {
     switch (format) {
         case 'json':
-            const jsonArray = rows.map(row => {
+            { const jsonArray = rows.map(row => {
                 const jsonData: Record<string, any> = {};
                 columns.forEach(col => {
                     if (col !== '#') {
@@ -662,12 +662,12 @@ const formatMultipleRows = (rows: DataRow[], columns: string[], format: 'text' |
                 });
                 return jsonData;
             });
-            return JSON.stringify(jsonArray, null, 2);
+            return JSON.stringify(jsonArray, null, 2); }
 
         case 'csv':
-            const headers = columns.filter(col => col !== '#').join(',');
+            { const headers = columns.filter(col => col !== '#').join(',');
             const dataRows = rows.map(row => formatRowData(row, columns, 'csv'));
-            return [headers, ...dataRows].join('\n');
+            return [headers, ...dataRows].join('\n'); }
 
         case 'text':
         default:
@@ -729,6 +729,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [columns, setColumns] = useState<string[]>([]);
     const [columnOrder, setColumnOrder] = useState<string[]>([]); // 列的显示顺序
     const [selectedColumns, setSelectedColumns] = useState<string[]>([]); // 选中的列
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>({}); // 统一的列宽度管理
     const [loading, setLoading] = useState(false);
     const [totalCount, setTotalCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -1200,6 +1201,27 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [columns, loadData, fetchTotalCount]);
 
+    // 统一的列宽度计算函数
+    const calculateColumnWidth = useCallback((column: string): number => {
+        if (column === '_actions') return 48;
+        if (column === '_select') return 48;
+        if (column === '#') return 80;
+        if (column === 'time') return 200;
+
+        // 根据列名长度计算宽度，但设置合理的最小和最大值
+        const baseWidth = Math.max(120, column.length * 8);
+        return Math.min(baseWidth, 300); // 最大宽度300px
+    }, []);
+
+    // 初始化列宽度
+    const initializeColumnWidths = useCallback((cols: string[]) => {
+        const widths: Record<string, number> = {};
+        cols.forEach(col => {
+            widths[col] = calculateColumnWidth(col);
+        });
+        setColumnWidths(widths);
+    }, [calculateColumnWidth]);
+
     // 处理时间列排序变化
     useEffect(() => {
         if (sortColumn === 'time' && columns.length > 0) {
@@ -1212,8 +1234,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         if (columns.length > 0) {
             setSelectedColumns(columns);
             setColumnOrder(columns); // 同时初始化列顺序
+            initializeColumnWidths(columns); // 初始化列宽度
         }
-    }, [columns]);
+    }, [columns, initializeColumnWidths]);
 
     // 处理页面变化 - 使用 startTransition 优化响应性
     const handlePageChange = useCallback((page: number) => {
@@ -1328,11 +1351,34 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [data]);
 
+    // 滚动同步状态
+    const isScrollingSyncRef = useRef(false);
+
     // 处理横向滚动同步
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        if (isScrollingSyncRef.current) return;
+
         const scrollLeft = e.currentTarget.scrollLeft;
-        if (headerRef.current) {
+        if (headerRef.current && headerRef.current.scrollLeft !== scrollLeft) {
+            isScrollingSyncRef.current = true;
             headerRef.current.scrollLeft = scrollLeft;
+            requestAnimationFrame(() => {
+                isScrollingSyncRef.current = false;
+            });
+        }
+    }, []);
+
+    // 处理表头滚动同步到内容
+    const handleHeaderScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        if (isScrollingSyncRef.current) return;
+
+        const scrollLeft = e.currentTarget.scrollLeft;
+        if (contentRef.current && contentRef.current.scrollLeft !== scrollLeft) {
+            isScrollingSyncRef.current = true;
+            contentRef.current.scrollLeft = scrollLeft;
+            requestAnimationFrame(() => {
+                isScrollingSyncRef.current = false;
+            });
         }
     }, []);
 
@@ -1645,16 +1691,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <div className="h-full flex flex-col">
+                        <div className="virtualized-table-container h-full flex flex-col">
                             {/* 固定表头容器 */}
                             <div
                                 ref={headerRef}
-                                className="overflow-hidden"
-                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                className="virtualized-table-header table-header-container"
+                                onScroll={handleHeaderScroll}
                             >
                                 <VirtualTableHeader
                                     columnOrder={columnOrder}
                                     selectedColumns={selectedColumns}
+                                    columnWidths={columnWidths}
                                     sortColumn={sortColumn}
                                     sortDirection={sortDirection}
                                     selectedRowsCount={selectedRows.size}
@@ -1667,7 +1714,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             </div>
 
                             {/* 虚拟化表格内容 */}
-                            <div className="flex-1">
+                            <div className="virtualized-table-content table-content-container">
                                 <Virtuoso
                                     style={{ height: '100%' }}
                                     data={data}
@@ -1678,14 +1725,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                             index={index}
                                             columnOrder={columnOrder}
                                             selectedColumns={selectedColumns}
+                                            columnWidths={columnWidths}
                                             isSelected={selectedRows.has(index)}
                                             onRowSelect={handleRowSelect}
                                             onCopyRow={handleCopyRow}
                                             onCopyCell={handleCopyCell}
                                         />
                                     )}
-                                    overscan={5}
-                                    increaseViewportBy={200}
+                                    overscan={10}
+                                    increaseViewportBy={400}
+                                    fixedItemHeight={40}
+                                    useWindowScroll={false}
                                     components={{
                                         Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
                                             <div
