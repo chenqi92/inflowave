@@ -87,7 +87,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
     return (
         <div
             className={cn(
-                "flex border-b transition-colors hover:bg-muted/50 cursor-pointer group relative min-h-[48px]",
+                "flex border-b transition-colors hover:bg-muted/50 cursor-pointer group relative min-h-[40px]",
                 isSelected && "bg-blue-50 hover:bg-blue-100"
             )}
             onClick={handleRowClick}
@@ -96,7 +96,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
             {visibleColumns.map((column) => {
                 if (column === '_actions') {
                     return (
-                        <div key="_actions" className="p-2 w-12 flex-shrink-0 flex items-center justify-center">
+                        <div key="_actions" className="px-2 py-2 w-12 flex-shrink-0 flex items-center justify-center">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -130,7 +130,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
 
                 if (column === '_select') {
                     return (
-                        <div key="_select" className="p-4 w-12 flex-shrink-0 flex items-center justify-center">
+                        <div key="_select" className="px-3 py-2 w-12 flex-shrink-0 flex items-center justify-center">
                             <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => onRowSelect(index)}
@@ -154,7 +154,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
                     <div
                         key={column}
                         className={cn(
-                            'p-4 text-xs flex items-center',
+                            'px-3 py-2 text-xs flex items-center',
                             column === '#'
                                 ? 'font-medium text-muted-foreground bg-muted/20 justify-center'
                                 : 'font-mono'
@@ -212,11 +212,11 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(({
     const isAllSelected = selectedRowsCount > 0 && selectedRowsCount === totalRowsCount;
 
     return (
-        <div className="flex border-b bg-background z-10 min-h-[48px] flex-shrink-0">
+        <div className="flex border-b bg-muted/30 z-10 min-h-[40px] flex-shrink-0">
             {visibleColumns.map((column) => {
                 if (column === '_actions') {
                     return (
-                        <div key="_actions" className="p-2 w-12 flex-shrink-0 flex items-center justify-center">
+                        <div key="_actions" className="px-2 py-2 w-12 flex-shrink-0 flex items-center justify-center">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -267,7 +267,7 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(({
 
                 if (column === '_select') {
                     return (
-                        <div key="_select" className="p-4 w-12 flex-shrink-0 flex items-center justify-center">
+                        <div key="_select" className="px-3 py-2 w-12 flex-shrink-0 flex items-center justify-center">
                             <Checkbox
                                 checked={isAllSelected}
                                 onCheckedChange={onSelectAll}
@@ -292,14 +292,14 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(({
                     <div
                         key={column}
                         className={cn(
-                            'p-4 text-left font-medium text-muted-foreground flex items-center',
+                            'px-3 py-2 text-left text-xs font-medium text-muted-foreground flex items-center',
                             column === '#' ? 'justify-center' : 'cursor-pointer hover:bg-muted/50'
                         )}
                         style={{ minWidth, flexShrink: 0 }}
                         onClick={() => column !== '#' && onSort(column)}
                     >
                         <div className="flex items-center gap-1 w-full">
-                            <span className="truncate" title={column === '#' ? '序号' : column}>
+                            <span className="truncate text-xs" title={column === '#' ? '序号' : column}>
                                 {column === '#' ? '序号' : column}
                             </span>
                             {column === 'time' && (
@@ -313,7 +313,7 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(({
                                 </Badge>
                             )}
                             {sortColumn === column && column !== '#' && (
-                                <span className="text-xs">
+                                <span className="text-xs text-primary">
                                     {sortDirection === 'asc' ? '↑' : '↓'}
                                 </span>
                             )}
@@ -323,7 +323,7 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(({
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-4 w-4 p-0 ml-1"
+                                            className="h-4 w-4 p-0 ml-1 opacity-60 hover:opacity-100"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <Filter className="w-3 h-3" />

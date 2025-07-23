@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useMemo, memo, startTransition} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, memo, startTransition, useRef} from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import {
     Card,
@@ -620,7 +620,7 @@ const formatRowData = (row: DataRow, columns: string[], format: 'text' | 'json' 
     switch (format) {
         case 'json':
             const jsonData: Record<string, any> = {};
-            columns.forEach(col => {
+            columns.forEach((col: string) => {
                 if (col !== '#') {
                     jsonData[col] = row[col];
                 }
@@ -743,6 +743,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
     const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
 
+    // 滚动同步的 refs
+    const headerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+
     // 拖拽传感器
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -756,7 +760,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         if (column === 'time') return 'time';
 
         // 取样本数据进行类型检测
-        const samples = sampleData.slice(0, 10).map(row => row[column]).filter(val => val != null && val !== '');
+        const samples = sampleData.slice(0, 10).map((row: DataRow) => row[column]).filter(val => val != null && val !== '');
         if (samples.length === 0) return 'string';
 
         // 检测是否为数字
@@ -941,6 +945,45 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         return query;
     }, [tableName, columns, searchText, filters, sortColumn, sortDirection, currentPage, pageSize]);
 
+    // 生成不包含过滤条件的基础查询（避免添加过滤器时自动重新加载）
+    const generateBaseQuery = useCallback(() => {
+        let query = `SELECT *
+                     FROM "${tableName}"`;
+
+        // 添加 WHERE 条件
+        const whereConditions: string[] = [];
+
+        // 搜索条件
+        if (searchText.trim()) {
+            const searchConditions = columns.filter(col => col !== 'time' && col !== '#').map(col =>
+                `"${col}" =~ /.*${searchText.trim()}.*/`
+            );
+            if (searchConditions.length > 0) {
+                whereConditions.push(`(${searchConditions.join(' OR ')})`);
+            }
+        }
+
+        if (whereConditions.length > 0) {
+            query += ` WHERE ${whereConditions.join(' AND ')}`;
+        }
+
+        // 添加排序 - InfluxDB只支持按时间排序
+        if (sortColumn === 'time') {
+            query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
+        } else {
+            // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+            query += ` ORDER BY time DESC`;
+        }
+
+        // 添加分页（如果不是"全部"选项）
+        if (pageSize > 0) {
+            const offset = (currentPage - 1) * pageSize;
+            query += ` LIMIT ${pageSize} OFFSET ${offset}`;
+        }
+
+        return query;
+    }, [tableName, columns, searchText, sortColumn, sortDirection, currentPage, pageSize]);
+
     // 获取表结构信息
     const fetchTableSchema = useCallback(async () => {
         try {
@@ -969,12 +1012,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
             // 处理字段键结果
             if (fieldResult.results?.[0]?.series?.[0]?.values) {
-                fieldKeys.push(...fieldResult.results[0].series[0].values.map(row => row[0] as string));
+                fieldKeys.push(...fieldResult.results[0].series[0].values.map((row: any[]) => row[0] as string));
             }
 
             // 处理标签键结果
             if (tagResult.results?.[0]?.series?.[0]?.values) {
-                tagKeys.push(...tagResult.results[0].series[0].values.map(row => row[0] as string));
+                tagKeys.push(...tagResult.results[0].series[0].values.map((row: any[]) => row[0] as string));
             }
 
             // 合并所有列：序号、时间、标签键、字段键
@@ -1017,7 +1060,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 客户端排序函数
     const sortDataClientSide = useCallback((dataToSort: DataRow[], column: string, direction: 'asc' | 'desc') => {
-        return [...dataToSort].sort((a, b) => {
+        return [...dataToSort].sort((a: DataRow, b: DataRow) => {
             let aVal = a[column];
             let bVal = b[column];
 
@@ -1051,7 +1094,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         setLoading(true);
         try {
-            const query = generateQuery();
+            const query = generateBaseQuery();
             console.log('执行查询:', query);
 
             const result = await safeTauriInvoke<QueryResult>('execute_query', {
@@ -1067,7 +1110,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 const {columns: resultColumns, values} = series;
 
                 if (resultColumns && values) {
-                    const formattedData: DataRow[] = values.map((row, index) => {
+                    const formattedData: DataRow[] = values.map((row: any[], index: number) => {
                         const record: DataRow = {_id: index};
 
                         // 添加序号列
@@ -1075,7 +1118,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         record['#'] = offset + index + 1;
 
                         // 添加其他列数据
-                        resultColumns.forEach((col, colIndex) => {
+                        resultColumns.forEach((col: string, colIndex: number) => {
                             record[col] = row[colIndex];
                         });
                         return record;
@@ -1103,13 +1146,47 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         } finally {
             setLoading(false);
         }
-    }, [connectionId, database, generateQuery, columns]);
+    }, [connectionId, database, generateBaseQuery, columns]);
 
     // 应用过滤器（延迟执行，避免添加过滤器时立即重新加载）
-    const applyFilters = useCallback(() => {
+    const applyFilters = useCallback(async () => {
+        if (columns.length === 0) return;
+
         setCurrentPage(1);
-        loadData();
-    }, [loadData]);
+        setLoading(true);
+        try {
+            const query = generateQuery(); // 使用包含过滤器的查询
+            console.log('应用过滤器查询:', query);
+
+            const result = await safeTauriInvoke<QueryResult>('execute_query', {
+                connectionId,
+                database,
+                query
+            });
+
+            if (result && result.data) {
+                setRawData(result.data);
+
+                // 添加序号列
+                const dataWithIndex = result.data.map((record, index) => {
+                    const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+                    record['#'] = offset + index + 1;
+                    return record;
+                });
+
+                setData(dataWithIndex);
+            } else {
+                setData([]);
+                setRawData([]);
+            }
+        } catch (error) {
+            console.error('应用过滤器失败:', error);
+            showMessage.error('应用过滤器失败');
+            setData([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [connectionId, database, generateQuery, columns, pageSize, currentPage]);
 
     // 初始化
     useEffect(() => {
@@ -1201,7 +1278,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 复制功能
     const handleCopyRow = useCallback(async (rowIndex: number, format: 'text' | 'json' | 'csv' = 'text') => {
-        const row = data[rowIndex];
+        const row: DataRow | undefined = data[rowIndex];
         if (!row) return;
 
         const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
@@ -1222,8 +1299,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
 
         const selectedData = Array.from(selectedRows)
-            .sort((a, b) => a - b)
-            .map(index => data[index])
+            .sort((a: number, b: number) => a - b)
+            .map((index: number) => data[index])
             .filter(Boolean);
 
         const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
@@ -1238,7 +1315,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }, [selectedRows, data, columnOrder, selectedColumns]);
 
     const handleCopyCell = useCallback(async (rowIndex: number, column: string) => {
-        const row = data[rowIndex];
+        const row: DataRow | undefined = data[rowIndex];
         if (!row) return;
 
         const value = String(row[column] || '');
@@ -1250,6 +1327,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             showMessage.error('复制失败');
         }
     }, [data]);
+
+    // 处理横向滚动同步
+    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        const scrollLeft = e.currentTarget.scrollLeft;
+        if (headerRef.current) {
+            headerRef.current.scrollLeft = scrollLeft;
+        }
+    }, []);
 
     // 处理排序
     const handleSort = (column: string) => {
@@ -1341,10 +1426,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     series: [{
                         name: tableName,
                         columns: orderedSelectedColumns,
-                        values: data.map(row => orderedSelectedColumns.map(col => row[col]))
+                        values: data.map((row: DataRow) => orderedSelectedColumns.map((col: string) => row[col]))
                     }]
                 }],
-                data: data.map(row => orderedSelectedColumns.map(col => row[col])), // 转换为正确的格式
+                data: data.map((row: DataRow) => orderedSelectedColumns.map((col: string) => row[col])), // 转换为正确的格式
                 executionTime: 0
             };
 
@@ -1561,19 +1646,25 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         </div>
                     ) : data.length > 0 ? (
                         <div className="h-full flex flex-col">
-                            {/* 固定表头 */}
-                            <VirtualTableHeader
-                                columnOrder={columnOrder}
-                                selectedColumns={selectedColumns}
-                                sortColumn={sortColumn}
-                                sortDirection={sortDirection}
-                                selectedRowsCount={selectedRows.size}
-                                totalRowsCount={data.length}
-                                onSort={handleSort}
-                                onAddFilter={addFilter}
-                                onSelectAll={handleSelectAll}
-                                onCopySelectedRows={handleCopySelectedRows}
-                            />
+                            {/* 固定表头容器 */}
+                            <div
+                                ref={headerRef}
+                                className="overflow-hidden"
+                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            >
+                                <VirtualTableHeader
+                                    columnOrder={columnOrder}
+                                    selectedColumns={selectedColumns}
+                                    sortColumn={sortColumn}
+                                    sortDirection={sortDirection}
+                                    selectedRowsCount={selectedRows.size}
+                                    totalRowsCount={data.length}
+                                    onSort={handleSort}
+                                    onAddFilter={addFilter}
+                                    onSelectAll={handleSelectAll}
+                                    onCopySelectedRows={handleCopySelectedRows}
+                                />
+                            </div>
 
                             {/* 虚拟化表格内容 */}
                             <div className="flex-1">
@@ -1595,6 +1686,29 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                     )}
                                     overscan={5}
                                     increaseViewportBy={200}
+                                    components={{
+                                        Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
+                                            <div
+                                                {...props}
+                                                ref={(element) => {
+                                                    if (typeof ref === 'function') {
+                                                        ref(element);
+                                                    } else if (ref && 'current' in ref) {
+                                                        (ref as React.MutableRefObject<HTMLDivElement | null>).current = element;
+                                                    }
+                                                    if (contentRef.current !== element) {
+                                                        contentRef.current = element;
+                                                    }
+                                                }}
+                                                onScroll={(e) => {
+                                                    if (props.onScroll) {
+                                                        props.onScroll(e);
+                                                    }
+                                                    handleScroll(e);
+                                                }}
+                                            />
+                                        ))
+                                    }}
                                 />
                             </div>
                         </div>
