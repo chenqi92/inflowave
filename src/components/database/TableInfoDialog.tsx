@@ -26,7 +26,9 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import { useConnectionStore } from '@/store/connection';
 import type { QueryResult } from '@/types';
+import type { InfluxDBVersion } from '@/types/database';
 
 interface TableInfoDialogProps {
   open: boolean;
@@ -65,6 +67,10 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
   const [info, setInfo] = useState<TableInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 获取连接信息以确定数据源类型
+  const { getConnection } = useConnectionStore();
+  const connection = getConnection(connectionId);
+
   const loadTableInfo = async () => {
     if (!open || !connectionId || !database || !tableName) return;
 
@@ -74,39 +80,101 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
     try {
       console.log('🔍 获取表信息:', { connectionId, database, tableName });
 
-      // 并行执行多个查询以获取完整信息
-      const queries = [
-        // 记录总数
-        `SELECT COUNT(*) as count FROM "${tableName}"`,
-        // 字段信息
-        `SHOW FIELD KEYS FROM "${tableName}"`,
-        // 标签信息
-        `SHOW TAG KEYS FROM "${tableName}"`,
-        // 时间范围
-        `SELECT MIN(time) as first_time, MAX(time) as last_time FROM "${tableName}"`,
-        // 保留策略
-        `SHOW RETENTION POLICIES ON "${database}"`,
-        // 序列信息
-        `SHOW SERIES FROM "${tableName}" LIMIT 1`,
-      ];
+      // 获取数据源类型 - 修复检测逻辑
+      let dbVersion: InfluxDBVersion | undefined;
+
+      const versionStr = connection?.version as string;
+      if (versionStr && typeof versionStr === 'string') {
+        // 检查版本字符串
+        if (versionStr === '1.x' || versionStr.includes('1.')) {
+          dbVersion = '1.x';
+        } else if (versionStr === '2.x' || versionStr.includes('2.')) {
+          dbVersion = '2.x';
+        } else if (versionStr === '3.x' || versionStr.includes('3.')) {
+          dbVersion = '3.x';
+        }
+      }
+
+      // 如果版本检测失败，根据dbType推断
+      if (!dbVersion && connection?.dbType === 'influxdb') {
+        console.warn('⚠️ 版本检测失败，使用默认InfluxDB 1.x');
+        dbVersion = '1.x';
+      }
+
+      console.log('🔍 检测到数据源类型:', dbVersion, '连接信息:', connection);
+
+      // 根据数据源类型生成查询
+      let queries: string[];
+
+      switch (dbVersion) {
+        case '1.x':
+          // InfluxDB 1.x 使用 InfluxQL
+          queries = [
+            `SELECT COUNT(*) FROM "${tableName}"`,
+            `SHOW FIELD KEYS FROM "${tableName}"`,
+            `SHOW TAG KEYS FROM "${tableName}"`,
+            `SELECT * FROM "${tableName}" ORDER BY time ASC LIMIT 1`,
+            `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 1`,
+            `SHOW RETENTION POLICIES ON "${database}"`,
+            `SHOW SERIES FROM "${tableName}" LIMIT 1`,
+          ];
+          break;
+
+        case '2.x':
+        case '3.x':
+          // InfluxDB 2.x/3.x 使用 Flux
+          queries = [
+            `from(bucket: "${database}") |> range(start: -30d) |> filter(fn: (r) => r._measurement == "${tableName}") |> count()`,
+            `from(bucket: "${database}") |> range(start: -30d) |> filter(fn: (r) => r._measurement == "${tableName}") |> keys()`,
+            `from(bucket: "${database}") |> range(start: -30d) |> filter(fn: (r) => r._measurement == "${tableName}") |> first()`,
+            `from(bucket: "${database}") |> range(start: -30d) |> filter(fn: (r) => r._measurement == "${tableName}") |> last()`,
+          ];
+          break;
+
+        default:
+          // 未知类型，使用InfluxQL作为默认
+          console.warn('⚠️ 未知数据源类型，使用InfluxQL作为默认');
+          queries = [
+            `SELECT COUNT(*) FROM "${tableName}"`,
+            `SHOW FIELD KEYS FROM "${tableName}"`,
+            `SHOW TAG KEYS FROM "${tableName}"`,
+            `SELECT * FROM "${tableName}" ORDER BY time ASC LIMIT 1`,
+            `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 1`,
+            `SHOW RETENTION POLICIES ON "${database}"`,
+            `SHOW SERIES FROM "${tableName}" LIMIT 1`,
+          ];
+      }
+
+      console.log('🔍 执行查询:', { dbVersion, queries });
 
       const results = await Promise.all(
-        queries.map(query =>
+        queries.map((query, index) =>
           safeTauriInvoke<QueryResult>('execute_query', {
             request: { connectionId, database, query },
           }).catch(err => {
-            console.warn(`查询失败: ${query}`, err);
+            console.warn(`查询失败 [${index}]: ${query}`, err);
             return null;
           })
         )
       );
 
-      const [countResult, fieldsResult, tagsResult, timeResult, retentionResult, seriesResult] = results;
+      const [countResult, fieldsResult, tagsResult, firstTimeResult, lastTimeResult, retentionResult, seriesResult] = results;
 
       // 解析数据
       let recordCount = 0;
+      console.log('📊 TableInfo COUNT查询结果:', countResult);
       if (countResult?.data && countResult.data.length > 0) {
-        recordCount = parseInt(countResult.data[0][0] as string) || 0;
+        const row = countResult.data[0];
+        if (row.length > 1) {
+          // COUNT查询返回的数据格式：[时间戳, count值, ...]
+          recordCount = parseInt(row[1] as string) || 0;
+          console.log('📊 TableInfo 解析的记录数 (从索引1):', recordCount);
+          console.log('📊 TableInfo 完整行数据:', row);
+        } else {
+          // 如果只有一列，可能是纯COUNT查询
+          recordCount = parseInt(row[0] as string) || 0;
+          console.log('📊 TableInfo 解析的记录数 (从索引0):', recordCount);
+        }
       }
 
       const fieldCount = fieldsResult?.data?.length || 0;
@@ -117,27 +185,39 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
       let dataSpan = '未知';
       let avgRecordsPerDay = 0;
 
-      if (timeResult?.data && timeResult.data.length > 0) {
-        const timeData = timeResult.data[0];
-        const firstTime = timeData[0] as string;
-        const lastTime = timeData[1] as string;
+      console.log('⏰ 时间查询结果:', { firstTimeResult, lastTimeResult });
 
-        if (firstTime && lastTime) {
-          const start = new Date(firstTime);
-          const end = new Date(lastTime);
-          const spanMs = end.getTime() - start.getTime();
-          const spanDays = spanMs / (1000 * 60 * 60 * 24);
+      // 从第一条记录获取最早时间
+      let firstTime: string | undefined;
+      if (firstTimeResult?.data && firstTimeResult.data.length > 0) {
+        firstTime = firstTimeResult.data[0][0] as string;
+        console.log('⏰ 最早时间:', firstTime);
+      }
 
-          firstRecord = start.toLocaleString();
-          lastRecord = end.toLocaleString();
-          dataSpan = spanDays > 1 
-            ? `${Math.round(spanDays)} 天` 
-            : `${Math.round(spanMs / (1000 * 60 * 60))} 小时`;
+      // 从最后一条记录获取最晚时间
+      let lastTime: string | undefined;
+      if (lastTimeResult?.data && lastTimeResult.data.length > 0) {
+        lastTime = lastTimeResult.data[0][0] as string;
+        console.log('⏰ 最晚时间:', lastTime);
+      }
 
-          if (spanDays > 0) {
-            avgRecordsPerDay = Math.round(recordCount / spanDays);
-          }
+      if (firstTime && lastTime) {
+        const start = new Date(firstTime);
+        const end = new Date(lastTime);
+        const spanMs = end.getTime() - start.getTime();
+        const spanDays = spanMs / (1000 * 60 * 60 * 24);
+
+        firstRecord = start.toLocaleString();
+        lastRecord = end.toLocaleString();
+        dataSpan = spanDays > 1
+          ? `${Math.round(spanDays)} 天`
+          : `${Math.round(spanMs / (1000 * 60 * 60))} 小时`;
+
+        if (spanDays > 0) {
+          avgRecordsPerDay = Math.round(recordCount / spanDays);
         }
+      } else {
+        console.warn('⚠️ 无法获取时间范围信息');
       }
 
       // 获取默认保留策略

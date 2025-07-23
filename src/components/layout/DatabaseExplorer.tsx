@@ -218,6 +218,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 弹框操作辅助函数
   const openDialog = (type: 'stats' | 'designer' | 'info', connectionId: string, database: string, tableName: string) => {
+    console.log(`🔍 打开${type}弹框:`, { connectionId, database, tableName });
     setDialogStates(prev => ({
       ...prev,
       [type]: { open: true, connectionId, database, tableName }
@@ -2642,6 +2643,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     {/* 表相关弹框 */}
     <TableStatsDialog
+      key={`stats-${dialogStates.stats.connectionId}-${dialogStates.stats.database}-${dialogStates.stats.tableName}`}
       open={dialogStates.stats.open}
       onClose={() => closeDialog('stats')}
       connectionId={dialogStates.stats.connectionId}
@@ -2650,6 +2652,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     />
 
     <TableDesignerDialog
+      key={`designer-${dialogStates.designer.connectionId}-${dialogStates.designer.database}-${dialogStates.designer.tableName}`}
       open={dialogStates.designer.open}
       onClose={() => closeDialog('designer')}
       connectionId={dialogStates.designer.connectionId}
@@ -2658,6 +2661,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     />
 
     <TableInfoDialog
+      key={`info-${dialogStates.info.connectionId}-${dialogStates.info.database}-${dialogStates.info.tableName}`}
       open={dialogStates.info.open}
       onClose={() => closeDialog('info')}
       connectionId={dialogStates.info.connectionId}
