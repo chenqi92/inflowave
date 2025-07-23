@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface TabState {
   tabs: EditorTab[];
@@ -21,20 +22,33 @@ interface TabActions {
   removeTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<EditorTab>) => void;
   setActiveKey: (key: string) => void;
-  
+
   // 数据库和时间范围
   setSelectedDatabase: (database: string) => void;
   setSelectedTimeRange: (timeRange: TabState['selectedTimeRange']) => void;
-  
+
   // 内容更新
   updateTabContent: (tabId: string, content: string) => void;
-  
+
   // 批量操作
   clearAllTabs: () => void;
   restoreFromBackup: (backup: TabState) => void;
+
+  // 应用关闭处理
+  handleAppClose: () => Promise<boolean>;
 }
 
 type TabStore = TabState & TabActions;
+
+// 获取未保存的查询标签页
+const getUnsavedQueryTabs = (tabs: EditorTab[]): EditorTab[] => {
+  return tabs.filter(tab => tab.type === 'query' && !tab.saved);
+};
+
+// 获取已保存的查询标签页
+const getSavedQueryTabs = (tabs: EditorTab[]): EditorTab[] => {
+  return tabs.filter(tab => tab.type === 'query' && tab.saved);
+};
 
 export const useTabStore = create<TabStore>()(
   persist(
@@ -99,18 +113,69 @@ export const useTabStore = create<TabStore>()(
       }),
       
       restoreFromBackup: (backup) => set(backup),
+
+      // 处理应用关闭时的未保存标签页
+      handleAppClose: async () => {
+        const state = get();
+        const unsavedQueryTabs = getUnsavedQueryTabs(state.tabs);
+
+        if (unsavedQueryTabs.length === 0) {
+          return true; // 没有未保存的标签页，可以直接关闭
+        }
+
+        // 触发显示未保存标签页对话框的事件
+        // 这里使用事件系统来避免在store中直接操作UI
+        const event = new CustomEvent('show-unsaved-tabs-dialog', {
+          detail: { unsavedTabs: unsavedQueryTabs }
+        });
+        window.dispatchEvent(event);
+
+        // 等待用户选择
+        return new Promise<boolean>((resolve) => {
+          const handleUserChoice = (event: CustomEvent) => {
+            const { action } = event.detail;
+
+            if (action === 'save') {
+              // 用户选择保存，将未保存的标签页标记为已保存
+              const updatedTabs = state.tabs.map(tab =>
+                unsavedQueryTabs.includes(tab)
+                  ? { ...tab, saved: true, modified: false }
+                  : tab
+              );
+              set({ tabs: updatedTabs });
+              console.log(`已保存 ${unsavedQueryTabs.length} 个查询标签页`);
+              resolve(true);
+            } else if (action === 'discard') {
+              // 用户选择不保存，这些标签页将不会被持久化
+              console.log(`丢弃 ${unsavedQueryTabs.length} 个未保存的查询标签页`);
+              resolve(true);
+            } else {
+              // 用户取消关闭
+              resolve(false);
+            }
+
+            // 移除事件监听器
+            window.removeEventListener('unsaved-tabs-dialog-result', handleUserChoice as EventListener);
+          };
+
+          // 监听用户选择结果
+          window.addEventListener('unsaved-tabs-dialog-result', handleUserChoice as EventListener);
+        });
+      },
     }),
     {
       name: 'tab-storage', // 存储键名
-      // 只持久化重要的状态，排除一些临时状态
+      // 只持久化已保存的查询标签页，不保存数据浏览标签页
       partialize: (state) => ({
-        tabs: state.tabs,
-        activeKey: state.activeKey,
+        tabs: getSavedQueryTabs(state.tabs), // 只保存已保存的查询标签页
+        activeKey: state.tabs.find(tab => tab.id === state.activeKey && tab.type === 'query' && tab.saved)
+          ? state.activeKey
+          : '', // 如果当前活跃tab不是已保存的查询tab，则清空
         selectedDatabase: state.selectedDatabase,
         selectedTimeRange: state.selectedTimeRange,
       }),
       // 版本控制，用于处理存储格式变更
-      version: 1,
+      version: 3, // 增加版本号以支持新的保存逻辑
       // 迁移函数，处理版本升级
       migrate: (persistedState: any, version: number) => {
         if (version === 0) {
@@ -118,6 +183,25 @@ export const useTabStore = create<TabStore>()(
           return {
             ...persistedState,
             selectedTimeRange: undefined,
+          };
+        }
+        if (version === 1) {
+          // 从版本1升级到版本2，添加autoLoad属性
+          return {
+            ...persistedState,
+            tabs: (persistedState.tabs || []).map((tab: any) => ({
+              ...tab,
+              autoLoad: tab.type === 'data-browser' ? false : undefined,
+            })),
+          };
+        }
+        if (version === 2) {
+          // 从版本2升级到版本3，只保留已保存的查询标签页
+          return {
+            ...persistedState,
+            tabs: (persistedState.tabs || []).filter((tab: any) =>
+              tab.type === 'query' && tab.saved
+            ),
           };
         }
         return persistedState;

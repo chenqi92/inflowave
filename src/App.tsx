@@ -19,6 +19,9 @@ import { useUserPreferences } from './hooks/useUserPreferences';
 import { consoleLogger } from './utils/consoleLogger';
 import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
+import { useTabStore } from './stores/tabStore';
+import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
+import type { EditorTab } from './components/editor/TabManager';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -187,6 +190,8 @@ const MainLayout: React.FC = () => {
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [showUnsavedTabsDialog, setShowUnsavedTabsDialog] = useState(false);
+  const [unsavedTabs, setUnsavedTabs] = useState<EditorTab[]>([]);
   const { preferences } = useUserPreferences();
 
   // 应用无障碍设置到 DOM
@@ -361,12 +366,104 @@ const App: React.FC = () => {
     console.log('已应用工作区设置:', { layout });
   }, [preferences?.workspace]);
 
+  // 处理未保存标签页对话框事件
+  useEffect(() => {
+    const handleShowDialog = (event: CustomEvent) => {
+      const { unsavedTabs } = event.detail;
+      setUnsavedTabs(unsavedTabs);
+      setShowUnsavedTabsDialog(true);
+    };
+
+    window.addEventListener('show-unsaved-tabs-dialog', handleShowDialog as EventListener);
+
+    return () => {
+      window.removeEventListener('show-unsaved-tabs-dialog', handleShowDialog as EventListener);
+    };
+  }, []);
+
+  // 处理对话框用户选择
+  const handleDialogSave = () => {
+    setShowUnsavedTabsDialog(false);
+    const event = new CustomEvent('unsaved-tabs-dialog-result', {
+      detail: { action: 'save' }
+    });
+    window.dispatchEvent(event);
+  };
+
+  const handleDialogDiscard = () => {
+    setShowUnsavedTabsDialog(false);
+    const event = new CustomEvent('unsaved-tabs-dialog-result', {
+      detail: { action: 'discard' }
+    });
+    window.dispatchEvent(event);
+  };
+
+  const handleDialogCancel = () => {
+    setShowUnsavedTabsDialog(false);
+    const event = new CustomEvent('unsaved-tabs-dialog-result', {
+      detail: { action: 'cancel' }
+    });
+    window.dispatchEvent(event);
+  };
+
+  // 处理应用关闭事件
+  useEffect(() => {
+    const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
+      const { handleAppClose } = useTabStore.getState();
+
+      try {
+        const canClose = await handleAppClose();
+        if (!canClose) {
+          event.preventDefault();
+          event.returnValue = ''; // 标准做法
+        }
+      } catch (error) {
+        console.error('处理应用关闭失败:', error);
+      }
+    };
+
+    // 监听浏览器关闭事件
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // 如果是Tauri环境，也监听Tauri的关闭事件
+    if ((window as any).__TAURI__) {
+      try {
+        import('@tauri-apps/api/event').then(({ listen }) => {
+          listen('tauri://close-requested', async () => {
+            const { handleAppClose } = useTabStore.getState();
+            try {
+              const canClose = await handleAppClose();
+              if (canClose) {
+                // 允许关闭应用 - 使用正确的webview window API
+                import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
+                  getCurrentWebviewWindow().close();
+                }).catch(err => {
+                  console.warn('无法关闭Tauri窗口:', err);
+                });
+              }
+            } catch (error) {
+              console.error('处理Tauri关闭事件失败:', error);
+            }
+          });
+        }).catch(err => {
+          console.warn('无法监听Tauri关闭事件:', err);
+        });
+      } catch (error) {
+        console.warn('Tauri API 不可用:', error);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   // 初始化应用
   useEffect(() => {
     const initApp = async () => {
       try {
         console.log('InfloWave 启动中...');
-        
+
         // 初始化控制台日志拦截器
         console.log('初始化控制台日志拦截器...');
 
@@ -513,6 +610,15 @@ const App: React.FC = () => {
         <MainLayout />
         <DialogManager />
         <Toaster position={getToasterPosition() as any} />
+
+        {/* 未保存标签页对话框 */}
+        <UnsavedTabsDialog
+          open={showUnsavedTabsDialog}
+          unsavedTabs={unsavedTabs}
+          onSave={handleDialogSave}
+          onDiscard={handleDialogDiscard}
+          onCancel={handleDialogCancel}
+        />
       </ErrorBoundary>
     </DialogProvider>
   );

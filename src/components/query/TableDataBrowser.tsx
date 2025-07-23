@@ -132,6 +132,10 @@ interface VirtualTableRowProps {
     selectedColumns: string[];
     currentPage: number;
     pageSize: number;
+    isSelected: boolean;
+    onRowSelect: (index: number, event?: React.MouseEvent) => void;
+    onCopyRow: (index: number, format?: 'text' | 'json' | 'csv') => void;
+    onCopyCell: (index: number, column: string) => void;
     style?: React.CSSProperties;
 }
 
@@ -142,6 +146,10 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
     selectedColumns,
     currentPage,
     pageSize,
+    isSelected,
+    onRowSelect,
+    onCopyRow,
+    onCopyCell,
     style
 }) => {
     const uniqueKey = useMemo(() =>
@@ -152,17 +160,76 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
     );
 
     const visibleColumns = useMemo(() =>
-        columnOrder.filter(column => selectedColumns.includes(column)),
+        ['_actions', '_select', ...columnOrder.filter(column => selectedColumns.includes(column))],
         [columnOrder, selectedColumns]
     );
+
+    const handleRowClick = useCallback((event: React.MouseEvent) => {
+        // 如果点击的是复制按钮或其他交互元素，不触发行选择
+        if ((event.target as HTMLElement).closest('.copy-button, .dropdown-trigger')) {
+            return;
+        }
+        onRowSelect(index, event);
+    }, [index, onRowSelect]);
 
     return (
         <tr
             key={uniqueKey}
-            className="border-b transition-colors hover:bg-muted/50"
+            className={cn(
+                "border-b transition-colors hover:bg-muted/50 cursor-pointer group relative",
+                isSelected && "bg-blue-50 hover:bg-blue-100"
+            )}
             style={style}
+            onClick={handleRowClick}
         >
             {visibleColumns.map((column) => {
+                if (column === '_actions') {
+                    return (
+                        <td key="_actions" className="p-2 align-middle w-12 relative">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 dropdown-trigger"
+                                        onClick={(e) => e.stopPropagation()}
+                                        title="行操作"
+                                    >
+                                        <MoreVertical className="w-3 h-3" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'text')}>
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        复制为文本
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'json')}>
+                                        <Code className="w-4 h-4 mr-2" />
+                                        复制为JSON
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'csv')}>
+                                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                        复制为CSV
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </td>
+                    );
+                }
+
+                if (column === '_select') {
+                    return (
+                        <td key="_select" className="p-4 align-middle text-xs w-12">
+                            <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                    onRowSelect(index);
+                                }}
+                                className="h-4 w-4"
+                            />
+                        </td>
+                    );
+                }
                 // 计算列的最小宽度（与表头保持一致）
                 const getColumnMinWidth = (col: string) => {
                     if (col === '#') return '60px';
@@ -177,14 +244,16 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
                     <td
                         key={column}
                         className={cn(
-                            'p-4 align-middle text-xs',
+                            'p-4 align-middle text-xs relative',
                             column === '#'
                                 ? 'font-medium text-muted-foreground bg-muted/20 text-center'
                                 : 'font-mono'
                         )}
                         style={{ minWidth }}
+                        onDoubleClick={() => onCopyCell(index, column)}
+                        title={`双击复制: ${String(row[column] || '-')}`}
                     >
-                        <div className="truncate" title={String(row[column] || '-')}>
+                        <div className="truncate">
                             {column === '#'
                                 ? row[column]
                                 : column === 'time'
@@ -195,6 +264,7 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
                     </td>
                 );
             })}
+
         </tr>
     );
 });
@@ -314,8 +384,12 @@ interface TableHeaderProps {
     selectedColumns: string[];
     sortColumn: string;
     sortDirection: 'asc' | 'desc';
+    selectedRowsCount: number;
+    totalRowsCount: number;
     onSort: (column: string) => void;
     onAddFilter: (column: string) => void;
+    onSelectAll: () => void;
+    onCopySelectedRows: (format: 'text' | 'json' | 'csv') => void;
 }
 
 const TableHeader: React.FC<TableHeaderProps> = memo(({
@@ -323,18 +397,88 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
     selectedColumns,
     sortColumn,
     sortDirection,
+    selectedRowsCount,
+    totalRowsCount,
     onSort,
-    onAddFilter
+    onAddFilter,
+    onSelectAll,
+    onCopySelectedRows
 }) => {
     const visibleColumns = useMemo(() =>
-        columnOrder.filter(column => selectedColumns.includes(column)),
+        ['_actions', '_select', ...columnOrder.filter(column => selectedColumns.includes(column))],
         [columnOrder, selectedColumns]
     );
+
+    const isAllSelected = selectedRowsCount > 0 && selectedRowsCount === totalRowsCount;
+    const isIndeterminate = selectedRowsCount > 0 && selectedRowsCount < totalRowsCount;
 
     return (
         <thead className="sticky top-0 bg-background z-10 border-b">
             <tr className="border-b transition-colors hover:bg-muted/50">
                 {visibleColumns.map((column) => {
+                    if (column === '_actions') {
+                        return (
+                            <th key="_actions" className="h-12 px-2 text-left align-middle font-medium text-muted-foreground w-12">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0"
+                                            title="批量操作"
+                                        >
+                                            <MoreVertical className="w-3 h-3" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start">
+                                        {selectedRowsCount > 0 && (
+                                            <>
+                                                <DropdownMenuItem onClick={() => onCopySelectedRows('text')}>
+                                                    <FileText className="w-4 h-4 mr-2" />
+                                                    复制为文本 ({selectedRowsCount})
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onCopySelectedRows('json')}>
+                                                    <Code className="w-4 h-4 mr-2" />
+                                                    复制为JSON ({selectedRowsCount})
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onCopySelectedRows('csv')}>
+                                                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                                    复制为CSV ({selectedRowsCount})
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                            </>
+                                        )}
+                                        <DropdownMenuItem onClick={onSelectAll}>
+                                            {selectedRowsCount === totalRowsCount ? (
+                                                <>
+                                                    <Square className="w-4 h-4 mr-2" />
+                                                    取消全选
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <CheckSquare className="w-4 h-4 mr-2" />
+                                                    全选
+                                                </>
+                                            )}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </th>
+                        );
+                    }
+
+                    if (column === '_select') {
+                        return (
+                            <th key="_select" className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-12">
+                                <Checkbox
+                                    checked={isAllSelected}
+                                    onCheckedChange={onSelectAll}
+                                    className="h-4 w-4"
+                                    title={isAllSelected ? '取消全选' : '全选'}
+                                />
+                            </th>
+                        );
+                    }
                     // 计算列的最小宽度
                     const getColumnMinWidth = (col: string) => {
                         if (col === '#') return '60px';
@@ -554,12 +698,103 @@ import {
     Code,
     Hash,
     ChevronDown,
+    Copy,
+    Check,
+    Square,
+    CheckSquare,
+    MoreVertical,
 } from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
+
+// 复制相关的工具函数
+const copyToClipboard = async (text: string): Promise<boolean> => {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } else {
+            // 降级方案
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const result = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return result;
+        }
+    } catch (error) {
+        console.error('复制失败:', error);
+        return false;
+    }
+};
+
+// 格式化行数据为文本
+const formatRowData = (row: DataRow, columns: string[], format: 'text' | 'json' | 'csv' = 'text'): string => {
+    switch (format) {
+        case 'json':
+            const jsonData: Record<string, any> = {};
+            columns.forEach(col => {
+                if (col !== '#') {
+                    jsonData[col] = row[col];
+                }
+            });
+            return JSON.stringify(jsonData, null, 2);
+
+        case 'csv':
+            return columns
+                .filter(col => col !== '#')
+                .map(col => {
+                    const value = String(row[col] || '');
+                    // CSV格式需要处理包含逗号、引号、换行的值
+                    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                })
+                .join(',');
+
+        case 'text':
+        default:
+            return columns
+                .filter(col => col !== '#')
+                .map(col => String(row[col] || ''))
+                .join('\t');
+    }
+};
+
+// 格式化多行数据
+const formatMultipleRows = (rows: DataRow[], columns: string[], format: 'text' | 'json' | 'csv' = 'text'): string => {
+    switch (format) {
+        case 'json':
+            const jsonArray = rows.map(row => {
+                const jsonData: Record<string, any> = {};
+                columns.forEach(col => {
+                    if (col !== '#') {
+                        jsonData[col] = row[col];
+                    }
+                });
+                return jsonData;
+            });
+            return JSON.stringify(jsonArray, null, 2);
+
+        case 'csv':
+            const headers = columns.filter(col => col !== '#').join(',');
+            const dataRows = rows.map(row => formatRowData(row, columns, 'csv'));
+            return [headers, ...dataRows].join('\n');
+
+        case 'text':
+        default:
+            return rows.map(row => formatRowData(row, columns, 'text')).join('\n');
+    }
+};
 import ExportOptionsDialog, { type ExportOptions } from './ExportOptionsDialog';
 
 // 生成带时间戳的文件名
@@ -624,6 +859,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [searchText, setSearchText] = useState<string>('');
     const [showExportDialog, setShowExportDialog] = useState(false);
+
+    // 行选择状态
+    const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+    const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
 
     // 拖拽传感器
     const sensors = useSensors(
@@ -1036,6 +1275,97 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         loadData();
     }, [loadData]);
 
+
+
+    // 行选择处理函数
+    const handleRowSelect = useCallback((index: number, event?: React.MouseEvent) => {
+        const newSelectedRows = new Set(selectedRows);
+
+        if (event?.shiftKey && lastSelectedIndex !== -1) {
+            // Shift+点击：范围选择
+            const start = Math.min(lastSelectedIndex, index);
+            const end = Math.max(lastSelectedIndex, index);
+            for (let i = start; i <= end; i++) {
+                newSelectedRows.add(i);
+            }
+        } else if (event?.ctrlKey || event?.metaKey) {
+            // Ctrl+点击：切换选择
+            if (newSelectedRows.has(index)) {
+                newSelectedRows.delete(index);
+            } else {
+                newSelectedRows.add(index);
+            }
+        } else {
+            // 普通点击：单选
+            newSelectedRows.clear();
+            newSelectedRows.add(index);
+        }
+
+        setSelectedRows(newSelectedRows);
+        setLastSelectedIndex(index);
+    }, [selectedRows, lastSelectedIndex]);
+
+    // 全选/取消全选
+    const handleSelectAll = useCallback(() => {
+        if (selectedRows.size === data.length) {
+            setSelectedRows(new Set());
+        } else {
+            setSelectedRows(new Set(data.map((_, index) => index)));
+        }
+    }, [selectedRows.size, data.length]);
+
+    // 复制功能
+    const handleCopyRow = useCallback(async (rowIndex: number, format: 'text' | 'json' | 'csv' = 'text') => {
+        const row = data[rowIndex];
+        if (!row) return;
+
+        const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
+        const text = formatRowData(row, visibleColumns, format);
+
+        const success = await copyToClipboard(text);
+        if (success) {
+            showMessage.success(`已复制行数据 (${format.toUpperCase()} 格式)`);
+        } else {
+            showMessage.error('复制失败');
+        }
+    }, [data, columnOrder, selectedColumns]);
+
+    const handleCopySelectedRows = useCallback(async (format: 'text' | 'json' | 'csv' = 'text') => {
+        if (selectedRows.size === 0) {
+            showMessage.warning('请先选择要复制的行');
+            return;
+        }
+
+        const selectedData = Array.from(selectedRows)
+            .sort((a, b) => a - b)
+            .map(index => data[index])
+            .filter(Boolean);
+
+        const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
+        const text = formatMultipleRows(selectedData, visibleColumns, format);
+
+        const success = await copyToClipboard(text);
+        if (success) {
+            showMessage.success(`已复制 ${selectedRows.size} 行数据 (${format.toUpperCase()} 格式)`);
+        } else {
+            showMessage.error('复制失败');
+        }
+    }, [selectedRows, data, columnOrder, selectedColumns]);
+
+    const handleCopyCell = useCallback(async (rowIndex: number, column: string) => {
+        const row = data[rowIndex];
+        if (!row) return;
+
+        const value = String(row[column] || '');
+        const success = await copyToClipboard(value);
+
+        if (success) {
+            showMessage.success('已复制单元格内容');
+        } else {
+            showMessage.error('复制失败');
+        }
+    }, [data]);
+
     // 处理排序
     const handleSort = (column: string) => {
         const newDirection = sortColumn === column ? (sortDirection === 'asc' ? 'desc' : 'asc') : 'desc';
@@ -1100,8 +1430,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         });
     };
 
-    // 全选/取消全选
-    const handleSelectAll = () => {
+    // 列全选/取消全选
+    const handleSelectAllColumns = () => {
         if (selectedColumns.length === columns.length) {
             // 当前全选，取消全选（但保留第一列）
             setSelectedColumns([columns[0]]);
@@ -1196,7 +1526,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={handleSelectAll}
+                                                onClick={handleSelectAllColumns}
                                                 className="h-7 px-2 text-xs"
                                             >
                                                 {selectedColumns.length === columns.length ? '取消全选' : '全选'}
@@ -1229,6 +1559,36 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                     </div>
                                 </DropdownMenuContent>
                             </DropdownMenu>
+
+                            {/* 复制选中行按钮 */}
+                            {selectedRows.size > 0 && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2"
+                                        >
+                                            <Copy className="w-3 h-3 mr-1"/>
+                                            复制 ({selectedRows.size})
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('text')}>
+                                            <FileText className="w-4 h-4 mr-2"/>
+                                            复制为文本
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('json')}>
+                                            <Code className="w-4 h-4 mr-2"/>
+                                            复制为JSON
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('csv')}>
+                                            <FileSpreadsheet className="w-4 h-4 mr-2"/>
+                                            复制为CSV
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1307,92 +1667,35 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         <ScrollArea className="h-full">
                             <div className="min-w-max">
                                 <table className="w-full caption-bottom text-sm">
-                                    <thead className="sticky top-0 bg-background z-10 border-b">
-                                        <tr className="border-b transition-colors hover:bg-muted/50">
-                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => {
-                                                // 计算列的最小宽度
-                                                const getColumnMinWidth = (col: string) => {
-                                                    if (col === '#') return '60px';
-                                                    if (col === 'time') return '180px';
-                                                    // 根据列名长度计算最小宽度，确保列名完整显示
-                                                    const colLength = col.length;
-                                                    return `${Math.max(120, colLength * 12)}px`;
-                                                };
-
-                                                const minWidth = getColumnMinWidth(column);
-
-                                                return (
-                                                    <th
-                                                        key={column}
-                                                        className={cn(
-                                                            'h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
-                                                            column === '#' ? '' : 'cursor-pointer hover:bg-muted/50'
-                                                        )}
-                                                        style={{ minWidth }}
-                                                        onClick={() => column !== '#' && handleSort(column)}
-                                                    >
-                                                        <div className="flex items-center gap-1 whitespace-nowrap">
-                                                            <span className="truncate" title={column === '#' ? '序号' : column}>
-                                                                {column === '#' ? '序号' : column}
-                                                            </span>
-                                                            {column === 'time' && (
-                                                        <Badge variant="secondary" className="text-xs">
-                                                            时间
-                                                        </Badge>
-                                                            )}
-                                                            {column === '#' && (
-                                                        <Badge variant="outline" className="text-xs">
-                                                            #
-                                                        </Badge>
-                                                            )}
-                                                            {column !== 'time' && column !== '#' && (
-                                                        <span className="text-xs text-muted-foreground/60" title="客户端排序">
-                                                            ⚡
-                                                        </span>
-                                                            )}
-                                                            {sortColumn === column && column !== '#' && (
-                                                        <span className="text-xs">
-                                                            {sortDirection === 'asc' ? '↑' : '↓'}
-                                                        </span>
-                                                            )}
-                                                            {column !== '#' && (
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-4 w-4 p-0 ml-1"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                >
-                                                                    <Filter className="w-3 h-3"/>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuItem onClick={() => addFilter(column)}>
-                                                                    添加过滤器
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                            )}
-                                                        </div>
-                                                    </th>
-                                                );
-                                            })}
-                                        </tr>
-                                </thead>
-                                <tbody className="[&_tr:last-child]:border-0">
-                                    {data.map((row, index) => (
-                                        <VirtualTableRow
-                                            key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
-                                            row={row}
-                                            index={index}
-                                            columnOrder={columnOrder}
-                                            selectedColumns={selectedColumns}
-                                            currentPage={currentPage}
-                                            pageSize={pageSize}
-                                        />
-                                    ))}
-                                </tbody>
+                                    <TableHeader
+                                        columnOrder={columnOrder}
+                                        selectedColumns={selectedColumns}
+                                        sortColumn={sortColumn}
+                                        sortDirection={sortDirection}
+                                        selectedRowsCount={selectedRows.size}
+                                        totalRowsCount={data.length}
+                                        onSort={handleSort}
+                                        onAddFilter={addFilter}
+                                        onSelectAll={handleSelectAll}
+                                        onCopySelectedRows={handleCopySelectedRows}
+                                    />
+                                    <tbody className="[&_tr:last-child]:border-0">
+                                        {data.map((row, index) => (
+                                            <VirtualTableRow
+                                                key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
+                                                row={row}
+                                                index={index}
+                                                columnOrder={columnOrder}
+                                                selectedColumns={selectedColumns}
+                                                currentPage={currentPage}
+                                                pageSize={pageSize}
+                                                isSelected={selectedRows.has(index)}
+                                                onRowSelect={handleRowSelect}
+                                                onCopyRow={handleCopyRow}
+                                                onCopyCell={handleCopyCell}
+                                            />
+                                        ))}
+                                    </tbody>
                             </table>
                         </div>
                         <ScrollBar orientation="horizontal" />
