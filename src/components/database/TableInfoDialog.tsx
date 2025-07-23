@@ -10,18 +10,19 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Separator } from '@/components/ui/Separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Info, 
-  Database, 
-  Calendar, 
-  Loader2, 
+import {
+  Info,
+  Database,
+  Calendar,
+  Loader2,
   RefreshCw,
   Copy,
   FileText,
   Clock,
   BarChart3,
   HardDrive,
-  Activity
+  Activity,
+  TrendingUp
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -469,6 +470,26 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
                   )}
                 </CardContent>
               </Card>
+
+              {/* 平均统计 */}
+              {info.avgRecordsPerDay > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-orange-500" />
+                      平均统计
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">平均每日记录数:</span>
+                      <span className="font-semibold text-orange-600">
+                        {formatNumber(info.avgRecordsPerDay)} 条/天
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               <Separator />
 

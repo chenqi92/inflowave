@@ -39,7 +39,6 @@ import {
   Copy,
   BarChart,
   FolderX,
-  Calculator,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
@@ -51,7 +50,6 @@ import { dialog } from '@/utils/dialog';
 // DropdownMenu相关组件已移除，使用自定义右键菜单
 
 // 导入弹框组件
-import TableStatsDialog from '@/components/database/TableStatsDialog';
 import TableDesignerDialog from '@/components/database/TableDesignerDialog';
 import TableInfoDialog from '@/components/database/TableInfoDialog';
 
@@ -173,7 +171,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 弹框状态管理
   const [dialogStates, setDialogStates] = useState({
-    stats: { open: false, connectionId: '', database: '', tableName: '' },
     designer: { open: false, connectionId: '', database: '', tableName: '' },
     info: { open: false, connectionId: '', database: '', tableName: '' },
   });
@@ -217,7 +214,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const displayConnectionInfo = getDisplayConnectionStatus();
 
   // 弹框操作辅助函数
-  const openDialog = (type: 'stats' | 'designer' | 'info', connectionId: string, database: string, tableName: string) => {
+  const openDialog = (type: 'designer' | 'info', connectionId: string, database: string, tableName: string) => {
     console.log(`🔍 打开${type}弹框:`, { connectionId, database, tableName });
     setDialogStates(prev => ({
       ...prev,
@@ -225,7 +222,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }));
   };
 
-  const closeDialog = (type: 'stats' | 'designer' | 'info') => {
+  const closeDialog = (type: 'designer' | 'info') => {
     setDialogStates(prev => ({
       ...prev,
       [type]: { open: false, connectionId: '', database: '', tableName: '' }
@@ -1576,12 +1573,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
           break;
 
-        case 'query_table_count':
-          if (contextMenuTarget.type === 'table') {
-            // 打开统计记录数弹框
-            openDialog('stats', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
-          }
-          break;
+
 
         case 'table_designer':
           if (contextMenuTarget.type === 'table') {
@@ -2510,17 +2502,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 <Search className="w-4 h-4" />
                                 查询表
                               </button>
-                              <button
-                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => {
-                                  handleContextMenuAction('query_table_count');
-                                  setContextMenuOpen(false);
-                                }}
-                              >
-                                <Calculator className="w-4 h-4" />
-                                统计记录数
-                              </button>
-
                               <div className="my-1 h-px bg-border" />
                               <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作</div>
                               <button
@@ -2642,15 +2623,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     </Card>
 
     {/* 表相关弹框 */}
-    <TableStatsDialog
-      key={`stats-${dialogStates.stats.connectionId}-${dialogStates.stats.database}-${dialogStates.stats.tableName}`}
-      open={dialogStates.stats.open}
-      onClose={() => closeDialog('stats')}
-      connectionId={dialogStates.stats.connectionId}
-      database={dialogStates.stats.database}
-      tableName={dialogStates.stats.tableName}
-    />
-
     <TableDesignerDialog
       key={`designer-${dialogStates.designer.connectionId}-${dialogStates.designer.database}-${dialogStates.designer.tableName}`}
       open={dialogStates.designer.open}
