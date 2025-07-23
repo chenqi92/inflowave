@@ -585,7 +585,7 @@ import {
 import {cn} from '@/lib/utils';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
-import { VirtualTableRow, VirtualTableHeader } from './VirtualizedTableDataBrowser';
+import { VirtualTableRow, VirtualTableHeader, UnifiedTableRow } from './VirtualizedTableDataBrowser';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
 
@@ -743,6 +743,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // 行选择状态
     const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
     const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
+
+    // 拖动选择状态
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStartIndex, setDragStartIndex] = useState<number>(-1);
+    const [contextMenu, setContextMenu] = useState<{
+        visible: boolean;
+        x: number;
+        y: number;
+        selectedRows: number[];
+    }>({
+        visible: false,
+        x: 0,
+        y: 0,
+        selectedRows: []
+    });
 
     // 滚动同步的 refs
     const headerRef = useRef<HTMLDivElement>(null);
@@ -1201,16 +1216,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [columns, loadData, fetchTotalCount]);
 
-    // 统一的列宽度计算函数
+    // 统一的列宽度计算函数 - 优化字段名显示
     const calculateColumnWidth = useCallback((column: string): number => {
         if (column === '_actions') return 48;
         if (column === '_select') return 48;
         if (column === '#') return 80;
         if (column === 'time') return 200;
 
-        // 根据列名长度计算宽度，但设置合理的最小和最大值
-        const baseWidth = Math.max(120, column.length * 8);
-        return Math.min(baseWidth, 300); // 最大宽度300px
+        // 更精确的列宽度计算，确保字段名完整显示
+        // 使用更大的字符宽度系数，并增加padding空间
+        const charWidth = 12; // 增加字符宽度
+        const padding = 40; // 增加padding空间（包括排序图标等）
+        const baseWidth = Math.max(150, column.length * charWidth + padding);
+        return Math.min(baseWidth, 400); // 增加最大宽度到400px
     }, []);
 
     // 初始化列宽度
@@ -1262,18 +1280,26 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
 
 
-    // 行选择处理函数
-    const handleRowSelect = useCallback((index: number, event?: React.MouseEvent) => {
+    // 行点击处理函数
+    const handleRowClick = useCallback((index: number, event: React.MouseEvent) => {
+        console.log('handleRowClick called with index:', index, 'event:', event);
+
+        // 如果正在拖动，不处理点击
+        if (isDragging) {
+            return;
+        }
+
         const newSelectedRows = new Set(selectedRows);
 
-        if (event?.shiftKey && lastSelectedIndex !== -1) {
+        if (event.shiftKey && lastSelectedIndex !== -1) {
             // Shift+点击：范围选择
             const start = Math.min(lastSelectedIndex, index);
             const end = Math.max(lastSelectedIndex, index);
+            newSelectedRows.clear();
             for (let i = start; i <= end; i++) {
                 newSelectedRows.add(i);
             }
-        } else if (event?.ctrlKey || event?.metaKey) {
+        } else if (event.ctrlKey || event.metaKey) {
             // Ctrl+点击：切换选择
             if (newSelectedRows.has(index)) {
                 newSelectedRows.delete(index);
@@ -1288,16 +1314,129 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         setSelectedRows(newSelectedRows);
         setLastSelectedIndex(index);
-    }, [selectedRows, lastSelectedIndex]);
+    }, [selectedRows, lastSelectedIndex, isDragging]);
+
+    // 鼠标按下处理函数（开始拖动选择）
+    const handleRowMouseDown = useCallback((index: number, event: React.MouseEvent) => {
+        console.log('handleRowMouseDown called with index:', index);
+
+        // 只有左键才开始拖动选择
+        if (event.button !== 0) {
+            return;
+        }
+
+        setIsDragging(true);
+        setDragStartIndex(index);
+
+        // 如果没有按修饰键，清空之前的选择
+        if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+            const newSelectedRows = new Set<number>();
+            newSelectedRows.add(index);
+            setSelectedRows(newSelectedRows);
+        }
+
+        setLastSelectedIndex(index);
+    }, []);
+
+    // 鼠标进入处理函数（拖动过程中的选择）
+    const handleRowMouseEnter = useCallback((index: number, event: React.MouseEvent) => {
+        if (!isDragging || dragStartIndex === -1) {
+            return;
+        }
+
+        const start = Math.min(dragStartIndex, index);
+        const end = Math.max(dragStartIndex, index);
+        const newSelectedRows = new Set(selectedRows);
+
+        // 拖动选择范围内的所有行
+        for (let i = start; i <= end; i++) {
+            newSelectedRows.add(i);
+        }
+
+        setSelectedRows(newSelectedRows);
+    }, [isDragging, dragStartIndex, selectedRows]);
+
+    // 鼠标抬起处理函数（结束拖动选择）
+    const handleRowMouseUp = useCallback((index: number, event: React.MouseEvent) => {
+        console.log('handleRowMouseUp called with index:', index);
+        setIsDragging(false);
+        setDragStartIndex(-1);
+    }, []);
+
+    // 右键菜单处理函数
+    const handleRowContextMenu = useCallback((index: number, event: React.MouseEvent) => {
+        console.log('handleRowContextMenu called with index:', index);
+
+        // 如果右键的行没有被选中，则选中它
+        const newSelectedRows = new Set(selectedRows);
+        if (!newSelectedRows.has(index)) {
+            newSelectedRows.clear();
+            newSelectedRows.add(index);
+            setSelectedRows(newSelectedRows);
+        }
+
+        // 显示右键菜单
+        setContextMenu({
+            visible: true,
+            x: event.clientX,
+            y: event.clientY,
+            selectedRows: Array.from(newSelectedRows)
+        });
+    }, [selectedRows]);
+
+    // 隐藏右键菜单
+    const hideContextMenu = useCallback(() => {
+        setContextMenu(prev => ({ ...prev, visible: false }));
+    }, []);
 
     // 全选/取消全选
     const handleSelectAll = useCallback(() => {
+        console.log('handleSelectAll called, current selected:', selectedRows.size, 'total:', data.length);
         if (selectedRows.size === data.length) {
+            console.log('Deselecting all rows');
             setSelectedRows(new Set());
         } else {
+            console.log('Selecting all rows');
             setSelectedRows(new Set(data.map((_, index) => index)));
         }
     }, [selectedRows.size, data.length]);
+
+    // 键盘事件监听
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Ctrl+A 全选
+            if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+                event.preventDefault();
+                handleSelectAll();
+            }
+            // Escape 取消选择
+            else if (event.key === 'Escape') {
+                setSelectedRows(new Set());
+                hideContextMenu();
+            }
+        };
+
+        const handleGlobalClick = (event: MouseEvent) => {
+            // 点击其他地方隐藏右键菜单
+            hideContextMenu();
+        };
+
+        const handleGlobalMouseUp = () => {
+            // 全局鼠标抬起，结束拖动
+            setIsDragging(false);
+            setDragStartIndex(-1);
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('click', handleGlobalClick);
+        document.addEventListener('mouseup', handleGlobalMouseUp);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('click', handleGlobalClick);
+            document.removeEventListener('mouseup', handleGlobalMouseUp);
+        };
+    }, [handleSelectAll, hideContextMenu]);
 
     // 复制功能
     const handleCopyRow = useCallback(async (rowIndex: number, format: 'text' | 'json' | 'csv' = 'text') => {
@@ -1341,6 +1480,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         const row: DataRow | undefined = data[rowIndex];
         if (!row) return;
 
+        // 立即保存当前精确的滚动位置
+        const currentScrollLeft = contentRef.current?.scrollLeft || headerRef.current?.scrollLeft || 0;
+        savedScrollPositionRef.current = currentScrollLeft;
+
         const value = String(row[column] || '');
         const success = await copyToClipboard(value);
 
@@ -1349,38 +1492,61 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         } else {
             showMessage.error('复制失败');
         }
+
+        // 立即恢复滚动位置，不等待
+        requestAnimationFrame(() => {
+            if (headerRef.current) {
+                headerRef.current.scrollLeft = savedScrollPositionRef.current;
+            }
+            if (contentRef.current) {
+                contentRef.current.scrollLeft = savedScrollPositionRef.current;
+            }
+        });
     }, [data]);
 
     // 滚动同步状态
     const isScrollingSyncRef = useRef(false);
 
-    // 处理横向滚动同步
+    // 保存滚动位置
+    const savedScrollPositionRef = useRef<number>(0);
+
+
+
+    // 处理横向滚动同步 - 优化同步精度
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         if (isScrollingSyncRef.current) return;
 
         const scrollLeft = e.currentTarget.scrollLeft;
-        if (headerRef.current && headerRef.current.scrollLeft !== scrollLeft) {
+        savedScrollPositionRef.current = scrollLeft; // 保存滚动位置
+
+        if (headerRef.current && Math.abs(headerRef.current.scrollLeft - scrollLeft) > 1) {
             isScrollingSyncRef.current = true;
             headerRef.current.scrollLeft = scrollLeft;
-            requestAnimationFrame(() => {
+            // 使用更短的延迟确保同步精度
+            setTimeout(() => {
                 isScrollingSyncRef.current = false;
-            });
+            }, 16); // 约1帧的时间
         }
     }, []);
 
-    // 处理表头滚动同步到内容
+    // 处理表头滚动同步到内容 - 优化同步精度
     const handleHeaderScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         if (isScrollingSyncRef.current) return;
 
         const scrollLeft = e.currentTarget.scrollLeft;
-        if (contentRef.current && contentRef.current.scrollLeft !== scrollLeft) {
+        savedScrollPositionRef.current = scrollLeft; // 保存滚动位置
+
+        if (contentRef.current && Math.abs(contentRef.current.scrollLeft - scrollLeft) > 1) {
             isScrollingSyncRef.current = true;
             contentRef.current.scrollLeft = scrollLeft;
-            requestAnimationFrame(() => {
+            // 使用更短的延迟确保同步精度
+            setTimeout(() => {
                 isScrollingSyncRef.current = false;
-            });
+            }, 16); // 约1帧的时间
         }
     }, []);
+
+
 
     // 处理排序
     const handleSort = (column: string) => {
@@ -1691,76 +1857,132 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <div className="virtualized-table-container h-full flex flex-col">
-                            {/* 固定表头容器 */}
-                            <div
-                                ref={headerRef}
-                                className="virtualized-table-header table-header-container"
-                                onScroll={handleHeaderScroll}
-                            >
-                                <VirtualTableHeader
-                                    columnOrder={columnOrder}
-                                    selectedColumns={selectedColumns}
-                                    columnWidths={columnWidths}
-                                    sortColumn={sortColumn}
-                                    sortDirection={sortDirection}
-                                    selectedRowsCount={selectedRows.size}
-                                    totalRowsCount={data.length}
-                                    onSort={handleSort}
-                                    onAddFilter={addFilter}
-                                    onSelectAll={handleSelectAll}
-                                    onCopySelectedRows={handleCopySelectedRows}
-                                />
-                            </div>
-
-                            {/* 虚拟化表格内容 */}
-                            <div className="virtualized-table-content table-content-container">
-                                <Virtuoso
-                                    style={{ height: '100%' }}
-                                    data={data}
-                                    itemContent={(index, row) => (
-                                        <VirtualTableRow
-                                            key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
-                                            row={row}
-                                            index={index}
-                                            columnOrder={columnOrder}
-                                            selectedColumns={selectedColumns}
-                                            columnWidths={columnWidths}
-                                            isSelected={selectedRows.has(index)}
-                                            onRowSelect={handleRowSelect}
-                                            onCopyRow={handleCopyRow}
-                                            onCopyCell={handleCopyCell}
+                        <div className="unified-table-with-fixed-column h-full">
+                            {/* 使用单一Virtuoso实例，通过自定义组件实现固定列效果 */}
+                            <Virtuoso
+                                style={{ height: '100%' }}
+                                data={data}
+                                components={{
+                                    Header: () => (
+                                        <div className="table-header-with-fixed-column">
+                                            {/* 固定序号列表头 */}
+                                            <div className="fixed-column-header">
+                                                <div className="row-number-header-cell">#</div>
+                                            </div>
+                                            {/* 可滚动数据列表头 */}
+                                            <div className="scrollable-columns-header">
+                                                <div className="scrollable-header-content">
+                                                    {columnOrder.filter(column => selectedColumns.includes(column) && column !== '#').map(column => {
+                                                        const width = columnWidths[column] || 120;
+                                                        return (
+                                                            <div
+                                                                key={column}
+                                                                className={cn(
+                                                                    'scrollable-header-cell',
+                                                                    'cursor-pointer hover:bg-muted/50'
+                                                                )}
+                                                                style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
+                                                                onClick={() => handleSort(column)}
+                                                            >
+                                                                <div className='flex items-center gap-1 w-full h-full'>
+                                                                    <span className='text-xs font-medium flex-shrink-0' title={column}>
+                                                                        {column}
+                                                                    </span>
+                                                                    {column === 'time' && (
+                                                                        <Badge variant='secondary' className='text-xs'>
+                                                                            时间
+                                                                        </Badge>
+                                                                    )}
+                                                                    {sortColumn === column && (
+                                                                        <span className='text-xs text-primary'>
+                                                                            {sortDirection === 'asc' ? '↑' : '↓'}
+                                                                        </span>
+                                                                    )}
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger asChild>
+                                                                            <Button
+                                                                                variant='ghost'
+                                                                                size='sm'
+                                                                                className='h-4 w-4 p-0 ml-auto opacity-0 group-hover:opacity-100'
+                                                                            >
+                                                                                <Filter className='h-3 w-3' />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align='start'>
+                                                                            <DropdownMenuItem onClick={() => addFilter(column)}>
+                                                                                <Filter className='w-4 h-4 mr-2' />
+                                                                                添加过滤器
+                                                                            </DropdownMenuItem>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ),
+                                    Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
+                                        <div
+                                            {...props}
+                                            ref={ref}
+                                            className="table-scroller-with-outer-scrollbar"
                                         />
-                                    )}
-                                    overscan={10}
-                                    increaseViewportBy={400}
-                                    fixedItemHeight={40}
-                                    useWindowScroll={false}
-                                    components={{
-                                        Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
-                                            <div
-                                                {...props}
-                                                ref={(element) => {
-                                                    if (typeof ref === 'function') {
-                                                        ref(element);
-                                                    } else if (ref && 'current' in ref) {
-                                                        (ref as React.MutableRefObject<HTMLDivElement | null>).current = element;
-                                                    }
-                                                    if (contentRef.current !== element) {
-                                                        (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = element;
-                                                    }
-                                                }}
-                                                onScroll={(e) => {
-                                                    if (props.onScroll) {
-                                                        props.onScroll(e);
-                                                    }
-                                                    handleScroll(e);
-                                                }}
-                                            />
-                                        ))
-                                    }}
-                                />
-                            </div>
+                                    ))
+                                }}
+                                itemContent={(index, row) => (
+                                    <div
+                                        key={row._id !== undefined ? `unified-row_${row._id}_${index}` : `unified-row_index_${index}_${currentPage}_${pageSize}`}
+                                        className={cn(
+                                            "table-row-with-fixed-column",
+                                            selectedRows.has(index) && "selected"
+                                        )}
+                                        onClick={(e) => handleRowClick(index, e)}
+                                        onMouseDown={(e) => handleRowMouseDown(index, e)}
+                                        onMouseEnter={(e) => handleRowMouseEnter(index, e)}
+                                        onMouseUp={(e) => handleRowMouseUp(index, e)}
+                                        onContextMenu={(e) => handleRowContextMenu(index, e)}
+                                    >
+                                        {/* 固定序号列 */}
+                                        <div className="fixed-column-cell">
+                                            <div className="row-number-cell">
+                                                {index + 1}
+                                            </div>
+                                        </div>
+                                        {/* 可滚动数据列 */}
+                                        <div className="scrollable-columns-cell">
+                                            <div className="scrollable-cell-content">
+                                                {columnOrder.filter(column => selectedColumns.includes(column) && column !== '#').map(column => {
+                                                    const width = columnWidths[column] || 120;
+                                                    return (
+                                                        <div
+                                                            key={column}
+                                                            className="scrollable-data-cell"
+                                                            style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
+                                                            onDoubleClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleCopyCell(index, column);
+                                                            }}
+                                                            title={`双击复制: ${String(row[column] || '-')}`}
+                                                        >
+                                                            <div className='truncate w-full'>
+                                                                {column === 'time'
+                                                                    ? new Date(row[column]).toLocaleString()
+                                                                    : String(row[column] || '-')}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                overscan={10}
+                                increaseViewportBy={400}
+                                useWindowScroll={false}
+                            />
                         </div>
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
@@ -1790,6 +2012,73 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 rowCount={data.length}
                 columnCount={selectedColumns.length}
             />
+
+            {/* 右键菜单 */}
+            {contextMenu.visible && (
+                <div
+                    className="fixed bg-background border border-border rounded-md shadow-lg z-50 py-1 min-w-[160px]"
+                    style={{
+                        left: contextMenu.x,
+                        top: contextMenu.y,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+                        已选择 {contextMenu.selectedRows.length} 行
+                    </div>
+                    <button
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                        onClick={() => {
+                            contextMenu.selectedRows.forEach(index => handleCopyRow(index, 'text'));
+                            hideContextMenu();
+                        }}
+                    >
+                        <FileText className="w-4 h-4" />
+                        复制为文本
+                    </button>
+                    <button
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                        onClick={() => {
+                            contextMenu.selectedRows.forEach(index => handleCopyRow(index, 'json'));
+                            hideContextMenu();
+                        }}
+                    >
+                        <Code className="w-4 h-4" />
+                        复制为JSON
+                    </button>
+                    <button
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                        onClick={() => {
+                            contextMenu.selectedRows.forEach(index => handleCopyRow(index, 'csv'));
+                            hideContextMenu();
+                        }}
+                    >
+                        <FileSpreadsheet className="w-4 h-4" />
+                        复制为CSV
+                    </button>
+                    <div className="border-t my-1"></div>
+                    <button
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                        onClick={() => {
+                            handleSelectAll();
+                            hideContextMenu();
+                        }}
+                    >
+                        <CheckSquare className="w-4 h-4" />
+                        全选
+                    </button>
+                    <button
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                        onClick={() => {
+                            setSelectedRows(new Set());
+                            hideContextMenu();
+                        }}
+                    >
+                        <Square className="w-4 h-4" />
+                        取消选择
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

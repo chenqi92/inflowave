@@ -1218,9 +1218,14 @@ pre,
   flex-shrink: 0;
   flex-grow: 0;
   box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  position: relative;
+  /* 添加竖向分割线，使用伪元素优化性能 */
+  border-right: 1px solid hsl(var(--border));
+}
+
+/* 最后一列不显示右边框 */
+.virtual-table-column:last-child {
+  border-right: none;
 }
 
 /* 优化大数据量渲染性能 */
@@ -1234,4 +1239,253 @@ pre,
   height: 40px;
   min-height: 40px;
   max-height: 40px;
+}
+
+/* 表头高度优化和固定样式 */
+.virtual-table-header {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  align-items: center;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* 一体化表头容器 */
+.table-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* 统一表格容器 */
+.unified-table-container {
+  overflow: auto;
+}
+
+/* 表头列内容对齐 */
+.virtual-table-header .virtual-table-column {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* 序号列样式优化 */
+.virtual-table-header .virtual-table-column:first-child,
+.virtual-table-row .virtual-table-column:first-child {
+  justify-content: center;
+  background: hsl(var(--muted));
+  border-right: 2px solid hsl(var(--border));
+  font-weight: 600;
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+/* 拖动选择时的视觉效果 */
+.virtual-table-row.dragging {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+/* 选中行的视觉效果 */
+.virtual-table-row.selected {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+/* 右键菜单样式 */
+.context-menu {
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 禁用文本选择，优化拖动体验 */
+.virtual-table-row {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 统一表格容器（单一滚动实例） */
+.unified-table-with-fixed-column {
+  height: 100%;
+  position: relative;
+}
+
+/* 表格滚动容器 - 滚动条在外围 */
+.table-scroller-with-outer-scrollbar {
+  height: 100%;
+  overflow: auto;
+  /* 滚动条样式优化 */
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.table-scroller-with-outer-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroller-with-outer-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroller-with-outer-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.table-scroller-with-outer-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* 表头容器（固定列 + 滚动列） */
+.table-header-with-fixed-column {
+  display: flex;
+  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* 固定列表头 */
+.fixed-column-header {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  flex-shrink: 0;
+  background: hsl(var(--muted));
+  border-right: 2px solid hsl(var(--border));
+  position: sticky;
+  left: 0;
+  z-index: 20;
+}
+
+.row-number-header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted));
+  user-select: none;
+}
+
+/* 可滚动列表头 */
+.scrollable-columns-header {
+  flex: 1;
+  overflow: hidden;
+}
+
+.scrollable-header-content {
+  display: flex;
+  min-width: max-content;
+  height: 48px;
+}
+
+.scrollable-header-cell {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  border-right: 1px solid hsl(var(--border));
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.scrollable-header-cell:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* 数据行容器（固定列 + 滚动列） */
+.table-row-with-fixed-column {
+  display: flex;
+  height: 40px;
+  border-bottom: 1px solid hsl(var(--border));
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.table-row-with-fixed-column:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.table-row-with-fixed-column.selected {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+/* 固定列单元格 */
+.fixed-column-cell {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  flex-shrink: 0;
+  background: hsl(var(--muted));
+  border-right: 2px solid hsl(var(--border));
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.row-number-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted));
+  user-select: none;
+}
+
+.table-row-with-fixed-column.selected .row-number-cell {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
+}
+
+/* 可滚动列单元格 */
+.scrollable-columns-cell {
+  flex: 1;
+  overflow: hidden;
+}
+
+.scrollable-cell-content {
+  display: flex;
+  min-width: max-content;
+  height: 40px;
+}
+
+.scrollable-data-cell {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  border-right: 1px solid hsl(var(--border));
+  flex-shrink: 0;
 }
