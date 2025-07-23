@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useCallback, useMemo, memo, startTransition} from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import {
     Card,
     CardContent,
@@ -124,150 +125,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(({ column, is
     );
 });
 
-// 虚拟化表格行组件
-interface VirtualTableRowProps {
-    row: DataRow;
-    index: number;
-    columnOrder: string[];
-    selectedColumns: string[];
-    currentPage: number;
-    pageSize: number;
-    isSelected: boolean;
-    onRowSelect: (index: number, event?: React.MouseEvent) => void;
-    onCopyRow: (index: number, format?: 'text' | 'json' | 'csv') => void;
-    onCopyCell: (index: number, column: string) => void;
-    style?: React.CSSProperties;
-}
-
-const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
-    row,
-    index,
-    columnOrder,
-    selectedColumns,
-    currentPage,
-    pageSize,
-    isSelected,
-    onRowSelect,
-    onCopyRow,
-    onCopyCell,
-    style
-}) => {
-    const uniqueKey = useMemo(() =>
-        row._id !== undefined
-            ? `row_${row._id}_${index}`
-            : `row_index_${index}_${currentPage}_${pageSize}`,
-        [row._id, index, currentPage, pageSize]
-    );
-
-    const visibleColumns = useMemo(() =>
-        ['_actions', '_select', ...columnOrder.filter(column => selectedColumns.includes(column))],
-        [columnOrder, selectedColumns]
-    );
-
-    const handleRowClick = useCallback((event: React.MouseEvent) => {
-        // 如果点击的是复制按钮或其他交互元素，不触发行选择
-        if ((event.target as HTMLElement).closest('.copy-button, .dropdown-trigger')) {
-            return;
-        }
-        onRowSelect(index, event);
-    }, [index, onRowSelect]);
-
-    return (
-        <tr
-            key={uniqueKey}
-            className={cn(
-                "border-b transition-colors hover:bg-muted/50 cursor-pointer group relative",
-                isSelected && "bg-blue-50 hover:bg-blue-100"
-            )}
-            style={style}
-            onClick={handleRowClick}
-        >
-            {visibleColumns.map((column) => {
-                if (column === '_actions') {
-                    return (
-                        <td key="_actions" className="p-2 align-middle w-12 relative">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0 dropdown-trigger"
-                                        onClick={(e) => e.stopPropagation()}
-                                        title="行操作"
-                                    >
-                                        <MoreVertical className="w-3 h-3" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start">
-                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'text')}>
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        复制为文本
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'json')}>
-                                        <Code className="w-4 h-4 mr-2" />
-                                        复制为JSON
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onCopyRow(index, 'csv')}>
-                                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                        复制为CSV
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </td>
-                    );
-                }
-
-                if (column === '_select') {
-                    return (
-                        <td key="_select" className="p-4 align-middle text-xs w-12">
-                            <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) => {
-                                    onRowSelect(index);
-                                }}
-                                className="h-4 w-4"
-                            />
-                        </td>
-                    );
-                }
-                // 计算列的最小宽度（与表头保持一致）
-                const getColumnMinWidth = (col: string) => {
-                    if (col === '#') return '60px';
-                    if (col === 'time') return '180px';
-                    const colLength = col.length;
-                    return `${Math.max(120, colLength * 12)}px`;
-                };
-
-                const minWidth = getColumnMinWidth(column);
-
-                return (
-                    <td
-                        key={column}
-                        className={cn(
-                            'p-4 align-middle text-xs relative',
-                            column === '#'
-                                ? 'font-medium text-muted-foreground bg-muted/20 text-center'
-                                : 'font-mono'
-                        )}
-                        style={{ minWidth }}
-                        onDoubleClick={() => onCopyCell(index, column)}
-                        title={`双击复制: ${String(row[column] || '-')}`}
-                    >
-                        <div className="truncate">
-                            {column === '#'
-                                ? row[column]
-                                : column === 'time'
-                                ? new Date(row[column]).toLocaleString()
-                                : String(row[column] || '-')
-                            }
-                        </div>
-                    </td>
-                );
-            })}
-
-        </tr>
-    );
-});
+// 原有的 VirtualTableRow 组件已移动到 VirtualizedTableDataBrowser.tsx
 
 // 优化的分页组件 - 独立渲染，避免受表格数据影响
 interface PaginationControlsProps {
@@ -335,7 +193,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">每页:</span>
                         <Select value={pageSize.toString()} onValueChange={handlePageSizeChangeInternal}>
-                            <SelectTrigger className="w-16 h-8">
+                            <SelectTrigger className="w-20 h-8">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
@@ -556,10 +414,11 @@ interface FilterEditorProps {
     filter: ColumnFilter;
     onUpdate: (filter: ColumnFilter) => void;
     onRemove: () => void;
+    onApply: () => void;
     availableOperators: { value: FilterOperator; label: string }[];
 }
 
-const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove, availableOperators }) => {
+const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove, onApply, availableOperators }) => {
     const handleOperatorChange = (operator: FilterOperator) => {
         onUpdate({ ...filter, operator, value: '', value2: undefined });
     };
@@ -653,9 +512,15 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
         }
     };
 
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            onApply();
+        }
+    };
+
     return (
         <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
-            <Badge variant="outline" className="text-xs px-2 py-1">
+            <Badge variant="outline" className="text-xs px-2 py-1 flex-shrink-0">
                 {filter.column}
             </Badge>
 
@@ -672,13 +537,26 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
                 </SelectContent>
             </Select>
 
-            {renderValueInput()}
+            <div onKeyPress={handleKeyPress}>
+                {renderValueInput()}
+            </div>
+
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onApply}
+                className="h-7 px-2 text-xs flex-shrink-0"
+                title="应用过滤器"
+            >
+                应用
+            </Button>
 
             <Button
                 variant="ghost"
                 size="sm"
                 onClick={onRemove}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
+                title="删除过滤器"
             >
                 ×
             </Button>
@@ -707,6 +585,7 @@ import {
 import {cn} from '@/lib/utils';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
+import { VirtualTableRow, VirtualTableHeader } from './VirtualizedTableDataBrowser';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type {QueryResult} from '@/types';
 
@@ -1226,6 +1105,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [connectionId, database, generateQuery, columns]);
 
+    // 应用过滤器（延迟执行，避免添加过滤器时立即重新加载）
+    const applyFilters = useCallback(() => {
+        setCurrentPage(1);
+        loadData();
+    }, [loadData]);
+
     // 初始化
     useEffect(() => {
         fetchTableSchema();
@@ -1402,7 +1287,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setFilters([...filters, newFilter]);
     };
 
-    // 更新过滤器
+    // 更新过滤器（不立即重新加载）
     const updateFilter = (index: number, updatedFilter: ColumnFilter) => {
         const newFilters = [...filters];
         newFilters[index] = updatedFilter;
@@ -1636,16 +1521,27 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 {filters.length > 0 && (
                     <CardContent className="pt-0 pb-3">
                         <div className="space-y-2">
-                            <div className="text-sm font-medium text-muted-foreground">
-                                筛选条件 ({filters.length})
+                            <div className="flex items-center justify-between">
+                                <div className="text-sm font-medium text-muted-foreground">
+                                    筛选条件 ({filters.length})
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={applyFilters}
+                                    className="h-7 px-3 text-xs"
+                                >
+                                    应用所有过滤器
+                                </Button>
                             </div>
-                            <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
                                 {filters.map((filter, index) => (
                                     <FilterEditor
                                         key={index}
                                         filter={filter}
                                         onUpdate={(updatedFilter) => updateFilter(index, updatedFilter)}
                                         onRemove={() => removeFilter(index)}
+                                        onApply={applyFilters}
                                         availableOperators={getAvailableOperators(filter.dataType)}
                                     />
                                 ))}
@@ -1664,42 +1560,44 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <ScrollArea className="h-full">
-                            <div className="min-w-max">
-                                <table className="w-full caption-bottom text-sm">
-                                    <TableHeader
-                                        columnOrder={columnOrder}
-                                        selectedColumns={selectedColumns}
-                                        sortColumn={sortColumn}
-                                        sortDirection={sortDirection}
-                                        selectedRowsCount={selectedRows.size}
-                                        totalRowsCount={data.length}
-                                        onSort={handleSort}
-                                        onAddFilter={addFilter}
-                                        onSelectAll={handleSelectAll}
-                                        onCopySelectedRows={handleCopySelectedRows}
-                                    />
-                                    <tbody className="[&_tr:last-child]:border-0">
-                                        {data.map((row, index) => (
-                                            <VirtualTableRow
-                                                key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
-                                                row={row}
-                                                index={index}
-                                                columnOrder={columnOrder}
-                                                selectedColumns={selectedColumns}
-                                                currentPage={currentPage}
-                                                pageSize={pageSize}
-                                                isSelected={selectedRows.has(index)}
-                                                onRowSelect={handleRowSelect}
-                                                onCopyRow={handleCopyRow}
-                                                onCopyCell={handleCopyCell}
-                                            />
-                                        ))}
-                                    </tbody>
-                            </table>
+                        <div className="h-full flex flex-col">
+                            {/* 固定表头 */}
+                            <VirtualTableHeader
+                                columnOrder={columnOrder}
+                                selectedColumns={selectedColumns}
+                                sortColumn={sortColumn}
+                                sortDirection={sortDirection}
+                                selectedRowsCount={selectedRows.size}
+                                totalRowsCount={data.length}
+                                onSort={handleSort}
+                                onAddFilter={addFilter}
+                                onSelectAll={handleSelectAll}
+                                onCopySelectedRows={handleCopySelectedRows}
+                            />
+
+                            {/* 虚拟化表格内容 */}
+                            <div className="flex-1">
+                                <Virtuoso
+                                    style={{ height: '100%' }}
+                                    data={data}
+                                    itemContent={(index, row) => (
+                                        <VirtualTableRow
+                                            key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
+                                            row={row}
+                                            index={index}
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            isSelected={selectedRows.has(index)}
+                                            onRowSelect={handleRowSelect}
+                                            onCopyRow={handleCopyRow}
+                                            onCopyCell={handleCopyCell}
+                                        />
+                                    )}
+                                    overscan={5}
+                                    increaseViewportBy={200}
+                                />
+                            </div>
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
                             <Database className="w-8 h-8 mr-2"/>

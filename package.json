@@ -111,6 +111,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^3.0.3",
     "react-router-dom": "^6.20.1",
+    "react-virtuoso": "^4.13.0",
     "recharts": "2.15.4",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
