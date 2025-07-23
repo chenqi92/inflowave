@@ -134,14 +134,17 @@ export const useCurrentTab = () => {
 
 // 便捷的hook，用于tab操作
 export const useTabOperations = () => {
+  const store = useTabStore();
   const {
+    tabs,
+    activeKey,
     addTab,
     removeTab,
     updateTab,
     updateTabContent,
     setActiveKey,
     clearAllTabs,
-  } = useTabStore();
+  } = store;
 
   // 创建新的查询tab
   const createQueryTab = (database?: string, query?: string) => {
@@ -153,9 +156,85 @@ export const useTabOperations = () => {
       modified: true,
       saved: false,
     };
-    
+
     addTab(newTab);
     return newTab;
+  };
+
+  // 复制标签页
+  const duplicateTab = (tabId: string) => {
+    const originalTab = tabs.find(tab => tab.id === tabId);
+    if (!originalTab) return null;
+
+    const newTab: EditorTab = {
+      ...originalTab,
+      id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: `${originalTab.title} - 副本`,
+      modified: true,
+      saved: false,
+      filePath: undefined,
+      workspacePath: undefined,
+    };
+
+    addTab(newTab);
+    setActiveKey(newTab.id);
+    return newTab;
+  };
+
+  // 关闭其他标签页
+  const closeOtherTabs = (keepTabId: string) => {
+    const tabsToClose = tabs.filter(tab => tab.id !== keepTabId);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        tabsToClose.forEach(tab => removeTab(tab.id));
+        setActiveKey(keepTabId);
+      }
+    };
+  };
+
+  // 关闭左侧标签页
+  const closeLeftTabs = (targetTabId: string) => {
+    const targetIndex = tabs.findIndex(tab => tab.id === targetTabId);
+    if (targetIndex <= 0) return { tabsToClose: [], unsavedTabs: [], execute: () => {} };
+
+    const tabsToClose = tabs.slice(0, targetIndex);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        tabsToClose.forEach(tab => removeTab(tab.id));
+      }
+    };
+  };
+
+  // 关闭右侧标签页
+  const closeRightTabs = (targetTabId: string) => {
+    const targetIndex = tabs.findIndex(tab => tab.id === targetTabId);
+    if (targetIndex === -1 || targetIndex === tabs.length - 1) {
+      return { tabsToClose: [], unsavedTabs: [], execute: () => {} };
+    }
+
+    const tabsToClose = tabs.slice(targetIndex + 1);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        tabsToClose.forEach(tab => removeTab(tab.id));
+      }
+    };
+  };
+
+  // 获取未保存的标签页
+  const getUnsavedTabs = () => {
+    return tabs.filter(tab => tab.modified);
   };
 
   // 创建数据浏览tab
@@ -171,8 +250,9 @@ export const useTabOperations = () => {
       database,
       tableName,
     };
-    
+
     addTab(newTab);
+    setActiveKey(newTab.id); // 自动切换到新创建的数据浏览标签页
     return newTab;
   };
 
@@ -184,6 +264,11 @@ export const useTabOperations = () => {
   return {
     createQueryTab,
     createDataBrowserTab,
+    duplicateTab,
+    closeOtherTabs,
+    closeLeftTabs,
+    closeRightTabs,
+    getUnsavedTabs,
     saveTab,
     removeTab,
     updateTab,

@@ -4,6 +4,9 @@ import { Popconfirm } from '@/components/ui/Popconfirm';
 import { FileText, Table, Database, Plus, X } from 'lucide-react';
 import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
+import TabContextMenu from './TabContextMenu';
+import SaveConfirmDialog from '../common/SaveConfirmDialog';
+import { useTabOperations } from '@/stores/tabStore';
 
 export interface EditorTab {
   id: string;
@@ -32,6 +35,8 @@ interface TabManagerProps {
   onActiveKeyChange: (key: string) => void;
   onTabContentChange: (tabId: string, content: string) => void;
   onSaveTab?: (tabId: string) => void;
+  onSaveTabAs?: (tabId: string) => void;
+  onSaveAllTabs?: () => Promise<void>;
   isDragging?: boolean;
   draggedTab?: any;
   onTabDragStart?: (e: React.DragEvent<HTMLElement>, tab: any) => void;
@@ -53,6 +58,8 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onActiveKeyChange,
   onTabContentChange,
   onSaveTab,
+  onSaveTabAs,
+  onSaveAllTabs,
   isDragging,
   draggedTab,
   onTabDragStart,
@@ -62,6 +69,241 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onTabDragOver,
 }) => {
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
+
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    targetTab: EditorTab | null;
+  }>({
+    open: false,
+    x: 0,
+    y: 0,
+    targetTab: null,
+  });
+
+  // 保存确认对话框状态
+  const [saveConfirmDialog, setSaveConfirmDialog] = useState<{
+    open: boolean;
+    unsavedTabs: EditorTab[];
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({
+    open: false,
+    unsavedTabs: [],
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  // 直接实现tab操作逻辑
+  const duplicateTab = useCallback((tabId: string) => {
+    const originalTab = tabs.find(tab => tab.id === tabId);
+    if (!originalTab) return null;
+
+    const newTab: EditorTab = {
+      ...originalTab,
+      id: generateUniqueId('tab'),
+      title: `${originalTab.title} - 副本`,
+      modified: true,
+      saved: false,
+      filePath: undefined,
+      workspacePath: undefined,
+    };
+
+    const newTabs = [...tabs, newTab];
+    onTabsChange(newTabs);
+    onActiveKeyChange(newTab.id);
+    return newTab;
+  }, [tabs, onTabsChange, onActiveKeyChange]);
+
+  const closeOtherTabs = useCallback((keepTabId: string) => {
+    const tabsToClose = tabs.filter(tab => tab.id !== keepTabId);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        const newTabs = tabs.filter(tab => tab.id === keepTabId);
+        onTabsChange(newTabs);
+        onActiveKeyChange(keepTabId);
+      }
+    };
+  }, [tabs, onTabsChange, onActiveKeyChange]);
+
+  const closeLeftTabs = useCallback((targetTabId: string) => {
+    const targetIndex = tabs.findIndex(tab => tab.id === targetTabId);
+    if (targetIndex <= 0) return { tabsToClose: [], unsavedTabs: [], execute: () => {} };
+
+    const tabsToClose = tabs.slice(0, targetIndex);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        const newTabs = tabs.slice(targetIndex);
+        onTabsChange(newTabs);
+      }
+    };
+  }, [tabs, onTabsChange]);
+
+  const closeRightTabs = useCallback((targetTabId: string) => {
+    const targetIndex = tabs.findIndex(tab => tab.id === targetTabId);
+    if (targetIndex === -1 || targetIndex === tabs.length - 1) {
+      return { tabsToClose: [], unsavedTabs: [], execute: () => {} };
+    }
+
+    const tabsToClose = tabs.slice(targetIndex + 1);
+    const unsavedTabs = tabsToClose.filter(tab => tab.modified);
+
+    return {
+      tabsToClose,
+      unsavedTabs,
+      execute: () => {
+        const newTabs = tabs.slice(0, targetIndex + 1);
+        onTabsChange(newTabs);
+      }
+    };
+  }, [tabs, onTabsChange]);
+
+  // 处理右键菜单
+  const handleContextMenu = useCallback((e: React.MouseEvent, tab: EditorTab) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setContextMenu({
+      open: true,
+      x: e.clientX,
+      y: e.clientY,
+      targetTab: tab,
+    });
+  }, []);
+
+  // 关闭右键菜单
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, open: false }));
+  }, []);
+
+  // 处理保存确认对话框
+  const showSaveConfirmDialog = useCallback((
+    unsavedTabs: EditorTab[],
+    onConfirm: () => void,
+    onCancel: () => void
+  ) => {
+    setSaveConfirmDialog({
+      open: true,
+      unsavedTabs,
+      onConfirm,
+      onCancel,
+    });
+  }, []);
+
+  // 关闭保存确认对话框
+  const closeSaveConfirmDialog = useCallback(() => {
+    setSaveConfirmDialog(prev => ({ ...prev, open: false }));
+  }, []);
+
+  // 右键菜单操作处理
+  const handleCloseTab = useCallback((tabId: string) => {
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    if (tab.modified) {
+      setClosingTab({ id: tab.id, title: tab.title });
+    } else {
+      const currentIndex = tabs.findIndex(t => t.id === tabId);
+      const newTabs = tabs.filter(t => t.id !== tabId);
+      onTabsChange(newTabs);
+
+      // 如果关闭的是当前活动标签，智能切换到其他标签
+      if (activeKey === tabId && newTabs.length > 0) {
+        // 优先选择右侧标签，如果没有则选择左侧标签
+        let nextActiveIndex = currentIndex;
+        if (nextActiveIndex >= newTabs.length) {
+          nextActiveIndex = newTabs.length - 1;
+        }
+        onActiveKeyChange(newTabs[nextActiveIndex].id);
+      }
+    }
+  }, [tabs, activeKey, onTabsChange, onActiveKeyChange]);
+
+  const handleCloseOtherTabs = useCallback((keepTabId: string) => {
+    const result = closeOtherTabs(keepTabId);
+
+    if (result.unsavedTabs.length > 0) {
+      showSaveConfirmDialog(
+        result.unsavedTabs,
+        async () => {
+          if (onSaveAllTabs) {
+            await onSaveAllTabs();
+          }
+          result.execute();
+        },
+        () => {
+          result.execute();
+        }
+      );
+    } else {
+      result.execute();
+    }
+  }, [closeOtherTabs, showSaveConfirmDialog, onSaveAllTabs]);
+
+  const handleCloseLeftTabs = useCallback((targetTabId: string) => {
+    const result = closeLeftTabs(targetTabId);
+
+    if (result.unsavedTabs.length > 0) {
+      showSaveConfirmDialog(
+        result.unsavedTabs,
+        async () => {
+          if (onSaveAllTabs) {
+            await onSaveAllTabs();
+          }
+          result.execute();
+        },
+        () => {
+          result.execute();
+        }
+      );
+    } else {
+      result.execute();
+    }
+  }, [closeLeftTabs, showSaveConfirmDialog, onSaveAllTabs]);
+
+  const handleCloseRightTabs = useCallback((targetTabId: string) => {
+    const result = closeRightTabs(targetTabId);
+
+    if (result.unsavedTabs.length > 0) {
+      showSaveConfirmDialog(
+        result.unsavedTabs,
+        async () => {
+          if (onSaveAllTabs) {
+            await onSaveAllTabs();
+          }
+          result.execute();
+        },
+        () => {
+          result.execute();
+        }
+      );
+    } else {
+      result.execute();
+    }
+  }, [closeRightTabs, showSaveConfirmDialog, onSaveAllTabs]);
+
+  const handleSaveTab = useCallback((tabId: string) => {
+    if (onSaveTabAs) {
+      onSaveTabAs(tabId);
+    }
+  }, [onSaveTabAs]);
+
+  const handleDuplicateTab = useCallback((tabId: string) => {
+    const newTab = duplicateTab(tabId);
+    if (newTab) {
+      showMessage.success(`已复制标签页: ${newTab.title}`);
+    }
+  }, [duplicateTab]);
 
   // 创建新标签
   const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
@@ -118,12 +360,18 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
   // 移除标签
   const removeTab = useCallback((tabId: string) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === tabId);
     const newTabs = tabs.filter(tab => tab.id !== tabId);
     onTabsChange(newTabs);
 
-    // 如果删除的是当前活跃标签，切换到其他标签
+    // 如果删除的是当前活跃标签，智能切换到其他标签
     if (activeKey === tabId && newTabs.length > 0) {
-      onActiveKeyChange(newTabs[newTabs.length - 1].id);
+      // 优先选择右侧标签，如果没有则选择左侧标签
+      let nextActiveIndex = currentIndex;
+      if (nextActiveIndex >= newTabs.length) {
+        nextActiveIndex = newTabs.length - 1;
+      }
+      onActiveKeyChange(newTabs[nextActiveIndex].id);
     }
   }, [tabs, activeKey, onTabsChange, onActiveKeyChange]);
 
@@ -189,6 +437,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
               : 'bg-muted/50'
           } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''}`}
           onClick={() => onActiveKeyChange(tab.id)}
+          onContextMenu={(e) => handleContextMenu(e, tab)}
           onDragStart={onTabDragStart ? (e) => onTabDragStart(e, {
             id: tab.id,
             title: tab.title,
@@ -267,6 +516,39 @@ export const TabManager: React.FC<TabManagerProps> = ({
       >
         <Plus className='w-4 h-4' />
       </Button>
+
+      {/* 右键菜单 */}
+      {contextMenu.targetTab && (
+        <TabContextMenu
+          open={contextMenu.open}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          targetTab={contextMenu.targetTab}
+          allTabs={tabs}
+          currentTabIndex={tabs.findIndex(tab => tab.id === contextMenu.targetTab?.id)}
+          onClose={closeContextMenu}
+          onCloseTab={handleCloseTab}
+          onCloseOtherTabs={handleCloseOtherTabs}
+          onCloseLeftTabs={handleCloseLeftTabs}
+          onCloseRightTabs={handleCloseRightTabs}
+          onSaveTab={handleSaveTab}
+          onDuplicateTab={handleDuplicateTab}
+        />
+      )}
+
+      {/* 保存确认对话框 */}
+      <SaveConfirmDialog
+        open={saveConfirmDialog.open}
+        onClose={closeSaveConfirmDialog}
+        unsavedTabs={saveConfirmDialog.unsavedTabs}
+        onSaveAll={async () => {
+          await saveConfirmDialog.onConfirm();
+        }}
+        onDiscardAll={saveConfirmDialog.onCancel}
+        onCancel={() => {
+          // 用户取消操作，什么都不做
+        }}
+      />
     </div>
   );
 };

@@ -27,24 +27,21 @@ export const useFileOperations = ({
     }
 
     try {
-      // 生成工作区路径
-      const workspacePath = `workspace/${currentTab.type}/${currentTab.title}.sql`;
-      
-      // 调用后端保存到工作区
-      await safeTauriInvoke('save_to_workspace', {
-        path: workspacePath,
+      // 调用后端保存到工作区 - 使用正确的命令
+      await safeTauriInvoke('save_tab_to_workspace', {
+        tab_id: currentTab.id,
+        title: currentTab.title,
         content: currentTab.content,
-        metadata: {
-          type: currentTab.type,
-          title: currentTab.title,
-          created: new Date().toISOString(),
-        },
+        tab_type: currentTab.type,
+        database: currentTab.database || null,
+        connection_id: currentTab.connectionId || null,
+        table_name: currentTab.tableName || null,
       });
 
       // 更新标签状态
       const updatedTabs = tabs.map(tab =>
         tab.id === currentTab.id
-          ? { ...tab, saved: true, modified: false, workspacePath }
+          ? { ...tab, saved: true, modified: false }
           : tab
       );
       onTabsChange(updatedTabs);
@@ -64,31 +61,31 @@ export const useFileOperations = ({
     }
 
     try {
-      // 调用后端文件保存对话框
-      const filePath = await safeTauriInvoke<string>('save_file_dialog', {
-        defaultName: `${currentTab.title}.sql`,
+      // 调用后端文件保存对话框 - 使用正确的参数结构
+      const dialogResult = await safeTauriInvoke<{ path: string; name: string } | null>('save_file_dialog', {
+        default_path: `${currentTab.title}.sql`,
         filters: [
           { name: 'SQL Files', extensions: ['sql'] },
           { name: 'All Files', extensions: ['*'] },
         ],
       });
 
-      if (filePath) {
+      if (dialogResult && dialogResult.path) {
         // 保存文件
-        await safeTauriInvoke('save_file', {
-          path: filePath,
+        await safeTauriInvoke('write_file', {
+          path: dialogResult.path,
           content: currentTab.content,
         });
 
         // 更新标签状态
         const updatedTabs = tabs.map(tab =>
           tab.id === currentTab.id
-            ? { ...tab, saved: true, modified: false, filePath }
+            ? { ...tab, saved: true, modified: false, filePath: dialogResult.path }
             : tab
         );
         onTabsChange(updatedTabs);
 
-        showMessage.success(`文件已保存: ${filePath}`);
+        showMessage.success(`文件已保存: ${dialogResult.path}`);
       }
     } catch (error) {
       console.error('另存为失败:', error);
@@ -222,19 +219,19 @@ export const useFileOperations = ({
 
   // 自动保存功能
   const autoSave = useCallback(async (tab: EditorTab) => {
-    if (!tab.modified || !tab.workspacePath) {
+    if (!tab.modified) {
       return;
     }
 
     try {
-      await safeTauriInvoke('save_to_workspace', {
-        path: tab.workspacePath,
+      await safeTauriInvoke('save_tab_to_workspace', {
+        tab_id: tab.id,
+        title: tab.title,
         content: tab.content,
-        metadata: {
-          type: tab.type,
-          title: tab.title,
-          lastModified: new Date().toISOString(),
-        },
+        tab_type: tab.type,
+        database: tab.database || null,
+        connection_id: tab.connectionId || null,
+        table_name: tab.tableName || null,
       });
 
       // 更新标签状态
@@ -262,31 +259,16 @@ export const useFileOperations = ({
 
     try {
       const savePromises = modifiedTabs.map(async (tab) => {
-        if (tab.workspacePath) {
-          // 保存到工作区
-          await safeTauriInvoke('save_to_workspace', {
-            path: tab.workspacePath,
-            content: tab.content,
-            metadata: {
-              type: tab.type,
-              title: tab.title,
-              lastModified: new Date().toISOString(),
-            },
-          });
-        } else {
-          // 生成新的工作区路径
-          const workspacePath = `workspace/${tab.type}/${tab.title}.sql`;
-          await safeTauriInvoke('save_to_workspace', {
-            path: workspacePath,
-            content: tab.content,
-            metadata: {
-              type: tab.type,
-              title: tab.title,
-              created: new Date().toISOString(),
-            },
-          });
-          tab.workspacePath = workspacePath;
-        }
+        // 使用正确的工作区保存命令
+        await safeTauriInvoke('save_tab_to_workspace', {
+          tab_id: tab.id,
+          title: tab.title,
+          content: tab.content,
+          tab_type: tab.type,
+          database: tab.database || null,
+          connection_id: tab.connectionId || null,
+          table_name: tab.tableName || null,
+        });
       });
 
       await Promise.all(savePromises);

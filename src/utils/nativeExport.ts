@@ -95,12 +95,10 @@ export const exportWithNativeDialog = async (
       filters: filters
     });
 
-    // 准备Tauri调用参数 - 使用正确的结构体包装格式
+    // 准备Tauri调用参数 - 直接传递参数结构
     const tauriParams = {
-      params: {
-        default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
-        filters
-      }
+      default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
+      filters
     };
 
     console.log('Tauri调用参数 (正确格式):', tauriParams);
