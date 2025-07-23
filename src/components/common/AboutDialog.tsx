@@ -33,10 +33,10 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
     name: 'InfloWave',
     version: versionInfo.version,
     description: '现代化的 InfluxDB 数据库管理工具',
-    author: 'InfloWave Team',
+    author: 'KKAPE',
     license: 'MIT',
     repository: 'https://github.com/chenqi92/inflowave',
-    website: 'https://inflowave.com',
+    website: 'https://inflowave.kkape.com',
   };
 
   const features = [

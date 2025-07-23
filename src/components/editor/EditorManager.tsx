@@ -26,7 +26,7 @@ import {
 import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
 import { unifiedSyntaxManager } from '@/utils/unifiedSyntaxHighlight';
 import { versionToLanguageType, type DatabaseLanguageType } from '@/types/database';
-import { debugMonarchTokenizer, checkInfluxQLTokenizer, fixInfluxQLTokenizer, validateTokenizerFix } from '@/utils/debugSyntaxHighlight';
+import { NativeSqlHighlight } from '@/utils/nativeSqlHighlight';
 
 
 
@@ -151,24 +151,16 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           setTimeout(() => {
             unifiedSyntaxManager.validateSyntaxHighlight(editor);
 
-            // 如果语法高亮不工作，尝试调试和修复
+            // 验证原生SQL语法高亮
             setTimeout(() => {
-              console.log('🔧 开始语法高亮调试和修复流程...');
-
-              // 1. 运行基础调试
-              debugMonarchTokenizer();
-
-              // 2. 检查InfluxQL tokenizer
-              checkInfluxQLTokenizer();
-
-              // 3. 修复InfluxQL tokenizer
-              fixInfluxQLTokenizer();
-
-              // 4. 验证修复效果
-              setTimeout(() => {
-                validateTokenizerFix(editor);
-              }, 200);
-
+              console.log('🔍 验证原生SQL语法高亮效果...');
+              const model = editor.getModel();
+              if (model) {
+                console.log('📋 编辑器信息:', {
+                  language: model.getLanguageId(),
+                  content: model.getValue().substring(0, 50) + '...'
+                });
+              }
             }, 500);
           }, 300);
 
@@ -213,28 +205,17 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     return languageType;
   }, [connections, activeConnectionId]);
 
-  // 获取编辑器语言ID
+  // 获取编辑器语言ID（使用原生SQL）
   const getEditorLanguage = useCallback(() => {
-    const languageType = getDatabaseLanguageType();
-    return unifiedSyntaxManager.getLanguageId(languageType);
-  }, [getDatabaseLanguageType]);
+    // 直接返回Monaco原生SQL语言
+    return 'sql';
+  }, []);
 
-  // 获取编辑器主题
+  // 获取编辑器主题（使用原生主题）
   const getEditorTheme = useCallback(() => {
-    const languageType = getDatabaseLanguageType();
-    const isDark = resolvedTheme === 'dark';
-    const themeName = unifiedSyntaxManager.getThemeName(languageType, isDark);
-
-    console.log('🎨 getEditorTheme调用:', {
-      languageType,
-      resolvedTheme,
-      isDark,
-      themeName
-    });
-
-    console.log('🎨 选择的简化主题:', themeName);
-    return themeName;
-  }, [getDatabaseLanguageType, resolvedTheme]);
+    // 直接返回Monaco原生主题
+    return resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+  }, [resolvedTheme]);
 
   // 处理编辑器内容变化
   const handleEditorChange = useCallback((value: string | undefined) => {
@@ -423,24 +404,20 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     try {
       editorRef.current = editor;
 
-      // 确保Monaco环境配置正确，禁用Web Workers
+      // 简化Monaco环境配置，使用基本设置
       if (typeof window !== 'undefined') {
         if (!window.MonacoEnvironment) {
           window.MonacoEnvironment = {};
         }
 
-        // 强制禁用Web Workers
-        window.MonacoEnvironment.getWorkerUrl = () => 'data:text/javascript;charset=utf-8,';
-        window.MonacoEnvironment.getWorker = () => ({
-          postMessage: () => {},
-          terminate: () => {},
-          addEventListener: () => {},
-          removeEventListener: () => {},
-          dispatchEvent: () => false,
-          onmessage: null,
-          onmessageerror: null,
-          onerror: null,
-        } as any);
+        // 基本的Worker配置，支持原生语法高亮
+        window.MonacoEnvironment.getWorkerUrl = () => {
+          return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+            self.onmessage = function(e) {
+              self.postMessage(e.data);
+            };
+          `)}`;
+        };
       }
 
       // 根据选择的数据源类型设置智能提示
@@ -503,28 +480,23 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         };
       }
 
-      // 确保统一语法高亮已注册（在编辑器挂载后）
+      // 使用原生SQL语法高亮
       try {
-        console.log('🔧 在编辑器挂载后注册统一语法高亮...');
-        unifiedSyntaxManager.registerAll();
-        console.log('✅ 统一语法高亮注册完成');
+        console.log('🔧 设置原生SQL语法高亮...');
 
-        // 立即设置正确的语言和主题
-        const targetLanguage = getEditorLanguage();
         const model = editor.getModel();
-        if (model && targetLanguage) {
-          console.log('🔧 设置编辑器语言为:', targetLanguage);
-          monaco.editor.setModelLanguage(model, targetLanguage);
+        if (model) {
+          // 确保使用SQL语言
+          monaco.editor.setModelLanguage(model, 'sql');
 
-          // 应用对应的主题
-          const currentTheme = getEditorTheme();
-          console.log('🎨 应用编辑器主题:', currentTheme);
-          monaco.editor.setTheme(currentTheme);
+          // 应用原生主题
+          const theme = resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+          monaco.editor.setTheme(theme);
 
-          console.log('✅ 统一语言和主题设置完成');
+          console.log('✅ 原生SQL语法高亮设置完成');
         }
       } catch (langError) {
-        console.error('❌ 统一语法高亮注册失败:', langError);
+        console.error('❌ 原生SQL语法高亮设置失败:', langError);
       }
 
       // 完全禁用Monaco编辑器的剪贴板功能，防止权限错误
@@ -868,11 +840,16 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                       setTimeout(() => {
                         unifiedSyntaxManager.validateSyntaxHighlight(editor);
 
-                        // 如果语法高亮仍然不工作，尝试修复
+                        // 验证原生SQL语法高亮
                         setTimeout(() => {
-                          console.log('🔧 编辑器挂载后语法高亮修复...');
-                          fixInfluxQLTokenizer();
-                          validateTokenizerFix(editor);
+                          console.log('🔍 编辑器挂载后验证原生SQL语法高亮...');
+                          const model = editor.getModel();
+                          if (model) {
+                            console.log('📋 最终编辑器状态:', {
+                              language: model.getLanguageId(),
+                              hasContent: model.getValue().length > 0
+                            });
+                          }
                         }, 200);
                       }, 500);
                     } catch (renderError) {

@@ -42,121 +42,21 @@ export class UnifiedSyntaxHighlightManager {
         mimetypes: ['text/x-influxql']
       });
 
-      // 设置语法高亮规则
-      monaco.languages.setMonarchTokensProvider(languageId, {
-        keywords: [
-          'SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'ORDER', 'LIMIT', 'OFFSET',
-          'SHOW', 'CREATE', 'DROP', 'DELETE', 'INSERT', 'INTO', 'VALUES',
-          'AND', 'OR', 'NOT', 'IN', 'LIKE', 'REGEXP', 'AS', 'ASC', 'DESC',
-          'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'FIELD', 'TIME',
-          'FILL', 'NULL', 'NONE', 'LINEAR', 'PREVIOUS', 'NOW'
-        ],
+      // 不设置复杂的tokenizer，让Monaco使用默认处理
+      console.log('🔧 跳过复杂tokenizer设置，使用默认处理');
 
-        builtins: [
-          'COUNT', 'SUM', 'MEAN', 'MEDIAN', 'MODE', 'SPREAD', 'STDDEV',
-          'FIRST', 'LAST', 'MAX', 'MIN', 'PERCENTILE', 'TOP', 'BOTTOM'
-        ],
-
-        tokenizer: {
-          root: [
-            // 注释
-            [/--.*$/, 'comment'],
-            [/\/\*/, 'comment', '@comment'],
-
-            // 字符串
-            [/'([^'\\]|\\.)*$/, 'string.invalid'],
-            [/'/, 'string', '@string'],
-            [/"([^"\\]|\\.)*$/, 'string.invalid'],
-            [/"/, 'string', '@dstring'],
-
-            // 数字
-            [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
-            [/\d+/, 'number'],
-
-            // 时间单位
-            [/\b\d+(?:ns|u|µ|ms|s|m|h|d|w)\b/, 'keyword.time'],
-
-            // 关键字和函数
-            [/[a-zA-Z_]\w*/, {
-              cases: {
-                '@keywords': 'keyword',
-                '@builtins': 'keyword.function',
-                '@default': 'identifier'
-              }
-            }],
-
-            // 操作符
-            [/[=!<>]=?/, 'operator'],
-            [/[+\-*/]/, 'operator'],
-            [/=~|!~/, 'operator'],
-
-            // 分隔符
-            [/[;,.]/, 'delimiter'],
-            [/[(){}[\]]/, 'bracket'],
-
-            // 空白字符
-            [/\s+/, 'white'],
-          ],
-
-          comment: [
-            [/[^/*]+/, 'comment'],
-            [/\*\//, 'comment', '@pop'],
-            [/[/*]/, 'comment']
-          ],
-
-          string: [
-            [/[^\\']+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/'/, 'string', '@pop']
-          ],
-
-          dstring: [
-            [/[^\\"]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/"/, 'string', '@pop']
-          ]
-        }
-      });
-
-      // 定义亮色主题
+      // 使用简单的主题定义
       this.defineTheme('unified-influxql-light', {
         base: 'vs',
         inherit: true,
-        rules: [
-          { token: 'comment', foreground: '008000', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
-          { token: 'keyword.function', foreground: 'DC143C', fontStyle: 'bold' },
-          { token: 'keyword.time', foreground: 'FF6600', fontStyle: 'bold' },
-          { token: 'string', foreground: 'A31515' },
-          { token: 'string.escape', foreground: 'FF0000' },
-          { token: 'number', foreground: '098658' },
-          { token: 'number.float', foreground: '098658' },
-          { token: 'operator', foreground: '666666', fontStyle: 'bold' },
-          { token: 'identifier', foreground: '000000' },
-          { token: 'delimiter', foreground: '666666' },
-          { token: 'bracket', foreground: '000000', fontStyle: 'bold' }
-        ],
+        rules: [],
         colors: {}
       });
 
-      // 定义暗色主题
       this.defineTheme('unified-influxql-dark', {
         base: 'vs-dark',
         inherit: true,
-        rules: [
-          { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
-          { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
-          { token: 'keyword.function', foreground: 'FF6B6B', fontStyle: 'bold' },
-          { token: 'keyword.time', foreground: 'FF9500', fontStyle: 'bold' },
-          { token: 'string', foreground: 'CE9178' },
-          { token: 'string.escape', foreground: 'D7BA7D' },
-          { token: 'number', foreground: 'B5CEA8' },
-          { token: 'number.float', foreground: 'B5CEA8' },
-          { token: 'operator', foreground: 'CCCCCC', fontStyle: 'bold' },
-          { token: 'identifier', foreground: 'D4D4D4' },
-          { token: 'delimiter', foreground: 'CCCCCC' },
-          { token: 'bracket', foreground: 'FFD700', fontStyle: 'bold' }
-        ],
+        rules: [],
         colors: {}
       });
 
