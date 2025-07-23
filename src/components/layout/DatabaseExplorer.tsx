@@ -39,6 +39,7 @@ import {
   Copy,
   BarChart,
   FolderX,
+  Calculator,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
@@ -80,6 +81,7 @@ interface DatabaseExplorerProps {
   onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调（保留兼容性）
   onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void; // 创建数据浏览tab回调
   onCreateQueryTab?: (query?: string, database?: string) => void; // 创建查询标签页回调
+  onCreateAndExecuteQuery?: (query: string, database: string) => void; // 创建查询标签页并自动执行回调
   onViewChange?: (view: string) => void; // 视图切换回调
   onGetCurrentView?: () => string; // 获取当前视图回调
   onExpandedDatabasesChange?: (databases: string[]) => void; // 已展开数据库列表变化回调
@@ -109,6 +111,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   onTableDoubleClick,
   onCreateDataBrowserTab,
   onCreateQueryTab,
+  onCreateAndExecuteQuery,
   onViewChange,
   onGetCurrentView,
   onExpandedDatabasesChange,
@@ -1534,8 +1537,58 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         case 'query_table':
           if (contextMenuTarget.type === 'table') {
             const query = generateQueryWithTimeFilter(contextMenuTarget.table);
-            if (onTableDoubleClick) {
-              onTableDoubleClick(contextMenuTarget.database, contextMenuTarget.table, query);
+            // 优先使用创建并执行查询的回调
+            if (onCreateAndExecuteQuery) {
+              onCreateAndExecuteQuery(query, contextMenuTarget.database);
+              showMessage.success(`正在查询表 "${contextMenuTarget.table}"`);
+            } else {
+              // 回退到原有逻辑
+              await executeTableQuery(contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
+            }
+          }
+          break;
+
+        case 'query_table_count':
+          if (contextMenuTarget.type === 'table') {
+            const countQuery = `SELECT COUNT(*) as total_records FROM "${contextMenuTarget.table}"`;
+            if (onCreateAndExecuteQuery) {
+              onCreateAndExecuteQuery(countQuery, contextMenuTarget.database);
+              showMessage.success(`正在统计表 "${contextMenuTarget.table}" 记录数`);
+            } else if (onCreateQueryTab) {
+              onCreateQueryTab(countQuery, contextMenuTarget.database);
+              showMessage.success(`已创建统计查询标签页，统计表 "${contextMenuTarget.table}" 记录数`);
+            } else {
+              const success = await writeToClipboard(countQuery, {
+                successMessage: `统计查询已复制到剪贴板: ${countQuery}`,
+                errorMessage: '复制失败',
+              });
+              if (!success) {
+                showMessage.info(`统计查询: ${countQuery}`);
+              }
+            }
+          }
+          break;
+
+        case 'query_table_structure':
+          if (contextMenuTarget.type === 'table') {
+            // InfluxDB 1.x 使用 SHOW FIELD KEYS 和 SHOW TAG KEYS 来查看表结构
+            const structureQuery = `-- 查看表 "${contextMenuTarget.table}" 的结构
+SHOW FIELD KEYS FROM "${contextMenuTarget.table}";
+SHOW TAG KEYS FROM "${contextMenuTarget.table}";`;
+            if (onCreateAndExecuteQuery) {
+              onCreateAndExecuteQuery(structureQuery, contextMenuTarget.database);
+              showMessage.success(`正在查看表 "${contextMenuTarget.table}" 结构`);
+            } else if (onCreateQueryTab) {
+              onCreateQueryTab(structureQuery, contextMenuTarget.database);
+              showMessage.success(`已创建结构查询标签页，查看表 "${contextMenuTarget.table}" 结构`);
+            } else {
+              const success = await writeToClipboard(structureQuery, {
+                successMessage: `结构查询已复制到剪贴板`,
+                errorMessage: '复制失败',
+              });
+              if (!success) {
+                showMessage.info(`结构查询: ${structureQuery}`);
+              }
             }
           }
           break;
@@ -2425,7 +2478,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                           {contextMenuTarget.type === 'table' && (
                             <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作</div>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">查询操作</div>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
@@ -2436,6 +2489,28 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 <Search className="w-4 h-4" />
                                 查询表
                               </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('query_table_count');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Calculator className="w-4 h-4" />
+                                统计记录数
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('query_table_structure');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Table className="w-4 h-4" />
+                                查看表结构
+                              </button>
+                              <div className="my-1 h-px bg-border" />
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作</div>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {

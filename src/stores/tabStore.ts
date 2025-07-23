@@ -158,6 +158,7 @@ export const useTabOperations = () => {
     };
 
     addTab(newTab);
+    setActiveKey(newTab.id); // 自动切换到新创建的标签页
     return newTab;
   };
 

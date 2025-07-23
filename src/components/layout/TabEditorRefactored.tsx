@@ -48,6 +48,7 @@ export interface TabEditorRef {
   createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
   createNewTab: (type?: 'query' | 'table' | 'database') => void;
   createQueryTabWithDatabase: (database: string, query?: string) => void;
+  createAndExecuteQuery: (query: string, database: string) => Promise<void>;
   setSelectedDatabase: (database: string) => void;
 }
 
@@ -203,6 +204,31 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
     }, [createQueryTab, setSelectedDatabase, onQueryResult, onBatchQueryResults]);
 
+    // 创建查询标签页并自动执行查询
+    const createAndExecuteQuery = useCallback(async (query: string, database: string) => {
+      // 首先创建新的查询标签页
+      const newTab = createQueryTab(database, query);
+      setSelectedDatabase(database);
+
+      // 清空之前的查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+
+      console.log(`✅ 创建查询标签页并准备执行查询: ${database}`);
+
+      // 等待一个短暂的延迟，确保标签页已经创建并激活
+      setTimeout(async () => {
+        try {
+          // 执行查询
+          await executeQueryWithContent(query, database);
+          console.log(`✅ 查询执行完成`);
+        } catch (error) {
+          console.error('❌ 自动执行查询失败:', error);
+          showMessage.error(`查询执行失败: ${error}`);
+        }
+      }, 100);
+    }, [createQueryTab, setSelectedDatabase, onQueryResult, onBatchQueryResults, executeQueryWithContent]);
+
     // 暴露方法给父组件
     useImperativeHandle(
       ref,
@@ -211,9 +237,10 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
         createDataBrowserTab: handleCreateDataBrowserTab,
         createNewTab,
         createQueryTabWithDatabase,
+        createAndExecuteQuery,
         setSelectedDatabase,
       }),
-      [executeQueryWithContent, handleCreateDataBrowserTab, createNewTab, createQueryTabWithDatabase, setSelectedDatabase]
+      [executeQueryWithContent, handleCreateDataBrowserTab, createNewTab, createQueryTabWithDatabase, createAndExecuteQuery, setSelectedDatabase]
     );
 
     // 监听活跃标签类型变化
