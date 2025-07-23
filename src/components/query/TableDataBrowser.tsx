@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, memo, startTransition} from 'react';
 import {
     Card,
     CardContent,
@@ -56,7 +56,7 @@ interface SortableColumnItemProps {
     onToggle: (column: string) => void;
 }
 
-const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelected, onToggle }) => {
+const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(({ column, isSelected, onToggle }) => {
     const {
         attributes,
         listeners,
@@ -122,7 +122,290 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = ({ column, isSelec
             </div>
         </div>
     );
-};
+});
+
+// 虚拟化表格行组件
+interface VirtualTableRowProps {
+    row: DataRow;
+    index: number;
+    columnOrder: string[];
+    selectedColumns: string[];
+    currentPage: number;
+    pageSize: number;
+    style?: React.CSSProperties;
+}
+
+const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(({
+    row,
+    index,
+    columnOrder,
+    selectedColumns,
+    currentPage,
+    pageSize,
+    style
+}) => {
+    const uniqueKey = useMemo(() =>
+        row._id !== undefined
+            ? `row_${row._id}_${index}`
+            : `row_index_${index}_${currentPage}_${pageSize}`,
+        [row._id, index, currentPage, pageSize]
+    );
+
+    const visibleColumns = useMemo(() =>
+        columnOrder.filter(column => selectedColumns.includes(column)),
+        [columnOrder, selectedColumns]
+    );
+
+    return (
+        <tr
+            key={uniqueKey}
+            className="border-b transition-colors hover:bg-muted/50"
+            style={style}
+        >
+            {visibleColumns.map((column) => {
+                // 计算列的最小宽度（与表头保持一致）
+                const getColumnMinWidth = (col: string) => {
+                    if (col === '#') return '60px';
+                    if (col === 'time') return '180px';
+                    const colLength = col.length;
+                    return `${Math.max(120, colLength * 12)}px`;
+                };
+
+                const minWidth = getColumnMinWidth(column);
+
+                return (
+                    <td
+                        key={column}
+                        className={cn(
+                            'p-4 align-middle text-xs',
+                            column === '#'
+                                ? 'font-medium text-muted-foreground bg-muted/20 text-center'
+                                : 'font-mono'
+                        )}
+                        style={{ minWidth }}
+                    >
+                        <div className="truncate" title={String(row[column] || '-')}>
+                            {column === '#'
+                                ? row[column]
+                                : column === 'time'
+                                ? new Date(row[column]).toLocaleString()
+                                : String(row[column] || '-')
+                            }
+                        </div>
+                    </td>
+                );
+            })}
+        </tr>
+    );
+});
+
+// 优化的分页组件 - 独立渲染，避免受表格数据影响
+interface PaginationControlsProps {
+    currentPage: number;
+    pageSize: number;
+    totalCount: number;
+    loading: boolean;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: string) => void;
+}
+
+const PaginationControls: React.FC<PaginationControlsProps> = memo(({
+    currentPage,
+    pageSize,
+    totalCount,
+    loading,
+    onPageChange,
+    onPageSizeChange
+}) => {
+    // 使用 useMemo 缓存分页计算，避免每次渲染都重新计算
+    const paginationInfo = useMemo(() => {
+        const totalPages = pageSize > 0 ? Math.ceil(totalCount / pageSize) : 1;
+        const startIndex = pageSize > 0 ? (currentPage - 1) * pageSize + 1 : 1;
+        const endIndex = pageSize > 0 ? Math.min(currentPage * pageSize, totalCount) : totalCount;
+
+        return { totalPages, startIndex, endIndex };
+    }, [totalCount, pageSize, currentPage]);
+
+    const { totalPages, startIndex, endIndex } = paginationInfo;
+
+    // 使用 useCallback 稳定事件处理函数，并添加防抖优化
+    const handlePrevPage = useCallback(() => {
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
+    }, [currentPage, onPageChange]);
+
+    const handleNextPage = useCallback(() => {
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
+    }, [currentPage, totalPages, onPageChange]);
+
+    // 优化的页面大小变化处理
+    const handlePageSizeChangeInternal = useCallback((size: string) => {
+        // 避免重复设置相同的值
+        if (size !== pageSize.toString()) {
+            onPageSizeChange(size);
+        }
+    }, [pageSize, onPageSizeChange]);
+
+    return (
+        <div className="flex-shrink-0 border-t bg-background px-4 py-3">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>
+                        显示 {startIndex}-{endIndex} 条，共 {totalCount.toLocaleString()} 条
+                    </span>
+                    <span>
+                        第 {currentPage} 页，共 {totalPages} 页
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">每页:</span>
+                        <Select value={pageSize.toString()} onValueChange={handlePageSizeChangeInternal}>
+                            <SelectTrigger className="w-16 h-8">
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="100">100</SelectItem>
+                                <SelectItem value="500">500</SelectItem>
+                                <SelectItem value="1000">1000</SelectItem>
+                                <SelectItem value="2000">2000</SelectItem>
+                                <SelectItem value="5000">5000</SelectItem>
+                                <SelectItem value="-1">全部</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePrevPage}
+                            disabled={currentPage <= 1 || loading || pageSize <= 0}
+                            className="h-8 px-3"
+                        >
+                            <ChevronLeft className="w-3 h-3"/>
+                            上一页
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPage}
+                            disabled={currentPage >= totalPages || loading || pageSize <= 0}
+                            className="h-8 px-3"
+                        >
+                            下一页
+                            <ChevronRight className="w-3 h-3"/>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// 优化的表头组件
+interface TableHeaderProps {
+    columnOrder: string[];
+    selectedColumns: string[];
+    sortColumn: string;
+    sortDirection: 'asc' | 'desc';
+    onSort: (column: string) => void;
+    onAddFilter: (column: string) => void;
+}
+
+const TableHeader: React.FC<TableHeaderProps> = memo(({
+    columnOrder,
+    selectedColumns,
+    sortColumn,
+    sortDirection,
+    onSort,
+    onAddFilter
+}) => {
+    const visibleColumns = useMemo(() =>
+        columnOrder.filter(column => selectedColumns.includes(column)),
+        [columnOrder, selectedColumns]
+    );
+
+    return (
+        <thead className="sticky top-0 bg-background z-10 border-b">
+            <tr className="border-b transition-colors hover:bg-muted/50">
+                {visibleColumns.map((column) => {
+                    // 计算列的最小宽度
+                    const getColumnMinWidth = (col: string) => {
+                        if (col === '#') return '60px';
+                        if (col === 'time') return '180px';
+                        const colLength = col.length;
+                        return `${Math.max(120, colLength * 12)}px`;
+                    };
+
+                    const minWidth = getColumnMinWidth(column);
+
+                    return (
+                        <th
+                            key={column}
+                            className={cn(
+                                'h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
+                                column === '#' ? '' : 'cursor-pointer hover:bg-muted/50'
+                            )}
+                            style={{ minWidth }}
+                            onClick={() => column !== '#' && onSort(column)}
+                        >
+                            <div className="flex items-center gap-1 whitespace-nowrap">
+                                <span className="truncate" title={column === '#' ? '序号' : column}>
+                                    {column === '#' ? '序号' : column}
+                                </span>
+                                {column === 'time' && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        时间
+                                    </Badge>
+                                )}
+                                {column === '#' && (
+                                    <Badge variant="outline" className="text-xs">
+                                        #
+                                    </Badge>
+                                )}
+                                {column !== 'time' && column !== '#' && (
+                                    <span className="text-xs text-muted-foreground/60" title="客户端排序">
+                                        ⚡
+                                    </span>
+                                )}
+                                {sortColumn === column && column !== '#' && (
+                                    <span className="text-xs">
+                                        {sortDirection === 'asc' ? '↑' : '↓'}
+                                    </span>
+                                )}
+                                {column !== '#' && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-4 w-4 p-0 ml-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Filter className="w-3 h-3"/>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuItem onClick={() => onAddFilter(column)}>
+                                                添加过滤器
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                        </th>
+                    );
+                })}
+            </tr>
+        </thead>
+    );
+});
 
 // 增强的筛选器组件
 interface FilterEditorProps {
@@ -531,9 +814,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             query += ` ORDER BY time DESC`;
         }
 
-        // 添加分页
-        const offset = (currentPage - 1) * pageSize;
-        query += ` LIMIT ${pageSize} OFFSET ${offset}`;
+        // 添加分页（如果不是"全部"选项）
+        if (pageSize > 0) {
+            const offset = (currentPage - 1) * pageSize;
+            query += ` LIMIT ${pageSize} OFFSET ${offset}`;
+        }
 
         return query;
     }, [tableName, columns, searchText, filters, sortColumn, sortDirection, currentPage, pageSize]);
@@ -668,7 +953,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         const record: DataRow = {_id: index};
 
                         // 添加序号列
-                        const offset = (currentPage - 1) * pageSize;
+                        const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
                         record['#'] = offset + index + 1;
 
                         // 添加其他列数据
@@ -729,22 +1014,27 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
     }, [columns]);
 
-    // 处理页面变化
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-    };
+    // 处理页面变化 - 使用 startTransition 优化响应性
+    const handlePageChange = useCallback((page: number) => {
+        startTransition(() => {
+            setCurrentPage(page);
+        });
+    }, []);
 
-    // 处理页面大小变化
-    const handlePageSizeChange = (size: string) => {
-        setPageSize(parseInt(size));
-        setCurrentPage(1);
-    };
+    // 处理页面大小变化 - 使用 startTransition 优化响应性
+    const handlePageSizeChange = useCallback((size: string) => {
+        startTransition(() => {
+            const newSize = parseInt(size);
+            setPageSize(newSize);
+            setCurrentPage(1);
+        });
+    }, []);
 
     // 处理搜索
-    const handleSearch = () => {
+    const handleSearch = useCallback(() => {
         setCurrentPage(1);
         loadData();
-    };
+    }, [loadData]);
 
     // 处理排序
     const handleSort = (column: string) => {
@@ -870,10 +1160,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         });
     };
 
-    // 计算分页信息
-    const totalPages = Math.ceil(totalCount / pageSize);
-    const startIndex = (currentPage - 1) * pageSize + 1;
-    const endIndex = Math.min(currentPage * pageSize, totalCount);
+    // 分页信息计算已移至独立的 PaginationControls 组件中
 
     return (
         <div className="h-full flex flex-col bg-background">
@@ -1094,53 +1381,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                         </tr>
                                 </thead>
                                 <tbody className="[&_tr:last-child]:border-0">
-                                    {data.map((row, index) => {
-                                        // 创建更健壮的唯一key，避免重复
-                                        const uniqueKey = row._id !== undefined
-                                            ? `row_${row._id}_${index}`
-                                            : `row_index_${index}_${currentPage}_${pageSize}`;
-
-                                        return (
-                                            <tr
-                                                key={uniqueKey}
-                                                className="border-b transition-colors hover:bg-muted/50"
-                                            >
-                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column) => {
-                                                // 计算列的最小宽度（与表头保持一致）
-                                                const getColumnMinWidth = (col: string) => {
-                                                    if (col === '#') return '60px';
-                                                    if (col === 'time') return '180px';
-                                                    const colLength = col.length;
-                                                    return `${Math.max(120, colLength * 12)}px`;
-                                                };
-
-                                                const minWidth = getColumnMinWidth(column);
-
-                                                return (
-                                                    <td
-                                                        key={column}
-                                                        className={cn(
-                                                            'p-4 align-middle text-xs',
-                                                            column === '#'
-                                                                ? 'font-medium text-muted-foreground bg-muted/20 text-center'
-                                                                : 'font-mono'
-                                                        )}
-                                                        style={{ minWidth }}
-                                                    >
-                                                        <div className="truncate" title={String(row[column] || '-')}>
-                                                            {column === '#'
-                                                                ? row[column]
-                                                                : column === 'time'
-                                                                ? new Date(row[column]).toLocaleString()
-                                                                : String(row[column] || '-')
-                                                            }
-                                                        </div>
-                                                    </td>
-                                                );
-                                            })}
-                                            </tr>
-                                        );
-                                    })}
+                                    {data.map((row, index) => (
+                                        <VirtualTableRow
+                                            key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
+                                            row={row}
+                                            index={index}
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            currentPage={currentPage}
+                                            pageSize={pageSize}
+                                        />
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -1155,60 +1406,15 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 </div>
             </div>
 
-            {/* 底部分页 */}
-            <div className="flex-shrink-0 border-t bg-background px-4 py-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>
-                            显示 {startIndex}-{endIndex} 条，共 {totalCount.toLocaleString()} 条
-                        </span>
-                        <span>
-                            第 {currentPage} 页，共 {totalPages} 页
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">每页:</span>
-                            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                                <SelectTrigger className="w-16 h-8">
-                                    <SelectValue/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="100">100</SelectItem>
-                                    <SelectItem value="500">500</SelectItem>
-                                    <SelectItem value="1000">1000</SelectItem>
-                                    <SelectItem value="2000">2000</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage <= 1 || loading}
-                                className="h-8 px-3"
-                            >
-                                <ChevronLeft className="w-3 h-3"/>
-                                上一页
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage >= totalPages || loading}
-                                className="h-8 px-3"
-                            >
-                                下一页
-                                <ChevronRight className="w-3 h-3"/>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* 底部分页 - 使用独立的分页组件 */}
+            <PaginationControls
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                loading={loading}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+            />
 
             {/* 导出选项对话框 */}
             <ExportOptionsDialog
