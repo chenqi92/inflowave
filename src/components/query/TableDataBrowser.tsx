@@ -1170,7 +1170,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 // 添加序号列
                 const dataWithIndex = result.data.map((record, index) => {
                     const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
-                    record['#'] = offset + index + 1;
+                    (record as DataRow)['#'] = offset + index + 1;
                     return record;
                 });
 
@@ -1697,7 +1697,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                                         (ref as React.MutableRefObject<HTMLDivElement | null>).current = element;
                                                     }
                                                     if (contentRef.current !== element) {
-                                                        contentRef.current = element;
+                                                        (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = element;
                                                     }
                                                 }}
                                                 onScroll={(e) => {
