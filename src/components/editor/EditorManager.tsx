@@ -26,7 +26,6 @@ import {
 import { writeToClipboard, readFromClipboard } from '@/utils/clipboard';
 import { unifiedSyntaxManager } from '@/utils/unifiedSyntaxHighlight';
 import { versionToLanguageType, type DatabaseLanguageType } from '@/types/database';
-import { NativeSqlHighlight } from '@/utils/nativeSqlHighlight';
 
 
 
@@ -205,16 +204,60 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     return languageType;
   }, [connections, activeConnectionId]);
 
-  // 获取编辑器语言ID（使用原生SQL）
-  const getEditorLanguage = useCallback(() => {
-    // 直接返回Monaco原生SQL语言
-    return 'sql';
-  }, []);
+  // 获取数据库类型（用于语法高亮）
+  const getDatabaseType = useCallback(() => {
+    const currentConnection = connections.find(c => c.id === activeConnectionId);
+    if (!currentConnection || !currentConnection.version) return 'unknown';
 
-  // 获取编辑器主题（使用原生主题）
+    const version = currentConnection.version;
+
+    // 根据版本信息确定具体的数据库类型
+    if (version.includes('InfluxDB')) {
+      if (version.includes('1.')) return 'influxdb-1.x';
+      if (version.includes('2.')) return 'influxdb-2.x';
+      if (version.includes('3.')) return 'influxdb-3.x';
+      return 'influxdb-1.x'; // 默认
+    }
+
+    if (version.includes('IoTDB')) return 'iotdb';
+
+    return 'unknown';
+  }, [connections, activeConnectionId]);
+
+  // 获取编辑器语言ID（基于数据库类型）
+  const getEditorLanguage = useCallback(() => {
+    const languageType = getDatabaseLanguageType();
+    const databaseType = getDatabaseType();
+
+    console.log('🔍 获取编辑器语言:', { languageType, databaseType });
+
+    // 根据数据库类型获取特定的语言
+    if (databaseType && databaseType !== 'unknown') {
+      const enhancedLanguage = unifiedSyntaxManager.getLanguageForDatabase(databaseType);
+      console.log('🎯 使用增强语言:', enhancedLanguage);
+      return enhancedLanguage;
+    }
+
+    // 回退到原生SQL
+    return 'sql';
+  }, [getDatabaseLanguageType]);
+
+  // 获取编辑器主题（基于数据库类型）
   const getEditorTheme = useCallback(() => {
-    // 直接返回Monaco原生主题
-    return resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+    const databaseType = getDatabaseType();
+    const isDark = resolvedTheme === 'dark';
+
+    console.log('🎨 获取编辑器主题:', { databaseType, isDark });
+
+    // 根据数据库类型获取特定的主题
+    if (databaseType && databaseType !== 'unknown') {
+      const enhancedTheme = unifiedSyntaxManager.getThemeForDatabase(databaseType, isDark);
+      console.log('🎯 使用增强主题:', enhancedTheme);
+      return enhancedTheme;
+    }
+
+    // 回退到原生主题
+    return isDark ? 'vs-dark' : 'vs';
   }, [resolvedTheme]);
 
   // 处理编辑器内容变化
@@ -480,23 +523,29 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         };
       }
 
-      // 使用原生SQL语法高亮
+      // 设置数据库特定的语法高亮
       try {
-        console.log('🔧 设置原生SQL语法高亮...');
+        console.log('🔧 设置数据库特定的语法高亮...');
+
+        const databaseType = getDatabaseType();
+        console.log('📊 当前数据库类型:', databaseType);
 
         const model = editor.getModel();
         if (model) {
-          // 确保使用SQL语言
-          monaco.editor.setModelLanguage(model, 'sql');
+          // 获取数据库特定的语言和主题
+          const language = getEditorLanguage();
+          const theme = getEditorTheme();
 
-          // 应用原生主题
-          const theme = resolvedTheme === 'dark' ? 'vs-dark' : 'vs';
+          console.log('🎯 应用语言和主题:', { language, theme });
+
+          // 应用语言和主题
+          monaco.editor.setModelLanguage(model, language);
           monaco.editor.setTheme(theme);
 
-          console.log('✅ 原生SQL语法高亮设置完成');
+          console.log('✅ 数据库特定语法高亮设置完成');
         }
       } catch (langError) {
-        console.error('❌ 原生SQL语法高亮设置失败:', langError);
+        console.error('❌ 数据库特定语法高亮设置失败:', langError);
       }
 
       // 完全禁用Monaco编辑器的剪贴板功能，防止权限错误
