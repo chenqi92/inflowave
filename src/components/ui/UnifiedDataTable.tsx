@@ -369,6 +369,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [lastSelectedRow, setLastSelectedRow] = useState<number | null>(null); // 用于Shift多选
     const editingInputRef = useRef<HTMLInputElement>(null);
 
+    // 单元格范围选择状态
+    const [selectedCellRange, setSelectedCellRange] = useState<Set<string>>(new Set()); // 选中的单元格范围
+    const [isSelecting, setIsSelecting] = useState(false); // 是否正在拖拽选择
+    const [selectionStart, setSelectionStart] = useState<{row: number, column: string} | null>(null); // 选择起点
+
+    // 自动滚动相关
+    const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const tableContainerRef = useRef<HTMLDivElement>(null);
+
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
 
@@ -391,8 +400,94 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         onColumnChange?.(visibleColumns, newColumnOrder);
     }, [onColumnChange, selectedColumns, columnOrder]);
 
+    // 获取列索引
+    const getColumnIndex = useCallback((column: string) => {
+        if (column === '#') return -1;
+        const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
+        return visibleColumns.indexOf(column);
+    }, [columnOrder, selectedColumns]);
+
+    // 获取指定索引的列名
+    const getColumnByIndex = useCallback((index: number) => {
+        if (index === -1) return '#';
+        const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
+        return visibleColumns[index] || '';
+    }, [columnOrder, selectedColumns]);
+
+    // 计算单元格范围选择
+    const calculateCellRange = useCallback((start: {row: number, column: string}, end: {row: number, column: string}) => {
+        const startRowIndex = start.row;
+        const endRowIndex = end.row;
+        const startColIndex = getColumnIndex(start.column);
+        const endColIndex = getColumnIndex(end.column);
+
+        const minRow = Math.min(startRowIndex, endRowIndex);
+        const maxRow = Math.max(startRowIndex, endRowIndex);
+        const minCol = Math.min(startColIndex, endColIndex);
+        const maxCol = Math.max(startColIndex, endColIndex);
+
+        const range = new Set<string>();
+        for (let row = minRow; row <= maxRow; row++) {
+            for (let col = minCol; col <= maxCol; col++) {
+                const columnName = getColumnByIndex(col);
+                if (columnName) {
+                    range.add(`${row}-${columnName}`);
+                }
+            }
+        }
+        return range;
+    }, [getColumnIndex, getColumnByIndex]);
+
+    // 自动滚动功能
+    const startAutoScroll = useCallback((mouseX: number, mouseY: number) => {
+        const container = tableContainerRef.current || tableScrollRef.current;
+        if (!container) return;
+
+        const rect = container.getBoundingClientRect();
+        const scrollThreshold = 50; // 距离边缘50px开始滚动
+        const scrollSpeed = 10; // 滚动速度
+
+        let scrollX = 0;
+        let scrollY = 0;
+
+        // 检查是否需要水平滚动
+        if (mouseX < rect.left + scrollThreshold) {
+            scrollX = -scrollSpeed; // 向左滚动
+        } else if (mouseX > rect.right - scrollThreshold) {
+            scrollX = scrollSpeed; // 向右滚动
+        }
+
+        // 检查是否需要垂直滚动
+        if (mouseY < rect.top + scrollThreshold) {
+            scrollY = -scrollSpeed; // 向上滚动
+        } else if (mouseY > rect.bottom - scrollThreshold) {
+            scrollY = scrollSpeed; // 向下滚动
+        }
+
+        // 如果需要滚动
+        if (scrollX !== 0 || scrollY !== 0) {
+            container.scrollBy(scrollX, scrollY);
+
+            // 继续自动滚动
+            autoScrollTimerRef.current = setTimeout(() => {
+                startAutoScroll(mouseX, mouseY);
+            }, 16); // 约60fps
+
+            console.log('🔧 [UnifiedDataTable] 自动滚动:', { scrollX, scrollY, mouseX, mouseY });
+        }
+    }, []);
+
+    // 停止自动滚动
+    const stopAutoScroll = useCallback(() => {
+        if (autoScrollTimerRef.current) {
+            clearTimeout(autoScrollTimerRef.current);
+            autoScrollTimerRef.current = null;
+            console.log('🔧 [UnifiedDataTable] 停止自动滚动');
+        }
+    }, []);
+
     // 高性能事件委托处理
-    const handleTableClick = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
+    const handleTableMouseDown = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
         const target = event.target as HTMLElement;
         const cell = target.closest('td');
         if (!cell) return;
@@ -404,7 +499,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         const column = cell.dataset.column || '';
         const cellId = `${rowIndex}-${column}`;
 
-        console.log('🔧 [UnifiedDataTable] 表格点击:', { rowIndex, column, cellId, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey });
+        console.log('🔧 [UnifiedDataTable] 鼠标按下:', { rowIndex, column, cellId, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey });
 
         // 序号列点击 - 高级行选择
         if (column === '#') {
@@ -437,6 +532,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             setSelectedRows(newSelectedRows);
             setLastSelectedRow(rowIndex);
             setSelectedCell(null); // 清除单元格选择
+            setSelectedCellRange(new Set()); // 清除单元格范围选择
             setEditingCell(null);
             onRowSelect?.(newSelectedRows);
             return;
@@ -449,24 +545,101 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             setLastSelectedRow(null);
         }
 
-        // 已选中单元格再次点击 - 进入编辑模式
-        if (selectedCell === cellId) {
-            setEditingCell(cellId);
-            // 延迟聚焦，确保DOM更新完成
-            setTimeout(() => {
-                if (editingInputRef.current) {
-                    editingInputRef.current.focus();
-                    editingInputRef.current.select();
-                }
-            }, 0);
-            console.log('🔧 [UnifiedDataTable] 进入编辑模式:', { cellId });
-        } else {
-            // 选中新单元格
-            setSelectedCell(cellId);
-            setEditingCell(null);
-            console.log('🔧 [UnifiedDataTable] 选中单元格:', { cellId });
-        }
+        // 开始单元格选择
+        setSelectedCell(cellId);
+        setSelectedCellRange(new Set([cellId])); // 初始化范围选择
+        setSelectionStart({ row: rowIndex, column });
+        setIsSelecting(true);
+        setEditingCell(null);
+
+        console.log('🔧 [UnifiedDataTable] 开始单元格选择:', { cellId });
+
+        // 阻止默认行为，避免文本选择
+        event.preventDefault();
     }, [selectedCell, selectedRows, lastSelectedRow, onRowSelect]);
+
+    // 处理鼠标移动 - 拖拽选择
+    const handleTableMouseMove = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
+        if (!isSelecting || !selectionStart) return;
+
+        // 获取鼠标位置用于自动滚动
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+
+        // 启动自动滚动
+        stopAutoScroll(); // 先停止之前的滚动
+        startAutoScroll(mouseX, mouseY);
+
+        const target = event.target as HTMLElement;
+        const cell = target.closest('td');
+        if (!cell) {
+            // 如果鼠标不在单元格上，仍然需要处理自动滚动
+            return;
+        }
+
+        const row = cell.closest('tr');
+        if (!row) return;
+
+        const rowIndex = parseInt(row.dataset.rowIndex || '0');
+        const column = cell.dataset.column || '';
+
+        // 跳过序号列
+        if (column === '#') return;
+
+        // 计算选择范围
+        const range = calculateCellRange(selectionStart, { row: rowIndex, column });
+        setSelectedCellRange(range);
+
+        console.log('🔧 [UnifiedDataTable] 拖拽选择:', {
+            start: selectionStart,
+            end: { row: rowIndex, column },
+            rangeSize: range.size,
+            mousePos: { mouseX, mouseY }
+        });
+    }, [isSelecting, selectionStart, calculateCellRange, startAutoScroll, stopAutoScroll]);
+
+    // 处理鼠标释放 - 结束选择
+    const handleTableMouseUp = useCallback(() => {
+        if (isSelecting) {
+            setIsSelecting(false);
+            stopAutoScroll(); // 停止自动滚动
+            console.log('🔧 [UnifiedDataTable] 结束单元格选择:', { rangeSize: selectedCellRange.size });
+        }
+    }, [isSelecting, selectedCellRange.size, stopAutoScroll]);
+
+    // 处理单击 - 编辑模式 (暂时注释掉以提升性能)
+    const handleTableClick = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
+        // if (isSelecting) return; // 如果刚刚结束拖拽选择，不处理点击
+
+        // const target = event.target as HTMLElement;
+        // const cell = target.closest('td');
+        // if (!cell) return;
+
+        // const row = cell.closest('tr');
+        // if (!row) return;
+
+        // const rowIndex = parseInt(row.dataset.rowIndex || '0');
+        // const column = cell.dataset.column || '';
+        // const cellId = `${rowIndex}-${column}`;
+
+        // // 序号列不进入编辑模式
+        // if (column === '#') return;
+
+        // // 如果是单个单元格选择且再次点击，进入编辑模式
+        // if (selectedCell === cellId && selectedCellRange.size === 1) {
+        //     setEditingCell(cellId);
+        //     // 延迟聚焦，确保DOM更新完成
+        //     setTimeout(() => {
+        //         if (editingInputRef.current) {
+        //             editingInputRef.current.focus();
+        //             editingInputRef.current.select();
+        //         }
+        //     }, 0);
+        //     console.log('🔧 [UnifiedDataTable] 进入编辑模式:', { cellId });
+        // }
+
+        console.log('🔧 [UnifiedDataTable] 编辑功能已暂时禁用以提升性能');
+    }, []);
 
     // 双击处理
     const handleTableDoubleClick = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
@@ -544,7 +717,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
         // 复制到剪贴板
         navigator.clipboard.writeText(csvData).then(() => {
-            console.log('🔧 [UnifiedDataTable] 复制成功:', {
+            console.log('🔧 [UnifiedDataTable] 复制行数据成功:', {
                 rowCount: selectedRows.size,
                 columnCount: headers.length,
                 dataLength: csvData.length
@@ -554,15 +727,98 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         });
     }, [selectedRows, data, columnOrder, selectedColumns, showRowNumbers]);
 
+    // 复制选中单元格数据
+    const copySelectedCellsData = useCallback(() => {
+        if (selectedCellRange.size === 0) return;
+
+        // 解析单元格范围，按行列排序
+        const cellsData: { row: number; column: string; value: any }[] = [];
+        selectedCellRange.forEach(cellId => {
+            const [rowStr, column] = cellId.split('-');
+            const row = parseInt(rowStr);
+            const value = data[row]?.[column];
+            cellsData.push({ row, column, value });
+        });
+
+        // 按行和列排序
+        const visibleColumns = columnOrder.filter(col => selectedColumns.includes(col));
+        cellsData.sort((a, b) => {
+            if (a.row !== b.row) return a.row - b.row;
+            return visibleColumns.indexOf(a.column) - visibleColumns.indexOf(b.column);
+        });
+
+        // 构建表格数据
+        const rowGroups = new Map<number, { column: string; value: any }[]>();
+        cellsData.forEach(({ row, column, value }) => {
+            if (!rowGroups.has(row)) {
+                rowGroups.set(row, []);
+            }
+            rowGroups.get(row)!.push({ column, value });
+        });
+
+        // 生成CSV格式
+        const csvData: string[] = [];
+        const sortedRows = Array.from(rowGroups.keys()).sort((a, b) => a - b);
+
+        sortedRows.forEach(rowIndex => {
+            const rowCells = rowGroups.get(rowIndex)!;
+            const rowData = rowCells.map(({ column, value }) => {
+                // 格式化值
+                if (column === 'time' && value) {
+                    return new Date(value).toLocaleString();
+                }
+                return String(value || '');
+            });
+            csvData.push(rowData.join('\t'));
+        });
+
+        const finalData = csvData.join('\n');
+
+        // 复制到剪贴板
+        navigator.clipboard.writeText(finalData).then(() => {
+            console.log('🔧 [UnifiedDataTable] 复制单元格数据成功:', {
+                cellCount: selectedCellRange.size,
+                rowCount: rowGroups.size,
+                dataLength: finalData.length
+            });
+        }).catch(err => {
+            console.error('🔧 [UnifiedDataTable] 复制失败:', err);
+        });
+    }, [selectedCellRange, data, columnOrder, selectedColumns]);
+
     // 全局键盘事件监听
     useEffect(() => {
         const handleGlobalKeyDown = (event: KeyboardEvent) => {
-            // Ctrl+C 复制选中行
-            if ((event.ctrlKey || event.metaKey) && event.key === 'c' && selectedRows.size > 0) {
-                // 如果当前没有在编辑模式，则复制选中行
-                if (!editingCell) {
-                    event.preventDefault();
+            // 如果在编辑模式，不处理复制
+            if (editingCell) return;
+
+            // Ctrl+C 复制
+            if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+                event.preventDefault();
+
+                if (selectedCellRange.size > 0) {
+                    // 优先复制选中的单元格范围
+                    copySelectedCellsData();
+                } else if (selectedRows.size > 0) {
+                    // 其次复制选中的行
                     copySelectedRowsData();
+                } else if (selectedCell) {
+                    // 最后复制单个选中的单元格
+                    const [rowStr, column] = selectedCell.split('-');
+                    const row = parseInt(rowStr);
+                    const value = data[row]?.[column];
+                    const formattedValue = column === 'time' && value
+                        ? new Date(value).toLocaleString()
+                        : String(value || '');
+
+                    navigator.clipboard.writeText(formattedValue).then(() => {
+                        console.log('🔧 [UnifiedDataTable] 复制单个单元格成功:', {
+                            cellId: selectedCell,
+                            value: formattedValue
+                        });
+                    }).catch(err => {
+                        console.error('🔧 [UnifiedDataTable] 复制失败:', err);
+                    });
                 }
             }
         };
@@ -571,7 +827,38 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         return () => {
             document.removeEventListener('keydown', handleGlobalKeyDown);
         };
-    }, [selectedRows, editingCell, copySelectedRowsData]);
+    }, [selectedRows, selectedCell, selectedCellRange, editingCell, copySelectedRowsData, copySelectedCellsData, data]);
+
+    // 全局鼠标事件监听 - 处理表格外的鼠标释放
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            if (isSelecting) {
+                setIsSelecting(false);
+                stopAutoScroll(); // 停止自动滚动
+                console.log('🔧 [UnifiedDataTable] 全局鼠标释放，结束选择');
+            }
+        };
+
+        const handleGlobalMouseMove = (event: MouseEvent) => {
+            if (isSelecting && selectionStart) {
+                // 全局鼠标移动时也处理自动滚动
+                const mouseX = event.clientX;
+                const mouseY = event.clientY;
+
+                stopAutoScroll();
+                startAutoScroll(mouseX, mouseY);
+            }
+        };
+
+        document.addEventListener('mouseup', handleGlobalMouseUp);
+        document.addEventListener('mousemove', handleGlobalMouseMove);
+
+        return () => {
+            document.removeEventListener('mouseup', handleGlobalMouseUp);
+            document.removeEventListener('mousemove', handleGlobalMouseMove);
+            stopAutoScroll(); // 组件卸载时停止滚动
+        };
+    }, [isSelecting, selectionStart, stopAutoScroll, startAutoScroll]);
 
     // 同步外部分页配置
     useEffect(() => {
@@ -845,7 +1132,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     ) : data.length > 0 ? (
                         shouldUseVirtualization ? (
                             // 虚拟化表格 - 使用flex-1自适应高度
-                            <div className="flex-1 min-h-0 virtualized-table">
+                            <div
+                                className="flex-1 min-h-0 virtualized-table"
+                                ref={tableContainerRef}
+                            >
                                 <TableVirtuoso
                                     data={paginatedData}
                                     fixedHeaderContent={() => (
@@ -939,7 +1229,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         data-column-index={colIndex + 1}
                                                         className={cn(
                                                             "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
-                                                            selectedCell === cellId && !isEditing && "table-cell-selected",
+                                                            selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
+                                                            selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
                                                             isEditing && "table-cell-editing"
                                                         )}
                                                         style={{
@@ -949,7 +1240,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
-                                                        {isEditing ? (
+                                                        {/* 暂时注释掉编辑功能以提升性能 */}
+                                                        {/* {isEditing ? (
                                                             <input
                                                                 ref={editingInputRef}
                                                                 type="text"
@@ -957,11 +1249,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 onBlur={handleEditComplete}
                                                                 onKeyDown={handleEditKeyDown}
                                                             />
-                                                        ) : (
+                                                        ) : ( */}
                                                             <div className="truncate w-full">
                                                                 {displayValue}
                                                             </div>
-                                                        )}
+                                                        {/* )} */}
                                                     </td>
                                                 );
                                             })}
@@ -981,7 +1273,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     width: '100%',
                                                     borderCollapse: 'collapse'
                                                 }}
-                                                className="w-full border-collapse table-unified-scroll"
+                                                className={cn(
+                                                    "w-full border-collapse table-unified-scroll",
+                                                    isSelecting && "table-selecting"
+                                                )}
+                                                onMouseDown={handleTableMouseDown}
+                                                onMouseMove={handleTableMouseMove}
+                                                onMouseUp={handleTableMouseUp}
                                                 onClick={handleTableClick}
                                                 onDoubleClick={handleTableDoubleClick}
                                             />
@@ -1009,9 +1307,25 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             </div>
                         ) : (
                             // 传统表格
-                            <div className="table-unified-scroll" ref={tableScrollRef}>
+                            <div
+                                className="table-unified-scroll"
+                                ref={(el) => {
+                                    if (tableScrollRef.current !== el) {
+                                        (tableScrollRef as any).current = el;
+                                    }
+                                    if (tableContainerRef.current !== el) {
+                                        (tableContainerRef as any).current = el;
+                                    }
+                                }}
+                            >
                                 <table
-                                    className="w-full border-collapse"
+                                    className={cn(
+                                        "w-full border-collapse",
+                                        isSelecting && "table-selecting"
+                                    )}
+                                    onMouseDown={handleTableMouseDown}
+                                    onMouseMove={handleTableMouseMove}
+                                    onMouseUp={handleTableMouseUp}
                                     onClick={handleTableClick}
                                     onDoubleClick={handleTableDoubleClick}
                                 >
@@ -1080,7 +1394,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             data-column-index={colIndex + 1}
                                                             className={cn(
                                                                 "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
-                                                                selectedCell === cellId && !isEditing && "table-cell-selected",
+                                                                selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
+                                                                selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
                                                                 isEditing && "table-cell-editing"
                                                             )}
                                                             style={{
@@ -1090,7 +1405,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             }}
                                                             title={String(displayValue || '')}
                                                         >
-                                                            {isEditing ? (
+                                                            {/* 暂时注释掉编辑功能以提升性能 */}
+                                                            {/* {isEditing ? (
                                                                 <input
                                                                     ref={editingInputRef}
                                                                     type="text"
@@ -1098,11 +1414,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                     onBlur={handleEditComplete}
                                                                     onKeyDown={handleEditKeyDown}
                                                                 />
-                                                            ) : (
+                                                            ) : ( */}
                                                                 <div className="truncate w-full">
                                                                     {displayValue}
                                                                 </div>
-                                                            )}
+                                                            {/* )} */}
                                                         </td>
                                                     );
                                                 })}

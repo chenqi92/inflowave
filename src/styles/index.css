@@ -170,6 +170,26 @@
   .dark .table-row-selected .table-cell-selectable[data-column="#"] {
     background-color: rgb(59 130 246 / 0.5) !important; /* dark:bg-blue-500/50 */
   }
+
+  /* 单元格范围选择样式 */
+  .table-cell-range-selected {
+    background-color: rgb(191 219 254) !important; /* bg-blue-200 */
+    box-shadow: inset 0 0 0 1px rgb(59 130 246) !important; /* ring-1 ring-blue-500 */
+  }
+
+  .dark .table-cell-range-selected {
+    background-color: rgb(59 130 246 / 0.4) !important; /* dark:bg-blue-500/40 */
+  }
+
+  /* 拖拽选择时的鼠标样式 */
+  .table-selecting {
+    user-select: none;
+    cursor: crosshair;
+  }
+
+  .table-selecting * {
+    user-select: none;
+  }
   /* Mac平台图标优化 - 针对高DPI屏幕 */
   @media screen and (-webkit-min-device-pixel-ratio: 2) {
     .lucide-icon,
