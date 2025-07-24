@@ -510,6 +510,7 @@ interface PaginationControlsProps {
     pageSize: number;
     totalCount: number;
     loading: boolean;
+    pageSizeOptions?: string[];
     onPageChange: (page: number) => void;
     onPageSizeChange: (size: string) => void;
 }
@@ -519,9 +520,13 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     pageSize,
     totalCount,
     loading,
+    pageSizeOptions = ['500', '1000', '2000', '5000', 'all'],
     onPageChange,
     onPageSizeChange
 }) => {
+    // 调试日志：检查分页选项
+    console.log('🔧 [PaginationControls] 分页选项:', { totalCount, pageSizeOptions });
+
     const isShowingAll = pageSize >= totalCount;
     const totalPages = isShowingAll ? 1 : Math.ceil(totalCount / pageSize);
     const startIndex = isShowingAll ? 1 : (currentPage - 1) * pageSize + 1;
@@ -538,11 +543,11 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="500">500</SelectItem>
-                        <SelectItem value="1000">1000</SelectItem>
-                        <SelectItem value="2000">2000</SelectItem>
-                        <SelectItem value="5000">5000</SelectItem>
-                        <SelectItem value="all">全部</SelectItem>
+                        {pageSizeOptions.map(option => (
+                            <SelectItem key={option} value={option}>
+                                {option === 'all' ? '全部' : option}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
                 <span className="text-sm text-muted-foreground">条/页</span>
@@ -629,7 +634,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [selectionStart, setSelectionStart] = useState<{row: number, column: string} | null>(null); // 选择起点
 
     // 自动滚动相关
-    const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     // Excel风格筛选相关状态
@@ -1259,7 +1264,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 setIsShowingAll(pagination.pageSize >= pagination.total);
             }
         }
-    }, [pagination && pagination.current, pagination && pagination.pageSize, currentPage, pageSize]);
+    }, [
+        pagination && pagination.current,
+        pagination && pagination.pageSize,
+        pagination && pagination.total,
+        pagination && pagination.pageSizeOptions
+    ]);
 
     // 处理搜索
     const handleSearch = useCallback((value: string) => {
@@ -1745,6 +1755,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     pageSize={pagination.pageSize}
                     totalCount={pagination.total}
                     loading={loading}
+                    pageSizeOptions={pagination.pageSizeOptions}
                     onPageChange={handlePageChange}
                     onPageSizeChange={handlePageSizeChange}
                 />
