@@ -74,12 +74,12 @@
     text-overflow: ellipsis;
   }
 
-  /* 虚拟化表格专用样式 - 全新方案 */
+  /* 虚拟化表格专用样式 - 使用更通用的选择器 */
   .virtualized-sticky-header {
     position: sticky !important;
     left: 0 !important;
     top: 0 !important;
-    z-index: 1000 !important; /* 极高层级，确保不被覆盖 */
+    z-index: 9999 !important; /* 极高层级，确保不被覆盖 */
     background: hsl(var(--muted)) !important;
     border-right: 2px solid hsl(var(--border)) !important;
     background-clip: padding-box !important;
@@ -93,12 +93,14 @@
     will-change: transform !important;
     /* 确保边界清晰 */
     overflow: hidden !important;
+    /* 强制覆盖所有可能的样式 */
+    position: sticky !important;
   }
 
   .virtualized-sticky-cell {
     position: sticky !important;
     left: 0 !important;
-    z-index: 100 !important; /* 远低于表头层级 */
+    z-index: 1 !important; /* 极低层级，确保被表头覆盖 */
     background: hsl(var(--background)) !important;
     border-right: 2px solid hsl(var(--border)) !important;
     background-clip: padding-box !important;

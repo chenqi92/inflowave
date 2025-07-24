@@ -168,7 +168,16 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 )}
                 
                 {/* 数据列表头 */}
-                {visibleColumns.map((column) => {
+                {(() => {
+                    const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
+                    console.log('🔧 [TableHeader] 渲染列表头:', {
+                        columnOrder,
+                        selectedColumns,
+                        visibleColumns,
+                        virtualMode
+                    });
+                    return visibleColumns;
+                })().map((column) => {
                     // 计算列的最小宽度
                     const getColumnMinWidth = (col: string) => {
                         if (col === 'time') return '180px';
@@ -359,10 +368,28 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     useEffect(() => {
         if (columns.length > 0) {
             const columnKeys = columns.map(col => col.key);
+            console.log('🔧 [UnifiedDataTable] 初始化列:', {
+                columns: columns.map(col => ({ key: col.key, title: col.title })),
+                columnKeys,
+                selectedColumns,
+                columnOrder
+            });
             setSelectedColumns(columnKeys);
             setColumnOrder(columnKeys);
         }
     }, [columns]);
+
+    // 列管理处理函数
+    const handleColumnChange = useCallback((visibleColumns: string[], newColumnOrder: string[]) => {
+        console.log('🔧 [UnifiedDataTable] 列管理变更:', {
+            before: { selectedColumns, columnOrder },
+            after: { visibleColumns, newColumnOrder },
+            hasCallback: !!onColumnChange
+        });
+        setSelectedColumns(visibleColumns);
+        setColumnOrder(newColumnOrder);
+        onColumnChange?.(visibleColumns, newColumnOrder);
+    }, [onColumnChange, selectedColumns, columnOrder]);
 
     // 同步外部分页配置
     useEffect(() => {
@@ -543,6 +570,82 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 )}
+                                {columnManagement && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    console.log('🔧 [UnifiedDataTable] 列管理按钮被点击:', {
+                                                        selectedColumns,
+                                                        columnOrder,
+                                                        columns: columns.map(col => ({ key: col.key, title: col.title }))
+                                                    });
+                                                }}
+                                            >
+                                                <Settings className="w-4 h-4 mr-2" />
+                                                列 ({selectedColumns.length}/{columns.length})
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
+                                            <div className="p-3">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-sm font-medium">列显示设置</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const allColumns = columns.map(col => col.key);
+                                                            if (selectedColumns.length === allColumns.length) {
+                                                                // 取消全选，但至少保留一列
+                                                                handleColumnChange([allColumns[0]], columnOrder);
+                                                            } else {
+                                                                // 全选
+                                                                handleColumnChange(allColumns, columnOrder);
+                                                            }
+                                                        }}
+                                                        className="h-7 px-2 text-xs"
+                                                    >
+                                                        {selectedColumns.length === columns.length ? '取消全选' : '全选'}
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {columnOrder.map((columnKey) => {
+                                                        const column = columns.find(col => col.key === columnKey);
+                                                        if (!column) return null;
+
+                                                        return (
+                                                            <div key={columnKey} className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
+                                                                <Checkbox
+                                                                    checked={selectedColumns.includes(columnKey)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        console.log('🔧 [UnifiedDataTable] Checkbox点击:', {
+                                                                            columnKey,
+                                                                            checked,
+                                                                            currentSelectedColumns: selectedColumns
+                                                                        });
+                                                                        if (checked) {
+                                                                            handleColumnChange([...selectedColumns, columnKey], columnOrder);
+                                                                        } else {
+                                                                            // 至少保留一列
+                                                                            if (selectedColumns.length > 1) {
+                                                                                handleColumnChange(selectedColumns.filter(col => col !== columnKey), columnOrder);
+                                                                            } else {
+                                                                                console.log('🔧 [UnifiedDataTable] 阻止取消最后一列');
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <span className="text-sm flex-1">{column.title}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </div>
                         </div>
                     </CardHeader>
@@ -564,31 +667,76 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                 <TableVirtuoso
                                     data={paginatedData}
                                     fixedHeaderContent={() => (
-                                        <TableHeader
-                                            columnOrder={columnOrder}
-                                            selectedColumns={selectedColumns}
-                                            sortColumn={sortConfig?.column || ''}
-                                            sortDirection={sortConfig?.direction || 'asc'}
-                                            selectedRowsCount={selectedRows.size}
-                                            totalRowsCount={data.length}
-                                            showRowNumbers={showRowNumbers}
-                                            onSort={handleSort}
-                                            onAddFilter={handleAddFilter}
-                                            onSelectAll={handleSelectAll}
-                                            onCopySelectedRows={handleCopySelectedRows}
-                                            virtualMode={true}
-                                        />
+                                        <tr>
+                                            {/* 序号列表头 */}
+                                            {showRowNumbers && (() => {
+                                                console.log('🔧 [VirtualizedTable] 渲染序号列表头，CSS类: virtualized-sticky-header');
+                                                return (
+                                                <th className="px-4 py-2 text-left align-middle font-medium text-sm text-muted-foreground bg-muted border-b-2 border-r w-16 virtualized-sticky-header">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs">#</span>
+                                                        <Badge variant="outline" className="text-xs">序号</Badge>
+                                                    </div>
+                                                </th>
+                                                );
+                                            })()}
+
+                                            {/* 数据列表头 */}
+                                            {(() => {
+                                                const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
+                                                console.log('🔧 [VirtualizedTable] 渲染虚拟化表头:', {
+                                                    columnOrder,
+                                                    selectedColumns,
+                                                    visibleColumns,
+                                                    showRowNumbers
+                                                });
+                                                return visibleColumns;
+                                            })().map((column) => {
+                                                const getColumnMinWidth = (col: string) => {
+                                                    if (col === 'time') return '180px';
+                                                    const colLength = col.length;
+                                                    return `${Math.max(120, colLength * 12)}px`;
+                                                };
+                                                const minWidth = getColumnMinWidth(column);
+
+                                                return (
+                                                    <th
+                                                        key={column}
+                                                        className="px-4 py-2 text-left align-middle font-medium text-sm text-muted-foreground bg-muted border-b-2 border-r cursor-pointer hover:bg-muted/80"
+                                                        style={{ minWidth }}
+                                                        onClick={() => handleSort(column)}
+                                                    >
+                                                        <div className="flex items-center gap-1 whitespace-nowrap">
+                                                            <span className="truncate" title={column}>{column}</span>
+                                                            {column === 'time' && (
+                                                                <Badge variant="secondary" className="text-xs">时间</Badge>
+                                                            )}
+                                                            {sortConfig?.column === column && (
+                                                                <span className="text-xs">
+                                                                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </th>
+                                                );
+                                            })}
+                                        </tr>
                                     )}
                                     itemContent={(index, row) => (
                                         <>
                                             {/* 固定的序号列 */}
-                                            {showRowNumbers && (
+                                            {showRowNumbers && (() => {
+                                                if (index === 0) {
+                                                    console.log('🔧 [VirtualizedTable] 渲染序号列数据，CSS类: virtualized-sticky-cell');
+                                                }
+                                                return (
                                                 <td className="px-4 py-2 text-sm font-mono w-16 virtualized-sticky-cell">
                                                     <div className="truncate w-full text-center text-muted-foreground">
                                                         {index + 1}
                                                     </div>
                                                 </td>
-                                            )}
+                                                );
+                                            })()}
                                             {/* 数据列 */}
                                             {columnOrder.filter(column => selectedColumns.includes(column)).map(column => {
                                                 const columnConfig = columns.find(col => col.key === column);

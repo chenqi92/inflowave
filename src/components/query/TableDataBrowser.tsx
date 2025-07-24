@@ -1271,16 +1271,22 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 处理列选择
     const handleColumnToggle = (column: string) => {
+        console.log('🔧 [TableDataBrowser] 列切换:', { column, currentSelected: selectedColumns });
         setSelectedColumns(prev => {
             if (prev.includes(column)) {
                 // 如果已选中，则取消选中（但至少保留一列）
                 if (prev.length > 1) {
-                    return prev.filter(col => col !== column);
+                    const newSelected = prev.filter(col => col !== column);
+                    console.log('🔧 [TableDataBrowser] 取消选中列:', { column, before: prev, after: newSelected });
+                    return newSelected;
                 }
+                console.log('🔧 [TableDataBrowser] 保留最后一列:', { column });
                 return prev; // 至少保留一列
             } else {
                 // 如果未选中，则添加到选中列表
-                return [...prev, column];
+                const newSelected = [...prev, column];
+                console.log('🔧 [TableDataBrowser] 选中列:', { column, before: prev, after: newSelected });
+                return newSelected;
             }
         });
     };
@@ -1497,7 +1503,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     filterable={true}
                     sortable={true}
                     exportable={false} // 使用外部导出
-                    columnManagement={false} // 使用外部列管理
+                    columnManagement={true} // 启用内置列管理作为备用
                     showToolbar={false} // 使用外部工具栏
                     showRowNumbers={true}
                     className="h-full"
