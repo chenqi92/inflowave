@@ -15,7 +15,6 @@ import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
-import { ThemeToggle } from '@/components/common/ThemeToggle';
 import TimeRangeSelector, {
   TimeRange,
 } from '@/components/common/TimeRangeSelector';
@@ -233,13 +232,21 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <div className='w-px h-6 bg-border mx-3' />
 
 
-        {/* 主题切换按钮 */}
-        <ThemeToggle
-          variant='ghost'
+        {/* 插件管理按钮 */}
+        <Button
+          variant={currentView === 'extensions' ? 'default' : 'ghost'}
           size='sm'
-          showLabel={true}
-          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
-        />
+          className={`h-10 w-14 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
+            currentView === 'extensions'
+              ? 'bg-accent text-accent-foreground shadow-sm'
+              : 'hover:bg-muted/50'
+          }`}
+          onClick={() => navigate('/extensions')}
+          title='扩展管理'
+        >
+          <Wrench className='w-4 h-4' />
+          <span className='text-xs'>扩展</span>
+        </Button>
 
         {/* 查询历史按钮 */}
         <Button
