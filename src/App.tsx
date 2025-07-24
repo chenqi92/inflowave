@@ -57,11 +57,18 @@ const MainLayout: React.FC = () => {
   // 检查是否显示用户指引
   useEffect(() => {
     if (!browserModeNoticeDismissed) {
-      // 延迟显示弹框，确保应用完全加载
+      // 监听app-ready事件后显示弹框
+      const handleAppReady = () => {
+        setTimeout(() => setUserGuideVisible(true), 100);
+      };
+      window.addEventListener('app-ready', handleAppReady);
       const timer = setTimeout(() => {
         setUserGuideVisible(true);
-      }, 1000);
-      return () => clearTimeout(timer);
+      }, 2000); // 兜底延迟
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('app-ready', handleAppReady);
+      };
     }
   }, [browserModeNoticeDismissed]);
 
@@ -536,7 +543,7 @@ const App: React.FC = () => {
           
           window.dispatchEvent(new CustomEvent('app-ready'));
           console.log('✅ 应用启动完成，窗口标题已设置，已发送ready信号');
-        }, 300); // 稍微延迟一下确保UI已渲染
+        }, 50); // 轻微延迟确保DOM更新完成
 
         // 在开发模式下加载测试工具
         if ((import.meta as any).env?.DEV) {
@@ -559,10 +566,9 @@ const App: React.FC = () => {
       }
     };
 
-    // 延迟初始化，确保UI先渲染
-    const timer = setTimeout(initApp, 100);
+    // 直接初始化，React已确保UI渲染顺序
+    initApp();
     return () => {
-      clearTimeout(timer);
       // 应用卸载时清理错误日志器
       errorLogger.cleanup();
     };
