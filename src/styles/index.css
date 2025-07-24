@@ -1321,10 +1321,28 @@ pre,
   -ms-user-select: none;
 }
 
-/* 统一表格容器（单一滚动实例） */
-.unified-table-with-fixed-column {
+/* 表格容器 */
+.table-container {
   height: 100%;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 固定表头容器 */
+.table-header-fixed {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格内容容器 */
+.table-content {
+  flex: 1;
+  min-height: 0;
 }
 
 /* 表格滚动容器 - 滚动条在外围 */
@@ -1334,6 +1352,10 @@ pre,
   /* 滚动条样式优化 */
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
+  /* 确保内容可以横向滚动 */
+  min-width: 0;
+  /* 确保滚动同步的精确性 */
+  scroll-behavior: auto;
 }
 
 .table-scroller-with-outer-scrollbar::-webkit-scrollbar {
@@ -1363,6 +1385,8 @@ pre,
   z-index: 10;
   background: hsl(var(--background));
   border-bottom: 1px solid hsl(var(--border));
+  /* 确保表头始终固定在顶部 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* 固定列表头 */
@@ -1393,7 +1417,17 @@ pre,
 /* 可滚动列表头 */
 .scrollable-columns-header {
   flex: 1;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* 隐藏滚动条，由内容区域统一显示 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* 确保滚动同步的精确性 */
+  scroll-behavior: auto;
+}
+
+.scrollable-columns-header::-webkit-scrollbar {
+  display: none;
 }
 
 .scrollable-header-content {
@@ -1427,6 +1461,9 @@ pre,
   cursor: pointer;
   transition: background-color 0.15s ease;
   user-select: none;
+  /* 防止点击时滚动跳转 */
+  position: relative;
+  contain: layout style;
 }
 
 .table-row-with-fixed-column:hover {
@@ -1472,12 +1509,16 @@ pre,
 .scrollable-columns-cell {
   flex: 1;
   overflow: hidden;
+  /* 允许收缩以支持横向滚动 */
+  min-width: 0;
 }
 
 .scrollable-cell-content {
   display: flex;
   min-width: max-content;
   height: 40px;
+  /* 确保内容不会因为点击而跳转 */
+  position: relative;
 }
 
 .scrollable-data-cell {
@@ -1488,4 +1529,10 @@ pre,
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   border-right: 1px solid hsl(var(--border));
   flex-shrink: 0;
+  /* 防止点击时滚动跳转 */
+  position: relative;
+  contain: layout style;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
 }

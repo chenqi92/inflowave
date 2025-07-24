@@ -759,9 +759,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         selectedRows: []
     });
 
-    // 滚动同步的 refs
-    const headerRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
+    // 滚动同步的 refs - 统一使用一套ref
+    const headerScrollRef = useRef<HTMLDivElement>(null);
+    const contentScrollRef = useRef<HTMLDivElement>(null);
 
     // 拖拽传感器
     const sensors = useSensors(
@@ -1280,7 +1280,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
 
 
-    // 行点击处理函数
+    // 行点击处理函数 - 添加滚动位置保护
     const handleRowClick = useCallback((index: number, event: React.MouseEvent) => {
         console.log('handleRowClick called with index:', index, 'event:', event);
 
@@ -1288,6 +1288,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         if (isDragging) {
             return;
         }
+
+        // 保存当前滚动位置，防止点击时跳转
+        const currentScrollLeft = contentScrollRef.current?.scrollLeft || headerScrollRef.current?.scrollLeft || 0;
+        const currentScrollTop = contentScrollRef.current?.scrollTop || 0;
+        savedScrollPositionRef.current = currentScrollLeft;
 
         const newSelectedRows = new Set(selectedRows);
 
@@ -1314,6 +1319,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         setSelectedRows(newSelectedRows);
         setLastSelectedIndex(index);
+
+        // 确保滚动位置不变
+        requestAnimationFrame(() => {
+            if (headerScrollRef.current) {
+                headerScrollRef.current.scrollLeft = currentScrollLeft;
+            }
+            if (contentScrollRef.current) {
+                contentScrollRef.current.scrollLeft = currentScrollLeft;
+                contentScrollRef.current.scrollTop = currentScrollTop;
+            }
+        });
     }, [selectedRows, lastSelectedIndex, isDragging]);
 
     // 鼠标按下处理函数（开始拖动选择）
@@ -1438,6 +1454,42 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         };
     }, [handleSelectAll, hideContextMenu]);
 
+    // 滚动同步状态和位置保存
+    const isScrollingSyncRef = useRef(false);
+    const savedScrollPositionRef = useRef<number>(0);
+
+    // 统一的滚动同步处理 - 表头滚动时同步内容
+    const handleHeaderScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        if (isScrollingSyncRef.current) return;
+
+        const scrollLeft = e.currentTarget.scrollLeft;
+        savedScrollPositionRef.current = scrollLeft;
+
+        if (contentScrollRef.current && Math.abs(contentScrollRef.current.scrollLeft - scrollLeft) > 1) {
+            isScrollingSyncRef.current = true;
+            contentScrollRef.current.scrollLeft = scrollLeft;
+            requestAnimationFrame(() => {
+                isScrollingSyncRef.current = false;
+            });
+        }
+    }, []);
+
+    // 统一的滚动同步处理 - 内容滚动时同步表头
+    const handleContentScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        if (isScrollingSyncRef.current) return;
+
+        const scrollLeft = e.currentTarget.scrollLeft;
+        savedScrollPositionRef.current = scrollLeft;
+
+        if (headerScrollRef.current && Math.abs(headerScrollRef.current.scrollLeft - scrollLeft) > 1) {
+            isScrollingSyncRef.current = true;
+            headerScrollRef.current.scrollLeft = scrollLeft;
+            requestAnimationFrame(() => {
+                isScrollingSyncRef.current = false;
+            });
+        }
+    }, []);
+
     // 复制功能
     const handleCopyRow = useCallback(async (rowIndex: number, format: 'text' | 'json' | 'csv' = 'text') => {
         const row: DataRow | undefined = data[rowIndex];
@@ -1481,7 +1533,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         if (!row) return;
 
         // 立即保存当前精确的滚动位置
-        const currentScrollLeft = contentRef.current?.scrollLeft || headerRef.current?.scrollLeft || 0;
+        const currentScrollLeft = contentScrollRef.current?.scrollLeft || headerScrollRef.current?.scrollLeft || 0;
         savedScrollPositionRef.current = currentScrollLeft;
 
         const value = String(row[column] || '');
@@ -1495,56 +1547,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 立即恢复滚动位置，不等待
         requestAnimationFrame(() => {
-            if (headerRef.current) {
-                headerRef.current.scrollLeft = savedScrollPositionRef.current;
+            if (headerScrollRef.current) {
+                headerScrollRef.current.scrollLeft = savedScrollPositionRef.current;
             }
-            if (contentRef.current) {
-                contentRef.current.scrollLeft = savedScrollPositionRef.current;
+            if (contentScrollRef.current) {
+                contentScrollRef.current.scrollLeft = savedScrollPositionRef.current;
             }
         });
     }, [data]);
-
-    // 滚动同步状态
-    const isScrollingSyncRef = useRef(false);
-
-    // 保存滚动位置
-    const savedScrollPositionRef = useRef<number>(0);
-
-
-
-    // 处理横向滚动同步 - 优化同步精度
-    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        if (isScrollingSyncRef.current) return;
-
-        const scrollLeft = e.currentTarget.scrollLeft;
-        savedScrollPositionRef.current = scrollLeft; // 保存滚动位置
-
-        if (headerRef.current && Math.abs(headerRef.current.scrollLeft - scrollLeft) > 1) {
-            isScrollingSyncRef.current = true;
-            headerRef.current.scrollLeft = scrollLeft;
-            // 使用更短的延迟确保同步精度
-            setTimeout(() => {
-                isScrollingSyncRef.current = false;
-            }, 16); // 约1帧的时间
-        }
-    }, []);
-
-    // 处理表头滚动同步到内容 - 优化同步精度
-    const handleHeaderScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        if (isScrollingSyncRef.current) return;
-
-        const scrollLeft = e.currentTarget.scrollLeft;
-        savedScrollPositionRef.current = scrollLeft; // 保存滚动位置
-
-        if (contentRef.current && Math.abs(contentRef.current.scrollLeft - scrollLeft) > 1) {
-            isScrollingSyncRef.current = true;
-            contentRef.current.scrollLeft = scrollLeft;
-            // 使用更短的延迟确保同步精度
-            setTimeout(() => {
-                isScrollingSyncRef.current = false;
-            }, 16); // 约1帧的时间
-        }
-    }, []);
 
 
 
@@ -1857,80 +1867,98 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <div className="unified-table-with-fixed-column h-full">
-                            {/* 使用单一Virtuoso实例，通过自定义组件实现固定列效果 */}
-                            <Virtuoso
-                                style={{ height: '100%' }}
-                                data={data}
-                                components={{
-                                    Header: () => (
-                                        <div className="table-header-with-fixed-column">
-                                            {/* 固定序号列表头 */}
-                                            <div className="fixed-column-header">
-                                                <div className="row-number-header-cell">#</div>
-                                            </div>
-                                            {/* 可滚动数据列表头 */}
-                                            <div className="scrollable-columns-header">
-                                                <div className="scrollable-header-content">
-                                                    {columnOrder.filter(column => selectedColumns.includes(column) && column !== '#').map(column => {
-                                                        const width = columnWidths[column] || 120;
-                                                        return (
-                                                            <div
-                                                                key={column}
-                                                                className={cn(
-                                                                    'scrollable-header-cell',
-                                                                    'cursor-pointer hover:bg-muted/50'
-                                                                )}
-                                                                style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
-                                                                onClick={() => handleSort(column)}
-                                                            >
-                                                                <div className='flex items-center gap-1 w-full h-full'>
-                                                                    <span className='text-xs font-medium flex-shrink-0' title={column}>
-                                                                        {column}
-                                                                    </span>
-                                                                    {column === 'time' && (
-                                                                        <Badge variant='secondary' className='text-xs'>
-                                                                            时间
-                                                                        </Badge>
-                                                                    )}
-                                                                    {sortColumn === column && (
-                                                                        <span className='text-xs text-primary'>
-                                                                            {sortDirection === 'asc' ? '↑' : '↓'}
-                                                                        </span>
-                                                                    )}
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant='ghost'
-                                                                                size='sm'
-                                                                                className='h-4 w-4 p-0 ml-auto opacity-0 group-hover:opacity-100'
-                                                                            >
-                                                                                <Filter className='h-3 w-3' />
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent align='start'>
-                                                                            <DropdownMenuItem onClick={() => addFilter(column)}>
-                                                                                <Filter className='w-4 h-4 mr-2' />
-                                                                                添加过滤器
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+                        <div className="table-container h-full flex flex-col">
+                            {/* 固定表头 */}
+                            <div className="table-header-fixed">
+                                <div className="table-header-with-fixed-column">
+                                    {/* 固定序号列表头 */}
+                                    <div className="fixed-column-header">
+                                        <div className="row-number-header-cell">#</div>
+                                    </div>
+                                    {/* 可滚动数据列表头 */}
+                                    <div className="scrollable-columns-header" ref={headerScrollRef} onScroll={handleHeaderScroll}>
+                                        <div className="scrollable-header-content">
+                                            {columnOrder.filter(column => selectedColumns.includes(column) && column !== '#').map(column => {
+                                                const width = columnWidths[column] || 120;
+                                                return (
+                                                    <div
+                                                        key={column}
+                                                        className={cn(
+                                                            'scrollable-header-cell',
+                                                            'cursor-pointer hover:bg-muted/50'
+                                                        )}
+                                                        style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
+                                                        onClick={() => handleSort(column)}
+                                                    >
+                                                        <div className='flex items-center gap-1 w-full h-full'>
+                                                            <span className='text-xs font-medium flex-shrink-0' title={column}>
+                                                                {column}
+                                                            </span>
+                                                            {column === 'time' && (
+                                                                <Badge variant='secondary' className='text-xs'>
+                                                                    时间
+                                                                </Badge>
+                                                            )}
+                                                            {sortColumn === column && (
+                                                                <span className='text-xs text-primary'>
+                                                                    {sortDirection === 'asc' ? '↑' : '↓'}
+                                                                </span>
+                                                            )}
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button
+                                                                        variant='ghost'
+                                                                        size='sm'
+                                                                        className='h-4 w-4 p-0 ml-auto opacity-0 group-hover:opacity-100'
+                                                                    >
+                                                                        <Filter className='h-3 w-3' />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align='start'>
+                                                                    <DropdownMenuItem onClick={() => addFilter(column)}>
+                                                                        <Filter className='w-4 h-4 mr-2' />
+                                                                        添加过滤器
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                    ),
-                                    Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
-                                        <div
-                                            {...props}
-                                            ref={ref}
-                                            className="table-scroller-with-outer-scrollbar"
-                                        />
-                                    ))
-                                }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 表格内容 */}
+                            <div className="table-content flex-1">
+                                <Virtuoso
+                                    style={{ height: '100%' }}
+                                    data={data}
+                                    components={{
+                                        Scroller: React.forwardRef<HTMLDivElement, any>((props, ref) => (
+                                            <div
+                                                {...props}
+                                                ref={(element) => {
+                                                    if (typeof ref === 'function') {
+                                                        ref(element);
+                                                    } else if (ref && 'current' in ref) {
+                                                        (ref as React.MutableRefObject<HTMLDivElement | null>).current = element;
+                                                    }
+                                                    if (contentScrollRef.current !== element) {
+                                                        (contentScrollRef as React.MutableRefObject<HTMLDivElement | null>).current = element;
+                                                    }
+                                                }}
+                                                className="table-scroller-with-outer-scrollbar"
+                                                onScroll={(e) => {
+                                                    if (props.onScroll) {
+                                                        props.onScroll(e);
+                                                    }
+                                                    handleContentScroll(e);
+                                                }}
+                                            />
+                                        ))
+                                    }}
                                 itemContent={(index, row) => (
                                     <div
                                         key={row._id !== undefined ? `unified-row_${row._id}_${index}` : `unified-row_index_${index}_${currentPage}_${pageSize}`}
@@ -1982,7 +2010,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                                 overscan={10}
                                 increaseViewportBy={400}
                                 useWindowScroll={false}
+                                followOutput={false}
+                                alignToBottom={false}
                             />
+                            </div>
                         </div>
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
