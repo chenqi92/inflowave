@@ -1345,35 +1345,91 @@ pre,
   min-height: 0;
 }
 
-/* 表格滚动容器 - 滚动条在外围 */
-.table-scroller-with-outer-scrollbar {
+/* 统一滚动的表格容器 */
+.table-unified-scroll {
   height: 100%;
   overflow: auto;
-  /* 滚动条样式优化 */
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
-  /* 确保内容可以横向滚动 */
-  min-width: 0;
-  /* 确保滚动同步的精确性 */
-  scroll-behavior: auto;
+  /* 显示滚动条，确保横向和纵向滚动都可见 */
+  scrollbar-width: auto;
+  scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
 }
 
-.table-scroller-with-outer-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.table-unified-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
 }
 
-.table-scroller-with-outer-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+.table-unified-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 6px;
 }
 
-.table-scroller-with-outer-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
-}
-
-.table-scroller-with-outer-scrollbar::-webkit-scrollbar-thumb:hover {
+.table-unified-scroll::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground));
+  border-radius: 6px;
+  border: 2px solid hsl(var(--muted));
+}
+
+.table-unified-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground));
+}
+
+.table-unified-scroll::-webkit-scrollbar-corner {
+  background: hsl(var(--muted));
+}
+
+/* 表格样式 */
+.table-unified-scroll table {
+  border-collapse: collapse;
+  min-width: max-content;
+  width: 100%;
+}
+
+.table-unified-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: hsl(var(--background));
+}
+
+.table-unified-scroll th {
+  background: hsl(var(--muted));
+  border-bottom: 2px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+
+.table-unified-scroll td {
+  border-bottom: 1px solid hsl(var(--border));
+  border-right: 1px solid hsl(var(--border));
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 固定序号列样式 */
+.table-unified-scroll th.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: hsl(var(--muted));
+  border-right: 2px solid hsl(var(--border));
+}
+
+.table-unified-scroll td.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: hsl(var(--muted) / 0.3);
+  border-right: 2px solid hsl(var(--border));
 }
 
 /* 表头容器（固定列 + 滚动列） */
@@ -1419,21 +1475,37 @@ pre,
   flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
-  /* 隐藏滚动条，由内容区域统一显示 */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* 显示细滚动条，提供更好的用户体验 */
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
   /* 确保滚动同步的精确性 */
   scroll-behavior: auto;
 }
 
 .scrollable-columns-header::-webkit-scrollbar {
-  display: none;
+  height: 6px;
+}
+
+.scrollable-columns-header::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-columns-header::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+.scrollable-columns-header::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
 
 .scrollable-header-content {
   display: flex;
   min-width: max-content;
+  width: max-content;
   height: 48px;
+  /* 确保内容宽度能够正确计算 */
+  flex-shrink: 0;
 }
 
 .scrollable-header-cell {
@@ -1516,9 +1588,12 @@ pre,
 .scrollable-cell-content {
   display: flex;
   min-width: max-content;
+  width: max-content;
   height: 40px;
   /* 确保内容不会因为点击而跳转 */
   position: relative;
+  /* 确保内容宽度能够正确计算 */
+  flex-shrink: 0;
 }
 
 .scrollable-data-cell {
