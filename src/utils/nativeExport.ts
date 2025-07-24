@@ -5,6 +5,7 @@
 
 import { safeTauriInvoke, safeTauriInvokeOptional } from '@/utils/tauri';
 import { convertToCSV, convertToJSON, convertToExcel, convertToTSV, convertToMarkdown, convertToSQL, getFileExtension, getMimeType } from './export';
+import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import type { QueryResult, ExportOptions } from '@/types';
 
 export interface NativeExportOptions {
@@ -165,7 +166,8 @@ export const exportWithNativeDialog = async (
     return true;
   } catch (error) {
     console.error('原生导出失败:', error);
-    throw new Error(`导出失败: ${error}`);
+    const friendlyError = getFileOperationError(String(error), 'save');
+    throw new Error(formatErrorMessage(friendlyError));
   }
 };
 
@@ -225,7 +227,8 @@ export const exportToPath = async (
     }
   } catch (error) {
     console.error('导出到指定路径失败:', error);
-    throw new Error(`导出失败: ${error}`);
+    const friendlyError = getFileOperationError(String(error), 'write');
+    throw new Error(formatErrorMessage(friendlyError));
   }
 };
 

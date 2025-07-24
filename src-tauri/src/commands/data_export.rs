@@ -280,12 +280,71 @@ fn export_to_json(
 }
 
 fn export_to_excel(
-    _query_result: &crate::models::QueryResult,
-    _file_path: &str,
-    _options: &Option<ExportOptions>,
+    query_result: &crate::models::QueryResult,
+    file_path: &str,
+    options: &Option<ExportOptions>,
 ) -> Result<u64, String> {
-    // 这里需要使用 Excel 库，暂时返回错误
-    Err("Excel 导出功能暂未实现".to_string())
+    use rust_xlsxwriter::{Workbook, Worksheet, Format};
+
+    debug!("开始导出Excel文件: {}", file_path);
+
+    // 创建工作簿
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    // 设置标题格式
+    let header_format = Format::new()
+        .set_bold()
+        .set_background_color("#4472C4")
+        .set_font_color("#FFFFFF");
+
+    let mut row = 0u32;
+    let mut exported_rows = 0u64;
+
+    // 写入列标题
+    if let Some(columns) = &query_result.columns {
+        for (col_idx, column) in columns.iter().enumerate() {
+            worksheet.write_string_with_format(row, col_idx as u16, &column.name, &header_format)
+                .map_err(|e| format!("写入列标题失败: {}", e))?;
+        }
+        row += 1;
+    }
+
+    // 写入数据行
+    if let Some(rows) = &query_result.rows {
+        for data_row in rows {
+            for (col_idx, value) in data_row.iter().enumerate() {
+                let cell_value = match value {
+                    serde_json::Value::String(s) => s.clone(),
+                    serde_json::Value::Number(n) => n.to_string(),
+                    serde_json::Value::Bool(b) => b.to_string(),
+                    serde_json::Value::Null => "".to_string(),
+                    _ => value.to_string(),
+                };
+
+                worksheet.write_string(row, col_idx as u16, &cell_value)
+                    .map_err(|e| format!("写入数据失败: {}", e))?;
+            }
+            row += 1;
+            exported_rows += 1;
+
+            // 检查是否有行数限制
+            if let Some(opts) = options {
+                if let Some(limit) = opts.limit {
+                    if exported_rows >= limit as u64 {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // 保存文件
+    workbook.save(file_path)
+        .map_err(|e| format!("保存Excel文件失败: {}", e))?;
+
+    info!("Excel导出完成: {} 行数据导出到 {}", exported_rows, file_path);
+    Ok(exported_rows)
 }
 
 fn export_to_sql(

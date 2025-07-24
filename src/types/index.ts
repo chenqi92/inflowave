@@ -234,6 +234,10 @@ export interface ChartConfig {
   id: string;
   type: 'line' | 'bar' | 'scatter' | 'area' | 'pie';
   title: string;
+  query?: string;
+  connectionId?: string;
+  database?: string;
+  refreshInterval?: number;
   xAxis?: AxisConfig;
   yAxis?: AxisConfig;
   series?: SeriesConfig[];

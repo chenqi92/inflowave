@@ -104,28 +104,47 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
 
   const { createDashboard, updateDashboard } = useVisualizationStore();
 
-  // 清理selectedChart状态
-  React.useEffect(() => {
-    if (selectedChart) {
-      // TODO: 实现图表编辑逻辑
-      // console.log('当前选中的图表:', selectedChart);
-    }
-  }, [selectedChart]);
-
   const form = useForm({
     defaultValues: {
-      name: currentDashboard.name,
-      description: currentDashboard.description || '',
+      name: '',
+      description: '',
       settings: {
-        theme: currentDashboard.settings?.theme || 'default',
-        gridSize: currentDashboard.settings?.gridSize || 12,
-        refreshInterval: currentDashboard.settings?.refreshInterval || 30,
-        autoRefresh: currentDashboard.settings?.autoRefresh || false,
-        showHeader: currentDashboard.settings?.showHeader !== false,
-        showGrid: currentDashboard.settings?.showGrid !== false,
+        theme: 'light',
+        gridSize: 12,
+        refreshInterval: 30,
+        autoRefresh: false,
+        showHeader: true,
+        showGrid: true,
       },
     },
   });
+
+  // 处理图表编辑
+  React.useEffect(() => {
+    if (selectedChart && dashboard?.widgets) {
+      console.log('🎨 开始编辑图表:', selectedChart);
+
+      // 找到选中的图表配置
+      const chartToEdit = dashboard.widgets.find((widget: any) => widget.id === selectedChart);
+      if (chartToEdit) {
+        // 将图表配置填充到表单中进行编辑
+        form.reset({
+          name: chartToEdit.title || '',
+          description: '', // Widget config doesn't have description, use empty string
+          settings: {
+            theme: dashboard.settings?.theme || 'light',
+            gridSize: dashboard.settings?.gridSize || 12,
+            refreshInterval: chartToEdit.config?.refreshInterval || 30,
+            autoRefresh: dashboard.settings?.autoRefresh || false,
+            showHeader: dashboard.settings?.showHeader || true,
+            showGrid: dashboard.settings?.showGrid || true,
+          },
+        });
+
+        console.log('✅ 图表配置已加载到编辑器');
+      }
+    }
+  }, [selectedChart, dashboard, form]);
 
   // 网格布局配置
   const gridConfig = {
@@ -265,9 +284,17 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                       size='sm'
                       variant='ghost'
                       onClick={() => {
+                        console.log('🖊️ 选择编辑图表:', chart.id);
                         setSelectedChart(chart.id);
-                        // TODO: 实现图表编辑功能
-                        // console.log('编辑图表:', chart.id);
+
+                        // 滚动到编辑表单区域
+                        const formElement = document.querySelector('[data-chart-form]');
+                        if (formElement) {
+                          formElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                          });
+                        }
                       }}
                     >
                       <Edit className='w-4 h-4' />
@@ -537,7 +564,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={handleSaveDashboard} className='space-y-4'>
+            <form onSubmit={handleSaveDashboard} className='space-y-4' data-chart-form>
               <FormField
                 control={form.control}
                 name='name'

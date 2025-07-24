@@ -7,6 +7,7 @@ import React from 'react';
 import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { getDatabaseConnectionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -556,9 +557,10 @@ export const specialMessage = {
     },
 
     connectionError: async (name: string, error: string) => {
+        const friendlyError = getDatabaseConnectionError(error);
         const result = showNotification.error({
-            message: '连接失败',
-            description: `连接 ${name} 失败: ${error}`,
+            message: friendlyError.title,
+            description: `连接 ${name} 失败: ${friendlyError.message}${friendlyError.suggestion ? '\n建议：' + friendlyError.suggestion : ''}`,
             duration: 6,
             action: {
                 label: '重试',
@@ -569,7 +571,7 @@ export const specialMessage = {
         // 发送桌面通知
         const prefs = await getUserNotificationPreferences();
         if (prefs.enabled && prefs.connection_status) {
-            await sendDesktopNotification('连接失败', `连接 ${name} 失败: ${error}`);
+            await sendDesktopNotification(friendlyError.title, `连接 ${name} 失败: ${friendlyError.message}`);
         }
         
         return result;

@@ -108,9 +108,116 @@ pub async fn validate_query(
         }
     }
     
-    // TODO: 添加更详细的语法分析和建议
+    // 添加更详细的语法分析和建议
+    add_detailed_query_analysis(&query, &mut result);
     
     Ok(result)
+}
+
+/// 添加详细的查询分析和建议
+fn add_detailed_query_analysis(query: &str, result: &mut QueryValidationResult) {
+    let query_lower = query.to_lowercase();
+
+    // 1. 检查查询性能相关问题
+    check_performance_issues(&query_lower, result);
+
+    // 2. 检查语法最佳实践
+    check_syntax_best_practices(&query_lower, result);
+
+    // 3. 检查安全性问题
+    check_security_issues(&query_lower, result);
+
+    // 4. 提供优化建议
+    provide_optimization_suggestions(&query_lower, result);
+}
+
+/// 检查性能相关问题
+fn check_performance_issues(query: &str, result: &mut QueryValidationResult) {
+    // 检查是否使用了SELECT *
+    if query.contains("select *") {
+        result.warnings.push(crate::models::QueryError {
+            line: 1,
+            column: 1,
+            message: "建议避免使用 SELECT *，明确指定需要的字段可以提高查询性能".to_string(),
+            error_type: crate::models::QueryErrorType::PerformanceWarning,
+        });
+    }
+
+    // 检查是否缺少时间范围限制
+    if !query.contains("where") || (!query.contains("time >") && !query.contains("time <")) {
+        result.warnings.push(crate::models::QueryError {
+            line: 1,
+            column: 1,
+            message: "建议添加时间范围限制以提高查询性能和减少资源消耗".to_string(),
+            error_type: crate::models::QueryErrorType::PerformanceWarning,
+        });
+    }
+
+    // 检查是否使用了LIMIT
+    if !query.contains("limit") {
+        result.suggestions.push("考虑添加 LIMIT 子句来限制返回的结果数量".to_string());
+    }
+}
+
+/// 检查语法最佳实践
+fn check_syntax_best_practices(query: &str, result: &mut QueryValidationResult) {
+    // 检查字段名是否使用了引号
+    if query.contains("\"") {
+        result.suggestions.push("字段名包含特殊字符时使用双引号是正确的做法".to_string());
+    }
+
+    // 检查是否使用了GROUP BY但没有聚合函数
+    if query.contains("group by") && !query.contains("mean(") && !query.contains("sum(")
+        && !query.contains("count(") && !query.contains("max(") && !query.contains("min(") {
+        result.warnings.push(crate::models::QueryError {
+            line: 1,
+            column: 1,
+            message: "使用 GROUP BY 时通常需要配合聚合函数使用".to_string(),
+            error_type: crate::models::QueryErrorType::SyntaxWarning,
+        });
+    }
+
+    // 检查时间格式
+    if query.contains("time >") || query.contains("time <") {
+        if !query.contains("now()") && !query.contains("'") {
+            result.suggestions.push("时间值建议使用 now() 相对时间或 '2023-01-01T00:00:00Z' 格式的绝对时间".to_string());
+        }
+    }
+}
+
+/// 检查安全性问题
+fn check_security_issues(query: &str, result: &mut QueryValidationResult) {
+    // 检查是否包含潜在的注入风险
+    let dangerous_patterns = vec!["drop", "delete", "truncate", "alter"];
+
+    for pattern in dangerous_patterns {
+        if query.contains(pattern) {
+            result.warnings.push(crate::models::QueryError {
+                line: 1,
+                column: 1,
+                message: format!("检测到潜在的危险操作: {}，请确认操作的安全性", pattern.to_uppercase()),
+                error_type: crate::models::QueryErrorType::SecurityWarning,
+            });
+        }
+    }
+}
+
+/// 提供优化建议
+fn provide_optimization_suggestions(query: &str, result: &mut QueryValidationResult) {
+    // 建议使用索引字段进行过滤
+    if query.contains("where") && !query.contains("time") {
+        result.suggestions.push("建议在 WHERE 子句中包含时间字段，这是 InfluxDB 的主要索引".to_string());
+    }
+
+    // 建议使用适当的聚合函数
+    if query.contains("select") && !query.contains("mean(") && !query.contains("sum(") {
+        result.suggestions.push("对于时序数据，考虑使用聚合函数如 mean(), sum(), count() 来减少返回的数据量".to_string());
+    }
+
+    // 建议使用合适的时间间隔
+    if query.contains("group by time(") {
+        result.suggestions.push("GROUP BY time() 的时间间隔应该根据数据密度和查询时间范围来选择".to_string());
+    }
 }
 
 

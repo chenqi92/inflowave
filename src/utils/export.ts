@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
 export interface ExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
@@ -422,7 +423,8 @@ export const downloadData = async (
     }
   } catch (error) {
     console.error('下载文件失败:', error);
-    throw new Error('文件下载失败');
+    const friendlyError = getFileOperationError(String(error), 'save');
+    throw new Error(formatErrorMessage(friendlyError));
   }
 };
 

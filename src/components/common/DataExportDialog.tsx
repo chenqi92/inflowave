@@ -18,6 +18,7 @@ import {
   Switch,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
+import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import {
   Dialog,
   DialogContent,
@@ -138,9 +139,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           duration: 1000,
         };
       } else {
+        // 用户取消导出，不视为错误
         return {
-          success: false,
-          message: '用户取消导出',
+          success: true,
+          message: '操作已取消',
           filePath: '',
           recordCount: 0,
           fileSize: 0,
@@ -148,9 +150,10 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         };
       }
     } catch (error) {
+      const friendlyError = getFileOperationError(String(error), 'save');
       return {
         success: false,
-        message: `导出失败: ${error}`,
+        message: formatErrorMessage(friendlyError),
         filePath: '',
         recordCount: 0,
         fileSize: 0,

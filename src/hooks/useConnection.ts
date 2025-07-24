@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useConnectionStore } from '@/store/connection';
 import { ConnectionAPI } from '@/services/api';
+import { getDatabaseConnectionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import type {
   ConnectionConfig,
   ConnectionStatus,
@@ -63,8 +64,9 @@ export const useConnection = () => {
         addConnection({ ...fullConfig, id: returnedId });
         return returnedId;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -85,8 +87,9 @@ export const useConnection = () => {
         const result = await ConnectionAPI.testConnection(connectionId);
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -119,8 +122,9 @@ export const useConnection = () => {
         const returnedId = await ConnectionAPI.createConnection(fullConfig);
         return returnedId;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -156,8 +160,9 @@ export const useConnection = () => {
         await ConnectionAPI.updateConnection(config);
         updateConnection(config.id!, config);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -178,8 +183,9 @@ export const useConnection = () => {
         await ConnectionAPI.deleteConnection(connectionId);
         removeConnection(connectionId);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -200,8 +206,9 @@ export const useConnection = () => {
         await connectToDatabase(connectionId);
         setActiveConnection(connectionId);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);
@@ -224,8 +231,9 @@ export const useConnection = () => {
           setActiveConnection(null);
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        setError(errorMessage);
+        const errorString = err instanceof Error ? err.message : String(err);
+        const friendlyError = getDatabaseConnectionError(errorString);
+        setError(formatErrorMessage(friendlyError));
         throw err;
       } finally {
         setLoading(false);

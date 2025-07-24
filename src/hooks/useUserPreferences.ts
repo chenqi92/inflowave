@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { getUserPreferencesError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
 // 用户偏好设置类型定义
 export interface NotificationSettings {
@@ -119,7 +120,8 @@ export const useUserPreferences = () => {
       }
     } catch (err) {
       console.error('加载用户偏好失败:', err);
-      setError(String(err));
+      const friendlyError = getUserPreferencesError(String(err), 'load');
+      setError(formatErrorMessage(friendlyError));
       // 即使加载失败，也使用默认偏好
       setPreferences(defaultPreferences);
     } finally {
@@ -138,7 +140,8 @@ export const useUserPreferences = () => {
         return true;
       } catch (err) {
         console.error('更新用户偏好失败:', err);
-        setError(String(err));
+        const friendlyError = getUserPreferencesError(String(err), 'save');
+        setError(formatErrorMessage(friendlyError));
         return false;
       }
     },

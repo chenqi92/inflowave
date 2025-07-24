@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { safeTauriListen, safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { getFileOperationError, handleUserCancellation, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -199,11 +200,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         }));
         showMessage.success('文件已打开');
       } else {
-        console.log('❌ 用户取消了文件选择或没有选择文件');
+        // 用户取消选择，静默处理，不显示错误信息
+        console.log('用户取消了文件选择');
       }
     } catch (error) {
       console.error('❌ 打开文件失败:', error);
-      showMessage.error(`打开文件失败: ${error}`);
+      const friendlyError = getFileOperationError(String(error), 'read');
+      showMessage.error(formatErrorMessage(friendlyError));
     }
   };
 
@@ -240,11 +243,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         }));
         showMessage.success('准备导入数据...');
       } else {
-        console.log('❌ 用户取消了数据导入或没有选择文件');
+        // 用户取消导入，静默处理
+        console.log('用户取消了数据导入');
       }
     } catch (error) {
       console.error('❌ 导入数据失败:', error);
-      showMessage.error(`导入数据失败: ${error}`);
+      const friendlyError = getFileOperationError(String(error), 'select');
+      showMessage.error(formatErrorMessage(friendlyError));
     }
   };
 

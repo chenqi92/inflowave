@@ -134,6 +134,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     connectionStatuses,
     getConnection,
     addConnection,
+    removeConnection,
     connectToDatabase,
     disconnectFromDatabase,
     getConnectionStatus,
@@ -1551,12 +1552,25 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   }
 
                   // 删除连接
-                  // TODO: 这里需要调用删除连接的API
-                  console.log(`🗑️ 删除连接: ${connection.name}`);
-                  showMessage.success(`连接 "${connection.name}" 已删除`);
+                  try {
+                    console.log(`🗑️ 开始删除连接: ${connection.name} (${connectionId})`);
 
-                  // 刷新树形数据
-                  buildCompleteTreeData(true);
+                    // 调用删除连接的API
+                    await safeTauriInvoke('delete_connection', { connectionId });
+                    console.log('✅ 后端删除成功');
+
+                    // 从前端状态删除
+                    removeConnection(connectionId);
+                    console.log('✅ 前端状态删除成功');
+
+                    showMessage.success(`连接 "${connection.name}" 已删除`);
+
+                    // 刷新树形数据
+                    buildCompleteTreeData(true);
+                  } catch (deleteError) {
+                    console.error('❌ 删除连接失败:', deleteError);
+                    showMessage.error(`删除连接失败: ${deleteError}`);
+                  }
                 } catch (error) {
                   console.error('删除连接失败:', error);
                   showMessage.error(`删除连接失败: ${error}`);
@@ -1606,8 +1620,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         case 'refresh_database':
           if (contextMenuTarget.type === 'database') {
-            // 重新加载数据库结构（功能待实现）
-            showMessage.success(`数据库 ${contextMenuTarget.database} 已刷新`);
+            try {
+              console.log(`🔄 刷新数据库结构: ${contextMenuTarget.database}`);
+
+              // 重新加载数据库结构
+              await buildCompleteTreeData(true);
+
+              showMessage.success(`数据库 ${contextMenuTarget.database} 已刷新`);
+            } catch (error) {
+              console.error('❌ 刷新数据库结构失败:', error);
+              showMessage.error(`刷新数据库结构失败: ${error}`);
+            }
           }
           break;
 
@@ -1779,17 +1802,61 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 打开表设计器
   const openTableDesigner = (tableInfo: { connectionId: string; database: string; table: string }) => {
-    // 这里需要通知 TabEditor 创建表设计器 tab
-    // 暂时使用 console.log
-    console.log('打开表设计器:', tableInfo);
-    showMessage.info(`表设计器功能开发中: ${tableInfo.table}`);
+    try {
+      console.log('🔧 打开表设计器:', tableInfo);
+
+      // 创建表设计器标签页
+      const newTab = {
+        id: `table-designer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: `表设计器: ${tableInfo.table}`,
+        content: '', // 表设计器不需要文本内容
+        type: 'table-designer' as const,
+        modified: false,
+        saved: true,
+        connectionId: tableInfo.connectionId,
+        database: tableInfo.database,
+        tableName: tableInfo.table,
+      };
+
+      // 通过事件通知 TabEditor 创建新标签页
+      window.dispatchEvent(new CustomEvent('create-tab', {
+        detail: newTab
+      }));
+
+      showMessage.success(`已打开表设计器: ${tableInfo.table}`);
+    } catch (error) {
+      console.error('❌ 打开表设计器失败:', error);
+      showMessage.error(`打开表设计器失败: ${error}`);
+    }
   };
 
   // 打开数据库设计器
   const openDatabaseDesigner = (dbInfo: { connectionId: string; database: string }) => {
-    // 这里需要通知 TabEditor 创建数据库设计器 tab
-    console.log('打开数据库设计器:', dbInfo);
-    showMessage.info(`数据库设计器功能开发中: ${dbInfo.database}`);
+    try {
+      console.log('🗄️ 打开数据库设计器:', dbInfo);
+
+      // 创建数据库设计器标签页
+      const newTab = {
+        id: `database-designer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: `数据库设计器: ${dbInfo.database}`,
+        content: '', // 数据库设计器不需要文本内容
+        type: 'database-designer' as const,
+        modified: false,
+        saved: true,
+        connectionId: dbInfo.connectionId,
+        database: dbInfo.database,
+      };
+
+      // 通过事件通知 TabEditor 创建新标签页
+      window.dispatchEvent(new CustomEvent('create-tab', {
+        detail: newTab
+      }));
+
+      showMessage.success(`已打开数据库设计器: ${dbInfo.database}`);
+    } catch (error) {
+      console.error('❌ 打开数据库设计器失败:', error);
+      showMessage.error(`打开数据库设计器失败: ${error}`);
+    }
   };
 
   // 处理节点选择
@@ -1996,9 +2063,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     // 测试所有连接的连通性
     for (const connection of connections) {
       try {
-        // 这里可以调用连接测试的API
-        console.log(`🔍 测试连接: ${connection.name}`);
-        // TODO: 实际的连接测试逻辑
+        console.log(`🔍 测试连接: ${connection.name} (${connection.id})`);
+
+        // 调用连接测试的API
+        const testResult = await safeTauriInvoke('test_connection', {
+          connectionId: connection.id
+        });
+
+        if (testResult.success) {
+          console.log(`✅ 连接测试成功: ${connection.name}`);
+        } else {
+          console.warn(`⚠️ 连接测试失败: ${connection.name} - ${testResult.error}`);
+        }
       } catch (error) {
         console.error(`❌ 连接测试失败: ${connection.name}`, error);
       }

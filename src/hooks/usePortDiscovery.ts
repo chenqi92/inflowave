@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { portDiscoveryService, type PortEvent, type PortInfo } from '@/services/portDiscovery';
+import { getPortDiscoveryError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
 export interface UsePortDiscoveryOptions {
   autoStart?: boolean;
@@ -35,8 +36,9 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       
       console.log(`Port discovery service initialized with port: ${port}`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize port discovery service';
-      setError(errorMessage);
+      const errorString = err instanceof Error ? err.message : 'Failed to initialize port discovery service';
+      const friendlyError = getPortDiscoveryError(errorString);
+      setError(formatErrorMessage(friendlyError));
       console.error('Failed to initialize port discovery service:', err);
     }
   }, []);
@@ -50,8 +52,9 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       }
       return port;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to allocate port';
-      setError(errorMessage);
+      const errorString = err instanceof Error ? err.message : 'Failed to allocate port';
+      const friendlyError = getPortDiscoveryError(errorString);
+      setError(formatErrorMessage(friendlyError));
       throw err;
     }
   }, [serviceName]);
@@ -61,8 +64,9 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
     try {
       await portDiscoveryService.releasePort(service);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to release port';
-      setError(errorMessage);
+      const errorString = err instanceof Error ? err.message : 'Failed to release port';
+      const friendlyError = getPortDiscoveryError(errorString);
+      setError(formatErrorMessage(friendlyError));
       throw err;
     }
   }, []);
@@ -85,6 +89,9 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       return healthy;
     } catch (err) {
       setHealthStatus('unhealthy');
+      const errorString = err instanceof Error ? err.message : 'Health check failed';
+      const friendlyError = getPortDiscoveryError(errorString);
+      setError(formatErrorMessage(friendlyError));
       console.error('Health check failed:', err);
       return false;
     }
@@ -95,6 +102,9 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
     try {
       await portDiscoveryService.startHealthCheckLoop(service);
     } catch (err) {
+      const errorString = err instanceof Error ? err.message : 'Failed to start health check loop';
+      const friendlyError = getPortDiscoveryError(errorString);
+      setError(formatErrorMessage(friendlyError));
       console.error('Failed to start health check loop:', err);
     }
   }, [serviceName]);

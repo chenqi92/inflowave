@@ -119,9 +119,27 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   useEffect(() => {
     if (!isAutoRefreshing || !refreshInterval) return;
 
-    const timer = setInterval(() => {
-      // TODO: 触发数据刷新
-      console.log('Auto refreshing chart data...');
+    const timer = setInterval(async () => {
+      try {
+        console.log('🔄 自动刷新图表数据...');
+
+        // 触发数据刷新 - 重新执行查询
+        if (config.query && config.connectionId) {
+          // 这里可以调用查询API重新获取数据
+          // 暂时通过事件通知父组件刷新数据
+          window.dispatchEvent(new CustomEvent('chart-auto-refresh', {
+            detail: {
+              chartId: config.id,
+              query: config.query,
+              connectionId: config.connectionId,
+            }
+          }));
+
+          console.log('✅ 图表自动刷新请求已发送');
+        }
+      } catch (error) {
+        console.error('❌ 图表自动刷新失败:', error);
+      }
     }, refreshInterval);
 
     return () => clearInterval(timer);

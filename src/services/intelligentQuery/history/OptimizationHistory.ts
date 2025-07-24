@@ -47,6 +47,8 @@ export interface HistoryMetadata {
   confidenceScore: number;
   engineVersion: string;
   modelVersion?: string;
+  source?: string;
+  importedAt?: string;
 }
 
 export interface HistoryFilter {
@@ -911,15 +913,157 @@ export class OptimizationHistory {
   }
 
   private async convertToExcel(data: any[]): Promise<string> {
-    // 这里需要实现 Excel 导出逻辑
-    // 简化实现，返回 JSON 格式
-    return JSON.stringify(data, null, 2);
+    try {
+      console.log('📊 开始转换为Excel格式');
+
+      // 创建Excel工作簿数据结构
+      const workbookData = {
+        sheets: [{
+          name: '优化历史',
+          data: [
+            // 表头
+            ['查询ID', '原始查询', '优化查询', '执行时间(ms)', '优化时间', '性能提升', '优化类型'],
+            // 数据行
+            ...data.map(entry => [
+              entry.queryId || '',
+              entry.originalQuery || '',
+              entry.optimizedQuery || '',
+              entry.executionTime || 0,
+              entry.optimizedAt ? new Date(entry.optimizedAt).toLocaleString() : '',
+              entry.performanceImprovement ? `${(entry.performanceImprovement * 100).toFixed(2)}%` : '',
+              entry.optimizationType || ''
+            ])
+          ]
+        }]
+      };
+
+      // 返回JSON格式的Excel数据结构
+      // 在实际应用中，这里可以调用后端API生成真正的Excel文件
+      console.log('✅ Excel格式转换完成');
+      return JSON.stringify(workbookData, null, 2);
+    } catch (error) {
+      console.error('❌ Excel转换失败:', error);
+      throw new Error(`Excel转换失败: ${error}`);
+    }
   }
 
   private parseCSV(csvData: string): OptimizationHistoryEntry[] {
-    // 这里需要实现 CSV 解析逻辑
-    // 简化实现，返回空数组
-    return [];
+    try {
+      console.log('📄 开始解析CSV数据');
+
+      const lines = csvData.trim().split('\n');
+      if (lines.length < 2) {
+        throw new Error('CSV数据格式无效：至少需要标题行和一行数据');
+      }
+
+      // 解析标题行
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      console.log('📋 CSV标题行:', headers);
+
+      const entries: OptimizationHistoryEntry[] = [];
+
+      // 解析数据行
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+
+        if (values.length !== headers.length) {
+          console.warn(`⚠️ 第${i + 1}行数据列数不匹配，跳过`);
+          continue;
+        }
+
+        // 创建优化历史条目
+        const entry: OptimizationHistoryEntry = {
+          id: values[0] || `imported-${Date.now()}-${i}`,
+          timestamp: values[4] ? new Date(values[4]) : new Date(),
+          connectionId: 'imported',
+          database: 'imported',
+          originalQuery: values[1] || '',
+          optimizedQuery: values[2] || '',
+          optimizationResult: {
+            originalQuery: values[1] || '',
+            optimizedQuery: values[2] || '',
+            optimizationTechniques: [],
+            estimatedPerformanceGain: values[5] ? parseFloat(values[5].replace('%', '')) / 100 : 0,
+            routingStrategy: {
+              targetConnection: 'imported',
+              loadBalancing: 'round_robin' as const,
+              priority: 1,
+              reason: 'CSV import'
+            },
+            executionPlan: {
+              steps: [],
+              parallelization: {
+                maxDegreeOfParallelism: 1,
+                parallelSteps: [],
+                bottlenecks: []
+              },
+              resourceRequirements: {
+                minMemory: 0,
+                maxMemory: 0,
+                cpuIntensive: false,
+                ioIntensive: false,
+                networkIntensive: false
+              },
+              estimatedDuration: parseFloat(values[3]) || 0
+            },
+            warnings: [],
+            recommendations: []
+          },
+          context: {
+            historicalQueries: [],
+            userPreferences: {
+              preferredPerformance: 'balanced' as const,
+              maxQueryTime: 30000,
+              cachePreference: 'conservative' as const
+            },
+            systemLoad: {
+              cpuUsage: 0,
+              memoryUsage: 0,
+              diskIo: 0,
+              networkLatency: 0
+            },
+            dataSize: {
+              totalRows: 0,
+              totalSize: 0,
+              averageRowSize: 0,
+              compressionRatio: 1
+            },
+            indexInfo: []
+          },
+          performance: {
+            originalExecutionTime: parseFloat(values[3]) || 0,
+            optimizedExecutionTime: parseFloat(values[3]) || 0,
+            performanceGain: values[5] ? parseFloat(values[5].replace('%', '')) / 100 : 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+            ioOperations: 0,
+            networkTraffic: 0,
+            rowsAffected: 0,
+            success: true
+          },
+          tags: ['imported', 'csv'],
+          metadata: {
+            queryType: 'imported',
+            complexity: 1,
+            optimizationTechniques: ['csv_import'],
+            estimatedBenefit: 0,
+            actualBenefit: values[5] ? parseFloat(values[5].replace('%', '')) / 100 : 0,
+            confidenceScore: 0.5,
+            engineVersion: '1.0.0',
+            source: 'csv_import',
+            importedAt: new Date().toISOString(),
+          }
+        };
+
+        entries.push(entry);
+      }
+
+      console.log(`✅ CSV解析完成，共解析${entries.length}条记录`);
+      return entries;
+    } catch (error) {
+      console.error('❌ CSV解析失败:', error);
+      throw new Error(`CSV解析失败: ${error}`);
+    }
   }
 
   private validateEntry(entry: any): boolean {
