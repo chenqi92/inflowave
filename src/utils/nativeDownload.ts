@@ -85,10 +85,12 @@ export const saveBinaryFile = async (
     const dialogResult = await safeTauriInvoke<{ path?: string } | null>(
       'save_file_dialog',
       {
-        default_path: defaultDirectory ? `${defaultDirectory}/${filename}` : filename,
-        filters: filters || [
-          { name: '所有文件', extensions: ['*'] }
-        ]
+        params: {
+          default_path: defaultDirectory ? `${defaultDirectory}/${filename}` : filename,
+          filters: filters || [
+            { name: '所有文件', extensions: ['*'] }
+          ]
+        }
       }
     );
 

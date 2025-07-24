@@ -58,11 +58,13 @@ export class TauriTypeTest {
   static async testFileDialog(fileName: string) {
     // 这应该返回 FileDialogResult 类型
     return safeTauriInvoke('save_file_dialog', {
-      defaultPath: fileName,
-      filters: [
-        { name: 'JSON Files', extensions: ['json'] },
-        { name: 'All Files', extensions: ['*'] },
-      ],
+      params: {
+        default_path: fileName,
+        filters: [
+          { name: 'JSON Files', extensions: ['json'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      }
     });
   }
 

@@ -61,13 +61,15 @@ export const useFileOperations = ({
     }
 
     try {
-      // 调用后端文件保存对话框 - 使用正确的参数结构
+      // 调用后端文件保存对话框 - 使用正确的参数结构，包装在params字段中
       const dialogResult = await safeTauriInvoke<{ path: string; name: string } | null>('save_file_dialog', {
-        default_path: `${currentTab.title}.sql`,
-        filters: [
-          { name: 'SQL Files', extensions: ['sql'] },
-          { name: 'All Files', extensions: ['*'] },
-        ],
+        params: {
+          default_path: `${currentTab.title}.sql`,
+          filters: [
+            { name: 'SQL Files', extensions: ['sql'] },
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        }
       });
 
       if (dialogResult && dialogResult.path) {

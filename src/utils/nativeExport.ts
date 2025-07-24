@@ -95,13 +95,15 @@ export const exportWithNativeDialog = async (
       filters: filters
     });
 
-    // 准备Tauri调用参数 - 直接传递参数，与FileOperations.tsx保持一致
+    // 准备Tauri调用参数 - 包装在params字段中，符合后端SaveFileDialogParams结构体要求
     const tauriParams = {
-      default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
-      filters
+      params: {
+        default_path: defaultPath,  // 使用snake_case，与Rust结构体字段保持一致
+        filters
+      }
     };
 
-    console.log('Tauri调用参数 (直接格式):', tauriParams);
+    console.log('Tauri调用参数 (包装格式):', tauriParams);
 
     // 显示原生文件保存对话框 - 使用safeTauriInvokeOptional允许null返回值
     const dialogResult = await safeTauriInvokeOptional<{ path?: string; name?: string }>(
