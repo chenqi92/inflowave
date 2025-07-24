@@ -98,6 +98,9 @@ export interface UnifiedDataTableProps {
     showRowNumbers?: boolean; // 是否显示序号列
     className?: string;
     title?: string;
+    // 外部列管理状态
+    selectedColumns?: string[];
+    columnOrder?: string[];
     onSearch?: (searchText: string) => void;
     onFilter?: (filters: FilterConfig[]) => void;
     onSort?: (sort: SortConfig | null) => void;
@@ -339,6 +342,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     showRowNumbers = true,
     className,
     title,
+    // 外部列管理状态
+    selectedColumns: externalSelectedColumns,
+    columnOrder: externalColumnOrder,
     onSearch,
     onFilter,
     onSort,
@@ -364,20 +370,28 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
 
-    // 初始化列
+    // 初始化列 - 优先使用外部传入的状态
     useEffect(() => {
         if (columns.length > 0) {
             const columnKeys = columns.map(col => col.key);
+            const finalSelectedColumns = externalSelectedColumns || columnKeys;
+            const finalColumnOrder = externalColumnOrder || columnKeys;
+
             console.log('🔧 [UnifiedDataTable] 初始化列:', {
                 columns: columns.map(col => ({ key: col.key, title: col.title })),
                 columnKeys,
-                selectedColumns,
-                columnOrder
+                externalSelectedColumns,
+                externalColumnOrder,
+                finalSelectedColumns,
+                finalColumnOrder,
+                currentSelectedColumns: selectedColumns,
+                currentColumnOrder: columnOrder
             });
-            setSelectedColumns(columnKeys);
-            setColumnOrder(columnKeys);
+
+            setSelectedColumns(finalSelectedColumns);
+            setColumnOrder(finalColumnOrder);
         }
-    }, [columns]);
+    }, [columns, externalSelectedColumns, externalColumnOrder]);
 
     // 列管理处理函数
     const handleColumnChange = useCallback((visibleColumns: string[], newColumnOrder: string[]) => {

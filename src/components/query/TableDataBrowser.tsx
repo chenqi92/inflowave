@@ -1507,6 +1507,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     showToolbar={false} // 使用外部工具栏
                     showRowNumbers={true}
                     className="h-full"
+                    // 传递外部列管理状态
+                    selectedColumns={selectedColumns}
+                    columnOrder={columnOrder}
                     onSort={(sortConfig) => {
                         if (sortConfig) {
                             setSortColumn(sortConfig.column);
