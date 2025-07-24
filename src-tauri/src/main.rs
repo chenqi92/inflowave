@@ -827,6 +827,17 @@ async fn main() {
                     error!("设置响应式窗口大小失败: {}", e);
                 }
 
+                // 当内容准备就绪后显示窗口，避免显示空白内容
+                let window_clone = window.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    if let Err(e) = window_clone.show() {
+                        error!("显示窗口失败: {}", e);
+                    } else {
+                        info!("窗口已显示");
+                    }
+                });
+
                 #[cfg(debug_assertions)]
                 {
                     info!("开发环境：保留右键上下文菜单用于调试");

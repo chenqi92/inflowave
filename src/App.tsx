@@ -64,7 +64,7 @@ const MainLayout: React.FC = () => {
       window.addEventListener('app-ready', handleAppReady);
       const timer = setTimeout(() => {
         setUserGuideVisible(true);
-      }, 2000); // 兜底延迟
+      }, 500); // 减少兜底延迟
       return () => {
         clearTimeout(timer);
         window.removeEventListener('app-ready', handleAppReady);
@@ -525,25 +525,23 @@ const App: React.FC = () => {
       } finally {
         setLoading(false);
 
-        // 通知加载屏幕应用已准备就绪
-        setTimeout(() => {
-          // 确保窗口标题正确设置
-          document.title = 'InfloWave';
-          
-          // 如果是Tauri环境，也通过Tauri API设置标题
-          if ((window as any).__TAURI__) {
-            import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
-              getCurrentWebviewWindow().setTitle('InfloWave').catch(err => {
-                console.warn('无法通过Tauri API设置窗口标题:', err);
-              });
-            }).catch(err => {
-              console.warn('无法导入Tauri webviewWindow模块:', err);
+        // 立即通知加载屏幕应用已准备就绪
+        // 确保窗口标题正确设置
+        document.title = 'InfloWave';
+        
+        // 如果是Tauri环境，也通过Tauri API设置标题
+        if ((window as any).__TAURI__) {
+          import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
+            getCurrentWebviewWindow().setTitle('InfloWave').catch(err => {
+              console.warn('无法通过Tauri API设置窗口标题:', err);
             });
-          }
-          
-          window.dispatchEvent(new CustomEvent('app-ready'));
-          console.log('✅ 应用启动完成，窗口标题已设置，已发送ready信号');
-        }, 50); // 轻微延迟确保DOM更新完成
+          }).catch(err => {
+            console.warn('无法导入Tauri webviewWindow模块:', err);
+          });
+        }
+        
+        window.dispatchEvent(new CustomEvent('app-ready'));
+        console.log('✅ 应用启动完成，窗口标题已设置，已发送ready信号');
 
         // 在开发模式下加载测试工具
         if ((import.meta as any).env?.DEV) {

@@ -27,9 +27,11 @@
         "theme": "Auto",
         "titleBarStyle": "Visible",
         "maximized": false,
-        "visible": true,
+        "visible": false,
         "shadow": true,
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "url": "index.html",
+        "transparent": false
       }
     ],
     "security": {
