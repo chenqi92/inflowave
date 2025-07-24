@@ -15,6 +15,102 @@
 
 /* 查询页面优化样式 */
 @layer components {
+  /* 虚拟化表格样式优化 - 与传统表格保持一致 */
+  .virtualized-table {
+    height: 100%;
+    /* 不设置overflow，让TableVirtuoso自己处理滚动 */
+    /* 继承传统表格的滚动条样式 */
+    scrollbar-width: auto;
+    scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+  }
+
+  .virtualized-table::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .virtualized-table::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 6px;
+  }
+
+  .virtualized-table::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 6px;
+    border: 2px solid hsl(var(--muted));
+  }
+
+  .virtualized-table::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground));
+  }
+
+  .virtualized-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: hsl(var(--background));
+  }
+
+  .virtualized-table th {
+    background: hsl(var(--muted));
+    border-bottom: 2px solid hsl(var(--border));
+    border-right: 1px solid hsl(var(--border));
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+  }
+
+  .virtualized-table td {
+    border-bottom: 1px solid hsl(var(--border));
+    border-right: 1px solid hsl(var(--border));
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 虚拟化表格专用样式 - 全新方案 */
+  .virtualized-sticky-header {
+    position: sticky !important;
+    left: 0 !important;
+    top: 0 !important;
+    z-index: 1000 !important; /* 极高层级，确保不被覆盖 */
+    background: hsl(var(--muted)) !important;
+    border-right: 2px solid hsl(var(--border)) !important;
+    background-clip: padding-box !important;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15) !important;
+    /* 明确的尺寸定义 */
+    min-height: 48px !important;
+    max-height: 48px !important;
+    height: 48px !important;
+    /* 渲染优化 */
+    transform: translate3d(0, 0, 0) !important;
+    will-change: transform !important;
+    /* 确保边界清晰 */
+    overflow: hidden !important;
+  }
+
+  .virtualized-sticky-cell {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 100 !important; /* 远低于表头层级 */
+    background: hsl(var(--background)) !important;
+    border-right: 2px solid hsl(var(--border)) !important;
+    background-clip: padding-box !important;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08) !important;
+    /* 渲染优化 */
+    transform: translate3d(0, 0, 0) !important;
+    will-change: transform !important;
+    /* 确保不侵占表头空间 */
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
   /* Mac平台图标优化 - 针对高DPI屏幕 */
   @media screen and (-webkit-min-device-pixel-ratio: 2) {
     .lucide-icon,

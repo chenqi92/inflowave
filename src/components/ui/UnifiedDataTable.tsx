@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { TableVirtuoso } from 'react-virtuoso';
 import {
     Card,
     CardContent,
@@ -104,6 +105,10 @@ export interface UnifiedDataTableProps {
     onExport?: (format: 'text' | 'json' | 'csv') => void;
     onColumnChange?: (visibleColumns: string[], columnOrder: string[]) => void;
     onRowSelect?: (selectedRows: Set<number>) => void;
+    // 虚拟化相关配置
+    virtualized?: boolean; // 是否启用虚拟化，默认当数据量>1000时自动启用
+    rowHeight?: number; // 行高，用于虚拟化计算，默认48px
+    maxHeight?: number; // 表格最大高度，默认600px
 }
 
 // 表头组件
@@ -119,6 +124,7 @@ interface TableHeaderProps {
     onAddFilter: (column: string) => void;
     onSelectAll: () => void;
     onCopySelectedRows: (format: 'text' | 'json' | 'csv') => void;
+    virtualMode?: boolean; // 虚拟化模式，为true时只返回tr内容
 }
 
 const TableHeader: React.FC<TableHeaderProps> = memo(({
@@ -132,7 +138,8 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
     onSort,
     onAddFilter,
     onSelectAll,
-    onCopySelectedRows
+    onCopySelectedRows,
+    virtualMode = false
 }) => {
     const visibleColumns = useMemo(() =>
         columnOrder.filter(column => selectedColumns.includes(column)),
@@ -141,12 +148,16 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
 
     const isAllSelected = selectedRowsCount > 0 && selectedRowsCount === totalRowsCount;
 
-    return (
-        <thead className="sticky top-0 bg-background z-10 border-b">
-            <tr className="border-b transition-colors hover:bg-muted/50">
+    // 表头行内容
+    const headerRowContent = (
+        <tr className="border-b transition-colors hover:bg-muted/50">
                 {/* 固定的序号列表头 */}
                 {showRowNumbers && (
-                    <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-16 sticky">
+                    <th className={cn(
+                        "px-3 py-2 text-left align-middle font-medium w-16 border-r",
+                        "text-xs text-muted-foreground bg-muted border-b-2",
+                        virtualMode ? "virtualized-sticky-header" : "sticky left-0 top-0 z-50 bg-muted"
+                    )}>
                         <div className="flex items-center gap-1">
                             <span className="text-xs">#</span>
                             <Badge variant="outline" className="text-xs">
@@ -171,8 +182,8 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                         <th
                             key={column}
                             className={cn(
-                                'h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
-                                'cursor-pointer hover:bg-muted/50'
+                                'px-3 py-2 text-left align-middle font-medium whitespace-nowrap border-r border-b-2',
+                                'text-xs text-muted-foreground bg-muted cursor-pointer hover:bg-muted/80'
                             )}
                             style={{ minWidth }}
                             onClick={() => onSort(column)}
@@ -212,9 +223,21 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                         </th>
                     );
                 })}
-            </tr>
-        </thead>
+        </tr>
     );
+
+    // 根据virtualMode决定返回结构
+    if (virtualMode) {
+        // 虚拟化模式：返回tr内容，因为fixedHeaderContent会自动包装在thead>tr中
+        return headerRowContent;
+    } else {
+        // 传统模式：返回完整的thead结构
+        return (
+            <thead className="sticky top-0 bg-background z-10 border-b">
+                {headerRowContent}
+            </thead>
+        );
+    }
 });
 
 TableHeader.displayName = 'TableHeader';
@@ -248,7 +271,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                 <span>显示 {startIndex}-{endIndex} 条，共 {totalCount} 条</span>
             </div>
             <div className="flex items-center gap-2">
-                <Select value={pageSize >= totalCount ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
+                <Select value={isShowingAll ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
                     <SelectTrigger className="w-20 h-8">
                         <SelectValue />
                     </SelectTrigger>
@@ -313,7 +336,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     onPageChange,
     onExport,
     onColumnChange,
-    onRowSelect
+    onRowSelect,
+    virtualized,
+    rowHeight = 48,
+    maxHeight = 600
 }) => {
     // 状态管理
     const [searchText, setSearchText] = useState('');
@@ -324,6 +350,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
     const [currentPage, setCurrentPage] = useState(pagination ? pagination.current : 1);
     const [pageSize, setPageSize] = useState(pagination ? pagination.pageSize : 500);
+    const [isShowingAll, setIsShowingAll] = useState(false); // 跟踪是否用户主动选择了"全部"
 
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -345,6 +372,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             }
             if (pageSize !== pagination.pageSize) {
                 setPageSize(pagination.pageSize);
+                // 检查是否为"全部"模式
+                setIsShowingAll(pagination.pageSize >= pagination.total);
             }
         }
     }, [pagination && pagination.current, pagination && pagination.pageSize, currentPage, pageSize]);
@@ -399,12 +428,37 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         console.log('Add filter for column:', column);
     }, []);
 
+    // 判断是否启用虚拟化
+    const shouldUseVirtualization = useMemo(() => {
+        if (virtualized !== undefined) {
+            return virtualized; // 如果明确指定，使用指定值
+        }
+
+        // 自动判断：数据量大于1000条时始终启用虚拟化
+        // 无论分页选择什么选项，都保持虚拟化以确保最佳用户体验
+        return data.length > 1000;
+    }, [virtualized, data.length]);
+
     // 计算分页数据
     const paginatedData = useMemo(() => {
         if (!pagination) {
             return data; // 如果没有分页配置，返回所有数据
         }
 
+        // 如果启用虚拟化，根据分页选项决定显示的数据
+        if (shouldUseVirtualization) {
+            // 如果选择了"全部"或pageSize大于等于数据总量，显示所有数据
+            if (pageSize === -1 || pageSize >= data.length) {
+                return data;
+            }
+
+            // 否则进行客户端分页，虚拟化会处理可见区域的渲染
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            return data.slice(startIndex, endIndex);
+        }
+
+        // 传统模式的分页处理
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
 
@@ -414,7 +468,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         }
 
         return data.slice(startIndex, endIndex);
-    }, [data, currentPage, pageSize, pagination]);
+    }, [data, currentPage, pageSize, pagination, shouldUseVirtualization]);
+
+
 
     // 处理分页
     const handlePageChange = useCallback((page: number) => {
@@ -423,15 +479,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     }, [pageSize, onPageChange]);
 
     const handlePageSizeChange = useCallback((size: string) => {
+        console.log('handlePageSizeChange called with:', size);
         if (size === 'all') {
             const totalSize = pagination ? pagination.total : data.length;
+            console.log('Setting page size to total:', totalSize);
             setPageSize(totalSize);
             setCurrentPage(1);
+            setIsShowingAll(true); // 标记为用户主动选择"全部"
             onPageChange?.(1, totalSize);
         } else {
             const newSize = parseInt(size);
+            console.log('Setting page size to:', newSize);
             setPageSize(newSize);
             setCurrentPage(1);
+            setIsShowingAll(false); // 标记为非"全部"模式
             onPageChange?.(1, newSize);
         }
     }, [onPageChange, pagination, data.length]);
@@ -497,41 +558,34 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        <div className="table-unified-scroll" ref={tableScrollRef}>
-                            <table className="w-full border-collapse">
-                                {/* 表头 */}
-                                <TableHeader
-                                    columnOrder={columnOrder}
-                                    selectedColumns={selectedColumns}
-                                    sortColumn={sortConfig?.column || ''}
-                                    sortDirection={sortConfig?.direction || 'asc'}
-                                    selectedRowsCount={selectedRows.size}
-                                    totalRowsCount={data.length}
-                                    showRowNumbers={showRowNumbers}
-                                    onSort={handleSort}
-                                    onAddFilter={handleAddFilter}
-                                    onSelectAll={handleSelectAll}
-                                    onCopySelectedRows={handleCopySelectedRows}
-                                />
-                                {/* 表格内容 */}
-                                <tbody>
-                                    {paginatedData.map((row, dataIndex) => {
-                                        // 计算实际的行索引（考虑分页）
-                                        const actualIndex = pagination ? (currentPage - 1) * pageSize + dataIndex : dataIndex;
-                                        return (
-                                        <tr
-                                            key={row._id !== undefined ? `row_${row._id}_${actualIndex}` : `row_index_${actualIndex}`}
-                                            className={cn(
-                                                "border-b transition-colors hover:bg-muted/50 cursor-pointer",
-                                                selectedRows.has(actualIndex) && "bg-primary/10 border-primary"
-                                            )}
-                                            onClick={(e) => handleRowClick(actualIndex, e)}
-                                        >
+                        shouldUseVirtualization ? (
+                            // 虚拟化表格 - 使用flex-1自适应高度
+                            <div className="flex-1 min-h-0 virtualized-table">
+                                <TableVirtuoso
+                                    data={paginatedData}
+                                    fixedHeaderContent={() => (
+                                        <TableHeader
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            sortColumn={sortConfig?.column || ''}
+                                            sortDirection={sortConfig?.direction || 'asc'}
+                                            selectedRowsCount={selectedRows.size}
+                                            totalRowsCount={data.length}
+                                            showRowNumbers={showRowNumbers}
+                                            onSort={handleSort}
+                                            onAddFilter={handleAddFilter}
+                                            onSelectAll={handleSelectAll}
+                                            onCopySelectedRows={handleCopySelectedRows}
+                                            virtualMode={true}
+                                        />
+                                    )}
+                                    itemContent={(index, row) => (
+                                        <>
                                             {/* 固定的序号列 */}
                                             {showRowNumbers && (
-                                                <td className="px-4 py-2 text-sm font-mono w-16 sticky">
+                                                <td className="px-4 py-2 text-sm font-mono w-16 virtualized-sticky-cell">
                                                     <div className="truncate w-full text-center text-muted-foreground">
-                                                        {actualIndex + 1}
+                                                        {index + 1}
                                                     </div>
                                                 </td>
                                             )}
@@ -551,10 +605,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             maxWidth: `${width}px`
                                                         }}
                                                         title={`${String(value || '-')}`}
+                                                        onClick={(e) => handleRowClick(index, e)}
                                                     >
                                                         <div className="truncate w-full">
                                                             {columnConfig?.render
-                                                                ? columnConfig.render(value, row, actualIndex)
+                                                                ? columnConfig.render(value, row, index)
                                                                 : column === 'time' && value
                                                                     ? new Date(value).toLocaleString()
                                                                     : String(value || '-')
@@ -563,12 +618,113 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     </td>
                                                 );
                                             })}
-                                        </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                        </>
+                                    )}
+                                    style={{
+                                        height: '100%',
+                                        width: '100%'
+                                    }}
+                                    className="table-unified-scroll"
+                                    components={{
+                                        Table: ({ style, ...props }) => (
+                                            <table
+                                                {...props}
+                                                style={{
+                                                    ...style,
+                                                    width: '100%',
+                                                    borderCollapse: 'collapse'
+                                                }}
+                                                className="w-full border-collapse table-unified-scroll"
+                                            />
+                                        ),
+
+                                        TableRow: ({ style, ...props }) => (
+                                            <tr
+                                                {...props}
+                                                style={{
+                                                    ...style
+                                                }}
+                                                className="border-b transition-colors hover:bg-muted/50"
+                                            />
+                                        )
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            // 传统表格
+                            <div className="table-unified-scroll" ref={tableScrollRef}>
+                                <table className="w-full border-collapse">
+                                    {/* 表头 */}
+                                    <TableHeader
+                                        columnOrder={columnOrder}
+                                        selectedColumns={selectedColumns}
+                                        sortColumn={sortConfig?.column || ''}
+                                        sortDirection={sortConfig?.direction || 'asc'}
+                                        selectedRowsCount={selectedRows.size}
+                                        totalRowsCount={data.length}
+                                        showRowNumbers={showRowNumbers}
+                                        onSort={handleSort}
+                                        onAddFilter={handleAddFilter}
+                                        onSelectAll={handleSelectAll}
+                                        onCopySelectedRows={handleCopySelectedRows}
+                                    />
+                                    {/* 表格内容 */}
+                                    <tbody>
+                                        {paginatedData.map((row, dataIndex) => {
+                                            // 计算实际的行索引（考虑分页）
+                                            const actualIndex = pagination ? (currentPage - 1) * pageSize + dataIndex : dataIndex;
+                                            return (
+                                            <tr
+                                                key={row._id !== undefined ? `row_${row._id}_${actualIndex}` : `row_index_${actualIndex}`}
+                                                className={cn(
+                                                    "border-b transition-colors hover:bg-muted/50 cursor-pointer",
+                                                    selectedRows.has(actualIndex) && "bg-primary/10 border-primary"
+                                                )}
+                                                onClick={(e) => handleRowClick(actualIndex, e)}
+                                            >
+                                                {/* 固定的序号列 */}
+                                                {showRowNumbers && (
+                                                    <td className="px-4 py-2 text-sm font-mono w-16 sticky">
+                                                        <div className="truncate w-full text-center text-muted-foreground">
+                                                            {actualIndex + 1}
+                                                        </div>
+                                                    </td>
+                                                )}
+                                                {/* 数据列 */}
+                                                {columnOrder.filter(column => selectedColumns.includes(column)).map(column => {
+                                                    const columnConfig = columns.find(col => col.key === column);
+                                                    const value = row[column];
+                                                    const width = columnConfig?.width || 120;
+
+                                                    return (
+                                                        <td
+                                                            key={column}
+                                                            className="px-4 py-2 text-sm font-mono border-r"
+                                                            style={{
+                                                                width: `${width}px`,
+                                                                minWidth: `${width}px`,
+                                                                maxWidth: `${width}px`
+                                                            }}
+                                                            title={`${String(value || '-')}`}
+                                                        >
+                                                            <div className="truncate w-full">
+                                                                {columnConfig?.render
+                                                                    ? columnConfig.render(value, row, actualIndex)
+                                                                    : column === 'time' && value
+                                                                        ? new Date(value).toLocaleString()
+                                                                        : String(value || '-')
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
                             <Database className="w-8 h-8 mr-2" />
@@ -578,7 +734,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 </div>
             </div>
 
-            {/* 底部分页 */}
+            {/* 底部分页 - 始终显示分页控件 */}
             {pagination && (
                 <PaginationControls
                     currentPage={pagination.current}

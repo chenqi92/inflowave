@@ -146,6 +146,19 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     console.log(`Page changed to ${page}, size: ${size}`);
   }, []);
 
+  // 页码变化处理
+  const handlePageNumberChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    console.log(`Page number changed to ${page}`);
+  }, []);
+
+  // 页面大小变化处理
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // 重置到第一页
+    console.log(`Page size changed to ${size}`);
+  }, []);
+
   // 主题配置生成函数
   const getThemeConfig = useCallback(() => {
     const isDark = resolvedTheme === 'dark';
@@ -1308,6 +1321,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         showSizeChanger: true,
                         pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                       }}
+                      virtualized={true} // 启用虚拟化
+                      rowHeight={48} // 设置行高
+                      maxHeight={600} // 设置最大高度
                       onPageChange={handlePageChange}
                     />
                   </div>
@@ -1746,6 +1762,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     showSizeChanger: true,
                     pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                   }}
+                  virtualized={true} // 启用虚拟化
+                  rowHeight={48} // 设置行高
+                  maxHeight={600} // 设置最大高度
                   searchable={true}
                   filterable={true}
                   sortable={true}
