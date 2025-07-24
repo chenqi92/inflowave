@@ -4,8 +4,8 @@ import React, {
   useMemo,
   useRef,
   useCallback,
+  startTransition,
 } from 'react';
-import { safeTauriInvoke } from '@/utils/tauri';
 import {
   Tabs,
   TabsList,
@@ -29,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { DataTable } from '@/components/ui/DataTable';
 import { UnifiedDataTable } from '@/components/ui/UnifiedDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
@@ -78,12 +77,7 @@ import {
   detectSQLStatementType,
   getSQLStatementCategory,
   getSQLStatementDisplayInfo,
-  getSQLStatementTabs,
-  getDefaultTab,
-  isQueryStatement,
-  getResultStatsLabels,
-  type SQLStatementType,
-  type SQLStatementCategory
+  getResultStatsLabels
 } from '@/utils/sqlTypeDetector';
 
 interface EnhancedResultPanelProps {
@@ -139,24 +133,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   
   const { resolvedTheme } = useTheme();
 
-  // 分页处理函数
-  const handlePageChange = useCallback((page: number, size: number) => {
-    setCurrentPage(page);
-    setPageSize(size);
-    console.log(`Page changed to ${page}, size: ${size}`);
+  // 分页处理函数 - 完全按照 TableDataBrowser.tsx 的实现
+  const handlePageChange = useCallback((page: number) => {
+    startTransition(() => {
+      setCurrentPage(page);
+    });
   }, []);
 
-  // 页码变化处理
-  const handlePageNumberChange = useCallback((page: number) => {
-    setCurrentPage(page);
-    console.log(`Page number changed to ${page}`);
-  }, []);
-
-  // 页面大小变化处理
-  const handlePageSizeChange = useCallback((size: number) => {
-    setPageSize(size);
-    setCurrentPage(1); // 重置到第一页
-    console.log(`Page size changed to ${size}`);
+  // 页面大小变化处理 - 完全按照 TableDataBrowser.tsx 的实现
+  const handlePageSizeChange = useCallback((size: string) => {
+    startTransition(() => {
+      const newSize = parseInt(size);
+      setPageSize(newSize);
+      setCurrentPage(1);
+    });
   }, []);
 
   // 主题配置生成函数
@@ -535,7 +525,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         format: options.format,
         includeHeaders: options.includeHeaders,
         delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
-        defaultFilename: defaultFilename,
+        defaultFilename,
         tableName: options.tableName || defaultTableName
       });
 
@@ -1283,7 +1273,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     )}
                   </TableToolbar>
 
-                  {/* 高级数据表格 - 使用UnifiedDataTable组件，禁用工具栏 */}
+                  {/* 高级数据表格 - 完全按照 TableDataBrowser.tsx 的配置 */}
                   <div className='flex-1 min-h-0'>
                     <UnifiedDataTable
                       data={parsedResult.data.map((row, rowIndex) => ({
@@ -1297,34 +1287,33 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           width: column === 'time' ? 180 : 120,
                           sortable: true,
                           filterable: true,
-                          render: (value: any) => {
-                            if (column === 'time' && value) {
-                              return new Date(value).toLocaleString();
-                            }
-                            return value !== null && value !== undefined ? String(value) : '-';
-                          }
+                          render: column === 'time'
+                            ? (value: any) => value ? new Date(value).toLocaleString() : '-'
+                            : undefined,
                         };
                       })}
                       loading={false}
-                      searchable={true}
-                      filterable={true}
-                      sortable={true}
-                      exportable={false} // 禁用内置导出功能
-                      columnManagement={true}
-                      showToolbar={false} // 禁用工具栏
-                      showRowNumbers={true}
-                      className="h-full"
                       pagination={{
                         current: currentPage,
-                        pageSize: pageSize,
+                        pageSize,
                         total: parsedResult.data.length,
                         showSizeChanger: true,
                         pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                       }}
-                      virtualized={true} // 启用虚拟化
-                      rowHeight={48} // 设置行高
-                      maxHeight={600} // 设置最大高度
-                      onPageChange={handlePageChange}
+                      searchable={false} // 使用外部搜索
+                      filterable={true}
+                      sortable={true}
+                      exportable={false} // 使用外部导出
+                      columnManagement={true}
+                      showToolbar={false} // 使用外部工具栏
+                      showRowNumbers={true}
+                      className='h-full'
+                      onPageChange={(page, size) => {
+                        handlePageChange(page);
+                        if (size !== pageSize) {
+                          handlePageSizeChange(size.toString());
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -1757,7 +1746,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   loading={false}
                   pagination={{
                     current: currentPage,
-                    pageSize: pageSize,
+                    pageSize,
                     total: parsedData.data.length,
                     showSizeChanger: true,
                     pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],

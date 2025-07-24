@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, startTransition} from 'react';
 import { UnifiedDataTable, type ColumnConfig, type DataRow } from '@/components/ui/UnifiedDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
@@ -451,10 +451,20 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(500);
 
-    // 分页处理函数
-    const handlePageChange = useCallback((page: number, size: number) => {
-        setCurrentPage(page);
-        setPageSize(size);
+    // 分页处理函数 - 完全按照 TableDataBrowser.tsx 的实现
+    const handlePageChange = useCallback((page: number) => {
+        startTransition(() => {
+            setCurrentPage(page);
+        });
+    }, []);
+
+    // 页面大小变化处理 - 完全按照 TableDataBrowser.tsx 的实现
+    const handlePageSizeChange = useCallback((size: string) => {
+        startTransition(() => {
+            const newSize = parseInt(size);
+            setPageSize(newSize);
+            setCurrentPage(1);
+        });
     }, []);
 
     const renderTableTab = () => (
@@ -478,7 +488,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         showColumnSelector={false}
                     />
 
-                    {/* 数据表格 */}
+                    {/* 数据表格 - 完全按照 TableDataBrowser.tsx 的配置 */}
                     <div className="flex-1 min-h-0">
                         <UnifiedDataTable
                             data={advancedDataSource}
@@ -486,20 +496,25 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                             loading={false}
                             pagination={{
                                 current: currentPage,
-                                pageSize: pageSize,
+                                pageSize,
                                 total: advancedDataSource.length,
                                 showSizeChanger: true,
                                 pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                             }}
-                            searchable={false}
+                            searchable={false} // 使用外部搜索
                             filterable={true}
                             sortable={true}
-                            exportable={false}
-                            columnManagement={false}
-                            showToolbar={false}
+                            exportable={false} // 使用外部导出
+                            columnManagement={true}
+                            showToolbar={false} // 使用外部工具栏
                             showRowNumbers={true}
                             className="h-full"
-                            onPageChange={handlePageChange}
+                            onPageChange={(page, size) => {
+                                handlePageChange(page);
+                                if (size !== pageSize) {
+                                    handlePageSizeChange(size.toString());
+                                }
+                            }}
                         />
                     </div>
                 </>
