@@ -31,6 +31,8 @@ import {
     TooltipContent,
 } from '@/components/ui';
 import {ScrollArea, ScrollBar} from '@/components/ui/scroll-area';
+import { UnifiedDataTable, ColumnConfig } from '@/components/ui/UnifiedDataTable';
+import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
     DndContext,
     closestCenter,
@@ -49,6 +51,31 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
+import {
+    RefreshCw,
+    Filter,
+    Download,
+    ChevronLeft,
+    ChevronRight,
+    Database,
+    Table as TableIcon,
+    FileText,
+    FileSpreadsheet,
+    Code,
+    Hash,
+    ChevronDown,
+    Copy,
+    Check,
+    Square,
+    CheckSquare,
+    MoreVertical,
+} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {safeTauriInvoke} from '@/utils/tauri';
+import {showMessage} from '@/utils/message';
+import { VirtualTableRow, VirtualTableHeader, UnifiedTableRow } from './VirtualizedTableDataBrowser';
+import { exportWithNativeDialog } from '@/utils/nativeExport';
+import type {QueryResult} from '@/types';
 
 // 可拖拽的列项组件
 interface SortableColumnItemProps {
@@ -127,234 +154,13 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(({ column, is
 
 // 原有的 VirtualTableRow 组件已移动到 VirtualizedTableDataBrowser.tsx
 
-// 优化的分页组件 - 独立渲染，避免受表格数据影响
-interface PaginationControlsProps {
-    currentPage: number;
-    pageSize: number;
-    totalCount: number;
-    loading: boolean;
-    onPageChange: (page: number) => void;
-    onPageSizeChange: (size: string) => void;
-}
 
-const PaginationControls: React.FC<PaginationControlsProps> = memo(({
-    currentPage,
-    pageSize,
-    totalCount,
-    loading,
-    onPageChange,
-    onPageSizeChange
-}) => {
-    // 使用 useMemo 缓存分页计算，避免每次渲染都重新计算
-    const paginationInfo = useMemo(() => {
-        const totalPages = pageSize > 0 ? Math.ceil(totalCount / pageSize) : 1;
-        const startIndex = pageSize > 0 ? (currentPage - 1) * pageSize + 1 : 1;
-        const endIndex = pageSize > 0 ? Math.min(currentPage * pageSize, totalCount) : totalCount;
 
-        return { totalPages, startIndex, endIndex };
-    }, [totalCount, pageSize, currentPage]);
 
-    const { totalPages, startIndex, endIndex } = paginationInfo;
 
-    // 使用 useCallback 稳定事件处理函数，并添加防抖优化
-    const handlePrevPage = useCallback(() => {
-        if (currentPage > 1) {
-            onPageChange(currentPage - 1);
-        }
-    }, [currentPage, onPageChange]);
 
-    const handleNextPage = useCallback(() => {
-        if (currentPage < totalPages) {
-            onPageChange(currentPage + 1);
-        }
-    }, [currentPage, totalPages, onPageChange]);
 
-    // 优化的页面大小变化处理
-    const handlePageSizeChangeInternal = useCallback((size: string) => {
-        // 避免重复设置相同的值
-        if (size !== pageSize.toString()) {
-            onPageSizeChange(size);
-        }
-    }, [pageSize, onPageSizeChange]);
 
-    return (
-        <div className="flex-shrink-0 border-t bg-background px-4 py-3">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>
-                        显示 {startIndex}-{endIndex} 条，共 {totalCount.toLocaleString()} 条
-                    </span>
-                    <span>
-                        第 {currentPage} 页，共 {totalPages} 页
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">每页:</span>
-                        <Select value={pageSize.toString()} onValueChange={handlePageSizeChangeInternal}>
-                            <SelectTrigger className="w-20 h-8">
-                                <SelectValue/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="100">100</SelectItem>
-                                <SelectItem value="500">500</SelectItem>
-                                <SelectItem value="1000">1000</SelectItem>
-                                <SelectItem value="2000">2000</SelectItem>
-                                <SelectItem value="5000">5000</SelectItem>
-                                <SelectItem value="-1">全部</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handlePrevPage}
-                            disabled={currentPage <= 1 || loading || pageSize <= 0}
-                            className="h-8 px-3"
-                        >
-                            <ChevronLeft className="w-3 h-3"/>
-                            上一页
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleNextPage}
-                            disabled={currentPage >= totalPages || loading || pageSize <= 0}
-                            className="h-8 px-3"
-                        >
-                            下一页
-                            <ChevronRight className="w-3 h-3"/>
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-// 优化的表头组件
-interface TableHeaderProps {
-    columnOrder: string[];
-    selectedColumns: string[];
-    sortColumn: string;
-    sortDirection: 'asc' | 'desc';
-    selectedRowsCount: number;
-    totalRowsCount: number;
-    onSort: (column: string) => void;
-    onAddFilter: (column: string) => void;
-    onSelectAll: () => void;
-    onCopySelectedRows: (format: 'text' | 'json' | 'csv') => void;
-}
-
-const TableHeader: React.FC<TableHeaderProps> = memo(({
-    columnOrder,
-    selectedColumns,
-    sortColumn,
-    sortDirection,
-    selectedRowsCount,
-    totalRowsCount,
-    onSort,
-    onAddFilter,
-    onSelectAll,
-    onCopySelectedRows
-}) => {
-    const visibleColumns = useMemo(() =>
-        columnOrder.filter(column => selectedColumns.includes(column) && column !== '#'),
-        [columnOrder, selectedColumns]
-    );
-
-    const isAllSelected = selectedRowsCount > 0 && selectedRowsCount === totalRowsCount;
-    const isIndeterminate = selectedRowsCount > 0 && selectedRowsCount < totalRowsCount;
-
-    return (
-        <thead className="sticky top-0 bg-background z-10 border-b">
-            <tr className="border-b transition-colors hover:bg-muted/50">
-                {/* 固定的序号列表头 */}
-                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-16 sticky">
-                    <div className="flex items-center gap-1">
-                        <span className="text-xs">#</span>
-                        <Badge variant="outline" className="text-xs">
-                            序号
-                        </Badge>
-                    </div>
-                </th>
-                {/* 数据列表头 */}
-                {visibleColumns.map((column) => {
-                    // 计算列的最小宽度
-                    const getColumnMinWidth = (col: string) => {
-                        if (col === '#') return '60px';
-                        if (col === 'time') return '180px';
-                        const colLength = col.length;
-                        return `${Math.max(120, colLength * 12)}px`;
-                    };
-
-                    const minWidth = getColumnMinWidth(column);
-
-                    return (
-                        <th
-                            key={column}
-                            className={cn(
-                                'h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
-                                column === '#' ? '' : 'cursor-pointer hover:bg-muted/50'
-                            )}
-                            style={{ minWidth }}
-                            onClick={() => column !== '#' && onSort(column)}
-                        >
-                            <div className="flex items-center gap-1 whitespace-nowrap">
-                                <span className="truncate" title={column === '#' ? '序号' : column}>
-                                    {column === '#' ? '序号' : column}
-                                </span>
-                                {column === 'time' && (
-                                    <Badge variant="secondary" className="text-xs">
-                                        时间
-                                    </Badge>
-                                )}
-                                {column === '#' && (
-                                    <Badge variant="outline" className="text-xs">
-                                        #
-                                    </Badge>
-                                )}
-                                {column !== 'time' && column !== '#' && (
-                                    <span className="text-xs text-muted-foreground/60" title="客户端排序">
-                                        ⚡
-                                    </span>
-                                )}
-                                {sortColumn === column && column !== '#' && (
-                                    <span className="text-xs">
-                                        {sortDirection === 'asc' ? '↑' : '↓'}
-                                    </span>
-                                )}
-                                {column !== '#' && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-4 w-4 p-0 ml-1"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Filter className="w-3 h-3"/>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
-                                            <DropdownMenuItem onClick={() => onAddFilter(column)}>
-                                                添加过滤器
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
-                            </div>
-                        </th>
-                    );
-                })}
-            </tr>
-        </thead>
-    );
-});
 
 // 增强的筛选器组件
 interface FilterEditorProps {
@@ -510,31 +316,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({ filter, onUpdate, onRemove,
         </div>
     );
 };
-import {
-    RefreshCw,
-    Filter,
-    Download,
-    ChevronLeft,
-    ChevronRight,
-    Database,
-    Table as TableIcon,
-    FileText,
-    FileSpreadsheet,
-    Code,
-    Hash,
-    ChevronDown,
-    Copy,
-    Check,
-    Square,
-    CheckSquare,
-    MoreVertical,
-} from 'lucide-react';
-import {cn} from '@/lib/utils';
-import {safeTauriInvoke} from '@/utils/tauri';
-import {showMessage} from '@/utils/message';
-import { VirtualTableRow, VirtualTableHeader, UnifiedTableRow } from './VirtualizedTableDataBrowser';
-import { exportWithNativeDialog } from '@/utils/nativeExport';
-import type {QueryResult} from '@/types';
+
 
 // 复制相关的工具函数
 const copyToClipboard = async (text: string): Promise<boolean> => {
@@ -1569,145 +1351,91 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     return (
         <div className="h-full flex flex-col bg-background">
             {/* 头部工具栏 */}
-            <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
-                <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <TableIcon className="w-5 h-5 text-blue-600"/>
-                            <CardTitle className="text-lg">{tableName}</CardTitle>
-                            <Badge variant="outline" className="text-xs">
-                                {database}
-                            </Badge>
+            <TableToolbar
+                title={tableName}
+                rowCount={data.length}
+                loading={loading}
+                showRefresh={true}
+                onRefresh={loadData}
+                onQuickExportCSV={quickExportCSV}
+                onAdvancedExport={() => setShowExportDialog(true)}
+                showColumnSelector={true}
+                selectedColumnsCount={selectedColumns.length}
+                totalColumnsCount={columns.filter(col => col !== '#').length}
+                columnSelectorContent={
+                    <div className="p-3">
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-medium">列显示设置</span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleSelectAllColumns}
+                                className="h-7 px-2 text-xs"
+                            >
+                                {selectedColumns.length === columns.filter(col => col !== '#').length ? '取消全选' : '全选'}
+                            </Button>
                         </div>
-                        <div className="flex items-center gap-2">
-                            {/* 列选择下拉菜单 */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 px-3"
-                                    >
-                                        <span className="text-xs">
-                                            列 ({selectedColumns.length}/{columns.filter(col => col !== '#').length})
-                                        </span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
-                                    <div className="p-3">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-sm font-medium">列显示设置</span>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleSelectAllColumns}
-                                                className="h-7 px-2 text-xs"
-                                            >
-                                                {selectedColumns.length === columns.filter(col => col !== '#').length ? '取消全选' : '全选'}
-                                            </Button>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground mb-3">
-                                            拖拽调整顺序，勾选显示列
-                                        </div>
-                                        <DndContext
-                                            sensors={sensors}
-                                            collisionDetection={closestCenter}
-                                            onDragEnd={handleDragEnd}
-                                        >
-                                            <SortableContext
-                                                items={columnOrder.filter(col => col !== '#')}
-                                                strategy={verticalListSortingStrategy}
-                                            >
-                                                <div className="space-y-1">
-                                                    {columnOrder.filter(col => col !== '#').map((column) => (
-                                                        <SortableColumnItem
-                                                            key={column}
-                                                            column={column}
-                                                            isSelected={selectedColumns.includes(column)}
-                                                            onToggle={handleColumnToggle}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </SortableContext>
-                                        </DndContext>
-                                    </div>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* 复制选中行按钮 */}
-                            {selectedRows.size > 0 && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 px-2"
-                                        >
-                                            <Copy className="w-3 h-3 mr-1"/>
-                                            复制 ({selectedRows.size})
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('text')}>
-                                            <FileText className="w-4 h-4 mr-2"/>
-                                            复制为文本
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('json')}>
-                                            <Code className="w-4 h-4 mr-2"/>
-                                            复制为JSON
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleCopySelectedRows('csv')}>
-                                            <FileSpreadsheet className="w-4 h-4 mr-2"/>
-                                            复制为CSV
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={loadData}
-                                        disabled={loading}
-                                        className="h-8 px-2"
-                                    >
-                                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`}/>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>刷新数据</TooltipContent>
-                            </Tooltip>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={data.length === 0}
-                                        className="h-8 px-2"
-                                    >
-                                        <Download className="w-3 h-3 mr-1"/>
-                                        <ChevronDown className="w-3 h-3"/>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={quickExportCSV}>
-                                        <FileText className="w-4 h-4 mr-2"/>
-                                        快速导出 CSV
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator/>
-                                    <DropdownMenuItem onClick={() => setShowExportDialog(true)}>
-                                        <Download className="w-4 h-4 mr-2"/>
-                                        更多导出选项...
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                        <div className="text-xs text-muted-foreground mb-3">
+                            拖拽调整顺序，勾选显示列
                         </div>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={columnOrder.filter(col => col !== '#')}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="space-y-1">
+                                    {columnOrder.filter(col => col !== '#').map((column) => (
+                                        <SortableColumnItem
+                                            key={column}
+                                            column={column}
+                                            isSelected={selectedColumns.includes(column)}
+                                            onToggle={handleColumnToggle}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </div>
-                </CardHeader>
+                }
+            >
+                {/* 复制选中行按钮 */}
+                {selectedRows.size > 0 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-2"
+                            >
+                                <Copy className="w-3 h-3 mr-1"/>
+                                复制 ({selectedRows.size})
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleCopySelectedRows('text')}>
+                                <FileText className="w-4 h-4 mr-2"/>
+                                复制为文本
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCopySelectedRows('json')}>
+                                <Code className="w-4 h-4 mr-2"/>
+                                复制为JSON
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleCopySelectedRows('csv')}>
+                                <FileSpreadsheet className="w-4 h-4 mr-2"/>
+                                复制为CSV
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </TableToolbar>
 
-                {/* 过滤栏 */}
-                {filters.length > 0 && (
+            {/* 过滤栏 */}
+            {filters.length > 0 && (
+                <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
                     <CardContent className="pt-0 pb-3">
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -1737,105 +1465,62 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                             </div>
                         </div>
                     </CardContent>
-                )}
-            </Card>
+                </Card>
+            )}
 
-            {/* 数据表格 */}
-            <div className="flex-1 min-h-0 p-4">
-                <div className="h-full border rounded-md overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-32">
-                            <Spin/>
-                            <span className="ml-2">加载中...</span>
-                        </div>
-                    ) : data.length > 0 ? (
-                        <div className="table-unified-scroll" ref={tableScrollRef}>
-                            <table className="w-full border-collapse">
-                                {/* 表头 */}
-                                <TableHeader
-                                    columnOrder={columnOrder}
-                                    selectedColumns={selectedColumns}
-                                    sortColumn={sortColumn}
-                                    sortDirection={sortDirection}
-                                    selectedRowsCount={selectedRows.size}
-                                    totalRowsCount={data.length}
-                                    onSort={handleSort}
-                                    onAddFilter={addFilter}
-                                    onSelectAll={handleSelectAll}
-                                    onCopySelectedRows={handleCopySelectedRows}
-                                />
-                                {/* 表格内容 */}
-                                <tbody>
-                                    {data.map((row, index) => (
-                                        <tr
-                                            key={row._id !== undefined ? `row_${row._id}_${index}` : `row_index_${index}_${currentPage}_${pageSize}`}
-                                            className={cn(
-                                                "border-b transition-colors hover:bg-muted/50 cursor-pointer",
-                                                selectedRows.has(index) && "bg-primary/10 border-primary"
-                                            )}
-                                            onClick={(e) => handleRowClick(index, e)}
-                                            onMouseDown={(e) => handleRowMouseDown(index, e)}
-                                            onMouseEnter={(e) => handleRowMouseEnter(index, e)}
-                                            onMouseUp={(e) => handleRowMouseUp(index, e)}
-                                            onContextMenu={(e) => handleRowContextMenu(index, e)}
-                                        >
-                                            {/* 固定的序号列 */}
-                                            <td className="px-4 py-2 text-sm font-mono w-16 sticky">
-                                                <div className="truncate w-full text-center text-muted-foreground">
-                                                    {index + 1}
-                                                </div>
-                                            </td>
-                                            {/* 数据列 */}
-                                            {columnOrder.filter(column => selectedColumns.includes(column) && column !== '#').map(column => {
-                                                const width = columnWidths[column] || 120;
-                                                return (
-                                                    <td
-                                                        key={column}
-                                                        className="px-4 py-2 text-sm font-mono border-r"
-                                                        style={{
-                                                            width: `${width}px`,
-                                                            minWidth: `${width}px`,
-                                                            maxWidth: `${width}px`
-                                                        }}
-                                                        onDoubleClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            handleCopyCell(index, column);
-                                                        }}
-                                                        title={`双击复制: ${String(row[column] || '-')}`}
-                                                    >
-                                                        <div className="truncate w-full">
-                                                            {column === 'time'
-                                                                ? new Date(row[column]).toLocaleString()
-                                                                : String(row[column] || '-')
-                                                            }
-                                                        </div>
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-32 text-muted-foreground">
-                            <Database className="w-8 h-8 mr-2"/>
-                            <span>没有找到数据</span>
-                        </div>
-                    )}
-                </div>
+            {/* 数据表格 - 使用统一的UnifiedDataTable组件 */}
+            <div className="flex-1 min-h-0">
+                <UnifiedDataTable
+                    data={data.map((row, index) => ({
+                        _id: row._id || `row_${index}`,
+                        ...row
+                    }))}
+                    columns={columnOrder.filter(col => col !== '#').map(col => ({
+                        key: col,
+                        title: col,
+                        width: columnWidths[col] || 120,
+                        sortable: true,
+                        filterable: true,
+                        render: col === 'time'
+                            ? (value: any) => value ? new Date(value).toLocaleString() : '-'
+                            : undefined
+                    }))}
+                    loading={loading}
+                    pagination={{
+                        current: currentPage,
+                        pageSize: pageSize,
+                        total: totalCount,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['500', '1000', '2000', '5000', 'all']
+                    }}
+                    searchable={false} // 使用外部搜索
+                    filterable={true}
+                    sortable={true}
+                    exportable={false} // 使用外部导出
+                    columnManagement={false} // 使用外部列管理
+                    showToolbar={false} // 使用外部工具栏
+                    showRowNumbers={true}
+                    className="h-full"
+                    onSort={(sortConfig) => {
+                        if (sortConfig) {
+                            setSortColumn(sortConfig.column);
+                            setSortDirection(sortConfig.direction);
+                        } else {
+                            setSortColumn('');
+                            setSortDirection('desc');
+                        }
+                    }}
+                    onPageChange={(page, size) => {
+                        handlePageChange(page);
+                        if (size !== pageSize) {
+                            handlePageSizeChange(size.toString());
+                        }
+                    }}
+                    onRowSelect={(selectedRowsSet) => {
+                        setSelectedRows(selectedRowsSet);
+                    }}
+                />
             </div>
-
-            {/* 底部分页 - 使用独立的分页组件 */}
-            <PaginationControls
-                currentPage={currentPage}
-                pageSize={pageSize}
-                totalCount={totalCount}
-                loading={loading}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-            />
 
             {/* 导出选项对话框 */}
             <ExportOptionsDialog

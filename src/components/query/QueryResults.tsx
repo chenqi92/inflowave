@@ -1,5 +1,6 @@
 import React, {useState, useCallback} from 'react';
-import {AdvancedDataTable, type ColumnConfig, type DataRow} from '@/components/ui/AdvancedDataTable';
+import { UnifiedDataTable, type ColumnConfig, type DataRow } from '@/components/ui/UnifiedDataTable';
+import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
     DataTable,
     Tabs,
@@ -43,14 +44,11 @@ import {
     PieChart,
     AreaChart,
     Table,
-    FileText,
     CheckCircle,
-    AlertCircle,
     Database,
-    Settings,
     Trash2,
-    Plus,
     Shield,
+    FileText,
 } from 'lucide-react';
 import {useContextMenu} from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
@@ -451,7 +449,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
     // 分页状态管理
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(50);
+    const [pageSize, setPageSize] = useState(500);
 
     // 分页处理函数
     const handlePageChange = useCallback((page: number, size: number) => {
@@ -460,33 +458,51 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     }, []);
 
     const renderTableTab = () => (
-        <div className="h-full">
+        <div className="h-full flex flex-col bg-background">
             {result ? (
-                <AdvancedDataTable
-                    data={advancedDataSource}
-                    columns={advancedColumns}
-                    loading={false}
-                    pagination={{
-                        current: currentPage,
-                        pageSize: pageSize,
-                        total: advancedDataSource.length,
-                        showSizeChanger: true,
-                        pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
-                    }}
-                    searchable={true}
-                    filterable={true}
-                    sortable={true}
-                    exportable={true}
-                    columnManagement={true}
-                    className="h-full"
-                    onPageChange={handlePageChange}
-                    onExport={(format) => {
-                        // 使用查询结果的名称作为默认文件名
-                        const defaultName = `query_result_${Date.now()}`;
-                        console.log(`导出格式: ${format}, 默认文件名: ${defaultName}`);
-                        // 这里可以添加自定义导出逻辑
-                    }}
-                />
+                <>
+                    {/* 头部工具栏 - 使用统一的TableToolbar组件 */}
+                    <TableToolbar
+                        title="查询结果"
+                        rowCount={advancedDataSource.length}
+                        loading={false}
+                        showRefresh={false}
+                        onQuickExportCSV={() => {
+                            console.log('快速导出CSV');
+                            // 这里可以添加快速导出逻辑
+                        }}
+                        onAdvancedExport={() => {
+                            console.log('高级导出选项');
+                            // 这里可以添加高级导出逻辑
+                        }}
+                        showColumnSelector={false}
+                    />
+
+                    {/* 数据表格 */}
+                    <div className="flex-1 min-h-0">
+                        <UnifiedDataTable
+                            data={advancedDataSource}
+                            columns={advancedColumns}
+                            loading={false}
+                            pagination={{
+                                current: currentPage,
+                                pageSize: pageSize,
+                                total: advancedDataSource.length,
+                                showSizeChanger: true,
+                                pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
+                            }}
+                            searchable={false}
+                            filterable={true}
+                            sortable={true}
+                            exportable={false}
+                            columnManagement={false}
+                            showToolbar={false}
+                            showRowNumbers={true}
+                            className="h-full"
+                            onPageChange={handlePageChange}
+                        />
+                    </div>
+                </>
             ) : (
                 <div className="h-full flex items-center justify-center">
                     <Empty description='暂无查询结果'/>
@@ -706,7 +722,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
     return (
         <Card className="h-full border-none">
-            <CardHeader className="pb-3">
+            <CardHeader className="py-2 pb-2">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         {statementCategory === 'query' && <Table className='w-5 h-5'/>}

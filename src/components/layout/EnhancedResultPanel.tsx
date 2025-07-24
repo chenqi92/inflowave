@@ -30,7 +30,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import { DataTable } from '@/components/ui/DataTable';
-import { AdvancedDataTable } from '@/components/ui/AdvancedDataTable';
+import { UnifiedDataTable } from '@/components/ui/UnifiedDataTable';
+import { TableToolbar } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
@@ -134,7 +135,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(500);
   
   const { resolvedTheme } = useTheme();
 
@@ -1235,90 +1236,60 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               {/* 根据SQL语句类型显示不同的内容 */}
               {statementCategory === 'query' && parsedResult ? (
                 <div className='h-full flex flex-col'>
-                  {/* 查询结果头部 */}
-                  <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
-                    <div className='flex items-center justify-between'>
-                      {/* 表名标注 */}
-                      {tableName && (
-                        <div className='flex items-center gap-2'>
-                          <span className='text-sm text-muted-foreground'>
-                            查询表：
-                          </span>
-                          <span className='px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20'>
-                            {tableName}
-                          </span>
-                        </div>
-                      )}
-                      <div className='flex items-center gap-2'>
-                        <Database className='w-4 h-4' />
-                        <span className='text-sm font-medium'>
-                          {displayInfo.title} {allResults.length > 1 ? `${index + 1}` : ''}
+                  {/* 查询结果头部 - 使用统一的TableToolbar */}
+                  <TableToolbar
+                    title={`${displayInfo.title}${allResults.length > 1 ? ` ${index + 1}` : ''}`}
+                    rowCount={parsedResult.rowCount}
+                    loading={false}
+                    showRefresh={false}
+                    onQuickExportCSV={() => setShowExportDialog(true)}
+                    onAdvancedExport={() => setShowExportDialog(true)}
+                    showColumnSelector={false}
+                  >
+                    {/* 表名标注 */}
+                    {tableName && (
+                      <div className='flex items-center gap-2 mr-2'>
+                        <span className='text-sm text-muted-foreground'>
+                          查询表：
                         </span>
-                        <Badge variant='outline' className='text-xs'>
-                          {parsedResult.rowCount} 行
-                        </Badge>
+                        <span className='px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20'>
+                          {tableName}
+                        </span>
                       </div>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='text-xs'
-                          onClick={() => setShowExportDialog(true)}
-                        >
-                          <Download className='w-3 h-3 mr-1' />
-                          导出
-                        </Button>
-                        {index === 0 && (
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='text-xs'
-                            onClick={onClearResult}
-                          >
-                            清空
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                    {/* 清空按钮 */}
+                    {index === 0 && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-xs'
+                        onClick={onClearResult}
+                      >
+                        清空
+                      </Button>
+                    )}
+                  </TableToolbar>
 
-                  {/* 高级数据表格 - 使用AdvancedDataTable组件，禁用工具栏 */}
+                  {/* 高级数据表格 - 使用UnifiedDataTable组件，禁用工具栏 */}
                   <div className='flex-1 min-h-0'>
-                    <AdvancedDataTable
+                    <UnifiedDataTable
                       data={parsedResult.data.map((row, rowIndex) => ({
                         _id: `result-${rowIndex}`,
                         ...row
                       }))}
                       columns={parsedResult.columns.map((column) => {
-                        // 检测数据类型
-                        let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
-                        if (column === 'time') {
-                          dataType = 'date';
-                        } else {
-                          // 检查前几行数据来推断类型
-                          for (let i = 0; i < Math.min(5, parsedResult.data.length); i++) {
-                            const value = parsedResult.data[i][column];
-                            if (value !== null && value !== undefined) {
-                              if (typeof value === 'number') {
-                                dataType = 'number';
-                                break;
-                              }
-                              if (typeof value === 'boolean') {
-                                dataType = 'boolean';
-                                break;
-                              }
-                            }
-                          }
-                        }
-
                         return {
                           key: column,
                           title: column,
-                          dataType,
                           width: column === 'time' ? 180 : 120,
                           sortable: true,
                           filterable: true,
-                          visible: true,
+                          render: (value: any) => {
+                            if (column === 'time' && value) {
+                              return new Date(value).toLocaleString();
+                            }
+                            return value !== null && value !== undefined ? String(value) : '-';
+                          }
                         };
                       })}
                       loading={false}
@@ -1328,13 +1299,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       exportable={false} // 禁用内置导出功能
                       columnManagement={true}
                       showToolbar={false} // 禁用工具栏
+                      showRowNumbers={true}
                       className="h-full"
                       pagination={{
                         current: currentPage,
                         pageSize: pageSize,
                         total: parsedResult.data.length,
                         showSizeChanger: true,
-                        pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
+                        pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                       }}
                       onPageChange={handlePageChange}
                     />
@@ -1744,43 +1716,26 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 </div>
               </div>
 
-              {/* 数据表格 - 使用AdvancedDataTable组件支持高级功能 */}
+              {/* 数据表格 - 使用UnifiedDataTable组件支持高级功能 */}
               <div className='flex-1 min-h-0'>
-                <AdvancedDataTable
+                <UnifiedDataTable
                   data={parsedData.data.map((row, index) => ({
                     _id: `table-${index}`,
                     ...row
                   }))}
                   columns={parsedData.columns.map((column) => {
-                    // 检测数据类型
-                    let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
-                    if (column === 'time') {
-                      dataType = 'date';
-                    } else {
-                      // 检查前几行数据来推断类型
-                      for (let i = 0; i < Math.min(5, parsedData.data.length); i++) {
-                        const value = parsedData.data[i][column];
-                        if (value !== null && value !== undefined) {
-                          if (typeof value === 'number') {
-                            dataType = 'number';
-                            break;
-                          }
-                          if (typeof value === 'boolean') {
-                            dataType = 'boolean';
-                            break;
-                          }
-                        }
-                      }
-                    }
-
                     return {
                       key: column,
                       title: column,
-                      dataType,
                       width: column === 'time' ? 180 : 120,
                       sortable: true,
                       filterable: true,
-                      visible: true,
+                      render: (value: any) => {
+                        if (column === 'time' && value) {
+                          return new Date(value).toLocaleString();
+                        }
+                        return value !== null && value !== undefined ? String(value) : '-';
+                      }
                     };
                   })}
                   loading={false}
@@ -1789,13 +1744,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     pageSize: pageSize,
                     total: parsedData.data.length,
                     showSizeChanger: true,
-                    pageSizeOptions: ['20', '50', '100', '200', '500', '全部'],
+                    pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                   }}
                   searchable={true}
                   filterable={true}
                   sortable={true}
                   exportable={true}
                   columnManagement={true}
+                  showRowNumbers={true}
                   className="h-full"
                   onPageChange={handlePageChange}
                 />
