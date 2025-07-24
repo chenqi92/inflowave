@@ -76,6 +76,7 @@ jobs:
               echo "✅ Manual trigger: will create release for v$VERSION"
             fi
           fi
+        shell: bash
 
   # 准备发布说明
   prepare-release-notes:
@@ -104,6 +105,7 @@ jobs:
             echo "$RELEASE_BODY"
             echo 'EOF'
           } >> $GITHUB_OUTPUT
+        shell: bash
 
   # 全平台全架构构建
   build-release:
@@ -159,6 +161,7 @@ jobs:
           if [[ "${{ matrix.rust_target }}" == "aarch64-unknown-linux-gnu" ]]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           fi
+        shell: bash
 
 
 
