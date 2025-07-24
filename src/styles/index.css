@@ -1388,7 +1388,7 @@ pre,
 .table-unified-scroll thead {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   background: hsl(var(--background));
 }
 
@@ -1417,19 +1417,32 @@ pre,
 
 /* 固定序号列样式 */
 .table-unified-scroll th.sticky {
-  position: sticky;
-  left: 0;
-  z-index: 20;
-  background: hsl(var(--muted));
+  position: sticky !important;
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  background: hsl(var(--muted)) !important;
   border-right: 2px solid hsl(var(--border));
+  /* 确保背景完全不透明，防止内容重叠 */
+  background-clip: padding-box;
+  /* 添加阴影以增强视觉层次 */
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  /* 强制固定定位，不受父元素影响 */
+  position: -webkit-sticky !important;
+  /* 确保不会被其他样式覆盖 */
+  transform: none !important;
 }
 
 .table-unified-scroll td.sticky {
   position: sticky;
   left: 0;
   z-index: 10;
-  background: hsl(var(--muted) / 0.3);
+  background: hsl(var(--background));
   border-right: 2px solid hsl(var(--border));
+  /* 确保背景完全不透明，防止内容重叠 */
+  background-clip: padding-box;
+  /* 添加阴影以增强视觉层次 */
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 
 /* 表头容器（固定列 + 滚动列） */
