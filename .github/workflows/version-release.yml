@@ -192,6 +192,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
           # 跨编译环境变量
           PKG_CONFIG_ALLOW_CROSS: 1
           PKG_CONFIG_PATH: ${{ matrix.platform == 'ubuntu-22.04' && '/usr/lib/pkgconfig:/usr/share/pkgconfig' || '' }}

@@ -17,6 +17,8 @@
     "tauri:build": "npm run copy-docs && tauri build",
     "tauri:build:server": "ENABLE_EMBEDDED_SERVER=true npm run tauri:build",
     "tauri:build:release": "tauri build --release",
+    "tauri:build:production": "DISABLE_CONSOLE_LOGS=true npm run copy-docs && tauri build",
+    "tauri:build:production:release": "DISABLE_CONSOLE_LOGS=true tauri build --release",
     "build:windows-x64": "tauri build --target x86_64-pc-windows-msvc",
     "build:windows-x86": "tauri build --target i686-pc-windows-msvc",
     "build:windows-arm64": "echo 'Windows ARM64 暂时禁用，等待 ring 库支持改善'",

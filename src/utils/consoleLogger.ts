@@ -40,7 +40,26 @@ class ConsoleLogger {
 
   // 判断是否应该过滤特定的日志
   private shouldFilterLog(message: string, level: ConsoleLogEntry['level']): boolean {
-    // 暂时不过滤任何日志，让错误正常显示以便调试
+    // 检查是否强制禁用所有控制台日志
+    const disableConsoleLogs = process.env.DISABLE_CONSOLE_LOGS === 'true';
+    if (disableConsoleLogs && (level === 'log' || level === 'info')) {
+      return true;
+    }
+    
+    // 在生产环境下过滤console.log和console.info
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction && (level === 'log' || level === 'info')) {
+      return true; // 过滤掉log和info级别的日志
+    }
+    
+    // 在Tauri桌面环境下过滤console.log和console.info（除非在调试模式）
+    const isTauriBuild = typeof window !== 'undefined' && !!window.__TAURI__;
+    const isTauriDebug = process.env.TAURI_DEBUG === 'true';
+    if (isTauriBuild && !isTauriDebug && (level === 'log' || level === 'info')) {
+      return true; // 过滤掉log和info级别的日志
+    }
+    
+    // 保留warn、error、debug级别的日志用于调试
     return false;
   }
 
