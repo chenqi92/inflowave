@@ -133,7 +133,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         // 检查下一行是否是分隔符
         if (i + 1 < lines.length) {
           const nextLine = lines[i + 1].trim();
-          if (nextLine.match(/^\|[\s\-\|:]+\|$/)) {
+          if (nextLine.match(/^\|[\s\-|:]+\|$/)) {
             // 找到表格，收集所有表格行
             const tableLines = [];
             let j = i;

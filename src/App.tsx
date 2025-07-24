@@ -381,10 +381,10 @@ const App: React.FC = () => {
       setShowUnsavedTabsDialog(true);
     };
 
-    window.addEventListener('show-unsaved-tabs-dialog', handleShowDialog as EventListener);
+    window.addEventListener('show-unsaved-tabs-dialog', handleShowDialog as (event: Event) => void);
 
     return () => {
-      window.removeEventListener('show-unsaved-tabs-dialog', handleShowDialog as EventListener);
+      window.removeEventListener('show-unsaved-tabs-dialog', handleShowDialog as (event: Event) => void);
     };
   }, []);
 

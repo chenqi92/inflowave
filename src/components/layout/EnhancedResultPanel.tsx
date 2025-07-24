@@ -130,6 +130,42 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
+
+  // 动态生成分页选项 - 根据数据量智能生成，以500为基础阶段
+  const generatePaginationOptions = useCallback((totalRows: number) => {
+    console.log(`🔢 生成分页选项，总行数: ${totalRows}`);
+    const options: string[] = [];
+
+    // 如果数据量小于等于500，只显示"全部"
+    if (totalRows <= 500) {
+      options.push('all');
+      console.log(`📄 数据量≤500，分页选项: [${options.join(', ')}]`);
+      return options;
+    }
+
+    // 始终包含500
+    options.push('500');
+
+    // 根据数据量动态添加选项
+    if (totalRows > 500 && totalRows <= 1000) {
+      // 500-1000: 显示 [500, 全部]
+    } else if (totalRows > 1000 && totalRows <= 2000) {
+      // 1000-2000: 显示 [500, 1000, 全部]
+      options.push('1000');
+    } else if (totalRows > 2000 && totalRows <= 5000) {
+      // 2000-5000: 显示 [500, 1000, 2000, 全部]
+      options.push('1000', '2000');
+    } else if (totalRows > 5000) {
+      // >5000: 显示 [500, 1000, 2000, 5000, 全部]
+      options.push('1000', '2000', '5000');
+    }
+
+    // 始终添加"全部"选项
+    options.push('all');
+
+    console.log(`📊 最终分页选项: [${options.join(', ')}]`);
+    return options;
+  }, []);
   
   const { resolvedTheme } = useTheme();
 
@@ -144,10 +180,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const handlePageSizeChange = useCallback((size: string) => {
     startTransition(() => {
       const newSize = parseInt(size);
+      console.log(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
       setPageSize(newSize);
       setCurrentPage(1);
     });
-  }, []);
+  }, [pageSize]);
 
   // 主题配置生成函数
   const getThemeConfig = useCallback(() => {
@@ -1298,7 +1335,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         pageSize,
                         total: parsedResult.data.length,
                         showSizeChanger: true,
-                        pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
+                        pageSizeOptions: generatePaginationOptions(parsedResult.data.length),
                       }}
                       searchable={false} // 使用外部搜索
                       filterable={true}

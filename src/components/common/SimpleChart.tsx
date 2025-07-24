@@ -57,7 +57,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
 
     // 准备图表配置
     let option: echarts.EChartsOption = {
-      backgroundColor: backgroundColor,
+      backgroundColor,
       textStyle: {
         color: textColor,
       },
@@ -73,7 +73,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
         }, 0);
         return {
           name: String(name),
-          value: value,
+          value,
         };
       }).filter(item => item.value > 0);
 
