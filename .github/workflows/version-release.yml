@@ -193,7 +193,7 @@ jobs:
       - name: Build Standard Mode
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           ENABLE_EMBEDDED_SERVER: false
           DISABLE_CONSOLE_LOGS: true
           # 跨编译环境变量

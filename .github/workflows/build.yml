@@ -140,7 +140,7 @@ jobs:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
-          releaseName: 'InfloWave ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}'
+          releaseName: InfloWave ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: true
           prerelease: false
