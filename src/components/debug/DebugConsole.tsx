@@ -488,9 +488,10 @@ const DebugConsole: React.FC = () => {
         </div>
       </div>
 
-      <div className='flex-1 overflow-hidden'>
+      <div className='flex-1 flex flex-col overflow-hidden'>
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className='h-full flex flex-col'>
-          <TabsList className='grid w-full grid-cols-3 mx-4 mt-4'>
+          <div className='flex-shrink-0 px-4 pt-4'>
+            <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='system' className='flex items-center gap-2'>
               <Activity className='w-4 h-4' />
               系统信息
@@ -503,58 +504,68 @@ const DebugConsole: React.FC = () => {
               <Info className='w-4 h-4' />
               视图日志
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
-          <TabsContent value='system' className='flex-1 mt-4 overflow-hidden'>
-            <div className='h-full overflow-y-auto px-4'>
+          <TabsContent value='system' className='flex-1 overflow-hidden'>
+            <div className='h-full px-4'>
               {renderSystemInfo()}
             </div>
           </TabsContent>
 
-          <TabsContent value='app' className='flex-1 mt-4 overflow-hidden'>
-            <div className='h-full overflow-y-auto px-4'>
-              <Card className='h-full flex flex-col'>
-                <CardHeader>
-                  <CardTitle className='text-sm flex items-center justify-between'>
-                    <span className='flex items-center gap-2'>
-                      <Database className='w-4 h-4' />
-                      应用日志
-                    </span>
-                    <div className='flex items-center gap-2'>
-                      <Badge variant='outline' className='text-xs'>
-                        {getFilteredAppLogs().length} 条日志
-                      </Badge>
+          <TabsContent value='app' className='flex-1 overflow-hidden'>
+            <div className='h-full flex flex-col px-4 gap-4'>
+              {/* 固定的筛选器框 */}
+              <div className='flex-shrink-0'>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className='text-sm flex items-center justify-between'>
+                      <span className='flex items-center gap-2'>
+                        <Database className='w-4 h-4' />
+                        应用日志
+                      </span>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant='outline' className='text-xs'>
+                          {getFilteredAppLogs().length} 条日志
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* 过滤器 */}
+                    <div className='flex items-center gap-4'>
+                      <div className='flex items-center gap-2'>
+                        <Search className='w-4 h-4 text-muted-foreground' />
+                        <Input
+                          placeholder='搜索应用日志...'
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          className='w-48 h-8 text-sm'
+                        />
+                      </div>
+                      <Select value={levelFilter} onValueChange={setLevelFilter}>
+                        <SelectTrigger className='w-32 h-8 text-sm'>
+                          <SelectValue placeholder='级别' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='all'>全部</SelectItem>
+                          <SelectItem value='info'>INFO</SelectItem>
+                          <SelectItem value='warning'>WARN</SelectItem>
+                          <SelectItem value='error'>ERROR</SelectItem>
+                          <SelectItem value='debug'>DEBUG</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='flex-1 flex flex-col space-y-4'>
-                  {/* 过滤器 */}
-                  <div className='flex items-center gap-4'>
-                    <div className='flex items-center gap-2'>
-                      <Search className='w-4 h-4 text-muted-foreground' />
-                      <Input
-                        placeholder='搜索应用日志...'
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        className='w-48 h-8 text-sm'
-                      />
-                    </div>
-                    <Select value={levelFilter} onValueChange={setLevelFilter}>
-                      <SelectTrigger className='w-32 h-8 text-sm'>
-                        <SelectValue placeholder='级别' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='all'>全部</SelectItem>
-                        <SelectItem value='info'>INFO</SelectItem>
-                        <SelectItem value='warning'>WARN</SelectItem>
-                        <SelectItem value='error'>ERROR</SelectItem>
-                        <SelectItem value='debug'>DEBUG</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-                  {/* 日志显示 */}
-                  <ScrollArea className='flex-1'>
+              {/* 可滚动的日志内容区域 */}
+              <div className='flex-1 min-h-0'>
+                <Card className='h-full flex flex-col'>
+                  <CardContent className='flex-1 flex flex-col p-4 min-h-0'>
+                    {/* 日志显示 */}
+                    <div className='flex-1 overflow-y-auto border rounded-lg p-2'>
                     <div className='space-y-2'>
                       {getCurrentPageLogs().map(log => (
                         <div key={log.id} className='group relative flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
@@ -587,111 +598,121 @@ const DebugConsole: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  </ScrollArea>
+                  </div>
                   
-                  {/* 分页控件 */}
-                  {getFilteredAppLogs().length > pageSize && (
-                    <div className='flex items-center justify-between pt-4 border-t'>
-                      <div className='flex items-center gap-4'>
-                        <span className='text-sm text-muted-foreground'>
-                          显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredAppLogs().length)} 条，共 {getFilteredAppLogs().length} 条
-                        </span>
-                        <Select
-                          value={pageSize.toString()}
-                          onValueChange={(value) => setPageSize(Number(value))}
-                        >
-                          <SelectTrigger className='w-20 h-8 text-sm'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value='25'>25</SelectItem>
-                            <SelectItem value='50'>50</SelectItem>
-                            <SelectItem value='100'>100</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className='text-sm text-muted-foreground'>条/页</span>
-                      </div>
+                    {/* 分页控件 */}
+                    {getFilteredAppLogs().length > pageSize && (
+                      <div className='flex items-center justify-between pt-4 border-t mt-4'>
+                        <div className='flex items-center gap-4'>
+                          <span className='text-sm text-muted-foreground'>
+                            显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredAppLogs().length)} 条，共 {getFilteredAppLogs().length} 条
+                          </span>
+                          <Select
+                            value={pageSize.toString()}
+                            onValueChange={(value) => setPageSize(Number(value))}
+                          >
+                            <SelectTrigger className='w-20 h-8 text-sm'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='25'>25</SelectItem>
+                              <SelectItem value='50'>50</SelectItem>
+                              <SelectItem value='100'>100</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className='text-sm text-muted-foreground'>条/页</span>
+                        </div>
 
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='h-8 px-2'
-                          onClick={() => goToPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className='w-4 h-4' />
-                        </Button>
-                        <span className='text-sm px-2'>
-                          第 {currentPage} 页，共 {getTotalPages()} 页
-                        </span>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='h-8 px-2'
-                          onClick={() => goToPage(currentPage + 1)}
-                          disabled={currentPage === getTotalPages()}
-                        >
-                          <ChevronRight className='w-4 h-4' />
-                        </Button>
+                        <div className='flex items-center gap-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-2'
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className='w-4 h-4' />
+                          </Button>
+                          <span className='text-sm px-2'>
+                            第 {currentPage} 页，共 {getTotalPages()} 页
+                          </span>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-2'
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === getTotalPages()}
+                          >
+                            <ChevronRight className='w-4 h-4' />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {getFilteredAppLogs().length === 0 && (
-                    <div className='text-center py-8 text-muted-foreground'>
-                      <Database className='w-12 h-12 mx-auto mb-4' />
-                      <p>暂无应用日志</p>
-                      <p className='text-sm mt-2'>应用运行时的详细事件将在这里显示</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                    
+                    {getFilteredAppLogs().length === 0 && (
+                      <div className='text-center py-8 text-muted-foreground'>
+                        <Database className='w-12 h-12 mx-auto mb-4' />
+                        <p>暂无应用日志</p>
+                        <p className='text-sm mt-2'>应用运行时的详细事件将在这里显示</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value='browser' className='flex-1 mt-4 overflow-hidden'>
-            <div className='h-full overflow-y-auto px-4'>
-              <Card className='h-full flex flex-col'>
-                <CardHeader>
-                  <CardTitle className='text-sm flex items-center justify-between'>
-                    <span>视图日志</span>
-                    <div className='flex items-center gap-2'>
-                      <Badge variant='outline' className='text-xs'>
-                        {getFilteredConsoleLogs().length} 条日志
-                      </Badge>
+          <TabsContent value='browser' className='flex-1 overflow-hidden'>
+            <div className='h-full flex flex-col px-4 gap-4'>
+              {/* 固定的头部和筛选器 */}
+              <div className='flex-shrink-0'>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className='text-sm flex items-center justify-between'>
+                      <span>视图日志</span>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant='outline' className='text-xs'>
+                          {getFilteredConsoleLogs().length} 条日志
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {/* 过滤器 */}
+                    <div className='flex items-center gap-4'>
+                      <div className='flex items-center gap-2'>
+                        <Search className='w-4 h-4 text-muted-foreground' />
+                        <Input
+                          placeholder='搜索日志...'
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          className='w-48 h-8 text-sm'
+                        />
+                      </div>
+                      <Select value={levelFilter} onValueChange={setLevelFilter}>
+                        <SelectTrigger className='w-32 h-8 text-sm'>
+                          <SelectValue placeholder='级别' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='all'>全部</SelectItem>
+                          <SelectItem value='log'>LOG</SelectItem>
+                          <SelectItem value='info'>INFO</SelectItem>
+                          <SelectItem value='warn'>WARN</SelectItem>
+                          <SelectItem value='error'>ERROR</SelectItem>
+                          <SelectItem value='debug'>DEBUG</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className='flex-1 flex flex-col space-y-4'>
-                  {/* 过滤器 */}
-                  <div className='flex items-center gap-4'>
-                    <div className='flex items-center gap-2'>
-                      <Search className='w-4 h-4 text-muted-foreground' />
-                      <Input
-                        placeholder='搜索日志...'
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        className='w-48 h-8 text-sm'
-                      />
-                    </div>
-                    <Select value={levelFilter} onValueChange={setLevelFilter}>
-                      <SelectTrigger className='w-32 h-8 text-sm'>
-                        <SelectValue placeholder='级别' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='all'>全部</SelectItem>
-                        <SelectItem value='log'>LOG</SelectItem>
-                        <SelectItem value='info'>INFO</SelectItem>
-                        <SelectItem value='warn'>WARN</SelectItem>
-                        <SelectItem value='error'>ERROR</SelectItem>
-                        <SelectItem value='debug'>DEBUG</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-                  {/* 日志显示 */}
-                  <ScrollArea className='flex-1'>
+              {/* 可滚动的日志内容区域 */}
+              <div className='flex-1 min-h-0'>
+                <Card className='h-full flex flex-col'>
+                  <CardContent className='flex-1 flex flex-col p-4 min-h-0'>
+                    {/* 日志显示 */}
+                    <div className='flex-1 overflow-y-auto border rounded-lg p-2'>
                     <div className='space-y-2'>
                       {getCurrentPageConsoleLogs().map(log => (
                         <div key={log.id} className='group relative flex items-start gap-2 p-3 rounded-lg bg-muted/50 border'>
@@ -754,66 +775,67 @@ const DebugConsole: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  </ScrollArea>
+                  </div>
 
-                  {/* 分页控件 */}
-                  {getFilteredConsoleLogs().length > pageSize && (
-                    <div className='flex items-center justify-between pt-4 border-t'>
-                      <div className='flex items-center gap-4'>
-                        <span className='text-sm text-muted-foreground'>
-                          显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredConsoleLogs().length)} 条，共 {getFilteredConsoleLogs().length} 条
-                        </span>
-                        <Select
-                          value={pageSize.toString()}
-                          onValueChange={(value) => setPageSize(Number(value))}
-                        >
-                          <SelectTrigger className='w-20 h-8 text-sm'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value='25'>25</SelectItem>
-                            <SelectItem value='50'>50</SelectItem>
-                            <SelectItem value='100'>100</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className='text-sm text-muted-foreground'>条/页</span>
-                      </div>
+                    {/* 分页控件 */}
+                    {getFilteredConsoleLogs().length > pageSize && (
+                      <div className='flex items-center justify-between pt-4 border-t mt-4'>
+                        <div className='flex items-center gap-4'>
+                          <span className='text-sm text-muted-foreground'>
+                            显示 {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, getFilteredConsoleLogs().length)} 条，共 {getFilteredConsoleLogs().length} 条
+                          </span>
+                          <Select
+                            value={pageSize.toString()}
+                            onValueChange={(value) => setPageSize(Number(value))}
+                          >
+                            <SelectTrigger className='w-20 h-8 text-sm'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='25'>25</SelectItem>
+                              <SelectItem value='50'>50</SelectItem>
+                              <SelectItem value='100'>100</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className='text-sm text-muted-foreground'>条/页</span>
+                        </div>
 
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='h-8 px-2'
-                          onClick={() => goToPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className='w-4 h-4' />
-                        </Button>
-                        <span className='text-sm px-2'>
-                          第 {currentPage} 页，共 {getTotalPages()} 页
-                        </span>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='h-8 px-2'
-                          onClick={() => goToPage(currentPage + 1)}
-                          disabled={currentPage === getTotalPages()}
-                        >
-                          <ChevronRight className='w-4 h-4' />
-                        </Button>
+                        <div className='flex items-center gap-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-2'
+                            onClick={() => goToPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className='w-4 h-4' />
+                          </Button>
+                          <span className='text-sm px-2'>
+                            第 {currentPage} 页，共 {getTotalPages()} 页
+                          </span>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='h-8 px-2'
+                            onClick={() => goToPage(currentPage + 1)}
+                            disabled={currentPage === getTotalPages()}
+                          >
+                            <ChevronRight className='w-4 h-4' />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {getFilteredConsoleLogs().length === 0 && (
-                    <div className='text-center py-8 text-muted-foreground'>
-                      <Terminal className='w-12 h-12 mx-auto mb-4' />
-                      <p>暂无控制台日志</p>
-                      <p className='text-sm mt-2'>应用启动后的所有控制台日志将在这里显示</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                    
+                    {getFilteredConsoleLogs().length === 0 && (
+                      <div className='text-center py-8 text-muted-foreground'>
+                        <Terminal className='w-12 h-12 mx-auto mb-4' />
+                        <p>暂无控制台日志</p>
+                        <p className='text-sm mt-2'>应用启动后的所有控制台日志将在这里显示</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
