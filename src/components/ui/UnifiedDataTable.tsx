@@ -173,12 +173,6 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 {/* 数据列表头 */}
                 {(() => {
                     const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
-                    console.log('🔧 [TableHeader] 渲染列表头:', {
-                        columnOrder,
-                        selectedColumns,
-                        visibleColumns,
-                        virtualMode
-                    });
                     return visibleColumns;
                 })().map((column) => {
                     // 计算列的最小宽度
@@ -253,6 +247,8 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
 });
 
 TableHeader.displayName = 'TableHeader';
+
+// 轻量级单元格选择和编辑功能 - 使用原生DOM事件
 
 // 分页控制组件
 interface PaginationControlsProps {
@@ -367,6 +363,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [pageSize, setPageSize] = useState(pagination ? pagination.pageSize : 500);
     const [isShowingAll, setIsShowingAll] = useState(false); // 跟踪是否用户主动选择了"全部"
 
+    // 轻量级单元格状态 - 只存储必要信息
+    const [selectedCell, setSelectedCell] = useState<string | null>(null); // 格式: "row-column"
+    const [editingCell, setEditingCell] = useState<string | null>(null);
+    const [lastSelectedRow, setLastSelectedRow] = useState<number | null>(null); // 用于Shift多选
+    const editingInputRef = useRef<HTMLInputElement>(null);
+
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
 
@@ -377,17 +379,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             const finalSelectedColumns = externalSelectedColumns || columnKeys;
             const finalColumnOrder = externalColumnOrder || columnKeys;
 
-            console.log('🔧 [UnifiedDataTable] 初始化列:', {
-                columns: columns.map(col => ({ key: col.key, title: col.title })),
-                columnKeys,
-                externalSelectedColumns,
-                externalColumnOrder,
-                finalSelectedColumns,
-                finalColumnOrder,
-                currentSelectedColumns: selectedColumns,
-                currentColumnOrder: columnOrder
-            });
-
             setSelectedColumns(finalSelectedColumns);
             setColumnOrder(finalColumnOrder);
         }
@@ -395,15 +386,192 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // 列管理处理函数
     const handleColumnChange = useCallback((visibleColumns: string[], newColumnOrder: string[]) => {
-        console.log('🔧 [UnifiedDataTable] 列管理变更:', {
-            before: { selectedColumns, columnOrder },
-            after: { visibleColumns, newColumnOrder },
-            hasCallback: !!onColumnChange
-        });
         setSelectedColumns(visibleColumns);
         setColumnOrder(newColumnOrder);
         onColumnChange?.(visibleColumns, newColumnOrder);
     }, [onColumnChange, selectedColumns, columnOrder]);
+
+    // 高性能事件委托处理
+    const handleTableClick = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
+        const target = event.target as HTMLElement;
+        const cell = target.closest('td');
+        if (!cell) return;
+
+        const row = cell.closest('tr');
+        if (!row) return;
+
+        const rowIndex = parseInt(row.dataset.rowIndex || '0');
+        const column = cell.dataset.column || '';
+        const cellId = `${rowIndex}-${column}`;
+
+        console.log('🔧 [UnifiedDataTable] 表格点击:', { rowIndex, column, cellId, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey });
+
+        // 序号列点击 - 高级行选择
+        if (column === '#') {
+            const newSelectedRows = new Set(selectedRows);
+
+            if (event.shiftKey && lastSelectedRow !== null) {
+                // Shift多选：选择范围
+                const start = Math.min(lastSelectedRow, rowIndex);
+                const end = Math.max(lastSelectedRow, rowIndex);
+                for (let i = start; i <= end; i++) {
+                    newSelectedRows.add(i);
+                }
+                console.log('🔧 [UnifiedDataTable] Shift范围选择:', { start, end, count: newSelectedRows.size });
+            } else if (event.ctrlKey || event.metaKey) {
+                // Ctrl多选：切换选择状态
+                if (newSelectedRows.has(rowIndex)) {
+                    newSelectedRows.delete(rowIndex);
+                    console.log('🔧 [UnifiedDataTable] Ctrl取消选择行:', { rowIndex });
+                } else {
+                    newSelectedRows.add(rowIndex);
+                    console.log('🔧 [UnifiedDataTable] Ctrl添加选择行:', { rowIndex });
+                }
+            } else {
+                // 普通点击：单选
+                newSelectedRows.clear();
+                newSelectedRows.add(rowIndex);
+                console.log('🔧 [UnifiedDataTable] 单选行:', { rowIndex });
+            }
+
+            setSelectedRows(newSelectedRows);
+            setLastSelectedRow(rowIndex);
+            setSelectedCell(null); // 清除单元格选择
+            setEditingCell(null);
+            onRowSelect?.(newSelectedRows);
+            return;
+        }
+
+        // 数据列点击 - 单元格选择
+        // 清除行选择（除非按住Ctrl）
+        if (!event.ctrlKey && !event.metaKey) {
+            setSelectedRows(new Set());
+            setLastSelectedRow(null);
+        }
+
+        // 已选中单元格再次点击 - 进入编辑模式
+        if (selectedCell === cellId) {
+            setEditingCell(cellId);
+            // 延迟聚焦，确保DOM更新完成
+            setTimeout(() => {
+                if (editingInputRef.current) {
+                    editingInputRef.current.focus();
+                    editingInputRef.current.select();
+                }
+            }, 0);
+            console.log('🔧 [UnifiedDataTable] 进入编辑模式:', { cellId });
+        } else {
+            // 选中新单元格
+            setSelectedCell(cellId);
+            setEditingCell(null);
+            console.log('🔧 [UnifiedDataTable] 选中单元格:', { cellId });
+        }
+    }, [selectedCell, selectedRows, lastSelectedRow, onRowSelect]);
+
+    // 双击处理
+    const handleTableDoubleClick = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
+        const target = event.target as HTMLElement;
+        const cell = target.closest('td');
+        if (!cell) return;
+
+        const row = cell.closest('tr');
+        if (!row) return;
+
+        const rowIndex = parseInt(row.dataset.rowIndex || '0');
+        const column = cell.dataset.column || '';
+        const cellId = `${rowIndex}-${column}`;
+
+        // 序号列双击不进入编辑模式
+        if (column === '#') return;
+
+        console.log('🔧 [UnifiedDataTable] 表格双击:', { cellId });
+        setSelectedCell(cellId);
+        setEditingCell(cellId);
+
+        // 延迟聚焦
+        setTimeout(() => {
+            if (editingInputRef.current) {
+                editingInputRef.current.focus();
+                editingInputRef.current.select();
+            }
+        }, 0);
+    }, []);
+
+    // 编辑完成处理
+    const handleEditComplete = useCallback(() => {
+        console.log('🔧 [UnifiedDataTable] 编辑完成:', { editingCell });
+        setEditingCell(null);
+    }, [editingCell]);
+
+    // 键盘事件处理
+    const handleEditKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleEditComplete();
+        } else if (event.key === 'Escape') {
+            setEditingCell(null);
+        }
+    }, [handleEditComplete]);
+
+    // 复制选中行数据
+    const copySelectedRowsData = useCallback(() => {
+        if (selectedRows.size === 0) return;
+
+        const selectedRowsArray = Array.from(selectedRows).sort((a, b) => a - b);
+        const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
+
+        // 构建CSV格式数据
+        const headers = showRowNumbers ? ['#', ...visibleColumns] : visibleColumns;
+        const csvData = [
+            headers.join('\t'), // 表头
+            ...selectedRowsArray.map(rowIndex => {
+                const row = data[rowIndex];
+                if (!row) return '';
+
+                const rowData = visibleColumns.map(column => {
+                    const value = row[column];
+                    // 格式化值
+                    if (column === 'time' && value) {
+                        return new Date(value).toLocaleString();
+                    }
+                    return String(value || '');
+                });
+
+                return showRowNumbers
+                    ? [rowIndex + 1, ...rowData].join('\t')
+                    : rowData.join('\t');
+            })
+        ].join('\n');
+
+        // 复制到剪贴板
+        navigator.clipboard.writeText(csvData).then(() => {
+            console.log('🔧 [UnifiedDataTable] 复制成功:', {
+                rowCount: selectedRows.size,
+                columnCount: headers.length,
+                dataLength: csvData.length
+            });
+        }).catch(err => {
+            console.error('🔧 [UnifiedDataTable] 复制失败:', err);
+        });
+    }, [selectedRows, data, columnOrder, selectedColumns, showRowNumbers]);
+
+    // 全局键盘事件监听
+    useEffect(() => {
+        const handleGlobalKeyDown = (event: KeyboardEvent) => {
+            // Ctrl+C 复制选中行
+            if ((event.ctrlKey || event.metaKey) && event.key === 'c' && selectedRows.size > 0) {
+                // 如果当前没有在编辑模式，则复制选中行
+                if (!editingCell) {
+                    event.preventDefault();
+                    copySelectedRowsData();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleGlobalKeyDown);
+        };
+    }, [selectedRows, editingCell, copySelectedRowsData]);
 
     // 同步外部分页配置
     useEffect(() => {
@@ -684,7 +852,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         <tr>
                                             {/* 序号列表头 */}
                                             {showRowNumbers && (() => {
-                                                console.log('🔧 [VirtualizedTable] 渲染序号列表头，CSS类: virtualized-sticky-header');
                                                 return (
                                                 <th className="px-4 py-2 text-left align-middle font-medium text-sm text-muted-foreground bg-muted border-b-2 border-r w-16 virtualized-sticky-header">
                                                     <div className="flex items-center gap-1">
@@ -698,12 +865,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             {/* 数据列表头 */}
                                             {(() => {
                                                 const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
-                                                console.log('🔧 [VirtualizedTable] 渲染虚拟化表头:', {
-                                                    columnOrder,
-                                                    selectedColumns,
-                                                    visibleColumns,
-                                                    showRowNumbers
-                                                });
                                                 return visibleColumns;
                                             })().map((column) => {
                                                 const getColumnMinWidth = (col: string) => {
@@ -740,43 +901,67 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         <>
                                             {/* 固定的序号列 */}
                                             {showRowNumbers && (() => {
-                                                if (index === 0) {
-                                                    console.log('🔧 [VirtualizedTable] 渲染序号列数据，CSS类: virtualized-sticky-cell');
-                                                }
+                                                const cellId = `${index}-#`;
                                                 return (
-                                                <td className="px-4 py-2 text-sm font-mono w-16 virtualized-sticky-cell">
-                                                    <div className="truncate w-full text-center text-muted-foreground">
+                                                <td
+                                                    data-column="#"
+                                                    data-column-index="0"
+                                                    className={cn(
+                                                        "px-4 py-2 text-sm font-mono w-16 virtualized-sticky-cell text-center text-muted-foreground table-cell-selectable",
+                                                        selectedCell === cellId && "table-cell-selected"
+                                                    )}
+                                                >
+                                                    <div className="truncate w-full">
                                                         {index + 1}
                                                     </div>
                                                 </td>
                                                 );
                                             })()}
                                             {/* 数据列 */}
-                                            {columnOrder.filter(column => selectedColumns.includes(column)).map(column => {
+                                            {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
                                                 const columnConfig = columns.find(col => col.key === column);
                                                 const value = row[column];
                                                 const width = columnConfig?.width || 120;
+                                                const cellId = `${index}-${column}`;
+                                                const isEditing = editingCell === cellId;
+
+                                                // 格式化显示值
+                                                const displayValue = columnConfig?.render
+                                                    ? columnConfig.render(value, row, index)
+                                                    : column === 'time' && value
+                                                        ? new Date(value).toLocaleString()
+                                                        : String(value || '-');
 
                                                 return (
                                                     <td
                                                         key={column}
-                                                        className="px-4 py-2 text-sm font-mono border-r"
+                                                        data-column={column}
+                                                        data-column-index={colIndex + 1}
+                                                        className={cn(
+                                                            "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
+                                                            selectedCell === cellId && !isEditing && "table-cell-selected",
+                                                            isEditing && "table-cell-editing"
+                                                        )}
                                                         style={{
                                                             width: `${width}px`,
                                                             minWidth: `${width}px`,
                                                             maxWidth: `${width}px`
                                                         }}
-                                                        title={`${String(value || '-')}`}
-                                                        onClick={(e) => handleRowClick(index, e)}
+                                                        title={String(displayValue || '')}
                                                     >
-                                                        <div className="truncate w-full">
-                                                            {columnConfig?.render
-                                                                ? columnConfig.render(value, row, index)
-                                                                : column === 'time' && value
-                                                                    ? new Date(value).toLocaleString()
-                                                                    : String(value || '-')
-                                                            }
-                                                        </div>
+                                                        {isEditing ? (
+                                                            <input
+                                                                ref={editingInputRef}
+                                                                type="text"
+                                                                defaultValue={String(value || '')}
+                                                                onBlur={handleEditComplete}
+                                                                onKeyDown={handleEditKeyDown}
+                                                            />
+                                                        ) : (
+                                                            <div className="truncate w-full">
+                                                                {displayValue}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                 );
                                             })}
@@ -797,25 +982,39 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     borderCollapse: 'collapse'
                                                 }}
                                                 className="w-full border-collapse table-unified-scroll"
+                                                onClick={handleTableClick}
+                                                onDoubleClick={handleTableDoubleClick}
                                             />
                                         ),
 
-                                        TableRow: ({ style, ...props }) => (
-                                            <tr
-                                                {...props}
-                                                style={{
-                                                    ...style
-                                                }}
-                                                className="border-b transition-colors hover:bg-muted/50"
-                                            />
-                                        )
+                                        TableRow: ({ style, ...props }) => {
+                                            // 从props中提取行索引
+                                            const rowIndex = props['data-index'] || 0;
+                                            return (
+                                                <tr
+                                                    {...props}
+                                                    data-row-index={rowIndex}
+                                                    style={{
+                                                        ...style
+                                                    }}
+                                                    className={cn(
+                                                        "border-b transition-colors hover:bg-muted/50",
+                                                        selectedRows.has(rowIndex) && "table-row-selected"
+                                                    )}
+                                                />
+                                            );
+                                        }
                                     }}
                                 />
                             </div>
                         ) : (
                             // 传统表格
                             <div className="table-unified-scroll" ref={tableScrollRef}>
-                                <table className="w-full border-collapse">
+                                <table
+                                    className="w-full border-collapse"
+                                    onClick={handleTableClick}
+                                    onDoubleClick={handleTableDoubleClick}
+                                >
                                     {/* 表头 */}
                                     <TableHeader
                                         columnOrder={columnOrder}
@@ -838,45 +1037,72 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             return (
                                             <tr
                                                 key={row._id !== undefined ? `row_${row._id}_${actualIndex}` : `row_index_${actualIndex}`}
+                                                data-row-index={actualIndex}
                                                 className={cn(
-                                                    "border-b transition-colors hover:bg-muted/50 cursor-pointer",
-                                                    selectedRows.has(actualIndex) && "bg-primary/10 border-primary"
+                                                    "border-b transition-colors hover:bg-muted/50",
+                                                    selectedRows.has(actualIndex) && "table-row-selected"
                                                 )}
-                                                onClick={(e) => handleRowClick(actualIndex, e)}
                                             >
                                                 {/* 固定的序号列 */}
                                                 {showRowNumbers && (
-                                                    <td className="px-4 py-2 text-sm font-mono w-16 sticky">
-                                                        <div className="truncate w-full text-center text-muted-foreground">
+                                                    <td
+                                                        data-column="#"
+                                                        data-column-index="0"
+                                                        className={cn(
+                                                            "px-4 py-2 text-sm font-mono w-16 sticky text-center text-muted-foreground table-cell-selectable",
+                                                            selectedCell === `${actualIndex}-#` && "table-cell-selected"
+                                                        )}
+                                                    >
+                                                        <div className="truncate w-full">
                                                             {actualIndex + 1}
                                                         </div>
                                                     </td>
                                                 )}
                                                 {/* 数据列 */}
-                                                {columnOrder.filter(column => selectedColumns.includes(column)).map(column => {
+                                                {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
                                                     const columnConfig = columns.find(col => col.key === column);
                                                     const value = row[column];
                                                     const width = columnConfig?.width || 120;
+                                                    const cellId = `${actualIndex}-${column}`;
+                                                    const isEditing = editingCell === cellId;
+
+                                                    // 格式化显示值
+                                                    const displayValue = columnConfig?.render
+                                                        ? columnConfig.render(value, row, actualIndex)
+                                                        : column === 'time' && value
+                                                            ? new Date(value).toLocaleString()
+                                                            : String(value || '-');
 
                                                     return (
                                                         <td
                                                             key={column}
-                                                            className="px-4 py-2 text-sm font-mono border-r"
+                                                            data-column={column}
+                                                            data-column-index={colIndex + 1}
+                                                            className={cn(
+                                                                "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
+                                                                selectedCell === cellId && !isEditing && "table-cell-selected",
+                                                                isEditing && "table-cell-editing"
+                                                            )}
                                                             style={{
                                                                 width: `${width}px`,
                                                                 minWidth: `${width}px`,
                                                                 maxWidth: `${width}px`
                                                             }}
-                                                            title={`${String(value || '-')}`}
+                                                            title={String(displayValue || '')}
                                                         >
-                                                            <div className="truncate w-full">
-                                                                {columnConfig?.render
-                                                                    ? columnConfig.render(value, row, actualIndex)
-                                                                    : column === 'time' && value
-                                                                        ? new Date(value).toLocaleString()
-                                                                        : String(value || '-')
-                                                                }
-                                                            </div>
+                                                            {isEditing ? (
+                                                                <input
+                                                                    ref={editingInputRef}
+                                                                    type="text"
+                                                                    defaultValue={String(value || '')}
+                                                                    onBlur={handleEditComplete}
+                                                                    onKeyDown={handleEditKeyDown}
+                                                                />
+                                                            ) : (
+                                                                <div className="truncate w-full">
+                                                                    {displayValue}
+                                                                </div>
+                                                            )}
                                                         </td>
                                                     );
                                                 })}
