@@ -80,7 +80,7 @@ export interface SortConfig {
 export interface FilterConfig {
     column: string;
     value: string;
-    operator: 'contains' | 'equals' | 'startsWith' | 'endsWith';
+    operator: 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'in';
 }
 
 // 组件属性
@@ -114,6 +114,194 @@ export interface UnifiedDataTableProps {
     maxHeight?: number; // 表格最大高度，默认600px
 }
 
+// Excel风格筛选组件
+interface ExcelStyleFilterProps {
+    column: string;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    searchText: string;
+    onSearchChange: (text: string) => void;
+    onApplyFilter: (selectedValues: string[]) => void;
+    loadColumnUniqueValues: (column: string) => Promise<{ value: string; count: number }[]>;
+    getFilteredUniqueValues: (uniqueValues: { value: string; count: number }[], searchText: string) => { value: string; count: number }[];
+    isLoading: boolean;
+}
+
+const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
+    column,
+    isOpen,
+    onOpenChange,
+    searchText,
+    onSearchChange,
+    onApplyFilter,
+    loadColumnUniqueValues,
+    getFilteredUniqueValues,
+    isLoading
+}) => {
+    const [selectedValues, setSelectedValues] = useState<Set<string>>(new Set());
+    const [uniqueValues, setUniqueValues] = useState<{ value: string; count: number }[]>([]);
+    const [filteredValues, setFilteredValues] = useState<{ value: string; count: number }[]>([]);
+
+    // 当菜单打开时，懒加载唯一值
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedValues(new Set()); // 默认不选中任何值
+
+            // 懒加载唯一值
+            loadColumnUniqueValues(column).then(values => {
+                setUniqueValues(values);
+                setFilteredValues(getFilteredUniqueValues(values, searchText));
+            });
+        }
+    }, [isOpen, column, loadColumnUniqueValues, getFilteredUniqueValues, searchText]);
+
+    // 当搜索文本变化时，更新过滤结果
+    useEffect(() => {
+        if (uniqueValues.length > 0) {
+            setFilteredValues(getFilteredUniqueValues(uniqueValues, searchText));
+        }
+    }, [searchText, uniqueValues, getFilteredUniqueValues]);
+
+    // 处理全选/取消全选
+    const handleSelectAll = useCallback((checked: boolean) => {
+        if (checked) {
+            const allValues = new Set(filteredValues.map(item => item.value));
+            setSelectedValues(allValues);
+            // 立即应用筛选
+            onApplyFilter(Array.from(allValues));
+        } else {
+            setSelectedValues(new Set());
+            // 立即清除筛选
+            onApplyFilter([]);
+        }
+    }, [filteredValues, onApplyFilter]);
+
+    // 处理单个值的选择 - 立即筛选
+    const handleValueToggle = useCallback((value: string) => {
+        const newSelected = new Set(selectedValues);
+        if (newSelected.has(value)) {
+            newSelected.delete(value);
+        } else {
+            newSelected.add(value);
+        }
+        setSelectedValues(newSelected);
+
+        // 立即应用筛选
+        onApplyFilter(Array.from(newSelected));
+        console.log('🔧 [ExcelStyleFilter] 值切换:', { column, value, selected: !selectedValues.has(value), totalSelected: newSelected.size });
+    }, [selectedValues, onApplyFilter, column]);
+
+    return (
+        <DropdownMenu
+            open={isOpen}
+            onOpenChange={(open) => {
+                if (!open) {
+                    // 点击外部关闭时清空搜索
+                    onSearchChange('');
+                }
+                onOpenChange(open);
+            }}
+        >
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0"
+                    title="筛选"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <Filter className="h-3 w-3" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="start"
+                className="w-96 p-0"
+                onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+                <div className="p-3 border-b">
+                    {/* 搜索框 */}
+                    <Input
+                        placeholder={`搜索 ${column}...`}
+                        value={searchText}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="h-8"
+                        onClick={(e) => e.stopPropagation()}
+                        onFocus={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                    />
+                </div>
+
+                {/* 表格样式的筛选界面 */}
+                <div className="max-h-80 overflow-hidden">
+                    {isLoading ? (
+                        /* 加载状态 */
+                        <div className="flex items-center justify-center py-8">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                正在加载数据...
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* 表头 */}
+                            <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
+                                <div className="col-span-2 flex items-center">
+                                    <Checkbox
+                                        checked={selectedValues.size === filteredValues.length && filteredValues.length > 0}
+                                        onCheckedChange={handleSelectAll}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <span className="ml-1">全选</span>
+                                </div>
+                                <div className="col-span-8">值</div>
+                                <div className="col-span-2 text-right">计数</div>
+                            </div>
+
+                            {/* 数据行 */}
+                            <div className="max-h-64 overflow-y-auto">
+                                {filteredValues.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground text-center py-8">
+                                        {searchText ? '没有找到匹配的值' : '没有数据'}
+                                    </div>
+                                ) : (
+                                    filteredValues.map(({ value, count }) => (
+                                        <div
+                                            key={value}
+                                            className="grid grid-cols-12 gap-2 p-2 hover:bg-muted/50 cursor-pointer border-b border-muted/30"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleValueToggle(value);
+                                            }}
+                                        >
+                                            <div className="col-span-2 flex items-center">
+                                                <Checkbox
+                                                    checked={selectedValues.has(value)}
+                                                    onCheckedChange={() => {}} // 由父级div的onClick处理
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            </div>
+                                            <div className="col-span-8 flex items-center">
+                                                <span className="text-sm truncate" title={value}>
+                                                    {value || '(空值)'}
+                                                </span>
+                                            </div>
+                                            <div className="col-span-2 flex items-center justify-end">
+                                                <span className="text-xs text-muted-foreground">
+                                                    {count}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+};
+
 // 表头组件
 interface TableHeaderProps {
     columnOrder: string[];
@@ -124,9 +312,18 @@ interface TableHeaderProps {
     totalRowsCount: number;
     showRowNumbers: boolean;
     onSort: (column: string) => void;
-    onAddFilter: (column: string) => void;
+    onAddFilter: (column: string, value: string) => void;
     onSelectAll: () => void;
     onCopySelectedRows: (format: 'text' | 'json' | 'csv') => void;
+    onColumnSelect: (column: string) => void; // 新增：点击表头选中整列
+    // Excel风格筛选相关
+    filterMenuOpen: string | null;
+    filterSearchText: string;
+    onFilterMenuOpenChange: (column: string | null) => void;
+    onFilterSearchChange: (text: string) => void;
+    loadColumnUniqueValues: (column: string) => Promise<{ value: string; count: number }[]>;
+    getFilteredUniqueValues: (uniqueValues: { value: string; count: number }[], searchText: string) => { value: string; count: number }[];
+    isLoadingColumn: string | null;
     virtualMode?: boolean; // 虚拟化模式，为true时只返回tr内容
 }
 
@@ -142,6 +339,15 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
     onAddFilter,
     onSelectAll,
     onCopySelectedRows,
+    onColumnSelect,
+    // Excel风格筛选相关
+    filterMenuOpen,
+    filterSearchText,
+    onFilterMenuOpenChange,
+    onFilterSearchChange,
+    loadColumnUniqueValues,
+    getFilteredUniqueValues,
+    isLoadingColumn,
     virtualMode = false
 }) => {
     const visibleColumns = useMemo(() =>
@@ -189,42 +395,90 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                             key={column}
                             className={cn(
                                 'px-3 py-2 text-left align-middle font-medium whitespace-nowrap border-r border-b-2',
-                                'text-xs text-muted-foreground bg-muted cursor-pointer hover:bg-muted/80'
+                                'text-xs text-muted-foreground bg-muted hover:bg-muted/80 group'
                             )}
                             style={{ minWidth }}
-                            onClick={() => onSort(column)}
                         >
                             <div className="flex items-center gap-1 whitespace-nowrap">
-                                <span className="truncate" title={column}>
+                                {/* 列名 - 点击选中整列 */}
+                                <span
+                                    className="truncate cursor-pointer flex-1"
+                                    title={`点击选中整列: ${column}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onColumnSelect(column);
+                                    }}
+                                >
                                     {column}
                                 </span>
+
+                                {/* 时间列标识 */}
                                 {column === 'time' && (
                                     <Badge variant="secondary" className="text-xs">
                                         时间
                                     </Badge>
                                 )}
-                                {sortColumn === column && (
-                                    <span className="text-xs">
-                                        {sortDirection === 'asc' ? '↑' : '↓'}
-                                    </span>
-                                )}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-4 w-4 p-0 ml-auto opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Filter className="h-3 w-3" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start">
-                                        <DropdownMenuItem onClick={() => onAddFilter(column)}>
-                                            <Filter className="w-4 h-4 mr-2" />
-                                            添加过滤器
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+
+                                {/* 排序按钮 */}
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {/* 排序切换按钮 */}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={cn(
+                                            "h-5 w-5 p-0",
+                                            sortColumn === column && "bg-blue-100 text-blue-600"
+                                        )}
+                                        title={
+                                            sortColumn === column
+                                                ? `当前${sortDirection === 'asc' ? '升序' : '降序'}，点击切换`
+                                                : '点击排序'
+                                        }
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onSort(column);
+                                        }}
+                                    >
+                                        {sortColumn === column ? (
+                                            sortDirection === 'asc' ? (
+                                                <ChevronUp className="h-3 w-3" />
+                                            ) : (
+                                                <ChevronDown className="h-3 w-3" />
+                                            )
+                                        ) : (
+                                            <ChevronUp className="h-3 w-3 opacity-50" />
+                                        )}
+                                    </Button>
+
+                                    {/* Excel风格筛选按钮 */}
+                                    <ExcelStyleFilter
+                                        column={column}
+                                        isOpen={filterMenuOpen === column}
+                                        onOpenChange={(open) => {
+                                            onFilterMenuOpenChange(open ? column : null);
+                                            if (!open) {
+                                                onFilterSearchChange('');
+                                            }
+                                        }}
+                                        searchText={filterSearchText}
+                                        onSearchChange={onFilterSearchChange}
+                                        loadColumnUniqueValues={loadColumnUniqueValues}
+                                        getFilteredUniqueValues={getFilteredUniqueValues}
+                                        isLoading={isLoadingColumn === column}
+                                        onApplyFilter={(selectedValues) => {
+                                            console.log('🔧 [UnifiedDataTable] 应用Excel筛选:', { column, selectedValues });
+                                            // 立即应用筛选，不关闭弹框
+                                            if (selectedValues.length === 0) {
+                                                onAddFilter(column, ''); // 清除筛选
+                                            } else {
+                                                // 将选中的值转换为筛选条件
+                                                const filterValue = selectedValues.join('|'); // 使用|分隔多个值
+                                                onAddFilter(column, filterValue);
+                                            }
+                                            // 不关闭弹框，允许继续筛选
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </th>
                     );
@@ -377,6 +631,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // 自动滚动相关
     const autoScrollTimerRef = useRef<NodeJS.Timeout | null>(null);
     const tableContainerRef = useRef<HTMLDivElement>(null);
+
+    // Excel风格筛选相关状态
+    const [filterMenuOpen, setFilterMenuOpen] = useState<string | null>(null); // 当前打开筛选菜单的列
+    const [filterSearchText, setFilterSearchText] = useState<string>(''); // 筛选搜索文本
+    const [columnUniqueValues, setColumnUniqueValues] = useState<Map<string, { value: string; count: number }[]>>(new Map()); // 缓存列的唯一值
+    const [loadingColumn, setLoadingColumn] = useState<string | null>(null); // 正在加载唯一值的列
 
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -829,6 +1089,133 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         };
     }, [selectedRows, selectedCell, selectedCellRange, editingCell, copySelectedRowsData, copySelectedCellsData, data]);
 
+    // 列选择处理函数
+    const handleColumnSelect = useCallback((column: string) => {
+        console.log('🔧 [UnifiedDataTable] 选中整列:', { column });
+
+        // 清除其他选择状态
+        setSelectedRows(new Set());
+        setSelectedCell(null);
+        setLastSelectedRow(null);
+
+        // 选中该列的所有单元格
+        const columnCells = new Set<string>();
+        for (let i = 0; i < data.length; i++) {
+            columnCells.add(`${i}-${column}`);
+        }
+        setSelectedCellRange(columnCells);
+
+        console.log('🔧 [UnifiedDataTable] 整列选择完成:', { column, cellCount: columnCells.size });
+    }, [data]);
+
+    // 高性能懒加载：只在需要时计算列的唯一值
+    const loadColumnUniqueValues = useCallback(async (column: string) => {
+        // 如果已经缓存了，直接返回
+        if (columnUniqueValues.has(column)) {
+            return columnUniqueValues.get(column)!;
+        }
+
+        // 如果正在加载，等待完成
+        if (loadingColumn === column) {
+            return [];
+        }
+
+        console.log('🔧 [UnifiedDataTable] 开始计算列唯一值:', { column, dataLength: data.length });
+        const startTime = performance.now();
+
+        setLoadingColumn(column);
+
+        // 使用Promise.resolve()让出主线程，避免阻塞UI
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        try {
+            const valueMap = new Map<string, number>();
+
+            // 批量处理数据，避免长时间阻塞
+            const batchSize = 1000;
+            for (let i = 0; i < data.length; i += batchSize) {
+                const batch = data.slice(i, i + batchSize);
+
+                batch.forEach(row => {
+                    const value = row[column];
+                    // 格式化显示值
+                    const displayValue = column === 'time' && value
+                        ? new Date(value).toLocaleString()
+                        : String(value || '');
+
+                    valueMap.set(displayValue, (valueMap.get(displayValue) || 0) + 1);
+                });
+
+                // 每处理一批数据后让出主线程
+                if (i + batchSize < data.length) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+
+            // 转换为数组并排序
+            const uniqueValues = Array.from(valueMap.entries())
+                .map(([value, count]) => ({ value, count }))
+                .sort((a, b) => {
+                    // 空值排在最后
+                    if (a.value === '' && b.value !== '') return 1;
+                    if (a.value !== '' && b.value === '') return -1;
+                    // 其他按字母顺序排序
+                    return a.value.localeCompare(b.value);
+                });
+
+            // 缓存结果
+            setColumnUniqueValues(prev => new Map(prev).set(column, uniqueValues));
+
+            const endTime = performance.now();
+            console.log('🔧 [UnifiedDataTable] 列唯一值计算完成:', {
+                column,
+                uniqueCount: uniqueValues.length,
+                dataLength: data.length,
+                duration: `${(endTime - startTime).toFixed(2)}ms`
+            });
+
+            return uniqueValues;
+        } finally {
+            setLoadingColumn(null);
+        }
+    }, [data, columnUniqueValues, loadingColumn]);
+
+    // 清除缓存：当数据变化时清除缓存
+    useEffect(() => {
+        setColumnUniqueValues(new Map());
+        console.log('🔧 [UnifiedDataTable] 数据变化，清除唯一值缓存');
+    }, [data]);
+
+    // 筛选搜索：根据搜索文本过滤唯一值
+    const getFilteredUniqueValues = useCallback((uniqueValues: { value: string; count: number }[], searchText: string) => {
+        if (!searchText.trim()) {
+            return uniqueValues;
+        }
+
+        const filtered = uniqueValues.filter(({ value }) =>
+            value.toLowerCase().includes(searchText.toLowerCase())
+        );
+
+        console.log('🔧 [UnifiedDataTable] 筛选搜索结果:', {
+            searchText,
+            totalCount: uniqueValues.length,
+            filteredCount: filtered.length
+        });
+
+        return filtered;
+    }, []);
+
+    // 筛选菜单状态处理
+    const handleFilterMenuOpenChange = useCallback((column: string | null) => {
+        setFilterMenuOpen(column);
+        console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化:', { column });
+    }, []);
+
+    const handleFilterSearchChange = useCallback((text: string) => {
+        setFilterSearchText(text);
+        console.log('🔧 [UnifiedDataTable] 筛选搜索文本变化:', { text });
+    }, []);
+
     // 全局鼠标事件监听 - 处理表格外的鼠标释放
     useEffect(() => {
         const handleGlobalMouseUp = () => {
@@ -919,12 +1306,73 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     }, [onExport]);
 
     // 处理添加过滤器
-    const handleAddFilter = useCallback((column: string) => {
-        // 这里可以添加过滤器逻辑
-        console.log('Add filter for column:', column);
+    const handleAddFilter = useCallback((column: string, value: string) => {
+        console.log('🔧 [UnifiedDataTable] 添加筛选:', { column, value });
+
+        if (!value || value.trim() === '') {
+            // 清除筛选
+            setFilters(prev => prev.filter(f => f.column !== column));
+            console.log('🔧 [UnifiedDataTable] 清除筛选:', { column });
+        } else {
+            // 添加或更新筛选
+            const filterValues = value.split('|').filter(v => v.trim() !== '');
+            setFilters(prev => {
+                const newFilters = prev.filter(f => f.column !== column);
+                newFilters.push({
+                    column,
+                    value: filterValues.join('|'),
+                    operator: 'in' // 使用in操作符支持多值筛选
+                });
+                return newFilters;
+            });
+            console.log('🔧 [UnifiedDataTable] 应用筛选:', { column, filterValues });
+        }
     }, []);
 
-    // 判断是否启用虚拟化
+    // 数据筛选处理
+    const filteredData = useMemo(() => {
+        if (filters.length === 0) {
+            return data;
+        }
+
+        console.log('🔧 [UnifiedDataTable] 开始数据筛选:', {
+            totalRows: data.length,
+            filterCount: filters.length,
+            filters: filters.map(f => ({ column: f.column, operator: f.operator, valueCount: f.value.split('|').length }))
+        });
+
+        const startTime = performance.now();
+
+        const filtered = data.filter(row => {
+            return filters.every(filter => {
+                const cellValue = row[filter.column];
+                const displayValue = filter.column === 'time' && cellValue
+                    ? new Date(cellValue).toLocaleString()
+                    : String(cellValue || '');
+
+                if (filter.operator === 'in') {
+                    // 多值筛选：检查单元格值是否在筛选值列表中
+                    const filterValues = filter.value.split('|');
+                    const matches = filterValues.includes(displayValue);
+                    return matches;
+                } else {
+                    // 默认包含筛选
+                    return displayValue.toLowerCase().includes(filter.value.toLowerCase());
+                }
+            });
+        });
+
+        const endTime = performance.now();
+        console.log('🔧 [UnifiedDataTable] 数据筛选完成:', {
+            originalRows: data.length,
+            filteredRows: filtered.length,
+            duration: `${(endTime - startTime).toFixed(2)}ms`
+        });
+
+        return filtered;
+    }, [data, filters]);
+
+    // 判断是否启用虚拟化 - 使用筛选后的数据量
     const shouldUseVirtualization = useMemo(() => {
         if (virtualized !== undefined) {
             return virtualized; // 如果明确指定，使用指定值
@@ -932,26 +1380,26 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
         // 自动判断：数据量大于1000条时始终启用虚拟化
         // 无论分页选择什么选项，都保持虚拟化以确保最佳用户体验
-        return data.length > 1000;
-    }, [virtualized, data.length]);
+        return filteredData.length > 1000;
+    }, [virtualized, filteredData.length]);
 
-    // 计算分页数据
+    // 计算分页数据 - 使用筛选后的数据
     const paginatedData = useMemo(() => {
         if (!pagination) {
-            return data; // 如果没有分页配置，返回所有数据
+            return filteredData; // 如果没有分页配置，返回所有筛选后的数据
         }
 
         // 如果启用虚拟化，根据分页选项决定显示的数据
         if (shouldUseVirtualization) {
             // 如果选择了"全部"或pageSize大于等于数据总量，显示所有数据
-            if (pageSize === -1 || pageSize >= data.length) {
-                return data;
+            if (pageSize === -1 || pageSize >= filteredData.length) {
+                return filteredData;
             }
 
             // 否则进行客户端分页，虚拟化会处理可见区域的渲染
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
-            return data.slice(startIndex, endIndex);
+            return filteredData.slice(startIndex, endIndex);
         }
 
         // 传统模式的分页处理
@@ -959,12 +1407,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         const endIndex = startIndex + pageSize;
 
         // 如果pageSize大于等于总数据量，返回所有数据
-        if (pageSize >= data.length) {
-            return data;
+        if (pageSize >= filteredData.length) {
+            return filteredData;
         }
 
-        return data.slice(startIndex, endIndex);
-    }, [data, currentPage, pageSize, pagination, shouldUseVirtualization]);
+        return filteredData.slice(startIndex, endIndex);
+    }, [filteredData, currentPage, pageSize, pagination, shouldUseVirtualization]);
 
 
 
@@ -1130,62 +1578,37 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        shouldUseVirtualization ? (
-                            // 虚拟化表格 - 使用flex-1自适应高度
-                            <div
-                                className="flex-1 min-h-0 virtualized-table"
-                                ref={tableContainerRef}
-                            >
+                        // 统一使用虚拟化表格 - 使用flex-1自适应高度
+                        <div
+                            className="flex-1 min-h-0 virtualized-table"
+                            ref={tableContainerRef}
+                        >
                                 <TableVirtuoso
                                     data={paginatedData}
                                     fixedHeaderContent={() => (
-                                        <tr>
-                                            {/* 序号列表头 */}
-                                            {showRowNumbers && (() => {
-                                                return (
-                                                <th className="px-4 py-2 text-left align-middle font-medium text-sm text-muted-foreground bg-muted border-b-2 border-r w-16 virtualized-sticky-header">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-xs">#</span>
-                                                        <Badge variant="outline" className="text-xs">序号</Badge>
-                                                    </div>
-                                                </th>
-                                                );
-                                            })()}
-
-                                            {/* 数据列表头 */}
-                                            {(() => {
-                                                const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
-                                                return visibleColumns;
-                                            })().map((column) => {
-                                                const getColumnMinWidth = (col: string) => {
-                                                    if (col === 'time') return '180px';
-                                                    const colLength = col.length;
-                                                    return `${Math.max(120, colLength * 12)}px`;
-                                                };
-                                                const minWidth = getColumnMinWidth(column);
-
-                                                return (
-                                                    <th
-                                                        key={column}
-                                                        className="px-4 py-2 text-left align-middle font-medium text-sm text-muted-foreground bg-muted border-b-2 border-r cursor-pointer hover:bg-muted/80"
-                                                        style={{ minWidth }}
-                                                        onClick={() => handleSort(column)}
-                                                    >
-                                                        <div className="flex items-center gap-1 whitespace-nowrap">
-                                                            <span className="truncate" title={column}>{column}</span>
-                                                            {column === 'time' && (
-                                                                <Badge variant="secondary" className="text-xs">时间</Badge>
-                                                            )}
-                                                            {sortConfig?.column === column && (
-                                                                <span className="text-xs">
-                                                                    {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </th>
-                                                );
-                                            })}
-                                        </tr>
+                                        <TableHeader
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            sortColumn={sortConfig?.column || ''}
+                                            sortDirection={sortConfig?.direction || 'asc'}
+                                            selectedRowsCount={selectedRows.size}
+                                            totalRowsCount={filteredData.length}
+                                            showRowNumbers={showRowNumbers}
+                                            onSort={handleSort}
+                                            onAddFilter={handleAddFilter}
+                                            onSelectAll={handleSelectAll}
+                                            onCopySelectedRows={handleCopySelectedRows}
+                                            onColumnSelect={handleColumnSelect}
+                                            // Excel风格筛选相关
+                                            filterMenuOpen={filterMenuOpen}
+                                            filterSearchText={filterSearchText}
+                                            onFilterMenuOpenChange={handleFilterMenuOpenChange}
+                                            onFilterSearchChange={handleFilterSearchChange}
+                                            loadColumnUniqueValues={loadColumnUniqueValues}
+                                            getFilteredUniqueValues={getFilteredUniqueValues}
+                                            isLoadingColumn={loadingColumn}
+                                            virtualMode={true}
+                                        />
                                     )}
                                     itemContent={(index, row) => (
                                         <>
@@ -1305,130 +1728,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     }}
                                 />
                             </div>
-                        ) : (
-                            // 传统表格
-                            <div
-                                className="table-unified-scroll"
-                                ref={(el) => {
-                                    if (tableScrollRef.current !== el) {
-                                        (tableScrollRef as any).current = el;
-                                    }
-                                    if (tableContainerRef.current !== el) {
-                                        (tableContainerRef as any).current = el;
-                                    }
-                                }}
-                            >
-                                <table
-                                    className={cn(
-                                        "w-full border-collapse",
-                                        isSelecting && "table-selecting"
-                                    )}
-                                    onMouseDown={handleTableMouseDown}
-                                    onMouseMove={handleTableMouseMove}
-                                    onMouseUp={handleTableMouseUp}
-                                    onClick={handleTableClick}
-                                    onDoubleClick={handleTableDoubleClick}
-                                >
-                                    {/* 表头 */}
-                                    <TableHeader
-                                        columnOrder={columnOrder}
-                                        selectedColumns={selectedColumns}
-                                        sortColumn={sortConfig?.column || ''}
-                                        sortDirection={sortConfig?.direction || 'asc'}
-                                        selectedRowsCount={selectedRows.size}
-                                        totalRowsCount={data.length}
-                                        showRowNumbers={showRowNumbers}
-                                        onSort={handleSort}
-                                        onAddFilter={handleAddFilter}
-                                        onSelectAll={handleSelectAll}
-                                        onCopySelectedRows={handleCopySelectedRows}
-                                    />
-                                    {/* 表格内容 */}
-                                    <tbody>
-                                        {paginatedData.map((row, dataIndex) => {
-                                            // 计算实际的行索引（考虑分页）
-                                            const actualIndex = pagination ? (currentPage - 1) * pageSize + dataIndex : dataIndex;
-                                            return (
-                                            <tr
-                                                key={row._id !== undefined ? `row_${row._id}_${actualIndex}` : `row_index_${actualIndex}`}
-                                                data-row-index={actualIndex}
-                                                className={cn(
-                                                    "border-b transition-colors hover:bg-muted/50",
-                                                    selectedRows.has(actualIndex) && "table-row-selected"
-                                                )}
-                                            >
-                                                {/* 固定的序号列 */}
-                                                {showRowNumbers && (
-                                                    <td
-                                                        data-column="#"
-                                                        data-column-index="0"
-                                                        className={cn(
-                                                            "px-4 py-2 text-sm font-mono w-16 sticky text-center text-muted-foreground table-cell-selectable",
-                                                            selectedCell === `${actualIndex}-#` && "table-cell-selected"
-                                                        )}
-                                                    >
-                                                        <div className="truncate w-full">
-                                                            {actualIndex + 1}
-                                                        </div>
-                                                    </td>
-                                                )}
-                                                {/* 数据列 */}
-                                                {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
-                                                    const columnConfig = columns.find(col => col.key === column);
-                                                    const value = row[column];
-                                                    const width = columnConfig?.width || 120;
-                                                    const cellId = `${actualIndex}-${column}`;
-                                                    const isEditing = editingCell === cellId;
 
-                                                    // 格式化显示值
-                                                    const displayValue = columnConfig?.render
-                                                        ? columnConfig.render(value, row, actualIndex)
-                                                        : column === 'time' && value
-                                                            ? new Date(value).toLocaleString()
-                                                            : String(value || '-');
-
-                                                    return (
-                                                        <td
-                                                            key={column}
-                                                            data-column={column}
-                                                            data-column-index={colIndex + 1}
-                                                            className={cn(
-                                                                "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
-                                                                selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
-                                                                selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
-                                                                isEditing && "table-cell-editing"
-                                                            )}
-                                                            style={{
-                                                                width: `${width}px`,
-                                                                minWidth: `${width}px`,
-                                                                maxWidth: `${width}px`
-                                                            }}
-                                                            title={String(displayValue || '')}
-                                                        >
-                                                            {/* 暂时注释掉编辑功能以提升性能 */}
-                                                            {/* {isEditing ? (
-                                                                <input
-                                                                    ref={editingInputRef}
-                                                                    type="text"
-                                                                    defaultValue={String(value || '')}
-                                                                    onBlur={handleEditComplete}
-                                                                    onKeyDown={handleEditKeyDown}
-                                                                />
-                                                            ) : ( */}
-                                                                <div className="truncate w-full">
-                                                                    {displayValue}
-                                                                </div>
-                                                            {/* )} */}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )
                     ) : (
                         <div className="flex items-center justify-center h-32 text-muted-foreground">
                             <Database className="w-8 h-8 mr-2" />
