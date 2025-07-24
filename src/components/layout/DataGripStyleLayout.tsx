@@ -18,6 +18,8 @@ import DatabaseExplorer from './DatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditorRefactored, { TabEditorRef } from './TabEditorRefactored';
 import EnhancedResultPanel from './EnhancedResultPanel';
+import RightFunctionBar, { type FunctionType } from './RightFunctionBar';
+import RightFunctionPanel from './RightFunctionPanel';
 
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -107,6 +109,18 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
   const [bottomPanelSize, setBottomPanelSize] = useState(() => {
     return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
   });
+  const [rightPanelSize, setRightPanelSize] = useState(() => {
+    return preferences?.workspace.panel_positions?.['right-panel'] || 30;
+  });
+
+  // 右侧功能面板状态
+  const [selectedFunction, setSelectedFunction] = useState<FunctionType | null>(null);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState<boolean>(() => {
+    return (
+      preferences?.workspace.panel_sizes?.['right-panel-collapsed'] === 1 ||
+      true // 默认折叠
+    );
+  });
 
   // 拖拽状态跟踪
   const [isResizing, setIsResizing] = useState(false);
@@ -120,12 +134,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       ...preferences.workspace.panel_sizes,
       'left-panel-collapsed': leftPanelCollapsed ? 1 : 0,
       'bottom-panel-collapsed': bottomPanelCollapsed ? 1 : 0,
+      'right-panel-collapsed': rightPanelCollapsed ? 1 : 0,
     };
 
     const currentPanelPositions = {
       ...preferences.workspace.panel_positions,
       'left-panel': leftPanelSize,
       'bottom-panel': bottomPanelSize,
+      'right-panel': rightPanelSize,
     };
 
     const updatedWorkspace = {
@@ -140,9 +156,11 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     preferences,
     leftPanelCollapsed,
     bottomPanelCollapsed,
+    rightPanelCollapsed,
     currentView,
     leftPanelSize,
     bottomPanelSize,
+    rightPanelSize,
     updateWorkspaceSettings,
   ]);
 
@@ -167,6 +185,22 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }, 1000);
   }, []);
 
+  const handleRightPanelResize = useCallback((size: number) => {
+    setRightPanelSize(size);
+    setIsResizing(true);
+
+    // 清除之前的定时器
+    if (resizeTimerRef.current) {
+      clearTimeout(resizeTimerRef.current);
+    }
+
+    // 设置新的定时器，延迟保存设置
+    resizeTimerRef.current = setTimeout(() => {
+      setIsResizing(false);
+      saveWorkspaceSettingsRef.current();
+    }, 1000);
+  }, []);
+
   const handleBottomPanelResize = useCallback((size: number) => {
     setBottomPanelSize(size);
     setIsResizing(true);
@@ -181,6 +215,29 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
       setIsResizing(false);
       saveWorkspaceSettingsRef.current();
     }, 1000);
+  }, []);
+
+
+
+  // 右侧功能面板处理函数
+  const handleFunctionSelect = useCallback((functionType: FunctionType | null) => {
+    setSelectedFunction(functionType);
+    setRightPanelCollapsed(functionType === null);
+
+    // 立即保存状态
+    setTimeout(() => {
+      saveWorkspaceSettingsRef.current();
+    }, 100);
+  }, []);
+
+  const handleRightPanelClose = useCallback(() => {
+    setSelectedFunction(null);
+    setRightPanelCollapsed(true);
+
+    // 立即保存状态
+    setTimeout(() => {
+      saveWorkspaceSettingsRef.current();
+    }, 100);
   }, []);
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -493,155 +550,88 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     [currentView, navigate, location.pathname, preferences?.workspace, updateWorkspaceSettings]
   );
 
-  // 根据当前视图渲染主要内容 - 使用 useMemo 优化性能
+  // 中间栏始终显示查询面板内容
   const mainContent = useMemo(() => {
-    switch (currentView) {
-      case 'datasource':
-        return (
-          <div className='h-full'>
-            <div className='p-0 h-full'>
-              <ConnectionsPage />
-            </div>
-          </div>
-        );
-      case 'database':
-        return (
-          <div className='h-full flex flex-col'>
-            <div className='flex-1 overflow-hidden p-0'>
-              <div className='h-full overflow-y-auto p-4'>
-                <DatabasePage />
-              </div>
-            </div>
-          </div>
-        );
-      case 'visualization':
-        return (
-          <div className='h-full flex flex-col'>
-            <div className='flex-1 overflow-hidden p-0'>
-              <div className='h-full overflow-y-auto p-4'>
-                <VisualizationPage />
-              </div>
-            </div>
-          </div>
-        );
-      case 'performance':
-        return (
-          <div className='h-full flex flex-col'>
-            <div className='flex-1 overflow-hidden p-0'>
-              <div className='h-full overflow-y-auto p-4'>
-                <PerformancePage />
-              </div>
-            </div>
-          </div>
-        );
-      case 'dev-tools':
-        return (
-          <div className='h-full'>
-            <div className='p-0 h-full'>
-              <DevTools />
-            </div>
-          </div>
-        );
-      case 'extensions':
-        return (
-          <div className='h-full'>
-            <div className='p-0 h-full'>
-              <Extensions />
-            </div>
-          </div>
-        );
-      case 'query-history':
-        return (
-          <div className='h-full'>
-            <div className='p-0 h-full'>
-              <QueryHistoryPage />
-            </div>
-          </div>
-        );
-      case 'query':
-      default:
-        return (
-          <div className='h-full'>
-            {/* 查询历史模态框 */}
-            <QueryHistory
-              visible={showQueryHistory}
-              onClose={() => setShowQueryHistory(false)}
-              onQuerySelect={(query, database) => {
-                // 执行选中的查询
-                if (tabEditorRef.current?.executeQueryWithContent) {
-                  tabEditorRef.current.executeQueryWithContent(query, database || '');
+    return (
+      <div className='h-full'>
+        {/* 查询历史模态框 */}
+        <QueryHistory
+          visible={showQueryHistory}
+          onClose={() => setShowQueryHistory(false)}
+          onQuerySelect={(query, database) => {
+            // 执行选中的查询
+            if (tabEditorRef.current?.executeQueryWithContent) {
+              tabEditorRef.current.executeQueryWithContent(query, database || '');
+            }
+            setShowQueryHistory(false);
+          }}
+        />
+
+        <ResizablePanelGroup direction='vertical'>
+          {/* 上半部分：编辑器 */}
+          <ResizablePanel
+            defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
+            minSize={30}
+            className='bg-background overflow-hidden'
+          >
+            <TabEditorRefactored
+              key="main-tab-editor-stable" // 使用更稳定的 key 防止重新挂载
+              onQueryResult={setQueryResult}
+              onBatchQueryResults={(results, queries, executionTime) => {
+                setQueryResults(results);
+                setExecutedQueries(queries);
+                setExecutionTime(executionTime);
+                // 如果只有一个结果，也设置 queryResult 以保持兼容性
+                if (results.length === 1) {
+                  setQueryResult(results[0]);
                 }
-                setShowQueryHistory(false);
               }}
+              onActiveTabTypeChange={setActiveTabType}
+              expandedDatabases={expandedDatabases}
+              currentTimeRange={currentTimeRange}
+              ref={tabEditorRef}
             />
+          </ResizablePanel>
 
-            <ResizablePanelGroup direction='vertical'>
-              {/* 上半部分：编辑器 */}
-              <ResizablePanel
-                defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
-                minSize={30}
-                className='bg-background overflow-hidden'
-              >
-                <TabEditorRefactored
-                  key="main-tab-editor-stable" // 使用更稳定的 key 防止重新挂载
-                  onQueryResult={setQueryResult}
-                  onBatchQueryResults={(results, queries, executionTime) => {
-                    setQueryResults(results);
-                    setExecutedQueries(queries);
-                    setExecutionTime(executionTime);
-                    // 如果只有一个结果，也设置 queryResult 以保持兼容性
-                    if (results.length === 1) {
-                      setQueryResult(results[0]);
-                    }
-                  }}
-                  onActiveTabTypeChange={setActiveTabType}
-                  expandedDatabases={expandedDatabases}
-                  currentTimeRange={currentTimeRange}
-                  ref={tabEditorRef}
-                />
-              </ResizablePanel>
+          {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
+          {!bottomPanelCollapsed && activeTabType === 'query' && (
+            <>
+              <ResizableHandle
+                withHandle
+                className='h-2 bg-border hover:bg-border/80'
+              />
 
-            {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
-            {!bottomPanelCollapsed && activeTabType === 'query' && (
-              <>
-                <ResizableHandle
-                  withHandle
-                  className='h-2 bg-border hover:bg-border/80'
-                />
-
-                {/* 只有在有查询结果时才显示结果面板 */}
-                {(queryResult || (queryResults && queryResults.length > 0)) && (
-                  <ResizablePanel
-                    defaultSize={bottomPanelSize}
-                    minSize={25}
-                    maxSize={70}
-                    onResize={handleBottomPanelResize}
-                  >
-                    <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
-                      <EnhancedResultPanel
-                        collapsed={bottomPanelCollapsed}
-                        queryResult={queryResult}
-                        queryResults={queryResults}
-                        executedQueries={executedQueries}
-                        executionTime={executionTime}
-                        onClearResult={() => {
-                          setQueryResult(null);
-                          setQueryResults([]);
-                          setExecutedQueries([]);
-                          setExecutionTime(0);
-                        }}
-                      />
-                    </div>
-                  </ResizablePanel>
-                )}
-              </>
-            )}
-          </ResizablePanelGroup>
-          </div>
-        );
-    }
+              {/* 只有在有查询结果时才显示结果面板 */}
+              {(queryResult || (queryResults && queryResults.length > 0)) && (
+                <ResizablePanel
+                  defaultSize={bottomPanelSize}
+                  minSize={25}
+                  maxSize={70}
+                  onResize={handleBottomPanelResize}
+                >
+                  <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
+                    <EnhancedResultPanel
+                      collapsed={bottomPanelCollapsed}
+                      queryResult={queryResult}
+                      queryResults={queryResults}
+                      executedQueries={executedQueries}
+                      executionTime={executionTime}
+                      onClearResult={() => {
+                        setQueryResult(null);
+                        setQueryResults([]);
+                        setExecutedQueries([]);
+                        setExecutionTime(0);
+                      }}
+                    />
+                  </div>
+                </ResizablePanel>
+              )}
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+    );
   }, [
-    currentView,
     bottomPanelCollapsed,
     bottomPanelSize,
     activeTabType,
@@ -699,26 +689,59 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
           </ResizablePanel>
 
           {/* 分割线 */}
-          <ResizableHandle
-            withHandle
-            className='w-2 bg-border hover:bg-border/80'
-          />
+          <ResizableHandle className='w-px bg-border hover:bg-primary/50 transition-colors cursor-col-resize' />
 
-          {/* 右侧主要工作区域 */}
+          {/* 右侧区域：使用嵌套的ResizablePanelGroup */}
           <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
-            <main className='h-full bg-background flex flex-col'>
-              <div
-                key={`view-${currentView}`}
-                className='h-full transition-all duration-200 ease-in-out'
-                style={{
-                  // 确保内容在视图切换时保持稳定
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
+            <ResizablePanelGroup direction='horizontal'>
+              {/* 中间主要工作区域 */}
+              <ResizablePanel
+                defaultSize={rightPanelCollapsed ? 100 : 100 - rightPanelSize}
+                minSize={40}
               >
-                {mainContent}
+                <div className='h-full bg-background flex flex-col'>
+                  <div
+                    key={`view-${currentView}`}
+                    className='h-full transition-all duration-200 ease-in-out'
+                    style={{
+                      // 确保内容在视图切换时保持稳定
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {mainContent}
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              {/* 右侧功能面板（始终存在但可能隐藏） */}
+              {!rightPanelCollapsed && selectedFunction && (
+                <>
+                  <ResizableHandle className='w-px bg-border hover:bg-primary/50 transition-colors cursor-col-resize' />
+                  <ResizablePanel
+                    defaultSize={rightPanelSize}
+                    minSize={20}
+                    maxSize={60}
+                    onResize={handleRightPanelResize}
+                  >
+                    <div className='h-full bg-background'>
+                      <RightFunctionPanel
+                        selectedFunction={selectedFunction}
+                        onClose={handleRightPanelClose}
+                      />
+                    </div>
+                  </ResizablePanel>
+                </>
+              )}
+
+              {/* 最右侧图标栏 - 固定宽度 */}
+              <div className='w-12 flex-shrink-0'>
+                <RightFunctionBar
+                  selectedFunction={selectedFunction}
+                  onFunctionSelect={handleFunctionSelect}
+                />
               </div>
-            </main>
+            </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

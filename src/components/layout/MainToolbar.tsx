@@ -142,89 +142,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
         <div className='w-px h-6 bg-border mx-3' />
 
-        {/* 区域3: 核心视图切换 - 统一按钮尺寸并优化响应式 */}
-        <div className='flex items-center gap-1 px-4 py-1 flex-shrink-0'>
-          <div className='p-0 flex items-center gap-1'>
-            <Button
-              variant={currentView === 'datasource' ? 'default' : 'ghost'}
-              size='sm'
-              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-                currentView === 'datasource'
-                  ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={handleDatasourceClick}
-              title='数据源管理'
-
-            >
-              <Database className='w-4 h-4' />
-              <span className='text-xs'>数据源</span>
-            </Button>
-
-            <Button
-              variant={currentView === 'query' ? 'default' : 'ghost'}
-              size='sm'
-              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-                currentView === 'query'
-                  ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={handleQueryClick}
-              disabled={!hasAnyConnectedInfluxDB}
-              title={
-                hasAnyConnectedInfluxDB
-                  ? '查询编辑器'
-                  : `查询编辑器 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
-              }
-
-            >
-              <Edit className='w-4 h-4' />
-              <span className='text-xs'>查询</span>
-            </Button>
-
-            <Button
-              variant={currentView === 'visualization' ? 'default' : 'ghost'}
-              size='sm'
-              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-                currentView === 'visualization'
-                  ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={handleVisualizationClick}
-              disabled={!hasAnyConnectedInfluxDB}
-              title={
-                hasAnyConnectedInfluxDB
-                  ? '数据可视化'
-                  : `数据可视化 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
-              }
-
-            >
-              <BarChart className='w-4 h-4' />
-              <span className='text-xs'>可视化</span>
-            </Button>
-
-            <Button
-              variant={currentView === 'performance' ? 'default' : 'ghost'}
-              size='sm'
-              className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-                currentView === 'performance'
-                  ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={handlePerformanceClick}
-              disabled={!hasAnyConnectedInfluxDB}
-              title={
-                hasAnyConnectedInfluxDB
-                  ? '性能监控'
-                  : `性能监控 (需要连接InfluxDB，当前已连接: ${connectedInfluxDBCount})`
-              }
-
-            >
-              <Zap className='w-4 h-4' />
-              <span className='text-xs'>监控</span>
-            </Button>
-          </div>
-        </div>
+        {/* 注意：数据源、查询、可视化、监控按钮已移除，中间栏始终显示查询面板 */}
       </div>
 
       {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
@@ -232,55 +150,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <div className='w-px h-6 bg-border mx-3' />
 
 
-        {/* 插件管理按钮 */}
-        <Button
-          variant={currentView === 'extensions' ? 'default' : 'ghost'}
-          size='sm'
-          className={`h-10 w-14 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-            currentView === 'extensions'
-              ? 'bg-accent text-accent-foreground shadow-sm'
-              : 'hover:bg-muted/50'
-          }`}
-          onClick={() => navigate('/extensions')}
-          title='扩展管理'
-        >
-          <Wrench className='w-4 h-4' />
-          <span className='text-xs'>扩展</span>
-        </Button>
-
-        {/* 查询历史按钮 */}
-        <Button
-          variant={currentView === 'query-history' ? 'default' : 'ghost'}
-          size='sm'
-          className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-            currentView === 'query-history'
-              ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-              : 'hover:bg-accent hover:text-accent-foreground'
-          }`}
-          onClick={handleQueryHistoryClick}
-          title='查询历史'
-
-        >
-          <History className='w-4 h-4' />
-          <span className='text-xs'>历史</span>
-        </Button>
-
-        {/* 开发者工具按钮 */}
-        <Button
-          variant={currentView === 'dev-tools' ? 'default' : 'ghost'}
-          size='sm'
-          className={`h-10 w-16 p-1 flex flex-col items-center justify-center gap-1 transition-all ${
-            currentView === 'dev-tools'
-              ? 'bg-primary hover:bg-primary/80 text-primary-foreground shadow-md'
-              : 'hover:bg-accent hover:text-accent-foreground'
-          }`}
-          onClick={handleDevToolsClick}
-          title='开发者工具'
-
-        >
-          <Wrench className='w-4 h-4' />
-          <span className='text-xs'>工具</span>
-        </Button>
+        {/* 注意：扩展、历史、工具等功能已移至右侧功能面板 */}
 
         {/* 设置按钮 */}
         <Button

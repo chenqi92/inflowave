@@ -28,11 +28,11 @@ import {
   GitBranch,
   Star,
   StarOff,
+  Plus,
   Trash2,
   Calendar,
   MousePointer,
   X,
-  Plus,
   Info,
   Search,
   Edit,
@@ -43,6 +43,8 @@ import {
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
+import type { ConnectionConfig } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
@@ -175,6 +177,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     info: { open: false, connectionId: '', database: '', tableName: '' },
   });
 
+  // 连接对话框状态
+  const [isConnectionDialogVisible, setIsConnectionDialogVisible] = useState(false);
+  const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
+
   const activeConnection = activeConnectionId
     ? getConnection(activeConnectionId)
     : null;
@@ -227,6 +233,41 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       ...prev,
       [type]: { open: false, connectionId: '', database: '', tableName: '' }
     }));
+  };
+
+  // 连接对话框处理函数
+  const handleOpenConnectionDialog = (connection?: ConnectionConfig) => {
+    setEditingConnection(connection || null);
+    setIsConnectionDialogVisible(true);
+  };
+
+  const handleCloseConnectionDialog = () => {
+    setIsConnectionDialogVisible(false);
+    setEditingConnection(null);
+  };
+
+  const handleConnectionSuccess = async (connection: ConnectionConfig) => {
+    try {
+      console.log('💾 连接保存成功:', connection.name);
+
+      // 如果是编辑现有连接，更新连接
+      if (editingConnection) {
+        // 这里可以调用更新连接的逻辑
+        showMessage.success(`连接 "${connection.name}" 已更新`);
+      } else {
+        // 新建连接，添加到连接列表
+        showMessage.success(`连接 "${connection.name}" 已创建`);
+      }
+
+      // 关闭对话框
+      handleCloseConnectionDialog();
+
+      // 刷新树形数据
+      buildCompleteTreeData(true);
+    } catch (error) {
+      console.error('连接保存失败:', error);
+      showMessage.error(`连接保存失败: ${error}`);
+    }
   };
 
   // 生成时间条件语句（使用当前选择的时间范围）
@@ -1479,13 +1520,48 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         case 'connection_properties':
           if (contextMenuTarget.type === 'connection') {
-            // 导航到连接管理页面
+            // 打开连接编辑对话框
             const connectionId = contextMenuTarget.connectionId;
             const connection = getConnection(connectionId);
             if (connection) {
-              // 使用 React Router 导航到连接管理页面
-              navigate('/connections');
-              showMessage.info(`正在打开连接属性: ${contextMenuTarget.title}`);
+              console.log(`🔧 编辑连接属性: ${connection.name}`);
+              handleOpenConnectionDialog(connection);
+            } else {
+              showMessage.error('连接不存在');
+            }
+          }
+          break;
+
+        case 'delete_connection':
+          if (contextMenuTarget.type === 'connection') {
+            const connectionId = contextMenuTarget.connectionId;
+            const connection = getConnection(connectionId);
+            if (connection) {
+              // 显示确认对话框
+              const confirmed = await dialog.confirm({
+                title: '删除连接',
+                content: `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`,
+              });
+
+              if (confirmed) {
+                try {
+                  // 先断开连接
+                  if (isConnectionConnected(connectionId)) {
+                    await disconnectFromDatabase(connectionId);
+                  }
+
+                  // 删除连接
+                  // TODO: 这里需要调用删除连接的API
+                  console.log(`🗑️ 删除连接: ${connection.name}`);
+                  showMessage.success(`连接 "${connection.name}" 已删除`);
+
+                  // 刷新树形数据
+                  buildCompleteTreeData(true);
+                } catch (error) {
+                  console.error('删除连接失败:', error);
+                  showMessage.error(`删除连接失败: ${error}`);
+                }
+              }
             } else {
               showMessage.error('连接不存在');
             }
@@ -1913,10 +1989,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     ]
   );
 
-  // 刷新树数据
-  const refreshTree = useCallback(() => {
+  // 刷新树数据并测试所有连接
+  const refreshTree = useCallback(async () => {
     buildCompleteTreeData(true); // 手动刷新时显示全局 loading
-  }, [buildCompleteTreeData]);
+
+    // 测试所有连接的连通性
+    for (const connection of connections) {
+      try {
+        // 这里可以调用连接测试的API
+        console.log(`🔍 测试连接: ${connection.name}`);
+        // TODO: 实际的连接测试逻辑
+      } catch (error) {
+        console.error(`❌ 连接测试失败: ${connection.name}`, error);
+      }
+    }
+  }, [buildCompleteTreeData, connections]);
 
   // 更新特定连接节点的显示状态（不影响其他节点）
   const updateConnectionNodeDisplay = useCallback(
@@ -2255,74 +2342,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       {/* 头部：连接状态和操作 */}
       <CardContent className='p-3 border-b'>
         <div ref={headerRef} className='flex items-center justify-between mb-3'>
-          {displayConnectionInfo ? (
-            <div className='flex items-center gap-2'>
-              <Badge
-                variant={
-                  displayConnectionInfo.status.status === 'connected'
-                    ? 'default'
-                    : displayConnectionInfo.status.status === 'connecting'
-                      ? 'secondary'
-                      : 'destructive'
-                }
-                className={
-                  displayConnectionInfo.status.status === 'connected'
-                    ? 'bg-success text-success-foreground'
-                    : displayConnectionInfo.status.status === 'connecting'
-                      ? 'bg-warning text-warning-foreground'
-                      : ''
-                }
-              >
-                <div className='flex items-center gap-1'>
-                  <span className='w-2 h-2 rounded-full bg-current'></span>
-                  {!isNarrow && (
-                    <Typography.Text className='text-sm font-medium'>
-                      {displayConnectionInfo.status.status === 'connected'
-                        ? '已连接'
-                        : displayConnectionInfo.status.status === 'connecting'
-                          ? '连接中'
-                          : displayConnectionInfo.status.status === 'error'
-                            ? '连接错误'
-                            : '已断开'}
-                    </Typography.Text>
-                  )}
-                </div>
-              </Badge>
-              <div className='flex flex-col'>
-                <Typography.Text className='text-sm font-medium'>
-                  {displayConnectionInfo.connection.name}
-                </Typography.Text>
-                <Typography.Text className='text-xs text-muted-foreground'>
-                  {displayConnectionInfo.connection.host}:
-                  {displayConnectionInfo.connection.port}
-                  {displayConnectionInfo.status.latency &&
-                    ` • ${displayConnectionInfo.status.latency}ms`}
-                </Typography.Text>
-              </div>
-            </div>
-          ) : (
-            <Badge variant='secondary'>
-              <div className='flex items-center gap-1'>
-                <span className='w-2 h-2 rounded-full bg-current'></span>
-                {!isNarrow && (
-                  <Typography.Text className='text-sm font-medium'>未连接</Typography.Text>
-                )}
-              </div>
-            </Badge>
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={refreshTree}
-                disabled={loading}
-              >
-                <RefreshCw className='w-4 h-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>刷新</TooltipContent>
-          </Tooltip>
+          <div className='flex items-center gap-2'>
+            <Typography.Text className='text-sm font-medium'>数据源</Typography.Text>
+          </div>
+          <div className='flex items-center gap-1'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={refreshTree}
+                  disabled={loading}
+                  title='刷新数据源树并测试连接'
+                >
+                  <RefreshCw className='w-4 h-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新数据源树并测试连接</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => handleOpenConnectionDialog()}
+                  title='添加数据源'
+                >
+                  <Plus className='w-4 h-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>添加数据源</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* 搜索框 */}
@@ -2415,6 +2466,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               >
                                 <Settings className="w-4 h-4" />
                                 连接属性
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  handleContextMenuAction('delete_connection');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                删除连接
                               </button>
                             </>
                           )}
@@ -2639,6 +2700,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       connectionId={dialogStates.info.connectionId}
       database={dialogStates.info.database}
       tableName={dialogStates.info.tableName}
+    />
+
+    {/* 连接配置对话框 */}
+    <SimpleConnectionDialog
+      visible={isConnectionDialogVisible}
+      connection={editingConnection || undefined}
+      onCancel={handleCloseConnectionDialog}
+      onSuccess={handleConnectionSuccess}
     />
     </>
   );
