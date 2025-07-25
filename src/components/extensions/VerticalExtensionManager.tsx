@@ -462,7 +462,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
               placeholder="搜索扩展..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="pl-8 h-8 text-xs"
+              className="pl-8 h-8 py-1 text-xs"
             />
           </div>
 

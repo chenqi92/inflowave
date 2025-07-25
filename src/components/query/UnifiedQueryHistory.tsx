@@ -672,7 +672,7 @@ export const UnifiedQueryHistory: React.FC<UnifiedQueryHistoryProps> = ({
                                     placeholder="搜索查询..."
                                     value={searchText}
                                     onChange={(e) => setSearchText(e.target.value)}
-                                    className="pl-10 h-9 text-sm w-full focus:ring-2 focus:ring-primary/20 transition-all"
+                                    className="pl-10 h-9 py-1.5 text-sm w-full focus:ring-2 focus:ring-primary/20 transition-all"
                                 />
                             </div>
                         </div>

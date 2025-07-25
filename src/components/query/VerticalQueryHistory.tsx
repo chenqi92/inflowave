@@ -337,7 +337,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               placeholder="搜索查询..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="pl-8 h-8 text-xs"
+              className="pl-8 h-8 py-1 text-xs"
             />
           </div>
 
