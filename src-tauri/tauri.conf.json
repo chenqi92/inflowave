@@ -83,7 +83,8 @@
         "componentRefs": [],
         "featureGroupRefs": [],
         "featureRefs": [],
-        "mergeRefs": []
+        "mergeRefs": [],
+        "language": "1033"
       }
     },
     "macOS": {
