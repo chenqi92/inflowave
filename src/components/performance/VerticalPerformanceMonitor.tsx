@@ -159,20 +159,28 @@ export const VerticalPerformanceMonitor: React.FC<
         metricsData.cpuUsage[metricsData.cpuUsage.length - 1]?.value || 0;
       const latestMemory =
         metricsData.memoryUsage[metricsData.memoryUsage.length - 1]?.value || 0;
+
+      // 修复磁盘使用率计算 - 基于实际磁盘IO活动
       const diskUsage = metricsData.diskIO
-        ? (metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) /
-          (1024 * 1024 * 1024)
-        : 0; // GB
+        ? Math.min(
+            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 1000, // MB/s转换为百分比
+            100
+          )
+        : 0;
+
+      // 修复网络使用率计算 - 基于实际网络流量
       const networkUsage = metricsData.networkIO
-        ? (metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) /
-          (1024 * 1024)
-        : 0; // MB
+        ? Math.min(
+            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 100, // MB/s转换为百分比
+            100
+          )
+        : 0;
 
       const health = {
         cpu: latestCpu,
         memory: latestMemory,
-        disk: Math.min(diskUsage * 10, 100), // 简化计算
-        network: Math.min(networkUsage, 100), // 简化计算
+        disk: diskUsage > 0 ? diskUsage : Math.min((metricsData.diskIO?.readOps || 0) / 100, 100), // 如果字节数为0，使用操作数
+        network: networkUsage > 0 ? networkUsage : Math.min((metricsData.networkIO?.packetsIn || 0) / 1000, 100), // 如果字节数为0，使用包数
         overall: 0,
       };
       health.overall =

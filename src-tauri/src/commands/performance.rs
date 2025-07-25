@@ -3254,6 +3254,78 @@ fn generate_sample_history() -> Vec<TimestampedSystemMetrics> {
     history
 }
 
+/// 从InfluxDB获取真实的查询延迟
+async fn get_real_query_latency_from_influxdb(_connection_id: &str) -> Result<f64, String> {
+    match get_default_connection_for_internal_query().await {
+        Ok(connection) => {
+            let query = r#"
+                SELECT mean("queryReqDurationNs") as avg_duration
+                FROM "_internal"."monitor"."httpd"
+                WHERE time > now() - 5m
+                LIMIT 1
+            "#;
+
+            match execute_influxdb_query(&connection, query).await {
+                Ok(response) => {
+                    // 解析响应获取平均查询时间
+                    if let Ok(query_result) = parse_influxdb_response_to_query_result(&response) {
+                        if let (Some(columns), Some(data)) = (&query_result.columns, &query_result.data) {
+                            if let Some(duration_index) = columns.iter().position(|col| col == "avg_duration") {
+                                if let Some(row) = data.first() {
+                                    if let Some(duration_val) = row.get(duration_index) {
+                                        if let Some(ns) = duration_val.as_f64() {
+                                            return Ok(ns / 1_000_000.0); // 纳秒转毫秒
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Err("无法解析查询延迟数据".to_string())
+                }
+                Err(e) => Err(format!("查询延迟获取失败: {}", e))
+            }
+        }
+        Err(e) => Err(format!("连接失败: {}", e))
+    }
+}
+
+/// 从InfluxDB获取真实的写入延迟
+async fn get_real_write_latency_from_influxdb(_connection_id: &str) -> Result<f64, String> {
+    match get_default_connection_for_internal_query().await {
+        Ok(connection) => {
+            let query = r#"
+                SELECT mean("writeReqDurationNs") as avg_duration
+                FROM "_internal"."monitor"."httpd"
+                WHERE time > now() - 5m
+                LIMIT 1
+            "#;
+
+            match execute_influxdb_query(&connection, query).await {
+                Ok(response) => {
+                    // 解析响应获取平均写入时间
+                    if let Ok(query_result) = parse_influxdb_response_to_query_result(&response) {
+                        if let (Some(columns), Some(data)) = (&query_result.columns, &query_result.data) {
+                            if let Some(duration_index) = columns.iter().position(|col| col == "avg_duration") {
+                                if let Some(row) = data.first() {
+                                    if let Some(duration_val) = row.get(duration_index) {
+                                        if let Some(ns) = duration_val.as_f64() {
+                                            return Ok(ns / 1_000_000.0); // 纳秒转毫秒
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Err("无法解析写入延迟数据".to_string())
+                }
+                Err(e) => Err(format!("写入延迟获取失败: {}", e))
+            }
+        }
+        Err(e) => Err(format!("连接失败: {}", e))
+    }
+}
+
 /// 获取真实查询执行指标
 async fn get_real_query_metrics(history: &[TimestampedSystemMetrics]) -> Vec<TimeSeriesPoint> {
     if history.is_empty() {
@@ -3505,15 +3577,34 @@ async fn get_real_influxdb_metrics(
             value: system_metrics.memory.percentage + (time_factor * 8.0 - 4.0),
         });
 
-        // 尝试获取查询时间数据
+        // 尝试获取真实的查询时间数据
+        let query_time = match get_real_query_latency_from_influxdb(&connection_id).await {
+            Ok(latency) => latency,
+            Err(_) => {
+                // 基于系统负载估算查询时间
+                let load_factor = (system_metrics.cpu.usage + system_metrics.memory.percentage) / 200.0;
+                50.0 + (load_factor * 100.0) // 50-150ms范围
+            }
+        };
+
         query_time_data.push(TimeSeriesPoint {
             timestamp: timestamp_str.clone(),
-            value: 150.0 + (time_factor * 50.0), // 模拟查询时间变化
+            value: query_time,
         });
+
+        // 尝试获取真实的写入延迟数据
+        let write_latency = match get_real_write_latency_from_influxdb(&connection_id).await {
+            Ok(latency) => latency,
+            Err(_) => {
+                // 基于系统负载估算写入延迟
+                let load_factor = (system_metrics.cpu.usage + system_metrics.memory.percentage) / 200.0;
+                30.0 + (load_factor * 70.0) // 30-100ms范围
+            }
+        };
 
         write_latency_data.push(TimeSeriesPoint {
             timestamp: timestamp_str,
-            value: 80.0 + (time_factor * 30.0), // 模拟写入延迟变化
+            value: write_latency,
         });
     }
 
