@@ -26,6 +26,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
     Input,
+    SearchInput,
 } from '@/components/ui';
 import { Spin } from '@/components/ui/Spin';
 import {
@@ -1514,15 +1515,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 {searchable && (
-                                    <div className="relative">
-                                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="搜索..."
-                                            value={searchText}
-                                            onChange={(e) => handleSearch(e.target.value)}
-                                            className="pl-8 w-64"
-                                        />
-                                    </div>
+                                    <SearchInput
+                                        placeholder="搜索..."
+                                        value={searchText}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+                                        onClear={() => handleSearch('')}
+                                        className="w-64"
+                                    />
                                 )}
                                 {exportable && (
                                     <DropdownMenu>

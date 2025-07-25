@@ -12,7 +12,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Input,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -534,15 +534,14 @@ const DebugConsole: React.FC = () => {
                   <CardContent>
                     {/* 过滤器 */}
                     <div className='flex items-center gap-4'>
-                      <div className='flex items-center gap-2'>
-                        <Search className='w-4 h-4 text-muted-foreground' />
-                        <Input
-                          placeholder='搜索应用日志...'
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          className='w-48 h-8 text-sm'
-                        />
-                      </div>
+                      <SearchInput
+                        placeholder='搜索应用日志...'
+                        value={searchText}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+                        onClear={() => setSearchText('')}
+                        className='w-48 h-8 text-sm'
+                        iconSize='sm'
+                      />
                       <Select value={levelFilter} onValueChange={setLevelFilter}>
                         <SelectTrigger className='w-32 h-8 text-sm'>
                           <SelectValue placeholder='级别' />
@@ -680,15 +679,14 @@ const DebugConsole: React.FC = () => {
                   <CardContent>
                     {/* 过滤器 */}
                     <div className='flex items-center gap-4'>
-                      <div className='flex items-center gap-2'>
-                        <Search className='w-4 h-4 text-muted-foreground' />
-                        <Input
-                          placeholder='搜索日志...'
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          className='w-48 h-8 text-sm'
-                        />
-                      </div>
+                      <SearchInput
+                        placeholder='搜索日志...'
+                        value={searchText}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+                        onClear={() => setSearchText('')}
+                        className='w-48 h-8 text-sm'
+                        iconSize='sm'
+                      />
                       <Select value={levelFilter} onValueChange={setLevelFilter}>
                         <SelectTrigger className='w-32 h-8 text-sm'>
                           <SelectValue placeholder='级别' />

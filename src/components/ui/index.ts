@@ -4,6 +4,8 @@ export type { ButtonProps } from './Button';
 
 export { Input } from './Input';
 
+export { SearchInput } from './SearchInput';
+
 export {
   Select,
   SelectContent,

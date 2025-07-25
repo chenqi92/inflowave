@@ -5,6 +5,7 @@ import {
   CardHeader,
   Button,
   Input,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -484,11 +485,13 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
 
           {/* 搜索和过滤 */}
           <div className="space-y-2">
-            <Input
+            <SearchInput
               placeholder="搜索图表..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+              onClear={() => setSearchText('')}
               className="h-8 text-xs"
+              iconSize="sm"
             />
             <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="h-8 text-xs">

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Button,
   Input,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -472,15 +473,12 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
       <div className='p-4 border-b bg-background'>
         <div className='grid grid-cols-12 gap-2'>
           <div className='col-span-4'>
-            <div className='relative'>
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-              <Input
-                placeholder='搜索查询...'
-                value={searchText}
-                onChange={e => setSearchText(e.target.value)}
-                className='pl-10'
-              />
-            </div>
+            <SearchInput
+              placeholder='搜索查询...'
+              value={searchText}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+              onClear={() => setSearchText('')}
+            />
           </div>
           <div className='col-span-3'>
             <Select value={filterDatabase} onValueChange={setFilterDatabase}>

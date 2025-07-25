@@ -24,7 +24,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Input,
+  SearchInput,
   Switch,
   Table,
   TableBody,
@@ -1103,10 +1103,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <CardContent className='p-4'>
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end'>
               <div className='lg:col-span-2'>
-                <Input
+                <SearchInput
                   placeholder='搜索瓶颈...'
                   value={searchText}
-                  onChange={e => setSearchText(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+                  onClear={() => setSearchText('')}
                 />
               </div>
               <div>

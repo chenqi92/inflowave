@@ -3,7 +3,7 @@ import {
   Card,
   CardContent,
   Button,
-  Input,
+  SearchInput,
   Tabs,
   TabsContent,
   TabsList,
@@ -123,7 +123,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   // 截断查询文本
   const truncateQuery = (query: string, maxLength: number = 100) => {
     if (query.length <= maxLength) return query;
-    return query.substring(0, maxLength) + '...';
+    return `${query.substring(0, maxLength)  }...`;
   };
 
   // 格式化时间
@@ -331,13 +331,14 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
           </div>
 
           {/* 搜索框 */}
-          <div className="relative mb-3">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <Input
+          <div className="mb-3">
+            <SearchInput
               placeholder="搜索查询..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="pl-8 h-8 py-1 text-xs"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+              onClear={() => setSearchText('')}
+              className="h-8 text-xs"
+              iconSize="sm"
             />
           </div>
 

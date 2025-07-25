@@ -22,7 +22,6 @@ import TimeRangeSelector, {
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
   currentView?: string;
-  onOpenQueryHistory?: () => void;
   currentTimeRange?: {
     label: string;
     value: string;
@@ -42,7 +41,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   currentView = 'datasource', // 软件启动时默认选中数据源按钮
   currentTimeRange,
   onTimeRangeChange,
-  onOpenQueryHistory,
 }) => {
   const {
     activeConnectionId,

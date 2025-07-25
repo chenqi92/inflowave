@@ -25,8 +25,7 @@ import {dataExplorerRefresh} from '@/utils/refreshEvents';
 import {useUserPreferences} from '@/hooks/useUserPreferences';
 import type {QueryResult} from '@/types';
 
-// 临时导入页面组件用于视图切换
-import QueryHistory from '../query/QueryHistory';
+
 
 export interface DataGripStyleLayoutProps {
     children?: React.ReactNode;
@@ -238,7 +237,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const [executedQueries, setExecutedQueries] = useState<string[]>([]);
     const [executionTime, setExecutionTime] = useState<number>(0);
     const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
-    const [showQueryHistory, setShowQueryHistory] = useState(false);
+
     const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]);
 
     // 调试：监听 expandedDatabases 变化
@@ -267,11 +266,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         }
     }, [currentView, expandedDatabases]);
 
-    // 手动打开查询历史的方法
-    const openQueryHistory = useCallback(() => {
-        console.log('Opening query history...');
-        setShowQueryHistory(true);
-    }, []);
+
     const [currentTimeRange, setCurrentTimeRange] = useState<{
         label: string;
         value: string;
@@ -545,18 +540,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const mainContent = useMemo(() => {
         return (
             <div className='h-full'>
-                {/* 查询历史模态框 */}
-                <QueryHistory
-                    visible={showQueryHistory}
-                    onClose={() => setShowQueryHistory(false)}
-                    onQuerySelect={(query, database) => {
-                        // 执行选中的查询
-                        if (tabEditorRef.current?.executeQueryWithContent) {
-                            tabEditorRef.current.executeQueryWithContent(query, database || '');
-                        }
-                        setShowQueryHistory(false);
-                    }}
-                />
+
 
                 <ResizablePanelGroup direction='vertical'>
                     {/* 上半部分：编辑器 */}
@@ -631,7 +615,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         executedQueries,
         executionTime,
         currentTimeRange,
-        showQueryHistory,
+
     ]);
 
     return (
@@ -643,7 +627,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     onViewChange={handleViewChange}
                     currentTimeRange={currentTimeRange}
                     onTimeRangeChange={setCurrentTimeRange}
-                    onOpenQueryHistory={openQueryHistory}
+
                 />
             </Header>
 

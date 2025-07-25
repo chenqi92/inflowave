@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Tree,
   TreeNode,
-  Input,
+  SearchInput,
   Button,
   Tooltip,
   TooltipTrigger,
@@ -2489,10 +2489,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         </div>
 
         {/* 搜索框 */}
-        <Input
+        <SearchInput
           placeholder='搜索连接、数据库、表...'
           value={searchValue}
-          onChange={e => setSearchValue(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchValue(e.target.value)}
+          onClear={() => setSearchValue('')}
           className='text-sm'
         />
       </CardContent>

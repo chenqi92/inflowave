@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Input,
+  SearchInput,
   Text,
   Badge,
   Separator,
@@ -329,17 +329,16 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
         <div className='global-search'>
           {/* 搜索输入框 */}
           <div className="p-4 pb-0">
-            <div className="relative">
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground' />
-              <Input
-                ref={inputRef}
-                placeholder='搜索数据库、测量、查询、设置...'
-                value={searchText}
-                onChange={e => setSearchText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="pl-10 border-none shadow-none text-lg"
-              />
-            </div>
+            <SearchInput
+              ref={inputRef}
+              placeholder='搜索数据库、测量、查询、设置...'
+              value={searchText}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onClear={() => setSearchText('')}
+              className="border-none shadow-none text-lg"
+              showClearButton={false}
+            />
           </div>
 
           <Separator className="my-3" />

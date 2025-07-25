@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Input,
+  SearchInput,
   Card,
   CardContent,
   CardHeader,
@@ -500,11 +500,11 @@ const ErrorLogViewer: React.FC = () => {
         <CardContent>
           <div className='flex flex-wrap gap-4'>
             <div className='flex items-center gap-2'>
-              <SearchIcon className='w-4 h-4 text-muted-foreground' />
-              <Input
+              <SearchInput
                 placeholder='搜索错误消息...'
                 value={searchText}
-                onChange={e => setSearchText(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+                onClear={() => setSearchText('')}
                 className='w-64'
               />
             </div>
