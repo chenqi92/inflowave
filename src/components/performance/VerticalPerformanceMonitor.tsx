@@ -160,18 +160,20 @@ export const VerticalPerformanceMonitor: React.FC<
       const latestMemory =
         metricsData.memoryUsage[metricsData.memoryUsage.length - 1]?.value || 0;
 
-      // 修复磁盘使用率计算 - 基于实际磁盘IO活动
+      // 修复磁盘使用率计算 - 基于磁盘IO速率
       const diskUsage = metricsData.diskIO
         ? Math.min(
-            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 1000, // MB/s转换为百分比
+            // 将磁盘IO速率转换为使用率百分比 (假设100MB/s为100%使用率)
+            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 100 * 100,
             100
           )
         : 0;
 
-      // 修复网络使用率计算 - 基于实际网络流量
+      // 修复网络使用率计算 - 基于网络流量速率
       const networkUsage = metricsData.networkIO
         ? Math.min(
-            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 100, // MB/s转换为百分比
+            // 将网络流量速率转换为使用率百分比 (假设10MB/s为100%使用率)
+            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 10 * 100,
             100
           )
         : 0;
@@ -179,8 +181,8 @@ export const VerticalPerformanceMonitor: React.FC<
       const health = {
         cpu: latestCpu,
         memory: latestMemory,
-        disk: diskUsage > 0 ? diskUsage : Math.min((metricsData.diskIO?.readOps || 0) / 100, 100), // 如果字节数为0，使用操作数
-        network: networkUsage > 0 ? networkUsage : Math.min((metricsData.networkIO?.packetsIn || 0) / 1000, 100), // 如果字节数为0，使用包数
+        disk: Math.max(diskUsage, Math.min((metricsData.diskIO?.readOps || 0) / 50, 100)), // 使用IOPS作为备用指标
+        network: Math.max(networkUsage, Math.min((metricsData.networkIO?.packetsIn || 0) / 100, 100)), // 使用包数作为备用指标
         overall: 0,
       };
       health.overall =
@@ -530,7 +532,7 @@ export const VerticalPerformanceMonitor: React.FC<
                               <div className='font-medium'>磁盘读取</div>
                               <div className='text-muted-foreground'>
                                 {metrics.diskIO
-                                  ? formatBytes(metrics.diskIO.readBytes)
+                                  ? `${formatBytes(metrics.diskIO.readBytes)}/s`
                                   : 'N/A'}
                               </div>
                             </div>
@@ -538,7 +540,7 @@ export const VerticalPerformanceMonitor: React.FC<
                               <div className='font-medium'>网络流入</div>
                               <div className='text-muted-foreground'>
                                 {metrics.networkIO
-                                  ? formatBytes(metrics.networkIO.bytesIn)
+                                  ? `${formatBytes(metrics.networkIO.bytesIn)}/s`
                                   : 'N/A'}
                               </div>
                             </div>
