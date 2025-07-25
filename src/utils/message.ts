@@ -8,6 +8,7 @@ import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getDatabaseConnectionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { addNotification } from '@/store/notifications';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -306,17 +307,38 @@ export const getNotificationInstance = () => ({
     },
 });
 
-// 便捷的消息方法 - 简单消息
+// 便捷的消息方法 - 简单消息（同时添加到通知中心）
 export const showMessage = {
-    success: (content: string, duration?: number) =>
-        message.success(content, duration),
-    error: (content: string, duration?: number) =>
-        message.error(content, duration),
-    warning: (content: string, duration?: number) =>
-        message.warning(content, duration),
-    info: (content: string, duration?: number) => message.info(content, duration),
-    loading: (content: string, duration?: number) =>
-        message.loading(content, duration),
+    success: (content: string, duration?: number, source?: string) => {
+        // 添加到通知中心
+        addNotification.success('操作成功', content, source || 'general');
+        // 显示 toast
+        return message.success(content, duration);
+    },
+    error: (content: string, duration?: number, source?: string) => {
+        // 添加到通知中心
+        addNotification.error('操作失败', content, source || 'general');
+        // 显示 toast
+        return message.error(content, duration);
+    },
+    warning: (content: string, duration?: number, source?: string) => {
+        // 添加到通知中心
+        addNotification.warning('警告', content, source || 'general');
+        // 显示 toast
+        return message.warning(content, duration);
+    },
+    info: (content: string, duration?: number, source?: string) => {
+        // 添加到通知中心
+        addNotification.info('信息', content, source || 'general');
+        // 显示 toast
+        return message.info(content, duration);
+    },
+    loading: (content: string, duration?: number, source?: string) => {
+        // 添加到通知中心
+        addNotification.info('加载中', content, source || 'general');
+        // 显示 toast
+        return message.loading(content, duration);
+    },
     custom: (content: string, options?: ExternalToast) =>
         message.custom(content, options),
     promise: <T>(

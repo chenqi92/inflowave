@@ -754,7 +754,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 加载数据库列表
   const loadDatabases = async () => {
     if (!activeConnectionId) {
-      showMessage.error('请先连接到InfluxDB');
+      showMessage.error('请先连接到InfluxDB', undefined, 'connection');
       return;
     }
 
@@ -767,14 +767,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         if (!selectedDatabase) {
           setSelectedDatabase(dbList[0]);
         }
-        showMessage.success(`已加载 ${dbList.length} 个数据库`);
+        showMessage.success(`已加载 ${dbList.length} 个数据库`, undefined, 'data');
       } else {
         setSelectedDatabase('');
-        showMessage.info('未找到数据库，请先创建数据库');
+        showMessage.info('未找到数据库，请先创建数据库', undefined, 'data');
       }
     } catch (error) {
       console.error('加载数据库列表失败:', error);
-      showMessage.error(`加载数据库列表失败: ${error}`);
+      showMessage.error(`加载数据库列表失败: ${error}`, undefined, 'data');
       setDatabases([]);
       setSelectedDatabase('');
     }
@@ -1276,7 +1276,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       // 强制触发重新渲染
       setTimeout(() => {
         if (fields.length > 0 || tags.length > 0) {
-          showMessage.success(`已分析表 "${tableName}" 的结构：${fields.length} 个字段，${tags.length} 个标签`);
+          showMessage.success(`已分析表 "${tableName}" 的结构：${fields.length} 个字段，${tags.length} 个标签`, undefined, 'data');
         } else {
           showMessage.warning(`表 "${tableName}" 暂无数据，无法分析字段类型`);
         }
@@ -1432,12 +1432,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 执行数据生成
   const generateData = async () => {
     if (!activeConnectionId) {
-      showMessage.error('请先连接到InfluxDB');
+      showMessage.error('请先连接到InfluxDB', undefined, 'connection');
       return;
     }
 
     if (!selectedDatabase) {
-      showMessage.error('请选择目标数据库');
+      showMessage.error('请选择目标数据库', undefined, 'data');
       return;
     }
 
@@ -1450,7 +1450,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       if (mode === 'custom') {
         // 自定义表数据生成 - 优化后的流式生成
         if (!selectedTable || !tableInfo) {
-          showMessage.error('请选择目标表');
+          showMessage.error('请选择目标表', undefined, 'data');
           return;
         }
 
@@ -1478,7 +1478,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           }
 
           if (shouldStop) {
-            showMessage.warning('数据生成已被用户停止');
+            showMessage.warning('数据生成已被用户停止', undefined, 'data');
             break;
           }
 
@@ -1576,11 +1576,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               }
             } else {
               console.error(`❌ 批次 ${batchIndex + 1} 写入失败:`, result.errors);
-              showMessage.error(`批次 ${batchIndex + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`);
+              showMessage.error(`批次 ${batchIndex + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`, undefined, 'data');
             }
           } catch (error) {
             console.error(`批次 ${batchIndex + 1} 处理失败:`, error);
-            showMessage.error(`批次 ${batchIndex + 1} 处理失败: ${error}`);
+            showMessage.error(`批次 ${batchIndex + 1} 处理失败: ${error}`, undefined, 'data');
             // 继续处理下一批次，不中断整个过程
           }
 
@@ -1652,12 +1652,16 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
             if (verificationSuccess) {
               showMessage.success(
-                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒，验证：表中有 ${dataCount} 条数据`
+                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒，验证：表中有 ${dataCount} 条数据`,
+                undefined,
+                'data'
               );
             } else {
               console.warn('⚠️ 所有验证查询都失败了');
               showMessage.success(
-                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（无法验证写入情况）`
+                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（无法验证写入情况）`,
+                undefined,
+                'data'
               );
             }
           } catch (verifyError) {
