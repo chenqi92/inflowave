@@ -132,12 +132,20 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
       );
 
       // 获取性能瓶颈
+      const hours = parseInt(timeRange.replace('h', '').replace('d', '')) * (timeRange.includes('d') ? 24 : 1);
+      const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+      const endTime = new Date();
+
       const bottlenecksData = await safeTauriInvoke<PerformanceBottleneck[]>(
         'detect_performance_bottlenecks_with_mode',
         {
           connectionId: activeConnectionId || '',
           mode: monitoringMode,
-          timeRange: { hours: parseInt(timeRange.replace('h', '')) },
+          timeRange: {
+            start: startTime.toISOString(),
+            end: endTime.toISOString(),
+            hours: hours,
+          },
         }
       );
 

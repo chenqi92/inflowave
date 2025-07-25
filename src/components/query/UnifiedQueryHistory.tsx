@@ -667,7 +667,7 @@ export const UnifiedQueryHistory: React.FC<UnifiedQueryHistoryProps> = ({
                         <div className="flex-1 min-w-0">
                             <div className="relative flex items-center">
                                 <Search
-                                    className="absolute left-3 z-10 w-4 h-4 text-muted-foreground pointer-events-none"/>
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-muted-foreground pointer-events-none"/>
                                 <Input
                                     placeholder="搜索查询..."
                                     value={searchText}
