@@ -838,7 +838,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           `SHOW FIELD KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
           `SHOW FIELD KEYS FROM "${tableName}"`,
           `SHOW FIELD KEYS FROM ${tableName}`,
-          `SHOW FIELD KEYS ON "${selectedDatabase}"`
+          `SHOW FIELD KEYS ON "${selectedDatabase}"`,
+          // 注意：避免使用可能导致retention policy错误的查询格式
+          // `SHOW FIELD KEYS FROM "${selectedDatabase}"."${tableName}"`,
+          // `SHOW FIELD KEYS FROM "${selectedDatabase}".."${tableName}"`,
+          // `SHOW FIELD KEYS FROM "${selectedDatabase}"."autogen"."${tableName}"`
         ];
         
         for (const query of fieldQueries) {
@@ -857,7 +861,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               hasError: fieldResult.error,
               query 
             });
-            if (fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
+            // 检查是否有数据（不依赖success字段，因为可能是undefined）
+            const hasData = fieldResult.data && fieldResult.data.length > 0;
+            const hasError = fieldResult.error || fieldResult.hasError;
+
+            if (hasData && !hasError) {
               console.log('\u2705 字段查询成功，使用查询:', query);
               break;
             }
@@ -867,7 +875,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           }
         }
 
-        if (fieldResult && fieldResult.success && fieldResult.data && fieldResult.data.length > 0) {
+        // 检查字段查询结果（不依赖success字段）
+        const hasFieldData = fieldResult && fieldResult.data && fieldResult.data.length > 0;
+        const hasFieldError = fieldResult && (fieldResult.error || fieldResult.hasError);
+
+        if (hasFieldData && !hasFieldError) {
           console.log('\ud83d\udcc8 字段查询结果:', fieldResult.data);
           console.log('\ud83d\udd0d 字段查询第一行数据:', fieldResult.data[0]);
           fieldResult.data.forEach((row: any) => {
@@ -900,11 +912,13 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
           });
         } else {
-          console.log('\u26a0\ufe0f 字段查询失败或无数据:', { 
+          console.log('\u26a0\ufe0f 字段查询失败或无数据:', {
             hasResult: !!fieldResult,
-            success: fieldResult?.success, 
+            success: fieldResult?.success,
             dataLength: fieldResult?.data?.length,
-            error: fieldResult?.error 
+            error: fieldResult?.error,
+            hasFieldData,
+            hasFieldError
           });
         }
 
@@ -914,7 +928,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           `SHOW TAG KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
           `SHOW TAG KEYS FROM "${tableName}"`,
           `SHOW TAG KEYS FROM ${tableName}`,
-          `SHOW TAG KEYS ON "${selectedDatabase}"`
+          `SHOW TAG KEYS ON "${selectedDatabase}"`,
+          // 注意：避免使用可能导致retention policy错误的查询格式
+          // `SHOW TAG KEYS FROM "${selectedDatabase}"."${tableName}"`,
+          // `SHOW TAG KEYS FROM "${selectedDatabase}".."${tableName}"`,
+          // `SHOW TAG KEYS FROM "${selectedDatabase}"."autogen"."${tableName}"`
         ];
         
         for (const query of tagQueries) {
@@ -933,7 +951,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               hasError: tagResult.error,
               query 
             });
-            if (tagResult.success && tagResult.data && tagResult.data.length > 0) {
+            // 检查是否有数据（不依赖success字段）
+            const hasData = tagResult.data && tagResult.data.length > 0;
+            const hasError = tagResult.error || tagResult.hasError;
+
+            if (hasData && !hasError) {
               console.log('\u2705 标签查询成功，使用查询:', query);
               break;
             }
@@ -943,7 +965,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           }
         }
 
-        if (tagResult && tagResult.success && tagResult.data && tagResult.data.length > 0) {
+        // 检查标签查询结果（不依赖success字段）
+        const hasTagData = tagResult && tagResult.data && tagResult.data.length > 0;
+        const hasTagError = tagResult && (tagResult.error || tagResult.hasError);
+
+        if (hasTagData && !hasTagError) {
           console.log('\ud83c\udff7\ufe0f 标签查询结果:', tagResult.data);
           console.log('\ud83d\udd0d 标签查询第一行数据:', tagResult.data[0]);
           tagResult.data.forEach((row: any) => {
@@ -955,32 +981,172 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
           });
         } else {
-          console.log('\u26a0\ufe0f 标签查询失败或无数据:', { 
+          console.log('\u26a0\ufe0f 标签查询失败或无数据:', {
             hasResult: !!tagResult,
-            success: tagResult?.success, 
+            success: tagResult?.success,
             dataLength: tagResult?.data?.length,
-            error: tagResult?.error 
+            error: tagResult?.error,
+            hasTagData,
+            hasTagError
           });
         }
       } catch (schemaError) {
         console.log('使用SHOW语句查询失败，尝试采样数据方法:', schemaError);
       }
 
-      // 方法2：如果SHOW语句失败，回退到采样数据方法
+      // 方法2：如果SHOW语句失败，尝试获取retention policy信息
       if (fields.length === 0 && tags.length === 0) {
+        console.log('尝试获取retention policy信息...');
+
+        // 首先尝试获取retention policy列表
+        let retentionPolicies: string[] = [];
+        try {
+          const rpResult = await safeTauriInvoke<any>('execute_query', {
+            request: {
+              connectionId: activeConnectionId,
+              database: selectedDatabase,
+              query: `SHOW RETENTION POLICIES ON "${selectedDatabase}"`,
+            },
+          });
+
+          if (rpResult.success && rpResult.data && rpResult.data.length > 0) {
+            console.log('获取到retention policies:', rpResult.data);
+            retentionPolicies = rpResult.data.map((rp: any) => rp.name || rp.policyName || Object.values(rp)[0]).filter(Boolean);
+            console.log('解析出的retention policy名称:', retentionPolicies);
+          }
+        } catch (rpError) {
+          console.log('获取retention policy失败:', rpError);
+        }
+
+        // 如果获取到了retention policy，尝试使用完整格式查询
+        if (retentionPolicies.length > 0) {
+          for (const rp of retentionPolicies) {
+            console.log(`尝试使用retention policy "${rp}" 查询字段和标签...`);
+
+            // 尝试字段查询
+            if (fields.length === 0) {
+              try {
+                const rpFieldResult = await safeTauriInvoke<any>('execute_query', {
+                  request: {
+                    connectionId: activeConnectionId,
+                    database: selectedDatabase,
+                    query: `SHOW FIELD KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`,
+                  },
+                });
+
+                if (rpFieldResult.success && rpFieldResult.data && rpFieldResult.data.length > 0) {
+                  console.log(`使用retention policy "${rp}" 获取到字段:`, rpFieldResult.data);
+                  rpFieldResult.data.forEach((row: any) => {
+                    const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
+                    if (fieldName && typeof fieldName === 'string') {
+                      let type: FieldInfo['type'] = 'string';
+                      const fieldType = row.fieldType || row.type;
+                      if (fieldType) {
+                        switch (fieldType.toLowerCase()) {
+                          case 'integer':
+                          case 'int':
+                            type = 'int';
+                            break;
+                          case 'float':
+                          case 'double':
+                          case 'number':
+                            type = 'float';
+                            break;
+                          case 'boolean':
+                          case 'bool':
+                            type = 'boolean';
+                            break;
+                          default:
+                            type = 'string';
+                        }
+                      }
+                      fields.push({ name: fieldName, type });
+                    }
+                  });
+                }
+              } catch (rpFieldError) {
+                console.log(`使用retention policy "${rp}" 查询字段失败:`, rpFieldError);
+              }
+            }
+
+            // 尝试标签查询
+            if (tags.length === 0) {
+              try {
+                const rpTagResult = await safeTauriInvoke<any>('execute_query', {
+                  request: {
+                    connectionId: activeConnectionId,
+                    database: selectedDatabase,
+                    query: `SHOW TAG KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`,
+                  },
+                });
+
+                if (rpTagResult.success && rpTagResult.data && rpTagResult.data.length > 0) {
+                  console.log(`使用retention policy "${rp}" 获取到标签:`, rpTagResult.data);
+                  rpTagResult.data.forEach((row: any) => {
+                    const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
+                    if (tagName && typeof tagName === 'string') {
+                      tags.push({ name: tagName, type: 'string' });
+                    }
+                  });
+                }
+              } catch (rpTagError) {
+                console.log(`使用retention policy "${rp}" 查询标签失败:`, rpTagError);
+              }
+            }
+
+            // 如果已经获取到了字段和标签，就不需要继续尝试其他retention policy
+            if (fields.length > 0 && tags.length > 0) {
+              break;
+            }
+          }
+        }
+
         console.log('尝试使用采样数据方法分析表结构...');
         
         // 首先尝试使用SHOW SERIES获取tag信息
         try {
-          const seriesResult = await safeTauriInvoke<any>('execute_query', {
-            request: {
-              connectionId: activeConnectionId,
-              database: selectedDatabase,
-              query: `SHOW SERIES FROM "${tableName}" LIMIT 1`,
-            },
-          });
+          // 尝试多种SHOW SERIES查询格式
+          let seriesResult;
+          const seriesQueries = [
+            `SHOW SERIES FROM "${tableName}" LIMIT 1`,
+            `SHOW SERIES FROM ${tableName} LIMIT 1`,
+            // 注意：不要直接使用数据库名称，因为可能需要指定retention policy
+            // 以下查询可能会导致"retention policy not found"错误
+            // `SHOW SERIES FROM "${selectedDatabase}"."${tableName}" LIMIT 1`,
+            // `SHOW SERIES FROM "${selectedDatabase}".."${tableName}" LIMIT 1`,
+            // `SHOW SERIES FROM "${selectedDatabase}"."autogen"."${tableName}" LIMIT 1`
+          ];
+
+          for (const query of seriesQueries) {
+            try {
+              console.log('尝试SHOW SERIES查询:', query);
+              seriesResult = await safeTauriInvoke<any>('execute_query', {
+                request: {
+                  connectionId: activeConnectionId,
+                  database: selectedDatabase,
+                  query: query,
+                },
+              });
+
+              // 检查是否有数据（不依赖success字段）
+              const hasData = seriesResult.data && seriesResult.data.length > 0;
+              const hasError = seriesResult.error || seriesResult.hasError;
+
+              if (hasData && !hasError) {
+                console.log('SHOW SERIES查询成功，使用查询:', query);
+                break;
+              }
+            } catch (error) {
+              console.log(`SHOW SERIES查询失败 "${query}":`, error);
+              continue;
+            }
+          }
           
-          if (seriesResult.success && seriesResult.data && seriesResult.data.length > 0) {
+          // 检查SHOW SERIES结果（不依赖success字段）
+          const hasSeriesData = seriesResult && seriesResult.data && seriesResult.data.length > 0;
+          const hasSeriesError = seriesResult && (seriesResult.error || seriesResult.hasError);
+
+          if (hasSeriesData && !hasSeriesError) {
             console.log('SHOW SERIES结果:', seriesResult.data[0]);
             // 从series信息中解析tag结构
             const seriesInfo = seriesResult.data[0];
@@ -1006,7 +1172,13 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         const sampleQueries = [
           `SELECT * FROM "${tableName}" ORDER BY time DESC LIMIT 5`,
           `SELECT * FROM ${tableName} ORDER BY time DESC LIMIT 5`,
-          `SELECT * FROM "${tableName}" LIMIT 5`
+          `SELECT * FROM "${tableName}" LIMIT 5`,
+          `SELECT * FROM "${tableName}" WHERE time > now() - 30d LIMIT 5`,
+          `SELECT * FROM "${tableName}" WHERE time > now() - 7d LIMIT 5`,
+          // 注意：避免使用可能导致retention policy错误的查询格式
+          // `SELECT * FROM "${selectedDatabase}"."${tableName}" LIMIT 5`,
+          // `SELECT * FROM "${selectedDatabase}".."${tableName}" LIMIT 5`,
+          // `SELECT * FROM "${selectedDatabase}"."autogen"."${tableName}" LIMIT 5`,
         ];
         
         for (const sampleQuery of sampleQueries) {
@@ -1020,7 +1192,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               },
             });
 
-            if (sampleResult.success && sampleResult.data && sampleResult.data.length > 0) {
+            // 检查是否有数据（不依赖success字段）
+            const hasSampleData = sampleResult.data && sampleResult.data.length > 0;
+            const hasSampleError = sampleResult.error || sampleResult.hasError;
+
+            if (hasSampleData && !hasSampleError) {
               console.log('采样数据成功，使用查询:', sampleQuery);
               console.log('采样数据结果:', sampleResult.data[0]);
               const sample = sampleResult.data[0];
@@ -1038,20 +1214,32 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   type = 'boolean';
                 }
 
-                // 如果SHOW FIELD KEYS没有数据，我们需要猜测这是field还是tag
-                // 通常数字类型更可能是field，字符串类型可能是tag
-                if (typeof value === 'string' && !fields.length && !tags.length) {
-                  // 如果值比较短且看起来像标识符，可能是tag
-                  if (value.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(value)) {
+                // 更智能的字段和标签识别逻辑
+                // 如果SHOW FIELD KEYS和SHOW TAG KEYS都没有数据，我们需要猜测
+                if (fields.length === 0 && tags.length === 0) {
+                  // 基于字段名和值的特征来判断
+                  const isLikelyTag = (
+                    typeof value === 'string' &&
+                    value.length <= 100 &&
+                    (
+                      // 常见的标签字段名模式
+                      /^(host|server|region|zone|env|environment|service|app|application|instance|node|cluster|datacenter|dc|location|tenant|user|client|device|platform|os|version|status|state|level|priority|category|type|kind|source|target|method|protocol|endpoint|path|route|component|module|namespace|project|team|owner|tag|label)$/i.test(key) ||
+                      // 或者值看起来像标识符
+                      /^[a-zA-Z0-9_.-]+$/.test(value)
+                    )
+                  );
+
+                  if (isLikelyTag) {
                     tags.push({ name: key, type: 'string' });
-                    console.log('推测为标签:', { name: key, type: 'string' });
+                    console.log('推测为标签:', { name: key, type: 'string', value });
                   } else {
                     fields.push({ name: key, type });
-                    console.log('推测为字段:', { name: key, type });
+                    console.log('推测为字段:', { name: key, type, value });
                   }
                 } else {
+                  // 如果已经有了一些字段或标签信息，默认添加为字段
                   fields.push({ name: key, type });
-                  console.log('添加字段:', { name: key, type });
+                  console.log('添加字段:', { name: key, type, value });
                 }
               });
               break; // 成功处理了采样数据，退出循环
@@ -1829,12 +2017,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         {/* 自定义表信息显示 */}
         {mode === 'custom' && tableInfo && (
           <Card className='mb-6'>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <Database className='w-5 h-5' />
+            <CardHeader className="pb-3">
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <Database className='w-4 h-4' />
                 表结构信息: {tableInfo.name}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 将为此表生成 {recordCount} 条随机数据
               </CardDescription>
             </CardHeader>
@@ -1842,17 +2030,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 {/* 字段信息 */}
                 <div>
-                  <h5 className='font-medium mb-3 flex items-center gap-2'>
-                    <Database className='w-4 h-4' />
+                  <h5 className='text-sm font-medium mb-3 flex items-center gap-2'>
+                    <Database className='w-3 h-3' />
                     字段 ({tableInfo.fields.length} 个)
                   </h5>
                   <div className='space-y-2'>
                     {tableInfo.fields.length > 0 ? (
                       tableInfo.fields.map((field, index) => (
-                        <div key={index} className='flex items-center justify-between p-2 bg-muted rounded'>
-                          <span className='font-medium'>{field.name}</span>
+                        <div key={`field-${field.name}-${index}`} className='flex items-center justify-between p-2 bg-muted rounded text-sm'>
+                          <span className='text-sm font-medium'>{field.name}</span>
                           <div className='flex items-center gap-2'>
-                            <Badge variant='outline'>{field.type}</Badge>
+                            <Badge variant='outline' className="text-xs">{field.type}</Badge>
                             {field.lastValue !== undefined && (
                               <span className='text-xs text-muted-foreground'>
                                 示例: {String(field.lastValue).substring(0, 20)}
@@ -1869,17 +2057,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
                 {/* 标签信息 */}
                 <div>
-                  <h5 className='font-medium mb-3 flex items-center gap-2'>
-                    <TagIcon className='w-4 h-4' />
+                  <h5 className='text-sm font-medium mb-3 flex items-center gap-2'>
+                    <TagIcon className='w-3 h-3' />
                     标签 ({tableInfo.tags.length} 个)
                   </h5>
                   <div className='space-y-2'>
                     {tableInfo.tags.length > 0 ? (
                       tableInfo.tags.map((tag, index) => (
-                        <div key={index} className='flex items-center justify-between p-2 bg-muted rounded'>
-                          <span className='font-medium'>{tag.name}</span>
+                        <div key={`tag-${tag.name}-${index}`} className='flex items-center justify-between p-2 bg-muted rounded text-sm'>
+                          <span className='text-sm font-medium'>{tag.name}</span>
                           <div className='flex items-center gap-2'>
-                            <Badge variant='outline'>{tag.type}</Badge>
+                            <Badge variant='outline' className="text-xs">{tag.type}</Badge>
                             {tag.lastValue !== undefined && (
                               <span className='text-xs text-muted-foreground'>
                                 示例: {String(tag.lastValue).substring(0, 20)}

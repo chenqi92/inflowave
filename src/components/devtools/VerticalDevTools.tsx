@@ -52,15 +52,6 @@ export const VerticalDevTools: React.FC<VerticalDevToolsProps> = ({
       <div className="p-3 border-b">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">开发工具</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleDevTools}
-            className="h-7 px-2 text-xs"
-          >
-            <Code className="w-3 h-3 mr-1" />
-            浏览器工具
-          </Button>
         </div>
       </div>
 

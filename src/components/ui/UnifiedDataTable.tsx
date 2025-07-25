@@ -1719,7 +1719,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
                                                 return (
                                                     <td
-                                                        key={column}
+                                                        key={`${index}-${column}-${colIndex}`}
                                                         data-column={column}
                                                         data-column-index={colIndex + 1}
                                                         className={cn(

@@ -155,8 +155,10 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
       // 计算系统健康度
       const latestCpu = metricsData.cpuUsage[metricsData.cpuUsage.length - 1]?.value || 0;
       const latestMemory = metricsData.memoryUsage[metricsData.memoryUsage.length - 1]?.value || 0;
-      const diskUsage = (metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024 * 1024); // GB
-      const networkUsage = (metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024); // MB
+      const diskUsage = metricsData.diskIO ?
+        (metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024 * 1024) : 0; // GB
+      const networkUsage = metricsData.networkIO ?
+        (metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024) : 0; // MB
 
       const health = {
         cpu: latestCpu,
@@ -474,13 +476,13 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                             <div className="text-center p-2 bg-muted/50 rounded">
                               <div className="font-medium">磁盘读取</div>
                               <div className="text-muted-foreground">
-                                {formatBytes(metrics.diskIO.readBytes)}
+                                {metrics.diskIO ? formatBytes(metrics.diskIO.readBytes) : 'N/A'}
                               </div>
                             </div>
                             <div className="text-center p-2 bg-muted/50 rounded">
                               <div className="font-medium">网络流入</div>
                               <div className="text-muted-foreground">
-                                {formatBytes(metrics.networkIO.bytesIn)}
+                                {metrics.networkIO ? formatBytes(metrics.networkIO.bytesIn) : 'N/A'}
                               </div>
                             </div>
                           </div>
