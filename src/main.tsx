@@ -28,6 +28,15 @@ configureMonacoGlobally();
 
 // 内部应用组件
 const InnerApp: React.FC = () => {
+  React.useEffect(() => {
+    // 应用启动完成，发送app-ready事件移除loading屏幕
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('app-ready'));
+    }, 100); // 短暂延迟确保DOM已渲染
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return <App />;
 };
 

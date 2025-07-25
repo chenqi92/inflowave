@@ -837,21 +837,31 @@ async fn main() {
                 } else {
                     info!("窗口标题已设置为: InfloWave");
                 }
+
+                // 根据系统主题设置初始背景色
+                match window.theme() {
+                    Ok(Some(tauri::Theme::Dark)) => {
+                        info!("检测到系统深色主题，使用深色背景");
+                        // 深色主题背景色已在CSS中处理，这里不需要额外设置
+                    }
+                    Ok(Some(tauri::Theme::Light)) => {
+                        info!("检测到系统浅色主题，使用浅色背景");
+                        // 浅色主题背景色已在配置中设置
+                    }
+                    Ok(None) => {
+                        info!("无法检测系统主题，使用默认浅色背景");
+                    }
+                    Err(e) => {
+                        warn!("获取系统主题失败: {}, 使用默认浅色背景", e);
+                    }
+                }
                 
                 if let Err(e) = setup_responsive_window_size(&window) {
                     error!("设置响应式窗口大小失败: {}", e);
                 }
 
-                // 当内容准备就绪后显示窗口，避免显示空白内容
-                let window_clone = window.clone();
-                std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                    if let Err(e) = window_clone.show() {
-                        error!("显示窗口失败: {}", e);
-                    } else {
-                        info!("窗口已显示");
-                    }
-                });
+                // 窗口已通过配置设置为可见，无需手动显示
+                info!("窗口已通过配置设置为可见状态");
 
                 #[cfg(debug_assertions)]
                 {

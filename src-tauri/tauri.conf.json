@@ -27,7 +27,7 @@
         "theme": "Auto",
         "titleBarStyle": "Visible",
         "maximized": false,
-        "visible": false,
+        "visible": true,
         "shadow": true,
         "backgroundColor": "#ffffff",
         "url": "index.html",
