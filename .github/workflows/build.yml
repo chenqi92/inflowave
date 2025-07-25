@@ -140,6 +140,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Download fonts for offline use
+        run: |
+          echo "📦 下载字体文件用于离线使用..."
+          node scripts/download-fonts-ci.js
+          echo "✅ 字体下载完成"
+
       - name: Get package version
         id: package-version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
@@ -209,6 +215,12 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Download fonts for offline use (dev)
+        run: |
+          echo "📦 下载字体文件用于离线使用 (开发构建)..."
+          node scripts/download-fonts-ci.js
+          echo "✅ 字体下载完成"
 
       - name: Run type check
         run: npm run type-check

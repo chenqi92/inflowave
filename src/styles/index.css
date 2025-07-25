@@ -1,7 +1,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
-/* Local Fonts - 已本地化，支持离线使用（完整版本，支持设置中的所有字体选项） */
+/* Local Fonts - CI环境动态下载，支持离线使用 */
 @import './fonts-local.css';
 /* Modal 优化样式 */
 @import './modal-optimization.css';
