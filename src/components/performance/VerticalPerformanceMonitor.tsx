@@ -163,8 +163,8 @@ export const VerticalPerformanceMonitor: React.FC<
       // 修复磁盘使用率计算 - 基于磁盘IO速率
       const diskUsage = metricsData.diskIO
         ? Math.min(
-            // 将磁盘IO速率转换为使用率百分比 (假设100MB/s为100%使用率)
-            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 100 * 100,
+            // 将磁盘IO速率转换为使用率百分比 (假设50MB/s为100%使用率)
+            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 50 * 100,
             100
           )
         : 0;
@@ -172,8 +172,8 @@ export const VerticalPerformanceMonitor: React.FC<
       // 修复网络使用率计算 - 基于网络流量速率
       const networkUsage = metricsData.networkIO
         ? Math.min(
-            // 将网络流量速率转换为使用率百分比 (假设10MB/s为100%使用率)
-            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 10 * 100,
+            // 将网络流量速率转换为使用率百分比 (假设5MB/s为100%使用率)
+            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 5 * 100,
             100
           )
         : 0;
@@ -181,8 +181,8 @@ export const VerticalPerformanceMonitor: React.FC<
       const health = {
         cpu: latestCpu,
         memory: latestMemory,
-        disk: Math.max(diskUsage, Math.min((metricsData.diskIO?.readOps || 0) / 50, 100)), // 使用IOPS作为备用指标
-        network: Math.max(networkUsage, Math.min((metricsData.networkIO?.packetsIn || 0) / 100, 100)), // 使用包数作为备用指标
+        disk: diskUsage > 0 ? diskUsage : Math.min((metricsData.diskIO?.readOps || 0) / 20, 100), // 使用IOPS作为备用指标
+        network: networkUsage > 0 ? networkUsage : Math.min((metricsData.networkIO?.packetsIn || 0) / 50, 100), // 使用包数作为备用指标
         overall: 0,
       };
       health.overall =

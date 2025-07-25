@@ -3432,27 +3432,32 @@ async fn generate_estimated_time_series_data(
         let time_factor = (i as f64) / 12.0;
 
         // 基于真实系统指标生成合理的变化
+        let cpu_variation = (i as f64 * 0.5).sin() * 5.0; // 正弦波变化
+        let memory_variation = (i as f64 * 0.3).cos() * 4.0; // 余弦波变化
+
         cpu_data.push(TimeSeriesPoint {
             timestamp: timestamp_str.clone(),
-            value: (system_metrics.cpu.usage + (time_factor * 10.0 - 5.0)).max(0.0).min(100.0),
+            value: (system_metrics.cpu.usage + cpu_variation).max(5.0).min(95.0),
         });
 
         memory_data.push(TimeSeriesPoint {
             timestamp: timestamp_str.clone(),
-            value: (system_metrics.memory.percentage + (time_factor * 8.0 - 4.0)).max(0.0).min(100.0),
+            value: (system_metrics.memory.percentage + memory_variation).max(10.0).min(90.0),
         });
 
-        // 基于系统负载估算查询和写入延迟
+        // 基于系统负载估算查询和写入延迟，添加更多变化
         let load_factor = (system_metrics.cpu.usage + system_metrics.memory.percentage) / 200.0;
+        let query_variation = (i as f64 * 0.4).sin() * 15.0; // 查询延迟变化
+        let write_variation = (i as f64 * 0.6).cos() * 10.0; // 写入延迟变化
 
         query_time_data.push(TimeSeriesPoint {
             timestamp: timestamp_str.clone(),
-            value: 50.0 + (load_factor * 100.0) + (time_factor * 20.0 - 10.0), // 50-150ms + 变化
+            value: (50.0 + (load_factor * 80.0) + query_variation).max(20.0).min(200.0), // 20-200ms范围
         });
 
         write_latency_data.push(TimeSeriesPoint {
             timestamp: timestamp_str,
-            value: 30.0 + (load_factor * 70.0) + (time_factor * 15.0 - 7.5), // 30-100ms + 变化
+            value: (30.0 + (load_factor * 60.0) + write_variation).max(15.0).min(150.0), // 15-150ms范围
         });
     }
 
