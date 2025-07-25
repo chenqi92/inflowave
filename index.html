@@ -192,34 +192,125 @@
           <div class="loading-tagline">现代化时序数据库管理工具</div>
         </div>
         <div class="loading-spinner"></div>
-        <div class="loading-text">正在启动应用程序...</div>
+        <div class="loading-text" id="loading-text">正在启动应用程序...</div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Remove loading screen when app is ready -->
     <script>
+      // 更智能的loading状态管理
+      let loadingStep = 0;
+      let hasAppStarted = false;
+      const loadingSteps = [
+        '正在启动应用程序...',
+        '正在加载组件...',
+        '正在初始化服务...',
+        '正在建立连接...',
+        '启动完成'
+      ];
+      
+      // 模拟启动进度
+      function updateLoadingProgress() {
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText && loadingStep < loadingSteps.length - 1) {
+          loadingStep++;
+          loadingText.textContent = loadingSteps[loadingStep];
+          setTimeout(updateLoadingProgress, 800 + Math.random() * 400); // 随机间隔
+        }
+      }
+      
+      // 开始loading进度更新
+      setTimeout(updateLoadingProgress, 500);
+
       // Listen for app ready signal
       window.addEventListener('app-ready', function() {
+        hasAppStarted = true;
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) {
+          loadingText.textContent = '启动完成';
+        }
+        
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
-          loadingScreen.classList.add('fade-out');
           setTimeout(() => {
-            loadingScreen.style.display = 'none';
-          }, 400);
+            loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 400);
+          }, 200);
         }
       });
+
+      // 错误处理和fallback机制
+      
+      // 监听错误事件
+      window.addEventListener('error', function(event) {
+        console.error('启动错误:', event.error);
+        showStartupError('应用程序启动时发生错误，请刷新页面重试');
+      });
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('未处理的Promise拒绝:', event.reason);
+        showStartupError('应用程序初始化失败，请检查网络连接并刷新页面');
+      });
+      
+      function showStartupError(message) {
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText && !hasAppStarted) {
+          loadingText.textContent = message;
+          loadingText.style.color = '#ef4444';
+          
+          // 停止spinner动画
+          const spinner = document.querySelector('.loading-spinner');
+          if (spinner) {
+            spinner.style.display = 'none';
+          }
+          
+          // 添加重试按钮
+          setTimeout(() => {
+            const loadingContainer = document.querySelector('.loading-container');
+            if (loadingContainer) {
+              const retryButton = document.createElement('button');
+              retryButton.textContent = '重新加载';
+              retryButton.style.cssText = `
+                margin-top: 20px;
+                padding: 10px 20px;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+              `;
+              retryButton.onclick = () => window.location.reload();
+              loadingContainer.appendChild(retryButton);
+            }
+          }, 1000);
+        }
+      }
 
       // Auto-remove loading screen if it takes too long (fallback)
       setTimeout(() => {
         const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen && loadingScreen.style.display !== 'none') {
-          loadingScreen.classList.add('fade-out');
-          setTimeout(() => {
-            loadingScreen.style.display = 'none';
-          }, 400);
+        if (loadingScreen && loadingScreen.style.display !== 'none' && !hasAppStarted) {
+          showStartupError('应用程序启动超时，可能存在问题');
         }
-      }, 3000); // 3 second fallback - 减少等待时间
+      }, 10000); // 10秒超时
+      
+      // 检测应用是否成功启动
+      setTimeout(() => {
+        if (!hasAppStarted) {
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen && loadingScreen.style.display !== 'none') {
+            hasAppStarted = true;
+            loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+            }, 400);
+          }
+        }
+      }, 5000); // 5秒后强制移除loading
       
       // 字体加载检测
       if ('fonts' in document) {
