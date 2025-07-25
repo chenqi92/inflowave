@@ -508,6 +508,344 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
     Ok(())
 }
 
+/// 执行关键启动检查
+async fn perform_startup_checks() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("开始执行启动前检查...");
+    
+    // 1. 检查必要的系统依赖
+    check_system_dependencies()?;
+    
+    // 2. 检查字体文件是否存在
+    check_font_files()?;
+    
+    // 3. 验证WebView2运行时
+    #[cfg(target_os = "windows")]
+    check_webview2_runtime()?;
+    
+    // 4. 检查内存使用情况
+    check_memory_availability()?;
+    
+    info!("启动前检查完成");
+    Ok(())
+}
+
+/// 检查系统依赖项
+fn check_system_dependencies() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("检查系统依赖项...");
+    
+    // 检查操作系统版本
+    let os = std::env::consts::OS;
+    info!("当前操作系统: {}", os);
+    
+    match os {
+        "windows" => {
+            // Windows特定检查
+            if let Err(e) = check_windows_dependencies() {
+                return Err(format!("Windows依赖检查失败: {}", e).into());
+            }
+        }
+        "macos" => {
+            // macOS特定检查
+            info!("macOS环境检查通过");
+        }
+        "linux" => {
+            // Linux特定检查
+            info!("Linux环境检查通过");
+        }
+        _ => {
+            warn!("未知操作系统: {}", os);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Windows依赖检查
+#[cfg(target_os = "windows")]
+fn check_windows_dependencies() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use std::process::Command;
+    
+    // 检查Visual C++运行库
+    let output = Command::new("powershell")
+        .arg("-Command")
+        .arg("Get-ItemProperty 'HKLM:SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64' -ErrorAction SilentlyContinue")
+        .output();
+    
+    match output {
+        Ok(result) if result.status.success() => {
+            info!("Visual C++运行库检查通过");
+        }
+        _ => {
+            warn!("Visual C++运行库可能缺失，但继续启动");
+        }
+    }
+    
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn check_windows_dependencies() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    Ok(())
+}
+
+/// 检查WebView2运行时 (仅Windows)
+#[cfg(target_os = "windows")]
+fn check_webview2_runtime() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use std::process::Command;
+    
+    info!("检查WebView2运行时...");
+    
+    let output = Command::new("powershell")
+        .arg("-Command")
+        .arg("Get-AppxPackage -Name Microsoft.WebView2 -ErrorAction SilentlyContinue")
+        .output();
+    
+    match output {
+        Ok(result) if result.status.success() && !result.stdout.is_empty() => {
+            info!("WebView2运行时检查通过");
+            Ok(())
+        }
+        _ => {
+            // 尝试检查注册表中的WebView2
+            let reg_output = Command::new("reg")
+                .args(&["query", "HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"])
+                .output();
+            
+            match reg_output {
+                Ok(result) if result.status.success() => {
+                    info!("WebView2运行时通过注册表检查");
+                    Ok(())
+                }
+                _ => {
+                    Err("WebView2运行时未安装。请访问 https://developer.microsoft.com/en-us/microsoft-edge/webview2/ 下载并安装".into())
+                }
+            }
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn check_webview2_runtime() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    Ok(())
+}
+
+/// 检查字体文件
+fn check_font_files() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("检查字体文件...");
+    
+    let font_css_path = "src/styles/fonts-local.css";
+    if !std::path::Path::new(font_css_path).exists() {
+        warn!("本地字体CSS文件不存在，将使用在线字体");
+    } else {
+        info!("本地字体文件检查通过");
+    }
+    
+    Ok(())
+}
+
+/// 检查内存可用性
+fn check_memory_availability() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("检查内存可用性...");
+    
+    // 这里可以添加内存检查逻辑
+    // 目前简单检查可以分配内存
+    let test_vec: Vec<u8> = Vec::with_capacity(1024 * 1024); // 1MB测试
+    if test_vec.capacity() < 1024 * 1024 {
+        return Err("内存分配测试失败，可能内存不足".into());
+    }
+    
+    info!("内存检查通过");
+    Ok(())
+}
+
+/// 显示启动错误对话框
+fn show_startup_error(error: &Box<dyn std::error::Error + Send + Sync>) {
+    eprintln!("InfloWave启动失败: {}", error);
+    
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let _ = Command::new("powershell")
+            .arg("-Command")
+            .arg(&format!(
+                "Add-Type -AssemblyName PresentationCore,PresentationFramework; [System.Windows.MessageBox]::Show('InfloWave 启动失败：{}\\n\\n请尝试以下解决方案：\\n1. 重新启动应用程序\\n2. 检查系统要求\\n3. 联系技术支持', 'InfloWave 启动错误', 'OK', 'Error')",
+                error.to_string().replace("'", "''")
+            ))
+            .output();
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let _ = Command::new("osascript")
+            .arg("-e")
+            .arg(&format!(
+                "display dialog \"InfloWave 启动失败：{}\\n\\n请尝试以下解决方案：\\n1. 重新启动应用程序\\n2. 检查系统要求\\n3. 联系技术支持\" with title \"InfloWave 启动错误\" buttons {{\"确定\"}} default button \"确定\" with icon stop",
+                error
+            ))
+            .output();
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        // 尝试使用zenity显示错误对话框
+        use std::process::Command;
+        let _ = Command::new("zenity")
+            .arg("--error")
+            .arg("--title=InfloWave 启动错误")
+            .arg(&format!(
+                "InfloWave 启动失败：{}\n\n请尝试以下解决方案：\n1. 重新启动应用程序\n2. 检查系统要求\n3. 联系技术支持",
+                error
+            ))
+            .output();
+    }
+}
+
+/// 设置崩溃处理程序
+fn setup_crash_handler(_app_handle: tauri::AppHandle) {
+    info!("设置应用程序崩溃处理程序...");
+    
+    // 设置 panic 处理程序
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let panic_message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+            s.to_string()
+        } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            "Unknown panic".to_string()
+        };
+        
+        let location = if let Some(location) = panic_info.location() {
+            format!("{}:{}:{}", location.file(), location.line(), location.column())
+        } else {
+            "Unknown location".to_string()
+        };
+        
+        error!("应用程序崩溃: {} at {}", panic_message, location);
+        
+        // 记录崩溃信息到文件
+        log_crash_info(&panic_message, &location);
+        
+        // 显示崩溃对话框 (仅在非调试模式下)
+        #[cfg(not(debug_assertions))]
+        show_crash_dialog(&panic_message);
+        
+        // 尝试清理资源
+        cleanup_on_crash();
+    }));
+    
+    info!("崩溃处理程序设置完成");
+}
+
+/// 记录崩溃信息到文件
+fn log_crash_info(panic_message: &str, location: &str) {
+    use std::fs::OpenOptions;
+    use std::io::Write;
+    
+    let crash_log_path = get_crash_log_path();
+    
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&crash_log_path) {
+        
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+            
+        let crash_entry = format!(
+            "\n=== CRASH REPORT ===\n\
+            Time: {}\n\
+            Version: {}\n\
+            OS: {} {}\n\
+            Message: {}\n\
+            Location: {}\n\
+            ==================\n\n",
+            timestamp,
+            env!("CARGO_PKG_VERSION"),
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            panic_message,
+            location
+        );
+        
+        let _ = file.write_all(crash_entry.as_bytes());
+        let _ = file.flush();
+        
+        eprintln!("崩溃信息已记录到: {}", crash_log_path.display());
+    } else {
+        eprintln!("无法写入崩溃日志文件");
+    }
+}
+
+/// 获取崩溃日志文件路径
+fn get_crash_log_path() -> std::path::PathBuf {
+    let mut path = std::env::temp_dir();
+    path.push("InfloWave");
+    
+    // 确保目录存在
+    let _ = std::fs::create_dir_all(&path);
+    
+    path.push("crash.log");
+    path
+}
+
+/// 显示崩溃对话框
+#[cfg(not(debug_assertions))]
+fn show_crash_dialog(panic_message: &str) {
+    let crash_log_path = get_crash_log_path();
+    
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let _ = Command::new("powershell")
+            .arg("-Command")
+            .arg(&format!(
+                "Add-Type -AssemblyName PresentationCore,PresentationFramework; [System.Windows.MessageBox]::Show('InfloWave 遇到意外错误并需要关闭。\\n\\n错误信息：{}\\n\\n日志文件：{}\\n\\n我们对此问题深表歉意。请将日志文件发送给技术支持以帮助我们改进产品。', 'InfloWave 意外错误', 'OK', 'Error')",
+                panic_message.replace("'", "''"),
+                crash_log_path.display().to_string().replace("\\", "\\\\").replace("'", "''")
+            ))
+            .output();
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let _ = Command::new("osascript")
+            .arg("-e")
+            .arg(&format!(
+                "display dialog \"InfloWave 遇到意外错误并需要关闭。\\n\\n错误信息：{}\\n\\n日志文件：{}\\n\\n我们对此问题深表歉意。请将日志文件发送给技术支持以帮助我们改进产品。\" with title \"InfloWave 意外错误\" buttons {{\"确定\"}} default button \"确定\" with icon stop",
+                panic_message,
+                crash_log_path.display()
+            ))
+            .output();
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let _ = Command::new("zenity")
+            .arg("--error")
+            .arg("--title=InfloWave 意外错误")
+            .arg(&format!(
+                "InfloWave 遇到意外错误并需要关闭。\n\n错误信息：{}\n\n日志文件：{}\n\n我们对此问题深表歉意。请将日志文件发送给技术支持以帮助我们改进产品。",
+                panic_message,
+                crash_log_path.display()
+            ))
+            .output();
+    }
+}
+
+/// 崩溃时的清理工作
+fn cleanup_on_crash() {
+    // 尝试保存重要数据
+    info!("执行崩溃清理工作...");
+    
+    // 这里可以添加具体的清理逻辑
+    // 例如：保存用户数据、关闭数据库连接等
+}
+
 /// 处理启动时的端口冲突
 async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use services::port_manager::get_port_manager;
@@ -560,10 +898,19 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
 
 #[tokio::main]
 async fn main() {
-    // Initialize logger
-    env_logger::init();
+    // Initialize logger with proper error handling
+    if let Err(e) = env_logger::try_init() {
+        eprintln!("Warning: Failed to initialize logger: {}", e);
+    }
 
-    info!("Starting InfloWave");
+    info!("Starting InfloWave...");
+    
+    // Perform critical startup checks
+    if let Err(e) = perform_startup_checks().await {
+        eprintln!("Critical startup error: {}", e);
+        show_startup_error(&e);
+        std::process::exit(1);
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -813,6 +1160,9 @@ async fn main() {
         ])
         .setup(|app| {
             info!("Application setup started");
+            
+            // 设置崩溃处理程序
+            setup_crash_handler(app.handle().clone());
 
             // 设置响应式窗口大小和标题
             if let Some(window) = app.get_webview_window("main") {

@@ -10,8 +10,9 @@
       content="A modern time-series database management tool"
     />
 
-    <!-- Local fonts (CI环境动态下载) -->
-    <link rel="stylesheet" href="/src/styles/fonts-local.css" />
+    <!-- Local fonts (CI环境动态下载) - 异步加载以防止阻塞 -->
+    <link rel="preload" href="/src/styles/fonts-local.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/src/styles/fonts-local.css"></noscript>
 
     <!-- Prevent FOUC and improve startup experience -->
     <style>
@@ -22,8 +23,14 @@
       }
 
       html {
-        font-family: 'Inter', system-ui, sans-serif;
+        /* 使用系统字体作为默认，避免字体加载时的闪烁 */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Inter', system-ui, sans-serif;
         height: 100%;
+      }
+      
+      /* 字体加载完成后的切换 */
+      .fonts-loaded html {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', system-ui, sans-serif;
       }
 
       body {
@@ -213,6 +220,19 @@
           }, 400);
         }
       }, 3000); // 3 second fallback - 减少等待时间
+      
+      // 字体加载检测
+      if ('fonts' in document) {
+        document.fonts.ready.then(function() {
+          document.documentElement.classList.add('fonts-loaded');
+          console.log('字体加载完成');
+        });
+      } else {
+        // 对于不支持 FontFace API 的浏览器，延迟添加类
+        setTimeout(function() {
+          document.documentElement.classList.add('fonts-loaded');
+        }, 1000);
+      }
     </script>
   </body>
 </html>
