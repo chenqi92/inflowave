@@ -11,7 +11,6 @@ const PanelDatabasePage = React.lazy(() => import('./PanelAdaptedPages').then(m 
 const PanelQueryHistoryPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelQueryHistoryPage })));
 const PanelExtensionsPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelExtensionsPage })));
 const PanelDevToolsPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelDevToolsPage })));
-const PanelSettingsPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelSettingsPage })));
 
 interface RightFunctionPanelProps {
   selectedFunction: FunctionType | null;
@@ -27,7 +26,6 @@ const functionTitles: Record<FunctionType, string> = {
   history: '查询历史',
   extensions: '扩展管理',
   tools: '开发工具',
-  settings: '应用设置',
 };
 
 // 功能描述映射
@@ -38,7 +36,6 @@ const functionDescriptions: Record<FunctionType, string> = {
   history: '查看和管理查询历史记录',
   extensions: '管理插件、API集成和自动化规则',
   tools: '开发和调试工具集合',
-  settings: '配置应用程序设置和偏好',
 };
 
 const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
@@ -64,8 +61,6 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         return <PanelExtensionsPage />;
       case 'tools':
         return <PanelDevToolsPage />;
-      case 'settings':
-        return <PanelSettingsPage />;
       default:
         return (
           <div className="p-6">

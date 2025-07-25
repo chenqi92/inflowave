@@ -8,16 +8,6 @@ import NotificationTest from '@/components/debug/NotificationTest';
 const DevTools: React.FC = () => {
   return (
     <div className='h-full bg-background flex flex-col'>
-      {/* 页面标题 */}
-      <div className='border-b bg-background'>
-        <div className='p-6'>
-          <h1 className='text-2xl font-semibold text-foreground'>开发者工具</h1>
-          <p className='text-sm text-muted-foreground mt-1'>
-            数据生成、调试和开发辅助工具
-          </p>
-        </div>
-      </div>
-
       {/* 内容区域 */}
       <div className='flex-1 overflow-hidden bg-background'>
         <div className='h-full flex flex-col'>

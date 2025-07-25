@@ -389,19 +389,21 @@ const Visualization: React.FC = () => {
         onClick={() => loadDatabases()}
         disabled={loading}
         variant='outline'
+        size='sm'
       >
-        <RefreshCw className='w-4 h-4 mr-2' />
+        <RefreshCw className='w-3 h-3 mr-1' />
         刷新
       </Button>
-      <Button variant='outline'>
-        <Settings className='w-4 h-4 mr-2' />
+      <Button variant='outline' size='sm'>
+        <Settings className='w-3 h-3 mr-1' />
         设置
       </Button>
       <Button
         onClick={() => setCreateModalVisible(true)}
         disabled={!activeConnectionId}
+        size='sm'
       >
-        <Plus className='w-4 h-4 mr-2' />
+        <Plus className='w-3 h-3 mr-1' />
         创建图表
       </Button>
     </div>
@@ -410,16 +412,6 @@ const Visualization: React.FC = () => {
   if (!activeConnectionId) {
     return (
       <div className='h-full bg-background flex flex-col'>
-        {/* 页面标题 */}
-        <div className='border-b bg-background'>
-          <div className='p-6'>
-            <h1 className='text-2xl font-semibold text-foreground'>数据可视化</h1>
-            <p className='text-sm text-muted-foreground mt-1'>
-              创建图表和仪表板来可视化您的时序数据
-            </p>
-          </div>
-        </div>
-
         {/* 内容区域 */}
         <div className='flex-1 overflow-hidden bg-background'>
           <div className='p-6'>
@@ -447,15 +439,9 @@ const Visualization: React.FC = () => {
 
   return (
     <div className='h-full bg-background flex flex-col'>
-      {/* 页面标题 */}
+      {/* 工具栏 */}
       <div className='border-b bg-background'>
-        <div className='p-6 flex items-center justify-between'>
-          <div>
-            <h1 className='text-2xl font-semibold text-foreground'>数据可视化</h1>
-            <p className='text-sm text-muted-foreground mt-1'>
-              创建图表和仪表板来可视化您的时序数据
-            </p>
-          </div>
+        <div className='p-4 flex items-center justify-end'>
           {toolbar}
         </div>
       </div>

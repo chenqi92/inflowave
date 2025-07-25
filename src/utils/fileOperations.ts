@@ -29,12 +29,19 @@ export class FileOperations {
    */
   static async appendToFile(path: string, content: string): Promise<void> {
     try {
-      // 由于后端没有append命令，我们先读取现有内容，然后追加
+      // 由于后端没有append命令，我们先检查文件是否存在，然后读取现有内容
       let existingContent = '';
-      try {
-        existingContent = await this.readFile(path);
-      } catch (error) {
-        // 如果文件不存在，existingContent保持为空字符串
+
+      // 先检查文件是否存在，避免不必要的错误日志
+      const fileExists = await this.fileExists(path);
+      if (fileExists) {
+        try {
+          existingContent = await this.readFile(path);
+        } catch (error) {
+          console.warn(`读取现有文件内容失败 ${path}:`, error);
+          // 如果读取失败，继续使用空字符串
+        }
+      } else {
         console.log('文件不存在，将创建新文件:', path);
       }
 

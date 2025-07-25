@@ -135,18 +135,33 @@ const ErrorLogViewer: React.FC = () => {
     setLoading(true);
     try {
       // 加载应用日志
-      const logContent = await FileOperations.readFile('logs/error.log');
-      const parsedLogs = parseLogContent(logContent);
+      let logContent = '';
+      let parsedLogs: ErrorLogEntry[] = [];
+
+      // 先检查日志文件是否存在
+      const logFileExists = await FileOperations.fileExists('logs/error.log');
+      if (logFileExists) {
+        try {
+          logContent = await FileOperations.readFile('logs/error.log');
+          parsedLogs = parseLogContent(logContent);
+        } catch (error) {
+          console.warn('读取日志文件失败:', error);
+          // 继续使用空的日志数组
+        }
+      } else {
+        console.log('日志文件不存在，使用空日志');
+      }
+
       setLogs(parsedLogs);
-      
+
       // 获取控制台错误日志
       const consoleErrors = consoleLogger.getErrorLogs();
-      
+
       // 合并日志
       const merged = mergeErrorLogs(parsedLogs, consoleErrors);
       setUnifiedLogs(merged);
       setFilteredLogs(merged);
-      
+
       showMessage.success(`已加载 ${merged.length} 条错误日志 (应用: ${parsedLogs.length}, 控制台: ${consoleErrors.length})`);
     } catch (error) {
       console.error('加载错误日志失败:', error);
@@ -320,6 +335,13 @@ const ErrorLogViewer: React.FC = () => {
   // 导出日志
   const exportLogs = async () => {
     try {
+      // 先检查日志文件是否存在
+      const logFileExists = await FileOperations.fileExists('logs/error.log');
+      if (!logFileExists) {
+        showMessage.warning('没有日志文件可以导出');
+        return;
+      }
+
       const logContent = await FileOperations.readFile('logs/error.log');
       const success = await saveTextFile(logContent, {
         filename: `error-logs-${new Date().toISOString().split('T')[0]}.log`,
@@ -329,11 +351,12 @@ const ErrorLogViewer: React.FC = () => {
           { name: '所有文件', extensions: ['*'] }
         ]
       });
-      
+
       if (success) {
         showMessage.success('日志已导出');
       }
     } catch (error) {
+      console.error('导出日志失败:', error);
       showMessage.error('导出日志失败');
     }
   };

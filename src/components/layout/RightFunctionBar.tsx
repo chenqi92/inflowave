@@ -7,10 +7,9 @@ import {
   History,
   Wrench,
   Database,
-  Settings,
 } from 'lucide-react';
 
-export type FunctionType = 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools' | 'database' | 'settings';
+export type FunctionType = 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools' | 'database';
 
 interface FunctionItem {
   key: FunctionType;
@@ -28,45 +27,39 @@ interface RightFunctionBarProps {
 const functionItems: FunctionItem[] = [
   {
     key: 'visualization',
-    icon: <BarChart className="w-5 h-5" />,
+    icon: <BarChart className="w-4 h-4" />,
     label: '可视化',
     description: '数据图表和仪表板',
   },
   {
     key: 'monitoring',
-    icon: <Activity className="w-5 h-5" />,
+    icon: <Activity className="w-4 h-4" />,
     label: '监控',
     description: '性能监控和诊断',
   },
   {
     key: 'database',
-    icon: <Database className="w-5 h-5" />,
+    icon: <Database className="w-4 h-4" />,
     label: '数据库',
     description: '数据库管理',
   },
   {
     key: 'history',
-    icon: <History className="w-5 h-5" />,
+    icon: <History className="w-4 h-4" />,
     label: '历史',
     description: '查询历史记录',
   },
   {
     key: 'extensions',
-    icon: <Package className="w-5 h-5" />,
+    icon: <Package className="w-4 h-4" />,
     label: '扩展',
     description: '插件和集成',
   },
   {
     key: 'tools',
-    icon: <Wrench className="w-5 h-5" />,
+    icon: <Wrench className="w-4 h-4" />,
     label: '工具',
     description: '开发工具',
-  },
-  {
-    key: 'settings',
-    icon: <Settings className="w-5 h-5" />,
-    label: '设置',
-    description: '应用设置',
   },
 ];
 
@@ -93,7 +86,7 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
             key={item.key}
             variant={selectedFunction === item.key ? 'default' : 'ghost'}
             size="sm"
-            className={`w-10 h-10 p-0 mx-1 flex flex-col items-center justify-center transition-all duration-200 ${
+            className={`w-8 h-8 p-0 mx-1 flex flex-col items-center justify-center transition-all duration-200 ${
               selectedFunction === item.key
                 ? 'bg-primary text-primary-foreground shadow-sm scale-105'
                 : 'hover:bg-accent hover:text-accent-foreground hover:scale-105'

@@ -599,8 +599,8 @@ async fn try_get_influxdb_internal_metrics(time_range: &str) -> Result<QueryPerf
 
     let mut total_queries = 0u64;
     let mut avg_execution_time = 0.0;
-    let mut total_writes = 0u64;
-    let mut series_count = 0u64;
+    let mut _total_writes = 0u64;
+    let mut _series_count = 0u64;
 
     // 执行查询获取监控数据
     for (index, query) in queries.iter().enumerate() {
@@ -621,10 +621,10 @@ async fn try_get_influxdb_internal_metrics(time_range: &str) -> Result<QueryPerf
                                     avg_execution_time = value.as_f64().unwrap_or(0.0) / 1_000_000.0; // 纳秒转毫秒
                                 }
                                 2 => { // 写入请求数
-                                    total_writes = value.as_f64().unwrap_or(0.0) as u64;
+                                    _total_writes = value.as_f64().unwrap_or(0.0) as u64;
                                 }
                                 3 => { // 序列数量
-                                    series_count = value.as_f64().unwrap_or(0.0) as u64;
+                                    _series_count = value.as_f64().unwrap_or(0.0) as u64;
                                 }
                                 _ => {}
                             }

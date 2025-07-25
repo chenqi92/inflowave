@@ -27,7 +27,6 @@ import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import DashboardManager from '@/components/dashboard/DashboardManager';
 import DataExportDialog from '@/components/common/DataExportDialog';
-import DesktopPageWrapper from '@/components/layout/DesktopPageWrapper';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -91,23 +90,29 @@ const Dashboard: React.FC = () => {
   // 工具栏
   const toolbar = (
     <div className='flex gap-2 p-2 border-0 shadow-none bg-transparent'>
-      <Button variant='outline' onClick={() => window.location.reload()}>
-        <RefreshCw className='w-4 h-4 mr-2' />
+      <Button variant='outline' size='sm' onClick={() => window.location.reload()}>
+        <RefreshCw className='w-3 h-3 mr-1' />
         刷新
       </Button>
-      <Button variant='default' onClick={() => navigate('/connections')}>
-        <Plus className='w-4 h-4 mr-2' />
+      <Button variant='default' size='sm' onClick={() => navigate('/connections')}>
+        <Plus className='w-3 h-3 mr-1' />
         新建连接
       </Button>
     </div>
   );
 
   return (
-    <DesktopPageWrapper
-      title='仪表板'
-      description='数据管理中心，快速访问各种功能和查看系统状态'
-      toolbar={toolbar}
-    >
+    <div className='h-full bg-background flex flex-col'>
+      {/* 工具栏 */}
+      <div className='border-b bg-background'>
+        <div className='p-4 flex items-center justify-end'>
+          {toolbar}
+        </div>
+      </div>
+
+      {/* 内容区域 */}
+      <div className='flex-1 overflow-hidden bg-background'>
+        <div className='p-6'>
       {/* 欢迎信息 */}
       <Alert className='mb-6'>
         <Rocket className='w-4 h-4' />
@@ -422,7 +427,9 @@ const Dashboard: React.FC = () => {
           console.log('导出成功:', result);
         }}
       />
-    </DesktopPageWrapper>
+        </div>
+      </div>
+    </div>
   );
 };
 

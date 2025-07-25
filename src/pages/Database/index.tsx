@@ -358,53 +358,57 @@ const Database: React.FC = () => {
 
   if (!activeConnectionId) {
     return (
-      <div className='p-6'>
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            <div className="space-y-2">
-              <div className="font-medium">请先连接到 InfluxDB</div>
-              <div>在连接管理页面选择一个连接并激活后，才能管理数据库。</div>
-              <Button size="sm" className="mt-2">
-                去连接
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
+      <div className='h-full bg-background flex flex-col'>
+        <div className='flex-1 overflow-hidden bg-background'>
+          <div className='p-6'>
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                <div className="space-y-2">
+                  <div className="font-medium">请先连接到 InfluxDB</div>
+                  <div>在连接管理页面选择一个连接并激活后，才能管理数据库。</div>
+                  <Button size="sm" className="mt-2">
+                    去连接
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <TooltipProvider>
-      <div className='p-6 database-management'>
-        {/* 页面标题和操作 */}
-        <div className='flex items-center justify-between mb-6'>
-          <div>
-            <h1 className='text-2xl font-bold mb-1'>
-              数据库管理
-            </h1>
-            <p className='text-muted-foreground'>
-              管理 InfluxDB 数据库、测量和保留策略
-            </p>
-          </div>
-          <div className='flex gap-2'>
+      <div className='h-full bg-background flex flex-col'>
+        {/* 工具栏 */}
+        <div className='border-b bg-background'>
+          <div className='p-4 flex items-center justify-end'>
+            <div className='flex gap-2'>
             <Button
               variant="outline"
+              size="sm"
               onClick={loadDatabases}
               disabled={loading}
             >
-              <RefreshCw className='w-4 h-4 mr-2' />
+              <RefreshCw className='w-3 h-3 mr-1' />
               刷新
             </Button>
             <Button
+              size="sm"
               onClick={() => setCreateModalVisible(true)}
             >
-              <Plus className='w-4 h-4 mr-2' />
+              <Plus className='w-3 h-3 mr-1' />
               创建数据库
             </Button>
+            </div>
           </div>
         </div>
+
+        {/* 内容区域 */}
+        <div className='flex-1 overflow-hidden bg-background'>
+          <div className='p-6 database-management'>
 
         {/* 数据库选择器 */}
         <div className='mb-6'>
@@ -649,6 +653,7 @@ const Database: React.FC = () => {
                 <div className='flex items-center justify-between'>
                   <CardTitle>保留策略</CardTitle>
                   <Button
+                    size="sm"
                     onClick={() =>
                       setRetentionPolicyDialog({
                         visible: true,
@@ -657,7 +662,7 @@ const Database: React.FC = () => {
                       })
                     }
                   >
-                    <Plus className='w-4 h-4 mr-2' />
+                    <Plus className='w-3 h-3 mr-1' />
                     创建策略
                   </Button>
                 </div>
@@ -1433,6 +1438,8 @@ const Database: React.FC = () => {
             </DialogContent>
           </Dialog>
         )}
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   );

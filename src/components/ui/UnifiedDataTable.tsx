@@ -645,6 +645,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
+    const virtuosoRef = useRef<any>(null);
 
     // 初始化列 - 优先使用外部传入的状态
     useEffect(() => {
@@ -705,8 +706,50 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // 自动滚动功能
     const startAutoScroll = useCallback((mouseX: number, mouseY: number) => {
-        const container = tableContainerRef.current || tableScrollRef.current;
-        if (!container) return;
+        // 优先查找 TableVirtuoso 内部的滚动容器
+        let container: HTMLElement | null = null;
+        let containerType = 'unknown';
+
+        // 尝试从 TableVirtuoso 内部找到实际的滚动容器
+        if (tableContainerRef.current) {
+            // 方法1: 查找 TableVirtuoso 的标准滚动容器
+            const virtuosoScroller = tableContainerRef.current.querySelector('[data-virtuoso-scroller]') as HTMLElement;
+            if (virtuosoScroller) {
+                container = virtuosoScroller;
+                containerType = 'virtuoso-scroller';
+            } else {
+                // 方法2: 查找带有 data-test-id 的滚动容器（TableVirtuoso 的另一种标识）
+                const testIdScroller = tableContainerRef.current.querySelector('[data-test-id*="virtuoso"]') as HTMLElement;
+                if (testIdScroller) {
+                    container = testIdScroller;
+                    containerType = 'virtuoso-test-id';
+                } else {
+                    // 方法3: 查找具有滚动样式的第一个 div 元素
+                    const scrollableElements = tableContainerRef.current.querySelectorAll('div');
+                    for (const element of scrollableElements) {
+                        const style = window.getComputedStyle(element);
+                        if ((style.overflow === 'auto' || style.overflow === 'scroll' ||
+                            style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+                            element.scrollHeight > element.clientHeight) {
+                            container = element;
+                            containerType = 'scrollable-div';
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 如果没有找到内部滚动容器，回退到外层容器
+        if (!container) {
+            container = tableContainerRef.current || tableScrollRef.current;
+            containerType = 'fallback-container';
+        }
+
+        if (!container) {
+            console.warn('🔧 [UnifiedDataTable] 未找到滚动容器，自动滚动失败');
+            return;
+        }
 
         const rect = container.getBoundingClientRect();
         const scrollThreshold = 50; // 距离边缘50px开始滚动
@@ -731,14 +774,32 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
         // 如果需要滚动
         if (scrollX !== 0 || scrollY !== 0) {
-            container.scrollBy(scrollX, scrollY);
+            // 检查容器是否真的可以滚动
+            const canScrollX = container.scrollWidth > container.clientWidth;
+            const canScrollY = container.scrollHeight > container.clientHeight;
 
-            // 继续自动滚动
-            autoScrollTimerRef.current = setTimeout(() => {
-                startAutoScroll(mouseX, mouseY);
-            }, 16); // 约60fps
+            if ((scrollX !== 0 && canScrollX) || (scrollY !== 0 && canScrollY)) {
+                container.scrollBy(scrollX, scrollY);
 
-            console.log('🔧 [UnifiedDataTable] 自动滚动:', { scrollX, scrollY, mouseX, mouseY });
+                // 继续自动滚动
+                autoScrollTimerRef.current = setTimeout(() => {
+                    startAutoScroll(mouseX, mouseY);
+                }, 16); // 约60fps
+
+                console.log('🔧 [UnifiedDataTable] 自动滚动:', {
+                    scrollX,
+                    scrollY,
+                    mouseX,
+                    mouseY,
+                    containerType,
+                    canScrollX,
+                    canScrollY,
+                    scrollWidth: container.scrollWidth,
+                    clientWidth: container.clientWidth,
+                    scrollHeight: container.scrollHeight,
+                    clientHeight: container.clientHeight
+                });
+            }
         }
     }, []);
 
@@ -1594,6 +1655,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             ref={tableContainerRef}
                         >
                                 <TableVirtuoso
+                                    ref={virtuosoRef}
                                     data={paginatedData}
                                     fixedHeaderContent={() => (
                                         <TableHeader
