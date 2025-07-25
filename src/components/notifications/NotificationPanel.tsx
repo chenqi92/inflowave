@@ -40,20 +40,22 @@ const getNotificationIcon = (type: NotificationItem['type']) => {
   }
 };
 
-// 通知类型背景色映射
+// 通知类型背景色映射（支持暗色模式）
 const getNotificationBgColor = (type: NotificationItem['type'], read: boolean) => {
-  const opacity = read ? 'bg-opacity-30' : 'bg-opacity-50';
+  const readOpacity = read ? 'opacity-70' : 'opacity-100';
+  const baseClasses = `border transition-all duration-200 ${readOpacity}`;
+
   switch (type) {
     case 'info':
-      return `bg-blue-50 border-blue-200 ${opacity}`;
+      return `${baseClasses} bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/50`;
     case 'success':
-      return `bg-green-50 border-green-200 ${opacity}`;
+      return `${baseClasses} bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800/50 hover:bg-green-100 dark:hover:bg-green-900/50`;
     case 'warning':
-      return `bg-yellow-50 border-yellow-200 ${opacity}`;
+      return `${baseClasses} bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-800/50 hover:bg-yellow-100 dark:hover:bg-yellow-900/50`;
     case 'error':
-      return `bg-red-50 border-red-200 ${opacity}`;
+      return `${baseClasses} bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800/50 hover:bg-red-100 dark:hover:bg-red-900/50`;
     default:
-      return `bg-gray-50 border-gray-200 ${opacity}`;
+      return `${baseClasses} bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-800/50`;
   }
 };
 
@@ -98,10 +100,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   return (
     <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
       {/* 面板头部 */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-foreground" />
-          <h3 className="text-lg font-semibold text-foreground">
+          <Bell className="w-5 h-5 text-foreground dark:text-foreground" />
+          <h3 className="text-lg font-semibold text-foreground dark:text-foreground">
             消息通知
           </h3>
           {unreadCount > 0 && (
@@ -153,10 +155,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       {/* 通知列表 */}
       <div className="flex-1 overflow-hidden">
         {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Bell className="w-12 h-12 mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-2">暂无通知</p>
-            <p className="text-sm text-center">
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground dark:text-muted-foreground">
+            <Bell className="w-12 h-12 mb-4 opacity-50 dark:opacity-40" />
+            <p className="text-lg font-medium mb-2 dark:text-muted-foreground">暂无通知</p>
+            <p className="text-sm text-center dark:text-muted-foreground">
               软件启动后的所有消息通知将显示在这里
             </p>
           </div>
@@ -167,10 +169,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                 <div
                   key={notification.id}
                   className={`
-                    p-3 rounded-lg border cursor-pointer transition-all duration-200
+                    p-3 rounded-lg cursor-pointer group
                     hover:shadow-sm hover:scale-[1.02]
                     ${getNotificationBgColor(notification.type, notification.read)}
-                    ${!notification.read ? 'ring-1 ring-primary/20' : ''}
+                    ${!notification.read ? 'ring-1 ring-primary/30 dark:ring-primary/50' : ''}
                   `}
                   onClick={() => handleNotificationClick(notification)}
                 >
@@ -184,7 +186,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className={`text-sm font-medium truncate ${
-                          !notification.read ? 'text-foreground' : 'text-muted-foreground'
+                          !notification.read
+                            ? 'text-foreground dark:text-foreground'
+                            : 'text-muted-foreground dark:text-muted-foreground'
                         }`}>
                           {notification.title}
                         </h4>
@@ -216,13 +220,15 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       </div>
                       
                       <p className={`text-xs mt-1 ${
-                        !notification.read ? 'text-foreground/80' : 'text-muted-foreground'
+                        !notification.read
+                          ? 'text-foreground/80 dark:text-foreground/90'
+                          : 'text-muted-foreground dark:text-muted-foreground'
                       }`}>
                         {notification.message}
                       </p>
                       
                       {/* 时间和来源 */}
-                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
                         <Clock className="w-3 h-3" />
                         <span>
                           {formatDistanceToNow(new Date(notification.timestamp), {
@@ -241,7 +247,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     
                     {/* 未读标识 */}
                     {!notification.read && (
-                      <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2"></div>
+                      <div className="w-2 h-2 bg-primary dark:bg-primary rounded-full flex-shrink-0 mt-2 shadow-sm"></div>
                     )}
                   </div>
                 </div>
