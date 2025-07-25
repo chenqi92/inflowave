@@ -26,7 +26,6 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { QueryResult } from '@/types';
 
 // 临时导入页面组件用于视图切换
-import DatabasePage from '../../pages/Database';
 import VisualizationPage from '../../pages/Visualization';
 import PerformancePage from '../../pages/Performance';
 import ConnectionsPage from '../../pages/Connections';

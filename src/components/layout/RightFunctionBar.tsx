@@ -6,10 +6,9 @@ import {
   Package,
   History,
   Wrench,
-  Database,
 } from 'lucide-react';
 
-export type FunctionType = 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools' | 'database';
+export type FunctionType = 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools';
 
 interface FunctionItem {
   key: FunctionType;
@@ -36,12 +35,6 @@ const functionItems: FunctionItem[] = [
     icon: <Activity className="w-4 h-4" />,
     label: '监控',
     description: '性能监控和诊断',
-  },
-  {
-    key: 'database',
-    icon: <Database className="w-4 h-4" />,
-    label: '数据库',
-    description: '数据库管理',
   },
   {
     key: 'history',

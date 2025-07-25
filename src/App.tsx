@@ -21,7 +21,7 @@ import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
 import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
-import type { EditorTab } from './components/editor/TabManager';
+import type { EditorTab } from '@components/editor';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -164,7 +164,6 @@ const MainLayout: React.FC = () => {
       <Routes>
         <Route path='/' element={<DataGripStyleLayout />} />
         <Route path='/dashboard' element={<DataGripStyleLayout />} />
-        <Route path='/database' element={<DataGripStyleLayout />} />
         <Route path='/query' element={<DataGripStyleLayout />} />
         <Route path='/datagrip' element={<DataGripStyleLayout />} />
         <Route path='/visualization' element={<DataGripStyleLayout />} />

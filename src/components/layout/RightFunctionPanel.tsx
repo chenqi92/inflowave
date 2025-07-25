@@ -5,12 +5,43 @@ import { Button } from '@/components/ui';
 import type { FunctionType } from './RightFunctionBar';
 
 // 懒加载面板适配的功能组件
-const PanelVisualizationPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelVisualizationPage })));
-const PanelPerformancePage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelPerformancePage })));
-const PanelDatabasePage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelDatabasePage })));
-const PanelQueryHistoryPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelQueryHistoryPage })));
-const PanelExtensionsPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelExtensionsPage })));
-const PanelDevToolsPage = React.lazy(() => import('./PanelAdaptedPages').then(m => ({ default: m.PanelDevToolsPage })));
+// 直接导入页面组件并创建面板适配版本
+const VisualizationPage = React.lazy(() => import('../../pages/Visualization'));
+const PerformancePage = React.lazy(() => import('../../pages/Performance'));
+const QueryHistoryPage = React.lazy(() => import('../../pages/QueryHistory'));
+const Extensions = React.lazy(() => import('../../pages/Extensions'));
+const DevTools = React.lazy(() => import('../../pages/DevTools'));
+
+// 面板适配组件
+const PanelVisualizationPage: React.FC = () => (
+  <div className="h-full">
+    <VisualizationPage />
+  </div>
+);
+
+const PanelPerformancePage: React.FC = () => (
+  <div className="h-full">
+    <PerformancePage />
+  </div>
+);
+
+const PanelQueryHistoryPage: React.FC = () => (
+  <div className="h-full">
+    <QueryHistoryPage />
+  </div>
+);
+
+const PanelExtensionsPage: React.FC = () => (
+  <div className="h-full">
+    <Extensions />
+  </div>
+);
+
+const PanelDevToolsPage: React.FC = () => (
+  <div className="h-full">
+    <DevTools />
+  </div>
+);
 
 interface RightFunctionPanelProps {
   selectedFunction: FunctionType | null;
@@ -22,7 +53,6 @@ interface RightFunctionPanelProps {
 const functionTitles: Record<FunctionType, string> = {
   visualization: '数据可视化',
   monitoring: '性能监控',
-  database: '数据库管理',
   history: '查询历史',
   extensions: '扩展管理',
   tools: '开发工具',
@@ -32,7 +62,6 @@ const functionTitles: Record<FunctionType, string> = {
 const functionDescriptions: Record<FunctionType, string> = {
   visualization: '创建图表和仪表板来可视化您的时序数据',
   monitoring: '监控系统性能和诊断瓶颈问题',
-  database: '管理数据库连接和数据库操作',
   history: '查看和管理查询历史记录',
   extensions: '管理插件、API集成和自动化规则',
   tools: '开发和调试工具集合',
@@ -53,8 +82,6 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         return <PanelVisualizationPage />;
       case 'monitoring':
         return <PanelPerformancePage />;
-      case 'database':
-        return <PanelDatabasePage />;
       case 'history':
         return <PanelQueryHistoryPage />;
       case 'extensions':

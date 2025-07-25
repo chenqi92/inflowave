@@ -48,6 +48,9 @@ import type { ConnectionConfig } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
+import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
+import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
 import { dialog } from '@/utils/dialog';
 // DropdownMenu相关组件已移除，使用自定义右键菜单
 
@@ -181,6 +184,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 连接对话框状态
   const [isConnectionDialogVisible, setIsConnectionDialogVisible] = useState(false);
   const [editingConnection, setEditingConnection] = useState<ConnectionConfig | null>(null);
+
+  // 数据库管理对话框状态
+  const [createDatabaseDialogOpen, setCreateDatabaseDialogOpen] = useState(false);
+  const [databaseInfoDialog, setDatabaseInfoDialog] = useState({
+    open: false,
+    databaseName: '',
+  });
+  const [retentionPolicyDialog, setRetentionPolicyDialog] = useState({
+    open: false,
+    mode: 'create' as 'create' | 'edit',
+    database: '',
+    policy: null as any,
+  });
 
   const activeConnection = activeConnectionId
     ? getConnection(activeConnectionId)
@@ -1634,6 +1650,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
           break;
 
+        case 'create_database':
+          if (contextMenuTarget.type === 'connection') {
+            setCreateDatabaseDialogOpen(true);
+          }
+          break;
+
         case 'create_measurement':
           if (contextMenuTarget.type === 'database') {
             showMessage.info(`创建测量值功能开发中: ${contextMenuTarget.database}`);
@@ -1642,7 +1664,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         case 'database_info':
           if (contextMenuTarget.type === 'database') {
-            showMessage.info(`数据库信息: ${contextMenuTarget.database}`);
+            setDatabaseInfoDialog({
+              open: true,
+              databaseName: contextMenuTarget.database,
+            });
+          }
+          break;
+
+        case 'manage_retention_policies':
+          if (contextMenuTarget.type === 'database') {
+            setRetentionPolicyDialog({
+              open: true,
+              mode: 'create',
+              database: contextMenuTarget.database,
+              policy: null,
+            });
           }
           break;
 
@@ -2515,6 +2551,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
+                                  handleContextMenuAction('create_database');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Plus className="w-4 h-4" />
+                                创建数据库
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
                                   handleContextMenuAction('refresh_connection');
                                   setContextMenuOpen(false);
                                 }}
@@ -2603,6 +2649,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 创建测量值
                               </button>
                               <div className="my-1 h-px bg-border" />
+                              <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库管理</div>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                                 onClick={() => {
@@ -2612,6 +2659,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               >
                                 <Info className="w-4 h-4" />
                                 数据库信息
+                              </button>
+                              <button
+                                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  handleContextMenuAction('manage_retention_policies');
+                                  setContextMenuOpen(false);
+                                }}
+                              >
+                                <Clock className="w-4 h-4" />
+                                保留策略
                               </button>
                               <button
                                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
@@ -2776,6 +2833,40 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       connectionId={dialogStates.info.connectionId}
       database={dialogStates.info.database}
       tableName={dialogStates.info.tableName}
+    />
+
+    {/* 数据库管理对话框 */}
+    <CreateDatabaseDialog
+      open={createDatabaseDialogOpen}
+      onClose={() => setCreateDatabaseDialogOpen(false)}
+      onSuccess={() => {
+        // 刷新树形数据
+        buildCompleteTreeData(true);
+      }}
+    />
+
+    <DatabaseInfoDialog
+      open={databaseInfoDialog.open}
+      onClose={() => setDatabaseInfoDialog({ open: false, databaseName: '' })}
+      databaseName={databaseInfoDialog.databaseName}
+    />
+
+    <RetentionPolicyDialog
+      visible={retentionPolicyDialog.open}
+      mode={retentionPolicyDialog.mode}
+      database={retentionPolicyDialog.database}
+      policy={retentionPolicyDialog.policy}
+      connectionId={activeConnectionId || ''}
+      onClose={() => setRetentionPolicyDialog({
+        open: false,
+        mode: 'create',
+        database: '',
+        policy: null,
+      })}
+      onSuccess={() => {
+        // 刷新数据库信息
+        buildCompleteTreeData(true);
+      }}
     />
 
     {/* 连接配置对话框 */}

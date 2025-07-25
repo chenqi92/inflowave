@@ -233,8 +233,8 @@ export const useTabOperations = () => {
   // 创建新的查询tab
   const createQueryTab = (database?: string, query?: string) => {
     const newTab: EditorTab = {
-      id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title: `查询-${Date.now()}`,
+      id: `tab-1`,
+      title: `查询-1`,
       content: query || 'SELECT * FROM ',
       type: 'query',
       modified: true,
