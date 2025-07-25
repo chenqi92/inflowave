@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, Spin } from '@/components/ui'
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import type { FunctionType } from './RightFunctionBar';
+import NotificationPanel from '@/components/notifications/NotificationPanel';
 
 // 懒加载面板适配的功能组件
 // 直接导入页面组件并创建面板适配版本
@@ -51,6 +52,7 @@ interface RightFunctionPanelProps {
 
 // 功能标题映射
 const functionTitles: Record<FunctionType, string> = {
+  notifications: '消息通知',
   visualization: '数据可视化',
   monitoring: '性能监控',
   history: '查询历史',
@@ -60,6 +62,7 @@ const functionTitles: Record<FunctionType, string> = {
 
 // 功能描述映射
 const functionDescriptions: Record<FunctionType, string> = {
+  notifications: '查看和管理软件启动后的所有消息通知',
   visualization: '创建图表和仪表板来可视化您的时序数据',
   monitoring: '监控系统性能和诊断瓶颈问题',
   history: '查看和管理查询历史记录',
@@ -78,6 +81,8 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
 
   const renderFunctionContent = () => {
     switch (selectedFunction) {
+      case 'notifications':
+        return <NotificationPanel onClose={onClose} />;
       case 'visualization':
         return <PanelVisualizationPage />;
       case 'monitoring':
@@ -98,6 +103,15 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         );
     }
   };
+
+  // 消息通知面板不需要额外的头部和包装
+  if (selectedFunction === 'notifications') {
+    return (
+      <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
+        {renderFunctionContent()}
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>

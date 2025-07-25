@@ -883,12 +883,24 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           console.log('\ud83d\udcc8 字段查询结果:', fieldResult.data);
           console.log('\ud83d\udd0d 字段查询第一行数据:', fieldResult.data[0]);
           fieldResult.data.forEach((row: any) => {
-            // 兼容不同版本的InfluxDB字段名称
-            const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
+            let fieldName: string;
+            let fieldType: string;
+
+            // 处理数组格式的响应 [fieldName, fieldType]
+            if (Array.isArray(row) && row.length >= 2) {
+              fieldName = row[0];
+              fieldType = row[1];
+              console.log('🔍 解析数组格式字段:', { fieldName, fieldType, rawRow: row });
+            } else {
+              // 处理对象格式的响应
+              fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
+              fieldType = row.fieldType || row.type;
+              console.log('🔍 解析对象格式字段:', { fieldName, fieldType, rawRow: row });
+            }
+
             if (fieldName && typeof fieldName === 'string') {
               let type: FieldInfo['type'] = 'string';
-              const fieldType = row.fieldType || row.type;
-              if (fieldType) {
+              if (fieldType && typeof fieldType === 'string') {
                 switch (fieldType.toLowerCase()) {
                   case 'integer':
                   case 'int':
@@ -908,7 +920,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 }
               }
               fields.push({ name: fieldName, type });
-              console.log('添加字段:', { name: fieldName, type });
+              console.log('✅ 添加字段:', { name: fieldName, type, originalType: fieldType });
             }
           });
         } else {
@@ -1476,9 +1488,34 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           try {
             // 异步生成当前批次数据
             const batchData = await generateCustomDataPointsBatch(batchIndex, currentBatchSize);
-            
+
+            console.log(`🔧 生成批次 ${batchIndex + 1} 数据:`, {
+              expectedSize: currentBatchSize,
+              actualSize: batchData.length,
+              tableInfo: {
+                name: tableInfo?.name,
+                fieldsCount: tableInfo?.fields.length,
+                tagsCount: tableInfo?.tags.length
+              },
+              sampleData: batchData[0]
+            });
+
+            // 详细检查生成的数据点
+            if (batchData.length > 0) {
+              const samplePoint = batchData[0];
+              console.log(`🔍 数据点详细信息:`, {
+                measurement: samplePoint.measurement,
+                tagsCount: Object.keys(samplePoint.tags || {}).length,
+                fieldsCount: Object.keys(samplePoint.fields || {}).length,
+                hasTimestamp: !!samplePoint.timestamp,
+                tags: samplePoint.tags,
+                fields: samplePoint.fields,
+                timestamp: samplePoint.timestamp
+              });
+            }
+
             if (batchData.length === 0) {
-              console.warn(`批次 ${batchIndex + 1} 生成的数据为空`);
+              console.warn(`⚠️ 批次 ${batchIndex + 1} 生成的数据为空`);
               continue;
             }
 
@@ -1490,18 +1527,56 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               precision: 'ms',
             };
 
+            console.log(`📝 准备写入批次 ${batchIndex + 1}/${totalBatches}:`, {
+              connectionId: activeConnectionId,
+              database: selectedDatabase,
+              pointsCount: batchData.length,
+              samplePoint: batchData[0]
+            });
+
+            // 详细比较自定义数据和预定义数据的格式差异
+            console.log(`🔍 自定义数据格式分析:`, {
+              measurement: batchData[0]?.measurement,
+              tagsType: typeof batchData[0]?.tags,
+              fieldsType: typeof batchData[0]?.fields,
+              timestampType: typeof batchData[0]?.timestamp,
+              tagsKeys: Object.keys(batchData[0]?.tags || {}),
+              fieldsKeys: Object.keys(batchData[0]?.fields || {}),
+              sampleTagValue: Object.values(batchData[0]?.tags || {})[0],
+              sampleFieldValue: Object.values(batchData[0]?.fields || {})[0],
+              timestampValue: batchData[0]?.timestamp
+            });
+
             const result = await safeTauriInvoke<WriteResult>(
               'write_data_points',
               { request }
             );
-            
+
+            console.log(`📊 写入结果:`, {
+              success: result.success,
+              pointsWritten: result.pointsWritten,
+              errors: result.errors,
+              duration: result.duration
+            });
+
             if (result.success) {
               processedCount += currentBatchSize;
               setGeneratedCount(processedCount);
               updateGenerationSpeed(processedCount, startTimeStamp);
+
+              // 使用实际的写入数量，如果未定义则使用预期数量
+              const actualWritten = result.pointsWritten || currentBatchSize;
               console.log(
-                `成功写入批次 ${batchIndex + 1}/${totalBatches} 到表 "${selectedTable}", 数据点: ${currentBatchSize}`
+                `✅ 成功写入批次 ${batchIndex + 1}/${totalBatches} 到表 "${selectedTable}", 预期数据点: ${currentBatchSize}, 实际写入: ${actualWritten}`
               );
+
+              // 检查是否有数据实际写入
+              if (result.pointsWritten === undefined || result.pointsWritten === 0) {
+                console.warn(`⚠️ 警告：批次 ${batchIndex + 1} 写入成功但 pointsWritten 为 ${result.pointsWritten}，这可能表示数据没有实际写入`);
+              }
+            } else {
+              console.error(`❌ 批次 ${batchIndex + 1} 写入失败:`, result.errors);
+              showMessage.error(`批次 ${batchIndex + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`);
             }
           } catch (error) {
             console.error(`批次 ${batchIndex + 1} 处理失败:`, error);
@@ -1524,13 +1599,78 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           setProgress(100);
           setCurrentTask('');
           const elapsed = (Date.now() - startTimeStamp) / 1000;
-          showMessage.success(
-            `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒`
-          );
-          
-          setTimeout(() => {
-            dataExplorerRefresh.trigger();
-          }, 1000);
+
+          // 验证数据是否真的写入了
+          console.log('🔍 验证数据写入情况...');
+          try {
+            // 尝试多种验证查询
+            const verifyQueries = [
+              `SELECT COUNT(*) FROM "${selectedTable}" WHERE time > now() - 1h`,
+              `SELECT COUNT(*) FROM "${selectedTable}"`,
+              `SELECT * FROM "${selectedTable}" ORDER BY time DESC LIMIT 1`
+            ];
+
+            let verificationSuccess = false;
+            let dataCount = 0;
+
+            for (const query of verifyQueries) {
+              try {
+                console.log(`🔍 尝试验证查询: ${query}`);
+                const verifyResult = await safeTauriInvoke<any>('execute_query', {
+                  request: {
+                    connectionId: activeConnectionId,
+                    database: selectedDatabase,
+                    query: query,
+                  },
+                });
+
+                console.log(`📊 验证查询结果:`, {
+                  success: verifyResult.success,
+                  dataLength: verifyResult.data?.length,
+                  rowCount: verifyResult.rowCount,
+                  sampleData: verifyResult.data?.[0]
+                });
+
+                if (verifyResult.success && verifyResult.data && verifyResult.data.length > 0) {
+                  if (query.includes('COUNT(*)')) {
+                    // COUNT查询的结果
+                    dataCount = verifyResult.data[0][1] || verifyResult.data[0][0] || 0;
+                    console.log(`✅ COUNT查询成功：表 "${selectedTable}" 中有 ${dataCount} 条数据`);
+                  } else {
+                    // SELECT查询的结果
+                    dataCount = verifyResult.rowCount || verifyResult.data.length;
+                    console.log(`✅ SELECT查询成功：表 "${selectedTable}" 中有数据，返回了 ${dataCount} 行`);
+                  }
+                  verificationSuccess = true;
+                  break;
+                }
+              } catch (queryError) {
+                console.log(`❌ 验证查询失败 "${query}":`, queryError);
+                continue;
+              }
+            }
+
+            if (verificationSuccess) {
+              showMessage.success(
+                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒，验证：表中有 ${dataCount} 条数据`
+              );
+            } else {
+              console.warn('⚠️ 所有验证查询都失败了');
+              showMessage.success(
+                `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（无法验证写入情况）`
+              );
+            }
+          } catch (verifyError) {
+            console.error('❌ 验证数据写入时出错:', verifyError);
+            showMessage.success(
+              `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（验证时出错）`
+            );
+          }
+
+          // 不再触发全局刷新，避免清空数据源树的展开状态
+          // setTimeout(() => {
+          //   dataExplorerRefresh.trigger();
+          // }, 1000);
         }
       } else {
         // 预定义任务数据生成 - 只生成选中的任务
@@ -1569,26 +1709,56 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               precision: 'ms',
             };
 
+            console.log(`📝 预定义任务写入批次 ${j + 1}/${batches}:`, {
+              task: task.name,
+              measurement: task.measurement,
+              database: selectedDatabase,
+              pointsCount: batch.length,
+              samplePoint: batch[0]
+            });
+
+            // 详细分析预定义数据格式
+            console.log(`🔍 预定义数据格式分析:`, {
+              measurement: batch[0]?.measurement,
+              tagsType: typeof batch[0]?.tags,
+              fieldsType: typeof batch[0]?.fields,
+              timestampType: typeof batch[0]?.timestamp,
+              tagsKeys: Object.keys(batch[0]?.tags || {}),
+              fieldsKeys: Object.keys(batch[0]?.fields || {}),
+              sampleTagValue: Object.values(batch[0]?.tags || {})[0],
+              sampleFieldValue: Object.values(batch[0]?.fields || {})[0],
+              timestampValue: batch[0]?.timestamp
+            });
+
             try {
               const result = await safeTauriInvoke<WriteResult>(
                 'write_data_points',
                 { request }
               );
+
+              console.log(`📊 预定义任务写入结果:`, {
+                success: result.success,
+                pointsWritten: result.pointsWritten,
+                errors: result.errors,
+                duration: result.duration
+              });
+
               if (result.success) {
                 console.log(
-                  `成功写入批次 ${j + 1}/${batches} 到数据库 "${selectedDatabase}", 表: "${task.measurement}", 数据点: ${batch.length}`
+                  `✅ 成功写入批次 ${j + 1}/${batches} 到数据库 "${selectedDatabase}", 表: "${task.measurement}", 数据点: ${batch.length}, 实际写入: ${result.pointsWritten}`
                 );
               } else {
-                console.error(`写入批次 ${j + 1} 失败:`, result.errors);
+                console.error(`❌ 写入批次 ${j + 1} 失败:`, result.errors);
+                showMessage.error(`批次 ${j + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`);
                 // 如果有错误但不是全部失败，继续处理
-                if (result.errors.length < batch.length) {
+                if (result.errors && result.errors.length < batch.length) {
                   showMessage.warning(
                     `批次 ${j + 1} 部分写入失败，继续处理下一批次`
                   );
                 }
               }
             } catch (error) {
-              console.error(`写入批次 ${j + 1} 失败:`, error);
+              console.error(`❌ 写入批次 ${j + 1} 失败:`, error);
               showMessage.error(`写入批次 ${j + 1} 失败: ${error}`);
               // 继续处理下一批次
             }
@@ -1621,10 +1791,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             `所有测试数据已生成到数据库 "${selectedDatabase}"！`
           );
 
-          // 触发数据源面板刷新
-          setTimeout(() => {
-            dataExplorerRefresh.trigger();
-          }, 1000); // 延迟1秒刷新，确保数据已经写入
+          // 不再触发全局刷新，避免清空数据源树的展开状态
+          // setTimeout(() => {
+          //   dataExplorerRefresh.trigger();
+          // }, 1000); // 延迟1秒刷新，确保数据已经写入
         } else {
           setCurrentTask('');
           showMessage.info('数据生成已停止');

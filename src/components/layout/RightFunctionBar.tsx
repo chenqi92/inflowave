@@ -1,14 +1,17 @@
 import React from 'react';
 import { Button } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import {
   BarChart,
   Activity,
   Package,
   History,
   Wrench,
+  Bell,
 } from 'lucide-react';
+import { useNotificationStore } from '@/store/notifications';
 
-export type FunctionType = 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools';
+export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools';
 
 interface FunctionItem {
   key: FunctionType;
@@ -24,6 +27,12 @@ interface RightFunctionBarProps {
 }
 
 const functionItems: FunctionItem[] = [
+  {
+    key: 'notifications',
+    icon: <Bell className="w-4 h-4" />,
+    label: '消息',
+    description: '消息通知中心',
+  },
   {
     key: 'visualization',
     icon: <BarChart className="w-4 h-4" />,
@@ -61,6 +70,8 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
   onFunctionSelect,
   className = '',
 }) => {
+  const { unreadCount } = useNotificationStore();
+
   const handleFunctionClick = (functionType: FunctionType) => {
     // 如果点击的是当前选中的功能，则折叠面板
     if (selectedFunction === functionType) {
@@ -75,20 +86,31 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
       {/* 功能图标列表 */}
       <div className="flex-1 py-2 space-y-1">
         {functionItems.map((item) => (
-          <Button
-            key={item.key}
-            variant={selectedFunction === item.key ? 'default' : 'ghost'}
-            size="sm"
-            className={`w-8 h-8 p-0 mx-1 flex flex-col items-center justify-center transition-all duration-200 ${
-              selectedFunction === item.key
-                ? 'bg-primary text-primary-foreground shadow-sm scale-105'
-                : 'hover:bg-accent hover:text-accent-foreground hover:scale-105'
-            }`}
-            onClick={() => handleFunctionClick(item.key)}
-            title={`${item.label} - ${item.description}`}
-          >
-            {item.icon}
-          </Button>
+          <div key={item.key} className="relative">
+            <Button
+              variant={selectedFunction === item.key ? 'default' : 'ghost'}
+              size="sm"
+              className={`w-8 h-8 p-0 mx-1 flex flex-col items-center justify-center transition-all duration-200 ${
+                selectedFunction === item.key
+                  ? 'bg-primary text-primary-foreground shadow-sm scale-105'
+                  : 'hover:bg-accent hover:text-accent-foreground hover:scale-105'
+              }`}
+              onClick={() => handleFunctionClick(item.key)}
+              title={`${item.label} - ${item.description}`}
+            >
+              {item.icon}
+            </Button>
+
+            {/* 消息通知徽章 */}
+            {item.key === 'notifications' && unreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs flex items-center justify-center min-w-[16px] rounded-full"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </div>
         ))}
       </div>
 

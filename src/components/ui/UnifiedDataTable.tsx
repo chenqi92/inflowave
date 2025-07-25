@@ -367,11 +367,8 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                         "text-xs text-muted-foreground bg-muted border-b-2",
                         virtualMode ? "virtualized-sticky-header" : "sticky left-0 top-0 z-50 bg-muted"
                     )}>
-                        <div className="flex items-center gap-1">
+                        <div className="text-center items-center gap-1">
                             <span className="text-xs">#</span>
-                            <Badge variant="outline" className="text-xs">
-                                序号
-                            </Badge>
                         </div>
                     </th>
                 )}
@@ -380,7 +377,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 {(() => {
                     const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
                     return visibleColumns;
-                })().map((column) => {
+                })().map((column, colIndex) => {
                     // 计算列的最小宽度
                     const getColumnMinWidth = (col: string) => {
                         if (col === 'time') return '180px';
@@ -392,7 +389,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
 
                     return (
                         <th
-                            key={column}
+                            key={`header-${column}-${colIndex}`}
                             className={cn(
                                 'px-3 py-2 text-left align-middle font-medium whitespace-nowrap border-r border-b-2',
                                 'text-xs text-muted-foreground bg-muted hover:bg-muted/80 group'
@@ -411,13 +408,6 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                                 >
                                     {column}
                                 </span>
-
-                                {/* 时间列标识 */}
-                                {column === 'time' && (
-                                    <Badge variant="secondary" className="text-xs">
-                                        时间
-                                    </Badge>
-                                )}
 
                                 {/* 排序按钮 */}
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

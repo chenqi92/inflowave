@@ -16,6 +16,7 @@ import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
+import { useAppNotifications } from './hooks/useAppNotifications';
 import { consoleLogger } from './utils/consoleLogger';
 import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
@@ -52,6 +53,8 @@ const MainLayout: React.FC = () => {
     skipVersion: _skipVersion,
   } = useUpdater();
 
+  // 初始化应用通知
+  useAppNotifications();
 
 
   // 检查是否显示用户指引
