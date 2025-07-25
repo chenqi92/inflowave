@@ -104,7 +104,9 @@
       },
       "appimage": {
         "bundleMediaFramework": false,
-        "files": {}
+        "files": {},
+        "compress": true,
+        "stripBinaries": true
       }
     }
   }
