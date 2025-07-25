@@ -8,7 +8,7 @@ use std::time::Instant;
 use sysinfo::{System, SystemExt, CpuExt, NetworkExt, DiskExt};
 use crate::services::ConnectionService;
 use crate::models::connection::ConnectionConfig;
-use chrono::{DateTime, Utc, Local, Timelike, Datelike};
+use chrono::{Timelike, Datelike};
 
 // 全局系统监控实例，用于持续收集历史数据
 lazy_static::lazy_static! {
@@ -639,6 +639,13 @@ async fn try_get_influxdb_internal_metrics(time_range: &str) -> Result<QueryPerf
         }
     }
 
+    // 计算负载因子用于错误率估算
+    let load_factor = if avg_execution_time > 0.0 {
+        (avg_execution_time / 1000.0).min(1.0) // 基于执行时间计算负载因子，最大为1.0
+    } else {
+        0.0
+    };
+
     // 构建性能指标
     let metrics = QueryPerformanceMetrics {
         total_queries,
@@ -672,20 +679,20 @@ async fn execute_internal_query(query: &str) -> Result<crate::models::QueryResul
                 Err(e) => {
                     warn!("内部监控查询失败: {}, 使用默认值", e);
                     // 返回合理的默认值而不是固定的模拟数据
-                    create_default_query_result_for_internal_query(query)
+                    create_default_query_result_for_internal_query(query).await
                 }
             }
         }
         Err(e) => {
             warn!("无法获取内部查询连接: {}, 使用默认值", e);
             // 返回合理的默认值
-            create_default_query_result_for_internal_query(query)
+            create_default_query_result_for_internal_query(query).await
         }
     }
 }
 
 /// 获取用于内部查询的默认连接配置
-async fn get_default_connection_for_internal_query() -> Result<crate::models::ConnectionConfig, String> {
+async fn get_default_connection_for_internal_query() -> Result<crate::models::connection::ConnectionConfig, String> {
     // 这里应该从连接管理器获取当前活跃的连接
     // 暂时使用一个默认配置，后续需要集成连接管理器
 
@@ -698,16 +705,25 @@ async fn get_default_connection_for_internal_query() -> Result<crate::models::Co
     let username = std::env::var("INFLUXDB_USERNAME").ok();
     let password = std::env::var("INFLUXDB_PASSWORD").ok();
 
-    Ok(crate::models::ConnectionConfig {
+    Ok(crate::models::connection::ConnectionConfig {
         id: "internal_monitoring".to_string(),
         name: "Internal Monitoring".to_string(),
+        description: Some("Internal monitoring connection".to_string()),
+        db_type: crate::models::connection::DatabaseType::InfluxDB,
+        version: Some(crate::models::connection::InfluxDBVersion::V1x),
         host,
         port,
         username,
         password,
         database: Some("_internal".to_string()),
         ssl: false,
-        timeout: Some(30),
+        timeout: 30,
+        connection_timeout: 30,
+        query_timeout: 60,
+        default_query_language: Some("InfluxQL".to_string()),
+        proxy_config: None,
+        retention_policy: None,
+        v2_config: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     })
@@ -765,7 +781,7 @@ fn parse_influxdb_response_to_query_result(response: &str) -> Result<crate::mode
 }
 
 /// 为内部查询创建默认的QueryResult
-fn create_default_query_result_for_internal_query(query: &str) -> Result<crate::models::QueryResult, String> {
+async fn create_default_query_result_for_internal_query(query: &str) -> Result<crate::models::QueryResult, String> {
     // 根据查询类型返回合理的默认值
     if query.contains("queryReq") {
         // 查询请求数 - 返回基于时间的合理估算
@@ -948,7 +964,7 @@ async fn get_real_network_metrics_from_influxdb(connection: &ConnectionConfig) -
 
     let mut bytes_in = 0u64;
     let mut bytes_out = 0u64;
-    let mut connections = 0u64;
+    let mut _connections = 0u64;
     let mut total_requests = 0u64;
 
     for (index, query) in network_queries.iter().enumerate() {
@@ -963,7 +979,7 @@ async fn get_real_network_metrics_from_influxdb(connection: &ConnectionConfig) -
                                 match index {
                                     0 => bytes_in = numeric_value,
                                     1 => bytes_out = numeric_value,
-                                    2 => connections = numeric_value,
+                                    2 => _connections = numeric_value,
                                     3 => total_requests = numeric_value,
                                     _ => {}
                                 }
@@ -1058,7 +1074,7 @@ fn estimate_compression_ratio_from_disk_usage(disk_metrics: &DiskMetrics) -> f64
     // 考虑数据类型的影响（时序数据通常有较好的压缩比）
     let timeseries_factor = 1.15; // 时序数据压缩效果通常较好
 
-    let estimated_ratio = base_compression * usage_factor * timeseries_factor;
+    let estimated_ratio: f64 = base_compression * usage_factor * timeseries_factor;
 
     // 限制在合理范围内 (0.5-0.95)
     estimated_ratio.max(0.5).min(0.95)

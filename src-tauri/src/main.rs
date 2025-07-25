@@ -840,16 +840,16 @@ async fn main() {
 
                 // 根据系统主题设置初始背景色
                 match window.theme() {
-                    Ok(Some(tauri::Theme::Dark)) => {
+                    Ok(tauri::Theme::Dark) => {
                         info!("检测到系统深色主题，使用深色背景");
                         // 深色主题背景色已在CSS中处理，这里不需要额外设置
                     }
-                    Ok(Some(tauri::Theme::Light)) => {
+                    Ok(tauri::Theme::Light) => {
                         info!("检测到系统浅色主题，使用浅色背景");
                         // 浅色主题背景色已在配置中设置
                     }
-                    Ok(None) => {
-                        info!("无法检测系统主题，使用默认浅色背景");
+                    Ok(_) => {
+                        info!("检测到未知系统主题，使用默认浅色背景");
                     }
                     Err(e) => {
                         warn!("获取系统主题失败: {}, 使用默认浅色背景", e);
