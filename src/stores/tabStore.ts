@@ -232,13 +232,23 @@ export const useTabOperations = () => {
 
   // 创建新的查询tab
   const createQueryTab = (database?: string, query?: string) => {
+    // 生成唯一的 tab ID
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    const tabId = `tab-${timestamp}-${random}`;
+
+    // 计算新的标签页编号
+    const queryTabs = tabs.filter(tab => tab.type === 'query');
+    const tabNumber = queryTabs.length + 1;
+
     const newTab: EditorTab = {
-      id: `tab-1`,
-      title: `查询-1`,
+      id: tabId,
+      title: `查询-${tabNumber}`,
       content: query || 'SELECT * FROM ',
       type: 'query',
       modified: true,
       saved: false,
+      database,
     };
 
     addTab(newTab);
