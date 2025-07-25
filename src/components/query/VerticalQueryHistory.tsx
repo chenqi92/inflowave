@@ -332,7 +332,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
 
           {/* 搜索框 */}
           <div className="relative mb-3">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="搜索查询..."
               value={searchText}

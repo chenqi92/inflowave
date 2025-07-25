@@ -6,11 +6,11 @@ import type { FunctionType } from './RightFunctionBar';
 
 // 懒加载面板适配的功能组件
 // 直接导入页面组件并创建面板适配版本
-const VisualizationPage = React.lazy(() => import('../../pages/Visualization'));
-const PerformancePage = React.lazy(() => import('../../pages/Performance'));
-const QueryHistoryPage = React.lazy(() => import('../../pages/QueryHistory'));
-const Extensions = React.lazy(() => import('../../pages/Extensions'));
-const DevTools = React.lazy(() => import('../../pages/DevTools'));
+const VisualizationPage = React.lazy(() => import('@/pages/Visualization'));
+const PerformancePage = React.lazy(() => import('@/pages/Performance'));
+const QueryHistoryPage = React.lazy(() => import('@/pages/QueryHistory'));
+const Extensions = React.lazy(() => import('@/pages/Extensions'));
+const DevTools = React.lazy(() => import('@/pages/DevTools'));
 
 // 面板适配组件
 const PanelVisualizationPage: React.FC = () => (
