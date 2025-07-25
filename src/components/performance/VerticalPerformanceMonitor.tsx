@@ -144,7 +144,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
           timeRange: {
             start: startTime.toISOString(),
             end: endTime.toISOString(),
-            hours: hours,
+            hours,
           },
         }
       );
@@ -267,7 +267,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
   };
 
   if (!activeConnectionId && monitoringMode === 'remote') {
@@ -398,7 +398,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                           <div className="flex items-center gap-2">
                             <Progress value={systemHealth.cpu} className="w-16 h-2" />
                             <span className={`text-xs ${getHealthColor(systemHealth.cpu)}`}>
-                              {systemHealth.cpu.toFixed(0)}%
+                              {systemHealth.cpu.toFixed(1)}%
                             </span>
                           </div>
                         </div>
@@ -412,7 +412,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                           <div className="flex items-center gap-2">
                             <Progress value={systemHealth.memory} className="w-16 h-2" />
                             <span className={`text-xs ${getHealthColor(systemHealth.memory)}`}>
-                              {systemHealth.memory.toFixed(0)}%
+                              {systemHealth.memory.toFixed(1)}%
                             </span>
                           </div>
                         </div>
@@ -426,7 +426,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                           <div className="flex items-center gap-2">
                             <Progress value={systemHealth.disk} className="w-16 h-2" />
                             <span className={`text-xs ${getHealthColor(systemHealth.disk)}`}>
-                              {systemHealth.disk.toFixed(0)}%
+                              {systemHealth.disk.toFixed(1)}%
                             </span>
                           </div>
                         </div>
@@ -440,7 +440,7 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                           <div className="flex items-center gap-2">
                             <Progress value={systemHealth.network} className="w-16 h-2" />
                             <span className={`text-xs ${getHealthColor(systemHealth.network)}`}>
-                              {systemHealth.network.toFixed(0)}%
+                              {systemHealth.network.toFixed(1)}%
                             </span>
                           </div>
                         </div>
@@ -577,15 +577,15 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                     )}
 
                     {/* 查询执行时间 */}
-                    {metrics.queryExecutionTime.length > 0 && (
-                      <Card>
-                        <CardHeader className="p-3">
-                          <h4 className="text-sm font-medium flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-purple-500" />
-                            查询执行时间
-                          </h4>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
+                    <Card>
+                      <CardHeader className="p-3">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-purple-500" />
+                          查询执行时间
+                        </h4>
+                      </CardHeader>
+                      <CardContent className="p-3 pt-0">
+                        {metrics.queryExecutionTime.length > 0 ? (
                           <div className="h-32">
                             <ReactECharts
                               option={generateChartOption(metrics.queryExecutionTime, '查询执行时间', 'ms')}
@@ -593,20 +593,28 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                               opts={{ renderer: 'canvas' }}
                             />
                           </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                        ) : (
+                          <div className="h-32 flex items-center justify-center text-muted-foreground">
+                            <div className="text-center">
+                              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              <div className="text-sm">需要本地InfluxDB实例</div>
+                              <div className="text-xs">请启动本地InfluxDB服务</div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
                     {/* 写入延迟 */}
-                    {metrics.writeLatency.length > 0 && (
-                      <Card>
-                        <CardHeader className="p-3">
-                          <h4 className="text-sm font-medium flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-orange-500" />
-                            写入延迟
-                          </h4>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
+                    <Card>
+                      <CardHeader className="p-3">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-orange-500" />
+                          写入延迟
+                        </h4>
+                      </CardHeader>
+                      <CardContent className="p-3 pt-0">
+                        {metrics.writeLatency.length > 0 ? (
                           <div className="h-32">
                             <ReactECharts
                               option={generateChartOption(metrics.writeLatency, '写入延迟', 'ms')}
@@ -614,9 +622,17 @@ export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProp
                               opts={{ renderer: 'canvas' }}
                             />
                           </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                        ) : (
+                          <div className="h-32 flex items-center justify-center text-muted-foreground">
+                            <div className="text-center">
+                              <Zap className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              <div className="text-sm">需要本地InfluxDB实例</div>
+                              <div className="text-xs">请启动本地InfluxDB服务</div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
