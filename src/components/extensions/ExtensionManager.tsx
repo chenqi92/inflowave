@@ -35,6 +35,7 @@ import {
   Empty,
 } from '@/components/ui';
 import { showMessage, showNotification } from '@/utils/message';
+import { getExtensionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import {
   Trash2,
   Plus,
@@ -147,7 +148,8 @@ const ExtensionManager: React.FC = () => {
       loadPlugins();
     } catch (error) {
       console.error('切换插件状态失败:', error);
-      showMessage.error('操作失败');
+      const friendlyError = getExtensionError(String(error), 'load');
+      showMessage.error(formatErrorMessage(friendlyError));
     }
   };
 
@@ -158,7 +160,8 @@ const ExtensionManager: React.FC = () => {
       loadPlugins();
     } catch (error) {
       console.error('卸载插件失败:', error);
-      showMessage.error('卸载失败');
+      const friendlyError = getExtensionError(String(error), 'uninstall');
+      showMessage.error(formatErrorMessage(friendlyError));
     }
   };
 
@@ -185,7 +188,8 @@ const ExtensionManager: React.FC = () => {
       loadApiIntegrations();
     } catch (error) {
       console.error('创建API集成失败:', error);
-      showMessage.error('创建失败');
+      const friendlyError = getExtensionError(String(error), 'api');
+      showMessage.error(formatErrorMessage(friendlyError));
     }
   };
 

@@ -3,6 +3,7 @@ import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { SQLParser } from '@/utils/sqlParser';
+import { getInfluxDBQueryError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import type { QueryResult, QueryRequest } from '@/types';
 import type { EditorTab } from './TabManager';
 import type { TimeRange } from '@/components/common/TimeRangeSelector';
@@ -166,16 +167,20 @@ export const useQueryExecutor = ({
         } catch (error) {
           console.error(`❌ 第 ${i + 1} 条语句执行失败:`, error);
           
+          // 使用友好的错误处理
+          const friendlyError = getInfluxDBQueryError(String(error));
+          const errorMessage = formatErrorMessage(friendlyError);
+          
           // 创建错误结果
           const errorResult: QueryResult = {
             results: [{
-              error: `语句 ${i + 1} 执行失败: ${error}`
+              error: `语句 ${i + 1} 执行失败: ${friendlyError.message}`
             }],
             executionTime: 0,
             rowCount: 1,
-            error: String(error),
+            error: errorMessage,
             columns: ['错误'],
-            data: [[`语句 ${i + 1} 执行失败: ${error}`]],
+            data: [[`语句 ${i + 1}: ${friendlyError.title} - ${friendlyError.message}`]],
           };
           
           results.push(errorResult);

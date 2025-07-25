@@ -17,6 +17,8 @@ import {
   Switch,
 } from '@/components/ui';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { getUIInteractionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { showMessage } from '@/utils/message';
 import {
   TrendingUp,
   BarChart,
@@ -137,18 +139,23 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
     if (valueColumns.length === 0) return null;
 
     const xAxisData = series.values.map((row: (string | number | boolean | null)[]) => {
-      const timeValue = timeColumn
-        ? row[series.columns.indexOf(timeColumn)]
-        : row[0];
-      if (typeof timeValue === 'string' && timeValue.includes('T')) {
-        try {
-          return new Date(timeValue).toLocaleString();
-        } catch {
-          return String(timeValue);
+      try {
+        const timeValue = timeColumn
+          ? row[series.columns.indexOf(timeColumn)]
+          : row[0];
+        if (typeof timeValue === 'string' && timeValue.includes('T')) {
+          try {
+            return new Date(timeValue).toLocaleString();
+          } catch {
+            return String(timeValue);
+          }
         }
+        // Convert null/undefined to string to satisfy ECharts type requirements
+        return timeValue === null || timeValue === undefined ? '' : String(timeValue);
+      } catch (error) {
+        console.error('处理X轴数据时发生错误:', error);
+        return '';
       }
-      // Convert null/undefined to string to satisfy ECharts type requirements
-      return timeValue === null || timeValue === undefined ? '' : String(timeValue);
     });
 
     const seriesData = valueColumns.map((col: string, index: number) => {
@@ -360,24 +367,36 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
   useEffect(() => {
     if (!chartRef.current) return;
 
-    if (!chartInstance.current) {
-      chartInstance.current = echarts.init(
-        chartRef.current, 
-        resolvedTheme === 'dark' ? 'dark' : 'light'
-      );
+    try {
+      if (!chartInstance.current) {
+        chartInstance.current = echarts.init(
+          chartRef.current, 
+          resolvedTheme === 'dark' ? 'dark' : 'light'
+        );
+      }
+
+      updateChart();
+
+      const handleResize = () => {
+        try {
+          chartInstance.current?.resize();
+        } catch (error) {
+          console.error('图表尺寸调整失败:', error);
+          const friendlyError = getUIInteractionError('chart', String(error), config.type);
+          showMessage.error(formatErrorMessage(friendlyError));
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    } catch (error) {
+      console.error('图表初始化失败:', error);
+      const friendlyError = getUIInteractionError('chart', String(error), config.type);
+      showMessage.error(formatErrorMessage(friendlyError));
     }
-
-    updateChart();
-
-    const handleResize = () => {
-      chartInstance.current?.resize();
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
   }, [data, config, updateChart, resolvedTheme]);
 
   // 监听主题变化，重新初始化图表和更新配置

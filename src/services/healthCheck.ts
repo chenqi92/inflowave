@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { portDiscoveryService } from './portDiscovery';
+import { getSystemResourceError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
 export interface HealthCheckResult {
   component: string;
@@ -139,12 +140,14 @@ export class HealthCheckService {
         };
       }
     } catch (error) {
+      const friendlyError = getSystemResourceError('network', undefined, undefined, '端口管理器');
       return {
         component: 'Port Manager',
         status: 'unhealthy',
-        message: `端口管理器检查失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: friendlyError.message,
         timestamp: Date.now(),
         latency: Date.now() - startTime,
+        details: { suggestion: friendlyError.suggestion }
       };
     }
   }
@@ -252,9 +255,14 @@ export class HealthCheckService {
       let status: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
       let message = '系统资源正常';
       
-      if (memoryUsage > 90 || cpuUsage > 90) {
+      if (memoryUsage > 90) {
         status = 'unhealthy';
-        message = '系统资源严重不足';
+        const memoryError = getSystemResourceError('memory', memoryUsage, 90);
+        message = memoryError.message;
+      } else if (cpuUsage > 90) {
+        status = 'unhealthy';
+        const cpuError = getSystemResourceError('cpu', cpuUsage, 90);
+        message = cpuError.message;
       } else if (memoryUsage > 70 || cpuUsage > 70) {
         status = 'degraded';
         message = '系统资源使用率较高';
@@ -278,12 +286,14 @@ export class HealthCheckService {
         },
       };
     } catch (error) {
+      const friendlyError = getSystemResourceError('memory', undefined, undefined, '系统资源检查');
       return {
         component: 'System Resources',
         status: 'unhealthy',
-        message: `系统资源检查失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: friendlyError.message,
         timestamp: Date.now(),
         latency: Date.now() - startTime,
+        details: { suggestion: friendlyError.suggestion }
       };
     }
   }

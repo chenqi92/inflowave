@@ -255,7 +255,7 @@ async fn cleanup_cache_files() -> Result<u64, String> {
         return Ok(0);
     }
 
-    let mut total_size = 0u64;
+    let total_size;
 
     // 递归计算并清理缓存目录
     fn calculate_and_clean_dir(dir: &std::path::Path) -> Result<u64, std::io::Error> {

@@ -282,9 +282,9 @@ fn export_to_json(
 fn export_to_excel(
     query_result: &crate::models::QueryResult,
     file_path: &str,
-    options: &Option<ExportOptions>,
+    _options: &Option<ExportOptions>,
 ) -> Result<u64, String> {
-    use rust_xlsxwriter::{Workbook, Worksheet, Format};
+    use rust_xlsxwriter::{Workbook, Format};
 
     debug!("开始导出Excel文件: {}", file_path);
 
@@ -302,17 +302,19 @@ fn export_to_excel(
     let mut exported_rows = 0u64;
 
     // 写入列标题
-    if let Some(columns) = &query_result.columns {
+    let columns = query_result.columns();
+    if !columns.is_empty() {
         for (col_idx, column) in columns.iter().enumerate() {
-            worksheet.write_string_with_format(row, col_idx as u16, &column.name, &header_format)
+            worksheet.write_string_with_format(row, col_idx as u16, column, &header_format)
                 .map_err(|e| format!("写入列标题失败: {}", e))?;
         }
         row += 1;
     }
 
     // 写入数据行
-    if let Some(rows) = &query_result.rows {
-        for data_row in rows {
+    let rows = query_result.rows();
+    if !rows.is_empty() {
+        for data_row in &rows {
             for (col_idx, value) in data_row.iter().enumerate() {
                 let cell_value = match value {
                     serde_json::Value::String(s) => s.clone(),
@@ -328,14 +330,8 @@ fn export_to_excel(
             row += 1;
             exported_rows += 1;
 
-            // 检查是否有行数限制
-            if let Some(opts) = options {
-                if let Some(limit) = opts.limit {
-                    if exported_rows >= limit as u64 {
-                        break;
-                    }
-                }
-            }
+            // 可以在这里添加行数限制逻辑
+            // 目前没有在ExportOptions中定义limit字段
         }
     }
 
