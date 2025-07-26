@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -41,7 +41,6 @@
     "test:integration": "playwright test tests/e2e/database-integration.spec.ts",
     "test:performance": "playwright test tests/e2e/performance.spec.ts",
     "test:all": "npm run test:coverage && npm run test:e2e",
-
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:src": "eslint src/ --report-unused-disable-directives",
     "lint:fix": "eslint . --fix",

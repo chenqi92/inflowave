@@ -28,9 +28,9 @@ export interface VersionDetectionResult {
 export interface DetectionRequest {
   host: string;
   port: number;
-  username?: string;
-  password?: string;
-  token?: string;
+  username?: string | undefined;
+  password?: string | undefined;
+  token?: string | undefined;
 }
 
 export interface DetectionResponse {

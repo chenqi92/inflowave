@@ -687,7 +687,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   handleInputChange('defaultQueryLanguage', 'SQL');
                 }
               }}
-              disabled={autoDetectionEnabled && detectionResult?.success}
+              disabled={!!(autoDetectionEnabled && detectionResult?.success)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={
@@ -725,7 +725,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   handleInputChange('defaultQueryLanguage', 'SQL');
                 }
               }}
-              disabled={autoDetectionEnabled && detectionResult?.success}
+              disabled={!!(autoDetectionEnabled && detectionResult?.success)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={

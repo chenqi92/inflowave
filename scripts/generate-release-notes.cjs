@@ -17,17 +17,20 @@
  * Features:
  *   - 自动读取 src-tauri/tauri.conf.json 中的版本号
  *   - 查找对应版本的 docs/release-notes/{version}.md 文件
- *   - 如果没有找到版本文件，使用默认模板
+ *   - 如果没有找到版本文件，使用 docs/release-notes/default.md 作为通用模板
+ *   - 如果通用模板也不存在，则使用硬编码的默认内容
  *   - 根据构建类型(release/development)生成不同的下载说明
  *   - 支持输出到文件或控制台
  * 
  * Directory Structure:
  *   docs/
  *   └── release-notes/
- *       ├── 0.1.1.md
- *       ├── 0.1.2.md
- *       ├── 0.1.3.md
- *       └── README.md
+ *       ├── 0.1.1.md          # 版本特定的发布说明
+ *       ├── 0.1.2.md          # 版本特定的发布说明
+ *       ├── 0.1.3.md          # 版本特定的发布说明
+ *       ├── default.md        # 通用回退模板
+ *       ├── TEMPLATE.md       # 编写模板参考
+ *       └── README.md         # 说明文档
  * 
  * Release Notes File Format:
  *   每个版本的release notes文件应该包含:
@@ -62,7 +65,16 @@ function loadReleaseNotes(version) {
     return fs.readFileSync(notesPath, 'utf8');
   }
   
-  console.log(`⚠️ No release notes file found for version ${version}`);
+  // 尝试读取通用默认文档
+  const defaultPath = path.join('docs', 'release-notes', 'default.md');
+  if (fs.existsSync(defaultPath)) {
+    console.log(`📄 Using default release notes file: ${defaultPath}`);
+    const defaultContent = fs.readFileSync(defaultPath, 'utf8');
+    // 替换版本占位符
+    return defaultContent.replace(/{VERSION}/g, version);
+  }
+  
+  console.log(`⚠️ No release notes file found for version ${version} and no default.md exists`);
   return null;
 }
 
