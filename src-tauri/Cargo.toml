@@ -38,6 +38,9 @@ async-trait = "0.1"
 url = "2.4"
 bytes = "1.5"
 
+# 多协议支持依赖
+tokio-tungstenite = "0.20"
+
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri = { version = "2.0", features = ["linux-libxdo"] }

@@ -1,4 +1,4 @@
-/* 基于实际可用字体文件的字体配置 */
+/* 基于实际可用字体文件的字体配置 - 仅使用本地字体文件 */
 
 /* Inter 字体 - 现代无衬线字体 */
 @font-face {
@@ -132,8 +132,3 @@
   src: url(/fonts/S6u9w4BMUTPHh7USew8.ttf) format('truetype');
 }
 
-/* Web 字体 - 通过 Google Fonts 加载 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Lato:wght@300;400;700&family=Poppins:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Ubuntu:wght@300;400;500;700&family=Fira+Code:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400;500;600;700&family=Ubuntu+Mono:wght@400;700&display=swap');
-
-/* 中文字体支持 */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Source+Han+Sans:wght@300;400;500;600;700&display=swap');

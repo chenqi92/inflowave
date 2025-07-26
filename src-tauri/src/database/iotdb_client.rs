@@ -62,7 +62,7 @@ impl IoTDBHttpClient {
         }
     }
 
-    /// 测试连接 - 支持TCP和HTTP两种方式（包含强制认证验证）
+    /// 测试连接 - 优先使用HTTP REST API，TCP作为备选
     pub async fn test_connection(&self) -> Result<u64> {
         debug!("测试 IoTDB 连接: {}", self.base_url);
 
@@ -74,66 +74,139 @@ impl IoTDBHttpClient {
             ));
         }
 
-        // 首先尝试HTTP REST API
+        // 🎯 优先尝试HTTP REST API (推荐方式)
         match self.test_http_connection().await {
             Ok(latency) => {
-                info!("IoTDB HTTP连接和认证验证成功");
+                info!("✅ IoTDB HTTP REST API连接成功");
                 return Ok(latency);
             }
             Err(http_error) => {
-                debug!("HTTP连接失败: {}", http_error);
+                warn!("HTTP REST API连接失败: {}", http_error);
+                info!("💡 建议启用IoTDB的REST API服务 (端口31999)");
             }
         }
 
-        // 如果HTTP失败，尝试TCP连接（包含认证验证）
+        // 🔧 尝试TCP连接（仅用于连接测试，不支持完整Thrift协议）
         match self.test_tcp_connection().await {
             Ok(latency) => {
-                info!("IoTDB TCP连接和认证验证成功");
+                warn!("⚠️  TCP连接成功，但IoTDB需要Thrift协议支持");
+                warn!("⚠️  建议配置并使用REST API以获得完整功能");
                 Ok(latency)
             }
             Err(tcp_error) => {
-                error!("IoTDB连接完全失败 - HTTP和TCP都无法连接或认证失败");
+                error!("❌ IoTDB连接完全失败");
                 Err(anyhow::anyhow!(
-                    "无法连接到IoTDB服务器 {}:{} 或认证失败。请检查:\n\
-                    1. IoTDB服务是否正在运行\n\
-                    2. 端口号是否正确 (默认: 6667)\n\
-                    3. 网络连接和防火墙设置\n\
-                    4. 用户名和密码是否正确\n\
-                    5. 用户是否有足够的权限\n\
-                    \n详细错误: {}",
-                    self.config.host, self.config.port, tcp_error
+                    "无法连接到IoTDB服务器 {}:{}。\n\
+                    \n🔍 诊断信息:\n\
+                    • HTTP REST API: 不可用 (检查端口31999是否开放)\n\
+                    • TCP连接: {} \n\
+                    \n💡 解决建议:\n\
+                    1. 启用IoTDB的REST API服务\n\
+                    2. 检查Docker容器端口映射: docker port <container>\n\
+                    3. 查看IoTDB日志: docker logs <container>\n\
+                    4. 验证配置文件: docker exec -it <container> cat conf/iotdb-datanode.properties\n\
+                    5. 确认用户名密码: {} / {}",
+                    self.config.host,
+                    self.config.port,
+                    tcp_error,
+                    self.config.username.as_ref().unwrap_or(&"未设置".to_string()),
+                    if self.config.password.is_some() { "已设置" } else { "未设置" }
                 ))
             }
         }
     }
 
-    /// 测试HTTP连接
+    /// 测试HTTP连接 - 尝试多个REST API端口和认证方式
     async fn test_http_connection(&self) -> Result<u64> {
         let start = Instant::now();
 
-        // 尝试多个可能的HTTP端点
-        let endpoints = vec!["/ping", "/rest/v1/ping", "/api/v1/ping", "/"];
+        // 尝试多个可能的REST API端口
+        let rest_ports = vec![31999, 18080, 8080];
 
-        for endpoint in endpoints {
-            let url = format!("{}{}", self.base_url, endpoint);
-            debug!("尝试HTTP端点: {}", url);
+        for port in rest_ports {
+            let base_url = format!("http://{}:{}", self.config.host, port);
+            debug!("尝试REST API端口: {}", port);
 
-            match self.client.get(&url).send().await {
-                Ok(response) if response.status().is_success() => {
-                    let latency = start.elapsed().as_millis() as u64;
-                    info!("IoTDB HTTP连接测试成功，延迟: {}ms", latency);
-                    return Ok(latency);
-                }
-                Ok(response) => {
-                    debug!("HTTP端点 {} 返回状态: {}", url, response.status());
-                }
-                Err(e) => {
-                    debug!("HTTP端点 {} 连接失败: {}", url, e);
+            // 尝试不同的端点
+            let endpoints = vec![
+                "/rest/v1/query",
+                "/rest/v2/query",
+                "/api/v1/query",
+                "/ping"
+            ];
+
+            for endpoint in endpoints {
+                match self.test_rest_endpoint(&base_url, endpoint).await {
+                    Ok(_latency) => {
+                        let total_latency = start.elapsed().as_millis() as u64;
+                        info!("✅ IoTDB REST API连接成功: {}:{}{}, 延迟: {}ms",
+                              self.config.host, port, endpoint, total_latency);
+                        return Ok(total_latency);
+                    }
+                    Err(e) => {
+                        debug!("端点 {}:{}{} 失败: {}", self.config.host, port, endpoint, e);
+                    }
                 }
             }
         }
 
-        Err(anyhow::anyhow!("所有HTTP端点都无法连接"))
+        Err(anyhow::anyhow!("所有REST API端口和端点都无法连接"))
+    }
+
+    /// 测试单个REST端点
+    async fn test_rest_endpoint(&self, base_url: &str, endpoint: &str) -> Result<u64> {
+        let start = Instant::now();
+        let url = format!("{}{}", base_url, endpoint);
+
+        // 根据端点类型构建不同的请求
+        let request_result = if endpoint.contains("query") {
+            // 查询端点 - 发送POST请求
+            let request_body = serde_json::json!({
+                "sql": "SHOW STORAGE GROUP"
+            });
+
+            let mut request_builder = self.client
+                .post(&url)
+                .header("Content-Type", "application/json")
+                .timeout(std::time::Duration::from_secs(5))
+                .json(&request_body);
+
+            // 添加认证头
+            if let (Some(username), Some(password)) = (&self.config.username, &self.config.password) {
+                let auth_string = format!("{}:{}", username, password);
+                let encoded = general_purpose::STANDARD.encode(auth_string.as_bytes());
+                request_builder = request_builder.header("Authorization", format!("Basic {}", encoded));
+            }
+
+            request_builder.send().await
+        } else {
+            // Ping端点 - 发送GET请求
+            self.client
+                .get(&url)
+                .timeout(std::time::Duration::from_secs(5))
+                .send()
+                .await
+        };
+
+        match request_result {
+            Ok(response) => {
+                let latency = start.elapsed().as_millis() as u64;
+
+                let status = response.status();
+                if status.is_success() {
+                    debug!("REST端点 {} 响应成功: {}", url, status);
+                    Ok(latency)
+                } else if status == 401 {
+                    Err(anyhow::anyhow!("认证失败: 用户名或密码错误"))
+                } else {
+                    let error_text = response.text().await.unwrap_or_default();
+                    Err(anyhow::anyhow!("HTTP请求失败: {} - {}", status, error_text))
+                }
+            }
+            Err(e) => {
+                Err(anyhow::anyhow!("连接失败: {}", e))
+            }
+        }
     }
 
     /// 测试TCP连接（包含认证验证）
@@ -171,56 +244,23 @@ impl IoTDBHttpClient {
     }
 
     /// 验证TCP连接的认证信息
-    async fn verify_tcp_authentication(&self, stream: &mut tokio::net::TcpStream) -> Result<()> {
-        use tokio::io::{AsyncWriteExt, AsyncReadExt};
-        use tokio::time::{timeout, Duration};
+    async fn verify_tcp_authentication(&self, _stream: &mut tokio::net::TcpStream) -> Result<()> {
+        // 🚨 重要说明：IoTDB使用Thrift协议，不是纯文本协议
+        // 当前的实现是一个简化的测试，实际生产环境需要实现完整的Thrift协议
 
-        // 获取认证信息
-        let username = self.config.username.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("缺少用户名")
-        })?;
-        let _password = self.config.password.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("缺少密码")
-        })?;
+        warn!("IoTDB TCP连接使用Thrift协议，当前实现仅用于连接测试");
+        warn!("建议使用REST API进行生产环境连接");
 
-        debug!("验证IoTDB认证: 用户名={}", username);
-
-        // 构造简单的认证测试查询
-        // 注意：在实际的IoTDB TCP协议中，认证信息应该在连接握手时发送
-        // 这里我们只是发送一个查询来测试连接是否有效
-        let auth_query = format!("SHOW STORAGE GROUP\n");
-
-        // 发送认证查询
-        if let Err(e) = timeout(Duration::from_secs(5), stream.write_all(auth_query.as_bytes())).await {
-            return Err(anyhow::anyhow!("发送认证查询超时: {}", e));
-        }
-
-        // 读取响应
-        let mut buffer = [0; 1024];
-        match timeout(Duration::from_secs(5), stream.read(&mut buffer)).await {
-            Ok(Ok(bytes_read)) => {
-                if bytes_read == 0 {
-                    return Err(anyhow::anyhow!("服务器关闭连接，可能是认证失败"));
-                }
-
-                let response = String::from_utf8_lossy(&buffer[..bytes_read]);
-                debug!("IoTDB认证响应: {}", response);
-
-                // 检查响应是否表示认证成功
-                if response.contains("error") || response.contains("unauthorized") || response.contains("authentication failed") {
-                    return Err(anyhow::anyhow!("认证失败: {}", response));
-                }
-
-                info!("IoTDB TCP认证验证成功");
-                Ok(())
-            }
-            Ok(Err(e)) => {
-                Err(anyhow::anyhow!("读取认证响应失败: {}", e))
-            }
-            Err(_) => {
-                Err(anyhow::anyhow!("读取认证响应超时"))
-            }
-        }
+        // 由于IoTDB使用Thrift协议，直接发送文本查询会导致连接关闭
+        // 这里我们返回一个明确的错误信息，指导用户使用正确的连接方式
+        Err(anyhow::anyhow!(
+            "IoTDB TCP连接需要Thrift协议支持。\n\
+            当前应用暂不支持Thrift协议。\n\
+            建议解决方案：\n\
+            1. 启用IoTDB的REST API (端口31999)\n\
+            2. 使用HTTP连接方式\n\
+            3. 检查IoTDB容器配置：docker exec -it <container> cat conf/iotdb-datanode.properties"
+        ))
     }
 
     /// 执行查询
