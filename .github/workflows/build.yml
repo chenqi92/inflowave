@@ -94,7 +94,25 @@ jobs:
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
             pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
             libxdo-dev libxdo3 libssl-dev \
-            libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev
+            libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev \
+            libgio-2.0-dev libgobject-2.0-dev libffi-dev
+          
+          # 验证 glib pkg-config 文件
+          echo "🔍 检查 glib pkg-config 文件..."
+          find /usr -name "glib-2.0.pc" 2>/dev/null | head -5
+          pkg-config --exists glib-2.0 && echo "✅ glib-2.0 pkg-config 可用" || echo "❌ glib-2.0 pkg-config 不可用"
+          
+          # 设置和验证 pkg-config 路径
+          echo "📋 设置 pkg-config 环境变量..."
+          export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          
+          echo "📋 当前 PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "📋 pkg-config 库列表:"
+          pkg-config --list-all | grep glib || echo "❌ 未找到 glib 相关库"
+          
+          # 尝试手动检查 glib 版本
+          pkg-config --modversion glib-2.0 || echo "❌ 无法获取 glib-2.0 版本"
           
           # ARM64 交叉编译设置
           if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
@@ -188,7 +206,8 @@ jobs:
           LC_ALL: ${{ matrix.platform == 'windows-latest' && 'zh_CN.UTF-8' || 'zh_CN.UTF-8' }}
           # 跨编译环境变量
           PKG_CONFIG_ALLOW_CROSS: 1
-          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/share/pkgconfig' }}
+          PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: 1
+          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' }}
           PKG_CONFIG_LIBDIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
           PKG_CONFIG_SYSROOT_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
           # 修复 macOS universal build 问题
