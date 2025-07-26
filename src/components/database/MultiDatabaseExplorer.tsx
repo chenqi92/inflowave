@@ -59,6 +59,7 @@ import { useFavoritesStore } from '@/store/favorites';
 import type { ConnectionConfig, DatabaseType } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { getDatabaseIcon as getUnifiedDatabaseIcon } from '@/utils/databaseIcons';
 
 // 数据节点接口
 interface DataSourceNode {
@@ -135,7 +136,7 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
 
   // 获取数据库特定的图标
   const getDatabaseIcon = useCallback((dbType: DatabaseType) => {
-    return DATABASE_ICONS[dbType] || DATABASE_ICONS.influxdb;
+    return getUnifiedDatabaseIcon(dbType, 'w-4 h-4');
   }, []);
 
   // 获取节点类型图标

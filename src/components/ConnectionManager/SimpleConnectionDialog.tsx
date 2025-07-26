@@ -32,6 +32,7 @@ import { generateUniqueId } from '@/utils/idGenerator';
 import { DatabaseVersionDetectionService, type VersionDetectionResult, type DatabaseVersionInfo } from '@/services/databaseVersionDetection';
 import { showMessage } from '@/utils/message';
 import { VersionDetectionDialog } from './VersionDetectionDialog';
+import { getDatabaseIcon, renderDatabaseOption } from '@/utils/databaseIcons';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -674,11 +675,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder='选择数据库类型' />
+              <SelectValue placeholder='选择数据库类型'>
+                {formData.dbType && (
+                  <div className="flex items-center gap-2">
+                    {getDatabaseIcon(formData.dbType)}
+                    <span>{formData.dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}</span>
+                  </div>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='influxdb'>InfluxDB</SelectItem>
-              <SelectItem value='iotdb'>Apache IoTDB</SelectItem>
+              <SelectItem value='influxdb'>
+                {renderDatabaseOption('influxdb')}
+              </SelectItem>
+              <SelectItem value='iotdb'>
+                {renderDatabaseOption('iotdb')}
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className='text-xs text-muted-foreground'>

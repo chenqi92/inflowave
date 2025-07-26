@@ -48,6 +48,7 @@ import type { ConnectionConfig } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import { getDatabaseIcon } from '@/utils/databaseIcons';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
@@ -537,9 +538,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         ),
         key: `connection-${connection.id}`,
         icon: isConnected ? (
-          <Database className='w-4 h-4 text-success' />
+          getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-success')
         ) : (
-          <Link className='w-4 h-4 text-muted-foreground' />
+          getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-muted-foreground')
         ),
         // 只有连接状态才设置children数组，未连接状态不设置（这样就不会显示收缩按钮）
         ...(isConnected ? { children: [] } : { isLeaf: true }),
@@ -2162,9 +2163,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 </div>
               ),
               icon: isConnected ? (
-                <Database className='w-4 h-4 text-success' />
+                getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-success')
               ) : (
-                <Link className='w-4 h-4 text-muted-foreground' />
+                getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-muted-foreground')
               ),
               // 根据连接状态决定是否显示收缩按钮
               ...(isConnected ? { children: node.children || [] } : { isLeaf: true }),
@@ -2801,15 +2802,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 )}
               </div>
             ) : (
-              <Card className='text-center text-muted-foreground mt-8'>
-                <CardContent className='pt-6'>
-                  <Database className='w-8 h-8 mx-auto mb-2' />
-                  <Typography.Text>暂无连接</Typography.Text>
-                  <Typography.Text className='text-sm mt-1 block'>
-                    请在连接管理中添加数据库连接
+              <div className='p-4 text-center'>
+                <div className='flex flex-col items-center justify-center py-8'>
+                  <Database className='w-8 h-8 text-muted-foreground/40 mb-3' />
+                  <Typography.Text className='text-sm text-muted-foreground mb-4 block'>
+                    暂无数据库连接
                   </Typography.Text>
-                </CardContent>
-              </Card>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={() => handleOpenConnectionDialog()}
+                    className='text-xs h-8 px-3 border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                  >
+                    <Plus className='w-3 h-3 mr-1' />
+                    添加连接
+                  </Button>
+                </div>
+              </div>
             )}
         </div>
       </CardContent>

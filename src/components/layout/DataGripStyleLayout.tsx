@@ -20,7 +20,7 @@ import TabEditorRefactored, {TabEditorRef} from './TabEditorRefactored';
 import EnhancedResultPanel from './EnhancedResultPanel';
 import RightFunctionBar, {type FunctionType} from './RightFunctionBar';
 import RightFunctionPanel from './RightFunctionPanel';
-import MultiDatabaseWorkbenchPage from '@/pages/MultiDatabaseWorkbench';
+
 import IoTDBTestPage from '@/pages/IoTDBTest';
 
 import {dataExplorerRefresh} from '@/utils/refreshEvents';
@@ -542,14 +542,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
     // 中间栏根据当前视图显示不同内容
     const mainContent = useMemo(() => {
-        // 如果是多数据库工作台视图，显示专门的工作台页面
-        if (currentView === 'multi-database') {
-            return (
-                <div className='h-full'>
-                    <MultiDatabaseWorkbenchPage />
-                </div>
-            );
-        }
+
 
         // 如果是 IoTDB 测试视图，显示测试页面
         if (currentView === 'iotdb-test') {
