@@ -77,14 +77,14 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
       "wix": {
-        "template": null,
-        "fragmentPaths": [],
+        "template": "./wix/main.wxs",
+        "fragmentPaths": ["./wix/zh-cn.wxl"],
         "componentGroupRefs": [],
         "componentRefs": [],
         "featureGroupRefs": [],
         "featureRefs": [],
         "mergeRefs": [],
-        "language": "en-US"
+        "language": "2052"
       }
     },
     "macOS": {
