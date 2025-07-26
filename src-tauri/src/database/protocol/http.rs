@@ -172,8 +172,9 @@ impl ProtocolClient for HttpClient {
                 Ok(())
             }
             Err(e) => {
-                self.status = ConnectionStatus::Error(e.to_string());
-                Err(e)
+                let error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
+                self.status = ConnectionStatus::Error("HTTP连接失败".to_string());
+                Err(anyhow::Error::msg("HTTP连接失败"))
             }
         }
     }

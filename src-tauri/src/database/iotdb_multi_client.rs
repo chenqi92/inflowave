@@ -85,8 +85,10 @@ impl IoTDBMultiClient {
                     return Ok(protocol);
                 }
                 Err(e) => {
-                    warn!("❌ 协议 {:?} 连接失败: {}", protocol, e);
-                    last_error = Some(e);
+                    // 只记录简洁的错误信息
+                    let error_msg = e.to_string().lines().next().unwrap_or("未知错误").to_string();
+                    warn!("❌ 协议 {:?} 连接失败: {}", protocol, error_msg);
+                    last_error = Some(anyhow::Error::msg(format!("协议 {:?} 连接失败", protocol)));
                 }
             }
         }
@@ -113,9 +115,11 @@ impl IoTDBMultiClient {
                 println!("✅ {:?} 协议连接测试成功，耗时: {:?}", protocol, duration);
             }
             Err(e) => {
-                println!("❌ {:?} 协议连接测试失败: {}", protocol, e);
-                println!("❌ 错误详情: {:?}", e);
-                return Err(e).context(format!("{:?} 协议连接测试失败", protocol));
+                // 只显示简洁的错误信息，不显示堆栈跟踪
+                let error_msg = e.to_string().lines().next().unwrap_or("未知错误").to_string();
+                println!("❌ {:?} 协议连接测试失败: {}", protocol, error_msg);
+                // 使用简单的错误消息，避免 anyhow 的堆栈跟踪
+                return Err(anyhow::Error::msg(format!("{:?} 协议连接失败", protocol)));
             }
         }
 

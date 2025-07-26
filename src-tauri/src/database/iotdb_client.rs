@@ -595,7 +595,13 @@ impl IoTDBHttpClient {
     pub async fn get_devices(&self, storage_group: &str) -> Result<Vec<String>> {
         debug!("获取 IoTDB 设备列表: {}", storage_group);
 
-        let query = format!("SHOW DEVICES {}", storage_group);
+        // IoTDB 正确的语法是 SHOW DEVICES root.sg1.** 或者 SHOW DEVICES
+        let query = if storage_group.is_empty() {
+            "SHOW DEVICES".to_string()
+        } else {
+            format!("SHOW DEVICES {}.** ", storage_group)
+        };
+
         let result = self.execute_query(&query, None).await?;
 
         // 从查询结果中提取设备名称

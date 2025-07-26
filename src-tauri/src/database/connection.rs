@@ -101,15 +101,16 @@ impl ConnectionManager {
                 Ok(ConnectionTestResult::success(latency, None))
             }
             Err(e) => {
-                let error_msg = e.to_string();
-                
+                // 只显示简洁的错误信息，不显示堆栈跟踪
+                let error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
+
                 // 更新状态为错误
                 self.update_status(connection_id, |status| {
-                    status.error(error_msg.clone())
+                    status.error("连接测试失败".to_string())
                 }).await;
-                
-                error!("连接测试失败: {} - {}", connection_id, error_msg);
-                Ok(ConnectionTestResult::error(error_msg))
+
+                error!("连接测试失败: {}", connection_id);
+                Ok(ConnectionTestResult::error("连接测试失败".to_string()))
             }
         }
     }
