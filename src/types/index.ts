@@ -19,6 +19,9 @@ export type InfluxDBVersion = '1.x' | '2.x' | '3.x';
 // IoTDB 版本
 export type IoTDBVersion = '0.13.x' | '0.14.x' | '1.0.x' | '1.1.x' | '1.2.x';
 
+// 通用数据库版本类型
+export type DatabaseVersion = InfluxDBVersion | IoTDBVersion;
+
 // 代理类型
 export type ProxyType = 'http' | 'https' | 'socks5';
 
@@ -85,7 +88,7 @@ export interface ConnectionConfig extends Omit<BaseDatabaseConnectionConfig, 'dr
   // 数据库特定配置
   driverConfig?: DatabaseDriverConfig;
   // 向后兼容字段
-  version?: InfluxDBVersion; // InfluxDB 版本
+  version?: DatabaseVersion; // 数据库版本
   database?: string; // InfluxDB 数据库名
   retentionPolicy?: string; // InfluxDB 保留策略
   v2Config?: InfluxDBV2Config; // InfluxDB 2.x/3.x 配置

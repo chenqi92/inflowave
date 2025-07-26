@@ -8,7 +8,7 @@ import {
   createDatabaseSpecificCompletions
 } from '@/utils/sqlIntelliSense';
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { DatabaseType } from '@/utils/sqlFormatter';
+import type { DatabaseType as SQLFormatterDatabaseType } from '@/utils/sqlFormatter';
 import type { EditorTab } from './TabManager';
 import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
 import { SmartSuggestionPopup } from './SmartSuggestionPopup';
@@ -198,7 +198,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       return 'sql';
     }
 
-    const languageType = versionToLanguageType(connection.version || 'unknown');
+    const languageType = versionToLanguageType(connection.version || 'unknown', connection.dbType);
     console.log('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', activeConnectionId);
 
     return languageType;
@@ -282,7 +282,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
   const setupEnhancedAutoComplete = useCallback((
     _monacoInstance: typeof monaco,
     editor: monaco.editor.IStandaloneCodeEditor,
-    databaseType: DatabaseType,
+    databaseType: SQLFormatterDatabaseType,
     database: string
   ) => {
     // 注册智能提示提供者
@@ -465,7 +465,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
       // 根据选择的数据源类型设置智能提示
       const currentConnection = connections.find(c => c.id === activeConnectionId);
-      const databaseType: DatabaseType = currentConnection?.version as DatabaseType || 'unknown';
+      const databaseType: SQLFormatterDatabaseType = currentConnection?.version as SQLFormatterDatabaseType || 'unknown';
 
       // 注意：不在这里设置编辑器语言，因为Editor组件已经通过language属性设置了
       // 语言设置由Editor组件的language属性和key属性的变化来控制

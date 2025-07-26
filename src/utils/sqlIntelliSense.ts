@@ -4,7 +4,8 @@
  */
 
 import * as monaco from 'monaco-editor';
-import type { InfluxDBVersion } from '@/types/database';
+import type { InfluxDBVersion, DatabaseVersion } from '@/types/database';
+import type { DatabaseType as SQLFormatterDatabaseType } from './sqlFormatter';
 
 /**
  * InfluxDB 1.x (InfluxQL) 关键字和函数
@@ -85,7 +86,7 @@ export const COMMON_SQL_KEYWORDS = [
 /**
  * 根据数据库版本获取关键字列表
  */
-export function getKeywordsByDatabaseVersion(version: InfluxDBVersion): string[] {
+export function getKeywordsByDatabaseVersion(version: SQLFormatterDatabaseType): string[] {
   switch (version) {
     case '1.x':
       return INFLUXQL_KEYWORDS;
@@ -184,7 +185,7 @@ export function createFunctionCompletions(
  * 创建数据库特定的智能提示
  */
 export function createDatabaseSpecificCompletions(
-  version: InfluxDBVersion,
+  version: SQLFormatterDatabaseType,
   range: monaco.IRange,
   context?: {
     databases?: string[];

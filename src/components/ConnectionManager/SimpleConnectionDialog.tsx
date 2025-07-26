@@ -26,7 +26,7 @@ import {
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
-import type { ConnectionConfig, ConnectionTestResult, DatabaseType } from '@/types';
+import type { ConnectionConfig, ConnectionTestResult, DatabaseType, DatabaseVersion } from '@/types';
 import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
 import { generateUniqueId } from '@/utils/idGenerator';
 
@@ -41,7 +41,7 @@ interface FormData {
   name: string;
   description: string;
   dbType: DatabaseType;
-  version: '1.x' | '2.x' | '3.x';
+  version: DatabaseVersion;
   host: string;
   port: number;
   username: string;
@@ -59,6 +59,14 @@ interface FormData {
   organization: string;
   bucket: string;
   v1CompatibilityApi: boolean;
+  // IoTDB 特有配置
+  sessionPoolSize: number;
+  enableCompression: boolean;
+  timeZone: string;
+  fetchSize: number;
+  enableRedirection: boolean;
+  maxRetryCount: number;
+  retryIntervalMs: number;
   // 代理配置
   proxyEnabled: boolean;
   proxyHost: string;
@@ -111,6 +119,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       organization: '',
       bucket: '',
       v1CompatibilityApi: false,
+      // IoTDB 默认配置
+      sessionPoolSize: 5,
+      enableCompression: true,
+      timeZone: 'Asia/Shanghai',
+      fetchSize: 10000,
+      enableRedirection: true,
+      maxRetryCount: 3,
+      retryIntervalMs: 1000,
       proxyEnabled: false,
       proxyHost: '127.0.0.1',
       proxyPort: 8080,
@@ -146,6 +162,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           organization: connection.v2Config?.organization || '',
           bucket: connection.v2Config?.bucket || '',
           v1CompatibilityApi: connection.v2Config?.v1CompatibilityApi || false,
+          // IoTDB 配置
+          sessionPoolSize: connection.driverConfig?.iotdb?.sessionPoolSize || 5,
+          enableCompression: connection.driverConfig?.iotdb?.enableCompression ?? true,
+          timeZone: connection.driverConfig?.iotdb?.timeZone || 'Asia/Shanghai',
+          fetchSize: connection.driverConfig?.iotdb?.fetchSize || 10000,
+          enableRedirection: connection.driverConfig?.iotdb?.enableRedirection ?? true,
+          maxRetryCount: connection.driverConfig?.iotdb?.maxRetryCount || 3,
+          retryIntervalMs: connection.driverConfig?.iotdb?.retryIntervalMs || 1000,
           proxyEnabled: connection.proxyConfig?.enabled || false,
           proxyHost: connection.proxyConfig?.host || '127.0.0.1',
           proxyPort: connection.proxyConfig?.port || 8080,
@@ -175,6 +199,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           organization: '',
           bucket: '',
           v1CompatibilityApi: false,
+          // IoTDB 默认配置
+          sessionPoolSize: 5,
+          enableCompression: true,
+          timeZone: 'Asia/Shanghai',
+          fetchSize: 10000,
+          enableRedirection: true,
+          maxRetryCount: 3,
+          retryIntervalMs: 1000,
           proxyEnabled: false,
           proxyHost: '127.0.0.1',
           proxyPort: 8080,
@@ -231,12 +263,28 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
 
     // InfluxDB 2.x/3.x 特有验证
-    if (formData.version === '2.x' || formData.version === '3.x') {
+    if (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) {
       if (!formData.apiToken.trim()) {
         newErrors.apiToken = '请输入API令牌';
       }
       if (!formData.organization.trim()) {
         newErrors.organization = '请输入组织ID或名称';
+      }
+    }
+
+    // IoTDB 特有验证
+    if (formData.dbType === 'iotdb') {
+      if (formData.sessionPoolSize < 1 || formData.sessionPoolSize > 50) {
+        newErrors.sessionPoolSize = '会话池大小范围: 1-50';
+      }
+      if (formData.fetchSize < 100 || formData.fetchSize > 100000) {
+        newErrors.fetchSize = '获取大小范围: 100-100000';
+      }
+      if (formData.maxRetryCount < 0 || formData.maxRetryCount > 10) {
+        newErrors.maxRetryCount = '最大重试次数范围: 0-10';
+      }
+      if (formData.retryIntervalMs < 100 || formData.retryIntervalMs > 10000) {
+        newErrors.retryIntervalMs = '重试间隔范围: 100-10000毫秒';
       }
     }
 
@@ -278,11 +326,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         queryTimeout: formData.queryTimeout,
         defaultQueryLanguage: formData.defaultQueryLanguage,
         retentionPolicy: formData.retentionPolicy || undefined,
-        v2Config: (formData.version === '2.x' || formData.version === '3.x') ? {
+        v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
           apiToken: formData.apiToken,
           organization: formData.organization,
           bucket: formData.bucket || undefined,
           v1CompatibilityApi: formData.v1CompatibilityApi,
+        } : undefined,
+        driverConfig: formData.dbType === 'iotdb' ? {
+          iotdb: {
+            sessionPoolSize: formData.sessionPoolSize,
+            enableCompression: formData.enableCompression,
+            timeZone: formData.timeZone,
+            fetchSize: formData.fetchSize,
+            enableRedirection: formData.enableRedirection,
+            maxRetryCount: formData.maxRetryCount,
+            retryIntervalMs: formData.retryIntervalMs,
+          }
         } : undefined,
         proxyConfig: formData.proxyEnabled ? {
           enabled: formData.proxyEnabled,
@@ -349,11 +408,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         queryTimeout: formData.queryTimeout,
         defaultQueryLanguage: formData.defaultQueryLanguage,
         retentionPolicy: formData.retentionPolicy || undefined,
-        v2Config: (formData.version === '2.x' || formData.version === '3.x') ? {
+        v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
           apiToken: formData.apiToken,
           organization: formData.organization,
           bucket: formData.bucket || undefined,
           v1CompatibilityApi: formData.v1CompatibilityApi,
+        } : undefined,
+        driverConfig: formData.dbType === 'iotdb' ? {
+          iotdb: {
+            sessionPoolSize: formData.sessionPoolSize,
+            enableCompression: formData.enableCompression,
+            timeZone: formData.timeZone,
+            fetchSize: formData.fetchSize,
+            enableRedirection: formData.enableRedirection,
+            maxRetryCount: formData.maxRetryCount,
+            retryIntervalMs: formData.retryIntervalMs,
+          }
         } : undefined,
         proxyConfig: formData.proxyEnabled ? {
           enabled: formData.proxyEnabled,
@@ -446,13 +516,26 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </Label>
             <Select
               value={formData.dbType}
-              onValueChange={value => handleInputChange('dbType', value)}
+              onValueChange={value => {
+                handleInputChange('dbType', value);
+                // 根据数据库类型设置默认值
+                if (value === 'influxdb') {
+                  handleInputChange('version', '1.x');
+                  handleInputChange('port', 8086);
+                  handleInputChange('defaultQueryLanguage', 'InfluxQL');
+                } else if (value === 'iotdb') {
+                  handleInputChange('version', '1.2.x');
+                  handleInputChange('port', 6667);
+                  handleInputChange('defaultQueryLanguage', 'SQL');
+                }
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder='选择数据库类型' />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='influxdb'>InfluxDB</SelectItem>
+                <SelectItem value='iotdb'>Apache IoTDB</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -465,11 +548,15 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               value={formData.version}
               onValueChange={value => {
                 handleInputChange('version', value);
-                // 根据版本设置默认查询语言
-                if (value === '1.x' || value === '3.x') {
-                  handleInputChange('defaultQueryLanguage', 'InfluxQL');
-                } else if (value === '2.x') {
-                  handleInputChange('defaultQueryLanguage', 'Flux');
+                // 根据数据库类型和版本设置默认查询语言
+                if (formData.dbType === 'influxdb') {
+                  if (value === '1.x' || value === '3.x') {
+                    handleInputChange('defaultQueryLanguage', 'InfluxQL');
+                  } else if (value === '2.x') {
+                    handleInputChange('defaultQueryLanguage', 'Flux');
+                  }
+                } else if (formData.dbType === 'iotdb') {
+                  handleInputChange('defaultQueryLanguage', 'SQL');
                 }
               }}
             >
@@ -477,9 +564,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <SelectValue placeholder='选择版本' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='1.x'>1.x</SelectItem>
-                <SelectItem value='2.x'>2.x</SelectItem>
-                <SelectItem value='3.x'>3.x</SelectItem>
+                {formData.dbType === 'influxdb' && (
+                  <>
+                    <SelectItem value='1.x'>1.x</SelectItem>
+                    <SelectItem value='2.x'>2.x</SelectItem>
+                    <SelectItem value='3.x'>3.x</SelectItem>
+                  </>
+                )}
+                {formData.dbType === 'iotdb' && (
+                  <>
+                    <SelectItem value='0.13.x'>0.13.x</SelectItem>
+                    <SelectItem value='0.14.x'>0.14.x</SelectItem>
+                    <SelectItem value='1.0.x'>1.0.x</SelectItem>
+                    <SelectItem value='1.1.x'>1.1.x</SelectItem>
+                    <SelectItem value='1.2.x'>1.2.x (推荐)</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -741,6 +841,140 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           </div>
 
+          {/* IoTDB 特定配置 */}
+          {formData.dbType === 'iotdb' && (
+            <div className='space-y-4'>
+              <div className='text-sm font-medium text-foreground border-b pb-2'>
+                IoTDB 特定配置
+              </div>
+
+              <div className='grid grid-cols-3 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    会话池大小
+                  </Label>
+                  <InputNumber
+                    placeholder='5'
+                    value={formData.sessionPoolSize}
+                    onChange={value => handleInputChange('sessionPoolSize', value || 5)}
+                    className='w-full'
+                    min={1}
+                    max={50}
+                    controls={false}
+                  />
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    获取大小
+                  </Label>
+                  <InputNumber
+                    placeholder='10000'
+                    value={formData.fetchSize}
+                    onChange={value => handleInputChange('fetchSize', value || 10000)}
+                    className='w-full'
+                    min={100}
+                    max={100000}
+                    controls={false}
+                  />
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    时区
+                  </Label>
+                  <Select
+                    value={formData.timeZone}
+                    onValueChange={value => handleInputChange('timeZone', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder='选择时区' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='Asia/Shanghai'>Asia/Shanghai</SelectItem>
+                      <SelectItem value='UTC'>UTC</SelectItem>
+                      <SelectItem value='America/New_York'>America/New_York</SelectItem>
+                      <SelectItem value='Europe/London'>Europe/London</SelectItem>
+                      <SelectItem value='Asia/Tokyo'>Asia/Tokyo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    最大重试次数
+                  </Label>
+                  <InputNumber
+                    placeholder='3'
+                    value={formData.maxRetryCount}
+                    onChange={value => handleInputChange('maxRetryCount', value || 3)}
+                    className='w-full'
+                    min={0}
+                    max={10}
+                    controls={false}
+                  />
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    重试间隔(毫秒)
+                  </Label>
+                  <InputNumber
+                    placeholder='1000'
+                    value={formData.retryIntervalMs}
+                    onChange={value => handleInputChange('retryIntervalMs', value || 1000)}
+                    className='w-full'
+                    min={100}
+                    max={10000}
+                    controls={false}
+                  />
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    启用压缩
+                  </Label>
+                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                    <Switch
+                      id='compression-switch'
+                      checked={formData.enableCompression}
+                      onCheckedChange={checked => handleInputChange('enableCompression', checked)}
+                    />
+                    <Label
+                      htmlFor='compression-switch'
+                      className='text-sm font-medium cursor-pointer'
+                    >
+                      {formData.enableCompression ? '已启用压缩' : '启用压缩'}
+                    </Label>
+                  </div>
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    启用重定向
+                  </Label>
+                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                    <Switch
+                      id='redirection-switch'
+                      checked={formData.enableRedirection}
+                      onCheckedChange={checked => handleInputChange('enableRedirection', checked)}
+                    />
+                    <Label
+                      htmlFor='redirection-switch'
+                      className='text-sm font-medium cursor-pointer'
+                    >
+                      {formData.enableRedirection ? '已启用重定向' : '启用重定向'}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 查询语言和SSL配置合并为一行 */}
           <div className='grid grid-cols-2 gap-4'>
             <div className='space-y-1'>
@@ -755,9 +989,16 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <SelectValue placeholder='选择查询语言' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
-                  <SelectItem value='Flux'>Flux</SelectItem>
-                  {formData.version === '3.x' && <SelectItem value='SQL'>SQL</SelectItem>}
+                  {formData.dbType === 'influxdb' && (
+                    <>
+                      <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
+                      <SelectItem value='Flux'>Flux</SelectItem>
+                      {formData.version === '3.x' && <SelectItem value='SQL'>SQL</SelectItem>}
+                    </>
+                  )}
+                  {formData.dbType === 'iotdb' && (
+                    <SelectItem value='SQL'>SQL</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
