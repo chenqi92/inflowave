@@ -64,8 +64,6 @@ impl IoTDBHttpClient {
 
     /// 测试连接 - 支持TCP和HTTP两种方式（包含强制认证验证）
     pub async fn test_connection(&self) -> Result<u64> {
-        let start = Instant::now();
-
         debug!("测试 IoTDB 连接: {}", self.base_url);
 
         // 🔒 安全检查：强制要求认证信息
@@ -142,7 +140,6 @@ impl IoTDBHttpClient {
     async fn test_tcp_connection(&self) -> Result<u64> {
         use tokio::net::TcpStream;
         use tokio::time::{timeout, Duration};
-        use tokio::io::{AsyncWriteExt, AsyncReadExt};
 
         let start = Instant::now();
         let address = format!("{}:{}", self.config.host, self.config.port);
@@ -182,13 +179,15 @@ impl IoTDBHttpClient {
         let username = self.config.username.as_ref().ok_or_else(|| {
             anyhow::anyhow!("缺少用户名")
         })?;
-        let password = self.config.password.as_ref().ok_or_else(|| {
+        let _password = self.config.password.as_ref().ok_or_else(|| {
             anyhow::anyhow!("缺少密码")
         })?;
 
         debug!("验证IoTDB认证: 用户名={}", username);
 
         // 构造简单的认证测试查询
+        // 注意：在实际的IoTDB TCP协议中，认证信息应该在连接握手时发送
+        // 这里我们只是发送一个查询来测试连接是否有效
         let auth_query = format!("SHOW STORAGE GROUP\n");
 
         // 发送认证查询

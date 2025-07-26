@@ -100,8 +100,18 @@ class ReleaseNotesService {
       });
       return content;
     } catch (error) {
-      // 文件不存在或读取失败
-      return null;
+      // 版本文件不存在，尝试读取 default.md
+      try {
+        const defaultFilePath = `docs/release-notes/default.md`;
+        const defaultContent = await safeTauriInvoke<string>('read_release_notes_file', { 
+          path: defaultFilePath 
+        });
+        console.log(`未找到版本 ${version} 的发布说明，使用默认发布说明`);
+        return defaultContent;
+      } catch (defaultError) {
+        console.warn('未找到版本发布说明文件或默认文件:', error);
+        return null;
+      }
     }
   }
 

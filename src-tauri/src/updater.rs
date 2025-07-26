@@ -35,6 +35,22 @@ pub struct UpdateInfo {
     pub is_skipped: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DownloadProgress {
+    pub downloaded: u64,
+    pub total: u64,
+    pub percentage: f64,
+    pub speed: f64, // bytes per second
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UpdateStatus {
+    pub status: String, // "downloading", "installing", "completed", "error"
+    pub progress: Option<DownloadProgress>,
+    pub message: String,
+    pub error: Option<String>,
+}
+
 const GITHUB_API_URL: &str = "https://api.github.com/repos/chenqi92/inflowave/releases";
 const USER_AGENT: &str = "InfloWave-Updater/0.1";
 
@@ -506,6 +522,329 @@ pub async fn list_release_notes_files() -> Result<Vec<String>, String> {
 
     files.sort();
     Ok(files)
+}
+
+/// 检查是否支持内置更新（仅Windows平台）
+#[command]
+pub fn is_builtin_update_supported() -> bool {
+    cfg!(target_os = "windows")
+}
+
+/// 获取平台信息
+#[command]
+pub fn get_platform_info() -> HashMap<String, String> {
+    let mut info = HashMap::new();
+    info.insert("os".to_string(), std::env::consts::OS.to_string());
+    info.insert("arch".to_string(), std::env::consts::ARCH.to_string());
+    info.insert("family".to_string(), std::env::consts::FAMILY.to_string());
+    info
+}
+
+/// 下载更新包（仅Windows平台）
+#[command]
+pub async fn download_update(
+    app_handle: AppHandle,
+    download_url: String,
+    version: String,
+) -> Result<String, String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (app_handle, download_url, version); // 避免未使用变量警告
+        return Err("内置更新仅支持Windows平台".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::io::Write;
+        use std::time::Instant;
+        
+        if download_url.is_empty() {
+            return Err("下载URL不能为空".to_string());
+        }
+
+        // 获取临时下载目录
+        let temp_dir = std::env::temp_dir();
+        let download_dir = temp_dir.join("inflowave_updates");
+        
+        // 确保下载目录存在
+        if let Err(e) = std::fs::create_dir_all(&download_dir) {
+            return Err(format!("创建下载目录失败: {}", e));
+        }
+
+        // 从URL获取文件名，或使用默认名称
+        let file_name = download_url
+            .split('/')
+            .last()
+            .unwrap_or(&format!("InfloWave_{}.msi", version))
+            .to_string();
+        
+        let file_path = download_dir.join(&file_name);
+
+        // 如果文件已存在，先删除
+        if file_path.exists() {
+            if let Err(e) = std::fs::remove_file(&file_path) {
+                log::warn!("删除已存在文件失败: {}", e);
+            }
+        }
+
+        log::info!("开始下载更新包: {} -> {:?}", download_url, file_path);
+
+        // 发送下载开始事件
+        let _ = app_handle.emit("update-download-started", UpdateStatus {
+            status: "downloading".to_string(),
+            progress: None,
+            message: "开始下载更新包...".to_string(),
+            error: None,
+        });
+
+        // 创建HTTP客户端
+        let client = reqwest::Client::new();
+        let start_time = Instant::now();
+        
+        // 获取文件大小
+        let response = client
+            .get(&download_url)
+            .header("User-Agent", USER_AGENT)
+            .send()
+            .await
+            .map_err(|e| format!("下载请求失败: {}", e))?;
+
+        if !response.status().is_success() {
+            return Err(format!("下载失败，HTTP状态码: {}", response.status()));
+        }
+
+        let total_size = response
+            .content_length()
+            .unwrap_or(0);
+
+        log::info!("文件大小: {} bytes", total_size);
+
+        // 创建文件
+        let mut file = std::fs::File::create(&file_path)
+            .map_err(|e| format!("创建文件失败: {}", e))?;
+
+        // 分块下载
+        let mut downloaded = 0u64;
+        let mut last_progress_time = Instant::now();
+        let mut stream = response.bytes_stream();
+
+        use futures_util::StreamExt;
+
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk.map_err(|e| format!("下载数据失败: {}", e))?;
+            
+            file.write_all(&chunk)
+                .map_err(|e| format!("写入文件失败: {}", e))?;
+            
+            downloaded += chunk.len() as u64;
+            
+            // 每500ms发送一次进度更新
+            if last_progress_time.elapsed().as_millis() >= 500 {
+                let elapsed_secs = start_time.elapsed().as_secs_f64();
+                let speed = if elapsed_secs > 0.0 { downloaded as f64 / elapsed_secs } else { 0.0 };
+                let percentage = if total_size > 0 { (downloaded as f64 / total_size as f64) * 100.0 } else { 0.0 };
+
+                let progress = DownloadProgress {
+                    downloaded,
+                    total: total_size,
+                    percentage,
+                    speed,
+                };
+
+                let _ = app_handle.emit("update-download-progress", UpdateStatus {
+                    status: "downloading".to_string(),
+                    progress: Some(progress),
+                    message: format!("下载中... {:.1}%", percentage),
+                    error: None,
+                });
+
+                last_progress_time = Instant::now();
+            }
+        }
+
+        // 确保文件写入完成
+        file.flush().map_err(|e| format!("文件刷新失败: {}", e))?;
+        drop(file);
+
+        log::info!("下载完成: {:?}, 大小: {} bytes", file_path, downloaded);
+
+        // 发送下载完成事件
+        let _ = app_handle.emit("update-download-completed", UpdateStatus {
+            status: "completed".to_string(),
+            progress: Some(DownloadProgress {
+                downloaded,
+                total: total_size,
+                percentage: 100.0,
+                speed: 0.0,
+            }),
+            message: "下载完成".to_string(),
+            error: None,
+        });
+
+        Ok(file_path.to_string_lossy().to_string())
+    }
+}
+
+/// 安装更新包（仅Windows平台）
+#[command]
+pub async fn install_update(
+    app_handle: AppHandle,
+    file_path: String,
+    silent: bool,
+) -> Result<(), String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (app_handle, file_path, silent); // 避免未使用变量警告
+        return Err("内置更新仅支持Windows平台".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::path::PathBuf;
+        use std::process::Command;
+        
+        let path = PathBuf::from(&file_path);
+        
+        if !path.exists() {
+            return Err("安装文件不存在".to_string());
+        }
+
+        // 检查文件扩展名
+        let extension = path.extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        log::info!("开始安装更新: {:?}, 文件类型: {}", path, extension);
+
+        // 发送安装开始事件
+        let _ = app_handle.emit("update-install-started", UpdateStatus {
+            status: "installing".to_string(),
+            progress: None,
+            message: "开始安装更新...".to_string(),
+            error: None,
+        });
+
+        let mut install_command = match extension.as_str() {
+            "msi" => {
+                let mut cmd = Command::new("msiexec");
+                cmd.arg("/i").arg(&file_path);
+                
+                if silent {
+                    cmd.arg("/quiet");
+                } else {
+                    cmd.arg("/qb"); // 基本UI
+                }
+                
+                // 允许重启
+                cmd.arg("/norestart");
+                
+                // 记录安装日志
+                let log_path = std::env::temp_dir().join("inflowave_install.log");
+                cmd.arg("/l*v").arg(&log_path);
+                
+                cmd
+            },
+            "exe" => {
+                let mut cmd = Command::new(&file_path);
+                
+                if silent {
+                    // 尝试常见的静默安装参数
+                    cmd.arg("/S").arg("/silent").arg("/quiet");
+                }
+                
+                cmd
+            },
+            _ => {
+                return Err(format!("不支持的安装文件类型: {}", extension));
+            }
+        };
+
+        // 执行安装命令
+        log::info!("执行安装命令: {:?}", install_command);
+        
+        let output = install_command
+            .output()
+            .map_err(|e| format!("启动安装程序失败: {}", e))?;
+
+        let exit_code = output.status.code().unwrap_or(-1);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+
+        log::info!("安装完成，退出码: {}", exit_code);
+        log::info!("安装输出: {}", stdout);
+        if !stderr.is_empty() {
+            log::warn!("安装错误: {}", stderr);
+        }
+
+        if output.status.success() || exit_code == 3010 { // 3010 表示需要重启
+            let message = if exit_code == 3010 {
+                "安装完成，需要重启系统以完成更新"
+            } else {
+                "安装完成"
+            };
+
+            // 发送安装成功事件
+            let _ = app_handle.emit("update-install-completed", UpdateStatus {
+                status: "completed".to_string(),
+                progress: None,
+                message: message.to_string(),
+                error: None,
+            });
+
+            // 清理下载的安装文件
+            if let Err(e) = std::fs::remove_file(&path) {
+                log::warn!("清理安装文件失败: {}", e);
+            }
+
+            Ok(())
+        } else {
+            let error_msg = if !stderr.is_empty() {
+                format!("安装失败 (退出码: {}): {}", exit_code, stderr)
+            } else {
+                format!("安装失败，退出码: {}", exit_code)
+            };
+
+            // 发送安装失败事件
+            let _ = app_handle.emit("update-install-error", UpdateStatus {
+                status: "error".to_string(),
+                progress: None,
+                message: "安装失败".to_string(),
+                error: Some(error_msg.clone()),
+            });
+
+            Err(error_msg)
+        }
+    }
+}
+
+/// 下载并安装更新（Windows内置更新的完整流程）
+#[command]
+pub async fn download_and_install_update(
+    app_handle: AppHandle,
+    download_url: String,
+    version: String,
+    silent: bool,
+) -> Result<(), String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (app_handle, download_url, version, silent); // 避免未使用变量警告
+        return Err("内置更新仅支持Windows平台".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // 第一步：下载更新包
+        let file_path = download_update(app_handle.clone(), download_url, version).await?;
+        
+        // 等待一段时间确保下载完全完成
+        tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+        
+        // 第二步：安装更新包
+        install_update(app_handle, file_path, silent).await?;
+        
+        Ok(())
+    }
 }
 
 #[cfg(test)]

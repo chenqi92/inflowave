@@ -6,6 +6,9 @@
 
 import type { DatabaseType } from '../index';
 
+// 重新导出 DatabaseType 以便其他模块使用
+export type { DatabaseType } from '../index';
+
 // 查询语言类型
 export type QueryLanguage = 'influxql' | 'flux' | 'sql' | 'iotdb-sql' | 'promql';
 

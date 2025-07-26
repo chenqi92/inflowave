@@ -402,7 +402,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
         results.push(result);
       } catch (error) {
         results.push({ 
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           query: query
         });
       }

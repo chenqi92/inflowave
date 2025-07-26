@@ -27,6 +27,12 @@ export { DatabaseRegistry, databaseRegistry } from './DatabaseRegistry';
 export { QueryEngineFactory, queryEngineFactory } from './QueryEngineFactory';
 export { DataSourceNodeBuilder, dataSourceNodeBuilder } from './DataSourceNodeBuilder';
 
+// 导入类用于内部使用
+import { DatabaseRegistry } from './DatabaseRegistry';
+import { QueryEngineFactory } from './QueryEngineFactory';
+import { DataSourceNodeBuilder } from './DataSourceNodeBuilder';
+import type { DatabaseType } from '@/types';
+
 // 查询引擎
 export { QueryEngineBase } from './QueryEngineBase';
 export { default as InfluxDBQueryEngine } from './InfluxDBQueryEngine';
@@ -40,16 +46,16 @@ export function initializeDatabaseServices(): void {
   
   try {
     // 初始化数据库注册表
-    databaseRegistry.initialize();
-    
+    DatabaseRegistry.getInstance().initialize();
+
     // 验证注册的数据库类型
-    const supportedTypes = databaseRegistry.getSupportedTypes();
+    const supportedTypes = DatabaseRegistry.getInstance().getSupportedTypes();
     console.log('📋 支持的数据库类型:', supportedTypes);
-    
+
     // 验证每个数据库类型的配置
     for (const dbType of supportedTypes) {
       try {
-        const features = databaseRegistry.getFeatures(dbType);
+        const features = DatabaseRegistry.getInstance().getFeatures(dbType);
         console.log(`✅ ${dbType} 配置验证通过:`, {
           levels: features.hierarchy.levels.length,
           languages: features.queryCapabilities.languages.length,
@@ -77,8 +83,8 @@ export function getDatabaseServiceStatus(): {
   registryStats: any;
 } {
   try {
-    const supportedTypes = databaseRegistry.getSupportedTypes();
-    const engineStats = queryEngineFactory.getStats();
+    const supportedTypes = DatabaseRegistry.getInstance().getSupportedTypes();
+    const engineStats = QueryEngineFactory.getStats();
     
     return {
       initialized: true,
@@ -106,7 +112,7 @@ export async function cleanupDatabaseServices(): Promise<void> {
   console.log('🧹 清理数据库服务...');
   
   try {
-    await queryEngineFactory.cleanup();
+    await QueryEngineFactory.cleanup();
     console.log('✅ 数据库服务清理完成');
   } catch (error) {
     console.error('❌ 数据库服务清理失败:', error);
@@ -118,14 +124,14 @@ export async function cleanupDatabaseServices(): Promise<void> {
  * 创建数据库查询引擎
  */
 export function createQueryEngine(dbType: DatabaseType, version: string = 'latest') {
-  return queryEngineFactory.create(dbType, version);
+  return QueryEngineFactory.create(dbType, version);
 }
 
 /**
  * 获取数据库特征配置
  */
 export function getDatabaseFeatures(dbType: DatabaseType, version?: string) {
-  return databaseRegistry.getFeatures(dbType, version);
+  return DatabaseRegistry.getInstance().getFeatures(dbType, version);
 }
 
 /**
@@ -135,9 +141,11 @@ export function buildDataSourceNode(
   type: 'connection' | 'database' | 'table' | 'field',
   params: any
 ) {
+  const builder = new DataSourceNodeBuilder();
+
   switch (type) {
     case 'connection':
-      return dataSourceNodeBuilder.buildConnectionNode(
+      return builder.buildConnectionNode(
         params.connectionId,
         params.dbType,
         params.connectionName,
@@ -146,7 +154,7 @@ export function buildDataSourceNode(
         params.isFavorite
       );
     case 'database':
-      return dataSourceNodeBuilder.buildDatabaseNode(
+      return builder.buildDatabaseNode(
         params.connectionId,
         params.dbType,
         params.databaseName,
@@ -154,7 +162,7 @@ export function buildDataSourceNode(
         params.isFavorite
       );
     case 'table':
-      return dataSourceNodeBuilder.buildTableNode(
+      return builder.buildTableNode(
         params.connectionId,
         params.dbType,
         params.database,
@@ -163,7 +171,7 @@ export function buildDataSourceNode(
         params.isFavorite
       );
     case 'field':
-      return dataSourceNodeBuilder.buildFieldNode(
+      return builder.buildFieldNode(
         params.connectionId,
         params.dbType,
         params.database,
@@ -181,21 +189,21 @@ export function buildDataSourceNode(
  * 验证数据库配置
  */
 export function validateDatabaseConfig(dbType: DatabaseType, version: string) {
-  return queryEngineFactory.validateEngine(dbType, version);
+  return QueryEngineFactory.validateEngine(dbType, version);
 }
 
 /**
  * 获取数据库层次结构
  */
 export function getDatabaseHierarchy(dbType: DatabaseType, version?: string) {
-  return databaseRegistry.getHierarchy(dbType, version);
+  return DatabaseRegistry.getInstance().getHierarchy(dbType, version);
 }
 
 /**
  * 获取节点类型配置
  */
 export function getNodeTypeConfig(dbType: DatabaseType, nodeType: string, version?: string) {
-  return databaseRegistry.getNodeTypeConfig(dbType, nodeType, version);
+  return DatabaseRegistry.getInstance().getNodeTypeConfig(dbType, nodeType, version);
 }
 
 /**
@@ -203,55 +211,55 @@ export function getNodeTypeConfig(dbType: DatabaseType, nodeType: string, versio
  */
 export const DatabaseServiceUtils = {
   // 检查数据库类型支持
-  isSupported: (dbType: DatabaseType) => databaseRegistry.supports(dbType),
+  isSupported: (dbType: DatabaseType) => DatabaseRegistry.getInstance().supports(dbType),
 
   // 获取所有支持的数据库类型
-  getSupportedTypes: () => databaseRegistry.getSupportedTypes(),
+  getSupportedTypes: () => DatabaseRegistry.getInstance().getSupportedTypes(),
 
   // 获取数据库显示名称
   getDisplayName: (dbType: DatabaseType) => {
     try {
-      const features = databaseRegistry.getFeatures(dbType);
+      const features = DatabaseRegistry.getInstance().getFeatures(dbType);
       return features.displayName;
     } catch {
       return dbType;
     }
   },
-  
+
   // 获取数据库描述
   getDescription: (dbType: DatabaseType) => {
     try {
-      const features = databaseRegistry.getFeatures(dbType);
+      const features = DatabaseRegistry.getInstance().getFeatures(dbType);
       return features.description;
     } catch {
       return '';
     }
   },
-  
+
   // 获取默认配置
   getDefaultConfig: (dbType: DatabaseType) => {
     try {
-      const features = databaseRegistry.getFeatures(dbType);
+      const features = DatabaseRegistry.getInstance().getFeatures(dbType);
       return features.defaultConfig;
     } catch {
       return null;
     }
   },
-  
+
   // 获取支持的查询语言
   getSupportedLanguages: (dbType: DatabaseType, version?: string) => {
     try {
-      const features = databaseRegistry.getFeatures(dbType, version);
+      const features = DatabaseRegistry.getInstance().getFeatures(dbType, version);
       return features.queryCapabilities.languages;
     } catch {
       return [];
     }
   },
-  
+
   // 获取支持的操作
   getSupportedOperations: (dbType: DatabaseType, version?: string) => {
     try {
-      const features = databaseRegistry.getFeatures(dbType, version);
+      const features = DatabaseRegistry.getInstance().getFeatures(dbType, version);
       return features.queryCapabilities.supportedOperations;
     } catch {
       return [];

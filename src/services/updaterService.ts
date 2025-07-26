@@ -3,7 +3,7 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
-import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS } from '@/types/updater';
+import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS, PlatformInfo, UpdateStatus } from '@/types/updater';
 import { getAppVersion } from '@/utils/version';
 
 class UpdaterService {
@@ -225,9 +225,47 @@ class UpdaterService {
   /**
    * 打开下载页面
    */
-  openDownloadPage(url: string): void {
-    if (url) {
-      window.open(url, '_blank');
+  async openDownloadPage(url: string): Promise<void> {
+    if (!url) {
+      console.warn('URL is empty, cannot open download page');
+      return;
+    }
+    
+    try {
+      // 在 Tauri 环境中使用 shell API 打开链接
+      if (window.__TAURI__) {
+        try {
+          // 使用 Tauri v2 的 shell API
+          const { open } = await import('@tauri-apps/plugin-shell');
+          await open(url);
+        } catch (error: unknown) {
+          console.error('Failed to open URL with Tauri shell:', error);
+          // 降级到浏览器打开
+          this.fallbackOpenUrl(url);
+        }
+      } else {
+        // 浏览器环境
+        this.fallbackOpenUrl(url);
+      }
+    } catch (error: unknown) {
+      console.error('Failed to open download page:', error);
+      // 最后的降级方案
+      this.fallbackOpenUrl(url);
+    }
+  }
+
+  /**
+   * 降级方案：使用浏览器打开URL
+   */
+  private fallbackOpenUrl(url: string): void {
+    try {
+      if (typeof window !== 'undefined' && window.open) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        console.error('Cannot open URL: window.open is not available');
+      }
+    } catch (error) {
+      console.error('Fallback URL opening failed:', error);
     }
   }
 
@@ -256,6 +294,152 @@ class UpdaterService {
       skipped: true,
       date: 'Unknown' // 无法获取具体跳过时间
     }));
+  }
+
+  /**
+   * 检查是否支持内置更新（仅Windows平台）
+   */
+  async isBuiltinUpdateSupported(): Promise<boolean> {
+    try {
+      return await safeTauriInvoke<boolean>('is_builtin_update_supported');
+    } catch (error) {
+      console.error('检查内置更新支持失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取平台信息
+   */
+  async getPlatformInfo(): Promise<PlatformInfo> {
+    try {
+      return await safeTauriInvoke<PlatformInfo>('get_platform_info');
+    } catch (error) {
+      console.error('获取平台信息失败:', error);
+      return { os: 'unknown', arch: 'unknown', family: 'unknown' };
+    }
+  }
+
+  /**
+   * 下载更新包（Windows内置更新）
+   */
+  async downloadUpdate(downloadUrl: string, version: string): Promise<string> {
+    try {
+      return await safeTauriInvoke<string>('download_update', {
+        downloadUrl,
+        version
+      });
+    } catch (error) {
+      console.error('下载更新失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 安装更新包（Windows内置更新）
+   */
+  async installUpdate(filePath: string, silent: boolean = false): Promise<void> {
+    try {
+      await safeTauriInvoke<void>('install_update', {
+        filePath,
+        silent
+      });
+    } catch (error) {
+      console.error('安装更新失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 下载并安装更新（Windows内置更新的完整流程）
+   */
+  async downloadAndInstallUpdate(
+    downloadUrl: string, 
+    version: string, 
+    silent: boolean = false
+  ): Promise<void> {
+    try {
+      await safeTauriInvoke<void>('download_and_install_update', {
+        downloadUrl,
+        version,
+        silent
+      });
+    } catch (error) {
+      console.error('下载并安装更新失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 监听更新事件
+   */
+  setupUpdateEventListeners(callbacks: {
+    onDownloadStarted?: (status: UpdateStatus) => void;
+    onDownloadProgress?: (status: UpdateStatus) => void;
+    onDownloadCompleted?: (status: UpdateStatus) => void;
+    onInstallStarted?: (status: UpdateStatus) => void;
+    onInstallCompleted?: (status: UpdateStatus) => void;
+    onError?: (status: UpdateStatus) => void;
+  }): () => void {
+    const removeListeners: (() => void)[] = [];
+
+    if (window.__TAURI__) {
+      try {
+        // 动态导入Tauri事件API
+        import('@tauri-apps/api/event').then(({ listen }) => {
+          if (callbacks.onDownloadStarted) {
+            listen<UpdateStatus>('update-download-started', (event) => {
+              callbacks.onDownloadStarted?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+
+          if (callbacks.onDownloadProgress) {
+            listen<UpdateStatus>('update-download-progress', (event) => {
+              callbacks.onDownloadProgress?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+
+          if (callbacks.onDownloadCompleted) {
+            listen<UpdateStatus>('update-download-completed', (event) => {
+              callbacks.onDownloadCompleted?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+
+          if (callbacks.onInstallStarted) {
+            listen<UpdateStatus>('update-install-started', (event) => {
+              callbacks.onInstallStarted?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+
+          if (callbacks.onInstallCompleted) {
+            listen<UpdateStatus>('update-install-completed', (event) => {
+              callbacks.onInstallCompleted?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+
+          if (callbacks.onError) {
+            listen<UpdateStatus>('update-install-error', (event) => {
+              callbacks.onError?.(event.payload);
+            }).then(unlisten => removeListeners.push(unlisten));
+          }
+        }).catch(error => {
+          console.error('设置更新事件监听器失败:', error);
+        });
+      } catch (error) {
+        console.error('导入Tauri事件API失败:', error);
+      }
+    }
+
+    // 返回清理函数
+    return () => {
+      removeListeners.forEach(unlisten => {
+        try {
+          unlisten();
+        } catch (error) {
+          console.error('移除事件监听器失败:', error);
+        }
+      });
+    };
   }
 }
 

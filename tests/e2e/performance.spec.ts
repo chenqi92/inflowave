@@ -36,7 +36,7 @@ test.describe('性能测试', () => {
     test('首次内容绘制时间应该合理', async ({ page }) => {
       // 使用 Performance API 测量 FCP
       const fcpTime = await page.evaluate(() => {
-        return new Promise((resolve) => {
+        return new Promise<number>((resolve) => {
           new PerformanceObserver((list) => {
             const entries = list.getEntries();
             const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint');
@@ -44,12 +44,12 @@ test.describe('性能测试', () => {
               resolve(fcpEntry.startTime);
             }
           }).observe({ entryTypes: ['paint'] });
-          
+
           // 超时处理
           setTimeout(() => resolve(0), 5000);
         });
       });
-      
+
       if (fcpTime > 0) {
         // FCP 应该在 2 秒内
         expect(fcpTime).toBeLessThan(2000);
@@ -60,7 +60,7 @@ test.describe('性能测试', () => {
     test('最大内容绘制时间应该合理', async ({ page }) => {
       // 使用 Performance API 测量 LCP
       const lcpTime = await page.evaluate(() => {
-        return new Promise((resolve) => {
+        return new Promise<number>((resolve) => {
           new PerformanceObserver((list) => {
             const entries = list.getEntries();
             const lcpEntry = entries[entries.length - 1]; // 最后一个 LCP 条目
@@ -68,12 +68,12 @@ test.describe('性能测试', () => {
               resolve(lcpEntry.startTime);
             }
           }).observe({ entryTypes: ['largest-contentful-paint'] });
-          
+
           // 超时处理
           setTimeout(() => resolve(0), 10000);
         });
       });
-      
+
       if (lcpTime > 0) {
         // LCP 应该在 4 秒内
         expect(lcpTime).toBeLessThan(4000);

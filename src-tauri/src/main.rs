@@ -843,6 +843,11 @@ async fn main() {
             update_updater_settings,
             read_release_notes_file,
             list_release_notes_files,
+            is_builtin_update_supported,
+            get_platform_info,
+            download_update,
+            install_update,
+            download_and_install_update,
         ])
         .setup(|app| {
             info!("Application setup started");

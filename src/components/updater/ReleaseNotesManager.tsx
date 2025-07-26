@@ -166,7 +166,7 @@ export const ReleaseNotesManager: React.FC = () => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`)}
+                                onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`).catch(console.error)}
                             >
                                 <ExternalLink className="w-4 h-4 mr-2"/>
                                 GitHub
@@ -185,7 +185,7 @@ export const ReleaseNotesManager: React.FC = () => {
                             maxHeight="400px"
                             showTitle={true}
                             showMetadata={true}
-                            onExternalLink={(url) => updaterService.openDownloadPage(url)}
+                            onExternalLink={(url) => updaterService.openDownloadPage(url).catch(console.error)}
                         />
                     </CardContent>
                 </Card>

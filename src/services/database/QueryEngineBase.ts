@@ -207,7 +207,7 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
         const result = await this.executeQuery(connectionId, query);
         results.push(result);
       } catch (error) {
-        results.push({ error: error.message });
+        results.push({ error: error instanceof Error ? error.message : String(error) });
       }
     }
     

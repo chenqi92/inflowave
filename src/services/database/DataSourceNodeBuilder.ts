@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Star } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/Badge';
 import type { 
   DatabaseType,
   DatabaseLevel,
@@ -283,9 +283,7 @@ export class DataSourceNodeBuilder {
     type?: string,
     isFavorite: boolean = false
   ): React.ReactNode {
-    return React.createElement('div', {
-      className: 'flex items-center justify-between w-full'
-    }, [
+    const elements: React.ReactNode[] = [
       React.createElement('div', {
         key: 'content',
         className: 'flex items-center space-x-2'
@@ -294,15 +292,22 @@ export class DataSourceNodeBuilder {
         React.createElement('span', { key: 'name' }, name),
         type && React.createElement(Badge, {
           key: 'type',
-          variant: 'outline',
+          variant: 'outline' as const,
           className: 'text-xs'
         }, type)
-      ]),
-      isFavorite && React.createElement(Star, {
+      ].filter(Boolean))
+    ];
+
+    if (isFavorite) {
+      elements.push(React.createElement(Star, {
         key: 'favorite',
         className: 'w-3 h-3 text-yellow-500 fill-current'
-      })
-    ]);
+      }));
+    }
+
+    return React.createElement('div', {
+      className: 'flex items-center justify-between w-full'
+    }, elements);
   }
 
   /**
@@ -314,9 +319,7 @@ export class DataSourceNodeBuilder {
     isConnected: boolean,
     isFavorite: boolean
   ): React.ReactNode {
-    return React.createElement('div', {
-      className: 'flex items-center justify-between w-full'
-    }, [
+    const elements: React.ReactNode[] = [
       React.createElement('div', {
         key: 'content',
         className: 'flex items-center space-x-2'
@@ -327,12 +330,19 @@ export class DataSourceNodeBuilder {
           key: 'status',
           className: `w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`
         })
-      ]),
-      isFavorite && React.createElement(Star, {
+      ])
+    ];
+
+    if (isFavorite) {
+      elements.push(React.createElement(Star, {
         key: 'favorite',
         className: 'w-3 h-3 text-yellow-500 fill-current'
-      })
-    ]);
+      }));
+    }
+
+    return React.createElement('div', {
+      className: 'flex items-center justify-between w-full'
+    }, elements);
   }
 
   /**
@@ -387,6 +397,8 @@ export class DataSourceNodeBuilder {
     return {
       ...node,
       status: {
+        loading: false,
+        childrenLoaded: false,
         ...node.status,
         ...status
       }
@@ -404,8 +416,9 @@ export class DataSourceNodeBuilder {
       ...node,
       children,
       status: {
-        ...node.status,
-        childrenLoaded: true
+        loading: false,
+        childrenLoaded: true,
+        ...node.status
       }
     };
   }
@@ -414,7 +427,7 @@ export class DataSourceNodeBuilder {
    * 检查节点是否可以展开
    */
   canExpandNode(node: DataSourceNodeExtended): boolean {
-    return node.actions?.canExpand && !node.isLeaf && !node.status?.loading;
+    return !!(node.actions?.canExpand && !node.isLeaf && !(node.status?.loading ?? false));
   }
 
   /**

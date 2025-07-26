@@ -3,7 +3,7 @@ use crate::database::iotdb_client::IoTDBHttpClient;
 use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use reqwest;
 
 /// 数据库客户端枚举 - 解决 async trait 的 dyn 兼容性问题

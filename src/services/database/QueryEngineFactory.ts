@@ -87,7 +87,9 @@ export class QueryEngineFactory {
     // 调用每个引擎的清理方法
     for (const [key, engine] of this.engines) {
       try {
-        await engine.cleanup();
+        if ('cleanup' in engine && typeof engine.cleanup === 'function') {
+          await engine.cleanup();
+        }
         console.log(`✅ 清理引擎: ${key}`);
       } catch (error) {
         console.error(`❌ 清理引擎失败: ${key}`, error);
@@ -182,7 +184,7 @@ export class QueryEngineFactory {
         warnings
       };
     } catch (error) {
-      errors.push(`验证引擎配置时发生错误: ${error.message}`);
+      errors.push(`验证引擎配置时发生错误: ${error instanceof Error ? error.message : String(error)}`);
       return { valid: false, errors, warnings };
     }
   }
@@ -215,7 +217,7 @@ export class QueryEngineFactory {
       };
     } catch (error) {
       validation.valid = false;
-      validation.errors.push(`创建引擎失败: ${error.message}`);
+      validation.errors.push(`创建引擎失败: ${error instanceof Error ? error.message : String(error)}`);
       
       return {
         engine: null,
@@ -242,7 +244,7 @@ export class QueryEngineFactory {
         failures.push({
           dbType: config.dbType,
           version: config.version,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
       }
     }

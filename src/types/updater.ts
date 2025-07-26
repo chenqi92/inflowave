@@ -41,6 +41,26 @@ export interface VersionInfo {
   release_notes: string;
 }
 
+export interface DownloadProgress {
+  downloaded: number;
+  total: number;
+  percentage: number;
+  speed: number; // bytes per second
+}
+
+export interface UpdateStatus {
+  status: 'downloading' | 'installing' | 'completed' | 'error';
+  progress?: DownloadProgress;
+  message: string;
+  error?: string;
+}
+
+export interface PlatformInfo {
+  os: string;
+  arch: string;
+  family: string;
+}
+
 export const DEFAULT_UPDATER_SETTINGS: UpdaterSettings = {
   auto_check: true,
   check_interval: 24, // 每24小时检查一次

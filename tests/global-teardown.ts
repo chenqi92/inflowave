@@ -19,7 +19,7 @@ async function globalTeardown(config: FullConfig) {
     const testStartTime = process.env.TEST_START_TIME || testEndTime;
     
     // 读取测试信息
-    let testInfo = {};
+    let testInfo: any = {};
     try {
       const testInfoPath = 'test-results/test-info.json';
       if (fs.existsSync(testInfoPath)) {
@@ -30,7 +30,7 @@ async function globalTeardown(config: FullConfig) {
     }
     
     // 读取测试结果
-    let testResults = {};
+    let testResults: any = {};
     try {
       const resultsPath = 'test-results/results.json';
       if (fs.existsSync(resultsPath)) {
