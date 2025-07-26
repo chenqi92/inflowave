@@ -178,17 +178,17 @@ jobs:
             sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
             
             # 配置多架构源
-            cat << 'EOF' | sudo tee /etc/apt/sources.list
-            # AMD64 (默认架构)
-            deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
-            deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
-            deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
-            
-            # ARM64 架构
-            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse
-            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse  
-            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse
-            EOF
+            {
+              echo "# AMD64 (默认架构)"
+              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse"
+              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse"
+              echo "deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse"
+              echo ""
+              echo "# ARM64 架构"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse"
+            } | sudo tee /etc/apt/sources.list
             
             # 更新包列表
             sudo apt-get update || true
