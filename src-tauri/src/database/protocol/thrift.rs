@@ -136,10 +136,11 @@ impl ThriftClient {
         
         let version = version_and_type >> 16;
         let message_type = (version_and_type & 0xFF) as u8;
-        
-        if version != THRIFT_VERSION {
+
+        let expected_version = THRIFT_VERSION >> 16;
+        if version != expected_version {
             return Err(ProtocolError::ProtocolError(
-                format!("不支持的Thrift版本: {}", version)
+                format!("不支持的Thrift版本: 0x{:04X}, 期望: 0x{:04X}", version, expected_version)
             ).into());
         }
         

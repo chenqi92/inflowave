@@ -37,6 +37,7 @@ async-trait = "0.1"
 # IoTDB 相关依赖
 url = "2.4"
 bytes = "1.5"
+iotdb = "0.0.7"
 
 # 多协议支持依赖
 tokio-tungstenite = "0.20"

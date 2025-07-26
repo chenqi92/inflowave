@@ -7,7 +7,7 @@
 
 use crate::models::{ConnectionConfig, QueryResult};
 use anyhow::{Context, Result};
-use log::{debug, info, warn};
+use log::{debug, info, warn, error};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -73,10 +73,10 @@ impl IoTDBMultiClient {
         
         let mut last_error = None;
         
-        info!("📋 要尝试的协议列表: {:?}", protocols_to_try);
+        println!("📋 要尝试的协议列表: {:?}", protocols_to_try);
 
         for protocol in protocols_to_try {
-            info!("🔍 尝试协议: {:?}", protocol);
+            println!("🔍 尝试协议: {:?}", protocol);
 
             match self.try_connect_with_protocol(protocol.clone()).await {
                 Ok(()) => {
@@ -97,18 +97,26 @@ impl IoTDBMultiClient {
     
     /// 尝试使用指定协议连接
     async fn try_connect_with_protocol(&mut self, protocol: ProtocolType) -> Result<()> {
-        info!("🔧 构建 {:?} 协议配置", protocol);
+        println!("🔧 构建 {:?} 协议配置", protocol);
         let protocol_config = self.build_protocol_config(protocol.clone())?;
-        info!("📡 协议配置: host={}:{}, type={:?}", protocol_config.host, protocol_config.port, protocol_config.protocol_type);
+        println!("📡 协议配置: host={}:{}, type={:?}", protocol_config.host, protocol_config.port, protocol_config.protocol_type);
 
-        info!("🏗️ 创建 {:?} 协议客户端", protocol);
+        println!("🏗️ 创建 {:?} 协议客户端", protocol);
         let mut client = ProtocolFactory::create_client(protocol_config)
             .context(format!("创建 {:?} 协议客户端失败", protocol))?;
 
         // 测试连接
-        info!("🔌 测试 {:?} 协议连接", protocol);
-        client.test_connection().await
-            .context(format!("{:?} 协议连接测试失败", protocol))?;
+        println!("🔌 测试 {:?} 协议连接", protocol);
+        match client.test_connection().await {
+            Ok(duration) => {
+                println!("✅ {:?} 协议连接测试成功，耗时: {:?}", protocol, duration);
+            }
+            Err(e) => {
+                println!("❌ {:?} 协议连接测试失败: {}", protocol, e);
+                println!("❌ 错误详情: {:?}", e);
+                return Err(e).context(format!("{:?} 协议连接测试失败", protocol));
+            }
+        }
 
         self.protocol_client = Some(client);
         Ok(())
