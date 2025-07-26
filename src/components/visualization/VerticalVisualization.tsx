@@ -114,31 +114,20 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
   };
 
   const loadCharts = async () => {
-    // 这里应该从本地存储或后端加载图表配置
-    // 暂时使用模拟数据
-    const mockCharts: ChartConfig[] = [
-      {
-        id: '1',
-        title: '系统性能趋势',
-        type: 'line',
-        query: 'SELECT time, cpu_usage FROM system_metrics ORDER BY time DESC LIMIT 100',
-        database: 'monitoring',
-        connectionId: activeConnectionId || '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '2',
-        title: '内存使用分布',
-        type: 'pie',
-        query: 'SELECT host, mean(memory_usage) FROM system_metrics GROUP BY host',
-        database: 'monitoring',
-        connectionId: activeConnectionId || '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-    setCharts(mockCharts);
+    try {
+      // 从本地存储加载图表配置
+      const savedCharts = localStorage.getItem('visualization-charts');
+      if (savedCharts) {
+        const parsedCharts: ChartConfig[] = JSON.parse(savedCharts);
+        setCharts(parsedCharts);
+      } else {
+        // 如果没有保存的图表，初始化为空数组
+        setCharts([]);
+      }
+    } catch (error) {
+      console.error('加载图表配置失败:', error);
+      setCharts([]);
+    }
   };
 
   // 过滤图表
@@ -309,7 +298,10 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
       const options = convertToEChartsOption(result, chartConfig);
       if (options) {
         chartConfig.options = options;
-        setCharts(prev => [...prev, chartConfig]);
+        const updatedCharts = [...charts, chartConfig];
+        setCharts(updatedCharts);
+        // 保存到本地存储
+        localStorage.setItem('visualization-charts', JSON.stringify(updatedCharts));
         setCreateModalOpen(false);
         setNewChart({ title: '', type: 'line', query: '', database: '' });
         showMessage.success('图表创建成功');
@@ -323,9 +315,12 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
     if (result) {
       const options = convertToEChartsOption(result, chart);
       if (options) {
-        setCharts(prev => prev.map(c => 
+        const updatedCharts = charts.map(c =>
           c.id === chart.id ? { ...c, options, updatedAt: new Date() } : c
-        ));
+        );
+        setCharts(updatedCharts);
+        // 更新本地存储
+        localStorage.setItem('visualization-charts', JSON.stringify(updatedCharts));
         showMessage.success('图表已刷新');
       }
     }
@@ -333,7 +328,10 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
 
   // 删除图表
   const handleDeleteChart = (chartId: string) => {
-    setCharts(prev => prev.filter(c => c.id !== chartId));
+    const updatedCharts = charts.filter(c => c.id !== chartId);
+    setCharts(updatedCharts);
+    // 更新本地存储
+    localStorage.setItem('visualization-charts', JSON.stringify(updatedCharts));
     showMessage.success('图表已删除');
   };
 

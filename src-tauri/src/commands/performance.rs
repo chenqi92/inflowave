@@ -3431,7 +3431,7 @@ async fn generate_estimated_time_series_data(
     for i in 0..12 {
         let timestamp = now - chrono::Duration::minutes(i * 5);
         let timestamp_str = timestamp.to_rfc3339();
-        let time_factor = (i as f64) / 12.0;
+        let _time_factor = (i as f64) / 12.0;
 
         // 基于真实系统指标生成合理的变化
         let cpu_variation = (i as f64 * 0.5).sin() * 5.0; // 正弦波变化

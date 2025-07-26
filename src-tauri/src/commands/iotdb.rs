@@ -5,9 +5,9 @@
  */
 
 use crate::database::connection::ConnectionManager;
-use crate::models::{QueryResult, ConnectionConfig};
-use anyhow::{Context, Result};
-use log::{debug, error, info};
+use crate::models::QueryResult;
+use anyhow::Result;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;

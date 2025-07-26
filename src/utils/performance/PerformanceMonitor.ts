@@ -1,8 +1,10 @@
 /**
  * 性能监控工具
- * 
+ *
  * 监控和分析多数据库系统的性能指标
  */
+
+import React from 'react';
 
 interface PerformanceMetric {
   name: string;

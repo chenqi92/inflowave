@@ -72,6 +72,8 @@ describe('MultiDatabaseQueryEngine', () => {
       theme: 'light',
       resolvedTheme: 'light',
       setTheme: vi.fn(),
+      colorScheme: 'default',
+      setColorScheme: vi.fn(),
     });
 
     // Mock Tauri invoke
@@ -243,6 +245,8 @@ describe('MultiDatabaseQueryEngine', () => {
       theme: 'dark',
       resolvedTheme: 'dark',
       setTheme: vi.fn(),
+      colorScheme: 'default',
+      setColorScheme: vi.fn(),
     });
 
     render(<MultiDatabaseQueryEngine />);
