@@ -158,7 +158,7 @@ impl DatabaseService {
             query.push_str(" DEFAULT");
         }
         
-        client.execute_query(&query).await
+        client.execute_query(&query, Some(database)).await
             .context("创建保留策略失败")?;
         
         info!("保留策略 '{}' 创建成功", name);
@@ -183,7 +183,7 @@ impl DatabaseService {
             policy_name, database
         );
         
-        client.execute_query(&query).await
+        client.execute_query(&query, Some(database)).await
             .context("删除保留策略失败")?;
         
         info!("保留策略 '{}' 删除成功", policy_name);
@@ -217,7 +217,7 @@ impl DatabaseService {
         
         let query = format!("DROP MEASUREMENT \"{}\"", measurement);
         
-        client.execute_query(&query).await
+        client.execute_query(&query, Some(database)).await
             .context("删除测量失败")?;
         
         info!("测量 '{}' 删除成功", measurement);
@@ -244,7 +244,7 @@ impl DatabaseService {
             format!("SHOW FIELD KEYS ON \"{}\"", database)
         };
         
-        let result = client.execute_query(&query).await
+        let result = client.execute_query(&query, Some(database)).await
             .context("获取字段键失败")?;
         
         // 解析字段键
@@ -280,7 +280,7 @@ impl DatabaseService {
             format!("SHOW TAG KEYS ON \"{}\"", database)
         };
         
-        let result = client.execute_query(&query).await
+        let result = client.execute_query(&query, Some(database)).await
             .context("获取标签键失败")?;
         
         // 解析标签键
@@ -316,7 +316,7 @@ impl DatabaseService {
             format!("SHOW TAG VALUES WITH KEY = \"{}\"", tag_key)
         };
         
-        let result = client.execute_query(&query).await
+        let result = client.execute_query(&query, Some(database)).await
             .context("获取标签值失败")?;
         
         // 解析标签值
@@ -374,7 +374,7 @@ impl DatabaseService {
             .context("获取连接失败")?;
         
         let query = format!("SHOW SERIES ON \"{}\"", database);
-        let result = client.execute_query(&query).await
+        let result = client.execute_query(&query, Some(database)).await
             .context("获取序列数量失败")?;
         
         Ok(result.row_count.unwrap_or(0) as u64)

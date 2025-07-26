@@ -72,7 +72,7 @@ pub async fn export_query_data(
         })?;
 
     // 执行查询获取数据
-    let query_result = client.execute_query(&request.query).await
+    let query_result = client.execute_query(&request.query, Some(&request.database)).await
         .map_err(|e| {
             error!("查询执行失败: {}", e);
             format!("查询执行失败: {}", e)
@@ -175,7 +175,7 @@ pub async fn estimate_export_size(
         format!("SELECT COUNT(*) FROM \"{}\"", query) // 假设 query 是测量名
     };
 
-    let count_result = client.execute_query(&count_query).await
+    let count_result = client.execute_query(&count_query, Some(&_database)).await
         .map_err(|e| format!("统计查询失败: {}", e))?;
 
     let row_count = if let Some(first_row) = count_result.rows().first() {

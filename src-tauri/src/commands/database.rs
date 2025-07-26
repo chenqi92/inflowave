@@ -158,7 +158,7 @@ pub async fn create_retention_policy(
         query.push_str(" DEFAULT");
     }
     
-    client.execute_query(&query).await
+    client.execute_query(&query, Some(&config.database)).await
         .map_err(|e| {
             error!("创建保留策略失败: {}", e);
             format!("创建保留策略失败: {}", e)
@@ -189,7 +189,7 @@ pub async fn drop_retention_policy(
         policy_name, database
     );
 
-    client.execute_query(&query).await
+    client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("删除保留策略失败: {}", e);
             format!("删除保留策略失败: {}", e)
@@ -262,7 +262,7 @@ pub async fn execute_table_query(
         _ => return Err(format!("不支持的查询类型: {}", query_type)),
     };
 
-    client.execute_query(&query).await
+    client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("执行表查询失败: {}", e);
             format!("执行表查询失败: {}", e)
@@ -288,7 +288,7 @@ pub async fn get_table_structure(
 
     // 获取字段信息，包含数据库上下文
     let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
-    let field_result = client.execute_query(&field_query).await
+    let field_result = client.execute_query(&field_query, Some(&database)).await
         .map_err(|e| {
             error!("获取字段信息失败: {}", e);
             format!("获取字段信息失败: {}", e)
@@ -296,7 +296,7 @@ pub async fn get_table_structure(
 
     // 获取标签信息，包含数据库上下文
     let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, table);
-    let tag_result = client.execute_query(&tag_query).await
+    let tag_result = client.execute_query(&tag_query, Some(&database)).await
         .map_err(|e| {
             error!("获取标签信息失败: {}", e);
             format!("获取标签信息失败: {}", e)
@@ -365,7 +365,7 @@ pub async fn export_table_data(
     let query = format!("SELECT * FROM \"{}\" ORDER BY time DESC{}", table, limit_clause);
 
     // 执行查询
-    let result = client.execute_query(&query).await
+    let result = client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("查询数据失败: {}", e);
             format!("查询数据失败: {}", e)
@@ -542,7 +542,7 @@ pub async fn alter_retention_policy(
         query.push_str(" DEFAULT");
     }
 
-    client.execute_query(&query).await
+    client.execute_query(&query, None).await
         .map_err(|e| {
             error!("修改保留策略失败: {}", e);
             format!("修改保留策略失败: {}", e)
@@ -571,7 +571,7 @@ pub async fn drop_measurement(
 
     let query = format!("DROP MEASUREMENT \"{}\"", measurement);
 
-    client.execute_query(&query).await
+    client.execute_query(&query, None).await
         .map_err(|e| {
             error!("删除测量失败: {}", e);
             format!("删除测量失败: {}", e)
@@ -628,7 +628,7 @@ pub async fn get_field_keys(
         format!("SHOW FIELD KEYS ON \"{}\"", database)
     };
 
-    let result = client.execute_query(&query).await
+    let result = client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("获取字段键失败: {}", e);
             format!("获取字段键失败: {}", e)
@@ -671,7 +671,7 @@ pub async fn get_tag_keys(
         format!("SHOW TAG KEYS ON \"{}\"", database)
     };
 
-    let result = client.execute_query(&query).await
+    let result = client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("获取标签键失败: {}", e);
             format!("获取标签键失败: {}", e)
@@ -715,7 +715,7 @@ pub async fn get_tag_values(
         format!("SHOW TAG VALUES ON \"{}\" WITH KEY = \"{}\"", database, tag_key)
     };
     
-    let result = client.execute_query(&query).await
+    let result = client.execute_query(&query, Some(&database)).await
         .map_err(|e| {
             error!("获取标签值失败: {}", e);
             format!("获取标签值失败: {}", e)

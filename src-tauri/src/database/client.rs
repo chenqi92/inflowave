@@ -1,9 +1,171 @@
-use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy};
+use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType};
 use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
 use log::{debug, error, info};
 use reqwest;
+
+/// 数据库客户端枚举 - 解决 async trait 的 dyn 兼容性问题
+#[derive(Debug, Clone)]
+pub enum DatabaseClient {
+    InfluxDB(InfluxClient),
+    IoTDB(IoTDBClient),
+}
+
+impl DatabaseClient {
+    /// 测试连接
+    pub async fn test_connection(&self) -> Result<u64> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.test_connection().await,
+            DatabaseClient::IoTDB(client) => client.test_connection().await,
+        }
+    }
+
+    /// 执行查询
+    pub async fn execute_query(&self, query: &str, database: Option<&str>) -> Result<QueryResult> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.execute_query_with_database(query, database).await,
+            DatabaseClient::IoTDB(client) => client.execute_query(query, database).await,
+        }
+    }
+
+    /// 获取数据库列表
+    pub async fn get_databases(&self) -> Result<Vec<String>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_databases().await,
+            DatabaseClient::IoTDB(client) => client.get_databases().await,
+        }
+    }
+
+    /// 获取表/测量列表
+    pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
+            DatabaseClient::IoTDB(client) => client.get_tables(database).await,
+        }
+    }
+
+    /// 获取字段列表
+    pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_field_keys(database, table).await,
+            DatabaseClient::IoTDB(client) => client.get_fields(database, table).await,
+        }
+    }
+
+    /// 获取连接信息
+    pub async fn get_connection_info(&self) -> Result<serde_json::Value> {
+        match self {
+            DatabaseClient::InfluxDB(client) => {
+                let config = client.get_config();
+                Ok(serde_json::json!({
+                    "type": "influxdb",
+                    "version": config.get_version_string(),
+                    "host": config.host,
+                    "port": config.port,
+                    "database": config.database,
+                    "ssl": config.ssl,
+                    "username": config.username
+                }))
+            },
+            DatabaseClient::IoTDB(client) => client.get_connection_info().await,
+        }
+    }
+
+    /// 关闭连接
+    pub async fn close(&self) -> Result<()> {
+        match self {
+            DatabaseClient::InfluxDB(_) => {
+                debug!("关闭 InfluxDB 连接");
+                Ok(())
+            },
+            DatabaseClient::IoTDB(client) => client.close().await,
+        }
+    }
+
+    /// 获取数据库类型
+    pub fn get_database_type(&self) -> DatabaseType {
+        match self {
+            DatabaseClient::InfluxDB(_) => DatabaseType::InfluxDB,
+            DatabaseClient::IoTDB(_) => DatabaseType::IoTDB,
+        }
+    }
+
+    /// 获取连接配置
+    pub fn get_config(&self) -> &ConnectionConfig {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_config(),
+            DatabaseClient::IoTDB(client) => client.get_config(),
+        }
+    }
+
+    /// 创建数据库
+    pub async fn create_database(&self, database_name: &str) -> Result<()> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.create_database(database_name).await,
+            DatabaseClient::IoTDB(client) => client.create_database(database_name).await,
+        }
+    }
+
+    /// 删除数据库
+    pub async fn drop_database(&self, database_name: &str) -> Result<()> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.drop_database(database_name).await,
+            DatabaseClient::IoTDB(client) => client.drop_database(database_name).await,
+        }
+    }
+
+    /// 获取保留策略
+    pub async fn get_retention_policies(&self, database: &str) -> Result<Vec<RetentionPolicy>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_retention_policies(database).await,
+            DatabaseClient::IoTDB(_) => {
+                // IoTDB 不支持保留策略概念，返回空列表
+                Ok(vec![])
+            },
+        }
+    }
+
+    /// 获取测量/表列表
+    pub async fn get_measurements(&self, database: &str) -> Result<Vec<String>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
+            DatabaseClient::IoTDB(client) => client.get_tables(database).await,
+        }
+    }
+
+    /// 获取字段键
+    pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_field_keys(database, measurement).await,
+            DatabaseClient::IoTDB(client) => client.get_fields(database, measurement).await,
+        }
+    }
+
+    /// 执行查询（带数据库参数，向后兼容）
+    pub async fn execute_query_with_database(&self, query: &str, database: Option<&str>) -> Result<QueryResult> {
+        self.execute_query(query, database).await
+    }
+
+    /// 获取表结构信息
+    pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
+        match self {
+            DatabaseClient::InfluxDB(client) => client.get_table_schema(database, measurement).await,
+            DatabaseClient::IoTDB(client) => client.get_table_schema(database, measurement).await,
+        }
+    }
+
+    /// 写入行协议数据
+    pub async fn write_line_protocol(&self, database: &str, line_protocol: &str) -> Result<()> {
+        match self {
+            DatabaseClient::InfluxDB(client) => {
+                client.write_line_protocol(database, line_protocol).await?;
+                Ok(())
+            },
+            DatabaseClient::IoTDB(client) => client.write_line_protocol(database, line_protocol).await,
+        }
+    }
+}
 
 /// InfluxDB 客户端封装
 #[derive(Debug, Clone)]
@@ -467,6 +629,21 @@ impl InfluxClient {
         }
     }
 
+    /// 获取字段键列表
+    pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
+        debug!("获取字段键列表: 数据库='{}', 测量='{}'", database, measurement);
+
+        let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+        let field_result = self.client.query(influxdb::ReadQuery::new(&field_query)).await
+            .map_err(|e| anyhow::anyhow!("获取字段信息失败: {}", e))?;
+
+        // 解析字段键
+        let fields = self.parse_field_keys_result(field_result)?;
+        let field_names: Vec<String> = fields.into_iter().map(|f| f.name).collect();
+
+        Ok(field_names)
+    }
+
     /// 获取表结构信息 (字段和标签)
     pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
         debug!("获取表 '{}' 在数据库 '{}' 的结构信息", measurement, database);
@@ -583,6 +760,207 @@ impl InfluxClient {
     /// 获取配置信息
     pub fn get_config(&self) -> &ConnectionConfig {
         &self.config
+    }
+}
+
+// 删除旧的 trait 实现，现在使用枚举方式
+
+/// IoTDB 客户端封装
+#[derive(Debug, Clone)]
+pub struct IoTDBClient {
+    config: ConnectionConfig,
+    // TODO: 添加实际的 IoTDB 客户端库
+}
+
+impl IoTDBClient {
+    /// 创建新的 IoTDB 客户端实例
+    pub fn new(config: ConnectionConfig) -> Result<Self> {
+        info!("创建 IoTDB 客户端: {}:{}", config.host, config.port);
+
+        // TODO: 实现 IoTDB 客户端初始化
+        // 这里需要集成实际的 IoTDB Rust 客户端库
+
+        Ok(Self { config })
+    }
+}
+
+impl IoTDBClient {
+    /// 测试连接
+    pub async fn test_connection(&self) -> Result<u64> {
+        let start = Instant::now();
+
+        debug!("测试 IoTDB 连接: {}:{}", self.config.host, self.config.port);
+
+        // TODO: 实现实际的 IoTDB 连接测试
+        // 目前使用模拟实现
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+
+        let latency = start.elapsed().as_millis() as u64;
+        info!("IoTDB 连接测试成功，延迟: {}ms", latency);
+        Ok(latency)
+    }
+
+    /// 执行查询
+    pub async fn execute_query(&self, query: &str, _database: Option<&str>) -> Result<QueryResult> {
+        debug!("执行 IoTDB 查询: {}", query);
+
+        // TODO: 实现实际的 IoTDB 查询执行
+        // 目前返回模拟数据
+        let result = QueryResult {
+            results: vec![],
+            execution_time: Some(50),
+            row_count: Some(0),
+            error: None,
+            data: None,
+            columns: None,
+        };
+
+        Ok(result)
+    }
+
+    /// 获取数据库列表
+    pub async fn get_databases(&self) -> Result<Vec<String>> {
+        debug!("获取 IoTDB 存储组列表");
+
+        // TODO: 实现实际的存储组查询
+        // IoTDB 使用存储组概念，类似于数据库
+        Ok(vec![
+            "root.sg1".to_string(),
+            "root.sg2".to_string(),
+            "root.vehicle".to_string(),
+        ])
+    }
+
+    /// 获取表/设备列表
+    pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
+        debug!("获取 IoTDB 设备列表: {}", database);
+
+        // TODO: 实现实际的设备查询
+        // IoTDB 中的设备类似于表
+        Ok(vec![
+            format!("{}.d1", database),
+            format!("{}.d2", database),
+        ])
+    }
+
+    /// 获取字段列表
+    pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
+        debug!("获取 IoTDB 时间序列列表: {}.{}", database, table);
+
+        // TODO: 实现实际的时间序列查询
+        // IoTDB 中的时间序列类似于字段
+        Ok(vec![
+            "s1".to_string(),
+            "s2".to_string(),
+            "temperature".to_string(),
+            "humidity".to_string(),
+        ])
+    }
+
+    /// 获取连接信息
+    pub async fn get_connection_info(&self) -> Result<serde_json::Value> {
+        let info = serde_json::json!({
+            "type": "iotdb",
+            "version": self.config.get_version_string(),
+            "host": self.config.host,
+            "port": self.config.port,
+            "ssl": self.config.ssl,
+            "username": self.config.username,
+            "driver_config": self.config.driver_config
+        });
+        Ok(info)
+    }
+
+    /// 关闭连接
+    pub async fn close(&self) -> Result<()> {
+        debug!("关闭 IoTDB 连接");
+        // TODO: 实现实际的连接关闭
+        Ok(())
+    }
+
+    /// 创建数据库/存储组
+    pub async fn create_database(&self, database_name: &str) -> Result<()> {
+        debug!("创建 IoTDB 存储组: {}", database_name);
+
+        // TODO: 实现实际的存储组创建
+        // IoTDB 使用 CREATE STORAGE GROUP 语句
+        let query = format!("CREATE STORAGE GROUP {}", database_name);
+        self.execute_query(&query, None).await?;
+
+        Ok(())
+    }
+
+    /// 删除数据库/存储组
+    pub async fn drop_database(&self, database_name: &str) -> Result<()> {
+        debug!("删除 IoTDB 存储组: {}", database_name);
+
+        // TODO: 实现实际的存储组删除
+        // IoTDB 使用 DELETE STORAGE GROUP 语句
+        let query = format!("DELETE STORAGE GROUP {}", database_name);
+        self.execute_query(&query, None).await?;
+
+        Ok(())
+    }
+
+    /// 获取保留策略（IoTDB 不支持，返回空）
+    pub async fn get_retention_policies(&self, _database: &str) -> Result<Vec<RetentionPolicy>> {
+        // IoTDB 不支持 InfluxDB 风格的保留策略
+        Ok(vec![])
+    }
+
+    /// 获取表结构信息
+    pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
+        debug!("获取 IoTDB 表结构: {}.{}", database, measurement);
+
+        // TODO: 实现实际的 IoTDB 表结构查询
+        // IoTDB 中可以查询时间序列的数据类型和属性
+        Ok(TableSchema {
+            fields: vec![
+                FieldSchema {
+                    name: "s1".to_string(),
+                    r#type: "DOUBLE".to_string(),
+                },
+                FieldSchema {
+                    name: "s2".to_string(),
+                    r#type: "TEXT".to_string(),
+                },
+            ],
+            tags: vec![], // IoTDB 没有标签概念
+        })
+    }
+
+    /// 写入行协议数据（IoTDB 不支持 InfluxDB 行协议）
+    pub async fn write_line_protocol(&self, _database: &str, _line_protocol: &str) -> Result<()> {
+        // IoTDB 不支持 InfluxDB 行协议格式
+        // 需要转换为 IoTDB 的 INSERT 语句
+        Err(anyhow::anyhow!("IoTDB 不支持 InfluxDB 行协议格式，请使用 SQL INSERT 语句"))
+    }
+
+    /// 获取配置
+    pub fn get_config(&self) -> &ConnectionConfig {
+        &self.config
+    }
+}
+
+/// 数据库客户端工厂
+pub struct DatabaseClientFactory;
+
+impl DatabaseClientFactory {
+    /// 创建数据库客户端
+    pub fn create_client(config: ConnectionConfig) -> Result<DatabaseClient> {
+        match config.db_type {
+            DatabaseType::InfluxDB => {
+                let client = InfluxClient::new(config)?;
+                Ok(DatabaseClient::InfluxDB(client))
+            },
+            DatabaseType::IoTDB => {
+                let client = IoTDBClient::new(config)?;
+                Ok(DatabaseClient::IoTDB(client))
+            },
+            _ => {
+                Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type))
+            }
+        }
     }
 }
 

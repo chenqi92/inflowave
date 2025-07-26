@@ -41,8 +41,9 @@ pub async fn write_data(
         let batch_data = chunk.join("\n");
         
         match client.write_line_protocol(&request.database, &batch_data).await {
-            Ok(count) => {
-                points_written += count as u64;
+            Ok(_) => {
+                let count = chunk.len() as u64;
+                points_written += count;
                 debug!("成功写入 {} 个数据点", count);
             }
             Err(e) => {
@@ -127,9 +128,9 @@ pub async fn write_data_points(
     let mut points_written = 0u64;
 
     match client.write_line_protocol(&request.database, &combined_line_protocol).await {
-        Ok(count) => {
-            points_written = count as u64;
-            debug!("成功批量写入 {} 个数据点", count);
+        Ok(_) => {
+            points_written = line_protocols.len() as u64;
+            debug!("成功批量写入 {} 个数据点", points_written);
         }
         Err(e) => {
             let error_msg = format!("批量写入失败: {}", e);

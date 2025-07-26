@@ -66,15 +66,30 @@ interface ConnectionState {
   forceRefreshConnections: () => Promise<void>;
 }
 
-// 辅助函数：解析 InfluxDB 版本字符串，返回主版本号（1.x, 2.x, 3.x）
-const parseInfluxDBVersion = (versionString: string): '1.x' | '2.x' | '3.x' | undefined => {
-  // 尝试从版本字符串中提取主版本号
-  if (versionString.includes('v1.') || versionString.startsWith('1.') || versionString.includes('InfluxDB/1.')) {
-    return '1.x';
-  } else if (versionString.includes('v2.') || versionString.startsWith('2.') || versionString.includes('InfluxDB/2.')) {
-    return '2.x';
-  } else if (versionString.includes('v3.') || versionString.startsWith('3.') || versionString.includes('InfluxDB/3.')) {
-    return '3.x';
+// 辅助函数：解析数据库版本字符串，支持多数据库类型
+const parseDatabaseVersion = (versionString: string, dbType: string): string | undefined => {
+  if (dbType === 'influxdb') {
+    // InfluxDB 版本解析
+    if (versionString.includes('v1.') || versionString.startsWith('1.') || versionString.includes('InfluxDB/1.')) {
+      return '1.x';
+    } else if (versionString.includes('v2.') || versionString.startsWith('2.') || versionString.includes('InfluxDB/2.')) {
+      return '2.x';
+    } else if (versionString.includes('v3.') || versionString.startsWith('3.') || versionString.includes('InfluxDB/3.')) {
+      return '3.x';
+    }
+  } else if (dbType === 'iotdb') {
+    // IoTDB 版本解析
+    if (versionString.includes('0.13.') || versionString.includes('v0.13.')) {
+      return '0.13.x';
+    } else if (versionString.includes('0.14.') || versionString.includes('v0.14.')) {
+      return '0.14.x';
+    } else if (versionString.includes('1.0.') || versionString.includes('v1.0.')) {
+      return '1.0.x';
+    } else if (versionString.includes('1.1.') || versionString.includes('v1.1.')) {
+      return '1.1.x';
+    } else if (versionString.includes('1.2.') || versionString.includes('v1.2.')) {
+      return '1.2.x';
+    }
   }
 
   // 如果无法确定版本，返回 undefined
@@ -467,15 +482,15 @@ export const useConnectionStore = create<ConnectionState>()(
               const connection = currentState.connections.find((conn: ConnectionConfig) => conn.id === id);
               if (connection) {
                 // 解析服务器版本，确定主版本号
-                const detectedVersion = parseInfluxDBVersion(result.serverVersion);
+                const detectedVersion = parseDatabaseVersion(result.serverVersion, connection.dbType || 'influxdb');
                 if (detectedVersion && detectedVersion !== connection.version) {
-                  console.log(`🔄 检测到版本变更: ${connection.version} -> ${detectedVersion}`);
+                  console.log(`🔄 检测到版本变更: ${connection.version} -> ${detectedVersion} (${connection.dbType})`);
 
                   // 更新连接配置中的版本
                   set(state => ({
                     connections: state.connections.map((conn: ConnectionConfig) =>
                       conn.id === id
-                        ? { ...conn, version: detectedVersion, updatedAt: new Date() }
+                        ? { ...conn, version: detectedVersion as any, updatedAt: new Date() }
                         : conn
                     ),
                   }));

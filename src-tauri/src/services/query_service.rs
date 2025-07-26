@@ -35,7 +35,7 @@ impl QueryService {
         
         let _start_time = std::time::Instant::now();
         
-        match client.execute_query(&request.query).await {
+        match client.execute_query(&request.query, request.database.as_deref()).await {
             Ok(result) => {
                 // 记录成功的查询历史
                 let history = QueryHistory::new(

@@ -35,13 +35,36 @@
   - [x] 为不同数据库类型提供特定配置字段
   - [x] 更新连接测试和保存逻辑
   - [x] 添加 IoTDB 特定配置 (会话池、压缩、时区等)
-- [ ] 3.2 重构连接存储管理
-- [ ] 3.3 重构默认配置
+- [x] 3.2 重构连接存储管理
+  - [x] 更新版本检测逻辑支持多数据库
+  - [x] 增强连接测试的数据库类型识别
+- [x] 3.3 重构默认配置
+  - [x] 创建数据库特定的默认配置结构
+  - [x] 支持 InfluxDB 和 IoTDB 的不同默认值
+  - [x] 添加环境变量配置支持
+  - [x] 实现类型安全的配置获取函数
 
 ### 阶段四：后端服务层重构 (第7-8周)
-- [ ] 4.1 Rust 后端数据库抽象
-- [ ] 4.2 连接服务重构
-- [ ] 4.3 查询服务重构
+- [x] 4.1 Rust 后端数据库抽象
+  - [x] 扩展 DatabaseType 枚举支持多数据库 (InfluxDB, IoTDB, Prometheus, Elasticsearch)
+  - [x] 创建通用 DatabaseVersion 枚举
+  - [x] 添加 IoTDBConfig 和 DatabaseDriverConfig 结构
+  - [x] 更新 ConnectionConfig 支持多数据库配置
+  - [x] 添加数据库特定的构造函数和辅助方法
+  - [x] 实现类型安全的版本检查和默认值
+- [x] 4.2 连接服务重构
+  - [x] 创建数据库客户端抽象层 (DatabaseClient 枚举)
+  - [x] 实现 InfluxDB 和 IoTDB 客户端枚举
+  - [x] 更新 ConnectionManager 支持多数据库
+  - [x] 修复接口兼容性问题 (54个编译错误 → 0个)
+  - [x] 统一 execute_query 方法签名
+  - [x] 添加缺失的方法 (get_table_schema, write_line_protocol)
+  - [x] 修复类型不匹配和返回值问题
+- [x] 4.3 查询服务重构
+  - [x] 更新查询命令支持多数据库客户端
+  - [x] 修复 INSERT/DELETE 语句处理
+  - [x] 更新数据写入服务
+  - [x] 修复数据导出服务
 
 ### 阶段五：UI组件适配 (第9-10周)
 - [ ] 5.1 查询引擎界面重构

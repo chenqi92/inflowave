@@ -472,7 +472,7 @@ pub async fn perform_health_check(
         Ok(client) => {
             // 执行简单的健康检查查询
             let health_query = "SHOW DATABASES";
-            match client.execute_query(health_query).await {
+            match client.execute_query(health_query, None).await {
                 Ok(_) => {
                     let response_time = start_time.elapsed().as_millis() as u64;
                     Ok(ConnectionHealthMetrics {
@@ -675,7 +675,7 @@ async fn try_connect_local_influxdb() -> Option<crate::models::connection::Conne
             name: "Local InfluxDB".to_string(),
             description: Some("Local InfluxDB instance".to_string()),
             db_type: crate::models::connection::DatabaseType::InfluxDB,
-            version: Some(crate::models::connection::InfluxDBVersion::V1x),
+            version: Some("1.x".to_string()),
             host: host.to_string(),
             port,
             username,
@@ -688,6 +688,7 @@ async fn try_connect_local_influxdb() -> Option<crate::models::connection::Conne
             default_query_language: Some("InfluxQL".to_string()),
             proxy_config: None,
             retention_policy: None,
+            driver_config: None,
             v2_config: None,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
@@ -729,7 +730,7 @@ async fn get_default_connection_for_internal_query() -> Result<crate::models::co
         name: "Internal Monitoring".to_string(),
         description: Some("Internal monitoring connection".to_string()),
         db_type: crate::models::connection::DatabaseType::InfluxDB,
-        version: Some(crate::models::connection::InfluxDBVersion::V1x),
+        version: Some("1.x".to_string()),
         host,
         port,
         username,
@@ -742,6 +743,7 @@ async fn get_default_connection_for_internal_query() -> Result<crate::models::co
         default_query_language: Some("InfluxQL".to_string()),
         proxy_config: None,
         retention_policy: None,
+        driver_config: None,
         v2_config: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
@@ -2631,7 +2633,7 @@ pub async fn get_connection_pool_stats_perf(
             match manager.get_connection(&connection_id).await {
                 Ok(client) => {
                     // 执行简单查询测试连接
-                    match client.execute_query("SHOW DATABASES").await {
+                    match client.execute_query("SHOW DATABASES", None).await {
                         Ok(_) => {
                             let response_time = start.elapsed().as_millis() as u64;
                             (1, 0, response_time) // 1个活跃连接，0个错误

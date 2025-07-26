@@ -1,7 +1,7 @@
 use crate::models::{QueryRequest, QueryResult, QueryResultItem, QueryValidationResult};
 use crate::services::ConnectionService;
 use crate::utils::validation::ValidationUtils;
-use crate::database::InfluxClient;
+use crate::database::client::DatabaseClient;
 use crate::commands::settings::SettingsStorage;
 use tauri::State;
 use log::{debug, error, info};
@@ -460,7 +460,7 @@ pub async fn explain_query(
 
 /// 执行INSERT语句
 async fn execute_insert_statement(
-    client: Arc<InfluxClient>,
+    client: Arc<DatabaseClient>,
     request: &QueryRequest,
 ) -> Result<QueryResult, String> {
     debug!("处理INSERT语句: {}", request.query);
@@ -483,9 +483,11 @@ async fn execute_insert_statement(
 
     // 使用写入API执行INSERT
     match client.write_line_protocol(database, &line_protocol).await {
-        Ok(points_written) => {
+        Ok(_) => {
             let execution_time = start_time.elapsed().as_millis() as u64;
 
+            // 估算写入的数据点数量（从行协议解析）
+            let points_written = line_protocol.lines().count();
             info!("INSERT执行成功，写入 {} 个数据点，耗时: {}ms", points_written, execution_time);
 
             // 构造写入操作的查询结果
@@ -510,7 +512,7 @@ async fn execute_insert_statement(
 
 /// 执行DELETE语句
 async fn execute_delete_statement(
-    client: Arc<InfluxClient>,
+    client: Arc<DatabaseClient>,
     request: &QueryRequest,
 ) -> Result<QueryResult, String> {
     debug!("处理DELETE语句: {}", request.query);

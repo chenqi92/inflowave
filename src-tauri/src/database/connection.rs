@@ -1,5 +1,5 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
-use crate::database::InfluxClient;
+use crate::database::client::{DatabaseClient, DatabaseClientFactory};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -9,7 +9,7 @@ use log::{debug, error, info, warn};
 /// 连接管理器
 #[derive(Debug)]
 pub struct ConnectionManager {
-    connections: Arc<RwLock<HashMap<String, Arc<InfluxClient>>>>,
+    connections: Arc<RwLock<HashMap<String, Arc<DatabaseClient>>>>,
     statuses: Arc<RwLock<HashMap<String, ConnectionStatus>>>,
 }
 
@@ -25,25 +25,26 @@ impl ConnectionManager {
     /// 添加连接
     pub async fn add_connection(&self, config: ConnectionConfig) -> Result<()> {
         let connection_id = config.id.clone();
-        
-        debug!("添加连接: {} ({}:{})", config.name, config.host, config.port);
-        
-        // 创建客户端
-        let client = InfluxClient::new(config.clone())
-            .context("创建 InfluxDB 客户端失败")?;
-        
+        let db_type = config.db_type.clone();
+
+        debug!("添加连接: {} ({:?} {}:{})", config.name, db_type, config.host, config.port);
+
+        // 使用工厂创建客户端
+        let client = DatabaseClientFactory::create_client(config.clone())
+            .context("创建数据库客户端失败")?;
+
         // 存储连接
         {
             let mut connections = self.connections.write().await;
             connections.insert(connection_id.clone(), Arc::new(client));
         }
-        
+
         // 初始化状态
         {
             let mut statuses = self.statuses.write().await;
             statuses.insert(connection_id.clone(), ConnectionStatus::new(connection_id));
         }
-        
+
         info!("连接 '{}' 添加成功", config.name);
         Ok(())
     }
@@ -69,9 +70,9 @@ impl ConnectionManager {
     }
 
     /// 获取连接
-    pub async fn get_connection(&self, connection_id: &str) -> Result<Arc<InfluxClient>> {
+    pub async fn get_connection(&self, connection_id: &str) -> Result<Arc<DatabaseClient>> {
         let connections = self.connections.read().await;
-        
+
         connections
             .get(connection_id)
             .cloned()
