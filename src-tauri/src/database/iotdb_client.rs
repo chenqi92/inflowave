@@ -48,8 +48,15 @@ pub struct IoTDBHttpClient {
 impl IoTDBHttpClient {
     /// 创建新的 IoTDB HTTP 客户端
     pub fn new(config: ConnectionConfig) -> Self {
+        // 使用用户配置的连接超时时间，如果未设置则使用默认值
+        let timeout_secs = if config.connection_timeout > 0 {
+            config.connection_timeout
+        } else {
+            30 // 默认30秒
+        };
+
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
+            .timeout(std::time::Duration::from_secs(timeout_secs))
             .build()
             .expect("Failed to create HTTP client");
 
@@ -64,7 +71,11 @@ impl IoTDBHttpClient {
 
     /// 测试连接 - 优先使用HTTP REST API，TCP作为备选
     pub async fn test_connection(&self) -> Result<u64> {
-        debug!("测试 IoTDB 连接: {}", self.base_url);
+        info!("🔍 开始测试 IoTDB 连接: {}:{}", self.config.host, self.config.port);
+        info!("📋 连接配置: 超时={}秒, 用户名={}, SSL={}",
+              self.config.connection_timeout,
+              self.config.username.as_ref().unwrap_or(&"未设置".to_string()),
+              self.config.ssl);
 
         // 🔒 安全检查：强制要求认证信息
         if self.config.username.is_none() || self.config.password.is_none() {
@@ -75,18 +86,20 @@ impl IoTDBHttpClient {
         }
 
         // 🎯 优先尝试HTTP REST API (推荐方式)
+        info!("🌐 尝试 HTTP REST API 连接...");
         match self.test_http_connection().await {
             Ok(latency) => {
-                info!("✅ IoTDB HTTP REST API连接成功");
+                info!("✅ IoTDB HTTP REST API连接成功，延迟: {}ms", latency);
                 return Ok(latency);
             }
             Err(http_error) => {
-                warn!("HTTP REST API连接失败: {}", http_error);
+                warn!("❌ HTTP REST API连接失败: {}", http_error);
                 info!("💡 建议启用IoTDB的REST API服务 (端口31999)");
             }
         }
 
         // 🔧 尝试TCP连接（仅用于连接测试，不支持完整Thrift协议）
+        info!("🔌 尝试 TCP 连接...");
         match self.test_tcp_connection().await {
             Ok(latency) => {
                 warn!("⚠️  TCP连接成功，但IoTDB需要Thrift协议支持");
@@ -98,16 +111,21 @@ impl IoTDBHttpClient {
                 Err(anyhow::anyhow!(
                     "无法连接到IoTDB服务器 {}:{}。\n\
                     \n🔍 诊断信息:\n\
+                    • 连接超时: {}秒\n\
                     • HTTP REST API: 不可用 (检查端口31999是否开放)\n\
                     • TCP连接: {} \n\
                     \n💡 解决建议:\n\
-                    1. 启用IoTDB的REST API服务\n\
-                    2. 检查Docker容器端口映射: docker port <container>\n\
-                    3. 查看IoTDB日志: docker logs <container>\n\
-                    4. 验证配置文件: docker exec -it <container> cat conf/iotdb-datanode.properties\n\
-                    5. 确认用户名密码: {} / {}",
+                    1. 检查IoTDB服务是否正在运行\n\
+                    2. 验证主机地址和端口号是否正确\n\
+                    3. 检查防火墙设置\n\
+                    4. 启用IoTDB的REST API服务\n\
+                    5. 检查Docker容器端口映射: docker port <container>\n\
+                    6. 查看IoTDB日志: docker logs <container>\n\
+                    7. 验证配置文件: docker exec -it <container> cat conf/iotdb-datanode.properties\n\
+                    8. 确认用户名密码: {} / {}",
                     self.config.host,
                     self.config.port,
+                    self.config.connection_timeout,
                     tcp_error,
                     self.config.username.as_ref().unwrap_or(&"未设置".to_string()),
                     if self.config.password.is_some() { "已设置" } else { "未设置" }
@@ -120,12 +138,39 @@ impl IoTDBHttpClient {
     async fn test_http_connection(&self) -> Result<u64> {
         let start = Instant::now();
 
-        // 尝试多个可能的REST API端口
-        let rest_ports = vec![31999, 18080, 8080];
+        // 构建端口列表：优先使用用户指定的端口，然后尝试常用端口
+        let mut rest_ports = vec![];
+
+        // 如果用户指定的端口是常见的 REST API 端口，优先使用
+        if [31999, 18080, 8080].contains(&self.config.port) {
+            rest_ports.push(self.config.port);
+        }
+
+        // 添加常用的 REST API 端口
+        for port in [31999, 18080, 8080] {
+            if !rest_ports.contains(&port) {
+                rest_ports.push(port);
+            }
+        }
+
+        // 如果用户指定的端口不是常见的 REST API 端口，也尝试一下
+        if ![31999, 18080, 8080].contains(&self.config.port) {
+            rest_ports.push(self.config.port);
+        }
+
+        info!("🔍 将尝试以下 REST API 端口: {:?}", rest_ports);
 
         for port in rest_ports {
+            info!("🔍 尝试REST API端口: {}", port);
+
+            // 首先快速检查端口是否可达
+            if !self.quick_port_check(port).await {
+                warn!("  ❌ 端口 {} 不可达，跳过", port);
+                continue;
+            }
+
             let base_url = format!("http://{}:{}", self.config.host, port);
-            debug!("尝试REST API端口: {}", port);
+            info!("  ✅ 端口 {} 可达，测试 REST API", port);
 
             // 尝试不同的端点
             let endpoints = vec![
@@ -136,6 +181,7 @@ impl IoTDBHttpClient {
             ];
 
             for endpoint in endpoints {
+                info!("    📡 测试端点: {}{}", base_url, endpoint);
                 match self.test_rest_endpoint(&base_url, endpoint).await {
                     Ok(_latency) => {
                         let total_latency = start.elapsed().as_millis() as u64;
@@ -144,7 +190,7 @@ impl IoTDBHttpClient {
                         return Ok(total_latency);
                     }
                     Err(e) => {
-                        debug!("端点 {}:{}{} 失败: {}", self.config.host, port, endpoint, e);
+                        warn!("    ❌ 端点 {}:{}{} 失败: {}", self.config.host, port, endpoint, e);
                     }
                 }
             }
@@ -153,10 +199,29 @@ impl IoTDBHttpClient {
         Err(anyhow::anyhow!("所有REST API端口和端点都无法连接"))
     }
 
+    /// 快速检查端口是否可达
+    async fn quick_port_check(&self, port: u16) -> bool {
+        use tokio::net::TcpStream;
+        use tokio::time::{timeout, Duration};
+
+        let address = format!("{}:{}", self.config.host, port);
+        match timeout(Duration::from_secs(3), TcpStream::connect(&address)).await {
+            Ok(Ok(_)) => true,
+            _ => false,
+        }
+    }
+
     /// 测试单个REST端点
     async fn test_rest_endpoint(&self, base_url: &str, endpoint: &str) -> Result<u64> {
         let start = Instant::now();
         let url = format!("{}{}", base_url, endpoint);
+
+        // 使用用户配置的连接超时时间
+        let timeout_secs = if self.config.connection_timeout > 0 {
+            self.config.connection_timeout
+        } else {
+            30 // 默认30秒
+        };
 
         // 根据端点类型构建不同的请求
         let request_result = if endpoint.contains("query") {
@@ -168,7 +233,7 @@ impl IoTDBHttpClient {
             let mut request_builder = self.client
                 .post(&url)
                 .header("Content-Type", "application/json")
-                .timeout(std::time::Duration::from_secs(5))
+                .timeout(std::time::Duration::from_secs(timeout_secs))
                 .json(&request_body);
 
             // 添加认证头
@@ -183,7 +248,7 @@ impl IoTDBHttpClient {
             // Ping端点 - 发送GET请求
             self.client
                 .get(&url)
-                .timeout(std::time::Duration::from_secs(5))
+                .timeout(std::time::Duration::from_secs(timeout_secs))
                 .send()
                 .await
         };
@@ -191,20 +256,31 @@ impl IoTDBHttpClient {
         match request_result {
             Ok(response) => {
                 let latency = start.elapsed().as_millis() as u64;
-
                 let status = response.status();
+
                 if status.is_success() {
-                    debug!("REST端点 {} 响应成功: {}", url, status);
+                    info!("✅ REST端点 {} 响应成功: {}, 延迟: {}ms", url, status, latency);
                     Ok(latency)
                 } else if status == 401 {
-                    Err(anyhow::anyhow!("认证失败: 用户名或密码错误"))
+                    Err(anyhow::anyhow!("认证失败: 用户名或密码错误 (HTTP 401)"))
+                } else if status == 404 {
+                    Err(anyhow::anyhow!("端点不存在: {} (HTTP 404)", endpoint))
+                } else if status == 500 {
+                    let error_text = response.text().await.unwrap_or_default();
+                    Err(anyhow::anyhow!("服务器内部错误 (HTTP 500): {}", error_text))
                 } else {
                     let error_text = response.text().await.unwrap_or_default();
                     Err(anyhow::anyhow!("HTTP请求失败: {} - {}", status, error_text))
                 }
             }
             Err(e) => {
-                Err(anyhow::anyhow!("连接失败: {}", e))
+                if e.is_timeout() {
+                    Err(anyhow::anyhow!("连接超时: 请检查网络连接或增加超时时间"))
+                } else if e.is_connect() {
+                    Err(anyhow::anyhow!("连接被拒绝: 请检查服务是否运行和端口是否正确"))
+                } else {
+                    Err(anyhow::anyhow!("连接失败: {}", e))
+                }
             }
         }
     }
@@ -217,28 +293,42 @@ impl IoTDBHttpClient {
         let start = Instant::now();
         let address = format!("{}:{}", self.config.host, self.config.port);
 
-        debug!("尝试TCP连接并验证认证: {}", address);
+        info!("🔌 尝试TCP连接并验证认证: {}", address);
+
+        // 使用用户配置的连接超时时间
+        let timeout_secs = if self.config.connection_timeout > 0 {
+            self.config.connection_timeout
+        } else {
+            30 // 默认30秒
+        };
 
         // 尝试建立TCP连接
-        match timeout(Duration::from_secs(10), TcpStream::connect(&address)).await {
+        match timeout(Duration::from_secs(timeout_secs), TcpStream::connect(&address)).await {
             Ok(Ok(mut stream)) => {
+                info!("✅ TCP连接建立成功，开始验证认证...");
                 // 🔒 安全修复: 必须验证认证信息
                 if let Err(auth_error) = self.verify_tcp_authentication(&mut stream).await {
-                    error!("IoTDB TCP认证验证失败: {}", auth_error);
+                    error!("❌ IoTDB TCP认证验证失败: {}", auth_error);
                     return Err(anyhow::anyhow!("认证验证失败: {}", auth_error));
                 }
 
                 let latency = start.elapsed().as_millis() as u64;
-                info!("IoTDB TCP连接和认证验证成功，延迟: {}ms", latency);
+                info!("✅ IoTDB TCP连接和认证验证成功，延迟: {}ms", latency);
                 Ok(latency)
             }
             Ok(Err(e)) => {
-                error!("IoTDB TCP连接失败: {}", e);
-                Err(anyhow::anyhow!("TCP连接失败: {}", e))
+                error!("❌ IoTDB TCP连接失败: {}", e);
+                if e.kind() == std::io::ErrorKind::ConnectionRefused {
+                    Err(anyhow::anyhow!("TCP连接被拒绝: 请检查IoTDB服务是否运行在端口 {}", self.config.port))
+                } else if e.kind() == std::io::ErrorKind::TimedOut {
+                    Err(anyhow::anyhow!("TCP连接超时: 请检查网络连接"))
+                } else {
+                    Err(anyhow::anyhow!("TCP连接失败: {}", e))
+                }
             }
             Err(_) => {
-                error!("IoTDB TCP连接超时");
-                Err(anyhow::anyhow!("TCP连接超时"))
+                error!("❌ IoTDB TCP连接超时 ({}秒)", timeout_secs);
+                Err(anyhow::anyhow!("TCP连接超时: 请检查网络连接或增加超时时间"))
             }
         }
     }

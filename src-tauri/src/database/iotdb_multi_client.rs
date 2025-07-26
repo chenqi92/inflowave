@@ -19,6 +19,7 @@ use super::protocol::{
 };
 
 /// IoTDB多协议客户端
+#[derive(Debug)]
 pub struct IoTDBMultiClient {
     config: ConnectionConfig,
     protocol_client: Option<Box<dyn ProtocolClient>>,
@@ -34,8 +35,8 @@ impl IoTDBMultiClient {
             protocol_client: None,
             preferred_protocol: None,
             fallback_protocols: vec![
+                ProtocolType::Thrift,  // 优先使用 Thrift，因为它更稳定
                 ProtocolType::Http,
-                ProtocolType::Thrift,
                 ProtocolType::WebSocket,
             ],
         }
@@ -73,8 +74,8 @@ impl IoTDBMultiClient {
         let mut last_error = None;
         
         for protocol in protocols_to_try {
-            info!("尝试协议: {:?}", protocol);
-            
+            info!("🔍 尝试协议: {:?}", protocol);
+
             match self.try_connect_with_protocol(protocol.clone()).await {
                 Ok(()) => {
                     info!("✅ 成功连接使用协议: {:?}", protocol);
@@ -106,7 +107,7 @@ impl IoTDBMultiClient {
         self.protocol_client = Some(client);
         Ok(())
     }
-    
+
     /// 构建协议配置
     fn build_protocol_config(&self, protocol: ProtocolType) -> Result<ProtocolConfig> {
         let port = match protocol {
@@ -153,12 +154,19 @@ impl IoTDBMultiClient {
             _ => {}
         }
         
+        // 使用用户配置的连接超时时间
+        let timeout_secs = if self.config.connection_timeout > 0 {
+            self.config.connection_timeout
+        } else {
+            30 // 默认30秒
+        };
+
         Ok(ProtocolConfig {
             protocol_type: protocol,
             host: self.config.host.clone(),
             port,
-            ssl: false, // 可以从配置中读取
-            timeout: Duration::from_secs(10),
+            ssl: self.config.ssl,
+            timeout: Duration::from_secs(timeout_secs),
             username: self.config.username.clone(),
             password: self.config.password.clone(),
             extra_params,
@@ -340,15 +348,15 @@ impl IoTDBMultiClient {
     /// 获取协议性能统计
     pub async fn get_protocol_performance(&mut self) -> Result<HashMap<ProtocolType, Duration>> {
         let mut performance = HashMap::new();
-        
+
         for protocol in &self.fallback_protocols.clone() {
             let start_time = Instant::now();
-            
+
             match self.try_connect_with_protocol(protocol.clone()).await {
                 Ok(()) => {
                     let latency = start_time.elapsed();
                     performance.insert(protocol.clone(), latency);
-                    
+
                     // 断开测试连接
                     if let Some(mut client) = self.protocol_client.take() {
                         let _ = client.disconnect().await;
@@ -360,7 +368,12 @@ impl IoTDBMultiClient {
                 }
             }
         }
-        
+
         Ok(performance)
+    }
+
+    /// 获取连接配置
+    pub fn get_config(&self) -> &ConnectionConfig {
+        &self.config
     }
 }

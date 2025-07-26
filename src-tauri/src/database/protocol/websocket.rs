@@ -73,6 +73,16 @@ pub struct WebSocketClient {
     status: ConnectionStatus,
 }
 
+impl std::fmt::Debug for WebSocketClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WebSocketClient")
+            .field("config", &self.config)
+            .field("ws_stream", &self.ws_stream.is_some())
+            .field("status", &self.status)
+            .finish()
+    }
+}
+
 impl WebSocketClient {
     pub fn new(config: ProtocolConfig) -> Result<Self> {
         Ok(Self {

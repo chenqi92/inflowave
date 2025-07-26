@@ -49,6 +49,7 @@ struct ServerInfoResponse {
 }
 
 /// HTTP协议客户端
+#[derive(Debug)]
 pub struct HttpClient {
     config: ProtocolConfig,
     client: Client,

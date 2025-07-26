@@ -85,7 +85,7 @@ pub enum ConnectionStatus {
 
 /// 协议客户端特征
 #[async_trait]
-pub trait ProtocolClient: Send + Sync {
+pub trait ProtocolClient: Send + Sync + std::fmt::Debug {
     /// 连接到服务器
     async fn connect(&mut self) -> Result<()>;
     

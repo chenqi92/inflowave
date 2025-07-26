@@ -69,6 +69,7 @@ impl IoTDBMethod {
 }
 
 /// Thrift客户端
+#[derive(Debug)]
 pub struct ThriftClient {
     config: ProtocolConfig,
     stream: Option<TcpStream>,
