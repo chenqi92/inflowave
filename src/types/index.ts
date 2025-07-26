@@ -1,10 +1,23 @@
 import React from 'react';
 
-// 数据库类型
-export type DatabaseType = 'influxdb';
+// 导入新的数据库抽象层类型
+import type {
+  DatabaseType as BaseDatabaseType,
+  QueryLanguage,
+  DatabaseConnectionConfig as BaseDatabaseConnectionConfig,
+  ValidationResult,
+  ValidationError,
+  ConnectionTestResult as BaseConnectionTestResult
+} from './database/base';
+
+// 数据库类型 - 扩展支持多种数据库
+export type DatabaseType = BaseDatabaseType;
 
 // InfluxDB 版本
 export type InfluxDBVersion = '1.x' | '2.x' | '3.x';
+
+// IoTDB 版本
+export type IoTDBVersion = '0.13.x' | '0.14.x' | '1.0.x' | '1.1.x' | '1.2.x';
 
 // 代理类型
 export type ProxyType = 'http' | 'https' | 'socks5';
@@ -27,31 +40,59 @@ export interface InfluxDBV2Config {
   v1CompatibilityApi: boolean;
 }
 
-// 连接相关类型
-export interface ConnectionConfig {
+// IoTDB 特有配置
+export interface IoTDBConfig {
+  version?: IoTDBVersion;
+  sessionPoolSize?: number;
+  enableCompression?: boolean;
+  timeZone?: string;
+  fetchSize?: number;
+  enableRedirection?: boolean;
+  maxRetryCount?: number;
+  retryIntervalMs?: number;
+}
+
+// 数据库驱动特定配置联合类型
+export interface DatabaseDriverConfig {
+  influxdb?: {
+    version: InfluxDBVersion;
+    database?: string;
+    retentionPolicy?: string;
+    v2Config?: InfluxDBV2Config;
+    defaultQueryLanguage?: 'influxql' | 'flux';
+  };
+  iotdb?: IoTDBConfig;
+  // 为未来的数据库类型预留空间
+  prometheus?: Record<string, any>;
+  elasticsearch?: Record<string, any>;
+}
+
+// 连接相关类型 - 重构为支持多数据库
+export interface ConnectionConfig extends Omit<BaseDatabaseConnectionConfig, 'driverConfig'> {
   id?: string;
   name: string;
   description?: string;
   dbType: DatabaseType;
-  version?: InfluxDBVersion;
   host: string;
   port: number;
   username?: string;
   password?: string;
-  database?: string;
-  ssl: boolean;
-  timeout: number;
-  connectionTimeout: number;
-  queryTimeout: number;
-  defaultQueryLanguage?: string;
+  ssl?: boolean;
+  timeout?: number;
+  connectionTimeout?: number;
+  queryTimeout?: number;
   proxyConfig?: ProxyConfig;
-  // InfluxDB 1.x 特有
-  retentionPolicy?: string;
-  // InfluxDB 2.x/3.x 特有
-  v2Config?: InfluxDBV2Config;
+  // 数据库特定配置
+  driverConfig?: DatabaseDriverConfig;
+  // 向后兼容字段
+  version?: InfluxDBVersion; // InfluxDB 版本
+  database?: string; // InfluxDB 数据库名
+  retentionPolicy?: string; // InfluxDB 保留策略
+  v2Config?: InfluxDBV2Config; // InfluxDB 2.x/3.x 配置
+  defaultQueryLanguage?: string; // 默认查询语言
+  // 时间戳字段
   created_at?: string;
   updated_at?: string;
-  // 保持向后兼容性
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -67,12 +108,15 @@ export interface ConnectionStatus {
   serverVersion?: string; // 检测到的服务器版本
 }
 
-export interface ConnectionTestResult {
+// 连接测试结果 - 扩展支持多数据库
+export interface ConnectionTestResult extends BaseConnectionTestResult {
   success: boolean;
   latency?: number;
   error?: string;
   serverVersion?: string;
   databases?: string[];
+  // 数据库特定的元数据
+  metadata?: Record<string, any>;
 }
 
 // Type alias for backward compatibility
@@ -123,12 +167,16 @@ export interface Tag {
   values: string[];
 }
 
-// 查询相关类型
+// 查询相关类型 - 扩展支持多数据库
 export interface QueryRequest {
   connectionId: string;
-  database: string;
+  database?: string; // 某些数据库可能不需要指定数据库
   query: string;
+  language?: QueryLanguage; // 查询语言类型
   format?: 'json' | 'csv' | 'table';
+  parameters?: Record<string, any>; // 查询参数
+  timeout?: number; // 查询超时
+  maxRows?: number; // 最大返回行数
 }
 
 export interface QueryResult {
@@ -151,7 +199,16 @@ export interface Series {
   tags?: Record<string, string>;
 }
 
-export interface QueryValidation {
+// 查询验证 - 使用新的验证结果接口
+export interface QueryValidation extends ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationError[];
+  suggestions?: string[];
+}
+
+// 向后兼容的简化验证接口
+export interface SimpleQueryValidation {
   valid: boolean;
   errors: string[];
   warnings: string[];

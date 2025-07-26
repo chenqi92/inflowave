@@ -26,7 +26,7 @@ import {
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
-import type { ConnectionConfig, ConnectionTestResult } from '@/types';
+import type { ConnectionConfig, ConnectionTestResult, DatabaseType } from '@/types';
 import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
 import { generateUniqueId } from '@/utils/idGenerator';
 
@@ -40,7 +40,7 @@ interface SimpleConnectionDialogProps {
 interface FormData {
   name: string;
   description: string;
-  dbType: 'influxdb';
+  dbType: DatabaseType;
   version: '1.x' | '2.x' | '3.x';
   host: string;
   port: number;
