@@ -1082,6 +1082,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     // 立即更新该连接节点的显示状态为加载中
     updateConnectionNodeDisplay(connection_id, true);
 
+    // 添加超时控制
+    const timeoutMs = (connection.connectionTimeout || 30) * 1000;
+    const abortController = new AbortController();
+
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+      console.warn(`⏰ 连接操作超时: ${connection.name}`);
+      showMessage.error(`连接操作超时: ${connection.name}`);
+    }, timeoutMs);
+
     try {
       if (isCurrentlyConnected) {
         // 断开连接
@@ -1095,10 +1105,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         showMessage.success(`已连接: ${connection.name}`);
       }
 
+      clearTimeout(timeoutId);
       console.log(`✅ 连接操作完成: ${connection.name}`);
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error(`❌ 连接操作失败:`, error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      let errorMessage = error instanceof Error ? error.message : String(error);
+
+      // 检查是否是超时错误
+      if (abortController.signal.aborted) {
+        errorMessage = `连接超时 (${connection.connectionTimeout || 30}秒)`;
+      }
+
       showMessage.error(`连接操作失败: ${errorMessage}`);
 
       // 确保错误状态被正确设置

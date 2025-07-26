@@ -1,7 +1,7 @@
 /**
  * IoTDB 多协议客户端
- * 
- * 支持HTTP REST API、Thrift TCP、WebSocket等多种协议
+ *
+ * 支持HTTP REST API、Thrift TCP等多种协议（桌面程序专用）
  * 自动检测最佳协议并提供统一的接口
  */
 
@@ -35,9 +35,9 @@ impl IoTDBMultiClient {
             protocol_client: None,
             preferred_protocol: None,
             fallback_protocols: vec![
-                ProtocolType::Thrift,  // 优先使用 Thrift，因为它更稳定
-                ProtocolType::Http,
-                ProtocolType::WebSocket,
+                ProtocolType::Thrift,  // IoTDB 标准协议，优先使用
+                ProtocolType::Http,    // REST API 备用协议
+                // 注意：桌面程序不需要 WebSocket 协议
             ],
         }
     }
@@ -73,6 +73,8 @@ impl IoTDBMultiClient {
         
         let mut last_error = None;
         
+        info!("📋 要尝试的协议列表: {:?}", protocols_to_try);
+
         for protocol in protocols_to_try {
             info!("🔍 尝试协议: {:?}", protocol);
 
@@ -95,15 +97,19 @@ impl IoTDBMultiClient {
     
     /// 尝试使用指定协议连接
     async fn try_connect_with_protocol(&mut self, protocol: ProtocolType) -> Result<()> {
+        info!("🔧 构建 {:?} 协议配置", protocol);
         let protocol_config = self.build_protocol_config(protocol.clone())?;
-        
+        info!("📡 协议配置: host={}:{}, type={:?}", protocol_config.host, protocol_config.port, protocol_config.protocol_type);
+
+        info!("🏗️ 创建 {:?} 协议客户端", protocol);
         let mut client = ProtocolFactory::create_client(protocol_config)
             .context(format!("创建 {:?} 协议客户端失败", protocol))?;
-        
+
         // 测试连接
+        info!("🔌 测试 {:?} 协议连接", protocol);
         client.test_connection().await
             .context(format!("{:?} 协议连接测试失败", protocol))?;
-        
+
         self.protocol_client = Some(client);
         Ok(())
     }
@@ -127,14 +133,7 @@ impl IoTDBMultiClient {
                     self.config.port
                 }
             }
-            ProtocolType::WebSocket => {
-                // WebSocket通常使用8080端口
-                if self.config.port == 6667 || self.config.port == 31999 {
-                    8080
-                } else {
-                    self.config.port
-                }
-            }
+            // WebSocket 协议已移除（桌面程序不需要）
             _ => self.config.port,
         };
         
@@ -148,9 +147,7 @@ impl IoTDBMultiClient {
             ProtocolType::Thrift => {
                 extra_params.insert("session_timeout".to_string(), "30000".to_string());
             }
-            ProtocolType::WebSocket => {
-                extra_params.insert("heartbeat_interval".to_string(), "30".to_string());
-            }
+            // WebSocket 协议已移除（桌面程序不需要）
             _ => {}
         }
         

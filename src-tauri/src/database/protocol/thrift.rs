@@ -16,7 +16,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use log::{debug, info, warn};
 
 /// Thrift协议常量
-const THRIFT_VERSION: i32 = 1;
+const THRIFT_VERSION: i32 = 0x80010000u32 as i32;  // Thrift Binary Protocol 版本标识
 const THRIFT_PROTOCOL_BINARY: u8 = 0x80;
 const THRIFT_TYPE_CALL: u8 = 1;
 const THRIFT_TYPE_REPLY: u8 = 2;
@@ -109,9 +109,9 @@ impl ThriftClient {
         
         // Thrift Binary Protocol Header
         // Version (4 bytes) | Message Type (1 byte) | Method Name Length (4 bytes) | Method Name | Sequence ID (4 bytes)
-        
-        // 版本和消息类型
-        let version_and_type = (THRIFT_VERSION << 16) | (message_type as i32);
+
+        // 版本和消息类型 (Thrift Binary Protocol)
+        let version_and_type = THRIFT_VERSION | (message_type as i32);
         stream.write_all(&version_and_type.to_be_bytes()).await?;
         
         // 方法名长度和方法名

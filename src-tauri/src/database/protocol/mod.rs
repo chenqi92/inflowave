@@ -1,7 +1,7 @@
 /**
  * 数据库协议抽象层
- * 
- * 支持多种协议：HTTP REST API、Thrift TCP、WebSocket等
+ *
+ * 支持多种协议：HTTP REST API、Thrift TCP（桌面程序专用）
  */
 
 use anyhow::Result;
@@ -12,18 +12,17 @@ use std::time::Duration;
 
 pub mod thrift;
 pub mod http;
-pub mod websocket;
+// 注意：桌面程序不需要 WebSocket 协议
+// pub mod websocket;
 
 /// 协议类型枚举
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ProtocolType {
     /// HTTP REST API
     Http,
-    /// Thrift TCP协议
+    /// Thrift TCP协议（IoTDB 标准协议）
     Thrift,
-    /// WebSocket协议
-    WebSocket,
-    /// gRPC协议
+    /// gRPC协议（暂未实现）
     Grpc,
 }
 
@@ -140,9 +139,6 @@ impl ProtocolFactory {
             ProtocolType::Thrift => {
                 Ok(Box::new(thrift::ThriftClient::new(config)?))
             }
-            ProtocolType::WebSocket => {
-                Ok(Box::new(websocket::WebSocketClient::new(config)?))
-            }
             ProtocolType::Grpc => {
                 Err(anyhow::anyhow!("gRPC协议暂未实现"))
             }
@@ -157,9 +153,8 @@ impl ProtocolFactory {
         password: Option<String>,
     ) -> Result<ProtocolType> {
         let protocols = vec![
-            ProtocolType::Http,
-            ProtocolType::Thrift,
-            ProtocolType::WebSocket,
+            ProtocolType::Thrift,  // IoTDB 标准协议，优先尝试
+            ProtocolType::Http,    // REST API 备用协议
         ];
         
         for protocol in protocols {
@@ -187,9 +182,8 @@ impl ProtocolFactory {
     /// 获取协议的默认端口
     pub fn get_default_port(protocol: &ProtocolType) -> u16 {
         match protocol {
-            ProtocolType::Http => 31999,      // IoTDB REST API默认端口
-            ProtocolType::Thrift => 6667,     // IoTDB Thrift默认端口
-            ProtocolType::WebSocket => 8080,  // WebSocket默认端口
+            ProtocolType::Http => 18080,      // IoTDB REST API默认端口
+            ProtocolType::Thrift => 6667,     // IoTDB Thrift默认端口（标准协议）
             ProtocolType::Grpc => 6668,       // gRPC默认端口
         }
     }
@@ -201,8 +195,8 @@ impl ProtocolFactory {
             (ProtocolType::Http, "async_query") => true,
             (ProtocolType::Thrift, "session") => true,
             (ProtocolType::Thrift, "prepared_statement") => true,
-            (ProtocolType::WebSocket, "real_time") => true,
-            (ProtocolType::WebSocket, "streaming") => true,
+            (ProtocolType::Thrift, "real_time") => true,  // Thrift 支持实时查询
+            (ProtocolType::Thrift, "streaming") => true,  // Thrift 支持流式查询
             _ => false,
         }
     }

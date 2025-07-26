@@ -12,8 +12,7 @@ use reqwest;
 #[derive(Debug)]
 pub enum DatabaseClient {
     InfluxDB(InfluxClient),
-    IoTDB(IoTDBClient),
-    IoTDBMulti(Arc<Mutex<IoTDBMultiClient>>),
+    IoTDB(Arc<Mutex<IoTDBMultiClient>>),
 }
 
 impl DatabaseClient {
@@ -21,8 +20,7 @@ impl DatabaseClient {
     pub async fn test_connection(&self) -> Result<u64> {
         match self {
             DatabaseClient::InfluxDB(client) => client.test_connection().await,
-            DatabaseClient::IoTDB(client) => client.test_connection().await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.test_connection().await
             },
@@ -33,8 +31,7 @@ impl DatabaseClient {
     pub async fn execute_query(&self, query: &str, database: Option<&str>) -> Result<QueryResult> {
         match self {
             DatabaseClient::InfluxDB(client) => client.execute_query_with_database(query, database).await,
-            DatabaseClient::IoTDB(client) => client.execute_query(query, database).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.execute_query(query).await
             },
@@ -45,8 +42,7 @@ impl DatabaseClient {
     pub async fn get_databases(&self) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_databases().await,
-            DatabaseClient::IoTDB(client) => client.get_databases().await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_databases().await
             },
@@ -57,8 +53,7 @@ impl DatabaseClient {
     pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
-            DatabaseClient::IoTDB(client) => client.get_tables(database).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
             },
@@ -69,8 +64,7 @@ impl DatabaseClient {
     pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_field_keys(database, table).await,
-            DatabaseClient::IoTDB(client) => client.get_fields(database, table).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_timeseries(table).await
             },
@@ -92,8 +86,7 @@ impl DatabaseClient {
                     "username": config.username
                 }))
             },
-            DatabaseClient::IoTDB(client) => client.get_connection_info().await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let server_info = client.get_server_info().await?;
                 let status = client.get_connection_status();
@@ -120,8 +113,7 @@ impl DatabaseClient {
                 debug!("关闭 InfluxDB 连接");
                 Ok(())
             },
-            DatabaseClient::IoTDB(client) => client.close().await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.disconnect().await
             },
@@ -133,7 +125,6 @@ impl DatabaseClient {
         match self {
             DatabaseClient::InfluxDB(_) => DatabaseType::InfluxDB,
             DatabaseClient::IoTDB(_) => DatabaseType::IoTDB,
-            DatabaseClient::IoTDBMulti(_) => DatabaseType::IoTDB,
         }
     }
 
@@ -141,8 +132,7 @@ impl DatabaseClient {
     pub async fn get_config(&self) -> ConnectionConfig {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_config().clone(),
-            DatabaseClient::IoTDB(client) => client.get_config().clone(),
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 client.get_config().clone()
             },
@@ -153,8 +143,7 @@ impl DatabaseClient {
     pub async fn create_database(&self, database_name: &str) -> Result<()> {
         match self {
             DatabaseClient::InfluxDB(client) => client.create_database(database_name).await,
-            DatabaseClient::IoTDB(client) => client.create_database(database_name).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let sql = format!("CREATE STORAGE GROUP root.{}", database_name);
                 client.execute_query(&sql).await?;
@@ -167,8 +156,7 @@ impl DatabaseClient {
     pub async fn drop_database(&self, database_name: &str) -> Result<()> {
         match self {
             DatabaseClient::InfluxDB(client) => client.drop_database(database_name).await,
-            DatabaseClient::IoTDB(client) => client.drop_database(database_name).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let sql = format!("DELETE STORAGE GROUP root.{}", database_name);
                 client.execute_query(&sql).await?;
@@ -181,7 +169,7 @@ impl DatabaseClient {
     pub async fn get_retention_policies(&self, database: &str) -> Result<Vec<RetentionPolicy>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_retention_policies(database).await,
-            DatabaseClient::IoTDB(_) | DatabaseClient::IoTDBMulti(_) => {
+            DatabaseClient::IoTDB(_) => {
                 // IoTDB 不支持保留策略概念，返回空列表
                 Ok(vec![])
             },
@@ -192,8 +180,7 @@ impl DatabaseClient {
     pub async fn get_measurements(&self, database: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
-            DatabaseClient::IoTDB(client) => client.get_tables(database).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
             },
@@ -204,8 +191,7 @@ impl DatabaseClient {
     pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_field_keys(database, measurement).await,
-            DatabaseClient::IoTDB(client) => client.get_fields(database, measurement).await,
-            DatabaseClient::IoTDBMulti(client) => {
+            DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_timeseries(measurement).await
             },
@@ -221,8 +207,7 @@ impl DatabaseClient {
     pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
         match self {
             DatabaseClient::InfluxDB(client) => client.get_table_schema(database, measurement).await,
-            DatabaseClient::IoTDB(client) => client.get_table_schema(database, measurement).await,
-            DatabaseClient::IoTDBMulti(_client) => {
+            DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持表结构查询，返回空结构
                 Ok(TableSchema {
                     tags: vec![],
@@ -239,8 +224,7 @@ impl DatabaseClient {
                 client.write_line_protocol(database, line_protocol).await?;
                 Ok(())
             },
-            DatabaseClient::IoTDB(client) => client.write_line_protocol(database, line_protocol).await,
-            DatabaseClient::IoTDBMulti(_client) => {
+            DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持行协议写入
                 Err(anyhow::anyhow!("IoTDB 多协议客户端暂不支持行协议写入"))
             },
@@ -893,144 +877,7 @@ impl InfluxClient {
 
 // 删除旧的 trait 实现，现在使用枚举方式
 
-/// IoTDB 客户端封装
-#[derive(Debug, Clone)]
-pub struct IoTDBClient {
-    config: ConnectionConfig,
-    multi_client: Arc<Mutex<IoTDBMultiClient>>,
-}
 
-impl IoTDBClient {
-    /// 创建新的 IoTDB 客户端实例
-    pub fn new(config: ConnectionConfig) -> Result<Self> {
-        info!("创建 IoTDB 多协议客户端: {}:{}", config.host, config.port);
-
-        let multi_client = IoTDBMultiClient::new(config.clone());
-
-        Ok(Self {
-            config,
-            multi_client: Arc::new(Mutex::new(multi_client)),
-        })
-    }
-}
-
-impl IoTDBClient {
-    /// 测试连接
-    pub async fn test_connection(&self) -> Result<u64> {
-        let mut client = self.multi_client.lock().await;
-        client.test_connection().await
-    }
-
-    /// 执行查询
-    pub async fn execute_query(&self, query: &str, _database: Option<&str>) -> Result<QueryResult> {
-        let mut client = self.multi_client.lock().await;
-        client.execute_query(query).await
-    }
-
-    /// 获取数据库列表（IoTDB中为存储组列表）
-    pub async fn get_databases(&self) -> Result<Vec<String>> {
-        debug!("IoTDB: 获取存储组列表");
-        let mut client = self.multi_client.lock().await;
-        client.get_databases().await
-    }
-
-    /// 获取表/设备列表
-    pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
-        let mut client = self.multi_client.lock().await;
-        client.get_devices(database).await
-    }
-
-    /// 获取字段列表
-    pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
-        let device_path = format!("{}.{}", database, table);
-        let mut client = self.multi_client.lock().await;
-        client.get_timeseries(&device_path).await
-    }
-
-    /// 获取连接信息
-    pub async fn get_connection_info(&self) -> Result<serde_json::Value> {
-        let info = serde_json::json!({
-            "type": "iotdb",
-            "version": self.config.get_version_string(),
-            "host": self.config.host,
-            "port": self.config.port,
-            "ssl": self.config.ssl,
-            "username": self.config.username,
-            "driver_config": self.config.driver_config
-        });
-        Ok(info)
-    }
-
-    /// 关闭连接
-    pub async fn close(&self) -> Result<()> {
-        debug!("关闭 IoTDB 连接");
-        // TODO: 实现实际的连接关闭
-        Ok(())
-    }
-
-    /// 创建数据库/存储组
-    pub async fn create_database(&self, database_name: &str) -> Result<()> {
-        debug!("创建 IoTDB 存储组: {}", database_name);
-
-        // TODO: 实现实际的存储组创建
-        // IoTDB 使用 CREATE STORAGE GROUP 语句
-        let query = format!("CREATE STORAGE GROUP {}", database_name);
-        self.execute_query(&query, None).await?;
-
-        Ok(())
-    }
-
-    /// 删除数据库/存储组
-    pub async fn drop_database(&self, database_name: &str) -> Result<()> {
-        debug!("删除 IoTDB 存储组: {}", database_name);
-
-        // TODO: 实现实际的存储组删除
-        // IoTDB 使用 DELETE STORAGE GROUP 语句
-        let query = format!("DELETE STORAGE GROUP {}", database_name);
-        self.execute_query(&query, None).await?;
-
-        Ok(())
-    }
-
-    /// 获取保留策略（IoTDB 不支持，返回空）
-    pub async fn get_retention_policies(&self, _database: &str) -> Result<Vec<RetentionPolicy>> {
-        // IoTDB 不支持 InfluxDB 风格的保留策略
-        Ok(vec![])
-    }
-
-    /// 获取表结构信息
-    pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
-        debug!("获取 IoTDB 表结构: {}.{}", database, measurement);
-
-        // TODO: 实现实际的 IoTDB 表结构查询
-        // IoTDB 中可以查询时间序列的数据类型和属性
-        Ok(TableSchema {
-            fields: vec![
-                FieldSchema {
-                    name: "s1".to_string(),
-                    r#type: "DOUBLE".to_string(),
-                },
-                FieldSchema {
-                    name: "s2".to_string(),
-                    r#type: "TEXT".to_string(),
-                },
-            ],
-            tags: vec![], // IoTDB 没有标签概念
-        })
-    }
-
-    /// 写入行协议数据（IoTDB 不支持 InfluxDB 行协议）
-    pub async fn write_line_protocol(&self, _database: &str, _line_protocol: &str) -> Result<()> {
-        // IoTDB 不支持 InfluxDB 行协议格式
-        // 需要转换为 IoTDB 的 INSERT 语句
-        Err(anyhow::anyhow!("IoTDB 不支持 InfluxDB 行协议格式，请使用 SQL INSERT 语句"))
-    }
-
-    /// 获取配置
-    pub fn get_config(&self) -> &ConnectionConfig {
-        &self.config
-    }
-}
 
 /// 数据库客户端工厂
 pub struct DatabaseClientFactory;
@@ -1045,7 +892,7 @@ impl DatabaseClientFactory {
             },
             DatabaseType::IoTDB => {
                 let client = IoTDBMultiClient::new(config);
-                Ok(DatabaseClient::IoTDBMulti(Arc::new(Mutex::new(client))))
+                Ok(DatabaseClient::IoTDB(Arc::new(Mutex::new(client))))
             },
             _ => {
                 Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type))

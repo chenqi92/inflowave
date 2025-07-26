@@ -101,6 +101,43 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const [isTesting, setIsTesting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // 添加取消控制器
+  const [testAbortController, setTestAbortController] = useState<AbortController | null>(null);
+
+  // 处理取消操作
+  const handleCancel = () => {
+    // 如果正在测试连接，先取消测试
+    if (testAbortController) {
+      testAbortController.abort();
+      setTestAbortController(null);
+    }
+
+    // 重置所有状态
+    setIsTesting(false);
+    setTestResult(null);
+    setIsSubmitting(false);
+
+    // 调用原始的取消回调
+    onCancel();
+  };
+
+  // 清理效果：当弹框关闭时重置状态
+  useEffect(() => {
+    if (!visible) {
+      // 弹框关闭时取消正在进行的测试
+      if (testAbortController) {
+        testAbortController.abort();
+        setTestAbortController(null);
+      }
+
+      // 重置所有状态
+      setIsTesting(false);
+      setTestResult(null);
+      setIsSubmitting(false);
+      setErrors({});
+    }
+  }, [visible, testAbortController]);
+
   // 版本检测相关状态
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [versionDetectionResult, setVersionDetectionResult] = useState<VersionDetectionResult | null>(null);
@@ -315,15 +352,36 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const handleTestConnection = async () => {
     if (!validateForm()) return;
 
+    // 创建新的取消控制器
+    const abortController = new AbortController();
+    setTestAbortController(abortController);
     setIsTesting(true);
     setTestResult(null);
 
     try {
+      // 添加超时控制
+      const timeoutMs = (formData.connectionTimeout || 30) * 1000;
+      const timeoutId = setTimeout(() => {
+        abortController.abort();
+      }, timeoutMs);
+
       // 同时进行连接测试和版本检测
       const [connectionResult, versionResult] = await Promise.allSettled([
         testConnectionOnly(),
         detectVersionForTest()
       ]);
+
+      clearTimeout(timeoutId);
+
+      // 检查是否被取消
+      if (abortController.signal.aborted) {
+        setTestResult({
+          success: false,
+          error: '连接测试已取消',
+          latency: 0,
+        });
+        return;
+      }
 
       // 处理连接测试结果
       if (connectionResult.status === 'fulfilled') {
@@ -351,13 +409,23 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     } catch (error) {
       console.error('测试连接失败:', error);
       const errorMessage = String(error).replace('Error: ', '');
-      setTestResult({
-        success: false,
-        error: errorMessage,
-        latency: 0,
-      });
+
+      if (abortController.signal.aborted) {
+        setTestResult({
+          success: false,
+          error: '连接测试超时或已取消',
+          latency: 0,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          error: errorMessage,
+          latency: 0,
+        });
+      }
     } finally {
       setIsTesting(false);
+      setTestAbortController(null);
     }
   };
 
@@ -1333,7 +1401,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
           {/* 操作按钮 */}
           <div className='flex justify-end gap-3 pt-4 border-t'>
-            <Button onClick={onCancel} variant='outline' size='sm'>
+            <Button onClick={handleCancel} variant='outline' size='sm'>
               取消
             </Button>
 
