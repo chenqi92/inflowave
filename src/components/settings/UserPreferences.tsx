@@ -16,6 +16,8 @@ import {
   Switch,
   Badge,
 } from '@/components/ui';
+import FontPreview from './FontPreview';
+import FontCategoryLabel from './FontCategoryLabel';
 import { showMessage } from '@/utils/message';
 import {
   Settings,
@@ -700,7 +702,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className='h-9'>
                               <SelectValue placeholder='选择通知位置' />
                             </SelectTrigger>
                           </FormControl>
@@ -824,7 +826,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className='h-9'>
                               <SelectValue placeholder='选择字体大小' />
                             </SelectTrigger>
                           </FormControl>
@@ -846,43 +848,128 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                       <FormItem>
                         <FormLabel>字体系列</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // 立即应用字体变化
+                            const currentValues = form.getValues();
+                            const updatedValues = {
+                              ...currentValues,
+                              accessibility: {
+                                ...currentValues.accessibility,
+                                font_family: value
+                              }
+                            };
+                            savePreferences(updatedValues);
+                          }}
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className='h-10'>
                               <SelectValue placeholder='选择字体系列' />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value='system'>系统默认</SelectItem>
-                            <SelectItem value='inter'>Inter</SelectItem>
-                            <SelectItem value='roboto'>Roboto</SelectItem>
-                            <SelectItem value='open-sans'>Open Sans</SelectItem>
-                            <SelectItem value='lato'>Lato</SelectItem>
-                            <SelectItem value='source-sans'>Source Sans Pro</SelectItem>
-                            <SelectItem value='nunito'>Nunito</SelectItem>
-                            <SelectItem value='poppins'>Poppins</SelectItem>
-                            <SelectItem value='montserrat'>Montserrat</SelectItem>
-                            <SelectItem value='fira-sans'>Fira Sans</SelectItem>
-                            <SelectItem value='noto-sans'>Noto Sans</SelectItem>
-                            <SelectItem value='ubuntu'>Ubuntu</SelectItem>
-                            <SelectItem value='work-sans'>Work Sans</SelectItem>
-                            <SelectItem value='dm-sans'>DM Sans</SelectItem>
-                            <SelectItem value='plus-jakarta'>Plus Jakarta Sans</SelectItem>
-                            <SelectItem value='manrope'>Manrope</SelectItem>
-                            <SelectItem value='space-grotesk'>Space Grotesk</SelectItem>
-                            <SelectItem value='outfit'>Outfit</SelectItem>
-                            <SelectItem value='lexend'>Lexend</SelectItem>
-                            <SelectItem value='be-vietnam'>Be Vietnam Pro</SelectItem>
-                            <SelectItem value='fira-code'>Fira Code (Mono)</SelectItem>
-                            <SelectItem value='jetbrains-mono'>JetBrains Mono</SelectItem>
-                            <SelectItem value='source-code-pro'>Source Code Pro (Mono)</SelectItem>
-                            <SelectItem value='inconsolata'>Inconsolata (Mono)</SelectItem>
-                            <SelectItem value='roboto-mono'>Roboto Mono</SelectItem>
-                            <SelectItem value='ubuntu-mono'>Ubuntu Mono</SelectItem>
-                            <SelectItem value='cascadia-code'>Cascadia Code (Mono)</SelectItem>
-                            <SelectItem value='sf-mono'>SF Mono (Mono)</SelectItem>
+                          <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-h-[300px] font-selector-content" sideOffset={2} align="start">
+                            {/* 系统字体 */}
+                            <SelectItem value='system'>
+                              <FontPreview 
+                                fontFamily='system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' 
+                                name="系统默认" 
+                              />
+                            </SelectItem>
+                            
+
+                            <FontCategoryLabel>现代无衬线字体</FontCategoryLabel>
+                            <SelectItem value='inter'>
+                              <FontPreview fontFamily='"Inter", sans-serif' name="Inter" />
+                            </SelectItem>
+                            <SelectItem value='roboto'>
+                              <FontPreview fontFamily='"Roboto", sans-serif' name="Roboto" />
+                            </SelectItem>
+                            <SelectItem value='open-sans'>
+                              <FontPreview fontFamily='"Open Sans", sans-serif' name="Open Sans" />
+                            </SelectItem>
+                            <SelectItem value='source-sans'>
+                              <FontPreview fontFamily='"Source Sans Pro", sans-serif' name="Source Sans Pro" />
+                            </SelectItem>
+                            <SelectItem value='lato'>
+                              <FontPreview fontFamily='"Lato", sans-serif' name="Lato" />
+                            </SelectItem>
+                            <SelectItem value='poppins'>
+                              <FontPreview fontFamily='"Poppins", sans-serif' name="Poppins" />
+                            </SelectItem>
+                            <SelectItem value='nunito'>
+                              <FontPreview fontFamily='"Nunito", sans-serif' name="Nunito" />
+                            </SelectItem>
+                            <SelectItem value='montserrat'>
+                              <FontPreview fontFamily='"Montserrat", sans-serif' name="Montserrat" />
+                            </SelectItem>
+                            <SelectItem value='fira-sans'>
+                              <FontPreview fontFamily='"Fira Sans", sans-serif' name="Fira Sans" />
+                            </SelectItem>
+                            <SelectItem value='work-sans'>
+                              <FontPreview fontFamily='"Work Sans", sans-serif' name="Work Sans" />
+                            </SelectItem>
+                            <SelectItem value='dm-sans'>
+                              <FontPreview fontFamily='"DM Sans", sans-serif' name="DM Sans" />
+                            </SelectItem>
+                            <SelectItem value='ubuntu'>
+                              <FontPreview fontFamily='"Ubuntu", sans-serif' name="Ubuntu" />
+                            </SelectItem>
+                            <SelectItem value='noto-sans'>
+                              <FontPreview fontFamily='"Noto Sans", "Noto Sans SC", sans-serif' name="Noto Sans" />
+                            </SelectItem>
+
+                            <FontCategoryLabel>经典字体</FontCategoryLabel>
+                            <SelectItem value='georgia'>
+                              <FontPreview fontFamily='"Georgia", serif' name="Georgia" />
+                            </SelectItem>
+                            <SelectItem value='times'>
+                              <FontPreview fontFamily='"Times New Roman", serif' name="Times New Roman" />
+                            </SelectItem>
+                            <SelectItem value='arial'>
+                              <FontPreview fontFamily='Arial, sans-serif' name="Arial" />
+                            </SelectItem>
+                            <SelectItem value='helvetica'>
+                              <FontPreview fontFamily='"Helvetica Neue", sans-serif' name="Helvetica" />
+                            </SelectItem>
+                            <SelectItem value='verdana'>
+                              <FontPreview fontFamily='Verdana, sans-serif' name="Verdana" />
+                            </SelectItem>
+                            <SelectItem value='tahoma'>
+                              <FontPreview fontFamily='Tahoma, sans-serif' name="Tahoma" />
+                            </SelectItem>
+                            <SelectItem value='trebuchet'>
+                              <FontPreview fontFamily='"Trebuchet MS", sans-serif' name="Trebuchet MS" />
+                            </SelectItem>
+
+                            <FontCategoryLabel>等宽字体</FontCategoryLabel>
+                            <SelectItem value='sf-mono'>
+                              <FontPreview fontFamily='ui-monospace, "SF Mono", Monaco, Consolas, monospace' name="SF Mono" />
+                            </SelectItem>
+                            <SelectItem value='jetbrains-mono'>
+                              <FontPreview fontFamily='"JetBrains Mono", Monaco, Consolas, monospace' name="JetBrains Mono" />
+                            </SelectItem>
+                            <SelectItem value='source-code-pro'>
+                              <FontPreview fontFamily='"Source Code Pro", Monaco, Consolas, monospace' name="Source Code Pro" />
+                            </SelectItem>
+                            <SelectItem value='fira-code'>
+                              <FontPreview fontFamily='"Fira Code", Monaco, Consolas, monospace' name="Fira Code" />
+                            </SelectItem>
+                            <SelectItem value='inconsolata'>
+                              <FontPreview fontFamily='"Inconsolata", Monaco, Consolas, monospace' name="Inconsolata" />
+                            </SelectItem>
+                            <SelectItem value='roboto-mono'>
+                              <FontPreview fontFamily='"Roboto Mono", Monaco, Consolas, monospace' name="Roboto Mono" />
+                            </SelectItem>
+                            <SelectItem value='ubuntu-mono'>
+                              <FontPreview fontFamily='"Ubuntu Mono", Monaco, Consolas, monospace' name="Ubuntu Mono" />
+                            </SelectItem>
+                            <SelectItem value='cascadia-code'>
+                              <FontPreview fontFamily='"Cascadia Code", Monaco, Consolas, monospace' name="Cascadia Code" />
+                            </SelectItem>
+                            <SelectItem value='courier'>
+                              <FontPreview fontFamily='"Courier New", monospace' name="Courier New" />
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -945,13 +1032,13 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             defaultValue="comfortable"
                           >
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue 
-                                  placeholder={safeValue ? 
+                              <SelectTrigger className='h-9'>
+                                <SelectValue
+                                  placeholder={safeValue ?
                                     (safeValue === 'compact' ? '紧凑布局' :
                                      safeValue === 'comfortable' ? '舒适布局' :
                                      safeValue === 'spacious' ? '宽松布局' :
-                                     safeValue === 'minimal' ? '极简布局' : '选择布局模式') 
+                                     safeValue === 'minimal' ? '极简布局' : '选择布局模式')
                                     : '选择布局模式'}
                                 />
                               </SelectTrigger>
@@ -1180,11 +1267,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
       {/* 保存按钮 - 固定在底部 */}
       <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-        <Button type='button' variant='outline' onClick={() => form.reset()}>
+        <Button type='button' variant='outline' size='sm' onClick={() => form.reset()}>
           <RefreshCw className='w-4 h-4 mr-2' />
           重置为默认
         </Button>
         <Button
+          size='sm'
           onClick={async () => {
             console.log('保存按钮被点击');
             const formData = form.getValues();

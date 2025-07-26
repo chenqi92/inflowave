@@ -243,16 +243,18 @@ const App: React.FC = () => {
         break;
     }
 
-    // 字体系列设置
+    // 字体系列设置 - 包含所有可用字体
     body.classList.remove(
-      'font-system', 'font-inter', 'font-roboto', 'font-open-sans', 'font-lato', 'font-source-sans',
-      'font-nunito', 'font-poppins', 'font-montserrat', 'font-fira-sans', 'font-noto-sans', 'font-ubuntu',
-      'font-work-sans', 'font-dm-sans', 'font-plus-jakarta', 'font-manrope', 'font-space-grotesk',
-      'font-outfit', 'font-lexend', 'font-be-vietnam', 'font-fira-code', 'font-jetbrains-mono',
-      'font-source-code-pro', 'font-inconsolata', 'font-roboto-mono', 'font-ubuntu-mono',
-      'font-cascadia-code', 'font-sf-mono'
+      'font-system', 'font-inter', 'font-roboto', 'font-open-sans', 'font-source-sans',
+      'font-lato', 'font-poppins', 'font-nunito', 'font-montserrat', 'font-fira-sans',
+      'font-work-sans', 'font-dm-sans', 'font-ubuntu', 'font-noto-sans',
+      'font-georgia', 'font-times', 'font-arial', 'font-helvetica', 'font-verdana',
+      'font-tahoma', 'font-trebuchet',
+      'font-sf-mono', 'font-jetbrains-mono', 'font-source-code-pro', 'font-fira-code',
+      'font-inconsolata', 'font-roboto-mono', 'font-ubuntu-mono', 'font-cascadia-code', 'font-courier'
     );
     switch (font_family) {
+      // 现代无衬线字体
       case 'inter':
         body.classList.add('font-inter');
         break;
@@ -262,17 +264,17 @@ const App: React.FC = () => {
       case 'open-sans':
         body.classList.add('font-open-sans');
         break;
-      case 'lato':
-        body.classList.add('font-lato');
-        break;
       case 'source-sans':
         body.classList.add('font-source-sans');
         break;
-      case 'nunito':
-        body.classList.add('font-nunito');
+      case 'lato':
+        body.classList.add('font-lato');
         break;
       case 'poppins':
         body.classList.add('font-poppins');
+        break;
+      case 'nunito':
+        body.classList.add('font-nunito');
         break;
       case 'montserrat':
         body.classList.add('font-montserrat');
@@ -280,45 +282,52 @@ const App: React.FC = () => {
       case 'fira-sans':
         body.classList.add('font-fira-sans');
         break;
-      case 'noto-sans':
-        body.classList.add('font-noto-sans');
-        break;
-      case 'ubuntu':
-        body.classList.add('font-ubuntu');
-        break;
       case 'work-sans':
         body.classList.add('font-work-sans');
         break;
       case 'dm-sans':
         body.classList.add('font-dm-sans');
         break;
-      case 'plus-jakarta':
-        body.classList.add('font-plus-jakarta');
+      case 'ubuntu':
+        body.classList.add('font-ubuntu');
         break;
-      case 'manrope':
-        body.classList.add('font-manrope');
+      case 'noto-sans':
+        body.classList.add('font-noto-sans');
         break;
-      case 'space-grotesk':
-        body.classList.add('font-space-grotesk');
+      // 经典字体
+      case 'georgia':
+        body.classList.add('font-georgia');
         break;
-      case 'outfit':
-        body.classList.add('font-outfit');
+      case 'times':
+        body.classList.add('font-times');
         break;
-      case 'lexend':
-        body.classList.add('font-lexend');
+      case 'arial':
+        body.classList.add('font-arial');
         break;
-      case 'be-vietnam':
-        body.classList.add('font-be-vietnam');
+      case 'helvetica':
+        body.classList.add('font-helvetica');
+        break;
+      case 'verdana':
+        body.classList.add('font-verdana');
+        break;
+      case 'tahoma':
+        body.classList.add('font-tahoma');
+        break;
+      case 'trebuchet':
+        body.classList.add('font-trebuchet');
         break;
       // 等宽字体
-      case 'fira-code':
-        body.classList.add('font-fira-code');
+      case 'sf-mono':
+        body.classList.add('font-sf-mono');
         break;
       case 'jetbrains-mono':
         body.classList.add('font-jetbrains-mono');
         break;
       case 'source-code-pro':
         body.classList.add('font-source-code-pro');
+        break;
+      case 'fira-code':
+        body.classList.add('font-fira-code');
         break;
       case 'inconsolata':
         body.classList.add('font-inconsolata');
@@ -332,8 +341,8 @@ const App: React.FC = () => {
       case 'cascadia-code':
         body.classList.add('font-cascadia-code');
         break;
-      case 'sf-mono':
-        body.classList.add('font-sf-mono');
+      case 'courier':
+        body.classList.add('font-courier');
         break;
       default: // system
         body.classList.add('font-system');

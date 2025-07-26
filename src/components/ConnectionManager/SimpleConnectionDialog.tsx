@@ -3,7 +3,7 @@ import {
   Button,
   Alert,
   AlertDescription,
-  Steps,
+
   Input,
   InputNumber,
   Switch,
@@ -93,7 +93,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     createTempConnectionForTest,
     deleteTempConnection,
   } = useConnection();
-  const [currentStep, setCurrentStep] = useState(0);
+  // 移除步骤状态，直接在单页面显示所有内容
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(
     null
   );
@@ -224,7 +224,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           proxyType: 'http',
         });
       }
-      setCurrentStep(0);
       setTestResult(null);
       setErrors({});
     }
@@ -329,13 +328,17 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       // 处理连接测试结果
       if (connectionResult.status === 'fulfilled') {
         setTestResult(connectionResult.value);
-        if (connectionResult.value.success) {
-          setCurrentStep(1);
-        }
       } else {
+        let errorMessage = connectionResult.reason?.message || '连接测试失败';
+
+        // 为IoTDB提供更友好的错误信息
+        if (formData.dbType === 'iotdb' && errorMessage.includes('ping request')) {
+          errorMessage = `IoTDB 连接失败: ${errorMessage}`;
+        }
+
         setTestResult({
           success: false,
-          error: connectionResult.reason?.message || '连接测试失败',
+          error: errorMessage,
           latency: 0,
         });
       }
@@ -576,7 +579,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         // 版本检测相关字段
         detectedVersion: versionInfo?.version,
         detectedType: versionInfo?.detected_type,
-        versionInfo: versionInfo,
+        versionInfo,
         lastVersionCheck: versionInfo ? new Date().toISOString() : undefined,
         versionCheckResult: versionDetectionResult || undefined,
 
@@ -608,7 +611,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         error: `保存失败: ${errorMessage}`,
         latency: 0,
       });
-      setCurrentStep(1); // 显示错误结果
+      // 错误结果会显示在底部测试结果区域
     } finally {
       setIsSubmitting(false);
     }
@@ -631,11 +634,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               onChange={e => handleInputChange('name', e.target.value)}
               autoCapitalize='off'
               autoCorrect='off'
-              className={
+              className={`h-9 ${
                 errors.name
                   ? 'border-destructive focus-visible:ring-destructive'
                   : ''
-              }
+              }`}
             />
             {errors.name && (
               <div className='text-xs text-destructive mt-1'>{errors.name}</div>
@@ -652,6 +655,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               onChange={e => handleInputChange('description', e.target.value)}
               autoCapitalize='off'
               autoCorrect='off'
+              className='h-9'
             />
           </div>
         </div>
@@ -674,7 +678,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               }
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger className='h-9'>
               <SelectValue placeholder='选择数据库类型'>
                 {formData.dbType && (
                   <div className="flex items-center gap-2">
@@ -722,11 +726,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onChange={e => handleInputChange('host', e.target.value)}
                 autoCapitalize='off'
                 autoCorrect='off'
-                className={
+                className={`h-9 ${
                   errors.host
                     ? 'border-destructive focus-visible:ring-destructive'
                     : ''
-                }
+                }`}
               />
               {errors.host && (
                 <div className='text-xs text-destructive mt-1'>{errors.host}</div>
@@ -741,7 +745,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='8086'
                 value={formData.port}
                 onChange={value => handleInputChange('port', value || createDefaultConnectionConfig().port)}
-                className={`w-full ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={1}
                 max={65535}
                 controls={false}
@@ -764,6 +768,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   onChange={e => handleInputChange('username', e.target.value)}
                   autoCapitalize='off'
                   autoCorrect='off'
+                  className='h-9'
                 />
               </div>
 
@@ -776,6 +781,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   placeholder='可选'
                   value={formData.password}
                   onChange={e => handleInputChange('password', e.target.value)}
+                  className='h-9'
                 />
               </div>
             </div>
@@ -792,11 +798,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   placeholder='请输入 API Token'
                   value={formData.apiToken}
                   onChange={e => handleInputChange('apiToken', e.target.value)}
-                  className={
+                  className={`h-9 ${
                     errors.apiToken
                       ? 'border-destructive focus-visible:ring-destructive'
                       : ''
-                  }
+                  }`}
                 />
                 {errors.apiToken && (
                   <div className='text-xs text-destructive mt-1'>{errors.apiToken}</div>
@@ -814,11 +820,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     onChange={e => handleInputChange('organization', e.target.value)}
                     autoCapitalize='off'
                     autoCorrect='off'
-                    className={
+                    className={`h-9 ${
                       errors.organization
                         ? 'border-destructive focus-visible:ring-destructive'
                         : ''
-                    }
+                    }`}
                   />
                   {errors.organization && (
                     <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
@@ -835,6 +841,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     onChange={e => handleInputChange('bucket', e.target.value)}
                     autoCapitalize='off'
                     autoCorrect='off'
+                    className='h-9'
                   />
                 </div>
               </div>
@@ -853,6 +860,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onChange={e => handleInputChange('database', e.target.value)}
                 autoCapitalize='off'
                 autoCorrect='off'
+                className='h-9'
               />
             </div>
 
@@ -867,6 +875,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   onChange={e => handleInputChange('retentionPolicy', e.target.value)}
                   autoCapitalize='off'
                   autoCorrect='off'
+                  className='h-9'
                 />
               </div>
             ) : (
@@ -903,7 +912,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='30'
                 value={formData.connectionTimeout}
                 onChange={value => handleInputChange('connectionTimeout', value || 30)}
-                className={`w-full ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={5}
                 max={300}
                 controls={false}
@@ -923,7 +932,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='60'
                 value={formData.queryTimeout}
                 onChange={value => handleInputChange('queryTimeout', value || 60)}
-                className={`w-full ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={10}
                 max={3600}
                 controls={false}
@@ -943,7 +952,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='30'
                 value={formData.timeout}
                 onChange={value => handleInputChange('timeout', value || 30)}
-                className={`w-full ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`w-full h-9 ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={5}
                 max={300}
                 controls={false}
@@ -972,7 +981,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     placeholder='5'
                     value={formData.sessionPoolSize}
                     onChange={value => handleInputChange('sessionPoolSize', value || 5)}
-                    className='w-full'
+                    className='w-full h-9'
                     min={1}
                     max={50}
                     controls={false}
@@ -987,7 +996,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     placeholder='10000'
                     value={formData.fetchSize}
                     onChange={value => handleInputChange('fetchSize', value || 10000)}
-                    className='w-full'
+                    className='w-full h-9'
                     min={100}
                     max={100000}
                     controls={false}
@@ -1002,7 +1011,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     value={formData.timeZone}
                     onValueChange={value => handleInputChange('timeZone', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className='h-9'>
                       <SelectValue placeholder='选择时区' />
                     </SelectTrigger>
                     <SelectContent>
@@ -1025,7 +1034,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     placeholder='3'
                     value={formData.maxRetryCount}
                     onChange={value => handleInputChange('maxRetryCount', value || 3)}
-                    className='w-full'
+                    className='w-full h-9'
                     min={0}
                     max={10}
                     controls={false}
@@ -1040,7 +1049,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     placeholder='1000'
                     value={formData.retryIntervalMs}
                     onChange={value => handleInputChange('retryIntervalMs', value || 1000)}
-                    className='w-full'
+                    className='w-full h-9'
                     min={100}
                     max={10000}
                     controls={false}
@@ -1100,7 +1109,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 value={formData.defaultQueryLanguage}
                 onValueChange={value => handleInputChange('defaultQueryLanguage', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className='h-9'>
                   <SelectValue placeholder='选择查询语言' />
                 </SelectTrigger>
                 <SelectContent>
@@ -1169,11 +1178,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onChange={e => handleInputChange('proxyHost', e.target.value)}
                 autoCapitalize='off'
                 autoCorrect='off'
-                className={
+                className={`h-9 ${
                   errors.proxyHost
                     ? 'border-destructive focus-visible:ring-destructive'
                     : ''
-                }
+                }`}
               />
               {errors.proxyHost && (
                 <div className='text-xs text-destructive mt-1'>{errors.proxyHost}</div>
@@ -1188,7 +1197,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='8080'
                 value={formData.proxyPort}
                 onChange={value => handleInputChange('proxyPort', value || 8080)}
-                className={`w-full ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`w-full h-9 ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={1}
                 max={65535}
                 controls={false}
@@ -1207,7 +1216,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               value={formData.proxyType}
               onValueChange={value => handleInputChange('proxyType', value)}
             >
-              <SelectTrigger className='w-full max-w-xs'>
+              <SelectTrigger className='w-full max-w-xs h-9'>
                 <SelectValue placeholder='选择代理类型' />
               </SelectTrigger>
               <SelectContent>
@@ -1229,6 +1238,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onChange={e => handleInputChange('proxyUsername', e.target.value)}
                 autoCapitalize='off'
                 autoCorrect='off'
+                className='h-9'
               />
             </div>
 
@@ -1241,6 +1251,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 placeholder='可选'
                 value={formData.proxyPassword}
                 onChange={e => handleInputChange('proxyPassword', e.target.value)}
+                className='h-9'
               />
             </div>
           </div>
@@ -1249,93 +1260,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     </div>
   );
 
-  const renderTestResult = () => {
-    if (!testResult) return null;
 
-    return (
-      <div className='space-y-4'>
-        <Alert
-          className={
-            testResult.success
-              ? 'border-success/20 bg-success/10'
-              : 'border-destructive/20 bg-destructive/10'
-          }
-        >
-          {testResult.success ? (
-            <CheckCircle className='h-4 w-4 text-success' />
-          ) : (
-            <XCircle className='h-4 w-4 text-destructive' />
-          )}
-          <AlertDescription>
-            <div className='space-y-2'>
-              <div
-                className={`font-medium ${testResult.success ? 'text-success' : 'text-destructive'}`}
-              >
-                {testResult.success ? '连接测试成功' : '连接测试失败'}
-              </div>
-              <div
-                className={`text-sm ${testResult.success ? 'text-success' : 'text-destructive'}`}
-              >
-                {testResult.success ? (
-                  <div className='space-y-1'>
-                    <div>服务器版本: {testResult.serverVersion || '未知'}</div>
-                    <div>延迟: {testResult.latency}ms</div>
-                    {testResult.databases &&
-                      testResult.databases.length > 0 && (
-                        <div>可用数据库: {testResult.databases.join(', ')}</div>
-                      )}
-                  </div>
-                ) : (
-                  testResult.error
-                )}
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
 
-        {testResult.success && (
-          <div className='bg-success/10 border border-success/20 rounded p-3'>
-            <div className='flex items-center gap-2 text-success'>
-              <CheckCircle />
-              <Typography.Text className='font-medium'>
-                连接配置正确
-              </Typography.Text>
-            </div>
-            <div className='text-sm text-success mt-1'>
-              您可以点击"保存连接"来保存此配置
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
-  const steps = [
-    {
-      title: '配置连接',
-      description: '填写连接参数',
-      icon:
-        currentStep === 0 ? (
-          <Loader2 className='w-4 h-4' />
-        ) : currentStep > 0 ? (
-          <CheckCircle />
-        ) : (
-          '1'
-        ),
-    },
-    {
-      title: '测试连接',
-      description: '验证连接可用性',
-      icon:
-        currentStep === 1 ? (
-          testResult?.success ? (
-            <CheckCircle />
-          ) : (
-            <XCircle />
-          )
-        ) : undefined,
-    },
-  ];
 
   return (
     <>
@@ -1347,80 +1274,99 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         <div className='space-y-6'>
-          {/* 步骤指示器 */}
-          <Steps current={currentStep} items={steps} />
+          {/* 连接配置表单 */}
+          {renderConnectionForm()}
 
-          {currentStep === 0 && renderConnectionForm()}
-          {currentStep === 1 && renderTestResult()}
+          {/* 测试结果显示区域 */}
+          {testResult && (
+            <div className='border-t pt-4'>
+              <div className={`p-4 rounded-lg border ${
+                testResult.success
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className='flex items-start gap-3'>
+                  {testResult.success ? (
+                    <CheckCircle className='w-5 h-5 text-green-600 flex-shrink-0 mt-0.5' />
+                  ) : (
+                    <XCircle className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5' />
+                  )}
+                  <div className='flex-1'>
+                    <h4 className={`font-medium ${
+                      testResult.success ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {testResult.success ? '连接测试成功' : '连接测试失败'}
+                    </h4>
+                    {testResult.success ? (
+                      <div className='mt-2 text-sm text-green-700'>
+                        <p>✅ 数据库连接正常</p>
+                        {testResult.latency && (
+                          <p>⚡ 响应时间: {testResult.latency}ms</p>
+                        )}
+                        <p className='mt-1 text-green-600'>连接配置有效，可以保存使用</p>
+                      </div>
+                    ) : (
+                      <div className='mt-2 text-sm text-red-700'>
+                        <p className='font-medium'>错误详情:</p>
+                        <p className='mt-1 bg-red-100 p-2 rounded text-xs font-mono'>
+                          {testResult.error}
+                        </p>
+                        {formData.dbType === 'iotdb' && testResult.error?.includes('ping request') && (
+                          <div className='mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs'>
+                            <p className='font-medium'>💡 IoTDB 连接提示:</p>
+                            <ul className='mt-1 list-disc list-inside space-y-1'>
+                              <li>确保 IoTDB 服务正在运行</li>
+                              <li>检查端口号是否正确（默认: 6667）</li>
+                              <li>确认网络连接和防火墙设置</li>
+                              <li>IoTDB 使用 TCP 连接，不是 HTTP</li>
+                            </ul>
+                          </div>
+                        )}
+                        <p className='mt-2 text-red-600'>请检查连接参数后重试</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 操作按钮 */}
-          <div className='flex justify-between pt-4 border-t'>
-            <div>
-              {currentStep === 1 && (
-                <Button
-                  onClick={() => setCurrentStep(0)}
-                  variant='outline'
-                  size='default'
-                >
-                  返回修改
-                </Button>
-              )}
-            </div>
+          <div className='flex justify-end gap-3 pt-4 border-t'>
+            <Button onClick={onCancel} variant='outline' size='sm'>
+              取消
+            </Button>
 
-            <div className='flex gap-3'>
-              <Button onClick={onCancel} variant='outline' size='default'>
-                取消
-              </Button>
-
-              {currentStep === 0 ? (
-                <div className='flex gap-3'>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    size='default'
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                        保存中...
-                      </>
-                    ) : (
-                      '保存连接'
-                    )}
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={handleTestConnection}
-                    disabled={isTesting}
-                    size='default'
-                  >
-                    {isTesting ? (
-                      <>
-                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                        测试中...
-                      </>
-                    ) : (
-                      '测试连接'
-                    )}
-                  </Button>
-                </div>
+            <Button
+              onClick={handleTestConnection}
+              disabled={isTesting}
+              variant='outline'
+              size='sm'
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  测试中...
+                </>
               ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !testResult?.success}
-                  size='default'
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                      保存中...
-                    </>
-                  ) : (
-                    '保存连接'
-                  )}
-                </Button>
+                '测试连接'
               )}
-            </div>
+            </Button>
+
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              size='sm'
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  保存中...
+                </>
+              ) : (
+                '保存连接'
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>

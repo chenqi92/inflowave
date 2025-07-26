@@ -202,7 +202,7 @@ export const UpdateSettings: React.FC = () => {
                             onValueChange={(value) => handleSettingChange('check_interval', parseInt(value))}
                             disabled={!settings.auto_check || saving}
                         >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full h-9">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
@@ -275,6 +275,7 @@ export const UpdateSettings: React.FC = () => {
                             </p>
                         </div>
                         <Button
+                            size='sm'
                             onClick={handleCheckForUpdates}
                             disabled={checking}
                             className="min-w-[120px]"
@@ -345,6 +346,7 @@ export const UpdateSettings: React.FC = () => {
                         </div>
                         <Button
                             variant="outline"
+                            size='sm'
                             onClick={handleClearSkippedVersions}
                             disabled={saving}
                             className="w-full"

@@ -120,7 +120,14 @@ export const VersionDetectionDialog: React.FC<VersionDetectionDialogProps> = ({
               <div>
                 <h3 className="font-semibold text-lg">{displayName}</h3>
                 <p className="text-sm text-muted-foreground">
-                  版本 {version_info.version}
+                  版本 {version_info.version === '1.x.x' || version_info.version === 'unknown' ? (
+                    <span className="text-yellow-600">
+                      未能检测到具体版本
+                      <span className="text-xs ml-1">(连接后可获取详细信息)</span>
+                    </span>
+                  ) : (
+                    version_info.version
+                  )}
                 </p>
               </div>
 

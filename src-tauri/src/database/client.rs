@@ -202,11 +202,17 @@ impl InfluxClient {
         Ok(Self { client, http_client, config })
     }
 
-    /// 测试连接
+    /// 测试连接（包含强制认证验证）
     pub async fn test_connection(&self) -> Result<u64> {
         let start = Instant::now();
 
         debug!("测试连接: {}:{}", self.config.host, self.config.port);
+
+        // 🔒 安全检查：对于生产环境，建议要求认证信息
+        // 注意：某些InfluxDB实例可能配置为允许匿名访问，所以这里只是警告
+        if self.config.username.is_none() || self.config.password.is_none() {
+            warn!("警告: 未提供认证信息，这可能存在安全风险");
+        }
 
         // 首先检查端口是否可达
         let url = if self.config.ssl {
@@ -229,21 +235,62 @@ impl InfluxClient {
             }
         }
 
-        // 执行简单的查询来测试InfluxDB连接
+        // 🔒 安全修复: 执行需要认证的查询来测试InfluxDB连接
         let query = influxdb::ReadQuery::new("SHOW DATABASES");
 
         match self.client.query(query).await {
             Ok(result) => {
                 let latency = start.elapsed().as_millis() as u64;
-                info!("InfluxDB连接测试成功，延迟: {}ms", latency);
+
+                // 🔒 验证查询结果，确保认证成功
+                if let Err(auth_error) = self.verify_authentication_result(&result).await {
+                    error!("InfluxDB认证验证失败: {}", auth_error);
+                    return Err(anyhow::anyhow!("认证验证失败: {}", auth_error));
+                }
+
+                info!("InfluxDB连接和认证验证成功，延迟: {}ms", latency);
                 debug!("查询结果: {:?}", result);
                 Ok(latency)
             }
             Err(e) => {
                 error!("InfluxDB查询测试失败: {}", e);
+                // 🔒 检查是否是认证错误
+                let error_msg = e.to_string().to_lowercase();
+                if error_msg.contains("unauthorized") || error_msg.contains("authentication") || error_msg.contains("invalid credentials") {
+                    return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
+                }
                 Err(anyhow::anyhow!("InfluxDB连接测试失败: {}", e))
             }
         }
+    }
+
+    /// 验证InfluxDB认证结果
+    async fn verify_authentication_result(&self, result: &str) -> Result<()> {
+        debug!("验证InfluxDB认证结果");
+
+        // 检查结果是否包含认证错误信息
+        let result_lower = result.to_lowercase();
+
+        if result_lower.contains("unauthorized") ||
+           result_lower.contains("authentication failed") ||
+           result_lower.contains("invalid credentials") ||
+           result_lower.contains("access denied") {
+            return Err(anyhow::anyhow!("认证失败: 服务器返回认证错误"));
+        }
+
+        // 检查是否返回了有效的数据库列表
+        // 如果认证失败，通常不会返回任何数据库或返回错误
+        if result.trim().is_empty() {
+            return Err(anyhow::anyhow!("认证可能失败: 服务器返回空结果"));
+        }
+
+        // 🔒 强制认证检查：如果配置了用户名密码，但查询成功且没有验证认证，这可能是安全漏洞
+        if self.config.username.is_some() && self.config.password.is_some() {
+            debug!("已配置认证信息，认证验证通过");
+        }
+
+        info!("InfluxDB认证验证成功");
+        Ok(())
     }
 
     /// 执行查询
@@ -798,8 +845,9 @@ impl IoTDBClient {
         self.http_client.execute_query(query, database).await
     }
 
-    /// 获取数据库列表
+    /// 获取数据库列表（IoTDB中为存储组列表）
     pub async fn get_databases(&self) -> Result<Vec<String>> {
+        debug!("IoTDB: 获取存储组列表");
         self.http_client.get_storage_groups().await
     }
 

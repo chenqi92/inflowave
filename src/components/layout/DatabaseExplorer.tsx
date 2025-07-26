@@ -270,18 +270,46 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
       // 如果是编辑现有连接，更新连接
       if (editingConnection) {
-        // 这里可以调用更新连接的逻辑
         showMessage.success(`连接 "${connection.name}" 已更新`);
       } else {
-        // 新建连接，添加到连接列表
         showMessage.success(`连接 "${connection.name}" 已创建`);
       }
 
       // 关闭对话框
       handleCloseConnectionDialog();
 
-      // 刷新树形数据
-      buildCompleteTreeData(true);
+      // 多重刷新策略确保新连接显示
+      const refreshStrategies = [
+        // 立即刷新
+        () => {
+          console.log('🔄 立即刷新数据源树');
+          buildCompleteTreeData(true);
+        },
+        // 延迟刷新
+        () => setTimeout(async () => {
+          console.log('🔄 延迟刷新数据源树以显示新连接');
+          try {
+            await buildCompleteTreeData(true);
+            console.log('✅ 数据源树刷新完成');
+          } catch (error) {
+            console.error('❌ 数据源树刷新失败:', error);
+          }
+        }, 300),
+        // 二次确认刷新
+        () => setTimeout(async () => {
+          console.log('🔄 二次确认刷新数据源树');
+          try {
+            await buildCompleteTreeData(true);
+            console.log('✅ 二次刷新完成');
+          } catch (error) {
+            console.error('❌ 二次刷新失败:', error);
+          }
+        }, 1000)
+      ];
+
+      // 执行所有刷新策略
+      refreshStrategies.forEach(strategy => strategy());
+
     } catch (error) {
       console.error('连接保存失败:', error);
       showMessage.error(`连接保存失败: ${error}`);

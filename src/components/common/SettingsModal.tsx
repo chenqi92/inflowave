@@ -324,7 +324,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       setTheme(value as 'light' | 'dark' | 'system')
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className='h-9'>
                       <SelectValue placeholder='选择主题' />
                     </SelectTrigger>
                     <SelectContent>
@@ -341,7 +341,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     value={form.watch('language') || config.language}
                     onValueChange={value => form.setValue('language', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className='h-9'>
                       <SelectValue placeholder='选择语言' />
                     </SelectTrigger>
                     <SelectContent>
@@ -435,7 +435,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     value={form.watch('logLevel') || config.logLevel}
                     onValueChange={value => form.setValue('logLevel', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className='h-9'>
                       <SelectValue placeholder='选择日志级别' />
                     </SelectTrigger>
                     <SelectContent>
@@ -535,12 +535,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             <Button
               type='button'
               variant='outline'
+              size='sm'
               onClick={handleResetSettings}
             >
               <RefreshCw className='w-4 h-4 mr-2' />
               重置为默认
             </Button>
-            <Button type='submit' disabled={loading}>
+            <Button type='submit' size='sm' disabled={loading}>
               <Save className='w-4 h-4 mr-2' />
               保存设置
             </Button>

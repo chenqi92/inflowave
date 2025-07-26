@@ -2,13 +2,15 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 /* Local Fonts - CI环境动态下载，支持离线使用 */
-/* @import './fonts-local.css'; */
+@import './fonts-available.css';
 /* Modal 优化样式 */
 @import './modal-optimization.css';
 /* macOS 优化样式 */
 @import './macos-optimizations.css';
 /* Monaco编辑器主题样式 */
 @import './monaco-theme.css';
+/* 字体偏好设置样式 */
+@import './font-preferences.css';
 
 /* 查询页面优化样式 */
 @layer components {

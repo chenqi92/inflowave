@@ -315,12 +315,13 @@ const ControllerSettings: React.FC = () => {
 
       {/* 操作按钮 - 固定在底部 */}
       <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-        <Button type='button' variant='outline' onClick={resetSettings}>
+        <Button type='button' variant='outline' size='sm' onClick={resetSettings}>
           <RefreshCw className='w-4 h-4 mr-2' />
           重置为默认
         </Button>
 
         <Button
+          size='sm'
           onClick={form.handleSubmit(saveSettings)}
           disabled={loading}
         >
