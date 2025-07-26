@@ -1,151 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product
-    Id="*"
-    Name="InfloWave - 现代化时序数据库管理工具"
-    Language="2052"
-    Version="{{version}}"
-    Manufacturer="{{manufacturer}}"
-    UpgradeCode="{{upgrade_code}}">
-    
-    <Package
-      Id="*"
-      Keywords="安装程序"
-      Description="InfloWave 时序数据库管理工具安装程序"
-      Comments="InfloWave 是一个现代化的时序数据库管理工具，支持 InfluxDB、IoTDB 等多种数据库"
-      Manufacturer="{{manufacturer}}"
-      InstallerVersion="300"
-      Languages="2052"
-      Compressed="yes"
-      SummaryCodepage="936"
-      InstallScope="perMachine" />
+  <Product Id="*" Name="{{product_name}}" Language="2052" Version="{{version}}" Manufacturer="{{manufacturer}}" UpgradeCode="{{upgrade_code}}">
+    <Package InstallerVersion="200" Compressed="yes" />
+    <Media Id="1" Cabinet="{{product_name}}.cab" EmbedCab="yes" />
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes" />
 
-    <Media Id="1" Cabinet="inflowav.cab" EmbedCab="yes" DiskPrompt="安装光盘 #1" />
-    <Property Id="DiskPrompt" Value="InfloWave 安装 [1]" />
-
-    <!-- 升级逻辑 -->
-    <MajorUpgrade
-      Schedule="afterInstallInitialize"
-      DowngradeErrorMessage="已安装了更新版本的 [ProductName]。安装程序将退出。"
-      AllowSameVersionUpgrades="yes" />
-
-    <!-- 目录结构 -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="{{program_files_dir}}" Name="{{program_files_dir}}">
-        <Directory Id="APPLICATIONFOLDER" Name="InfloWave">
+      <Directory Id="{{program_files_dir}}">
+        <Directory Id="APPLICATIONFOLDER" Name="{{product_name}}">
           {{#each binaries}}
           <Component Id="{{guid}}" Guid="{{guid}}">
-            <File
-              Id="{{id}}"
-              Source="{{source}}"
-              KeyPath="yes"
-              Checksum="yes" />
+            <File Id="{{id}}" Source="{{source}}" KeyPath="yes" />
           </Component>
           {{/each}}
-          
-          <!-- 创建配置目录 -->
-          <Directory Id="ConfigFolder" Name="config">
-            <Component Id="ConfigFolderComponent" Guid="*">
-              <CreateFolder />
-              <RemoveFolder Id="RemoveConfigFolder" On="uninstall" />
-              <RegistryValue Root="HKCU" Key="Software\InfloWave" Name="ConfigPath" Type="string" Value="[ConfigFolder]" KeyPath="yes" />
-            </Component>
-          </Directory>
         </Directory>
       </Directory>
-      
-      <!-- 程序菜单 -->
-      <Directory Id="ProgramMenuFolder" Name="程序">
-        <Directory Id="ApplicationProgramsFolder" Name="InfloWave" />
-      </Directory>
-      
-      <!-- 桌面快捷方式 -->
-      <Directory Id="DesktopFolder" Name="桌面" />
     </Directory>
 
-    <!-- 快捷方式组件 -->
-    <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="*">
-        <Shortcut Id="ApplicationStartMenuShortcut"
-                  Name="InfloWave - 时序数据库管理工具"
-                  Description="现代化的时序数据库管理工具，支持 InfluxDB、IoTDB 等多种数据库"
-                  Target="[#{{app_exe}}]"
-                  WorkingDirectory="APPLICATIONFOLDER"
-                  Icon="{{app_icon}}" />
-        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\InfloWave" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </DirectoryRef>
-
-    <!-- 桌面快捷方式（可选） -->
-    <DirectoryRef Id="DesktopFolder">
-      <Component Id="DesktopShortcut" Guid="*">
-        <Shortcut Id="ApplicationDesktopShortcut"
-                  Name="InfloWave"
-                  Description="时序数据库管理工具"
-                  Target="[#{{app_exe}}]"
-                  WorkingDirectory="APPLICATIONFOLDER"
-                  Icon="{{app_icon}}" />
-        <RegistryValue Root="HKCU" Key="Software\InfloWave" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </DirectoryRef>
-
-    <!-- 功能定义 -->
-    <Feature Id="MainApplication" Title="主程序" Description="InfloWave 主程序文件" Level="1" ConfigurableDirectory="APPLICATIONFOLDER">
+    <Feature Id="MainApplication" Title="Main Application" Level="1">
       {{#each binaries}}
       <ComponentRef Id="{{guid}}" />
       {{/each}}
-      <ComponentRef Id="ConfigFolderComponent" />
-      <ComponentRef Id="ApplicationShortcut" />
-    </Feature>
-    
-    <Feature Id="DesktopShortcutFeature" Title="桌面快捷方式" Description="在桌面创建 InfloWave 快捷方式" Level="1">
-      <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <!-- 应用程序属性 -->
-    <SetProperty Id="ARPINSTALLLOCATION" Value="[APPLICATIONFOLDER]" After="CostFinalize" />
-    <Property Id="ARPPRODUCTICON" Value="{{app_icon}}" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/chenqi92/inflowave" />
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/chenqi92/inflowave" />
-    <Property Id="ARPCOMMENTS" Value="现代化的时序数据库管理工具，支持 InfluxDB、IoTDB 等多种数据库类型" />
-    <Property Id="ARPCONTACT" Value="Kkape Team" />
-    
-    <!-- 自定义属性 -->
-    <Property Id="LAUNCH_APP_ON_EXIT" Value="1" />
-    
-    <!-- 条件属性 -->
-    <Condition Message="此应用程序需要 Windows 10 或更高版本。">
-      <![CDATA[Installed OR (VersionNT >= 1000)]]>
-    </Condition>
-
-    <!-- 用户界面 -->
     <UI>
-      <UIRef Id="WixUI_FeatureTree" />
-      <UIRef Id="WixUI_ErrorProgressText" />
-      
-      <!-- 自定义对话框文本 -->
-      <Publish Dialog="ExitDialog" 
-               Control="Finish" 
-               Event="DoAction" 
-               Value="LaunchApplication">LAUNCH_APP_ON_EXIT = 1 and NOT Installed</Publish>
+      <UIRef Id="WixUI_Minimal" />
     </UI>
-    
-    <!-- 启动应用程序的自定义动作 -->
-    <Property Id="WixShellExecTarget" Value="[#{{app_exe}}]" />
-    <CustomAction Id="LaunchApplication" 
-                  BinaryKey="WixCA" 
-                  DllEntry="WixShellExec" 
-                  Impersonate="yes" />
-
-    <!-- 安装目录属性 -->
-    <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONFOLDER" />
-    
-    <!-- 许可协议（如果需要） -->
-    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
-    
-    <!-- 安装图标 -->
-    <Icon Id="{{app_icon}}" SourceFile="{{app_icon}}" />
-
   </Product>
 </Wix>

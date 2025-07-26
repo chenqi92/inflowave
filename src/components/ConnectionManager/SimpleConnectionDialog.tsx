@@ -31,6 +31,7 @@ import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/conf
 import { generateUniqueId } from '@/utils/idGenerator';
 import { DatabaseVersionDetectionService, type VersionDetectionResult, type DatabaseVersionInfo } from '@/services/databaseVersionDetection';
 import { showMessage } from '@/utils/message';
+import { VersionDetectionDialog } from './VersionDetectionDialog';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -100,10 +101,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 版本检测相关状态
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [detectionResult, setDetectionResult] = useState<VersionDetectionResult | null>(null);
-  const [showManualSelection, setShowManualSelection] = useState(false);
-  const [autoDetectionEnabled, setAutoDetectionEnabled] = useState(true);
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [versionDetectionResult, setVersionDetectionResult] = useState<VersionDetectionResult | null>(null);
+  const [isDetectingVersion, setIsDetectingVersion] = useState(false);
 
   const [formData, setFormData] = useState<FormData>(() => {
     const defaults = createDefaultConnectionConfig();
@@ -235,86 +235,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
-
-    // 如果修改了主机或端口，且启用了自动检测，则触发检测
-    if ((field === 'host' || field === 'port') && autoDetectionEnabled && value) {
-      const host = field === 'host' ? value : formData.host;
-      const port = field === 'port' ? value : formData.port;
-
-      if (host && port) {
-        // 延迟检测，避免频繁触发
-        setTimeout(() => {
-          handleAutoDetection(host, port);
-        }, 1000);
-      }
-    }
   };
 
-  // 自动检测数据库版本
-  const handleAutoDetection = async (host?: string, port?: number) => {
-    if (!autoDetectionEnabled) return;
 
-    const targetHost = host || formData.host;
-    const targetPort = port || formData.port;
-
-    if (!targetHost || !targetPort) return;
-
-    setIsDetecting(true);
-    setDetectionResult(null);
-
-    try {
-      const result = await DatabaseVersionDetectionService.detectDatabaseVersion({
-        host: targetHost,
-        port: targetPort,
-        username: formData.username || undefined,
-        password: formData.password || undefined,
-        token: formData.apiToken || undefined,
-      });
-
-      setDetectionResult(result);
-
-      if (result.success && result.version_info) {
-        // 自动填充表单
-        await applyDetectionResult(result.version_info);
-        showMessage.success(`检测到 ${DatabaseVersionDetectionService.getDatabaseTypeDisplayName(result.version_info.detected_type)} v${result.version_info.version}`);
-      } else {
-        showMessage.warning('无法自动检测数据库版本，请手动选择');
-        setShowManualSelection(true);
-      }
-    } catch (error) {
-      console.error('版本检测失败:', error);
-      setShowManualSelection(true);
-    } finally {
-      setIsDetecting(false);
-    }
-  };
-
-  // 应用检测结果到表单
-  const applyDetectionResult = async (versionInfo: DatabaseVersionInfo) => {
-    try {
-      const suggestions = await DatabaseVersionDetectionService.generateConnectionConfigSuggestions({
-        success: true,
-        version_info: versionInfo,
-        error_message: undefined,
-        detection_time_ms: 0,
-        tried_methods: [],
-      });
-
-      const autoFillData = DatabaseVersionDetectionService.autoFillConnectionForm(versionInfo, suggestions);
-
-      setFormData(prev => ({
-        ...prev,
-        ...autoFillData,
-        // 保留用户已输入的值
-        name: prev.name || `${versionInfo.database_type} 连接`,
-        host: prev.host,
-        port: prev.port,
-      }));
-
-    } catch (error) {
-      console.error('应用检测结果失败:', error);
-    }
-  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -396,69 +319,31 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     setTestResult(null);
 
     try {
-      const tempConfig: ConnectionConfig = {
-        id: generateUniqueId('temp-test'),
-        name: formData.name,
-        description: formData.description,
-        dbType: formData.dbType,
-        version: formData.version,
-        host: formData.host,
-        port: formData.port,
-        username: formData.username,
-        password: formData.password,
-        database: formData.database,
-        ssl: formData.ssl,
-        timeout: formData.timeout,
-        connectionTimeout: formData.connectionTimeout,
-        queryTimeout: formData.queryTimeout,
-        defaultQueryLanguage: formData.defaultQueryLanguage,
-        retentionPolicy: formData.retentionPolicy || undefined,
-        v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
-          apiToken: formData.apiToken,
-          organization: formData.organization,
-          bucket: formData.bucket || undefined,
-          v1CompatibilityApi: formData.v1CompatibilityApi,
-        } : undefined,
-        driverConfig: formData.dbType === 'iotdb' ? {
-          iotdb: {
-            sessionPoolSize: formData.sessionPoolSize,
-            enableCompression: formData.enableCompression,
-            timeZone: formData.timeZone,
-            fetchSize: formData.fetchSize,
-            enableRedirection: formData.enableRedirection,
-            maxRetryCount: formData.maxRetryCount,
-            retryIntervalMs: formData.retryIntervalMs,
-          }
-        } : undefined,
-        proxyConfig: formData.proxyEnabled ? {
-          enabled: formData.proxyEnabled,
-          host: formData.proxyHost,
-          port: formData.proxyPort,
-          username: formData.proxyUsername || undefined,
-          password: formData.proxyPassword || undefined,
-          proxyType: formData.proxyType,
-        } : undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      // 同时进行连接测试和版本检测
+      const [connectionResult, versionResult] = await Promise.allSettled([
+        testConnectionOnly(),
+        detectVersionForTest()
+      ]);
 
-      // 使用专门的临时连接创建函数（不添加到前端状态）
-      const tempId = await createTempConnectionForTest(tempConfig);
-
-      try {
-        // 测试连接
-        const result = await testConnection(tempId);
-        setTestResult(result);
-
-        if (result.success) {
+      // 处理连接测试结果
+      if (connectionResult.status === 'fulfilled') {
+        setTestResult(connectionResult.value);
+        if (connectionResult.value.success) {
           setCurrentStep(1);
         }
-      } finally {
-        // 删除临时连接
-        await deleteTempConnection(tempId);
+      } else {
+        setTestResult({
+          success: false,
+          error: connectionResult.reason?.message || '连接测试失败',
+          latency: 0,
+        });
       }
+
+      // 处理版本检测结果
+      if (versionResult.status === 'fulfilled' && versionResult.value.success) {
+        await handleVersionChangeDetection(versionResult.value);
+      }
+
     } catch (error) {
       console.error('测试连接失败:', error);
       const errorMessage = String(error).replace('Error: ', '');
@@ -472,9 +357,175 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
   };
 
+  // 仅测试连接（不检测版本）
+  const testConnectionOnly = async () => {
+    const tempConfig: ConnectionConfig = {
+      id: generateUniqueId('temp-test'),
+      name: formData.name,
+      description: formData.description,
+      dbType: formData.dbType,
+      version: formData.version,
+      host: formData.host,
+      port: formData.port,
+      username: formData.username,
+      password: formData.password,
+      database: formData.database,
+      ssl: formData.ssl,
+      timeout: formData.timeout,
+      connectionTimeout: formData.connectionTimeout,
+      queryTimeout: formData.queryTimeout,
+      defaultQueryLanguage: formData.defaultQueryLanguage,
+      retentionPolicy: formData.retentionPolicy || undefined,
+      v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
+        apiToken: formData.apiToken,
+        organization: formData.organization,
+        bucket: formData.bucket || undefined,
+        v1CompatibilityApi: formData.v1CompatibilityApi,
+      } : undefined,
+      driverConfig: formData.dbType === 'iotdb' ? {
+        iotdb: {
+          sessionPoolSize: formData.sessionPoolSize,
+          enableCompression: formData.enableCompression,
+          timeZone: formData.timeZone,
+          fetchSize: formData.fetchSize,
+          enableRedirection: formData.enableRedirection,
+          maxRetryCount: formData.maxRetryCount,
+          retryIntervalMs: formData.retryIntervalMs,
+        }
+      } : undefined,
+      proxyConfig: formData.proxyEnabled ? {
+        enabled: formData.proxyEnabled,
+        host: formData.proxyHost,
+        port: formData.proxyPort,
+        username: formData.proxyUsername || undefined,
+        password: formData.proxyPassword || undefined,
+        proxyType: formData.proxyType,
+      } : undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // 使用专门的临时连接创建函数（不添加到前端状态）
+    const tempId = await createTempConnectionForTest(tempConfig);
+
+    try {
+      // 测试连接
+      const result = await testConnection(tempId);
+      return result;
+    } finally {
+      // 删除临时连接
+      await deleteTempConnection(tempId);
+    }
+  };
+
+  // 为测试检测版本
+  const detectVersionForTest = async () => {
+    return await DatabaseVersionDetectionService.detectDatabaseVersion({
+      host: formData.host,
+      port: formData.port,
+      username: formData.username || undefined,
+      password: formData.password || undefined,
+      token: formData.apiToken || undefined,
+    });
+  };
+
+  // 处理版本变化检测
+  const handleVersionChangeDetection = async (newVersionResult: VersionDetectionResult) => {
+    if (!newVersionResult.success || !newVersionResult.version_info) return;
+
+    const newVersionInfo = newVersionResult.version_info;
+
+    // 如果是编辑现有连接，检查版本是否发生变化
+    if (isEditing && connection?.versionInfo) {
+      const oldVersion = connection.versionInfo.version;
+      const newVersion = newVersionInfo.version;
+      const oldType = connection.versionInfo.detected_type;
+      const newType = newVersionInfo.detected_type;
+
+      if (oldVersion !== newVersion || oldType !== newType) {
+        // 版本发生变化，显示提醒
+        showMessage.warning(
+          `检测到数据库版本变化：${oldType} v${oldVersion} → ${newType} v${newVersion}`,
+          5000
+        );
+
+        // 自动更新连接配置中的版本信息
+        if (connection?.id) {
+          try {
+            const updatedConfig: ConnectionConfig = {
+              ...connection,
+              detectedVersion: newVersion,
+              detectedType: newType,
+              versionInfo: newVersionInfo,
+              lastVersionCheck: new Date().toISOString(),
+              versionCheckResult: newVersionResult,
+              updated_at: new Date().toISOString(),
+              updatedAt: new Date(),
+            };
+
+            await editConnection(updatedConfig);
+            showMessage.success('连接版本信息已自动更新');
+          } catch (error) {
+            console.error('更新版本信息失败:', error);
+            showMessage.error('更新版本信息失败');
+          }
+        }
+      }
+    }
+  };
+
+  // 版本检测和保存逻辑
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    // 如果是编辑现有连接，直接保存
+    if (isEditing) {
+      await saveConnection();
+      return;
+    }
+
+    // 新建连接时，先进行版本检测
+    await detectVersionAndSave();
+  };
+
+  // 检测版本并保存
+  const detectVersionAndSave = async () => {
+    setIsDetectingVersion(true);
+    setShowVersionDialog(true);
+
+    try {
+      const result = await DatabaseVersionDetectionService.detectDatabaseVersion({
+        host: formData.host,
+        port: formData.port,
+        username: formData.username || undefined,
+        password: formData.password || undefined,
+        token: formData.apiToken || undefined,
+      });
+
+      setVersionDetectionResult(result);
+    } catch (error) {
+      console.error('版本检测失败:', error);
+      setVersionDetectionResult({
+        success: false,
+        error_message: error instanceof Error ? error.message : '版本检测失败',
+        detection_time_ms: 0,
+        tried_methods: [],
+      });
+    } finally {
+      setIsDetectingVersion(false);
+    }
+  };
+
+  // 确认版本信息并保存连接
+  const handleVersionConfirm = async (versionInfo: DatabaseVersionInfo) => {
+    setShowVersionDialog(false);
+    await saveConnection(versionInfo);
+  };
+
+  // 保存连接
+  const saveConnection = async (versionInfo?: DatabaseVersionInfo) => {
     setIsSubmitting(true);
 
     try {
@@ -520,6 +571,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           password: formData.proxyPassword || undefined,
           proxyType: formData.proxyType,
         } : undefined,
+
+        // 版本检测相关字段
+        detectedVersion: versionInfo?.version,
+        detectedType: versionInfo?.detected_type,
+        versionInfo: versionInfo,
+        lastVersionCheck: versionInfo ? new Date().toISOString() : undefined,
+        versionCheckResult: versionDetectionResult || undefined,
+
         created_at: connection?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         createdAt: connection?.createdAt || new Date(),
@@ -596,168 +655,38 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           </div>
         </div>
 
-        {/* 自动检测控制 */}
-        <div className='flex items-center justify-between p-4 border rounded-lg bg-muted/30'>
-          <div className='flex items-center gap-3'>
-            <Switch
-              id='auto-detection-switch'
-              checked={autoDetectionEnabled}
-              onCheckedChange={setAutoDetectionEnabled}
-            />
-            <div>
-              <Label htmlFor='auto-detection-switch' className='text-sm font-medium cursor-pointer'>
-                自动检测数据库版本
-              </Label>
-              <p className='text-xs text-muted-foreground mt-1'>
-                输入主机和端口后自动检测数据库类型和版本
-              </p>
-            </div>
-          </div>
 
-          {formData.host && formData.port && (
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={() => handleAutoDetection()}
-              disabled={isDetecting}
-            >
-              {isDetecting ? (
-                <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                  检测中...
-                </>
-              ) : (
-                '立即检测'
-              )}
-            </Button>
-          )}
+
+        <div className='space-y-1'>
+          <Label className='block text-sm font-medium text-foreground'>
+            数据库类型 <span className='text-destructive'>*</span>
+          </Label>
+          <Select
+            value={formData.dbType}
+            onValueChange={value => {
+              handleInputChange('dbType', value);
+              // 根据数据库类型设置默认值
+              if (value === 'influxdb') {
+                handleInputChange('port', 8086);
+              } else if (value === 'iotdb') {
+                handleInputChange('port', 6667);
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder='选择数据库类型' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='influxdb'>InfluxDB</SelectItem>
+              <SelectItem value='iotdb'>Apache IoTDB</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className='text-xs text-muted-foreground'>
+            版本信息将在保存连接时自动检测
+          </p>
         </div>
 
-        {/* 检测结果显示 */}
-        {detectionResult && (
-          <div className={`p-4 border rounded-lg ${
-            detectionResult.success ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
-          }`}>
-            {detectionResult.success && detectionResult.version_info ? (
-              <div className='flex items-center gap-2'>
-                <CheckCircle className='w-5 h-5 text-green-600' />
-                <div>
-                  <p className='text-sm font-medium text-green-800'>
-                    {DatabaseVersionDetectionService.generateDetectionSummary(detectionResult)}
-                  </p>
-                  <p className='text-xs text-green-600 mt-1'>
-                    已自动配置连接参数
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className='flex items-center gap-2'>
-                <XCircle className='w-5 h-5 text-yellow-600' />
-                <div>
-                  <p className='text-sm font-medium text-yellow-800'>
-                    无法自动检测数据库版本
-                  </p>
-                  <p className='text-xs text-yellow-600 mt-1'>
-                    {detectionResult.error_message || '请手动选择数据库类型和版本'}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              数据库类型 {!autoDetectionEnabled && <span className='text-destructive'>*</span>}
-            </Label>
-            <Select
-              value={formData.dbType}
-              onValueChange={value => {
-                handleInputChange('dbType', value);
-                // 根据数据库类型设置默认值
-                if (value === 'influxdb') {
-                  handleInputChange('version', '1.x');
-                  handleInputChange('port', 8086);
-                  handleInputChange('defaultQueryLanguage', 'InfluxQL');
-                } else if (value === 'iotdb') {
-                  handleInputChange('version', '1.2.x');
-                  handleInputChange('port', 6667);
-                  handleInputChange('defaultQueryLanguage', 'SQL');
-                }
-              }}
-              disabled={!!(autoDetectionEnabled && detectionResult?.success)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  autoDetectionEnabled ? '将自动检测' : '选择数据库类型'
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='influxdb'>InfluxDB</SelectItem>
-                <SelectItem value='iotdb'>Apache IoTDB</SelectItem>
-              </SelectContent>
-            </Select>
-            {autoDetectionEnabled && detectionResult?.success && (
-              <p className='text-xs text-muted-foreground'>
-                已自动检测为 {DatabaseVersionDetectionService.getDatabaseTypeDisplayName(detectionResult.version_info!.detected_type)}
-              </p>
-            )}
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              版本 {!autoDetectionEnabled && <span className='text-destructive'>*</span>}
-            </Label>
-            <Select
-              value={formData.version}
-              onValueChange={value => {
-                handleInputChange('version', value);
-                // 根据数据库类型和版本设置默认查询语言
-                if (formData.dbType === 'influxdb') {
-                  if (value === '1.x' || value === '3.x') {
-                    handleInputChange('defaultQueryLanguage', 'InfluxQL');
-                  } else if (value === '2.x') {
-                    handleInputChange('defaultQueryLanguage', 'Flux');
-                  }
-                } else if (formData.dbType === 'iotdb') {
-                  handleInputChange('defaultQueryLanguage', 'SQL');
-                }
-              }}
-              disabled={!!(autoDetectionEnabled && detectionResult?.success)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  autoDetectionEnabled ? '将自动检测' : '选择版本'
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {formData.dbType === 'influxdb' && (
-                  <>
-                    <SelectItem value='1.x'>1.x</SelectItem>
-                    <SelectItem value='2.x'>2.x</SelectItem>
-                    <SelectItem value='3.x'>3.x</SelectItem>
-                  </>
-                )}
-                {formData.dbType === 'iotdb' && (
-                  <>
-                    <SelectItem value='0.13.x'>0.13.x</SelectItem>
-                    <SelectItem value='0.14.x'>0.14.x</SelectItem>
-                    <SelectItem value='1.0.x'>1.0.x</SelectItem>
-                    <SelectItem value='1.1.x'>1.1.x</SelectItem>
-                    <SelectItem value='1.2.x'>1.2.x (推荐)</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-            {autoDetectionEnabled && detectionResult?.success && (
-              <p className='text-xs text-muted-foreground'>
-                已自动检测为 v{detectionResult.version_info!.version}
-              </p>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Tab 配置区域 */}
@@ -1397,6 +1326,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   ];
 
   return (
+    <>
     <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
       <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader className='pb-4'>
@@ -1483,5 +1413,16 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* 版本检测确认对话框 */}
+    <VersionDetectionDialog
+      visible={showVersionDialog}
+      detectionResult={versionDetectionResult}
+      connectionName={formData.name}
+      onConfirm={handleVersionConfirm}
+      onCancel={() => setShowVersionDialog(false)}
+      loading={isDetectingVersion}
+    />
+  </>
   );
 };

@@ -222,6 +222,8 @@ export class DatabaseVersionDetectionService {
     return authFields[detectedType] || [];
   }
 
+
+
   /**
    * 获取数据库类型的默认端口
    */

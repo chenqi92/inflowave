@@ -70,6 +70,26 @@ export interface DatabaseDriverConfig {
   elasticsearch?: Record<string, any>;
 }
 
+// 版本检测结果类型
+export interface DatabaseVersionInfo {
+  database_type: string;
+  version: string;
+  major_version: number;
+  minor_version: number;
+  patch_version: number;
+  detected_type: string; // "influxdb1", "influxdb2", "influxdb3", "iotdb"
+  api_endpoints: string[];
+  supported_features: string[];
+}
+
+export interface VersionDetectionResult {
+  success: boolean;
+  version_info?: DatabaseVersionInfo;
+  error_message?: string;
+  detection_time_ms: number;
+  tried_methods: string[];
+}
+
 // 连接相关类型 - 重构为支持多数据库
 export interface ConnectionConfig extends Omit<BaseDatabaseConnectionConfig, 'driverConfig'> {
   id?: string;
@@ -93,6 +113,14 @@ export interface ConnectionConfig extends Omit<BaseDatabaseConnectionConfig, 'dr
   retentionPolicy?: string; // InfluxDB 保留策略
   v2Config?: InfluxDBV2Config; // InfluxDB 2.x/3.x 配置
   defaultQueryLanguage?: string; // 默认查询语言
+
+  // 版本检测相关字段
+  detectedVersion?: string; // 检测到的具体版本号
+  detectedType?: string; // 检测到的数据库类型 (influxdb1/influxdb2/iotdb)
+  versionInfo?: DatabaseVersionInfo; // 完整的版本检测信息
+  lastVersionCheck?: string; // 最后一次版本检测时间
+  versionCheckResult?: VersionDetectionResult; // 最后一次检测结果
+
   // 时间戳字段
   created_at?: string;
   updated_at?: string;
