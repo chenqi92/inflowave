@@ -1,4 +1,5 @@
 use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType};
+use crate::database::iotdb_client::IoTDBHttpClient;
 use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
@@ -769,7 +770,7 @@ impl InfluxClient {
 #[derive(Debug, Clone)]
 pub struct IoTDBClient {
     config: ConnectionConfig,
-    // TODO: 添加实际的 IoTDB 客户端库
+    http_client: IoTDBHttpClient,
 }
 
 impl IoTDBClient {
@@ -777,84 +778,40 @@ impl IoTDBClient {
     pub fn new(config: ConnectionConfig) -> Result<Self> {
         info!("创建 IoTDB 客户端: {}:{}", config.host, config.port);
 
-        // TODO: 实现 IoTDB 客户端初始化
-        // 这里需要集成实际的 IoTDB Rust 客户端库
+        let http_client = IoTDBHttpClient::new(config.clone());
 
-        Ok(Self { config })
+        Ok(Self {
+            config,
+            http_client,
+        })
     }
 }
 
 impl IoTDBClient {
     /// 测试连接
     pub async fn test_connection(&self) -> Result<u64> {
-        let start = Instant::now();
-
-        debug!("测试 IoTDB 连接: {}:{}", self.config.host, self.config.port);
-
-        // TODO: 实现实际的 IoTDB 连接测试
-        // 目前使用模拟实现
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-
-        let latency = start.elapsed().as_millis() as u64;
-        info!("IoTDB 连接测试成功，延迟: {}ms", latency);
-        Ok(latency)
+        self.http_client.test_connection().await
     }
 
     /// 执行查询
-    pub async fn execute_query(&self, query: &str, _database: Option<&str>) -> Result<QueryResult> {
-        debug!("执行 IoTDB 查询: {}", query);
-
-        // TODO: 实现实际的 IoTDB 查询执行
-        // 目前返回模拟数据
-        let result = QueryResult {
-            results: vec![],
-            execution_time: Some(50),
-            row_count: Some(0),
-            error: None,
-            data: None,
-            columns: None,
-        };
-
-        Ok(result)
+    pub async fn execute_query(&self, query: &str, database: Option<&str>) -> Result<QueryResult> {
+        self.http_client.execute_query(query, database).await
     }
 
     /// 获取数据库列表
     pub async fn get_databases(&self) -> Result<Vec<String>> {
-        debug!("获取 IoTDB 存储组列表");
-
-        // TODO: 实现实际的存储组查询
-        // IoTDB 使用存储组概念，类似于数据库
-        Ok(vec![
-            "root.sg1".to_string(),
-            "root.sg2".to_string(),
-            "root.vehicle".to_string(),
-        ])
+        self.http_client.get_storage_groups().await
     }
 
     /// 获取表/设备列表
     pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
-        debug!("获取 IoTDB 设备列表: {}", database);
-
-        // TODO: 实现实际的设备查询
-        // IoTDB 中的设备类似于表
-        Ok(vec![
-            format!("{}.d1", database),
-            format!("{}.d2", database),
-        ])
+        self.http_client.get_devices(database).await
     }
 
     /// 获取字段列表
     pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
-        debug!("获取 IoTDB 时间序列列表: {}.{}", database, table);
-
-        // TODO: 实现实际的时间序列查询
-        // IoTDB 中的时间序列类似于字段
-        Ok(vec![
-            "s1".to_string(),
-            "s2".to_string(),
-            "temperature".to_string(),
-            "humidity".to_string(),
-        ])
+        let device_path = format!("{}.{}", database, table);
+        self.http_client.get_timeseries(&device_path).await
     }
 
     /// 获取连接信息

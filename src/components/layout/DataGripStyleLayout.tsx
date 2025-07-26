@@ -21,6 +21,7 @@ import EnhancedResultPanel from './EnhancedResultPanel';
 import RightFunctionBar, {type FunctionType} from './RightFunctionBar';
 import RightFunctionPanel from './RightFunctionPanel';
 import MultiDatabaseWorkbenchPage from '@/pages/MultiDatabaseWorkbench';
+import IoTDBTestPage from '@/pages/IoTDBTest';
 
 import {dataExplorerRefresh} from '@/utils/refreshEvents';
 import {useUserPreferences} from '@/hooks/useUserPreferences';
@@ -64,6 +65,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         if (pathname === '/extensions') return 'extensions';
         if (pathname === '/dev-tools') return 'dev-tools';
         if (pathname === '/multi-database') return 'multi-database';
+        if (pathname === '/iotdb-test') return 'iotdb-test';
 
         // 根据路径返回对应视图，如果没有匹配则保持当前视图不变
         if (pathname === '/' || pathname === '/dashboard') return 'datasource';
@@ -545,6 +547,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             return (
                 <div className='h-full'>
                     <MultiDatabaseWorkbenchPage />
+                </div>
+            );
+        }
+
+        // 如果是 IoTDB 测试视图，显示测试页面
+        if (currentView === 'iotdb-test') {
+            return (
+                <div className='h-full'>
+                    <IoTDBTestPage />
                 </div>
             );
         }

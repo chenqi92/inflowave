@@ -33,6 +33,9 @@ sysinfo = "0.29"
 lazy_static = "1.4"
 rust_xlsxwriter = "0.64"
 async-trait = "0.1"
+# IoTDB 相关依赖
+url = "2.4"
+bytes = "1.5"
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]

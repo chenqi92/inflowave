@@ -182,6 +182,9 @@ const MainLayout: React.FC = () => {
 
         {/* 多数据库工作台页面 */}
         <Route path='/multi-database' element={<DataGripStyleLayout />} />
+
+        {/* IoTDB 测试页面 */}
+        <Route path='/iotdb-test' element={<DataGripStyleLayout />} />
       </Routes>
 
       {/* 用户指引弹框 */}

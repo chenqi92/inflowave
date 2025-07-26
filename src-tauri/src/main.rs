@@ -30,6 +30,7 @@ use commands::optimization_history::*;
 use commands::port_manager::*;
 use commands::embedded_server::*;
 use commands::workspace::*;
+use commands::iotdb::*;
 
 // Updater commands
 use updater::*;
@@ -632,6 +633,18 @@ async fn main() {
             refresh_database_structure,
             create_measurement_template,
             show_measurements,
+
+            // IoTDB specific operations
+            get_iotdb_storage_groups,
+            get_iotdb_devices,
+            get_iotdb_timeseries,
+            execute_iotdb_query,
+            create_iotdb_storage_group,
+            delete_iotdb_storage_group,
+            create_iotdb_timeseries,
+            delete_iotdb_timeseries,
+            insert_iotdb_data,
+            get_iotdb_server_info,
 
             // Query operations
             execute_query,
