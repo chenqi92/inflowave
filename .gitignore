@@ -119,3 +119,4 @@ logs/
 *.sqlite
 *.db
 pnpm-lock.yaml
+/test/connecting.yml

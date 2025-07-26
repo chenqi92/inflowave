@@ -152,46 +152,65 @@ jobs:
       - name: Install dependencies (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
+          # 刷新包缓存和清理
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
-            pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
-            libxdo-dev libxdo3 libssl-dev
           
-          # Install ARM64 cross-compilation toolchain and libraries for aarch64 builds
+          # 安装基础编译依赖
+          sudo apt-get install -y build-essential curl wget gnupg software-properties-common
+          
+          # 安装 glib-sys 和 GTK 相关依赖
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
+            pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
+            libxdo-dev libxdo3 libssl-dev \
+            libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev
+          
+          # ARM64 交叉编译设置
           if [[ "${{ matrix.rust_target }}" == "aarch64-unknown-linux-gnu" ]]; then
-            # Add ARM64 architecture
+            echo "🔧 设置 ARM64 交叉编译环境..."
+            
+            # 添加 ARM64 架构
             sudo dpkg --add-architecture arm64
             
-            # Update package lists and configure ARM64 repositories
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-            sudo apt-get update
+            # 备份原始 sources.list
+            sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
             
-            # Install ARM64 cross-compilation toolchain
+            # 配置多架构源
+            cat << 'EOF' | sudo tee /etc/apt/sources.list
+            # AMD64 (默认架构)
+            deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
+            deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
+            deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+            
+            # ARM64 架构
+            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse
+            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse  
+            deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse
+            EOF
+            
+            # 更新包列表
+            sudo apt-get update || true
+            
+            # 安装交叉编译工具链
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
             
-            # Install ARM64 development libraries
+            # 尝试安装 ARM64 开发库（允许失败）
             sudo apt-get install -y \
               libwebkit2gtk-4.1-dev:arm64 \
               libgtk-3-dev:arm64 \
-              libayatana-appindicator3-dev:arm64 \
-              librsvg2-dev:arm64 \
               libglib2.0-dev:arm64 \
               libgdk-pixbuf2.0-dev:arm64 \
               libpango1.0-dev:arm64 \
               libatk1.0-dev:arm64 \
               libssl-dev:arm64 \
-              pkg-config:arm64 || true
-            
-            # Set up pkg-config for cross-compilation
-            export PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
-            export PKG_CONFIG_LIBDIR="/usr/lib/aarch64-linux-gnu/pkgconfig"
-            export PKG_CONFIG_SYSROOT_DIR="/"
+              libayatana-appindicator3-dev:arm64 \
+              librsvg2-dev:arm64 || {
+                echo "⚠️ 部分 ARM64 库安装失败，将使用系统库进行交叉编译"
+              }
           fi
         shell: bash
-
-
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -230,12 +249,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           ENABLE_EMBEDDED_SERVER: false
           DISABLE_CONSOLE_LOGS: true
-          # 强制设置语言环境为中文，避免生成 en-US 后缀
-          LANG: zh_CN.UTF-8
-          LC_ALL: zh_CN.UTF-8
+          # 设置语言环境（Windows MSI 需要英文环境）
+          LANG: ${{ matrix.platform == 'windows-latest' && 'en_US.UTF-8' || 'zh_CN.UTF-8' }}
+          LC_ALL: ${{ matrix.platform == 'windows-latest' && 'en_US.UTF-8' || 'zh_CN.UTF-8' }}
           # 跨编译环境变量
           PKG_CONFIG_ALLOW_CROSS: 1
-          PKG_CONFIG_PATH: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/share/pkgconfig' }}
+          PKG_CONFIG_PATH: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/share/pkgconfig' }}
           PKG_CONFIG_LIBDIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
           PKG_CONFIG_SYSROOT_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
           MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.13' || '' }}
@@ -248,6 +267,10 @@ jobs:
           OPENSSL_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
           OPENSSL_LIB_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
           OPENSSL_INCLUDE_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
+          # glib-sys 特定环境变量
+          GLIB_SYS_USE_PKG_CONFIG: 1
+          GOBJECT_SYS_USE_PKG_CONFIG: 1
+          GIO_SYS_USE_PKG_CONFIG: 1
           # AppImage 优化配置
           APPIMAGE_EXTRACT_AND_RUN: 1
         with:

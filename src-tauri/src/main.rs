@@ -31,6 +31,7 @@ use commands::port_manager::*;
 use commands::embedded_server::*;
 use commands::workspace::*;
 use commands::iotdb::*;
+use commands::database_detection::*;
 
 // Updater commands
 use updater::*;
@@ -646,6 +647,13 @@ async fn main() {
             insert_iotdb_data,
             get_iotdb_server_info,
 
+            // Database version detection
+            detect_database_version,
+            quick_detect_database_type,
+            validate_detected_connection,
+            get_supported_database_types,
+            generate_connection_config_suggestions,
+
             // Query operations
             execute_query,
             execute_batch_queries,
@@ -922,6 +930,9 @@ async fn main() {
 
             // Store services in app state
             app.manage(connection_service);
+
+            // Initialize database version detector
+            app.manage(commands::database_detection::init_detector());
 
             // Initialize storage for query history and saved queries
             app.manage(commands::query_history::QueryHistoryStorage::new(Vec::new()));

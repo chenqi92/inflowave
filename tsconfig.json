@@ -43,7 +43,18 @@
     "sourceMap": true
   },
   "include": ["src/**/*", "src/**/*.ts", "src/**/*.tsx", "src/vite-env.d.ts"],
-  "exclude": ["node_modules", "dist", "src-tauri"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src-tauri",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**/*",
+    "tests/**/*",
+    "playwright.config.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"
