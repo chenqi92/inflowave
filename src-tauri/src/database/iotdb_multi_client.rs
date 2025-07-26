@@ -7,7 +7,7 @@
 
 use crate::models::{ConnectionConfig, QueryResult};
 use anyhow::{Context, Result};
-use log::{debug, info, warn, error};
+use log::{debug, info, warn};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -35,8 +35,9 @@ impl IoTDBMultiClient {
             protocol_client: None,
             preferred_protocol: None,
             fallback_protocols: vec![
-                ProtocolType::Thrift,  // IoTDB 标准协议，优先使用
-                ProtocolType::Http,    // REST API 备用协议
+                ProtocolType::IoTDBOfficial,  // IoTDB 官方客户端，最优选择
+                ProtocolType::Thrift,         // IoTDB 标准协议，次选
+                ProtocolType::Http,           // REST API 备用协议
                 // 注意：桌面程序不需要 WebSocket 协议
             ],
         }

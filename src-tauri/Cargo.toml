@@ -6,6 +6,7 @@ authors = ["Kkape Team"]
 license = "MIT"
 repository = "https://github.com/kkape/inflowave"
 edition = "2021"
+default-run = "InfloWave"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
