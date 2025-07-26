@@ -114,6 +114,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
     onViewChange?.('dev-tools');
   }, [onViewChange]);
 
+  const handleMultiDatabaseClick = useCallback(() => {
+    onViewChange?.('multi-database');
+  }, [onViewChange]);
+
   return (
     <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
       {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
@@ -140,7 +144,68 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
         <div className='w-px h-6 bg-border mx-3' />
 
-        {/* 注意：数据源、查询、可视化、监控按钮已移除，中间栏始终显示查询面板 */}
+        {/* 导航按钮区域 */}
+        <div className='flex items-center gap-1'>
+          {/* 数据源管理 */}
+          <Button
+            variant={currentView === 'datasource' ? 'default' : 'ghost'}
+            size='sm'
+            className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+            onClick={handleDatasourceClick}
+            title='数据源管理'
+          >
+            <Database className='w-4 h-4' />
+            <span className='text-xs'>数据源</span>
+          </Button>
+
+          {/* 查询编辑器 */}
+          <Button
+            variant={currentView === 'query' ? 'default' : 'ghost'}
+            size='sm'
+            className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+            onClick={handleQueryClick}
+            title='查询编辑器'
+          >
+            <Edit className='w-4 h-4' />
+            <span className='text-xs'>查询</span>
+          </Button>
+
+          {/* 多数据库工作台 */}
+          <Button
+            variant={currentView === 'multi-database' ? 'default' : 'ghost'}
+            size='sm'
+            className='h-10 w-16 p-1 flex flex-col items-center justify-center gap-1'
+            onClick={handleMultiDatabaseClick}
+            title='多数据库工作台'
+          >
+            <Zap className='w-4 h-4' />
+            <span className='text-xs'>工作台</span>
+          </Button>
+
+          {/* 可视化 */}
+          <Button
+            variant={currentView === 'visualization' ? 'default' : 'ghost'}
+            size='sm'
+            className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+            onClick={handleVisualizationClick}
+            title='数据可视化'
+          >
+            <BarChart className='w-4 h-4' />
+            <span className='text-xs'>可视化</span>
+          </Button>
+
+          {/* 性能监控 */}
+          <Button
+            variant={currentView === 'performance' ? 'default' : 'ghost'}
+            size='sm'
+            className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+            onClick={handlePerformanceClick}
+            title='性能监控'
+          >
+            <Wrench className='w-4 h-4' />
+            <span className='text-xs'>监控</span>
+          </Button>
+        </div>
       </div>
 
       {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}

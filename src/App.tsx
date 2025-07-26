@@ -179,6 +179,9 @@ const MainLayout: React.FC = () => {
 
         {/* 连接管理页面 */}
         <Route path='/connections' element={<DataGripStyleLayout />} />
+
+        {/* 多数据库工作台页面 */}
+        <Route path='/multi-database' element={<DataGripStyleLayout />} />
       </Routes>
 
       {/* 用户指引弹框 */}
