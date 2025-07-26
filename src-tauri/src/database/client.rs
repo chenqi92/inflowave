@@ -230,6 +230,49 @@ impl DatabaseClient {
             },
         }
     }
+
+    /// 检测数据库版本
+    pub async fn detect_version(&self) -> Result<String> {
+        match self {
+            DatabaseClient::InfluxDB(client) => {
+                // InfluxDB 版本检测逻辑
+                client.detect_version().await
+            },
+            DatabaseClient::IoTDB(client) => {
+                let mut client = client.lock().await;
+                client.detect_version().await
+            },
+        }
+    }
+
+    /// 获取数据源树节点
+    pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => {
+                // InfluxDB 树节点生成逻辑
+                client.get_tree_nodes().await
+            },
+            DatabaseClient::IoTDB(client) => {
+                let mut client = client.lock().await;
+                client.get_tree_nodes().await
+            },
+        }
+    }
+
+    /// 获取树节点的子节点（懒加载）
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+        match self {
+            DatabaseClient::InfluxDB(client) => {
+                // InfluxDB 子节点获取逻辑
+                client.get_tree_children(parent_node_id, node_type).await
+            },
+            DatabaseClient::IoTDB(client) => {
+                let _client = client.lock().await;
+                // IoTDB 子节点获取逻辑（暂时返回空）
+                Ok(Vec::new())
+            },
+        }
+    }
 }
 
 /// InfluxDB 客户端封装
@@ -873,6 +916,160 @@ impl InfluxClient {
     pub fn get_config(&self) -> &ConnectionConfig {
         &self.config
     }
+
+    /// 检测 InfluxDB 版本
+    pub async fn detect_version(&self) -> Result<String> {
+        // 尝试执行 SHOW DIAGNOSTICS（InfluxDB 1.8+）
+        match self.execute_query("SHOW DIAGNOSTICS").await {
+            Ok(_) => Ok("InfluxDB-1.8+".to_string()),
+            Err(_) => {
+                // 尝试执行 SHOW STATS（InfluxDB 1.7+）
+                match self.execute_query("SHOW STATS").await {
+                    Ok(_) => Ok("InfluxDB-1.7+".to_string()),
+                    Err(_) => {
+                        // 尝试基本查询来确认是 InfluxDB 1.x
+                        match self.execute_query("SHOW DATABASES").await {
+                            Ok(_) => Ok("InfluxDB-1.x".to_string()),
+                            Err(_) => Ok("InfluxDB-unknown".to_string()),
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 生成 InfluxDB 数据源树
+    pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::TreeNodeFactory;
+
+        let mut nodes = Vec::new();
+
+        // 检测版本以确定树结构
+        let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
+
+        // 获取数据库列表
+        match self.get_databases().await {
+            Ok(databases) => {
+                for db_name in databases {
+                    let is_system = db_name.starts_with('_');
+
+                    // 根据版本创建不同的数据库节点
+                    let db_node = if version.contains("1.8") {
+                        TreeNodeFactory::create_influxdb1_database_with_version(db_name, is_system, "1.8+")
+                    } else if version.contains("1.7") {
+                        TreeNodeFactory::create_influxdb1_database_with_version(db_name, is_system, "1.7+")
+                    } else {
+                        TreeNodeFactory::create_influxdb1_database_with_version(db_name, is_system, "1.x")
+                    };
+
+                    nodes.push(db_node);
+                }
+            }
+            Err(e) => {
+                log::warn!("获取数据库列表失败: {}", e);
+            }
+        }
+
+        Ok(nodes)
+    }
+
+    /// 获取树节点的子节点（懒加载）
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::TreeNodeFactory;
+
+        let mut children = Vec::new();
+
+        match node_type {
+            "database" | "system_database" => {
+                // 获取数据库的保留策略
+                match self.get_retention_policies(parent_node_id).await {
+                    Ok(policies) => {
+                        for policy in policies {
+                            let rp_node = TreeNodeFactory::create_retention_policy(
+                                policy.name.clone(),
+                                parent_node_id.to_string(),
+                                policy.duration.clone(),
+                                policy.replication
+                            );
+                            children.push(rp_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取保留策略失败: {}", e);
+                    }
+                }
+            }
+            "retention_policy" => {
+                // 获取测量值
+                let parts: Vec<&str> = parent_node_id.split('/').collect();
+                if parts.len() >= 2 {
+                    let database = parts[0];
+                    match self.get_measurements(database).await {
+                        Ok(measurements) => {
+                            for measurement in measurements {
+                                let measurement_node = TreeNodeFactory::create_measurement(
+                                    measurement.clone(),
+                                    parent_node_id.to_string()
+                                );
+                                children.push(measurement_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取测量值失败: {}", e);
+                        }
+                    }
+                }
+            }
+            "measurement" => {
+                // 获取字段和标签
+                let parts: Vec<&str> = parent_node_id.split('/').collect();
+                if parts.len() >= 3 {
+                    let database = parts[0];
+                    let measurement = parts[2];
+
+                    // 获取字段
+                    match self.get_field_keys(database, measurement).await {
+                        Ok(fields) => {
+                            for field in fields {
+                                let field_node = TreeNodeFactory::create_field(
+                                    field.name.clone(),
+                                    parent_node_id.to_string(),
+                                    field.field_type.clone()
+                                );
+                                children.push(field_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取字段失败: {}", e);
+                        }
+                    }
+
+                    // 获取标签
+                    match self.get_tag_keys(database, measurement).await {
+                        Ok(tags) => {
+                            for tag in tags {
+                                let tag_node = TreeNodeFactory::create_tag(
+                                    tag.clone(),
+                                    parent_node_id.to_string()
+                                );
+                                children.push(tag_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取标签失败: {}", e);
+                        }
+                    }
+                }
+            }
+            _ => {
+                log::debug!("未知节点类型: {}", node_type);
+            }
+        }
+
+        Ok(children)
+    }
+
+
 }
 
 // 删除旧的 trait 实现，现在使用枚举方式

@@ -998,4 +998,60 @@ fn parse_timestamp(value: &str) -> Result<i64, String> {
     Err(format!("无法解析时间戳: {}", value))
 }
 
+/// 获取数据源树节点
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_tree_nodes(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<Vec<crate::models::TreeNode>, String> {
+    debug!("处理获取数据源树节点命令: {}", connection_id);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 根据数据库类型生成树节点
+    let tree_nodes = client.get_tree_nodes().await
+        .map_err(|e| {
+            error!("获取数据源树失败: {}", e);
+            format!("获取数据源树失败: {}", e)
+        })?;
+
+    Ok(tree_nodes)
+}
+
+/// 获取树节点的子节点（懒加载）
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_tree_children(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    parent_node_id: String,
+    node_type: String,
+) -> Result<Vec<crate::models::TreeNode>, String> {
+    debug!("处理获取树节点子节点命令: {} - {}", connection_id, parent_node_id);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 根据节点类型获取子节点
+    let children = client.get_tree_children(&parent_node_id, &node_type).await
+        .map_err(|e| {
+            error!("获取树节点子节点失败: {}", e);
+            format!("获取树节点子节点失败: {}", e)
+        })?;
+
+    Ok(children)
+}
+
+
+
+
+
 

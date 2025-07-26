@@ -1,10 +1,12 @@
 pub mod connection;
 pub mod database;
 pub mod query;
+pub mod tree_node;
 
 pub use connection::*;
 pub use database::*;
 pub use query::*;
+pub use tree_node::*;
 
 // 数据写入相关模型
 use serde::{Deserialize, Serialize};

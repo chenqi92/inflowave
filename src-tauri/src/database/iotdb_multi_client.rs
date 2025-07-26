@@ -386,4 +386,151 @@ impl IoTDBMultiClient {
     pub fn get_config(&self) -> &ConnectionConfig {
         &self.config
     }
+
+    /// 检测数据库版本
+    pub async fn detect_version(&mut self) -> Result<String> {
+        // 尝试执行版本查询
+        match self.execute_query("SHOW VERSION").await {
+            Ok(result) => {
+                // 解析版本信息
+                let rows = result.rows();
+                if !rows.is_empty() {
+                    if let Some(first_row) = rows.first() {
+                        if let Some(version_info) = first_row.first() {
+                            return Ok(format!("IoTDB-{}", version_info));
+                        }
+                    }
+                }
+                Ok("IoTDB-unknown".to_string())
+            }
+            Err(_) => {
+                // 如果 SHOW VERSION 不支持，尝试其他方法
+                match self.execute_query("SELECT * FROM root.** LIMIT 1").await {
+                    Ok(_) => Ok("IoTDB-1.0+".to_string()), // 支持新语法，可能是1.0+版本
+                    Err(_) => Ok("IoTDB-0.13.x".to_string()), // 可能是较老版本
+                }
+            }
+        }
+    }
+
+    /// 生成 IoTDB 数据源树
+    pub async fn get_tree_nodes(&mut self) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::TreeNodeFactory;
+
+        let mut nodes = Vec::new();
+
+        // 检测版本以确定树结构
+        let version = self.detect_version().await.unwrap_or_else(|_| "IoTDB-1.0+".to_string());
+
+        // 获取存储组列表
+        match self.get_databases().await {
+            Ok(storage_groups) => {
+                for sg in storage_groups {
+                    let sg_node = TreeNodeFactory::create_storage_group_with_version(sg, version.clone());
+                    nodes.push(sg_node);
+                }
+            }
+            Err(e) => {
+                log::warn!("获取存储组列表失败: {}", e);
+            }
+        }
+
+        Ok(nodes)
+    }
+
+    /// 获取树节点的子节点（懒加载）
+    pub async fn get_tree_children(&mut self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::TreeNodeFactory;
+
+        let mut children = Vec::new();
+
+        match node_type {
+            "storage_group" => {
+                // 获取设备列表
+                match self.get_devices_for_tree(parent_node_id).await {
+                    Ok(devices) => {
+                        for device in devices {
+                            let device_node = TreeNodeFactory::create_device(
+                                device.clone(),
+                                parent_node_id.to_string()
+                            );
+                            children.push(device_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取设备列表失败: {}", e);
+                    }
+                }
+            }
+            "device" => {
+                // 获取时间序列
+                match self.get_timeseries_for_tree(parent_node_id).await {
+                    Ok(timeseries) => {
+                        for ts in timeseries {
+                            let ts_node = TreeNodeFactory::create_timeseries(
+                                ts.clone(),
+                                parent_node_id.to_string()
+                            );
+                            children.push(ts_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取时间序列失败: {}", e);
+                    }
+                }
+            }
+            _ => {
+                log::debug!("未知节点类型: {}", node_type);
+            }
+        }
+
+        Ok(children)
+    }
+
+    /// 获取设备列表（用于树节点）
+    async fn get_devices_for_tree(&mut self, storage_group: &str) -> Result<Vec<String>> {
+        // 使用 SHOW DEVICES 查询设备
+        let query = if storage_group.is_empty() {
+            "SHOW DEVICES".to_string()
+        } else {
+            format!("SHOW DEVICES {}.** ", storage_group)
+        };
+
+        let result = self.execute_query(&query).await?;
+        let mut devices = Vec::new();
+
+        let rows = result.rows();
+        if !rows.is_empty() {
+            for row in rows {
+                if let Some(device_path) = row.first() {
+                    devices.push(device_path.clone());
+                }
+            }
+        }
+
+        Ok(devices)
+    }
+
+    /// 获取时间序列列表（用于树节点）
+    async fn get_timeseries_for_tree(&mut self, device_path: &str) -> Result<Vec<String>> {
+        let query = format!("SHOW TIMESERIES {}.** ", device_path);
+        let result = self.execute_query(&query).await?;
+        let mut timeseries = Vec::new();
+
+        let rows = result.rows();
+        if !rows.is_empty() {
+            for row in rows {
+                if let Some(ts_path) = row.first() {
+                    // 提取时间序列名称（去掉设备路径前缀）
+                    if let Some(ts_name) = ts_path.strip_prefix(&format!("{}.", device_path)) {
+                        timeseries.push(ts_name.to_string());
+                    } else {
+                        timeseries.push(ts_path.clone());
+                    }
+                }
+            }
+        }
+
+        Ok(timeseries)
+    }
 }

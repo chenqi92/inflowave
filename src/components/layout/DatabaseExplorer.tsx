@@ -48,6 +48,7 @@ import type { ConnectionConfig } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import { SimpleTreeView } from '@/components/database/SimpleTreeView';
 import { getDatabaseIcon } from '@/utils/databaseIcons';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
@@ -171,6 +172,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const [_connectionLoadingStates, setConnectionLoadingStates] = useState<
     Map<string, boolean>
   >(new Map());
+
+  // 版本感知树视图状态
+  const [useVersionAwareTree, setUseVersionAwareTree] = useState(false);
 
   const [_updateTimeouts, setUpdateTimeouts] = useState<
     Map<string, number>
@@ -2509,6 +2513,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  variant={useVersionAwareTree ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => setUseVersionAwareTree(!useVersionAwareTree)}
+                  title={useVersionAwareTree ? '切换到传统视图' : '切换到版本感知视图'}
+                >
+                  <GitBranch className='w-4 h-4' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {useVersionAwareTree ? '切换到传统视图' : '切换到版本感知视图'}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
                   variant='ghost'
                   size='sm'
                   onClick={refreshTree}
@@ -2549,11 +2568,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       {/* 主要内容：数据源树 */}
       <CardContent className='flex-1 overflow-hidden p-0'>
         <div className='px-2 h-full overflow-auto'>
-            {loading ? (
-              <div className='flex items-center justify-center py-8'>
-                <Spin tip='加载中...' />
+          {useVersionAwareTree ? (
+            // 版本感知树视图
+            activeConnectionId ? (
+              <SimpleTreeView
+                connectionId={activeConnectionId}
+                className="h-full"
+              />
+            ) : (
+              <div className='flex items-center justify-center py-8 text-gray-500'>
+                <div className='text-center'>
+                  <Database className='w-8 h-8 mx-auto mb-2 opacity-50' />
+                  <p className='text-sm'>请选择一个连接</p>
+                </div>
               </div>
-            ) : treeData.length > 0 ? (
+            )
+          ) : (
+            // 传统树视图
+            <>
+              {loading ? (
+                <div className='flex items-center justify-center py-8'>
+                  <Spin tip='加载中...' />
+                </div>
+              ) : treeData.length > 0 ? (
               <div className="relative w-full">
                 <Tree
                   showIcon
@@ -2867,6 +2904,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 </div>
               </div>
             )}
+            </>
+          )}
         </div>
       </CardContent>
 

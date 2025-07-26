@@ -648,11 +648,17 @@ async fn main() {
             get_iotdb_server_info,
 
             // Database version detection
-            detect_database_version,
+            commands::database_detection::detect_database_version,
             quick_detect_database_type,
             validate_detected_connection,
             get_supported_database_types,
             generate_connection_config_suggestions,
+
+            // Tree node operations
+            commands::database::get_tree_nodes,
+            commands::database::get_tree_children,
+
+
 
             // Query operations
             execute_query,

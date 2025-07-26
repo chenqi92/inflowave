@@ -102,7 +102,7 @@ impl ConnectionManager {
             }
             Err(e) => {
                 // 只显示简洁的错误信息，不显示堆栈跟踪
-                let error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
+                let _error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
 
                 // 更新状态为错误
                 self.update_status(connection_id, |status| {

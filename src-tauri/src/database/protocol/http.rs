@@ -171,8 +171,7 @@ impl ProtocolClient for HttpClient {
                 info!("成功连接到IoTDB HTTP服务");
                 Ok(())
             }
-            Err(e) => {
-                let error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
+            Err(_e) => {
                 self.status = ConnectionStatus::Error("HTTP连接失败".to_string());
                 Err(anyhow::Error::msg("HTTP连接失败"))
             }
