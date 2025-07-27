@@ -236,3 +236,12 @@
   color: hsl(142 76% 40%);
   border: 1px solid hsl(142 76% 88%);
 }
+
+/* 强制应用字体到下拉框选项 */
+.font-dropdown-option {
+  font-family: inherit !important;
+}
+
+.font-dropdown-option * {
+  font-family: inherit !important;
+}

@@ -19,6 +19,7 @@ import {
 import FontPreview from './FontPreview';
 import FontCategoryLabel from './FontCategoryLabel';
 import CustomFontSelector from './CustomFontSelector';
+// 测试组件已移除
 import { showMessage } from '@/utils/message';
 import {
   Settings,
@@ -870,6 +871,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     )}
                   />
                 </div>
+                
 
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField

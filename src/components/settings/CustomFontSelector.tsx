@@ -26,7 +26,7 @@ const fontOptions: FontOption[] = [
     category: 'system'
   },
   
-  // 现代无衬线字体
+  // 现代无衬线字体 - 仅包含实际可用的字体
   {
     value: 'inter',
     name: 'Inter',
@@ -51,18 +51,12 @@ const fontOptions: FontOption[] = [
     fontFamily: '"Source Sans Pro", sans-serif',
     category: 'modern'
   },
-  {
-    value: 'lato',
-    name: 'Lato',
-    fontFamily: '"Lato", sans-serif',
-    category: 'modern'
-  },
   
-  // 经典字体
+  // 经典系统字体 - 这些是操作系统自带的
   {
     value: 'georgia',
     name: 'Georgia',
-    fontFamily: '"Georgia", serif',
+    fontFamily: 'Georgia, serif',
     category: 'classic'
   },
   {
@@ -77,48 +71,30 @@ const fontOptions: FontOption[] = [
     fontFamily: 'Arial, sans-serif',
     category: 'classic'
   },
+  {
+    value: 'helvetica',
+    name: 'Helvetica',
+    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+    category: 'classic'
+  },
+  {
+    value: 'verdana',
+    name: 'Verdana',
+    fontFamily: 'Verdana, sans-serif',
+    category: 'classic'
+  },
   
-  // 等宽字体
+  // 等宽系统字体 - 使用系统自带的等宽字体
   {
-    value: 'jetbrains-mono',
-    name: 'JetBrains Mono',
-    fontFamily: '"JetBrains Mono", Monaco, Consolas, monospace',
+    value: 'sf-mono',
+    name: 'SF Mono / Consolas',
+    fontFamily: 'ui-monospace, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
     category: 'mono'
   },
   {
-    value: 'source-code-pro',
-    name: 'Source Code Pro',
-    fontFamily: '"Source Code Pro", Monaco, Consolas, monospace',
-    category: 'mono'
-  },
-  {
-    value: 'fira-code',
-    name: 'Fira Code',
-    fontFamily: '"Fira Code", Monaco, Consolas, monospace',
-    category: 'mono'
-  },
-  {
-    value: 'inconsolata',
-    name: 'Inconsolata',
-    fontFamily: '"Inconsolata", Monaco, Consolas, monospace',
-    category: 'mono'
-  },
-  {
-    value: 'roboto-mono',
-    name: 'Roboto Mono',
-    fontFamily: '"Roboto Mono", Monaco, Consolas, monospace',
-    category: 'mono'
-  },
-  {
-    value: 'ubuntu-mono',
-    name: 'Ubuntu Mono',
-    fontFamily: '"Ubuntu Mono", Monaco, Consolas, monospace',
-    category: 'mono'
-  },
-  {
-    value: 'cascadia-code',
-    name: 'Cascadia Code',
-    fontFamily: '"Cascadia Code", Monaco, Consolas, monospace',
+    value: 'courier',
+    name: 'Courier New',
+    fontFamily: '"Courier New", Courier, monospace',
     category: 'mono'
   }
 ];
@@ -252,12 +228,16 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
                   <div
                     key={font.value}
                     className={cn(
-                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-3 text-sm outline-none transition-colors",
+                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-3 text-sm outline-none transition-colors font-dropdown-option",
                       "hover:bg-accent hover:text-accent-foreground",
                       highlightedIndex === globalIndex && "bg-accent text-accent-foreground",
                       value === font.value && "bg-accent/50"
                     )}
-                    style={{ fontFamily: font.fontFamily }}
+                    style={{ 
+                      fontFamily: font.fontFamily,
+                      fontWeight: 'inherit',
+                      fontSize: 'inherit'
+                    }}
                     onClick={() => handleOptionClick(font.value)}
                     role="option"
                     aria-selected={value === font.value}

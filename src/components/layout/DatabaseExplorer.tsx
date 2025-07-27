@@ -284,35 +284,41 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
       // 多重刷新策略确保新连接显示
       const refreshStrategies = [
-        // 立即刷新
+        // 立即刷新数据源树
         () => {
           console.log('🔄 立即刷新数据源树');
           buildCompleteTreeData(true);
         },
-        // 延迟刷新
+        // 延迟刷新确保数据同步
         () => setTimeout(async () => {
           console.log('🔄 延迟刷新数据源树以显示新连接');
           try {
             await buildCompleteTreeData(true);
-            console.log('✅ 数据源树刷新完成');
+            console.log('✅ 数据源树延迟刷新完成');
           } catch (error) {
-            console.error('❌ 数据源树刷新失败:', error);
+            console.error('❌ 数据源树延迟刷新失败:', error);
           }
-        }, 300),
-        // 二次确认刷新
+        }, 500),
+        // 最终确认刷新
         () => setTimeout(async () => {
-          console.log('🔄 二次确认刷新数据源树');
+          console.log('🔄 最终确认刷新数据源树');
           try {
             await buildCompleteTreeData(true);
-            console.log('✅ 二次刷新完成');
+            console.log('✅ 最终刷新完成');
           } catch (error) {
-            console.error('❌ 二次刷新失败:', error);
+            console.error('❌ 最终刷新失败:', error);
           }
-        }, 1000)
+        }, 1500)
       ];
 
       // 执行所有刷新策略
-      refreshStrategies.forEach(strategy => strategy());
+      for (const strategy of refreshStrategies) {
+        try {
+          await strategy();
+        } catch (error) {
+          console.error('❌ 刷新策略执行失败:', error);
+        }
+      }
 
     } catch (error) {
       console.error('连接保存失败:', error);

@@ -62,11 +62,24 @@ export const useKeyboardShortcuts = (
                 const metaMatch = !!shortcut.metaKey === !!keyboardEvent.metaKey;
 
                 if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
-                    // 不要阻止系统级的复制粘贴快捷键
+                    // 检查是否在输入元素中
+                    const target = keyboardEvent.target as HTMLElement;
+                    const isInputElement = target.tagName === 'INPUT' ||
+                                         target.tagName === 'TEXTAREA' ||
+                                         target.isContentEditable ||
+                                         target.closest('.monaco-editor') ||
+                                         target.closest('[contenteditable="true"]');
+
+                    // 不要阻止系统级的复制粘贴快捷键，特别是在输入元素中
                     const isSystemClipboard = (
                         (keyboardEvent.ctrlKey || keyboardEvent.metaKey) &&
-                        ['c', 'v', 'x', 'a'].includes(keyboardEvent.key.toLowerCase())
+                        ['c', 'v', 'x', 'a', 'z', 'y'].includes(keyboardEvent.key.toLowerCase())
                     );
+
+                    // 如果是输入元素中的系统快捷键，完全不处理
+                    if (isInputElement && isSystemClipboard) {
+                        return;
+                    }
 
                     if (!isSystemClipboard) {
                         if (shortcut.preventDefault ?? preventDefault) {

@@ -126,33 +126,33 @@ impl DatabaseVersionDetector {
     ) -> Result<DatabaseVersionInfo> {
         let base_url = format!("http://{}:{}", host, port);
 
-        // 方法1: 尝试 InfluxDB 1.x 的 /ping 端点（优先检测，因为更具体）
-        tried_methods.push("influxdb1_ping".to_string());
-        if let Ok(version_info) = self.try_influxdb1_ping(&base_url).await {
-            return Ok(version_info);
-        }
-
-        // 方法2: 尝试 InfluxDB 2.x 的 /health 端点
+        // 方法1: 优先尝试 InfluxDB 2.x/3.x 的 /health 端点（更准确）
         tried_methods.push("influxdb2_health".to_string());
         if let Ok(version_info) = self.try_influxdb2_health(&base_url).await {
             return Ok(version_info);
         }
 
-        // 方法3: 尝试通过查询端点检测
+        // 方法2: 尝试 InfluxDB 2.x/3.x 的查询端点
+        if let Some(token) = token {
+            tried_methods.push("influxdb2_query".to_string());
+            if let Ok(version_info) = self.try_influxdb2_query(&base_url, token).await {
+                return Ok(version_info);
+            }
+        }
+
+        // 方法3: 尝试 InfluxDB 1.x 的 /ping 端点
+        tried_methods.push("influxdb1_ping".to_string());
+        if let Ok(version_info) = self.try_influxdb1_ping(&base_url).await {
+            return Ok(version_info);
+        }
+
+        // 方法4: 尝试通过查询端点检测 InfluxDB 1.x
         if let Some(username) = username {
             if let Some(password) = password {
                 tried_methods.push("influxdb1_query".to_string());
                 if let Ok(version_info) = self.try_influxdb1_query(&base_url, username, password).await {
                     return Ok(version_info);
                 }
-            }
-        }
-
-        // 方法4: 尝试 InfluxDB 2.x 的查询端点
-        if let Some(token) = token {
-            tried_methods.push("influxdb2_query".to_string());
-            if let Ok(version_info) = self.try_influxdb2_query(&base_url, token).await {
-                return Ok(version_info);
             }
         }
 
@@ -197,7 +197,7 @@ impl DatabaseVersionDetector {
     /// 尝试 InfluxDB 1.x Ping
     async fn try_influxdb1_ping(&self, base_url: &str) -> Result<DatabaseVersionInfo> {
         let url = format!("{}/ping", base_url);
-        
+
         let response = timeout(
             self.timeout_duration,
             self.client.get(&url).send()
@@ -209,11 +209,50 @@ impl DatabaseVersionDetector {
             // 检查响应头中的版本信息
             if let Some(version_header) = response.headers().get("X-Influxdb-Version") {
                 if let Ok(version) = version_header.to_str() {
-                    return Ok(self.parse_influxdb_version_info(version, "influxdb1"));
+                    // 根据版本号判断是 1.x 还是 2.x/3.x
+                    let detected_type = if version.starts_with("2.") {
+                        "influxdb2"
+                    } else if version.starts_with("3.") {
+                        "influxdb3"
+                    } else {
+                        "influxdb1"
+                    };
+                    return Ok(self.parse_influxdb_version_info(version, detected_type));
                 }
             }
 
-            // 如果没有版本头，但 ping 成功，假设是 InfluxDB 1.x
+            // 如果没有版本头，但 ping 成功，需要进一步检测
+            // 尝试访问 InfluxDB 2.x 特有的端点来确认版本
+            let health_url = format!("{}/health", base_url);
+            if let Ok(health_response) = timeout(
+                Duration::from_secs(2),
+                self.client.get(&health_url).send()
+            ).await {
+                if let Ok(health_response) = health_response {
+                    if health_response.status().is_success() {
+                        if let Ok(text) = health_response.text().await {
+                            if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
+                                if health_info.get("name").is_some() || health_info.get("message").is_some() {
+                                    // 这是 InfluxDB 2.x/3.x
+                                    let version = health_info
+                                        .get("version")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("2.x.x");
+
+                                    let detected_type = if version.starts_with("3.") {
+                                        "influxdb3"
+                                    } else {
+                                        "influxdb2"
+                                    };
+                                    return Ok(self.parse_influxdb_version_info(version, detected_type));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 如果 /health 检测失败，假设是 InfluxDB 1.x
             return Ok(self.parse_influxdb_version_info("1.x.x", "influxdb1"));
         }
 
@@ -267,16 +306,18 @@ impl DatabaseVersionDetector {
     /// 解析 InfluxDB 版本信息
     fn parse_influxdb_version_info(&self, version: &str, detected_type: &str) -> DatabaseVersionInfo {
         let (major, minor, patch) = self.parse_version_string(version);
-        
+
         let api_endpoints = match detected_type {
             "influxdb1" => vec!["/ping".to_string(), "/query".to_string()],
-            "influxdb2" => vec!["/health".to_string(), "/api/v2/query".to_string()],
+            "influxdb2" => vec!["/health".to_string(), "/api/v2/query".to_string(), "/api/v2/buckets".to_string()],
+            "influxdb3" => vec!["/health".to_string(), "/api/v2/query".to_string(), "/api/v2/buckets".to_string(), "/api/v3/query_sql".to_string()],
             _ => vec![],
         };
 
         let supported_features = match detected_type {
             "influxdb1" => vec!["InfluxQL".to_string(), "HTTP API".to_string()],
             "influxdb2" => vec!["Flux".to_string(), "InfluxQL".to_string(), "HTTP API v2".to_string()],
+            "influxdb3" => vec!["SQL".to_string(), "Flux".to_string(), "InfluxQL".to_string(), "HTTP API v2".to_string(), "HTTP API v3".to_string()],
             _ => vec![],
         };
 

@@ -282,21 +282,32 @@ export class DatabaseVersionDetectionService {
       case 'influxdb1':
         if (versionInfo.major_version < 1 || (versionInfo.major_version === 1 && versionInfo.minor_version < 7)) {
           compatible = false;
-          warnings.push('InfluxDB 版本过低，建议升级到 1.7 或更高版本');
+          warnings.push('InfluxDB 1.x 版本过低，建议升级到 1.7 或更高版本');
         }
-        recommendations.push('考虑升级到 InfluxDB 2.x 以获得更好的性能和功能');
+        recommendations.push('考虑升级到 InfluxDB 2.x 或 3.x 以获得更好的性能和功能');
         break;
-        
+
       case 'influxdb2':
         if (versionInfo.major_version < 2) {
           compatible = false;
           warnings.push('检测到的版本不是 InfluxDB 2.x');
-        }
-        if (versionInfo.minor_version < 1) {
+        } else if (versionInfo.minor_version < 1) {
           warnings.push('建议升级到 InfluxDB 2.1 或更高版本以获得更好的稳定性');
         }
+        if (versionInfo.major_version === 2 && versionInfo.minor_version >= 7) {
+          recommendations.push('您使用的是较新的 InfluxDB 2.x 版本，功能完善');
+        }
         break;
-        
+
+      case 'influxdb3':
+        if (versionInfo.major_version < 3) {
+          compatible = false;
+          warnings.push('检测到的版本不是 InfluxDB 3.x');
+        } else {
+          recommendations.push('您使用的是最新的 InfluxDB 3.x 版本，支持 SQL 查询和高性能存储');
+        }
+        break;
+
       case 'iotdb':
         if (versionInfo.major_version < 1) {
           warnings.push('IoTDB 版本较低，可能存在兼容性问题');

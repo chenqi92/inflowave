@@ -97,11 +97,24 @@ const MainLayout: React.FC = () => {
   // 键盘快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 不要阻止系统级的复制粘贴快捷键
+      // 检查是否在输入元素中
+      const target = e.target as HTMLElement;
+      const isInputElement = target.tagName === 'INPUT' ||
+                           target.tagName === 'TEXTAREA' ||
+                           target.isContentEditable ||
+                           target.closest('.monaco-editor') ||
+                           target.closest('[contenteditable="true"]');
+
+      // 不要阻止系统级的复制粘贴快捷键，特别是在输入元素中
       const isSystemClipboard = (
         (e.ctrlKey || e.metaKey) &&
-        ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())
+        ['c', 'v', 'x', 'a', 'z', 'y'].includes(e.key.toLowerCase())
       );
+
+      // 如果是输入元素中的系统快捷键，完全不处理
+      if (isInputElement && isSystemClipboard) {
+        return;
+      }
 
       if (isSystemClipboard) {
         return; // 让系统处理复制粘贴
@@ -109,6 +122,10 @@ const MainLayout: React.FC = () => {
 
       // Ctrl+Shift+P 打开全局搜索
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        // 如果在输入元素中，不处理全局搜索
+        if (isInputElement) {
+          return;
+        }
         e.preventDefault();
         setGlobalSearchVisible(true);
       }
