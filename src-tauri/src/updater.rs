@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tauri::{command, AppHandle, Manager, Emitter};
+use tauri::{command, AppHandle, Manager};
 use anyhow::{Result, Context};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -557,6 +557,7 @@ pub async fn download_update(
     {
         use std::io::Write;
         use std::time::Instant;
+        use tauri::Emitter;
         
         if download_url.is_empty() {
             return Err("下载URL不能为空".to_string());
@@ -702,6 +703,7 @@ pub async fn install_update(
     {
         use std::path::PathBuf;
         use std::process::Command;
+        use tauri::Emitter;
         
         let path = PathBuf::from(&file_path);
         
