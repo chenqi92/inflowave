@@ -8,14 +8,45 @@ export type TreeNodeType =
 
   // InfluxDB 1.x 节点类型
   | 'database'           // 数据库
+  | 'system_database'    // 系统数据库
   | 'retention_policy'   // 保留策略
+  | 'series'             // 序列
+  | 'continuous_query'   // 连续查询
+  | 'shard'              // 分片
+  | 'shard_group'        // 分片组
+  | 'user1x'             // InfluxDB 1.x 用户
+  | 'privilege'          // 权限
 
   // InfluxDB 2.x 节点类型
   | 'organization'       // 组织
-  | 'bucket'            // 存储桶
+  | 'bucket'             // 存储桶
+  | 'system_bucket'      // 系统存储桶
+  | 'task'               // 任务
+  | 'dashboard'          // 仪表板
+  | 'cell'               // 仪表板单元格
+  | 'variable'           // 变量
+  | 'check'              // 监控检查
+  | 'notification_rule'  // 通知规则
+  | 'notification_endpoint' // 通知端点
+  | 'scraper'            // 数据抓取器
+  | 'telegraf'           // Telegraf 配置
+  | 'authorization'      // 授权令牌
+  | 'user2x'             // InfluxDB 2.x 用户
+  | 'label'              // 组织标签
 
   // InfluxDB 3.x 节点类型（简化架构）
-  | 'database3x'        // InfluxDB 3.x 数据库
+  | 'database3x'         // InfluxDB 3.x 数据库
+  | 'schema'             // 模式
+  | 'table'              // 表
+  | 'column'             // 列
+  | 'index'              // 索引
+  | 'partition'          // 分区
+  | 'view'               // 视图
+  | 'materialized_view'  // 物化视图
+  | 'function3x'         // InfluxDB 3.x 函数
+  | 'procedure'          // 存储过程
+  | 'trigger3x'          // InfluxDB 3.x 触发器
+  | 'namespace'          // 命名空间
 
   // IoTDB 节点类型
   | 'storage_group'     // 存储组/数据库
@@ -67,13 +98,45 @@ export type DatabaseType = 'InfluxDB' | 'IoTDB' | 'InfluxDB2';
  */
 export const TreeNodeIcons: Record<TreeNodeType, string> = {
   connection: '🔌',
+  // InfluxDB 1.x 图标
   database: '💾',
-  database3x: '🗄️',
   system_database: '🔧',
   retention_policy: '📅',
+  series: '📈',
+  continuous_query: '🔄',
+  shard: '🧩',
+  shard_group: '📦',
+  user1x: '👤',
+  privilege: '🔐',
+  // InfluxDB 2.x 图标
   organization: '🏢',
   bucket: '🪣',
   system_bucket: '⚙️',
+  task: '⚡',
+  dashboard: '📊',
+  cell: '📋',
+  variable: '🔤',
+  check: '✅',
+  notification_rule: '🔔',
+  notification_endpoint: '📡',
+  scraper: '🕷️',
+  telegraf: '📊',
+  authorization: '🔑',
+  user2x: '👤',
+  label: '🏷️',
+  // InfluxDB 3.x 图标
+  database3x: '🗄️',
+  schema: '📋',
+  table: '📊',
+  column: '📏',
+  index: '🔍',
+  partition: '🗂️',
+  view: '👁️',
+  materialized_view: '💎',
+  function3x: '⚙️',
+  procedure: '🔧',
+  trigger3x: '🔔',
+  namespace: '📁',
   storage_group: '🏢',
   device: '📱',
   timeseries: '📊',
@@ -102,13 +165,45 @@ export const TreeNodeIcons: Record<TreeNodeType, string> = {
  */
 export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
   connection: '数据库连接',
-  database: 'InfluxDB 1.x 数据库',
-  database3x: 'InfluxDB 3.x 数据库，支持现代功能和 SQL 查询',
+  // InfluxDB 1.x 描述
+  database: 'InfluxDB 1.x 数据库，支持时间序列数据存储',
   system_database: '系统数据库，包含内部监控和元数据',
-  retention_policy: '数据保留策略，定义数据存储时长',
+  retention_policy: '数据保留策略，定义数据存储时长和分片策略',
+  series: '时间序列，特定标签组合的数据点集合',
+  continuous_query: '连续查询，自动化数据聚合和处理',
+  shard: '数据分片，存储特定时间范围的数据',
+  shard_group: '分片组，管理相关分片的集合',
+  user1x: 'InfluxDB 1.x 用户账户',
+  privilege: '用户权限，控制数据库访问级别',
+  // InfluxDB 2.x 描述
   organization: 'InfluxDB 2.x 组织，用于多租户管理',
   bucket: 'InfluxDB 2.x 存储桶，类似于数据库',
   system_bucket: '系统存储桶，包含监控和内部数据',
+  task: '任务，使用 Flux 语言的自动化数据处理',
+  dashboard: '仪表板，数据可视化和监控界面',
+  cell: '仪表板单元格，单个图表或可视化组件',
+  variable: '变量，仪表板和查询中的动态参数',
+  check: '监控检查，数据质量和阈值监控',
+  notification_rule: '通知规则，定义告警触发条件',
+  notification_endpoint: '通知端点，告警消息的发送目标',
+  scraper: '数据抓取器，从外部源收集指标数据',
+  telegraf: 'Telegraf 配置，数据收集代理设置',
+  authorization: '授权令牌，API 访问凭证',
+  user2x: 'InfluxDB 2.x 用户账户',
+  label: '组织标签，用于资源分类和管理',
+  // InfluxDB 3.x 描述
+  database3x: 'InfluxDB 3.x 数据库，支持现代功能和 SQL 查询',
+  schema: '数据库模式，定义表结构和约束',
+  table: '数据表，存储结构化时间序列数据',
+  column: '表列，定义数据字段和类型',
+  index: '索引，优化查询性能的数据结构',
+  partition: '分区，按时间或其他维度分割数据',
+  view: '视图，基于查询的虚拟表',
+  materialized_view: '物化视图，预计算的查询结果',
+  function3x: '用户定义函数，扩展 SQL 查询功能',
+  procedure: '存储过程，预定义的数据库操作序列',
+  trigger3x: '触发器，自动响应数据变化的操作',
+  namespace: '命名空间，逻辑分组和权限管理',
   storage_group: 'IoTDB 存储组，用于组织时间序列数据',
   device: 'IoTDB 设备，包含多个传感器时间序列',
   timeseries: 'IoTDB 时间序列，存储传感器数据',
@@ -137,13 +232,45 @@ export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
  */
 export const TreeNodeStyles: Record<TreeNodeType, string> = {
   connection: 'text-blue-600 font-semibold',
+  // InfluxDB 1.x 样式
   database: 'text-green-600',
-  database3x: 'text-green-700 font-medium',
   system_database: 'text-orange-600 italic',
   retention_policy: 'text-purple-600',
+  series: 'text-blue-500',
+  continuous_query: 'text-indigo-600',
+  shard: 'text-gray-600',
+  shard_group: 'text-gray-700',
+  user1x: 'text-blue-700',
+  privilege: 'text-red-600',
+  // InfluxDB 2.x 样式
   organization: 'text-indigo-600 font-medium',
   bucket: 'text-cyan-600',
   system_bucket: 'text-gray-600 italic',
+  task: 'text-purple-600',
+  dashboard: 'text-green-600',
+  cell: 'text-green-500',
+  variable: 'text-yellow-600',
+  check: 'text-green-700',
+  notification_rule: 'text-orange-600',
+  notification_endpoint: 'text-orange-500',
+  scraper: 'text-indigo-600',
+  telegraf: 'text-blue-600',
+  authorization: 'text-red-600',
+  user2x: 'text-blue-700',
+  label: 'text-pink-600',
+  // InfluxDB 3.x 样式
+  database3x: 'text-green-700 font-medium',
+  schema: 'text-purple-600',
+  table: 'text-green-600',
+  column: 'text-blue-600',
+  index: 'text-yellow-600',
+  partition: 'text-gray-600',
+  view: 'text-cyan-600',
+  materialized_view: 'text-cyan-700',
+  function3x: 'text-indigo-600',
+  procedure: 'text-indigo-700',
+  trigger3x: 'text-orange-600',
+  namespace: 'text-purple-700',
   storage_group: 'text-emerald-600',
   device: 'text-blue-500',
   timeseries: 'text-teal-600',
@@ -199,14 +326,20 @@ export function getNodePath(node: TreeNode, allNodes: TreeNode[]): string[] {
 /**
  * 根据数据库类型获取预期的树结构层级
  */
-export function getExpectedTreeLevels(dbType: DatabaseType): TreeNodeType[] {
+export function getExpectedTreeLevels(dbType: string): TreeNodeType[] {
   switch (dbType) {
     case 'InfluxDB':
-      return ['database', 'retention_policy', 'measurement', 'field_group', 'field'];
+    case 'influxdb':
+      return ['database', 'system_database', 'retention_policy', 'measurement', 'series', 'field_group', 'field', 'continuous_query', 'user1x', 'privilege'];
     case 'InfluxDB2':
-      return ['organization', 'bucket', 'measurement', 'field_group', 'field'];
+    case 'influxdb2':
+      return ['organization', 'bucket', 'system_bucket', 'measurement', 'field_group', 'field', 'task', 'dashboard', 'variable', 'user2x', 'authorization'];
+    case 'InfluxDB3':
+    case 'influxdb3':
+      return ['database3x', 'schema', 'table', 'column', 'index', 'view', 'materialized_view', 'function3x', 'namespace'];
     case 'IoTDB':
-      return ['system_info', 'schema_template', 'storage_group', 'device', 'timeseries', 'data_type'];
+    case 'iotdb':
+      return ['system_info', 'schema_template', 'storage_group', 'device', 'timeseries', 'data_type', 'encoding', 'compression'];
     default:
       return ['database', 'measurement'];
   }
@@ -217,7 +350,10 @@ export function getExpectedTreeLevels(dbType: DatabaseType): TreeNodeType[] {
  */
 export function canHaveChildren(nodeType: TreeNodeType): boolean {
   const leafNodeTypes: TreeNodeType[] = [
-    'field', 'tag', 'version_info', 'data_type', 'encoding', 'compression'
+    'field', 'tag', 'version_info', 'data_type', 'encoding', 'compression',
+    'column', 'privilege', 'user1x', 'user2x', 'authorization', 'continuous_query',
+    'cell', 'variable', 'check', 'notification_rule', 'notification_endpoint',
+    'scraper', 'telegraf', 'label', 'index', 'partition', 'function3x', 'procedure', 'trigger3x'
   ];
   return !leafNodeTypes.includes(nodeType);
 }
