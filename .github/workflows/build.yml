@@ -95,7 +95,7 @@ jobs:
             pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
             libxdo-dev libxdo3 libssl-dev \
             libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev \
-            libgio-2.0-dev libgobject-2.0-dev libffi-dev
+            libffi-dev
           
           # 验证 glib pkg-config 文件
           echo "🔍 检查 glib pkg-config 文件..."
