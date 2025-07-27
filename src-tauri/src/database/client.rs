@@ -98,10 +98,9 @@ impl DatabaseClient {
     pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, table).await,
-            DatabaseClient::InfluxDB2x(_client) => {
-                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取字段信息
-                // 暂时返回空列表，后续可以实现完整的字段查询
-                Ok(vec![])
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
+                client.get_field_keys_flux(database, table).await
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -248,10 +247,9 @@ impl DatabaseClient {
     pub async fn get_measurements(&self, database: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.get_measurements(database).await,
-            DatabaseClient::InfluxDB2x(_client) => {
-                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取测量值
-                // 暂时返回空列表，后续可以实现完整的测量值查询
-                Ok(vec![])
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x: 通过 Flux 查询获取测量值
+                client.get_measurements_flux(database).await
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -264,10 +262,9 @@ impl DatabaseClient {
     pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, measurement).await,
-            DatabaseClient::InfluxDB2x(_client) => {
-                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取字段信息
-                // 暂时返回空列表，后续可以实现完整的字段查询
-                Ok(vec![])
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
+                client.get_field_keys_flux(database, measurement).await
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -370,9 +367,9 @@ impl DatabaseClient {
                 client.get_tree_children(parent_node_id, node_type).await
             },
             DatabaseClient::IoTDB(client) => {
-                let _client = client.lock().await;
-                // IoTDB 子节点获取逻辑（暂时返回空）
-                Ok(Vec::new())
+                let mut client = client.lock().await;
+                // IoTDB 子节点获取逻辑
+                client.get_tree_children(parent_node_id, node_type).await
             },
         }
     }
@@ -1307,15 +1304,108 @@ impl InfluxDB2Client {
             }
             TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
                 // InfluxDB 2.x: 获取存储桶下的测量值
-                // 这里可以通过 Flux 查询获取测量值，但需要更复杂的实现
-                // 暂时返回空，后续可以扩展
-                log::debug!("存储桶子节点获取暂未实现");
+                let bucket_name = if let Some(bucket_part) = parent_node_id.split("/bucket_").nth(1) {
+                    bucket_part.to_string()
+                } else {
+                    parent_node_id.strip_prefix("bucket_").unwrap_or(parent_node_id).to_string()
+                };
+
+                match self.get_measurements_flux(&bucket_name).await {
+                    Ok(measurements) => {
+                        for measurement in measurements {
+                            let measurement_node = TreeNodeFactory::create_measurement(
+                                parent_node_id.to_string(),
+                                measurement
+                            );
+                            children.push(measurement_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取存储桶 {} 的测量值失败: {}", bucket_name, e);
+                    }
+                }
             }
             TreeNodeType::Database3x => {
                 // InfluxDB 3.x: 获取数据库下的表/测量值
-                // 这里可以通过 SQL 或 Flux 查询获取表信息
-                // 暂时返回空，后续可以扩展
-                log::debug!("InfluxDB 3.x 数据库子节点获取暂未实现");
+                let database_name = if let Some(db_part) = parent_node_id.strip_prefix("db3x_") {
+                    db_part.to_string()
+                } else {
+                    parent_node_id.to_string()
+                };
+
+                // InfluxDB 3.x 使用数据库名称作为存储桶名称
+                match self.get_measurements_flux(&database_name).await {
+                    Ok(measurements) => {
+                        for measurement in measurements {
+                            let measurement_node = TreeNodeFactory::create_measurement(
+                                parent_node_id.to_string(),
+                                measurement
+                            );
+                            children.push(measurement_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取 InfluxDB 3.x 数据库 {} 的表失败: {}", database_name, e);
+                    }
+                }
+            }
+            TreeNodeType::Measurement => {
+                // InfluxDB 2.x/3.x: 获取测量值下的字段
+                // 解析测量值节点 ID 来获取存储桶和测量值名称
+                let measurement_name = if let Some(measurement_part) = parent_node_id.split("measurement_").nth(1) {
+                    // 从 "measurement_{parent_id}_{measurement_name}" 中提取测量值名称
+                    if let Some(last_underscore) = measurement_part.rfind('_') {
+                        measurement_part[last_underscore + 1..].to_string()
+                    } else {
+                        measurement_part.to_string()
+                    }
+                } else {
+                    parent_node_id.to_string()
+                };
+
+                // 获取存储桶名称（从父节点路径中推断）
+                let bucket_name = if parent_node_id.contains("/bucket_") {
+                    // 从存储桶节点路径中提取存储桶名称
+                    if let Some(bucket_part) = parent_node_id.split("/bucket_").nth(1) {
+                        if let Some(measurement_start) = bucket_part.find("/measurement_") {
+                            bucket_part[..measurement_start].to_string()
+                        } else {
+                            bucket_part.to_string()
+                        }
+                    } else {
+                        "unknown".to_string()
+                    }
+                } else if parent_node_id.contains("db3x_") {
+                    // InfluxDB 3.x: 数据库名称就是存储桶名称
+                    if let Some(db_part) = parent_node_id.split("db3x_").nth(1) {
+                        if let Some(measurement_start) = db_part.find("/measurement_") {
+                            db_part[..measurement_start].to_string()
+                        } else {
+                            db_part.to_string()
+                        }
+                    } else {
+                        "unknown".to_string()
+                    }
+                } else {
+                    "unknown".to_string()
+                };
+
+                // 获取字段
+                match self.get_field_keys_flux(&bucket_name, &measurement_name).await {
+                    Ok(fields) => {
+                        for field in fields {
+                            let field_node = TreeNodeFactory::create_field(
+                                field.clone(),
+                                parent_node_id.to_string(),
+                                "unknown".to_string()
+                            );
+                            children.push(field_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取测量值 {} 的字段失败: {}", measurement_name, e);
+                    }
+                }
             }
             _ => {}
         }
@@ -2411,7 +2501,175 @@ impl InfluxClient {
         Ok(children)
     }
 
+    /// 通过 Flux 查询获取测量值列表
+    pub async fn get_measurements_flux(&self, bucket: &str) -> Result<Vec<String>> {
+        debug!("通过 Flux 查询获取测量值列表: {}", bucket);
 
+        // 构建 Flux 查询来获取测量值
+        let flux_query = format!(
+            r#"
+            import "influxdata/influxdb/schema"
+
+            schema.measurements(bucket: "{}")
+            "#,
+            bucket
+        );
+
+        match self.execute_flux_query(flux_query).await {
+            Ok(result) => {
+                let mut measurements = Vec::new();
+
+                // 解析 Flux 查询结果
+                if let Some(data) = result.data {
+                    for row in data {
+                        if let Some(measurement) = row.get(0) {
+                            if let Some(measurement_str) = measurement.as_str() {
+                                measurements.push(measurement_str.to_string());
+                            }
+                        }
+                    }
+                }
+
+                debug!("获取到 {} 个测量值", measurements.len());
+                Ok(measurements)
+            }
+            Err(e) => {
+                warn!("Flux 查询获取测量值失败: {}, 返回空列表", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 通过 Flux 查询获取字段列表
+    pub async fn get_field_keys_flux(&self, bucket: &str, measurement: &str) -> Result<Vec<String>> {
+        debug!("通过 Flux 查询获取字段列表: bucket={}, measurement={}", bucket, measurement);
+
+        // 构建 Flux 查询来获取字段
+        let flux_query = format!(
+            r#"
+            import "influxdata/influxdb/schema"
+
+            schema.fieldKeys(
+                bucket: "{}",
+                predicate: (r) => r._measurement == "{}"
+            )
+            "#,
+            bucket, measurement
+        );
+
+        match self.execute_flux_query(flux_query).await {
+            Ok(result) => {
+                let mut fields = Vec::new();
+
+                // 解析 Flux 查询结果
+                if let Some(data) = result.data {
+                    for row in data {
+                        if let Some(field) = row.get(0) {
+                            if let Some(field_str) = field.as_str() {
+                                fields.push(field_str.to_string());
+                            }
+                        }
+                    }
+                }
+
+                debug!("获取到 {} 个字段", fields.len());
+                Ok(fields)
+            }
+            Err(e) => {
+                warn!("Flux 查询获取字段失败: {}, 返回空列表", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 执行 Flux 查询的通用方法
+    async fn execute_flux_query(&self, flux_query: String) -> Result<QueryResult> {
+        debug!("执行 Flux 查询: {}", flux_query);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let url = format!("{}/api/v2/query", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .post(&url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .header("Content-Type", "application/vnd.flux")
+                .body(flux_query.clone())
+                .timeout(std::time::Duration::from_secs(30))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        debug!("Flux 查询响应: {}", text);
+                        return self.parse_flux_response(&text);
+                    }
+                }
+                Ok(response) => {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_default();
+                    warn!("Flux 查询失败，状态码: {}, 错误: {}", status, error_text);
+                }
+                Err(e) => {
+                    warn!("Flux 查询请求失败: {}", e);
+                }
+            }
+        }
+
+        // 返回空结果
+        Ok(QueryResult {
+            results: vec![],
+            execution_time: Some(0),
+            row_count: Some(0),
+            error: None,
+            data: Some(vec![]),
+            columns: Some(vec![]),
+        })
+    }
+
+    /// 解析 Flux 查询响应
+    fn parse_flux_response(&self, response: &str) -> Result<QueryResult> {
+        debug!("解析 Flux 响应: {}", response);
+
+        // 简单的 CSV 解析（Flux 默认返回 CSV 格式）
+        let mut data = Vec::new();
+        let mut columns = Vec::new();
+
+        for (i, line) in response.lines().enumerate() {
+            if line.trim().is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            let values: Vec<&str> = line.split(',').collect();
+
+            if i == 0 {
+                // 第一行是列名
+                columns = values.iter().map(|s| s.trim().to_string()).collect();
+            } else {
+                // 数据行
+                let row: Vec<serde_json::Value> = values
+                    .iter()
+                    .map(|s| serde_json::Value::String(s.trim().to_string()))
+                    .collect();
+                data.push(row);
+            }
+        }
+
+        Ok(QueryResult {
+            results: vec![],
+            execution_time: Some(0),
+            row_count: Some(data.len()),
+            error: None,
+            data: Some(data),
+            columns: Some(columns),
+        })
+    }
 }
 
 // 删除旧的 trait 实现，现在使用枚举方式

@@ -455,8 +455,11 @@ impl IoTDBMultiClient {
 
         match parsed_type {
             TreeNodeType::StorageGroup => {
+                // 从节点 ID 中提取存储组名称（去掉 "sg_" 前缀）
+                let storage_group_name = parent_node_id.strip_prefix("sg_").unwrap_or(parent_node_id);
+
                 // 获取设备列表
-                match self.get_devices_for_tree(parent_node_id).await {
+                match self.get_devices_for_tree(storage_group_name).await {
                     Ok(devices) => {
                         for device in devices {
                             let device_node = TreeNodeFactory::create_device(
@@ -472,8 +475,18 @@ impl IoTDBMultiClient {
                 }
             }
             TreeNodeType::Device => {
+                // 从设备节点 ID 中提取设备路径
+                // 设备节点 ID 格式: {storage_group_id}/device_{device_path}
+                let device_path = if let Some(device_part) = parent_node_id.split("/device_").nth(1) {
+                    // 将下划线替换回点号，恢复原始设备路径
+                    device_part.replace("_", ".")
+                } else {
+                    // 如果解析失败，直接使用 parent_node_id
+                    parent_node_id.to_string()
+                };
+
                 // 获取时间序列
-                match self.get_timeseries_for_tree(parent_node_id).await {
+                match self.get_timeseries_for_tree(&device_path).await {
                     Ok(timeseries) => {
                         for ts in timeseries {
                             let ts_node = TreeNodeFactory::create_timeseries(
