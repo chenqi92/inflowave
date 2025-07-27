@@ -1,35 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Button,
-  Alert,
-  AlertDescription,
-
-  Input,
-  InputNumber,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Input,
+  InputNumber,
   Label,
-  Typography,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useConnection } from '@/hooks/useConnection';
 import { ValidationUtils } from '@/utils/validation';
-import type { ConnectionConfig, ConnectionTestResult, DatabaseType, DatabaseVersion } from '@/types';
-import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
+import type {
+  ConnectionConfig,
+  ConnectionTestResult,
+  DatabaseType,
+  DatabaseVersion,
+} from '@/types';
+import {
+  createDefaultConnectionConfig,
+  getFilledConnectionConfig,
+} from '@/config/defaults';
 import { generateUniqueId } from '@/utils/idGenerator';
-import { DatabaseVersionDetectionService, type VersionDetectionResult, type DatabaseVersionInfo } from '@/services/databaseVersionDetection';
+import {
+  DatabaseVersionDetectionService,
+  type DatabaseVersionInfo,
+  type VersionDetectionResult,
+} from '@/services/databaseVersionDetection';
 import { showMessage } from '@/utils/message';
 import { VersionDetectionDialog } from './VersionDetectionDialog';
 import { getDatabaseIcon, renderDatabaseOption } from '@/utils/databaseIcons';
@@ -102,7 +110,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 添加取消控制器
-  const [testAbortController, setTestAbortController] = useState<AbortController | null>(null);
+  const [testAbortController, setTestAbortController] =
+    useState<AbortController | null>(null);
 
   // 处理取消操作
   const handleCancel = () => {
@@ -140,7 +149,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
   // 版本检测相关状态
   const [showVersionDialog, setShowVersionDialog] = useState(false);
-  const [versionDetectionResult, setVersionDetectionResult] = useState<VersionDetectionResult | null>(null);
+  const [versionDetectionResult, setVersionDetectionResult] =
+    useState<VersionDetectionResult | null>(null);
   const [isDetectingVersion, setIsDetectingVersion] = useState(false);
 
   const [formData, setFormData] = useState<FormData>(() => {
@@ -210,12 +220,15 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           v1CompatibilityApi: connection.v2Config?.v1CompatibilityApi || false,
           // IoTDB 配置
           sessionPoolSize: connection.driverConfig?.iotdb?.sessionPoolSize || 5,
-          enableCompression: connection.driverConfig?.iotdb?.enableCompression ?? true,
+          enableCompression:
+            connection.driverConfig?.iotdb?.enableCompression ?? true,
           timeZone: connection.driverConfig?.iotdb?.timeZone || 'Asia/Shanghai',
           fetchSize: connection.driverConfig?.iotdb?.fetchSize || 10000,
-          enableRedirection: connection.driverConfig?.iotdb?.enableRedirection ?? true,
+          enableRedirection:
+            connection.driverConfig?.iotdb?.enableRedirection ?? true,
           maxRetryCount: connection.driverConfig?.iotdb?.maxRetryCount || 3,
-          retryIntervalMs: connection.driverConfig?.iotdb?.retryIntervalMs || 1000,
+          retryIntervalMs:
+            connection.driverConfig?.iotdb?.retryIntervalMs || 1000,
           proxyEnabled: connection.proxyConfig?.enabled || false,
           proxyHost: connection.proxyConfig?.host || '127.0.0.1',
           proxyPort: connection.proxyConfig?.port || 8080,
@@ -274,8 +287,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
   };
 
-
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -310,7 +321,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
 
     // InfluxDB 2.x/3.x 特有验证
-    if (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) {
+    if (
+      formData.dbType === 'influxdb' &&
+      (formData.version === '2.x' || formData.version === '3.x')
+    ) {
       if (!formData.apiToken.trim()) {
         newErrors.apiToken = '请输入API令牌';
       }
@@ -341,7 +355,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (!formData.proxyHost.trim()) {
         newErrors.proxyHost = '请输入代理服务器地址';
       }
-      if (!formData.proxyPort || formData.proxyPort < 1 || formData.proxyPort > 65535) {
+      if (
+        !formData.proxyPort ||
+        formData.proxyPort < 1 ||
+        formData.proxyPort > 65535
+      ) {
         newErrors.proxyPort = '代理端口范围: 1-65535';
       }
     }
@@ -369,7 +387,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       // 同时进行连接测试和版本检测
       const [connectionResult, versionResult] = await Promise.allSettled([
         testConnectionOnly(),
-        detectVersionForTest()
+        detectVersionForTest(),
       ]);
 
       clearTimeout(timeoutId);
@@ -391,7 +409,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         let errorMessage = connectionResult.reason?.message || '连接测试失败';
 
         // 为IoTDB提供更友好的错误信息
-        if (formData.dbType === 'iotdb' && errorMessage.includes('ping request')) {
+        if (
+          formData.dbType === 'iotdb' &&
+          errorMessage.includes('ping request')
+        ) {
           errorMessage = `IoTDB 连接失败: ${errorMessage}`;
         }
 
@@ -406,7 +427,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (versionResult.status === 'fulfilled' && versionResult.value.success) {
         await handleVersionChangeDetection(versionResult.value);
       }
-
     } catch (error) {
       console.error('测试连接失败:', error);
       const errorMessage = String(error).replace('Error: ', '');
@@ -449,31 +469,40 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       queryTimeout: formData.queryTimeout,
       defaultQueryLanguage: formData.defaultQueryLanguage,
       retentionPolicy: formData.retentionPolicy || undefined,
-      v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
-        apiToken: formData.apiToken,
-        organization: formData.organization,
-        bucket: formData.bucket || undefined,
-        v1CompatibilityApi: formData.v1CompatibilityApi,
-      } : undefined,
-      driverConfig: formData.dbType === 'iotdb' ? {
-        iotdb: {
-          sessionPoolSize: formData.sessionPoolSize,
-          enableCompression: formData.enableCompression,
-          timeZone: formData.timeZone,
-          fetchSize: formData.fetchSize,
-          enableRedirection: formData.enableRedirection,
-          maxRetryCount: formData.maxRetryCount,
-          retryIntervalMs: formData.retryIntervalMs,
-        }
-      } : undefined,
-      proxyConfig: formData.proxyEnabled ? {
-        enabled: formData.proxyEnabled,
-        host: formData.proxyHost,
-        port: formData.proxyPort,
-        username: formData.proxyUsername || undefined,
-        password: formData.proxyPassword || undefined,
-        proxyType: formData.proxyType,
-      } : undefined,
+      v2Config:
+        formData.dbType === 'influxdb' &&
+        (formData.version === '2.x' || formData.version === '3.x')
+          ? {
+              apiToken: formData.apiToken,
+              organization: formData.organization,
+              bucket: formData.bucket || undefined,
+              v1CompatibilityApi: formData.v1CompatibilityApi,
+            }
+          : undefined,
+      driverConfig:
+        formData.dbType === 'iotdb'
+          ? {
+              iotdb: {
+                sessionPoolSize: formData.sessionPoolSize,
+                enableCompression: formData.enableCompression,
+                timeZone: formData.timeZone,
+                fetchSize: formData.fetchSize,
+                enableRedirection: formData.enableRedirection,
+                maxRetryCount: formData.maxRetryCount,
+                retryIntervalMs: formData.retryIntervalMs,
+              },
+            }
+          : undefined,
+      proxyConfig: formData.proxyEnabled
+        ? {
+            enabled: formData.proxyEnabled,
+            host: formData.proxyHost,
+            port: formData.proxyPort,
+            username: formData.proxyUsername || undefined,
+            password: formData.proxyPassword || undefined,
+            proxyType: formData.proxyType,
+          }
+        : undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       createdAt: new Date(),
@@ -505,7 +534,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   };
 
   // 处理版本变化检测
-  const handleVersionChangeDetection = async (newVersionResult: VersionDetectionResult) => {
+  const handleVersionChangeDetection = async (
+    newVersionResult: VersionDetectionResult
+  ) => {
     if (!newVersionResult.success || !newVersionResult.version_info) return;
 
     const newVersionInfo = newVersionResult.version_info;
@@ -569,13 +600,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     setShowVersionDialog(true);
 
     try {
-      const result = await DatabaseVersionDetectionService.detectDatabaseVersion({
-        host: formData.host,
-        port: formData.port,
-        username: formData.username || undefined,
-        password: formData.password || undefined,
-        token: formData.apiToken || undefined,
-      });
+      const result =
+        await DatabaseVersionDetectionService.detectDatabaseVersion({
+          host: formData.host,
+          port: formData.port,
+          username: formData.username || undefined,
+          password: formData.password || undefined,
+          token: formData.apiToken || undefined,
+        });
 
       setVersionDetectionResult(result);
     } catch (error) {
@@ -619,31 +651,43 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         queryTimeout: formData.queryTimeout,
         defaultQueryLanguage: formData.defaultQueryLanguage,
         retentionPolicy: formData.retentionPolicy || undefined,
-        v2Config: (formData.dbType === 'influxdb' && (formData.version === '2.x' || formData.version === '3.x')) ? {
-          apiToken: formData.apiToken,
-          organization: formData.organization,
-          bucket: formData.bucket || undefined,
-          v1CompatibilityApi: formData.v1CompatibilityApi,
-        } : undefined,
-        driverConfig: formData.dbType === 'iotdb' ? {
-          iotdb: {
-            sessionPoolSize: formData.sessionPoolSize,
-            enableCompression: formData.enableCompression,
-            timeZone: formData.timeZone,
-            fetchSize: formData.fetchSize,
-            enableRedirection: formData.enableRedirection,
-            maxRetryCount: formData.maxRetryCount,
-            retryIntervalMs: formData.retryIntervalMs,
-          }
-        } : undefined,
-        proxyConfig: formData.proxyEnabled ? {
-          enabled: formData.proxyEnabled,
-          host: formData.proxyHost,
-          port: formData.proxyPort,
-          username: formData.proxyUsername || undefined,
-          password: formData.proxyPassword || undefined,
-          proxyType: formData.proxyType,
-        } : undefined,
+        v2Config:
+          formData.dbType === 'influxdb' &&
+          (formData.version === '2.x' || formData.version === '3.x')
+            ? {
+                apiToken: formData.apiToken,
+                organization:
+                  formData.version === '3.x' && !formData.organization.trim()
+                    ? '' // InfluxDB 3.x 允许空组织
+                    : formData.organization,
+                bucket: formData.bucket || undefined,
+                v1CompatibilityApi: formData.v1CompatibilityApi,
+              }
+            : undefined,
+        driverConfig:
+          formData.dbType === 'iotdb'
+            ? {
+                iotdb: {
+                  sessionPoolSize: formData.sessionPoolSize,
+                  enableCompression: formData.enableCompression,
+                  timeZone: formData.timeZone,
+                  fetchSize: formData.fetchSize,
+                  enableRedirection: formData.enableRedirection,
+                  maxRetryCount: formData.maxRetryCount,
+                  retryIntervalMs: formData.retryIntervalMs,
+                },
+              }
+            : undefined,
+        proxyConfig: formData.proxyEnabled
+          ? {
+              enabled: formData.proxyEnabled,
+              host: formData.proxyHost,
+              port: formData.proxyPort,
+              username: formData.proxyUsername || undefined,
+              password: formData.proxyPassword || undefined,
+              proxyType: formData.proxyType,
+            }
+          : undefined,
 
         // 版本检测相关字段
         detectedVersion: versionInfo?.version,
@@ -690,7 +734,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     <div className='space-y-6'>
       {/* 基本信息 - 始终显示 */}
       <div className='space-y-4'>
-        <h3 className='text-lg font-medium text-foreground border-b pb-2'>基本信息</h3>
+        <h3 className='text-lg font-medium text-foreground border-b pb-2'>
+          基本信息
+        </h3>
 
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-1'>
@@ -729,8 +775,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           </div>
         </div>
 
-
-
         <div className='grid grid-cols-2 gap-4'>
           <div className='space-y-1'>
             <Label className='block text-sm font-medium text-foreground'>
@@ -753,9 +797,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <SelectTrigger className='h-9'>
                 <SelectValue placeholder='选择数据库类型'>
                   {formData.dbType && (
-                    <div className="flex items-center gap-2">
+                    <div className='flex items-center gap-2'>
                       {getDatabaseIcon(formData.dbType)}
-                      <span>{formData.dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}</span>
+                      <span>
+                        {formData.dbType === 'influxdb'
+                          ? 'InfluxDB'
+                          : 'Apache IoTDB'}
+                      </span>
                     </div>
                   )}
                 </SelectValue>
@@ -797,14 +845,16 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <SelectTrigger className='h-9'>
                   <SelectValue placeholder='选择版本'>
                     {formData.version && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      <div className='flex items-center gap-2'>
+                        <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded'>
                           {formData.version}
                         </span>
                         <span>
-                          {formData.version === '1.x' && 'InfluxDB 1.x (InfluxQL)'}
+                          {formData.version === '1.x' &&
+                            'InfluxDB 1.x (InfluxQL)'}
                           {formData.version === '2.x' && 'InfluxDB 2.x (Flux)'}
-                          {formData.version === '3.x' && 'InfluxDB 3.x (SQL + Flux)'}
+                          {formData.version === '3.x' &&
+                            'InfluxDB 3.x (SQL + Flux)'}
                         </span>
                       </div>
                     )}
@@ -812,35 +862,41 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='1.x'>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium'>
                         1.x
                       </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium">InfluxDB 1.x</span>
-                        <span className="text-xs text-muted-foreground">InfluxQL 查询语言</span>
+                      <div className='flex flex-col'>
+                        <span className='font-medium'>InfluxDB 1.x</span>
+                        <span className='text-xs text-muted-foreground'>
+                          InfluxQL 查询语言
+                        </span>
                       </div>
                     </div>
                   </SelectItem>
                   <SelectItem value='2.x'>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium'>
                         2.x
                       </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium">InfluxDB 2.x</span>
-                        <span className="text-xs text-muted-foreground">Flux 查询语言，API Token 认证</span>
+                      <div className='flex flex-col'>
+                        <span className='font-medium'>InfluxDB 2.x</span>
+                        <span className='text-xs text-muted-foreground'>
+                          Flux 查询语言，API Token 认证
+                        </span>
                       </div>
                     </div>
                   </SelectItem>
                   <SelectItem value='3.x'>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium'>
                         3.x
                       </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium">InfluxDB 3.x</span>
-                        <span className="text-xs text-muted-foreground">SQL + Flux，简化架构，可选组织</span>
+                      <div className='flex flex-col'>
+                        <span className='font-medium'>InfluxDB 3.x</span>
+                        <span className='text-xs text-muted-foreground'>
+                          SQL + Flux，简化架构，可选组织
+                        </span>
                       </div>
                     </div>
                   </SelectItem>
@@ -852,20 +908,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           )}
         </div>
-
-
       </div>
 
       {/* Tab 配置区域 */}
-      <Tabs defaultValue="server" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="server">服务器配置</TabsTrigger>
-          <TabsTrigger value="advanced">高级配置</TabsTrigger>
-          <TabsTrigger value="proxy">代理配置</TabsTrigger>
+      <Tabs defaultValue='server' className='w-full'>
+        <TabsList className='grid w-full grid-cols-3'>
+          <TabsTrigger value='server'>服务器配置</TabsTrigger>
+          <TabsTrigger value='advanced'>高级配置</TabsTrigger>
+          <TabsTrigger value='proxy'>代理配置</TabsTrigger>
         </TabsList>
 
         {/* 服务器配置 Tab */}
-        <TabsContent value="server" className="space-y-6 mt-6">
+        <TabsContent value='server' className='space-y-6 mt-6'>
           <div className='grid grid-cols-3 gap-4'>
             <div className='col-span-2 space-y-1'>
               <Label className='block text-sm font-medium text-foreground'>
@@ -884,7 +938,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 }`}
               />
               {errors.host && (
-                <div className='text-xs text-destructive mt-1'>{errors.host}</div>
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.host}
+                </div>
               )}
             </div>
 
@@ -895,14 +951,21 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <InputNumber
                 placeholder='8086'
                 value={formData.port}
-                onChange={value => handleInputChange('port', value || createDefaultConnectionConfig().port)}
+                onChange={value =>
+                  handleInputChange(
+                    'port',
+                    value || createDefaultConnectionConfig().port
+                  )
+                }
                 className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={1}
                 max={65535}
                 controls={false}
               />
               {errors.port && (
-                <div className='text-xs text-destructive mt-1'>{errors.port}</div>
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.port}
+                </div>
               )}
             </div>
           </div>
@@ -911,10 +974,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {formData.version === '1.x' && (
             <div className='space-y-4'>
               <div className='flex items-center gap-2 pb-2 border-b'>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                <span className='text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium'>
                   1.x
                 </span>
-                <h4 className='text-sm font-medium text-foreground'>用户名/密码认证</h4>
+                <h4 className='text-sm font-medium text-foreground'>
+                  用户名/密码认证
+                </h4>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
@@ -924,7 +989,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <Input
                     placeholder='可选，如 admin'
                     value={formData.username}
-                    onChange={e => handleInputChange('username', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('username', e.target.value)
+                    }
                     autoCapitalize='off'
                     autoCorrect='off'
                     className='h-9'
@@ -942,7 +1009,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     type='password'
                     placeholder='可选'
                     value={formData.password}
-                    onChange={e => handleInputChange('password', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('password', e.target.value)
+                    }
                     className='h-9'
                   />
                 </div>
@@ -954,14 +1023,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {(formData.version === '2.x' || formData.version === '3.x') && (
             <div className='space-y-4'>
               <div className='flex items-center gap-2 pb-2 border-b'>
-                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                  formData.version === '2.x'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-purple-100 text-purple-800'
-                }`}>
+                <span
+                  className={`text-xs px-2 py-1 rounded font-medium ${
+                    formData.version === '2.x'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}
+                >
                   {formData.version}
                 </span>
-                <h4 className='text-sm font-medium text-foreground'>API Token 认证</h4>
+                <h4 className='text-sm font-medium text-foreground'>
+                  API Token 认证
+                </h4>
               </div>
 
               <div className='space-y-1'>
@@ -980,7 +1053,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   }`}
                 />
                 {errors.apiToken && (
-                  <div className='text-xs text-destructive mt-1'>{errors.apiToken}</div>
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.apiToken}
+                  </div>
                 )}
                 <p className='text-xs text-muted-foreground'>
                   在 InfluxDB UI 中生成的 API Token，具有读写权限
@@ -990,16 +1065,25 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
                   <Label className='block text-sm font-medium text-foreground'>
-                    组织 ID/名称 {formData.version === '3.x' ? (
-                      <span className='text-muted-foreground text-xs'>(可选)</span>
+                    组织 ID/名称{' '}
+                    {formData.version === '3.x' ? (
+                      <span className='text-muted-foreground text-xs'>
+                        (可选)
+                      </span>
                     ) : (
                       <span className='text-destructive'>*</span>
                     )}
                   </Label>
                   <Input
-                    placeholder={formData.version === '3.x' ? '可选，如: myorg' : '如: myorg 或 org-id'}
+                    placeholder={
+                      formData.version === '3.x'
+                        ? '可选，如: myorg'
+                        : '如: myorg 或 org-id'
+                    }
                     value={formData.organization}
-                    onChange={e => handleInputChange('organization', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('organization', e.target.value)
+                    }
                     autoCapitalize='off'
                     autoCorrect='off'
                     className={`h-9 ${
@@ -1009,13 +1093,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     }`}
                   />
                   {errors.organization && (
-                    <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.organization}
+                    </div>
                   )}
                   <p className='text-xs text-muted-foreground'>
                     {formData.version === '3.x'
                       ? '可选，某些 InfluxDB 3.x 部署不需要组织'
-                      : '组织名称或 ID'
-                    }
+                      : '组织名称或 ID'}
                   </p>
                 </div>
 
@@ -1043,10 +1128,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {formData.version === '1.x' && (
             <div className='space-y-4'>
               <div className='flex items-center gap-2 pb-2 border-b'>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                <span className='text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium'>
                   1.x
                 </span>
-                <h4 className='text-sm font-medium text-foreground'>数据库配置</h4>
+                <h4 className='text-sm font-medium text-foreground'>
+                  数据库配置
+                </h4>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
@@ -1056,7 +1143,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <Input
                     placeholder='如: mydb'
                     value={formData.database}
-                    onChange={e => handleInputChange('database', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('database', e.target.value)
+                    }
                     autoCapitalize='off'
                     autoCorrect='off'
                     className='h-9'
@@ -1073,7 +1162,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <Input
                     placeholder='如: autogen'
                     value={formData.retentionPolicy}
-                    onChange={e => handleInputChange('retentionPolicy', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('retentionPolicy', e.target.value)
+                    }
                     autoCapitalize='off'
                     autoCorrect='off'
                     className='h-9'
@@ -1089,14 +1180,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {(formData.version === '2.x' || formData.version === '3.x') && (
             <div className='space-y-4'>
               <div className='flex items-center gap-2 pb-2 border-b'>
-                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                  formData.version === '2.x'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-purple-100 text-purple-800'
-                }`}>
+                <span
+                  className={`text-xs px-2 py-1 rounded font-medium ${
+                    formData.version === '2.x'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-purple-100 text-purple-800'
+                  }`}
+                >
                   {formData.version}
                 </span>
-                <h4 className='text-sm font-medium text-foreground'>兼容性配置</h4>
+                <h4 className='text-sm font-medium text-foreground'>
+                  兼容性配置
+                </h4>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
@@ -1107,13 +1202,17 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     <Switch
                       id='v1-compat-switch'
                       checked={formData.v1CompatibilityApi}
-                      onCheckedChange={checked => handleInputChange('v1CompatibilityApi', checked)}
+                      onCheckedChange={checked =>
+                        handleInputChange('v1CompatibilityApi', checked)
+                      }
                     />
                     <Label
                       htmlFor='v1-compat-switch'
                       className='text-sm font-medium cursor-pointer'
                     >
-                      {formData.v1CompatibilityApi ? '已启用 V1 兼容 API' : '启用 V1 兼容 API'}
+                      {formData.v1CompatibilityApi
+                        ? '已启用 V1 兼容 API'
+                        : '启用 V1 兼容 API'}
                     </Label>
                   </div>
                   <p className='text-xs text-muted-foreground'>
@@ -1128,7 +1227,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <Input
                     placeholder='可选，用于 V1 兼容 API'
                     value={formData.database}
-                    onChange={e => handleInputChange('database', e.target.value)}
+                    onChange={e =>
+                      handleInputChange('database', e.target.value)
+                    }
                     autoCapitalize='off'
                     autoCorrect='off'
                     className='h-9'
@@ -1144,7 +1245,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </TabsContent>
 
         {/* 高级配置 Tab */}
-        <TabsContent value="advanced" className="space-y-6 mt-6">
+        <TabsContent value='advanced' className='space-y-6 mt-6'>
           <div className='grid grid-cols-3 gap-4'>
             <div className='space-y-1'>
               <Label className='block text-sm font-medium text-foreground'>
@@ -1153,7 +1254,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <InputNumber
                 placeholder='30'
                 value={formData.connectionTimeout}
-                onChange={value => handleInputChange('connectionTimeout', value || 30)}
+                onChange={value =>
+                  handleInputChange('connectionTimeout', value || 30)
+                }
                 className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={5}
                 max={300}
@@ -1173,7 +1276,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <InputNumber
                 placeholder='60'
                 value={formData.queryTimeout}
-                onChange={value => handleInputChange('queryTimeout', value || 60)}
+                onChange={value =>
+                  handleInputChange('queryTimeout', value || 60)
+                }
                 className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={10}
                 max={3600}
@@ -1222,7 +1327,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <InputNumber
                     placeholder='5'
                     value={formData.sessionPoolSize}
-                    onChange={value => handleInputChange('sessionPoolSize', value || 5)}
+                    onChange={value =>
+                      handleInputChange('sessionPoolSize', value || 5)
+                    }
                     className='w-full h-9'
                     min={1}
                     max={50}
@@ -1237,7 +1344,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <InputNumber
                     placeholder='10000'
                     value={formData.fetchSize}
-                    onChange={value => handleInputChange('fetchSize', value || 10000)}
+                    onChange={value =>
+                      handleInputChange('fetchSize', value || 10000)
+                    }
                     className='w-full h-9'
                     min={100}
                     max={100000}
@@ -1251,16 +1360,24 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   </Label>
                   <Select
                     value={formData.timeZone}
-                    onValueChange={value => handleInputChange('timeZone', value)}
+                    onValueChange={value =>
+                      handleInputChange('timeZone', value)
+                    }
                   >
                     <SelectTrigger className='h-9'>
                       <SelectValue placeholder='选择时区' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='Asia/Shanghai'>Asia/Shanghai</SelectItem>
+                      <SelectItem value='Asia/Shanghai'>
+                        Asia/Shanghai
+                      </SelectItem>
                       <SelectItem value='UTC'>UTC</SelectItem>
-                      <SelectItem value='America/New_York'>America/New_York</SelectItem>
-                      <SelectItem value='Europe/London'>Europe/London</SelectItem>
+                      <SelectItem value='America/New_York'>
+                        America/New_York
+                      </SelectItem>
+                      <SelectItem value='Europe/London'>
+                        Europe/London
+                      </SelectItem>
                       <SelectItem value='Asia/Tokyo'>Asia/Tokyo</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1275,7 +1392,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <InputNumber
                     placeholder='3'
                     value={formData.maxRetryCount}
-                    onChange={value => handleInputChange('maxRetryCount', value || 3)}
+                    onChange={value =>
+                      handleInputChange('maxRetryCount', value || 3)
+                    }
                     className='w-full h-9'
                     min={0}
                     max={10}
@@ -1290,7 +1409,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <InputNumber
                     placeholder='1000'
                     value={formData.retryIntervalMs}
-                    onChange={value => handleInputChange('retryIntervalMs', value || 1000)}
+                    onChange={value =>
+                      handleInputChange('retryIntervalMs', value || 1000)
+                    }
                     className='w-full h-9'
                     min={100}
                     max={10000}
@@ -1308,7 +1429,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     <Switch
                       id='compression-switch'
                       checked={formData.enableCompression}
-                      onCheckedChange={checked => handleInputChange('enableCompression', checked)}
+                      onCheckedChange={checked =>
+                        handleInputChange('enableCompression', checked)
+                      }
                     />
                     <Label
                       htmlFor='compression-switch'
@@ -1327,13 +1450,17 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     <Switch
                       id='redirection-switch'
                       checked={formData.enableRedirection}
-                      onCheckedChange={checked => handleInputChange('enableRedirection', checked)}
+                      onCheckedChange={checked =>
+                        handleInputChange('enableRedirection', checked)
+                      }
                     />
                     <Label
                       htmlFor='redirection-switch'
                       className='text-sm font-medium cursor-pointer'
                     >
-                      {formData.enableRedirection ? '已启用重定向' : '启用重定向'}
+                      {formData.enableRedirection
+                        ? '已启用重定向'
+                        : '启用重定向'}
                     </Label>
                   </div>
                 </div>
@@ -1349,7 +1476,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               </Label>
               <Select
                 value={formData.defaultQueryLanguage}
-                onValueChange={value => handleInputChange('defaultQueryLanguage', value)}
+                onValueChange={value =>
+                  handleInputChange('defaultQueryLanguage', value)
+                }
               >
                 <SelectTrigger className='h-9'>
                   <SelectValue placeholder='选择查询语言' />
@@ -1359,7 +1488,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     <>
                       <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
                       <SelectItem value='Flux'>Flux</SelectItem>
-                      {formData.version === '3.x' && <SelectItem value='SQL'>SQL</SelectItem>}
+                      {formData.version === '3.x' && (
+                        <SelectItem value='SQL'>SQL</SelectItem>
+                      )}
                     </>
                   )}
                   {formData.dbType === 'iotdb' && (
@@ -1391,11 +1522,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </TabsContent>
 
         {/* 代理配置 Tab */}
-        <TabsContent value="proxy" className="space-y-6 mt-6">
+        <TabsContent value='proxy' className='space-y-6 mt-6'>
           {/* 启用代理开关 */}
           <div className='flex items-center justify-between p-4 rounded-lg border bg-muted/20'>
             <div>
-              <Label htmlFor='proxy-switch' className='text-sm font-medium cursor-pointer'>
+              <Label
+                htmlFor='proxy-switch'
+                className='text-sm font-medium cursor-pointer'
+              >
                 启用代理
               </Label>
               <p className='text-xs text-muted-foreground mt-1'>
@@ -1405,7 +1539,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             <Switch
               id='proxy-switch'
               checked={formData.proxyEnabled}
-              onCheckedChange={checked => handleInputChange('proxyEnabled', checked)}
+              onCheckedChange={checked =>
+                handleInputChange('proxyEnabled', checked)
+              }
             />
           </div>
 
@@ -1427,7 +1563,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 }`}
               />
               {errors.proxyHost && (
-                <div className='text-xs text-destructive mt-1'>{errors.proxyHost}</div>
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.proxyHost}
+                </div>
               )}
             </div>
 
@@ -1438,14 +1576,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <InputNumber
                 placeholder='8080'
                 value={formData.proxyPort}
-                onChange={value => handleInputChange('proxyPort', value || 8080)}
+                onChange={value =>
+                  handleInputChange('proxyPort', value || 8080)
+                }
                 className={`w-full h-9 ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 min={1}
                 max={65535}
                 controls={false}
               />
               {errors.proxyPort && (
-                <div className='text-xs text-destructive mt-1'>{errors.proxyPort}</div>
+                <div className='text-xs text-destructive mt-1'>
+                  {errors.proxyPort}
+                </div>
               )}
             </div>
           </div>
@@ -1477,7 +1619,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <Input
                 placeholder='可选'
                 value={formData.proxyUsername}
-                onChange={e => handleInputChange('proxyUsername', e.target.value)}
+                onChange={e =>
+                  handleInputChange('proxyUsername', e.target.value)
+                }
                 autoCapitalize='off'
                 autoCorrect='off'
                 className='h-9'
@@ -1492,7 +1636,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 type='password'
                 placeholder='可选'
                 value={formData.proxyPassword}
-                onChange={e => handleInputChange('proxyPassword', e.target.value)}
+                onChange={e =>
+                  handleInputChange('proxyPassword', e.target.value)
+                }
                 className='h-9'
               />
             </div>
@@ -1502,127 +1648,130 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     </div>
   );
 
-
-
-
-
   return (
     <>
-    <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
-        <DialogHeader className='pb-4'>
-          <DialogTitle className='text-xl font-semibold'>
-            {isEditing ? '编辑连接' : '新建连接'}
-          </DialogTitle>
-        </DialogHeader>
-        <div className='space-y-6'>
-          {/* 连接配置表单 */}
-          {renderConnectionForm()}
+      <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
+        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+          <DialogHeader className='pb-4'>
+            <DialogTitle className='text-xl font-semibold'>
+              {isEditing ? '编辑连接' : '新建连接'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className='space-y-6'>
+            {/* 连接配置表单 */}
+            {renderConnectionForm()}
 
-          {/* 测试结果显示区域 */}
-          {testResult && (
-            <div className='border-t pt-4'>
-              <div className={`p-4 rounded-lg border ${
-                testResult.success
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-red-50 border-red-200'
-              }`}>
-                <div className='flex items-start gap-3'>
-                  {testResult.success ? (
-                    <CheckCircle className='w-5 h-5 text-green-600 flex-shrink-0 mt-0.5' />
-                  ) : (
-                    <XCircle className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5' />
-                  )}
-                  <div className='flex-1'>
-                    <h4 className={`font-medium ${
-                      testResult.success ? 'text-green-800' : 'text-red-800'
-                    }`}>
-                      {testResult.success ? '连接测试成功' : '连接测试失败'}
-                    </h4>
+            {/* 测试结果显示区域 */}
+            {testResult && (
+              <div className='border-t pt-4'>
+                <div
+                  className={`p-4 rounded-lg border ${
+                    testResult.success
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  <div className='flex items-start gap-3'>
                     {testResult.success ? (
-                      <div className='mt-2 text-sm text-green-700'>
-                        <p>✅ 数据库连接正常</p>
-                        {testResult.latency && (
-                          <p>⚡ 响应时间: {testResult.latency}ms</p>
-                        )}
-                        <p className='mt-1 text-green-600'>连接配置有效，可以保存使用</p>
-                      </div>
+                      <CheckCircle className='w-5 h-5 text-green-600 flex-shrink-0 mt-0.5' />
                     ) : (
-                      <div className='mt-2 text-sm text-red-700'>
-                        <p className='font-medium'>错误详情:</p>
-                        <p className='mt-1 bg-red-100 p-2 rounded text-xs font-mono'>
-                          {testResult.error}
-                        </p>
-                        {formData.dbType === 'iotdb' && testResult.error?.includes('ping request') && (
-                          <div className='mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs'>
-                            <p className='font-medium'>💡 IoTDB 连接提示:</p>
-                            <ul className='mt-1 list-disc list-inside space-y-1'>
-                              <li>确保 IoTDB 服务正在运行</li>
-                              <li>检查端口号是否正确（默认: 6667）</li>
-                              <li>确认网络连接和防火墙设置</li>
-                              <li>IoTDB 使用 TCP 连接，不是 HTTP</li>
-                            </ul>
-                          </div>
-                        )}
-                        <p className='mt-2 text-red-600'>请检查连接参数后重试</p>
-                      </div>
+                      <XCircle className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5' />
                     )}
+                    <div className='flex-1'>
+                      <h4
+                        className={`font-medium ${
+                          testResult.success ? 'text-green-800' : 'text-red-800'
+                        }`}
+                      >
+                        {testResult.success ? '连接测试成功' : '连接测试失败'}
+                      </h4>
+                      {testResult.success ? (
+                        <div className='mt-2 text-sm text-green-700'>
+                          <p>✅ 数据库连接正常</p>
+                          {testResult.latency && (
+                            <p>⚡ 响应时间: {testResult.latency}ms</p>
+                          )}
+                          <p className='mt-1 text-green-600'>
+                            连接配置有效，可以保存使用
+                          </p>
+                        </div>
+                      ) : (
+                        <div className='mt-2 text-sm text-red-700'>
+                          <p className='font-medium'>错误详情:</p>
+                          <p className='mt-1 bg-red-100 p-2 rounded text-xs font-mono'>
+                            {testResult.error}
+                          </p>
+                          {formData.dbType === 'iotdb' &&
+                            testResult.error?.includes('ping request') && (
+                              <div className='mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs'>
+                                <p className='font-medium'>
+                                  💡 IoTDB 连接提示:
+                                </p>
+                                <ul className='mt-1 list-disc list-inside space-y-1'>
+                                  <li>确保 IoTDB 服务正在运行</li>
+                                  <li>检查端口号是否正确（默认: 6667）</li>
+                                  <li>确认网络连接和防火墙设置</li>
+                                  <li>IoTDB 使用 TCP 连接，不是 HTTP</li>
+                                </ul>
+                              </div>
+                            )}
+                          <p className='mt-2 text-red-600'>
+                            请检查连接参数后重试
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* 操作按钮 */}
+            <div className='flex justify-end gap-3 pt-4 border-t'>
+              <Button onClick={handleCancel} variant='outline' size='sm'>
+                取消
+              </Button>
+
+              <Button
+                onClick={handleTestConnection}
+                disabled={isTesting}
+                variant='outline'
+                size='sm'
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                    测试中...
+                  </>
+                ) : (
+                  '测试连接'
+                )}
+              </Button>
+
+              <Button onClick={handleSubmit} disabled={isSubmitting} size='sm'>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                    保存中...
+                  </>
+                ) : (
+                  '保存连接'
+                )}
+              </Button>
             </div>
-          )}
-
-          {/* 操作按钮 */}
-          <div className='flex justify-end gap-3 pt-4 border-t'>
-            <Button onClick={handleCancel} variant='outline' size='sm'>
-              取消
-            </Button>
-
-            <Button
-              onClick={handleTestConnection}
-              disabled={isTesting}
-              variant='outline'
-              size='sm'
-            >
-              {isTesting ? (
-                <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                  测试中...
-                </>
-              ) : (
-                '测试连接'
-              )}
-            </Button>
-
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              size='sm'
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                  保存中...
-                </>
-              ) : (
-                '保存连接'
-              )}
-            </Button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
-    {/* 版本检测确认对话框 */}
-    <VersionDetectionDialog
-      visible={showVersionDialog}
-      detectionResult={versionDetectionResult}
-      connectionName={formData.name}
-      onConfirm={handleVersionConfirm}
-      onCancel={() => setShowVersionDialog(false)}
-      loading={isDetectingVersion}
-    />
-  </>
+      {/* 版本检测确认对话框 */}
+      <VersionDetectionDialog
+        visible={showVersionDialog}
+        detectionResult={versionDetectionResult}
+        connectionName={formData.name}
+        onConfirm={handleVersionConfirm}
+        onCancel={() => setShowVersionDialog(false)}
+        loading={isDetectingVersion}
+      />
+    </>
   );
 };
