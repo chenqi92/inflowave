@@ -237,11 +237,25 @@
   border: 1px solid hsl(142 76% 88%);
 }
 
-/* 强制应用字体到下拉框选项 */
-.font-dropdown-option {
+/* 强制应用字体到下拉框选项 - 使用极高优先级覆盖全局样式 */
+div[role="option"].font-dropdown-option {
   font-family: inherit !important;
 }
 
-.font-dropdown-option * {
+div[role="option"].font-dropdown-option *,
+div[role="option"].font-dropdown-option .font-preview,
+div[role="option"].font-dropdown-option .font-preview *,
+div[role="option"].font-dropdown-option .font-preview span,
+div[role="option"].font-dropdown-option .font-preview div {
+  font-family: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* 更具体的选择器来覆盖body的全局字体设置 */
+body div[role="option"][style*="fontFamily"] * {
+  font-family: inherit !important;
+}
+
+body div[role="option"][style*="fontFamily"] .font-preview * {
   font-family: inherit !important;
 }

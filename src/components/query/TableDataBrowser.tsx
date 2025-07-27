@@ -1219,10 +1219,29 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 键盘事件监听
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+A 全选
+      const target = event.target as HTMLElement;
+
+      // 检查是否在可编辑元素中
+      const isEditable = target.isContentEditable ||
+                       target.tagName === 'INPUT' ||
+                       target.tagName === 'TEXTAREA' ||
+                       target.closest('.monaco-editor') ||
+                       target.closest('[contenteditable="true"]') ||
+                       target.closest('.ProseMirror') ||
+                       target.closest('[role="textbox"]');
+
+      // 如果在可编辑元素中，不处理表格快捷键
+      if (isEditable) {
+        return;
+      }
+
+      // Ctrl+A 全选（仅在表格区域）
       if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-        event.preventDefault();
-        handleSelectAll();
+        // 检查是否在表格容器内
+        if (target.closest('.table-data-browser')) {
+          event.preventDefault();
+          handleSelectAll();
+        }
       }
       // Escape 取消选择
       else if (event.key === 'Escape') {
@@ -1484,7 +1503,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 分页信息计算已移至独立的 PaginationControls 组件中
 
   return (
-    <div className='h-full flex flex-col bg-background'>
+    <div className='h-full flex flex-col bg-background table-data-browser'>
       {/* 头部工具栏 */}
       <TableToolbar
         title={tableName}

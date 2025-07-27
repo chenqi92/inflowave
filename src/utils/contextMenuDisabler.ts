@@ -27,42 +27,60 @@ const disableContextMenu = (): void => {
  */
 const disableKeyboardShortcuts = (): void => {
   document.addEventListener('keydown', (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+
+    // 检查是否在可编辑元素中
+    const isEditable = target.isContentEditable ||
+                     target.tagName === 'INPUT' ||
+                     target.tagName === 'TEXTAREA' ||
+                     target.closest('.monaco-editor') ||
+                     target.closest('[contenteditable="true"]') ||
+                     target.closest('.ProseMirror') ||
+                     target.closest('[role="textbox"]');
+
+    // 如果在可编辑元素中，不禁用任何键盘快捷键
+    if (isEditable) {
+      return;
+    }
+
+    // 只在非可编辑元素中禁用特定的浏览器快捷键
+
     // 禁用F5刷新
     if (e.key === 'F5') {
       e.preventDefault();
       return false;
     }
-    
+
     // 禁用Ctrl+R刷新
     if (e.ctrlKey && e.key === 'r') {
       e.preventDefault();
       return false;
     }
-    
+
     // 禁用F12开发者工具
     if (e.key === 'F12') {
       e.preventDefault();
       return false;
     }
-    
+
     // 禁用Ctrl+Shift+I开发者工具
     if (e.ctrlKey && e.shiftKey && e.key === 'I') {
       e.preventDefault();
       return false;
     }
-    
+
     // 禁用Ctrl+U查看源码
     if (e.ctrlKey && e.key === 'u') {
       e.preventDefault();
       return false;
     }
-    
-    // 禁用Ctrl+Shift+C开发者工具
+
+    // 禁用Ctrl+Shift+C开发者工具（但不是复制）
     if (e.ctrlKey && e.shiftKey && e.key === 'C') {
       e.preventDefault();
       return false;
     }
-    
+
     // 禁用Ctrl+Shift+J开发者工具
     if (e.ctrlKey && e.shiftKey && e.key === 'J') {
       e.preventDefault();

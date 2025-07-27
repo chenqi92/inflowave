@@ -235,8 +235,8 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
                     )}
                     style={{ 
                       fontFamily: font.fontFamily,
-                      fontWeight: 'inherit',
-                      fontSize: 'inherit'
+                      fontWeight: 400,
+                      fontSize: '14px'
                     }}
                     onClick={() => handleOptionClick(font.value)}
                     role="option"
@@ -248,7 +248,10 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
                       </span>
                     )}
                     
-                    <div className={cn("w-full", value === font.value && "ml-6")}>
+                    <div 
+                      className={cn("w-full", value === font.value && "ml-6")}
+                      style={{ fontFamily: font.fontFamily }}
+                    >
                       <FontPreview
                         fontFamily={font.fontFamily}
                         name={font.name}

@@ -483,19 +483,30 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
       // 阻止 Backspace 键导致页面后退
       const preventBrowserNavigation = (e: KeyboardEvent) => {
-        // 阻止 Backspace 键在非输入元素上的默认行为
-        if (e.key === 'Backspace') {
-          const target = e.target as HTMLElement;
-          const isEditable = target.isContentEditable ||
-                           target.tagName === 'INPUT' ||
-                           target.tagName === 'TEXTAREA' ||
-                           target.closest('.monaco-editor');
+        const target = e.target as HTMLElement;
 
-          if (!isEditable) {
-            console.log('🚫 阻止 Backspace 键导致页面后退');
-            e.preventDefault();
-            e.stopPropagation();
-          }
+        // 检查是否在可编辑元素中
+        const isEditable = target.isContentEditable ||
+                         target.tagName === 'INPUT' ||
+                         target.tagName === 'TEXTAREA' ||
+                         target.closest('.monaco-editor') ||
+                         target.closest('[contenteditable="true"]') ||
+                         target.closest('.ProseMirror') ||
+                         target.closest('[role="textbox"]');
+
+        // 如果在可编辑元素中，完全不干预任何键盘事件
+        if (isEditable) {
+          return;
+        }
+
+        // 只在非可编辑元素中阻止特定的浏览器行为
+
+        // 阻止 Backspace 键在非输入元素上导致页面后退
+        if (e.key === 'Backspace') {
+          console.log('🚫 阻止 Backspace 键导致页面后退');
+          e.preventDefault();
+          e.stopPropagation();
+          return;
         }
 
         // 阻止 F5 刷新页面
@@ -503,6 +514,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           console.log('🚫 阻止 F5 键刷新页面');
           e.preventDefault();
           e.stopPropagation();
+          return;
         }
 
         // 阻止 Ctrl+R 刷新页面
@@ -510,6 +522,15 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           console.log('🚫 阻止 Ctrl+R 刷新页面');
           e.preventDefault();
           e.stopPropagation();
+          return;
+        }
+
+        // 阻止 Alt+Left/Right 导致浏览器前进后退
+        if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+          console.log('🚫 阻止 Alt+方向键导致浏览器导航');
+          e.preventDefault();
+          e.stopPropagation();
+          return;
         }
       };
 
@@ -1195,16 +1216,20 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
         },
         wordWrap: 'on',
         automaticLayout: true,
-        // 禁用Monaco内置的智能提示，使用我们的自定义提示
-        quickSuggestions: false,
-        suggestOnTriggerCharacters: false,
-        parameterHints: { enabled: false },
+        // 启用Monaco内置的智能提示，确保正常的编辑体验
+        quickSuggestions: {
+          other: true,
+          comments: false,
+          strings: true,
+        },
+        suggestOnTriggerCharacters: true,
+        parameterHints: { enabled: true },
         formatOnPaste: true,
         formatOnType: true,
-        acceptSuggestionOnEnter: 'off',
-        tabCompletion: 'off',
+        acceptSuggestionOnEnter: 'on',
+        tabCompletion: 'on',
         hover: { enabled: true },
-        wordBasedSuggestions: 'off',
+        wordBasedSuggestions: 'currentDocument',
         // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
         contextmenu: false,
         // 关键：完全禁用所有可能触发剪贴板权限的功能
