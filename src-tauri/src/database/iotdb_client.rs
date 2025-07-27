@@ -457,84 +457,11 @@ impl IoTDBHttpClient {
 
     /// 执行模拟查询（当HTTP失败时使用）
     async fn execute_fallback_query(&self, query: &str) -> Result<QueryResult> {
-        let start = Instant::now();
-        debug!("使用模拟数据执行IoTDB查询: {}", query);
+        error!("IoTDB HTTP 查询失败，查询: {}", query);
 
-        // 根据查询类型返回模拟数据
-        let (columns, data) = if query.to_uppercase().contains("SHOW STORAGE GROUP") ||
-                                 query.to_uppercase().contains("SHOW DATABASE") {
-            // 存储组查询
-            (
-                vec!["storage group".to_string()],
-                vec![
-                    vec![Value::String("root.sg1".to_string())],
-                    vec![Value::String("root.sg2".to_string())],
-                    vec![Value::String("root.vehicle".to_string())],
-                    vec![Value::String("root.test".to_string())],
-                ]
-            )
-        } else if query.to_uppercase().contains("SHOW DEVICES") {
-            // 设备查询
-            let storage_group = if query.contains("root.") {
-                // 从查询中提取存储组名称
-                query.split_whitespace()
-                    .find(|s| s.starts_with("root."))
-                    .unwrap_or("root.sg1")
-            } else {
-                "root.sg1"
-            };
+        // 不返回模拟数据，而是返回错误
+        Err(anyhow::anyhow!("IoTDB 查询失败：HTTP 连接不可用，请检查 IoTDB 服务状态和连接配置"))
 
-            (
-                vec!["devices".to_string()],
-                vec![
-                    vec![Value::String(format!("{}.d1", storage_group))],
-                    vec![Value::String(format!("{}.d2", storage_group))],
-                    vec![Value::String(format!("{}.device1", storage_group))],
-                ]
-            )
-        } else if query.to_uppercase().contains("SHOW TIMESERIES") {
-            // 时间序列查询
-            (
-                vec!["timeseries".to_string(), "alias".to_string(), "storage group".to_string(), "dataType".to_string()],
-                vec![
-                    vec![
-                        Value::String("temperature".to_string()),
-                        Value::Null,
-                        Value::String("root.sg1".to_string()),
-                        Value::String("FLOAT".to_string()),
-                    ],
-                    vec![
-                        Value::String("humidity".to_string()),
-                        Value::Null,
-                        Value::String("root.sg1".to_string()),
-                        Value::String("FLOAT".to_string()),
-                    ],
-                    vec![
-                        Value::String("pressure".to_string()),
-                        Value::Null,
-                        Value::String("root.sg1".to_string()),
-                        Value::String("DOUBLE".to_string()),
-                    ],
-                ]
-            )
-        } else {
-            // 其他查询返回空结果
-            (vec![], vec![])
-        };
-
-        let execution_time = start.elapsed().as_millis() as u64;
-        let row_count = data.len();
-
-        info!("IoTDB 模拟查询执行成功，返回 {} 行数据，耗时: {}ms", row_count, execution_time);
-
-        Ok(QueryResult {
-            results: vec![],
-            execution_time: Some(execution_time),
-            row_count: Some(row_count),
-            error: None,
-            data: Some(data),
-            columns: Some(columns),
-        })
     }
 
     /// 获取存储组列表
@@ -581,14 +508,14 @@ impl IoTDBHttpClient {
             }
         }
 
-        // 如果所有查询都失败，返回默认存储组
-        warn!("无法获取存储组列表，返回默认值");
-        Ok(vec![
-            "root.sg1".to_string(),
-            "root.sg2".to_string(),
-            "root.vehicle".to_string(),
-            "root.test".to_string(),
-        ])
+        // 如果所有查询都失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取 IoTDB 存储组列表：所有查询方法都失败，请检查连接配置和服务状态"))
+    }
+
+    /// 获取数据库列表（在 IoTDB 中对应存储组）
+    pub async fn get_databases(&self) -> Result<Vec<String>> {
+        debug!("获取 IoTDB 数据库列表（存储组）");
+        self.get_storage_groups().await
     }
 
     /// 获取设备列表
@@ -621,12 +548,8 @@ impl IoTDBHttpClient {
             return Ok(devices);
         }
 
-        // 如果查询失败，返回默认设备
-        warn!("无法获取设备列表，返回默认值");
-        Ok(vec![
-            format!("{}.d1", storage_group),
-            format!("{}.d2", storage_group),
-        ])
+        // 如果查询失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取存储组 {} 的设备列表：查询失败，请检查存储组是否存在", storage_group))
     }
 
     /// 获取时间序列列表
@@ -658,14 +581,8 @@ impl IoTDBHttpClient {
             return Ok(timeseries);
         }
 
-        // 如果查询失败，返回默认时间序列
-        warn!("无法获取时间序列列表，返回默认值");
-        Ok(vec![
-            "s1".to_string(),
-            "s2".to_string(),
-            "temperature".to_string(),
-            "humidity".to_string(),
-        ])
+        // 如果查询失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取设备 {} 的时间序列列表：查询失败，请检查设备是否存在", device_path))
     }
 
     /// 创建存储组

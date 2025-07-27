@@ -27,7 +27,7 @@ const fontOptions: FontOption[] = [
     category: 'system'
   },
   
-  // 现代无衬线字体 - 仅包含实际可用的字体
+  // 现代无衬线字体 - 本地下载的字体
   {
     value: 'inter',
     name: 'Inter',
@@ -50,6 +50,96 @@ const fontOptions: FontOption[] = [
     value: 'source-sans',
     name: 'Source Sans Pro',
     fontFamily: '"Source Sans Pro", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'lato',
+    name: 'Lato',
+    fontFamily: '"Lato", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'nunito',
+    name: 'Nunito',
+    fontFamily: '"Nunito", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'poppins',
+    name: 'Poppins',
+    fontFamily: '"Poppins", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'montserrat',
+    name: 'Montserrat',
+    fontFamily: '"Montserrat", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'fira-sans',
+    name: 'Fira Sans',
+    fontFamily: '"Fira Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'noto-sans',
+    name: 'Noto Sans',
+    fontFamily: '"Noto Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'ubuntu',
+    name: 'Ubuntu',
+    fontFamily: '"Ubuntu", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'work-sans',
+    name: 'Work Sans',
+    fontFamily: '"Work Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'dm-sans',
+    name: 'DM Sans',
+    fontFamily: '"DM Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'plus-jakarta-sans',
+    name: 'Plus Jakarta Sans',
+    fontFamily: '"Plus Jakarta Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'manrope',
+    name: 'Manrope',
+    fontFamily: '"Manrope", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'space-grotesk',
+    name: 'Space Grotesk',
+    fontFamily: '"Space Grotesk", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'outfit',
+    name: 'Outfit',
+    fontFamily: '"Outfit", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'lexend',
+    name: 'Lexend',
+    fontFamily: '"Lexend", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'be-vietnam-pro',
+    name: 'Be Vietnam Pro',
+    fontFamily: '"Be Vietnam Pro", sans-serif',
     category: 'modern'
   },
   
@@ -85,7 +175,43 @@ const fontOptions: FontOption[] = [
     category: 'classic'
   },
   
-  // 等宽系统字体 - 使用系统自带的等宽字体
+  // 等宽字体 - 本地下载的等宽字体
+  {
+    value: 'fira-code',
+    name: 'Fira Code',
+    fontFamily: '"Fira Code", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'jetbrains-mono',
+    name: 'JetBrains Mono',
+    fontFamily: '"JetBrains Mono", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'source-code-pro',
+    name: 'Source Code Pro',
+    fontFamily: '"Source Code Pro", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'inconsolata',
+    name: 'Inconsolata',
+    fontFamily: '"Inconsolata", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'roboto-mono',
+    name: 'Roboto Mono',
+    fontFamily: '"Roboto Mono", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'ubuntu-mono',
+    name: 'Ubuntu Mono',
+    fontFamily: '"Ubuntu Mono", monospace',
+    category: 'mono'
+  },
   {
     value: 'sf-mono',
     name: 'SF Mono / Consolas',

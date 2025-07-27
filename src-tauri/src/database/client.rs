@@ -588,15 +588,16 @@ impl InfluxDB2Client {
                     }
                 }
                 Ok(response) => {
-                    return Err(anyhow::anyhow!("获取组织列表失败: HTTP {}", response.status()));
+                    warn!("获取组织列表失败: HTTP {}", response.status());
                 }
                 Err(e) => {
-                    return Err(anyhow::anyhow!("获取组织列表请求失败: {}", e));
+                    warn!("获取组织列表请求失败: {}", e);
                 }
             }
         }
 
-        Err(anyhow::anyhow!("无法获取组织列表"))
+        // 如果所有查询都失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取组织列表：API 请求失败，请检查连接配置和网络状态"))
     }
 
     /// 获取存储桶列表
@@ -676,15 +677,16 @@ impl InfluxDB2Client {
                     }
                 }
                 Ok(response) => {
-                    return Err(anyhow::anyhow!("获取组织 {} 的存储桶列表失败: HTTP {}", org_name, response.status()));
+                    warn!("获取组织 {} 的存储桶列表失败: HTTP {}", org_name, response.status());
                 }
                 Err(e) => {
-                    return Err(anyhow::anyhow!("获取组织 {} 的存储桶列表请求失败: {}", org_name, e));
+                    warn!("获取组织 {} 的存储桶列表请求失败: {}", org_name, e);
                 }
             }
         }
 
-        Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表", org_name))
+        // 如果所有查询都失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表：API 请求失败，请检查连接配置和权限", org_name))
     }
 
     /// 获取 InfluxDB 3.x 数据库列表（简化架构）
@@ -760,13 +762,8 @@ impl InfluxDB2Client {
             }
         }
 
-        // 回退：返回一些常见的数据库名称
-        Ok(vec![
-            "mydb".to_string(),
-            "metrics".to_string(),
-            "logs".to_string(),
-            "_system".to_string(),
-        ])
+        // 如果所有查询都失败，返回错误而不是假数据
+        Err(anyhow::anyhow!("无法获取 InfluxDB 3.x 数据库列表：所有 API 端点都无法访问，请检查连接配置和服务状态"))
     }
 
     /// 检测 InfluxDB 版本
@@ -1257,9 +1254,9 @@ impl InfluxClient {
                 Ok(databases)
             }
             Err(e) => {
-                debug!("JSON 解析失败: {}", e);
-                // 如果解析失败，返回空列表
-                Ok(vec![])
+                error!("JSON 解析失败: {}", e);
+                // 如果解析失败，返回错误而不是空列表
+                Err(anyhow::anyhow!("解析数据库列表响应失败: {}", e))
             }
         }
     }
@@ -1310,25 +1307,70 @@ impl InfluxClient {
         let query = influxdb::ReadQuery::new(&query_str);
         
         match self.client.query(query).await {
-            Ok(_result) => {
-                // 临时实现：返回默认保留策略
-                // TODO: 正确解析 InfluxDB 查询结果
-                let policies = vec![
-                    RetentionPolicy {
-                        name: "autogen".to_string(),
-                        duration: "0s".to_string(),
-                        shard_group_duration: "168h0m0s".to_string(),
-                        replica_n: 1,
-                        default: true,
-                    }
-                ];
-
+            Ok(result) => {
+                // 解析保留策略结果
+                let policies = self.parse_retention_policies_result(result)?;
                 info!("获取到 {} 个保留策略", policies.len());
                 Ok(policies)
             }
             Err(e) => {
                 error!("获取保留策略失败: {}", e);
                 Err(anyhow::anyhow!("获取保留策略失败: {}", e))
+            }
+        }
+    }
+
+    /// 解析保留策略结果
+    fn parse_retention_policies_result(&self, result: String) -> Result<Vec<RetentionPolicy>> {
+        debug!("解析保留策略结果: {}", result);
+
+        match serde_json::from_str::<serde_json::Value>(&result) {
+            Ok(json) => {
+                let mut policies = Vec::new();
+
+                // SHOW RETENTION POLICIES 返回格式：
+                // {"results":[{"series":[{"name":"mydb","columns":["name","duration","shardGroupDuration","replicaN","default"],"values":[["autogen","0s","168h0m0s",1,true]]}]}]}
+                if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+                    for result_item in results {
+                        if let Some(series) = result_item.get("series").and_then(|s| s.as_array()) {
+                            for serie in series {
+                                if let Some(values) = serie.get("values").and_then(|v| v.as_array()) {
+                                    for value in values {
+                                        if let Some(arr) = value.as_array() {
+                                            if arr.len() >= 5 {
+                                                let name = arr[0].as_str().unwrap_or("").to_string();
+                                                let duration = arr[1].as_str().unwrap_or("0s").to_string();
+                                                let shard_group_duration = arr[2].as_str().unwrap_or("168h0m0s").to_string();
+                                                let replica_n = arr[3].as_u64().unwrap_or(1) as u32;
+                                                let default = arr[4].as_bool().unwrap_or(false);
+
+                                                policies.push(RetentionPolicy {
+                                                    name,
+                                                    duration,
+                                                    shard_group_duration,
+                                                    replica_n,
+                                                    default,
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 处理错误情况
+                        if let Some(error) = result_item.get("error") {
+                            let error_msg = error.as_str().unwrap_or("Unknown error");
+                            return Err(anyhow::anyhow!("InfluxDB 查询错误: {}", error_msg));
+                        }
+                    }
+                }
+
+                Ok(policies)
+            }
+            Err(e) => {
+                error!("JSON 解析失败: {}", e);
+                Err(anyhow::anyhow!("解析保留策略响应失败: {}", e))
             }
         }
     }
@@ -1865,13 +1907,16 @@ impl InfluxClient {
 
         match parsed_type {
             TreeNodeType::Database | TreeNodeType::SystemDatabase => {
-                // InfluxDB 1.x: 获取数据库的保留策略
-                match self.get_retention_policies(parent_node_id).await {
+                // InfluxDB 1.x: 获取数据库的保留策略和测量值
+                let db_name = parent_node_id.strip_prefix("db1x_").unwrap_or(parent_node_id);
+
+                // 获取保留策略
+                match self.get_retention_policies(db_name).await {
                     Ok(policies) => {
                         for policy in policies {
                             let rp_node = TreeNodeFactory::create_retention_policy(
                                 policy.name.clone(),
-                                parent_node_id.to_string(),
+                                db_name.to_string(),
                                 policy.duration.clone(),
                                 policy.replica_n.try_into().unwrap_or(1)
                             );
@@ -1880,6 +1925,43 @@ impl InfluxClient {
                     }
                     Err(e) => {
                         log::warn!("获取保留策略失败: {}", e);
+                    }
+                }
+
+                // 获取测量值
+                match self.get_measurements(db_name).await {
+                    Ok(measurements) => {
+                        for measurement in measurements {
+                            let measurement_node = TreeNodeFactory::create_measurement(
+                                measurement.clone(),
+                                db_name.to_string(),
+                            );
+                            children.push(measurement_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取测量值失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::RetentionPolicy => {
+                // 保留策略下的测量值
+                let parts: Vec<&str> = parent_node_id.split('_').collect();
+                if parts.len() >= 3 {
+                    let db_name = parts[1];
+                    match self.get_measurements(db_name).await {
+                        Ok(measurements) => {
+                            for measurement in measurements {
+                                let measurement_node = TreeNodeFactory::create_measurement(
+                                    measurement.clone(),
+                                    db_name.to_string(),
+                                );
+                                children.push(measurement_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取测量值失败: {}", e);
+                        }
                     }
                 }
             }
@@ -1905,26 +1987,11 @@ impl InfluxClient {
                 // 暂时返回空，后续可以扩展
                 log::debug!("存储桶子节点获取暂未实现");
             }
-            TreeNodeType::RetentionPolicy => {
-                // 获取测量值
-                let parts: Vec<&str> = parent_node_id.split('/').collect();
-                if parts.len() >= 2 {
-                    let database = parts[0];
-                    match self.get_measurements(database).await {
-                        Ok(measurements) => {
-                            for measurement in measurements {
-                                let measurement_node = TreeNodeFactory::create_measurement(
-                                    parent_node_id.to_string(),
-                                    measurement.clone()
-                                );
-                                children.push(measurement_node);
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("获取测量值失败: {}", e);
-                        }
-                    }
-                }
+            TreeNodeType::Database3x => {
+                // InfluxDB 3.x: 获取数据库下的表/测量值
+                // 这里可以通过 SQL 或 Flux 查询获取表信息
+                // 暂时返回空，后续可以扩展
+                log::debug!("InfluxDB 3.x 数据库子节点获取暂未实现");
             }
             TreeNodeType::Measurement => {
                 // 获取字段和标签

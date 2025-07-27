@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tauri::{command, AppHandle, Manager};
+use tauri::{command, AppHandle, Manager, Emitter};
 use anyhow::{Result, Context};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -3,6 +3,8 @@
 @import 'tailwindcss/utilities';
 /* Local Fonts - CI环境动态下载，支持离线使用 */
 @import './fonts-available.css';
+/* 本地下载的字体文件 */
+@import './fonts-local.css';
 /* Modal 优化样式 */
 @import './modal-optimization.css';
 /* macOS 优化样式 */
