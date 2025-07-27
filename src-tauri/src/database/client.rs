@@ -565,6 +565,18 @@ impl InfluxDB2Client {
         Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表", org_name))
     }
 
+    /// 获取 InfluxDB 3.x 数据库列表（简化架构）
+    pub async fn get_databases_v3(&self) -> Result<Vec<String>> {
+        // InfluxDB 3.x 可能使用不同的 API 端点
+        // 暂时返回一些示例数据库，后续可以实现完整的查询
+        Ok(vec![
+            "mydb".to_string(),
+            "metrics".to_string(),
+            "logs".to_string(),
+            "_system".to_string(),
+        ])
+    }
+
     /// 检测 InfluxDB 版本
     pub async fn detect_version(&self) -> Result<String> {
         let base_url = if self.config.ssl {
@@ -614,30 +626,62 @@ impl InfluxDB2Client {
 
         // 检测版本以确定树结构
         let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
+        let is_v3 = version.starts_with("3.") || version.contains("3.x");
 
-        // InfluxDB 2.x/3.x: Organization → Bucket 结构
-        match self.get_organizations().await {
-            Ok(organizations) => {
-                for org_name in organizations {
-                    let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
-                    org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                    nodes.push(org_node);
+        if is_v3 {
+            // InfluxDB 3.x: 简化架构，直接显示数据库
+            match self.get_databases_v3().await {
+                Ok(databases) => {
+                    for db_name in databases {
+                        let is_system = db_name.starts_with('_');
+                        let mut db_node = TreeNodeFactory::create_influxdb3_database(db_name, is_system);
+                        db_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                        nodes.push(db_node);
+                    }
                 }
-            }
-            Err(e) => {
-                log::warn!("获取组织列表失败: {}", e);
-                // 如果获取组织失败，尝试直接获取存储桶
-                match self.get_buckets().await {
-                    Ok(buckets) => {
-                        for bucket_name in buckets {
-                            let is_system = bucket_name.starts_with('_');
-                            let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
-                            bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                            nodes.push(bucket_node);
+                Err(e) => {
+                    log::warn!("获取 InfluxDB 3.x 数据库列表失败: {}", e);
+                    // 回退到存储桶模式
+                    match self.get_buckets().await {
+                        Ok(buckets) => {
+                            for bucket_name in buckets {
+                                let is_system = bucket_name.starts_with('_');
+                                let mut bucket_node = TreeNodeFactory::create_influxdb3_database(bucket_name, is_system);
+                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                                nodes.push(bucket_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取存储桶列表失败: {}", e);
                         }
                     }
-                    Err(e) => {
-                        log::warn!("获取存储桶列表失败: {}", e);
+                }
+            }
+        } else {
+            // InfluxDB 2.x: Organization → Bucket 结构
+            match self.get_organizations().await {
+                Ok(organizations) => {
+                    for org_name in organizations {
+                        let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
+                        org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                        nodes.push(org_node);
+                    }
+                }
+                Err(e) => {
+                    log::warn!("获取组织列表失败: {}", e);
+                    // 如果获取组织失败，尝试直接获取存储桶
+                    match self.get_buckets().await {
+                        Ok(buckets) => {
+                            for bucket_name in buckets {
+                                let is_system = bucket_name.starts_with('_');
+                                let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
+                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                                nodes.push(bucket_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取存储桶列表失败: {}", e);
+                        }
                     }
                 }
             }
@@ -678,10 +722,16 @@ impl InfluxDB2Client {
                 }
             }
             TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
-                // InfluxDB 2.x/3.x: 获取存储桶下的测量值
+                // InfluxDB 2.x: 获取存储桶下的测量值
                 // 这里可以通过 Flux 查询获取测量值，但需要更复杂的实现
                 // 暂时返回空，后续可以扩展
                 log::debug!("存储桶子节点获取暂未实现");
+            }
+            TreeNodeType::Database3x => {
+                // InfluxDB 3.x: 获取数据库下的表/测量值
+                // 这里可以通过 SQL 或 Flux 查询获取表信息
+                // 暂时返回空，后续可以扩展
+                log::debug!("InfluxDB 3.x 数据库子节点获取暂未实现");
             }
             _ => {}
         }

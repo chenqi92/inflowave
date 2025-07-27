@@ -15,6 +15,9 @@ pub enum TreeNodeType {
     // InfluxDB 2.x 节点类型
     Organization,       // 组织
     Bucket,            // 存储桶
+
+    // InfluxDB 3.x 节点类型（简化架构）
+    Database3x,        // InfluxDB 3.x 数据库（类似 1.x 但支持现代功能）
     
     // IoTDB 节点类型
     StorageGroup,      // 存储组/数据库
@@ -176,7 +179,22 @@ impl TreeNodeFactory {
         
         node
     }
-    
+
+    /// 创建 InfluxDB 3.x 数据库节点（简化架构）
+    pub fn create_influxdb3_database(name: String, is_system: bool) -> TreeNode {
+        let node_type = if is_system {
+            TreeNodeType::SystemDatabase
+        } else {
+            TreeNodeType::Database3x
+        };
+
+        let mut node = TreeNode::new(format!("db3x_{}", name), name, node_type);
+        if is_system {
+            node = node.as_system();
+        }
+        node.with_metadata("version".to_string(), serde_json::Value::String("3.x".to_string()))
+    }
+
     /// 创建 IoTDB 存储组节点
     pub fn create_storage_group(name: String) -> TreeNode {
         TreeNode::new(format!("sg_{}", name), name, TreeNodeType::StorageGroup)
@@ -276,6 +294,7 @@ impl TreeNodeType {
             TreeNodeType::Organization => "🏢",
             TreeNodeType::Bucket => "🪣",
             TreeNodeType::SystemBucket => "⚙️",
+            TreeNodeType::Database3x => "🗄️",
             TreeNodeType::StorageGroup => "🏢",
             TreeNodeType::Device => "📱",
             TreeNodeType::Timeseries => "📊",
@@ -296,6 +315,7 @@ impl TreeNodeType {
             TreeNodeType::Organization => "组织",
             TreeNodeType::Bucket => "存储桶",
             TreeNodeType::SystemBucket => "系统存储桶",
+            TreeNodeType::Database3x => "InfluxDB 3.x 数据库",
             TreeNodeType::StorageGroup => "存储组",
             TreeNodeType::Device => "设备",
             TreeNodeType::Timeseries => "时间序列",

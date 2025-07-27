@@ -314,7 +314,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (!formData.apiToken.trim()) {
         newErrors.apiToken = '请输入API令牌';
       }
-      if (!formData.organization.trim()) {
+      // InfluxDB 2.x 必须有组织，3.x 可选
+      if (formData.version === '2.x' && !formData.organization.trim()) {
         newErrors.organization = '请输入组织ID或名称';
       }
     }
@@ -839,7 +840,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       </span>
                       <div className="flex flex-col">
                         <span className="font-medium">InfluxDB 3.x</span>
-                        <span className="text-xs text-muted-foreground">SQL + Flux，高性能</span>
+                        <span className="text-xs text-muted-foreground">SQL + Flux，简化架构，可选组织</span>
                       </div>
                     </div>
                   </SelectItem>
@@ -989,10 +990,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
                   <Label className='block text-sm font-medium text-foreground'>
-                    组织 ID/名称 <span className='text-destructive'>*</span>
+                    组织 ID/名称 {formData.version === '3.x' ? (
+                      <span className='text-muted-foreground text-xs'>(可选)</span>
+                    ) : (
+                      <span className='text-destructive'>*</span>
+                    )}
                   </Label>
                   <Input
-                    placeholder='如: myorg 或 org-id'
+                    placeholder={formData.version === '3.x' ? '可选，如: myorg' : '如: myorg 或 org-id'}
                     value={formData.organization}
                     onChange={e => handleInputChange('organization', e.target.value)}
                     autoCapitalize='off'
@@ -1007,7 +1012,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
                   )}
                   <p className='text-xs text-muted-foreground'>
-                    组织名称或 ID
+                    {formData.version === '3.x'
+                      ? '可选，某些 InfluxDB 3.x 部署不需要组织'
+                      : '组织名称或 ID'
+                    }
                   </p>
                 </div>
 
