@@ -147,7 +147,22 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             panel_positions: currentPanelPositions,
         };
 
-        await updateWorkspaceSettings(updatedWorkspace);
+        // 检查是否真的有变化，避免不必要的保存
+        const hasChanges =
+            preferences.workspace.layout !== currentView ||
+            preferences.workspace.panel_sizes?.['left-panel-collapsed'] !== (leftPanelCollapsed ? 1 : 0) ||
+            preferences.workspace.panel_sizes?.['bottom-panel-collapsed'] !== (bottomPanelCollapsed ? 1 : 0) ||
+            preferences.workspace.panel_sizes?.['right-panel-collapsed'] !== (rightPanelCollapsed ? 1 : 0) ||
+            preferences.workspace.panel_positions?.['left-panel'] !== leftPanelSize ||
+            preferences.workspace.panel_positions?.['bottom-panel'] !== bottomPanelSize ||
+            preferences.workspace.panel_positions?.['right-panel'] !== rightPanelSize;
+
+        if (hasChanges) {
+            console.log('工作区设置有变化，保存到用户偏好');
+            await updateWorkspaceSettings(updatedWorkspace);
+        } else {
+            console.log('工作区设置无变化，跳过保存');
+        }
     }, [
         preferences,
         leftPanelCollapsed,
@@ -356,7 +371,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         const timer = setTimeout(() => {
             // 只在非导航页面时保存视图状态，避免干扰路由导航
             if (location.pathname === '/' || location.pathname === '/dashboard') {
-                saveWorkspaceSettings();
+                saveWorkspaceSettingsRef.current();
             }
         }, 1000); // 增加到1000ms，减少保存频率
 
@@ -365,8 +380,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         leftPanelCollapsed,
         bottomPanelCollapsed,
         currentView,
-        saveWorkspaceSettings,
-        location.pathname, // 添加路径依赖，确保在正确的页面保存
+        location.pathname, // 移除 saveWorkspaceSettings 依赖，使用 ref 避免无限循环
     ]);
 
     // 清理定时器

@@ -116,7 +116,11 @@ pub async fn update_user_preferences(
     let time_diff = now.saturating_sub(last_time);
 
     if time_diff < 5 && last_time > 0 {
-        warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}", time_diff, call_count);
+        warn!("用户偏好更新过于频繁! 距离上次调用仅{}秒，总调用次数: {}，请检查前端是否有无限循环调用", time_diff, call_count);
+        // 输出更详细的调试信息
+        debug!("当前偏好设置: layout={}, panel_sizes={:?}",
+               preferences.workspace.layout,
+               preferences.workspace.panel_sizes);
     }
 
     // 每100次调用输出一次统计
