@@ -1,0 +1,169 @@
+/* 字体预览专用样式 - 确保字体选择下拉框正确显示各自字体 */
+
+/* 强制所有字体预览项使用其指定的字体系列 */
+.font-preview-item[data-value="system"] {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+.font-preview-item[data-value="inter"] {
+  font-family: "Inter", sans-serif !important;
+}
+
+.font-preview-item[data-value="roboto"] {
+  font-family: "Roboto", sans-serif !important;
+}
+
+.font-preview-item[data-value="open-sans"] {
+  font-family: "Open Sans", sans-serif !important;
+}
+
+.font-preview-item[data-value="source-sans"] {
+  font-family: "Source Sans Pro", sans-serif !important;
+}
+
+.font-preview-item[data-value="lato"] {
+  font-family: "Lato", sans-serif !important;
+}
+
+.font-preview-item[data-value="poppins"] {
+  font-family: "Poppins", sans-serif !important;
+}
+
+.font-preview-item[data-value="nunito"] {
+  font-family: "Nunito", sans-serif !important;
+}
+
+.font-preview-item[data-value="montserrat"] {
+  font-family: "Montserrat", sans-serif !important;
+}
+
+.font-preview-item[data-value="fira-sans"] {
+  font-family: "Fira Sans", sans-serif !important;
+}
+
+.font-preview-item[data-value="work-sans"] {
+  font-family: "Work Sans", sans-serif !important;
+}
+
+.font-preview-item[data-value="dm-sans"] {
+  font-family: "DM Sans", sans-serif !important;
+}
+
+.font-preview-item[data-value="ubuntu"] {
+  font-family: "Ubuntu", sans-serif !important;
+}
+
+.font-preview-item[data-value="noto-sans"] {
+  font-family: "Noto Sans", "Noto Sans SC", sans-serif !important;
+}
+
+/* 经典字体 */
+.font-preview-item[data-value="georgia"] {
+  font-family: "Georgia", serif !important;
+}
+
+.font-preview-item[data-value="times"] {
+  font-family: "Times New Roman", serif !important;
+}
+
+.font-preview-item[data-value="arial"] {
+  font-family: Arial, sans-serif !important;
+}
+
+.font-preview-item[data-value="helvetica"] {
+  font-family: "Helvetica Neue", sans-serif !important;
+}
+
+.font-preview-item[data-value="verdana"] {
+  font-family: Verdana, sans-serif !important;
+}
+
+.font-preview-item[data-value="tahoma"] {
+  font-family: Tahoma, sans-serif !important;
+}
+
+.font-preview-item[data-value="trebuchet"] {
+  font-family: "Trebuchet MS", sans-serif !important;
+}
+
+/* 等宽字体 */
+.font-preview-item[data-value="sf-mono"] {
+  font-family: ui-monospace, "SF Mono", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="jetbrains-mono"] {
+  font-family: "JetBrains Mono", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="source-code-pro"] {
+  font-family: "Source Code Pro", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="fira-code"] {
+  font-family: "Fira Code", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="inconsolata"] {
+  font-family: "Inconsolata", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="roboto-mono"] {
+  font-family: "Roboto Mono", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="ubuntu-mono"] {
+  font-family: "Ubuntu Mono", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="cascadia-code"] {
+  font-family: "Cascadia Code", Monaco, Consolas, monospace !important;
+}
+
+.font-preview-item[data-value="courier"] {
+  font-family: "Courier New", monospace !important;
+}
+
+/* 确保所有子元素继承字体设置 */
+.font-preview-item *,
+.font-preview-item .font-preview *,
+.font-preview-item .font-preview span {
+  font-family: inherit !important;
+}
+
+/* 字体预览组件容器 */
+.font-preview {
+  font-family: inherit !important;
+}
+
+/* 确保 Radix UI Select 组件的文本继承字体 */
+.font-preview-item [data-radix-select-item-text] {
+  font-family: inherit !important;
+}
+
+/* 确保选中状态也使用正确字体 */
+.font-preview-item[data-state="checked"] {
+  font-family: inherit !important;
+}
+
+.font-preview-item[data-state="checked"] * {
+  font-family: inherit !important;
+}
+
+/* 字体标签样式优化 */
+.font-tag {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgba(59, 130, 246, 0.8);
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+}
+
+.font-tag.mono {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: rgba(34, 197, 94, 0.8);
+}
+
+.font-tag.serif {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: rgba(168, 85, 247, 0.8);
+}

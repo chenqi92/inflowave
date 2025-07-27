@@ -12,20 +12,25 @@ const FontPreview: React.FC<FontPreviewProps> = ({ fontFamily, name, className }
   const isSystem = name === '系统默认';
   
   return (
-    <div className={`font-preview flex items-center justify-between w-full rounded-md transition-colors ${className}`}>
+    <div 
+      className={`font-preview flex items-center justify-between w-full rounded-md transition-colors ${className}`}
+      style={{ 
+        fontFamily: fontFamily + ' !important'
+      }}
+    >
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="font-medium text-sm text-foreground truncate" style={{ fontFamily }} title={name}>{name}</span>
+        <span className="font-medium text-sm text-foreground truncate" style={{ fontFamily: 'inherit' }} title={name}>{name}</span>
         {isMono && (
-          <span className="font-tag mono text-xs px-1 py-0.5 rounded shrink-0">等宽</span>
+          <span className="font-tag mono text-xs px-1 py-0.5 rounded shrink-0" style={{ fontFamily: 'inherit' }}>等宽</span>
         )}
         {isSerif && (
-          <span className="font-tag serif text-xs px-1 py-0.5 rounded shrink-0">衬线</span>
+          <span className="font-tag serif text-xs px-1 py-0.5 rounded shrink-0" style={{ fontFamily: 'inherit' }}>衬线</span>
         )}
         {isSystem && (
-          <span className="font-tag text-xs px-1 py-0.5 rounded shrink-0">推荐</span>
+          <span className="font-tag text-xs px-1 py-0.5 rounded shrink-0" style={{ fontFamily: 'inherit' }}>推荐</span>
         )}
       </div>
-      <div className="text-sm text-muted-foreground/70 ml-4 shrink-0" style={{ fontFamily }}>
+      <div className="text-sm text-muted-foreground/70 ml-4 shrink-0" style={{ fontFamily: 'inherit' }}>
         中文 English 123
       </div>
     </div>

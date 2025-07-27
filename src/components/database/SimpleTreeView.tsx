@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Database, Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button,Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 interface TreeNode {
   id: string;
@@ -42,14 +41,12 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     setError(null);
 
     try {
-      // 检测数据库版本
-      const version = await invoke<string>('detect_database_version', {
-        connectionId,
-      });
-      setDatabaseVersion(version);
+      // 暂时跳过版本检测，直接设置默认版本
+      // TODO: 实现版本检测 API 调用
+      setDatabaseVersion('Database-1.x');
 
       // 获取树节点
-      const nodes = await invoke<TreeNode[]>('get_tree_nodes', {
+      const nodes = await safeTauriInvoke<TreeNode[]>('get_tree_nodes', {
         connectionId,
       });
       setTreeNodes(nodes);
@@ -58,6 +55,73 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
       setError(err as string);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 展开/折叠节点
+  const toggleNode = async (nodeId: string) => {
+    const node = treeNodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // 如果节点已展开，直接折叠
+    if (node.isExpanded) {
+      setTreeNodes(prevNodes =>
+        prevNodes.map(n =>
+          n.id === nodeId
+            ? { ...n, isExpanded: false }
+            : n
+        )
+      );
+      return;
+    }
+
+    // 如果节点未展开且没有子节点，需要懒加载
+    if (!node.isExpanded && node.children.length === 0 && node.isExpandable) {
+      try {
+        // 设置加载状态
+        setTreeNodes(prevNodes =>
+          prevNodes.map(n =>
+            n.id === nodeId
+              ? { ...n, isLoading: true }
+              : n
+          )
+        );
+
+        // 获取子节点
+        const children = await safeTauriInvoke<TreeNode[]>('get_tree_children', {
+          connectionId,
+          parentNodeId: nodeId,
+          nodeType: node.nodeType,
+        });
+
+        // 更新节点状态
+        setTreeNodes(prevNodes =>
+          prevNodes.map(n =>
+            n.id === nodeId
+              ? { ...n, isExpanded: true, isLoading: false, children }
+              : n
+          )
+        );
+      } catch (error) {
+        console.error('加载子节点失败:', error);
+        // 清除加载状态
+        setTreeNodes(prevNodes =>
+          prevNodes.map(n =>
+            n.id === nodeId
+              ? { ...n, isLoading: false }
+              : n
+          )
+        );
+      }
+    } else {
+      // 直接展开已有子节点的节点
+      setTreeNodes(prevNodes =>
+        prevNodes.map(n =>
+          n.id === nodeId
+            ? { ...n, isExpanded: true }
+            : n
+        )
+      );
     }
   };
 
@@ -142,9 +206,17 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
           onClick={() => handleNodeClick(node)}
         >
           {/* 展开/折叠图标 */}
-          <div className="w-4 h-4 flex items-center justify-center mr-1">
+          <div
+            className="w-4 h-4 flex items-center justify-center mr-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasChildren) {
+                toggleNode(node.id);
+              }
+            }}
+          >
             {hasChildren && (
-              <div className="w-3 h-3">
+              <div className="w-3 h-3 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer">
                 {node.isLoading ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : node.isExpanded ? (

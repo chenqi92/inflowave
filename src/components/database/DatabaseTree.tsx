@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
+import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
@@ -33,7 +33,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
     setError(null);
 
     try {
-      const nodes: TreeNode[] = await invoke('get_tree_nodes', {
+      const nodes: TreeNode[] = await safeTauriInvoke('get_tree_nodes', {
         connectionId,
       });
 
@@ -60,7 +60,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
         updateNodeInTree(prevNodes, parentNode.id, { isLoading: true })
       );
 
-      const children: TreeNode[] = await invoke('get_tree_children', {
+      const children: TreeNode[] = await safeTauriInvoke('get_tree_children', {
         connectionId,
         parentNodeId: parentNode.id,
         nodeType: parentNode.nodeType,
