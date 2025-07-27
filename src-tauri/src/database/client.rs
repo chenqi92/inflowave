@@ -2089,68 +2089,44 @@ impl InfluxClient {
         Err(anyhow::anyhow!("不是 InfluxDB 2.x/3.x"))
     }
 
-    /// 生成 InfluxDB 数据源树
+    /// 生成 InfluxDB 1.x 数据源树
     pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::TreeNodeFactory;
 
         let mut nodes = Vec::new();
 
-        // 检测版本以确定树结构
-        let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
+        info!("生成 InfluxDB 1.x 数据源树");
 
-        if version.contains("2.x") || version.contains("3.x") {
-            // InfluxDB 2.x/3.x: Organization → Bucket 结构
-            match self.get_influxdb2_organizations().await {
-                Ok(organizations) => {
-                    for org_name in organizations {
-                        let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
-                        org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                        nodes.push(org_node);
+        // InfluxDB 1.x: Database → Retention Policy 结构
+        match self.get_databases().await {
+            Ok(databases) => {
+                info!("InfluxDB 1.x 获取到 {} 个数据库，开始生成树节点", databases.len());
+                for db_name in databases {
+                    let is_system = db_name.starts_with('_');
+
+                    // 创建 InfluxDB 1.x 数据库节点
+                    let mut db_node = TreeNodeFactory::create_influxdb1_database(db_name.clone(), is_system);
+
+                    // 检测具体版本（仅用于元数据，不影响树结构）
+                    let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
+
+                    // 添加版本信息到元数据
+                    if version.contains("1.8") {
+                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.8+".to_string()));
+                    } else if version.contains("1.7") {
+                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.7+".to_string()));
+                    } else {
+                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.x".to_string()));
                     }
+
+                    info!("创建 InfluxDB 1.x 数据库节点: {} (系统数据库: {})", db_name, is_system);
+                    nodes.push(db_node);
                 }
-                Err(e) => {
-                    log::warn!("获取组织列表失败: {}", e);
-                    // 如果获取组织失败，尝试直接获取存储桶
-                    match self.get_influxdb2_buckets().await {
-                        Ok(buckets) => {
-                            for bucket_name in buckets {
-                                let is_system = bucket_name.starts_with('_');
-                                let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
-                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                                nodes.push(bucket_node);
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("获取存储桶列表失败: {}", e);
-                        }
-                    }
-                }
+                info!("InfluxDB 1.x 树节点生成完成，共 {} 个节点", nodes.len());
             }
-        } else {
-            // InfluxDB 1.x: Database → Retention Policy 结构
-            match self.get_databases().await {
-                Ok(databases) => {
-                    for db_name in databases {
-                        let is_system = db_name.starts_with('_');
-
-                        // 根据版本创建不同的数据库节点
-                        let mut db_node = TreeNodeFactory::create_influxdb1_database(db_name, is_system);
-
-                        // 添加版本信息到元数据
-                        if version.contains("1.8") {
-                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.8+".to_string()));
-                        } else if version.contains("1.7") {
-                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.7+".to_string()));
-                        } else {
-                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.x".to_string()));
-                        }
-
-                        nodes.push(db_node);
-                    }
-                }
-                Err(e) => {
-                    log::warn!("获取数据库列表失败: {}", e);
-                }
+            Err(e) => {
+                error!("InfluxDB 1.x 获取数据库列表失败: {}", e);
+                return Err(e);
             }
         }
 
