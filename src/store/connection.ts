@@ -368,6 +368,16 @@ export const useConnectionStore = create<ConnectionState>()(
               : [...state.connectedConnectionIds, id],
             activeConnectionId: id,
           }));
+
+          // 触发数据源树刷新
+          console.log(`🔄 触发数据源树刷新: ${id}`);
+          try {
+            const { dataExplorerRefresh } = await import('@/utils/refreshEvents');
+            dataExplorerRefresh.trigger();
+          } catch (error) {
+            console.warn('触发数据源树刷新失败:', error);
+          }
+
           console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
           console.error(`❌ 连接失败 (${id}):`, error);

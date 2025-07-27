@@ -26,19 +26,22 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // 加载树节点
-  const loadTreeNodes = useCallback(async () => {
+  const loadTreeNodes = useCallback(async (forceRefresh = false) => {
     if (!connectionId) return;
 
     setLoading(true);
     setError(null);
 
     try {
+      console.log(`🌳 加载数据源树节点: ${connectionId}${forceRefresh ? ' (强制刷新)' : ''}`);
+
       const nodes: TreeNode[] = await safeTauriInvoke('get_tree_nodes', {
         connectionId,
       });
 
+      console.log(`✅ 获取到 ${nodes.length} 个树节点:`, nodes.map(n => `${n.name} (${n.nodeType})`));
       setTreeNodes(nodes);
-      
+
       // 自动展开第一级节点
       const firstLevelIds = nodes.map(node => node.id);
       setExpandedNodes(new Set(firstLevelIds));
@@ -144,6 +147,18 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   // 初始加载
   useEffect(() => {
     loadTreeNodes();
+  }, [loadTreeNodes]);
+
+  // 监听刷新事件
+  useEffect(() => {
+    const { dataExplorerRefresh } = require('@/utils/refreshEvents');
+
+    const unsubscribe = dataExplorerRefresh.addListener(() => {
+      console.log('🔄 DatabaseTree 收到刷新事件，强制重新加载树节点');
+      loadTreeNodes(true); // 强制刷新
+    });
+
+    return unsubscribe;
   }, [loadTreeNodes]);
 
   // 渲染树节点
@@ -276,7 +291,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  onClick={loadTreeNodes}
+                  onClick={() => loadTreeNodes(true)}
                   size="sm"
                   variant="ghost"
                   className="h-6 w-6 p-0"

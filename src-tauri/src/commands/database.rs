@@ -1004,7 +1004,7 @@ pub async fn get_tree_nodes(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
 ) -> Result<Vec<crate::models::TreeNode>, String> {
-    debug!("处理获取数据源树节点命令: {}", connection_id);
+    info!("🌳 处理获取数据源树节点命令: {}", connection_id);
 
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
@@ -1013,12 +1013,17 @@ pub async fn get_tree_nodes(
             format!("获取连接失败: {}", e)
         })?;
 
+    info!("✅ 成功获取连接客户端: {}", connection_id);
+
     // 根据数据库类型生成树节点
     let tree_nodes = client.get_tree_nodes().await
         .map_err(|e| {
             error!("获取数据源树失败: {}", e);
             format!("获取数据源树失败: {}", e)
         })?;
+
+    info!("🎉 成功生成 {} 个树节点: {:?}", tree_nodes.len(),
+          tree_nodes.iter().map(|n| format!("{} ({:?})", n.name, n.node_type)).collect::<Vec<_>>());
 
     Ok(tree_nodes)
 }
