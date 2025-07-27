@@ -14,6 +14,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { configureMonacoGlobally } from '@/utils/monacoConfig';
 
 import './styles/index.css';
+import './styles/font-preview.css';
 
 // 配置 dayjs
 dayjs.extend(relativeTime);

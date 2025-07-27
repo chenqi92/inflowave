@@ -919,6 +919,12 @@ impl InfluxClient {
 
     /// 检测 InfluxDB 版本
     pub async fn detect_version(&self) -> Result<String> {
+        // 首先尝试检测 InfluxDB 2.x/3.x（通过 HTTP API）
+        if let Ok(version) = self.detect_influxdb2_version().await {
+            return Ok(version);
+        }
+
+        // 然后尝试检测 InfluxDB 1.x
         // 尝试执行 SHOW DIAGNOSTICS（InfluxDB 1.8+）
         match self.execute_query("SHOW DIAGNOSTICS").await {
             Ok(_) => Ok("InfluxDB-1.8+".to_string()),
@@ -938,6 +944,64 @@ impl InfluxClient {
         }
     }
 
+    /// 检测 InfluxDB 2.x/3.x 版本
+    async fn detect_influxdb2_version(&self) -> Result<String> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        // 尝试 InfluxDB 2.x/3.x 的 /health 端点
+        let health_url = format!("{}/health", base_url);
+
+        match self.http_client.get(&health_url).send().await {
+            Ok(response) if response.status().is_success() => {
+                if let Ok(text) = response.text().await {
+                    if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
+                        // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
+                        if health_info.get("name").is_some() || health_info.get("message").is_some() {
+                            let version = health_info
+                                .get("version")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("2.x.x");
+
+                            // 根据版本号判断是 2.x 还是 3.x
+                            if version.starts_with("3.") {
+                                return Ok("InfluxDB-3.x".to_string());
+                            } else if version.starts_with("2.") {
+                                return Ok("InfluxDB-2.x".to_string());
+                            } else {
+                                return Ok("InfluxDB-2.x".to_string()); // 默认假设是 2.x
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        // 尝试 InfluxDB 2.x/3.x 的 API 端点
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let api_url = format!("{}/api/v2/buckets", base_url);
+
+            match self.http_client
+                .get(&api_url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    return Ok("InfluxDB-2.x".to_string());
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("不是 InfluxDB 2.x/3.x"))
+    }
+
     /// 生成 InfluxDB 数据源树
     pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::TreeNodeFactory;
@@ -947,33 +1011,180 @@ impl InfluxClient {
         // 检测版本以确定树结构
         let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
 
-        // 获取数据库列表
-        match self.get_databases().await {
-            Ok(databases) => {
-                for db_name in databases {
-                    let is_system = db_name.starts_with('_');
-
-                    // 根据版本创建不同的数据库节点
-                    let mut db_node = TreeNodeFactory::create_influxdb1_database(db_name, is_system);
-
-                    // 添加版本信息到元数据
-                    if version.contains("1.8") {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.8+".to_string()));
-                    } else if version.contains("1.7") {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.7+".to_string()));
-                    } else {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.x".to_string()));
+        if version.contains("2.x") || version.contains("3.x") {
+            // InfluxDB 2.x/3.x: Organization → Bucket 结构
+            match self.get_influxdb2_organizations().await {
+                Ok(organizations) => {
+                    for org_name in organizations {
+                        let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
+                        org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                        nodes.push(org_node);
                     }
-
-                    nodes.push(db_node);
+                }
+                Err(e) => {
+                    log::warn!("获取组织列表失败: {}", e);
+                    // 如果获取组织失败，尝试直接获取存储桶
+                    match self.get_influxdb2_buckets().await {
+                        Ok(buckets) => {
+                            for bucket_name in buckets {
+                                let is_system = bucket_name.starts_with('_');
+                                let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
+                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                                nodes.push(bucket_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取存储桶列表失败: {}", e);
+                        }
+                    }
                 }
             }
-            Err(e) => {
-                log::warn!("获取数据库列表失败: {}", e);
+        } else {
+            // InfluxDB 1.x: Database → Retention Policy 结构
+            match self.get_databases().await {
+                Ok(databases) => {
+                    for db_name in databases {
+                        let is_system = db_name.starts_with('_');
+
+                        // 根据版本创建不同的数据库节点
+                        let mut db_node = TreeNodeFactory::create_influxdb1_database(db_name, is_system);
+
+                        // 添加版本信息到元数据
+                        if version.contains("1.8") {
+                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.8+".to_string()));
+                        } else if version.contains("1.7") {
+                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.7+".to_string()));
+                        } else {
+                            db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.x".to_string()));
+                        }
+
+                        nodes.push(db_node);
+                    }
+                }
+                Err(e) => {
+                    log::warn!("获取数据库列表失败: {}", e);
+                }
             }
         }
 
         Ok(nodes)
+    }
+
+    /// 获取 InfluxDB 2.x/3.x 组织列表
+    async fn get_influxdb2_organizations(&self) -> Result<Vec<String>> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/orgs", base_url);
+
+            match self.http_client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(orgs_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(orgs) = orgs_response.get("orgs").and_then(|o| o.as_array()) {
+                                let org_names: Vec<String> = orgs
+                                    .iter()
+                                    .filter_map(|org| org.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(org_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织列表"))
+    }
+
+    /// 获取 InfluxDB 2.x/3.x 存储桶列表
+    async fn get_influxdb2_buckets(&self) -> Result<Vec<String>> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets", base_url);
+
+            match self.http_client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取存储桶列表"))
+    }
+
+    /// 获取特定组织的存储桶列表
+    async fn get_influxdb2_buckets_for_org(&self, org_name: &str) -> Result<Vec<String>> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets?org={}", base_url, org_name);
+
+            match self.http_client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表", org_name))
     }
 
     /// 获取树节点的子节点（懒加载）
@@ -989,20 +1200,23 @@ impl InfluxClient {
             "SystemDatabase" => TreeNodeType::SystemDatabase,
             "RetentionPolicy" => TreeNodeType::RetentionPolicy,
             "Measurement" => TreeNodeType::Measurement,
+            "Organization" => TreeNodeType::Organization,
+            "Bucket" => TreeNodeType::Bucket,
+            "SystemBucket" => TreeNodeType::SystemBucket,
             _ => return Ok(children),
         };
 
         match parsed_type {
             TreeNodeType::Database | TreeNodeType::SystemDatabase => {
-                // 获取数据库的保留策略
+                // InfluxDB 1.x: 获取数据库的保留策略
                 match self.get_retention_policies(parent_node_id).await {
                     Ok(policies) => {
                         for policy in policies {
-                            let mut rp_node = TreeNodeFactory::create_retention_policy(
+                            let rp_node = TreeNodeFactory::create_retention_policy(
                                 policy.name.clone(),
                                 parent_node_id.to_string(),
                                 policy.duration.clone(),
-                                policy.replica_n
+                                policy.replica_n.try_into().unwrap_or(1)
                             );
                             children.push(rp_node);
                         }
@@ -1011,6 +1225,28 @@ impl InfluxClient {
                         log::warn!("获取保留策略失败: {}", e);
                     }
                 }
+            }
+            TreeNodeType::Organization => {
+                // InfluxDB 2.x/3.x: 获取组织下的存储桶
+                let org_name = parent_node_id.strip_prefix("org_").unwrap_or(parent_node_id);
+                match self.get_influxdb2_buckets_for_org(org_name).await {
+                    Ok(buckets) => {
+                        for bucket_name in buckets {
+                            let is_system = bucket_name.starts_with('_');
+                            let bucket_node = TreeNodeFactory::create_bucket(org_name, bucket_name, is_system);
+                            children.push(bucket_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取存储桶失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
+                // InfluxDB 2.x/3.x: 获取存储桶下的测量值
+                // 这里可以通过 Flux 查询获取测量值，但需要更复杂的实现
+                // 暂时返回空，后续可以扩展
+                log::debug!("存储桶子节点获取暂未实现");
             }
             TreeNodeType::RetentionPolicy => {
                 // 获取测量值
@@ -1045,9 +1281,9 @@ impl InfluxClient {
                         Ok(fields) => {
                             for field in fields {
                                 let field_node = TreeNodeFactory::create_field(
+                                    field.clone(),
                                     parent_node_id.to_string(),
-                                    field.name.clone(),
-                                    Some(field.field_type.clone())
+                                    "unknown".to_string()
                                 );
                                 children.push(field_node);
                             }

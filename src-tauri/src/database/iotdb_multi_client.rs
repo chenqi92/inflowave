@@ -460,8 +460,8 @@ impl IoTDBMultiClient {
                     Ok(devices) => {
                         for device in devices {
                             let device_node = TreeNodeFactory::create_device(
-                                &parent_node_id,
-                                device.clone()
+                                device.clone(),
+                                parent_node_id.to_string()
                             );
                             children.push(device_node);
                         }
@@ -477,8 +477,8 @@ impl IoTDBMultiClient {
                     Ok(timeseries) => {
                         for ts in timeseries {
                             let ts_node = TreeNodeFactory::create_timeseries(
-                                &parent_node_id,
-                                ts.clone()
+                                ts.clone(),
+                                parent_node_id.to_string()
                             );
                             children.push(ts_node);
                         }
