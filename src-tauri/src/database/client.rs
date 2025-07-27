@@ -1412,6 +1412,176 @@ impl InfluxDB2Client {
 
         Ok(children)
     }
+
+    /// 通过 Flux 查询获取测量值列表
+    pub async fn get_measurements_flux(&self, bucket: &str) -> Result<Vec<String>> {
+        debug!("通过 Flux 查询获取测量值列表: {}", bucket);
+
+        // 构建 Flux 查询来获取测量值
+        let flux_query = format!(
+            r#"
+            import "influxdata/influxdb/schema"
+
+            schema.measurements(bucket: "{}")
+            "#,
+            bucket
+        );
+
+        match self.execute_flux_query(flux_query).await {
+            Ok(result) => {
+                let mut measurements = Vec::new();
+
+                // 解析 Flux 查询结果
+                if let Some(data) = result.data {
+                    for row in data {
+                        if let Some(measurement) = row.get(0) {
+                            if let Some(measurement_str) = measurement.as_str() {
+                                measurements.push(measurement_str.to_string());
+                            }
+                        }
+                    }
+                }
+
+                debug!("获取到 {} 个测量值", measurements.len());
+                Ok(measurements)
+            }
+            Err(e) => {
+                warn!("Flux 查询获取测量值失败: {}, 返回空列表", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 通过 Flux 查询获取字段列表
+    pub async fn get_field_keys_flux(&self, bucket: &str, measurement: &str) -> Result<Vec<String>> {
+        debug!("通过 Flux 查询获取字段列表: bucket={}, measurement={}", bucket, measurement);
+
+        // 构建 Flux 查询来获取字段
+        let flux_query = format!(
+            r#"
+            import "influxdata/influxdb/schema"
+
+            schema.fieldKeys(
+                bucket: "{}",
+                predicate: (r) => r._measurement == "{}"
+            )
+            "#,
+            bucket, measurement
+        );
+
+        match self.execute_flux_query(flux_query).await {
+            Ok(result) => {
+                let mut fields = Vec::new();
+
+                // 解析 Flux 查询结果
+                if let Some(data) = result.data {
+                    for row in data {
+                        if let Some(field) = row.get(0) {
+                            if let Some(field_str) = field.as_str() {
+                                fields.push(field_str.to_string());
+                            }
+                        }
+                    }
+                }
+
+                debug!("获取到 {} 个字段", fields.len());
+                Ok(fields)
+            }
+            Err(e) => {
+                warn!("Flux 查询获取字段失败: {}, 返回空列表", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 执行 Flux 查询的通用方法
+    async fn execute_flux_query(&self, flux_query: String) -> Result<QueryResult> {
+        debug!("执行 Flux 查询: {}", flux_query);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let url = format!("{}/api/v2/query", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .post(&url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .header("Content-Type", "application/vnd.flux")
+                .body(flux_query.clone())
+                .timeout(std::time::Duration::from_secs(30))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        debug!("Flux 查询响应: {}", text);
+                        return self.parse_flux_response(&text);
+                    }
+                }
+                Ok(response) => {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_default();
+                    warn!("Flux 查询失败，状态码: {}, 错误: {}", status, error_text);
+                }
+                Err(e) => {
+                    warn!("Flux 查询请求失败: {}", e);
+                }
+            }
+        }
+
+        // 返回空结果
+        Ok(QueryResult {
+            results: vec![],
+            execution_time: Some(0),
+            row_count: Some(0),
+            error: None,
+            data: Some(vec![]),
+            columns: Some(vec![]),
+        })
+    }
+
+    /// 解析 Flux 查询响应
+    fn parse_flux_response(&self, response: &str) -> Result<QueryResult> {
+        debug!("解析 Flux 响应: {}", response);
+
+        // 简单的 CSV 解析（Flux 默认返回 CSV 格式）
+        let mut data = Vec::new();
+        let mut columns = Vec::new();
+
+        for (i, line) in response.lines().enumerate() {
+            if line.trim().is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            let values: Vec<&str> = line.split(',').collect();
+
+            if i == 0 {
+                // 第一行是列名
+                columns = values.iter().map(|s| s.trim().to_string()).collect();
+            } else {
+                // 数据行
+                let row: Vec<serde_json::Value> = values
+                    .iter()
+                    .map(|s| serde_json::Value::String(s.trim().to_string()))
+                    .collect();
+                data.push(row);
+            }
+        }
+
+        Ok(QueryResult {
+            results: vec![],
+            execution_time: Some(0),
+            row_count: Some(data.len()),
+            error: None,
+            data: Some(data),
+            columns: Some(columns),
+        })
+    }
 }
 
 /// InfluxDB 1.x 客户端封装

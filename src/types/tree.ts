@@ -21,6 +21,19 @@ export type TreeNodeType =
   | 'storage_group'     // 存储组/数据库
   | 'device'            // 设备
   | 'timeseries'        // 时间序列
+  | 'aligned_timeseries' // IoTDB 对齐时间序列
+  | 'template'          // IoTDB 设备模板
+  | 'function'          // IoTDB 用户定义函数
+  | 'trigger'           // IoTDB 触发器
+  | 'system_info'       // IoTDB 系统信息
+  | 'version_info'      // IoTDB 版本信息
+  | 'storage_engine_info' // IoTDB 存储引擎信息
+  | 'cluster_info'      // IoTDB 集群信息
+  | 'schema_template'   // IoTDB 模式模板
+  | 'data_type'         // IoTDB 数据类型
+  | 'encoding'          // IoTDB 编码方式
+  | 'compression'       // IoTDB 压缩方式
+  | 'attribute_group'   // IoTDB 属性分组
 
   // 通用测量相关
   | 'measurement'       // 测量/表
@@ -64,6 +77,19 @@ export const TreeNodeIcons: Record<TreeNodeType, string> = {
   storage_group: '🏢',
   device: '📱',
   timeseries: '📊',
+  aligned_timeseries: '📊',
+  template: '📋',
+  function: '⚙️',
+  trigger: '🔔',
+  system_info: '🔧',
+  version_info: '📋',
+  storage_engine_info: '💾',
+  cluster_info: '🌐',
+  schema_template: '📋',
+  data_type: '🔢',
+  encoding: '🔧',
+  compression: '📦',
+  attribute_group: '📝',
   measurement: '📊',
   field_group: '📈',
   tag_group: '🏷️',
@@ -76,21 +102,34 @@ export const TreeNodeIcons: Record<TreeNodeType, string> = {
  */
 export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
   connection: '数据库连接',
-  database: '数据库',
-  database3x: 'InfluxDB 3.x 数据库',
-  system_database: '系统数据库',
-  retention_policy: '保留策略',
-  organization: '组织',
-  bucket: '存储桶',
-  system_bucket: '系统存储桶',
-  storage_group: '存储组',
-  device: '设备',
-  timeseries: '时间序列',
-  measurement: '测量',
-  field_group: '字段组',
-  tag_group: '标签组',
-  field: '字段',
-  tag: '标签',
+  database: 'InfluxDB 1.x 数据库',
+  database3x: 'InfluxDB 3.x 数据库，支持现代功能和 SQL 查询',
+  system_database: '系统数据库，包含内部监控和元数据',
+  retention_policy: '数据保留策略，定义数据存储时长',
+  organization: 'InfluxDB 2.x 组织，用于多租户管理',
+  bucket: 'InfluxDB 2.x 存储桶，类似于数据库',
+  system_bucket: '系统存储桶，包含监控和内部数据',
+  storage_group: 'IoTDB 存储组，用于组织时间序列数据',
+  device: 'IoTDB 设备，包含多个传感器时间序列',
+  timeseries: 'IoTDB 时间序列，存储传感器数据',
+  aligned_timeseries: 'IoTDB 对齐时间序列，优化存储和查询性能',
+  template: 'IoTDB 设备模板，定义设备结构',
+  function: 'IoTDB 用户定义函数，扩展查询功能',
+  trigger: 'IoTDB 触发器，自动处理数据变化',
+  system_info: 'IoTDB 系统信息，包含版本和配置',
+  version_info: 'IoTDB 版本信息',
+  storage_engine_info: 'IoTDB 存储引擎配置信息',
+  cluster_info: 'IoTDB 集群节点信息',
+  schema_template: 'IoTDB 模式模板，定义数据结构',
+  data_type: '时间序列数据类型 (BOOLEAN, INT32, FLOAT, DOUBLE, TEXT)',
+  encoding: '数据编码方式 (PLAIN, RLE, TS_2DIFF, GORILLA)',
+  compression: '数据压缩算法 (SNAPPY, GZIP, LZO)',
+  attribute_group: 'IoTDB 属性分组，包含元数据信息',
+  measurement: 'InfluxDB 测量，类似于表',
+  field_group: '字段分组，包含数值类型的数据',
+  tag_group: '标签分组，包含索引的元数据',
+  field: '字段，存储数值数据',
+  tag: '标签，用于索引和过滤',
 };
 
 /**
@@ -113,6 +152,19 @@ export const TreeNodeStyles: Record<TreeNodeType, string> = {
   tag_group: 'text-pink-500 font-medium',
   field: 'text-orange-400',
   tag: 'text-pink-400',
+  function: '',
+  aligned_timeseries: '',
+  template: '',
+  trigger: '',
+  system_info: '',
+  version_info: '',
+  storage_engine_info: '',
+  cluster_info: '',
+  schema_template: '',
+  data_type: '',
+  encoding: '',
+  compression: '',
+  attribute_group: '',
 };
 
 /**
@@ -154,7 +206,7 @@ export function getExpectedTreeLevels(dbType: DatabaseType): TreeNodeType[] {
     case 'InfluxDB2':
       return ['organization', 'bucket', 'measurement', 'field_group', 'field'];
     case 'IoTDB':
-      return ['storage_group', 'device', 'timeseries'];
+      return ['system_info', 'schema_template', 'storage_group', 'device', 'timeseries', 'data_type'];
     default:
       return ['database', 'measurement'];
   }
@@ -164,8 +216,46 @@ export function getExpectedTreeLevels(dbType: DatabaseType): TreeNodeType[] {
  * 检查节点是否可以有子节点
  */
 export function canHaveChildren(nodeType: TreeNodeType): boolean {
-  const leafNodeTypes: TreeNodeType[] = ['field', 'tag', 'timeseries'];
+  const leafNodeTypes: TreeNodeType[] = [
+    'field', 'tag', 'version_info', 'data_type', 'encoding', 'compression'
+  ];
   return !leafNodeTypes.includes(nodeType);
+}
+
+/**
+ * 将 PascalCase 节点类型转换为 snake_case
+ * 用于后端返回的 PascalCase 类型与前端 snake_case 类型的转换
+ */
+export function normalizeNodeType(nodeType: string): TreeNodeType {
+  const normalized = nodeType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '') as TreeNodeType;
+  return normalized;
+}
+
+/**
+ * 获取节点类型的图标
+ */
+export function getNodeIcon(nodeType: string): string {
+  const normalized = normalizeNodeType(nodeType);
+  return TreeNodeIcons[normalized] || '📄';
+}
+
+/**
+ * 获取节点类型的样式
+ */
+export function getNodeStyle(nodeType: string, isSystem: boolean = false): string {
+  if (isSystem) {
+    return 'text-orange-600 italic';
+  }
+  const normalized = normalizeNodeType(nodeType);
+  return TreeNodeStyles[normalized] || 'text-gray-600';
+}
+
+/**
+ * 获取节点类型的描述
+ */
+export function getNodeDescription(nodeType: string): string {
+  const normalized = normalizeNodeType(nodeType);
+  return TreeNodeDescriptions[normalized] || '数据节点';
 }
 
 /**

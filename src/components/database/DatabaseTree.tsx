@@ -3,7 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-import { TreeNode, TreeNodeType, TreeNodeIcons, TreeNodeStyles, isSystemNode, TreeNodeUtils } from '@/types/tree';
+import { TreeNode, TreeNodeType, TreeNodeIcons, TreeNodeStyles, TreeNodeDescriptions, isSystemNode, TreeNodeUtils } from '@/types/tree';
 
 interface DatabaseTreeProps {
   connectionId: string;
@@ -159,52 +159,75 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
     const icon = TreeNodeIcons[node.nodeType] || '📄';
     const styleClass = TreeNodeStyles[node.nodeType] || '';
 
+    const nodeDescription = TreeNodeDescriptions[node.nodeType] || '数据节点';
+
     return (
       <div key={node.id} className="select-none">
-        <div
-          className={`
-            flex items-center py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer rounded
-            ${isSelected ? 'bg-blue-100 dark:bg-blue-900' : ''}
-            ${isSystemNode(node) ? 'opacity-75' : ''}
-          `}
-          style={{ paddingLeft: `${level * 20 + 8}px` }}
-          onClick={() => handleNodeClick(node)}
-          onDoubleClick={() => handleNodeDoubleClick(node)}
-        >
-          {/* 展开/折叠图标 */}
-          <div className="w-4 h-4 flex items-center justify-center mr-1">
-            {hasChildren && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleNodeExpansion(node);
-                }}
-                className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-0.5"
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={`
+                  flex items-center py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer rounded
+                  ${isSelected ? 'bg-blue-100 dark:bg-blue-900' : ''}
+                  ${isSystemNode(node) ? 'opacity-75' : ''}
+                `}
+                style={{ paddingLeft: `${level * 20 + 8}px` }}
+                onClick={() => handleNodeClick(node)}
+                onDoubleClick={() => handleNodeDoubleClick(node)}
               >
-                {node.isLoading ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : isExpanded ? (
-                  <ChevronDown className="w-3 h-3" />
-                ) : (
-                  <ChevronRight className="w-3 h-3" />
+                {/* 展开/折叠图标 */}
+                <div className="w-4 h-4 flex items-center justify-center mr-1">
+                  {hasChildren && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleNodeExpansion(node);
+                      }}
+                      className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-0.5"
+                    >
+                      {node.isLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : isExpanded ? (
+                        <ChevronDown className="w-3 h-3" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3" />
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* 节点图标 */}
+                <span className="mr-2 text-sm">{icon}</span>
+
+                {/* 节点名称 */}
+                <span className={`text-sm truncate ${styleClass}`}>
+                  {node.name}
+                </span>
+
+                {/* 系统节点标识 */}
+                {isSystemNode(node) && (
+                  <span className="ml-2 text-xs text-gray-500 italic">system</span>
                 )}
-              </button>
-            )}
-          </div>
-
-          {/* 节点图标 */}
-          <span className="mr-2 text-sm">{icon}</span>
-
-          {/* 节点名称 */}
-          <span className={`text-sm truncate ${styleClass}`}>
-            {node.name}
-          </span>
-
-          {/* 系统节点标识 */}
-          {isSystemNode(node) && (
-            <span className="ml-2 text-xs text-gray-500 italic">system</span>
-          )}
-        </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xs">
+              <div className="space-y-1">
+                <div className="font-medium">{node.name}</div>
+                <div className="text-sm text-muted-foreground">{nodeDescription}</div>
+                {node.metadata && Object.keys(node.metadata).length > 0 && (
+                  <div className="text-xs text-muted-foreground border-t pt-1">
+                    {Object.entries(node.metadata).slice(0, 3).map(([key, value]) => (
+                      <div key={key}>
+                        <span className="font-medium">{key}:</span> {String(value)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* 子节点 */}
         {isExpanded && node.children.length > 0 && (

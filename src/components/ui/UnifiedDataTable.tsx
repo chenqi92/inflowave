@@ -1503,8 +1503,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         }
     }, [onPageChange, pagination, data.length]);
 
+    // 计算表格内容高度 - 防止数据稀少时行高自动拉伸
+    const calculateTableHeight = useMemo(() => {
+        const headerHeight = 40; // 表头高度
+        const minRowsToShow = Math.min(paginatedData.length, 10); // 最少显示行数，最多10行
+        const calculatedHeight = headerHeight + (minRowsToShow * rowHeight);
+        
+        // 如果数据量少，使用内容高度；如果数据量多，使用最大高度限制
+        return paginatedData.length <= 10 
+            ? `${calculatedHeight}px`
+            : `${Math.min(maxHeight, calculatedHeight)}px`;
+    }, [paginatedData.length, rowHeight, maxHeight]);
+
     return (
-        <div className={cn("h-full flex flex-col bg-background", className)}>
+        <div className={cn("flex flex-col bg-background", className)}>
             {/* 工具栏 */}
             {showToolbar && (
                 <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
@@ -1630,18 +1642,19 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             )}
 
             {/* 数据表格 */}
-            <div className="flex-1 min-h-0 p-4">
-                <div className="h-full border rounded-md overflow-hidden">
+            <div className="p-4">
+                <div className="border rounded-md overflow-hidden" style={{ height: calculateTableHeight }}>
                     {loading ? (
                         <div className="flex items-center justify-center h-32">
                             <Spin />
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        // 统一使用虚拟化表格 - 使用flex-1自适应高度
+                        // 统一使用虚拟化表格 - 使用计算的固定高度
                         <div
-                            className="flex-1 min-h-0 virtualized-table"
+                            className="w-full virtualized-table"
                             ref={tableContainerRef}
+                            style={{ height: '100%' }}
                         >
                                 <TableVirtuoso
                                     ref={virtuosoRef}
@@ -1720,7 +1733,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         style={{
                                                             width: `${width}px`,
                                                             minWidth: `${width}px`,
-                                                            maxWidth: `${width}px`
+                                                            maxWidth: `${width}px`,
+                                                            height: `${rowHeight}px` // 固定行高
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
@@ -1777,7 +1791,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     {...props}
                                                     data-row-index={rowIndex}
                                                     style={{
-                                                        ...style
+                                                        ...style,
+                                                        height: `${rowHeight}px` // 固定行高
                                                     }}
                                                     className={cn(
                                                         "border-b transition-colors hover:bg-muted/50",

@@ -23,7 +23,24 @@ pub enum TreeNodeType {
     StorageGroup,      // 存储组/数据库
     Device,            // 设备
     Timeseries,        // 时间序列
-    
+    AlignedTimeseries, // 对齐时间序列
+    Template,          // 设备模板
+    Function,          // 用户定义函数
+    Trigger,           // 触发器
+
+    // IoTDB 系统节点
+    SystemInfo,        // 系统信息
+    VersionInfo,       // 版本信息
+    StorageEngineInfo, // 存储引擎信息
+    ClusterInfo,       // 集群信息
+    SchemaTemplate,    // 模式模板
+
+    // IoTDB 时间序列属性
+    DataType,          // 数据类型
+    Encoding,          // 编码方式
+    Compression,       // 压缩方式
+    AttributeGroup,    // 属性分组
+
     // 通用测量相关
     Measurement,       // 测量/表
     FieldGroup,        // 字段分组
@@ -224,6 +241,141 @@ impl TreeNodeFactory {
             TreeNodeType::Timeseries,
         )
         .with_parent(parent_id)
+    }
+
+    /// 创建 IoTDB 时间序列节点（带详细信息）
+    pub fn create_timeseries_with_info(
+        name: String,
+        parent_id: String,
+        data_type: String,
+        encoding: Option<String>,
+        compression: Option<String>
+    ) -> TreeNode {
+        let mut node = TreeNode::new(
+            format!("{}/ts_{}", parent_id, name.replace(".", "_")),
+            format!("{} ({})", name, data_type),
+            TreeNodeType::Timeseries,
+        )
+        .with_parent(parent_id)
+        .with_metadata("data_type".to_string(), serde_json::Value::String(data_type));
+
+        if let Some(enc) = encoding {
+            node = node.with_metadata("encoding".to_string(), serde_json::Value::String(enc));
+        }
+        if let Some(comp) = compression {
+            node = node.with_metadata("compression".to_string(), serde_json::Value::String(comp));
+        }
+
+        node
+    }
+
+    /// 创建 IoTDB 对齐时间序列节点
+    pub fn create_aligned_timeseries(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("{}/aligned_ts_{}", parent_id, name.replace(".", "_")),
+            format!("📊 {} (Aligned)", name),
+            TreeNodeType::AlignedTimeseries,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建 IoTDB 设备模板节点
+    pub fn create_template(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("{}/template_{}", parent_id, name.replace(".", "_")),
+            format!("📋 {}", name),
+            TreeNodeType::Template,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建 IoTDB 系统信息节点
+    pub fn create_system_info() -> TreeNode {
+        TreeNode::new(
+            "system_info".to_string(),
+            "🔧 System Information".to_string(),
+            TreeNodeType::SystemInfo,
+        )
+        .as_system()
+    }
+
+    /// 创建 IoTDB 版本信息节点
+    pub fn create_version_info(version: String) -> TreeNode {
+        TreeNode::new(
+            "version_info".to_string(),
+            format!("📋 Version: {}", version),
+            TreeNodeType::VersionInfo,
+        )
+        .with_parent("system_info".to_string())
+        .with_metadata("version".to_string(), serde_json::Value::String(version))
+        .as_leaf()
+        .as_system()
+    }
+
+    /// 创建 IoTDB 存储引擎信息节点
+    pub fn create_storage_engine_info() -> TreeNode {
+        TreeNode::new(
+            "storage_engine_info".to_string(),
+            "💾 Storage Engine".to_string(),
+            TreeNodeType::StorageEngineInfo,
+        )
+        .with_parent("system_info".to_string())
+        .as_system()
+    }
+
+    /// 创建 IoTDB 集群信息节点
+    pub fn create_cluster_info() -> TreeNode {
+        TreeNode::new(
+            "cluster_info".to_string(),
+            "🌐 Cluster Information".to_string(),
+            TreeNodeType::ClusterInfo,
+        )
+        .with_parent("system_info".to_string())
+        .as_system()
+    }
+
+    /// 创建 IoTDB 模式模板节点
+    pub fn create_schema_template(name: String) -> TreeNode {
+        TreeNode::new(
+            format!("schema_template_{}", name),
+            format!("📋 Template: {}", name),
+            TreeNodeType::SchemaTemplate,
+        )
+    }
+
+    /// 创建 IoTDB 数据类型信息节点
+    pub fn create_data_type_info(data_type: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("{}/datatype", parent_id),
+            format!("🔢 Type: {}", data_type),
+            TreeNodeType::DataType,
+        )
+        .with_parent(parent_id)
+        .with_metadata("data_type".to_string(), serde_json::Value::String(data_type))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 编码信息节点
+    pub fn create_encoding_info(encoding: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("{}/encoding", parent_id),
+            format!("🔧 Encoding: {}", encoding),
+            TreeNodeType::Encoding,
+        )
+        .with_parent(parent_id)
+        .with_metadata("encoding".to_string(), serde_json::Value::String(encoding))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 压缩信息节点
+    pub fn create_compression_info(compression: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("{}/compression", parent_id),
+            format!("📦 Compression: {}", compression),
+            TreeNodeType::Compression,
+        )
+        .with_parent(parent_id)
+        .with_metadata("compression".to_string(), serde_json::Value::String(compression))
         .as_leaf()
     }
     
@@ -246,7 +398,7 @@ impl TreeNodeFactory {
         )
         .with_parent(parent_id)
     }
-    
+
     /// 创建标签分组节点
     pub fn create_tag_group(parent_id: String) -> TreeNode {
         TreeNode::new(
@@ -298,6 +450,19 @@ impl TreeNodeType {
             TreeNodeType::StorageGroup => "🏢",
             TreeNodeType::Device => "📱",
             TreeNodeType::Timeseries => "📊",
+            TreeNodeType::AlignedTimeseries => "📊",
+            TreeNodeType::Template => "📋",
+            TreeNodeType::Function => "⚙️",
+            TreeNodeType::Trigger => "🔔",
+            TreeNodeType::SystemInfo => "🔧",
+            TreeNodeType::VersionInfo => "📋",
+            TreeNodeType::StorageEngineInfo => "💾",
+            TreeNodeType::ClusterInfo => "🌐",
+            TreeNodeType::SchemaTemplate => "📋",
+            TreeNodeType::DataType => "🔢",
+            TreeNodeType::Encoding => "🔧",
+            TreeNodeType::Compression => "📦",
+            TreeNodeType::AttributeGroup => "📝",
             TreeNodeType::Measurement => "📊",
             TreeNodeType::FieldGroup => "📈",
             TreeNodeType::TagGroup => "🏷️",
@@ -309,21 +474,34 @@ impl TreeNodeType {
     pub fn get_description(&self) -> &'static str {
         match self {
             TreeNodeType::Connection => "数据库连接",
-            TreeNodeType::Database => "数据库",
-            TreeNodeType::SystemDatabase => "系统数据库",
-            TreeNodeType::RetentionPolicy => "保留策略",
-            TreeNodeType::Organization => "组织",
-            TreeNodeType::Bucket => "存储桶",
-            TreeNodeType::SystemBucket => "系统存储桶",
-            TreeNodeType::Database3x => "InfluxDB 3.x 数据库",
-            TreeNodeType::StorageGroup => "存储组",
-            TreeNodeType::Device => "设备",
-            TreeNodeType::Timeseries => "时间序列",
-            TreeNodeType::Measurement => "测量",
-            TreeNodeType::FieldGroup => "字段组",
-            TreeNodeType::TagGroup => "标签组",
-            TreeNodeType::Field => "字段",
-            TreeNodeType::Tag => "标签",
+            TreeNodeType::Database => "InfluxDB 1.x 数据库",
+            TreeNodeType::SystemDatabase => "系统数据库，包含内部监控和元数据",
+            TreeNodeType::RetentionPolicy => "数据保留策略，定义数据存储时长",
+            TreeNodeType::Organization => "InfluxDB 2.x 组织，用于多租户管理",
+            TreeNodeType::Bucket => "InfluxDB 2.x 存储桶，类似于数据库",
+            TreeNodeType::SystemBucket => "系统存储桶，包含监控和内部数据",
+            TreeNodeType::Database3x => "InfluxDB 3.x 数据库，支持现代功能和 SQL 查询",
+            TreeNodeType::StorageGroup => "IoTDB 存储组，用于组织时间序列数据",
+            TreeNodeType::Device => "IoTDB 设备，包含多个传感器时间序列",
+            TreeNodeType::Timeseries => "IoTDB 时间序列，存储传感器数据",
+            TreeNodeType::AlignedTimeseries => "IoTDB 对齐时间序列，优化存储和查询性能",
+            TreeNodeType::Template => "IoTDB 设备模板，定义设备结构",
+            TreeNodeType::Function => "IoTDB 用户定义函数，扩展查询功能",
+            TreeNodeType::Trigger => "IoTDB 触发器，自动处理数据变化",
+            TreeNodeType::SystemInfo => "IoTDB 系统信息，包含版本和配置",
+            TreeNodeType::VersionInfo => "IoTDB 版本信息",
+            TreeNodeType::StorageEngineInfo => "IoTDB 存储引擎配置信息",
+            TreeNodeType::ClusterInfo => "IoTDB 集群节点信息",
+            TreeNodeType::SchemaTemplate => "IoTDB 模式模板，定义数据结构",
+            TreeNodeType::DataType => "时间序列数据类型 (BOOLEAN, INT32, FLOAT, DOUBLE, TEXT)",
+            TreeNodeType::Encoding => "数据编码方式 (PLAIN, RLE, TS_2DIFF, GORILLA)",
+            TreeNodeType::Compression => "数据压缩算法 (SNAPPY, GZIP, LZO)",
+            TreeNodeType::TagGroup => "标签分组，包含索引的元数据",
+            TreeNodeType::AttributeGroup => "IoTDB 属性分组，包含元数据信息",
+            TreeNodeType::Measurement => "InfluxDB 测量，类似于表",
+            TreeNodeType::FieldGroup => "字段分组，包含数值类型的数据",
+            TreeNodeType::Field => "字段，存储数值数据",
+            TreeNodeType::Tag => "标签，用于索引和过滤",
         }
     }
 }

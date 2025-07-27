@@ -3,6 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Database, Loader2, RefreshCw } from 'lucide-react';
 import { Button,Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getNodeIcon, getNodeStyle, getNodeDescription } from '@/types/tree';
 
 interface TreeNode {
   id: string;
@@ -142,79 +143,7 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     const isSelected = selectedNodeId === node.id;
     const hasChildren = node.children.length > 0 || node.isExpandable;
 
-    // 根据节点类型选择图标
-    const getNodeIcon = (nodeType: string) => {
-      switch (nodeType) {
-        case 'database':
-        case 'Database':
-          return '💾';
-        case 'database3x':
-        case 'Database3x':
-          return '🗄️';
-        case 'system_database':
-        case 'SystemDatabase':
-          return '🔧';
-        case 'storage_group':
-        case 'StorageGroup':
-          return '🏢';
-        case 'retention_policy':
-        case 'RetentionPolicy':
-          return '📅';
-        case 'organization':
-        case 'Organization':
-          return '🏢';
-        case 'bucket':
-        case 'Bucket':
-          return '🪣';
-        case 'system_bucket':
-        case 'SystemBucket':
-          return '⚙️';
-        case 'device':
-        case 'Device':
-          return '📱';
-        case 'measurement':
-        case 'Measurement':
-          return '📊';
-        case 'timeseries':
-        case 'Timeseries':
-          return '📈';
-        case 'field':
-        case 'Field':
-          return '📊';
-        case 'tag':
-        case 'Tag':
-          return '🏷️';
-        default:
-          return '📄';
-      }
-    };
-
-    // 根据节点类型选择样式
-    const getNodeStyle = (nodeType: string, isSystem: boolean) => {
-      if (isSystem) {
-        return 'text-orange-600 italic';
-      }
-      switch (nodeType) {
-        case 'Database':
-          return 'text-green-600';
-        case 'StorageGroup':
-          return 'text-emerald-600';
-        case 'RetentionPolicy':
-          return 'text-purple-600';
-        case 'Device':
-          return 'text-blue-500';
-        case 'Measurement':
-          return 'text-green-500';
-        case 'Timeseries':
-          return 'text-teal-600';
-        case 'Field':
-          return 'text-blue-600';
-        case 'Tag':
-          return 'text-yellow-600';
-        default:
-          return 'text-gray-700';
-      }
-    };
+    // 现在使用统一的工具函数
 
     return (
       <div key={node.id} className="select-none">

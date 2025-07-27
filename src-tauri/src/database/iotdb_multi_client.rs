@@ -5,7 +5,7 @@
  * 自动检测最佳协议并提供统一的接口
  */
 
-use crate::models::{ConnectionConfig, QueryResult};
+use crate::models::{ConnectionConfig, QueryResult, TreeNode};
 use anyhow::{Context, Result};
 use log::{debug, info, warn};
 use std::time::{Duration, Instant};
@@ -422,7 +422,34 @@ impl IoTDBMultiClient {
         // 检测版本以确定树结构
         let version = self.detect_version().await.unwrap_or_else(|_| "IoTDB-1.0+".to_string());
 
-        // 获取存储组列表
+        // 1. 添加系统信息节点
+        let mut system_info = TreeNodeFactory::create_system_info();
+
+        // 添加版本信息子节点
+        let version_info = TreeNodeFactory::create_version_info(version.clone());
+        system_info.add_child(version_info);
+
+        // 添加存储引擎信息子节点
+        let storage_engine_info = TreeNodeFactory::create_storage_engine_info();
+        system_info.add_child(storage_engine_info);
+
+        // 如果是集群版本，添加集群信息
+        if self.is_cluster_version().await.unwrap_or(false) {
+            let cluster_info = TreeNodeFactory::create_cluster_info();
+            system_info.add_child(cluster_info);
+        }
+
+        nodes.push(system_info);
+
+        // 2. 获取模式模板（如果支持）
+        if let Ok(templates) = self.get_schema_templates().await {
+            for template in templates {
+                let template_node = TreeNodeFactory::create_schema_template(template);
+                nodes.push(template_node);
+            }
+        }
+
+        // 3. 获取存储组列表
         match self.get_databases().await {
             Ok(storage_groups) => {
                 for sg in storage_groups {
@@ -450,6 +477,11 @@ impl IoTDBMultiClient {
         let parsed_type = match node_type {
             "StorageGroup" => TreeNodeType::StorageGroup,
             "Device" => TreeNodeType::Device,
+            "Timeseries" => TreeNodeType::Timeseries,
+            "SystemInfo" => TreeNodeType::SystemInfo,
+            "StorageEngineInfo" => TreeNodeType::StorageEngineInfo,
+            "ClusterInfo" => TreeNodeType::ClusterInfo,
+            "SchemaTemplate" => TreeNodeType::SchemaTemplate,
             _ => return Ok(children),
         };
 
@@ -485,19 +517,138 @@ impl IoTDBMultiClient {
                     parent_node_id.to_string()
                 };
 
-                // 获取时间序列
-                match self.get_timeseries_for_tree(&device_path).await {
-                    Ok(timeseries) => {
-                        for ts in timeseries {
-                            let ts_node = TreeNodeFactory::create_timeseries(
-                                ts.clone(),
-                                parent_node_id.to_string()
+                // 获取时间序列（带详细信息）
+                match self.get_timeseries_with_details(&device_path).await {
+                    Ok(timeseries_info) => {
+                        for ts_info in timeseries_info {
+                            let ts_node = TreeNodeFactory::create_timeseries_with_info(
+                                ts_info.name,
+                                parent_node_id.to_string(),
+                                ts_info.data_type,
+                                ts_info.encoding,
+                                ts_info.compression
                             );
                             children.push(ts_node);
                         }
                     }
-                    Err(e) => {
-                        log::warn!("获取时间序列失败: {}", e);
+                    Err(_) => {
+                        // 如果获取详细信息失败，回退到简单方式
+                        match self.get_timeseries_for_tree(&device_path).await {
+                            Ok(timeseries) => {
+                                for ts in timeseries {
+                                    let ts_node = TreeNodeFactory::create_timeseries(
+                                        ts.clone(),
+                                        parent_node_id.to_string()
+                                    );
+                                    children.push(ts_node);
+                                }
+                            }
+                            Err(e) => {
+                                log::warn!("获取时间序列失败: {}", e);
+                            }
+                        }
+                    }
+                }
+
+                // 检查是否有对齐时间序列
+                if let Ok(aligned_ts) = self.get_aligned_timeseries(&device_path).await {
+                    for aligned in aligned_ts {
+                        let aligned_node = TreeNodeFactory::create_aligned_timeseries(
+                            aligned,
+                            parent_node_id.to_string()
+                        );
+                        children.push(aligned_node);
+                    }
+                }
+
+                // 检查是否有设备模板
+                if let Ok(templates) = self.get_device_templates(&device_path).await {
+                    for template in templates {
+                        let template_node = TreeNodeFactory::create_template(
+                            template,
+                            parent_node_id.to_string()
+                        );
+                        children.push(template_node);
+                    }
+                }
+            }
+            TreeNodeType::Timeseries => {
+                // 时间序列节点可以展开显示详细信息
+                let ts_path = if let Some(ts_part) = parent_node_id.split("/ts_").nth(1) {
+                    ts_part.replace("_", ".")
+                } else {
+                    parent_node_id.to_string()
+                };
+
+                // 获取时间序列的详细信息
+                if let Ok(ts_details) = self.get_timeseries_details(&ts_path).await {
+                    // 添加数据类型信息
+                    let data_type_node = TreeNodeFactory::create_data_type_info(
+                        ts_details.data_type,
+                        parent_node_id.to_string()
+                    );
+                    children.push(data_type_node);
+
+                    // 添加编码信息
+                    if let Some(encoding) = ts_details.encoding {
+                        let encoding_node = TreeNodeFactory::create_encoding_info(
+                            encoding,
+                            parent_node_id.to_string()
+                        );
+                        children.push(encoding_node);
+                    }
+
+                    // 添加压缩信息
+                    if let Some(compression) = ts_details.compression {
+                        let compression_node = TreeNodeFactory::create_compression_info(
+                            compression,
+                            parent_node_id.to_string()
+                        );
+                        children.push(compression_node);
+                    }
+
+                    // 添加标签信息
+                    if !ts_details.tags.is_empty() {
+                        let tag_group = TreeNodeFactory::create_tag_group(parent_node_id.to_string());
+                        children.push(tag_group);
+                    }
+
+                    // 添加属性信息
+                    if !ts_details.attributes.is_empty() {
+                        let attr_group = TreeNodeFactory::create_field_group(parent_node_id.to_string()); // 复用字段分组
+                        children.push(attr_group);
+                    }
+                }
+            }
+            TreeNodeType::StorageEngineInfo => {
+                // 获取存储引擎详细信息
+                if let Ok(engine_info) = self.get_storage_engine_info().await {
+                    for (key, value) in engine_info {
+                        let info_node = TreeNode::new(
+                            format!("{}/engine_{}", parent_node_id, key),
+                            format!("{}: {}", key, value),
+                            TreeNodeType::Field, // 复用字段类型
+                        )
+                        .with_parent(parent_node_id.to_string())
+                        .as_leaf()
+                        .as_system();
+                        children.push(info_node);
+                    }
+                }
+            }
+            TreeNodeType::ClusterInfo => {
+                // 获取集群信息
+                if let Ok(cluster_nodes) = self.get_cluster_nodes().await {
+                    for node_info in cluster_nodes {
+                        let node_node = TreeNode::new(
+                            format!("{}/node_{}", parent_node_id, node_info.id),
+                            format!("Node {}: {} ({})", node_info.id, node_info.host, node_info.status),
+                            TreeNodeType::Field, // 复用字段类型
+                        )
+                        .with_parent(parent_node_id.to_string())
+                        .as_leaf()
+                        .as_system();
+                        children.push(node_node);
                     }
                 }
             }
@@ -575,4 +726,193 @@ impl IoTDBMultiClient {
 
         Ok(timeseries)
     }
+
+    /// 检查是否为集群版本
+    async fn is_cluster_version(&mut self) -> Result<bool> {
+        // 尝试执行集群相关查询来判断
+        let result = self.execute_query("SHOW CLUSTER").await;
+        Ok(result.is_ok())
+    }
+
+    /// 获取模式模板列表
+    async fn get_schema_templates(&mut self) -> Result<Vec<String>> {
+        let result = self.execute_query("SHOW SCHEMA TEMPLATES").await?;
+        let mut templates = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if let Some(template_name) = row.first() {
+                    if let Some(name_str) = template_name.as_str() {
+                        templates.push(name_str.to_string());
+                    }
+                }
+            }
+        }
+
+        Ok(templates)
+    }
+
+    /// 获取时间序列详细信息
+    async fn get_timeseries_with_details(&mut self, device_path: &str) -> Result<Vec<TimeseriesInfo>> {
+        let query = format!("SHOW TIMESERIES {} WITH SCHEMA", device_path);
+        let result = self.execute_query(&query).await?;
+        let mut timeseries_info = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if row.len() >= 4 {
+                    let name = row[0].as_str().unwrap_or("").to_string();
+                    let data_type = row[3].as_str().unwrap_or("UNKNOWN").to_string();
+                    let encoding = if row.len() > 4 {
+                        row[4].as_str().map(|s| s.to_string())
+                    } else {
+                        None
+                    };
+                    let compression = if row.len() > 5 {
+                        row[5].as_str().map(|s| s.to_string())
+                    } else {
+                        None
+                    };
+
+                    timeseries_info.push(TimeseriesInfo {
+                        name: name.split('.').last().unwrap_or(&name).to_string(),
+                        data_type,
+                        encoding,
+                        compression,
+                        tags: std::collections::HashMap::new(),
+                        attributes: std::collections::HashMap::new(),
+                    });
+                }
+            }
+        }
+
+        Ok(timeseries_info)
+    }
+
+    /// 获取对齐时间序列
+    async fn get_aligned_timeseries(&mut self, device_path: &str) -> Result<Vec<String>> {
+        let query = format!("SHOW TIMESERIES {} WHERE ALIGNED=true", device_path);
+        let result = self.execute_query(&query).await?;
+        let mut aligned_ts = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if let Some(ts_name) = row.first() {
+                    if let Some(name_str) = ts_name.as_str() {
+                        if let Some(sensor_name) = name_str.split('.').last() {
+                            aligned_ts.push(sensor_name.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(aligned_ts)
+    }
+
+    /// 获取设备模板
+    async fn get_device_templates(&mut self, device_path: &str) -> Result<Vec<String>> {
+        let query = format!("SHOW DEVICE TEMPLATE {}", device_path);
+        let result = self.execute_query(&query).await?;
+        let mut templates = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if let Some(template_name) = row.first() {
+                    if let Some(name_str) = template_name.as_str() {
+                        templates.push(name_str.to_string());
+                    }
+                }
+            }
+        }
+
+        Ok(templates)
+    }
+
+    /// 获取时间序列详细信息
+    async fn get_timeseries_details(&mut self, ts_path: &str) -> Result<TimeseriesDetails> {
+        let query = format!("DESCRIBE TIMESERIES {}", ts_path);
+        let result = self.execute_query(&query).await?;
+
+        if let Some(data) = result.data {
+            if let Some(row) = data.first() {
+                return Ok(TimeseriesDetails {
+                    data_type: row.get(1).and_then(|v| v.as_str()).unwrap_or("UNKNOWN").to_string(),
+                    encoding: row.get(2).and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    compression: row.get(3).and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    tags: std::collections::HashMap::new(),
+                    attributes: std::collections::HashMap::new(),
+                });
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取时间序列详细信息"))
+    }
+
+    /// 获取存储引擎信息
+    async fn get_storage_engine_info(&mut self) -> Result<Vec<(String, String)>> {
+        let result = self.execute_query("SHOW VARIABLES").await?;
+        let mut engine_info = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if row.len() >= 2 {
+                    let key = row[0].as_str().unwrap_or("").to_string();
+                    let value = row[1].as_str().unwrap_or("").to_string();
+                    engine_info.push((key, value));
+                }
+            }
+        }
+
+        Ok(engine_info)
+    }
+
+    /// 获取集群节点信息
+    async fn get_cluster_nodes(&mut self) -> Result<Vec<ClusterNodeInfo>> {
+        let result = self.execute_query("SHOW CLUSTER").await?;
+        let mut nodes = Vec::new();
+
+        if let Some(data) = result.data {
+            for row in data {
+                if row.len() >= 3 {
+                    let id = row[0].as_str().unwrap_or("").to_string();
+                    let host = row[1].as_str().unwrap_or("").to_string();
+                    let status = row[2].as_str().unwrap_or("").to_string();
+
+                    nodes.push(ClusterNodeInfo { id, host, status });
+                }
+            }
+        }
+
+        Ok(nodes)
+    }
+}
+
+/// 时间序列信息结构
+#[derive(Debug, Clone)]
+struct TimeseriesInfo {
+    name: String,
+    data_type: String,
+    encoding: Option<String>,
+    compression: Option<String>,
+    tags: std::collections::HashMap<String, String>,
+    attributes: std::collections::HashMap<String, String>,
+}
+
+/// 时间序列详细信息结构
+#[derive(Debug, Clone)]
+struct TimeseriesDetails {
+    data_type: String,
+    encoding: Option<String>,
+    compression: Option<String>,
+    tags: std::collections::HashMap<String, String>,
+    attributes: std::collections::HashMap<String, String>,
+}
+
+/// 集群节点信息结构
+#[derive(Debug, Clone)]
+struct ClusterNodeInfo {
+    id: String,
+    host: String,
+    status: String,
 }
