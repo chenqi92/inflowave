@@ -582,29 +582,65 @@ impl InfluxDB2Client {
             if !v2_config.api_token.is_empty() {
                 info!("尝试 InfluxDB 3.x Core 带认证 SQL 端点");
 
-                match client
-                    .post(&query_url)
-                    .header("Authorization", format!("Bearer {}", v2_config.api_token))
-                    .header("Content-Type", "application/json")
-                    .json(&serde_json::json!({
-                        "query": "SELECT 1",
-                        "format": "json"
-                    }))
-                    .timeout(std::time::Duration::from_secs(10))
-                    .send()
-                    .await
-                {
-                    Ok(response) if response.status().is_success() => {
-                        info!("InfluxDB 3.x Core 带认证 SQL 端点测试成功");
-                        return Ok(());
+                // 尝试不同的认证方式和请求格式
+                let auth_methods = vec![
+                    ("Bearer", format!("Bearer {}", v2_config.api_token)),
+                    ("Token", format!("Token {}", v2_config.api_token)),
+                ];
+
+                for (auth_type, auth_header) in auth_methods {
+                    // 尝试 JSON 格式（包含必需的 db 字段）
+                    match client
+                        .post(&query_url)
+                        .header("Authorization", &auth_header)
+                        .header("Content-Type", "application/json")
+                        .json(&serde_json::json!({
+                            "query": "SELECT 1",
+                            "db": "default"
+                        }))
+                        .timeout(std::time::Duration::from_secs(10))
+                        .send()
+                        .await
+                    {
+                        Ok(response) if response.status().is_success() => {
+                            info!("InfluxDB 3.x Core 带认证 SQL 端点测试成功 (认证: {})", auth_type);
+                            return Ok(());
+                        }
+                        Ok(response) => {
+                            debug!("InfluxDB 3.x Core {} 认证 JSON 格式返回: {}", auth_type, response.status());
+                            if let Ok(text) = response.text().await {
+                                debug!("响应内容: {}", text);
+                            }
+                        }
+                        Err(e) => {
+                            debug!("InfluxDB 3.x Core {} 认证 JSON 格式请求失败: {}", auth_type, e);
+                        }
                     }
-                    Ok(response) => {
-                        warn!("InfluxDB 3.x Core 带认证 SQL 端点返回: {}", response.status());
-                    }
-                    Err(e) => {
-                        warn!("InfluxDB 3.x Core 带认证 SQL 端点请求失败: {}", e);
+
+                    // 尝试 SQL 文本格式
+                    match client
+                        .post(&query_url)
+                        .header("Authorization", &auth_header)
+                        .header("Content-Type", "application/sql")
+                        .body("SELECT 1")
+                        .timeout(std::time::Duration::from_secs(10))
+                        .send()
+                        .await
+                    {
+                        Ok(response) if response.status().is_success() => {
+                            info!("InfluxDB 3.x Core 带认证 SQL 文本端点测试成功 (认证: {})", auth_type);
+                            return Ok(());
+                        }
+                        Ok(response) => {
+                            debug!("InfluxDB 3.x Core {} 认证 SQL 文本格式返回: {}", auth_type, response.status());
+                        }
+                        Err(e) => {
+                            debug!("InfluxDB 3.x Core {} 认证 SQL 文本格式请求失败: {}", auth_type, e);
+                        }
                     }
                 }
+
+                warn!("InfluxDB 3.x Core 所有认证方式都失败");
 
                 // 方法4: 尝试传统的 /api/v2/query 端点（兼容性测试）
                 let query_url_v2 = format!("{}/api/v2/query", base_url);
@@ -849,7 +885,8 @@ impl InfluxDB2Client {
             .header("Content-Type", "application/json")
             .json(&serde_json::json!({
                 "query": sql_query,
-                "format": "json"
+                "format": "json",
+                "db": "default"
             }))
             .timeout(std::time::Duration::from_secs(10))
             .send()
@@ -904,7 +941,8 @@ impl InfluxDB2Client {
                     .header("Content-Type", "application/json")
                     .json(&serde_json::json!({
                         "query": sql_query,
-                        "format": "json"
+                        "format": "json",
+                        "db": "default"
                     }))
                     .timeout(std::time::Duration::from_secs(10))
                     .send()
@@ -1538,19 +1576,30 @@ impl InfluxClient {
 
     /// 获取数据库列表
     pub async fn get_databases(&self) -> Result<Vec<String>> {
-        debug!("获取数据库列表");
-        
+        info!("InfluxDB 1.x 开始获取数据库列表");
+
         let query = influxdb::ReadQuery::new("SHOW DATABASES");
-        
+
         match self.client.query(query).await {
             Ok(result) => {
+                info!("InfluxDB 1.x SHOW DATABASES 查询成功，响应长度: {}", result.len());
+                debug!("InfluxDB 1.x 原始响应: {}", result);
+
                 // 解析 SHOW DATABASES 的响应
                 let databases = self.parse_show_databases_result(result)?;
-                info!("获取到 {} 个数据库", databases.len());
-                Ok(databases)
+                info!("InfluxDB 1.x 解析得到 {} 个数据库: {:?}", databases.len(), databases);
+
+                // 如果没有数据库，可能是新安装的 InfluxDB，创建一个默认数据库用于测试
+                if databases.is_empty() {
+                    warn!("InfluxDB 1.x 没有找到任何数据库，这可能是新安装的实例");
+                    // 返回空列表，让用户知道需要创建数据库
+                    Ok(vec![])
+                } else {
+                    Ok(databases)
+                }
             }
             Err(e) => {
-                error!("获取数据库列表失败: {}", e);
+                error!("InfluxDB 1.x 获取数据库列表失败: {}", e);
                 Err(anyhow::anyhow!("获取数据库列表失败: {}", e))
             }
         }
@@ -2383,22 +2432,39 @@ impl DatabaseClientFactory {
     pub fn create_client(config: ConnectionConfig) -> Result<DatabaseClient> {
         match config.db_type {
             DatabaseType::InfluxDB => {
-                // 根据版本选择合适的客户端
+                // 优先根据版本选择合适的客户端
                 if let Some(version) = &config.version {
-                    if version.contains("2.") || version.contains("3.") {
+                    if version.contains("1.") || version.contains("1x") {
+                        // 明确指定为 InfluxDB 1.x
+                        info!("根据版本配置创建 InfluxDB 1.x 客户端: {}", version);
+                        let client = InfluxClient::new(config)?;
+                        return Ok(DatabaseClient::InfluxDB1x(client));
+                    } else if version.contains("2.") || version.contains("3.") {
                         // 创建 InfluxDB 2.x/3.x 客户端
+                        info!("根据版本配置创建 InfluxDB 2.x/3.x 客户端: {}", version);
                         let client = InfluxDB2Client::new(config)?;
                         return Ok(DatabaseClient::InfluxDB2x(client));
                     }
                 }
 
-                // 检查是否有 v2_config，如果有则使用 2.x 客户端
+                // 如果版本不明确，检查是否有 v2_config 且没有明确指定为 1.x
                 if config.v2_config.is_some() {
+                    // 但是如果版本明确指定为 1.x，则忽略 v2_config
+                    if let Some(version) = &config.version {
+                        if version.contains("1.") || version.contains("1x") {
+                            info!("版本指定为 1.x，忽略 v2_config，创建 InfluxDB 1.x 客户端");
+                            let client = InfluxClient::new(config)?;
+                            return Ok(DatabaseClient::InfluxDB1x(client));
+                        }
+                    }
+
+                    info!("检测到 v2_config，创建 InfluxDB 2.x/3.x 客户端");
                     let client = InfluxDB2Client::new(config)?;
                     return Ok(DatabaseClient::InfluxDB2x(client));
                 }
 
                 // 默认使用 InfluxDB 1.x 客户端
+                info!("使用默认 InfluxDB 1.x 客户端");
                 let client = InfluxClient::new(config)?;
                 Ok(DatabaseClient::InfluxDB1x(client))
             },

@@ -502,9 +502,16 @@ impl IoTDBMultiClient {
         let query = if storage_group.is_empty() {
             "SHOW DEVICES".to_string()
         } else {
-            format!("SHOW DEVICES {}.** ", storage_group)
+            // 对存储组名称进行转义，处理包含特殊字符的情况
+            let escaped_sg = if storage_group.contains(':') || storage_group.contains('-') || storage_group.contains(' ') {
+                format!("`{}`", storage_group)
+            } else {
+                storage_group.to_string()
+            };
+            format!("SHOW DEVICES {}.**", escaped_sg)
         };
 
+        debug!("IoTDB 设备查询: {}", query);
         let result = self.execute_query(&query).await?;
         let mut devices = Vec::new();
 
@@ -519,12 +526,21 @@ impl IoTDBMultiClient {
             }
         }
 
+        debug!("IoTDB 获取到 {} 个设备", devices.len());
         Ok(devices)
     }
 
     /// 获取时间序列列表（用于树节点）
     async fn get_timeseries_for_tree(&mut self, device_path: &str) -> Result<Vec<String>> {
-        let query = format!("SHOW TIMESERIES {}.** ", device_path);
+        // 对设备路径进行转义，处理包含特殊字符的情况
+        let escaped_path = if device_path.contains(':') || device_path.contains('-') || device_path.contains(' ') {
+            format!("`{}`", device_path)
+        } else {
+            device_path.to_string()
+        };
+        let query = format!("SHOW TIMESERIES {}.**", escaped_path);
+
+        debug!("IoTDB 时间序列查询: {}", query);
         let result = self.execute_query(&query).await?;
         let mut timeseries = Vec::new();
 
