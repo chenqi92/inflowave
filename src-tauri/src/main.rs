@@ -32,6 +32,7 @@ use commands::embedded_server::*;
 use commands::workspace::*;
 use commands::iotdb::*;
 use commands::database_detection::*;
+use commands::multi_source_performance::*;
 
 // Updater commands
 use updater::*;
@@ -777,6 +778,12 @@ async fn main() {
             get_connection_pool_stats_perf,
             generate_performance_report,
             generate_local_performance_report,
+
+            // Multi-source performance monitoring
+            get_multi_source_performance_overview,
+            get_single_source_performance_details,
+            get_performance_monitoring_config,
+            update_performance_monitoring_config,
 
             // User experience
             get_user_preferences,

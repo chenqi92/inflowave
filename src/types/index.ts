@@ -9,6 +9,7 @@ import type {
   ValidationError,
   ConnectionTestResult as BaseConnectionTestResult
 } from './database/base';
+import { PerformanceBottleneck } from '@services/analyticsService.ts';
 
 // 数据库类型 - 扩展支持多种数据库
 export type DatabaseType = BaseDatabaseType;
@@ -721,6 +722,70 @@ export interface Dashboard {
 }
 
 // 性能监控相关类型
+
+// 数据源类型和版本
+export type DataSourceType = 'influxdb' | 'iotdb';
+export type DataSourceVersion = 'influxdb-1.x' | 'influxdb-2.x' | 'influxdb-3.x' | 'iotdb-0.x' | 'iotdb-1.x';
+
+// 监控数据源信息
+export interface MonitoringDataSource {
+  connectionId: string;
+  name: string;
+  type: DataSourceType;
+  version: DataSourceVersion;
+  isActive: boolean;
+  databases: string[];
+}
+
+// 统一的性能监控指标
+export interface UnifiedPerformanceMetrics {
+  dataSource: MonitoringDataSource;
+  timestamp: Date;
+
+  // 查询性能
+  queryMetrics: {
+    totalQueries: number;
+    averageExecutionTime: number;
+    queriesPerSecond: number;
+    slowQueryCount: number;
+    errorRate: number;
+  };
+
+  // 系统资源
+  systemMetrics: {
+    cpu: { usage: number; cores: number };
+    memory: { used: number; total: number; percentage: number };
+    disk: { used: number; total: number; percentage: number };
+    network: { bytesIn: number; bytesOut: number };
+  };
+
+  // 数据库特定指标
+  databaseMetrics: {
+    connectionCount: number;
+    databaseCount: number;
+    writeLatency: number;
+    readLatency: number;
+    storageSize: number;
+  };
+
+  // 瓶颈和建议
+  bottlenecks: PerformanceBottleneck[];
+  recommendations: string[];
+}
+
+// 性能监控配置
+export interface PerformanceMonitoringConfig {
+  enabledDataSources: string[]; // connectionId列表
+  refreshInterval: number; // 秒
+  autoRefresh: boolean;
+  timeRange: string; // '1h', '6h', '24h', '7d'
+  alertThresholds: {
+    cpuUsage: number;
+    memoryUsage: number;
+    diskUsage: number;
+    queryLatency: number;
+  };
+}
 
 export interface SlowQueryInfo {
   id: string;

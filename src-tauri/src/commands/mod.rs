@@ -17,6 +17,7 @@ pub mod embedded_server;
 pub mod workspace;
 pub mod iotdb;
 pub mod database_detection;
+pub mod multi_source_performance;
 
 /// 宏：为 Tauri 命令自动添加 camelCase 参数转换
 /// 使用方式：#[camel_case_command] 替代 #[tauri::command]
