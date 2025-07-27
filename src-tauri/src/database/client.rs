@@ -547,85 +547,127 @@ impl InfluxDB2Client {
             }
         }
 
-        if let Some(v2_config) = &self.config.v2_config {
-            // 方法2: 尝试 InfluxDB 3.x Core 的 /api/v3/query_sql 端点
-            let query_url = format!("{}/api/v3/query_sql", base_url);
-            info!("尝试 InfluxDB 3.x Core SQL 端点: {}", query_url);
+        // 方法2: 尝试无认证的 SQL 查询（InfluxDB 3.x Core 可能不需要认证）
+        let query_url = format!("{}/api/v3/query_sql", base_url);
+        info!("尝试 InfluxDB 3.x Core 无认证 SQL 端点: {}", query_url);
 
-            match client
-                .post(&query_url)
-                .header("Authorization", format!("Bearer {}", v2_config.api_token))
-                .header("Content-Type", "application/json")
-                .json(&serde_json::json!({
-                    "query": "SELECT 1",
-                    "format": "json"
-                }))
-                .timeout(std::time::Duration::from_secs(10))
-                .send()
-                .await
-            {
-                Ok(response) if response.status().is_success() => {
-                    info!("InfluxDB 3.x Core SQL 端点测试成功");
-                    return Ok(());
-                }
-                Ok(response) => {
-                    warn!("InfluxDB 3.x Core SQL 端点返回: {}", response.status());
-                    if let Ok(text) = response.text().await {
-                        debug!("SQL 端点响应内容: {}", text);
-                    }
-                }
-                Err(e) => {
-                    warn!("InfluxDB 3.x Core SQL 端点请求失败: {}", e);
-                }
-            }
-
-            // 方法3: 尝试传统的 /api/v2/query 端点（兼容性测试）
-            let query_url_v2 = format!("{}/api/v2/query", base_url);
-            info!("尝试 InfluxDB 3.x 兼容性端点: {}", query_url_v2);
-
-            match client
-                .post(&query_url_v2)
-                .header("Authorization", format!("Token {}", v2_config.api_token))
-                .header("Content-Type", "application/vnd.flux")
-                .body("buckets() |> limit(n:1)")
-                .timeout(std::time::Duration::from_secs(10))
-                .send()
-                .await
-            {
-                Ok(response) if response.status().is_success() => {
-                    info!("InfluxDB 3.x 兼容性端点测试成功");
-                    return Ok(());
-                }
-                Ok(response) => {
-                    warn!("InfluxDB 3.x 兼容性端点返回: {}", response.status());
-                }
-                Err(e) => {
-                    warn!("InfluxDB 3.x 兼容性端点请求失败: {}", e);
-                }
-            }
-        }
-
-        // 方法4: 尝试无认证的基本连通性测试
-        info!("尝试 InfluxDB 3.x 无认证连通性测试");
         match client
-            .get(&format!("{}/ping", base_url))
-            .timeout(std::time::Duration::from_secs(5))
+            .post(&query_url)
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "query": "SELECT 1",
+                "format": "json"
+            }))
+            .timeout(std::time::Duration::from_secs(10))
             .send()
             .await
         {
+            Ok(response) if response.status().is_success() => {
+                info!("InfluxDB 3.x Core 无认证 SQL 端点测试成功");
+                return Ok(());
+            }
             Ok(response) => {
-                info!("InfluxDB 3.x ping 测试响应: {}", response.status());
-                if response.status().is_success() || response.status() == 404 {
-                    // 404 也表示服务器可达，只是端点不存在
-                    return Ok(());
+                warn!("InfluxDB 3.x Core 无认证 SQL 端点返回: {}", response.status());
+                if let Ok(text) = response.text().await {
+                    debug!("无认证 SQL 端点响应内容: {}", text);
                 }
             }
             Err(e) => {
-                warn!("InfluxDB 3.x ping 测试失败: {}", e);
+                warn!("InfluxDB 3.x Core 无认证 SQL 端点请求失败: {}", e);
             }
         }
 
-        Err(anyhow::anyhow!("InfluxDB 3.x 连接测试失败：无法连接到服务器 {}。请检查：\n1. 服务器是否正在运行\n2. 地址和端口是否正确\n3. 网络连接是否正常", base_url))
+        // 方法3: 如果有 API Token，尝试带认证的查询
+        if let Some(v2_config) = &self.config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                info!("尝试 InfluxDB 3.x Core 带认证 SQL 端点");
+
+                match client
+                    .post(&query_url)
+                    .header("Authorization", format!("Bearer {}", v2_config.api_token))
+                    .header("Content-Type", "application/json")
+                    .json(&serde_json::json!({
+                        "query": "SELECT 1",
+                        "format": "json"
+                    }))
+                    .timeout(std::time::Duration::from_secs(10))
+                    .send()
+                    .await
+                {
+                    Ok(response) if response.status().is_success() => {
+                        info!("InfluxDB 3.x Core 带认证 SQL 端点测试成功");
+                        return Ok(());
+                    }
+                    Ok(response) => {
+                        warn!("InfluxDB 3.x Core 带认证 SQL 端点返回: {}", response.status());
+                    }
+                    Err(e) => {
+                        warn!("InfluxDB 3.x Core 带认证 SQL 端点请求失败: {}", e);
+                    }
+                }
+
+                // 方法4: 尝试传统的 /api/v2/query 端点（兼容性测试）
+                let query_url_v2 = format!("{}/api/v2/query", base_url);
+                info!("尝试 InfluxDB 3.x 兼容性端点: {}", query_url_v2);
+
+                match client
+                    .post(&query_url_v2)
+                    .header("Authorization", format!("Token {}", v2_config.api_token))
+                    .header("Content-Type", "application/vnd.flux")
+                    .body("buckets() |> limit(n:1)")
+                    .timeout(std::time::Duration::from_secs(10))
+                    .send()
+                    .await
+                {
+                    Ok(response) if response.status().is_success() => {
+                        info!("InfluxDB 3.x 兼容性端点测试成功");
+                        return Ok(());
+                    }
+                    Ok(response) => {
+                        warn!("InfluxDB 3.x 兼容性端点返回: {}", response.status());
+                    }
+                    Err(e) => {
+                        warn!("InfluxDB 3.x 兼容性端点请求失败: {}", e);
+                    }
+                }
+            }
+        }
+
+        // 方法5: 尝试基本的连通性测试
+        info!("尝试 InfluxDB 3.x 基本连通性测试");
+
+        // 尝试多个可能的端点
+        let test_endpoints = vec![
+            format!("{}/ping", base_url),
+            format!("{}/api/v2/ping", base_url),
+            format!("{}/api/v3/ping", base_url),
+            format!("{}/", base_url),
+        ];
+
+        for endpoint in test_endpoints {
+            match client
+                .get(&endpoint)
+                .timeout(std::time::Duration::from_secs(5))
+                .send()
+                .await
+            {
+                Ok(response) => {
+                    info!("InfluxDB 3.x 端点 {} 响应: {}", endpoint, response.status());
+                    if response.status().is_success() ||
+                       response.status() == 404 ||
+                       response.status() == 405 {
+                        // 成功、404 或 405 都表示服务器可达
+                        info!("InfluxDB 3.x 连通性测试成功 (端点: {})", endpoint);
+                        return Ok(());
+                    }
+                }
+                Err(e) => {
+                    debug!("InfluxDB 3.x 端点 {} 测试失败: {}", endpoint, e);
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("InfluxDB 3.x 连接测试失败：无法连接到服务器 {}。请检查：\n1. InfluxDB 3.x 服务是否正在运行\n2. 地址和端口是否正确 (当前: {}:{})\n3. 网络连接是否正常\n4. 防火墙设置是否允许访问", base_url, self.config.host, self.config.port))
     }
 
     /// 执行 Flux 查询
@@ -795,26 +837,79 @@ impl InfluxDB2Client {
             format!("http://{}:{}", self.config.host, self.config.port)
         };
 
+        let client = reqwest::Client::new();
+
+        // 方法1: 尝试无认证的 InfluxDB 3.x Core SQL 查询
+        let query_url = format!("{}/api/v3/query_sql", base_url);
+        let sql_query = "SHOW DATABASES";
+        info!("尝试 InfluxDB 3.x Core 无认证 SQL 查询: {} -> {}", query_url, sql_query);
+
+        match client
+            .post(&query_url)
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "query": sql_query,
+                "format": "json"
+            }))
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                if let Ok(text) = response.text().await {
+                    info!("InfluxDB 3.x Core 无认证 SQL 查询成功，响应: {}", text);
+
+                    if let Ok(json_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                        let mut databases = Vec::new();
+
+                        // 解析 InfluxDB 3.x Core 的响应格式
+                        if let Some(data) = json_response.get("data") {
+                            if let Some(rows) = data.as_array() {
+                                for row in rows {
+                                    if let Some(row_array) = row.as_array() {
+                                        if let Some(db_name) = row_array.get(0).and_then(|v| v.as_str()) {
+                                            databases.push(db_name.to_string());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if !databases.is_empty() {
+                            info!("无认证查询成功解析到 {} 个数据库: {:?}", databases.len(), databases);
+                            return Ok(databases);
+                        }
+                    }
+                }
+            }
+            Ok(response) => {
+                warn!("InfluxDB 3.x Core 无认证 SQL 查询失败: HTTP {}", response.status());
+                if let Ok(text) = response.text().await {
+                    debug!("无认证查询错误响应内容: {}", text);
+                }
+            }
+            Err(e) => {
+                warn!("InfluxDB 3.x Core 无认证 SQL 查询请求失败: {}", e);
+            }
+        }
+
+        // 方法2: 如果有 API Token，尝试带认证的查询
         if let Some(v2_config) = &self.config.v2_config {
-            let client = reqwest::Client::new();
+            if !v2_config.api_token.is_empty() {
+                info!("尝试 InfluxDB 3.x Core 带认证 SQL 查询");
 
-            // 方法1: 尝试 InfluxDB 3.x Core 的 /api/v3/query_sql 端点
-            let query_url = format!("{}/api/v3/query_sql", base_url);
-            let sql_query = "SHOW DATABASES";
-            info!("尝试 InfluxDB 3.x Core SQL 查询: {} -> {}", query_url, sql_query);
-
-            match client
-                .post(&query_url)
-                .header("Authorization", format!("Bearer {}", v2_config.api_token))
-                .header("Content-Type", "application/json")
-                .json(&serde_json::json!({
-                    "query": sql_query,
-                    "format": "json"
-                }))
-                .timeout(std::time::Duration::from_secs(10))
-                .send()
-                .await
-            {
+                match client
+                    .post(&query_url)
+                    .header("Authorization", format!("Bearer {}", v2_config.api_token))
+                    .header("Content-Type", "application/json")
+                    .json(&serde_json::json!({
+                        "query": sql_query,
+                        "format": "json"
+                    }))
+                    .timeout(std::time::Duration::from_secs(10))
+                    .send()
+                    .await
+                {
                 Ok(response) if response.status().is_success() => {
                     if let Ok(text) = response.text().await {
                         info!("InfluxDB 3.x Core SQL 查询成功，响应: {}", text);
@@ -899,32 +994,33 @@ impl InfluxDB2Client {
                     warn!("InfluxDB 3.x Flux 查询请求失败: {}", e);
                 }
             }
+        }
 
-            // 方法3: 尝试 /health 端点检查服务是否可用
-            let health_url = format!("{}/health", base_url);
-            info!("尝试 InfluxDB 3.x health 检查: {}", health_url);
+        // 方法3: 尝试 /health 端点检查服务是否可用
+        let health_url = format!("{}/health", base_url);
+        info!("尝试 InfluxDB 3.x health 检查: {}", health_url);
 
-            match client
-                .get(&health_url)
-                .timeout(std::time::Duration::from_secs(5))
-                .send()
-                .await
-            {
-                Ok(response) if response.status().is_success() => {
-                    info!("InfluxDB 3.x health 检查成功，但无法获取数据库列表");
-                    // 如果 health 检查成功但无法获取数据库列表，返回一个默认数据库
-                    return Ok(vec!["default".to_string()]);
-                }
-                Ok(response) => {
-                    warn!("InfluxDB 3.x health 检查失败: HTTP {}", response.status());
-                }
-                Err(e) => {
-                    warn!("InfluxDB 3.x health 检查请求失败: {}", e);
-                }
+        match client
+            .get(&health_url)
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                info!("InfluxDB 3.x health 检查成功，但无法获取数据库列表");
+                // 如果 health 检查成功但无法获取数据库列表，返回一个默认数据库
+                return Ok(vec!["default".to_string()]);
             }
+            Ok(response) => {
+                warn!("InfluxDB 3.x health 检查失败: HTTP {}", response.status());
+            }
+            Err(e) => {
+                warn!("InfluxDB 3.x health 检查请求失败: {}", e);
+            }
+        }
 
-            // 方法4: 尝试不同的认证方式
-            info!("尝试 InfluxDB 3.x 无认证查询");
+        // 方法4: 尝试不同的认证方式
+        info!("尝试 InfluxDB 3.x 无认证查询");
             match client
                 .post(&format!("{}/api/v3/query_sql", base_url))
                 .header("Content-Type", "application/json")

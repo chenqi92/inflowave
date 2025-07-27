@@ -273,13 +273,14 @@ export const MultiSourcePerformanceMonitor: React.FC<
     return () => resizeObserver.disconnect();
   }, []);
 
-  // 根据宽度判断是否使用紧凑模式
-  const isNarrow = containerWidth > 0 && containerWidth < 300;
-  const isVeryNarrow = containerWidth > 0 && containerWidth < 250;
+  // 根据宽度判断显示模式
+  const isNarrow = containerWidth > 0 && containerWidth < 320;
+  const isVeryNarrow = containerWidth > 0 && containerWidth < 280;
+  const isUltraNarrow = containerWidth > 0 && containerWidth < 240;
 
-  // 渲染超紧凑的数据源列表（极窄模式）
+  // 渲染超精简数据源列表（极窄模式）
   const renderMinimalDataSources = () => (
-    <div className='space-y-1'>
+    <div className='space-y-0.5'>
       {metricsData.map(metrics => {
         const datasourceKey = `${metrics.connectionId}/${metrics.databaseName}`;
         const isSelected = selectedDataSource === datasourceKey;
@@ -288,11 +289,11 @@ export const MultiSourcePerformanceMonitor: React.FC<
           <TooltipProvider key={datasourceKey}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div
-                  className={`p-1.5 rounded cursor-pointer transition-all duration-200 ${
+                <button
+                  className={`w-full p-1 rounded-sm text-left transition-all duration-200 ${
                     isSelected
-                      ? 'bg-primary/10 border-l-2 border-l-primary'
-                      : 'hover:bg-muted/50'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'hover:bg-muted/80'
                   }`}
                   onClick={() => {
                     setSelectedDataSource(datasourceKey);
@@ -300,21 +301,31 @@ export const MultiSourcePerformanceMonitor: React.FC<
                   }}
                 >
                   <div className='flex items-center gap-1'>
-                    {getHealthIcon(metrics.healthScore, metrics.isConnected)}
-                    <div className='min-w-0 flex-1'>
-                      <div className='text-xs font-medium truncate'>
-                        {metrics.connectionName}
-                      </div>
-                    </div>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      metrics.isConnected
+                        ? metrics.healthScore === 'good'
+                          ? 'bg-green-500'
+                          : metrics.healthScore === 'warning'
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                        : 'bg-gray-400'
+                    }`} />
+                    <span className='text-xs font-medium truncate leading-tight'>
+                      {metrics.connectionName.length > 12 
+                        ? `${metrics.connectionName.substring(0, 12)}...` 
+                        : metrics.connectionName}
+                    </span>
                   </div>
-                </div>
+                </button>
               </TooltipTrigger>
               <TooltipContent side='right' className='max-w-xs'>
-                <div className='space-y-1'>
-                  <div className='font-medium'>{metrics.connectionName}</div>
-                  <div className='text-xs'>{metrics.databaseName} • {metrics.dbType}</div>
-                  <Separator className='my-1' />
-                  <div className='space-y-1 text-xs'>
+                <div className='space-y-2'>
+                  <div>
+                    <div className='font-medium'>{metrics.connectionName}</div>
+                    <div className='text-xs text-muted-foreground'>{metrics.databaseName} • {metrics.dbType}</div>
+                  </div>
+                  <Separator />
+                  <div className='grid grid-cols-2 gap-2 text-xs'>
                     <div>延迟: {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency}ms` : 'N/A'}</div>
                     <div>表数: {metrics.tableCount}</div>
                     <div>大小: {(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</div>
@@ -337,53 +348,33 @@ export const MultiSourcePerformanceMonitor: React.FC<
         const isSelected = selectedDataSource === datasourceKey;
         
         return (
-          <TooltipProvider key={datasourceKey}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={`p-2 rounded cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-primary/10 border-l-2 border-l-primary'
-                      : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => {
-                    setSelectedDataSource(datasourceKey);
-                    getSelectedDataSourceDetails(datasourceKey);
-                  }}
-                >
-                  <div className='flex items-center gap-2'>
-                    {getHealthIcon(metrics.healthScore, metrics.isConnected)}
-                    <div className='min-w-0 flex-1'>
-                      <div className='text-xs font-medium truncate'>
-                        {metrics.connectionName}
-                      </div>
-                      <div className='text-xs text-muted-foreground truncate'>
-                        {metrics.databaseName}
-                      </div>
-                    </div>
-                  </div>
-                  {!isNarrow && (
-                    <div className='text-xs text-muted-foreground mt-1'>
-                      {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency}ms` : 'N/A'}
-                    </div>
-                  )}
+          <div
+            key={datasourceKey}
+            className={`p-2 rounded-md cursor-pointer transition-all duration-200 border ${
+              isSelected
+                ? 'border-primary bg-primary/5 shadow-sm'
+                : 'border-transparent hover:border-border hover:bg-muted/50'
+            }`}
+            onClick={() => {
+              setSelectedDataSource(datasourceKey);
+              getSelectedDataSourceDetails(datasourceKey);
+            }}
+          >
+            <div className='flex items-center gap-2'>
+              {getHealthIcon(metrics.healthScore, metrics.isConnected)}
+              <div className='min-w-0 flex-1'>
+                <div className='text-sm font-medium truncate'>
+                  {metrics.connectionName}
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side='right' className='max-w-xs'>
-                <div className='space-y-1'>
-                  <div className='font-medium'>{metrics.connectionName}</div>
-                  <div className='text-xs'>{metrics.databaseName} • {metrics.dbType}</div>
-                  <Separator className='my-1' />
-                  <div className='grid grid-cols-2 gap-2 text-xs'>
-                    <div>延迟: {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency}ms` : 'N/A'}</div>
-                    <div>表数: {metrics.tableCount}</div>
-                    <div>大小: {(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</div>
-                    <div>记录: {formatValue(metrics.recordCount)}</div>
-                  </div>
+                <div className='text-xs text-muted-foreground truncate'>
+                  {metrics.databaseName}
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </div>
+              <div className='text-xs text-muted-foreground font-mono'>
+                {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency}ms` : 'N/A'}
+              </div>
+            </div>
+          </div>
         );
       })}
     </div>
@@ -559,120 +550,167 @@ export const MultiSourcePerformanceMonitor: React.FC<
           </div>
         </div>
 
-        {/* 关键指标 - 响应式布局 */}
-        {isVeryNarrow ? (
-          // 超窄屏：垂直列表
+        {/* 关键指标 - 全新响应式设计 */}
+        {isUltraNarrow ? (
+          // 超窄屏：简洁的进度条样式
           <div className='space-y-2'>
-            <div className='flex items-center justify-between p-2 border rounded'>
-              <div className='flex items-center gap-2'>
-                <Network className='w-3 h-3 text-blue-500' />
-                <span className='text-xs text-muted-foreground'>延迟</span>
+            <div className='p-2 bg-muted/30 rounded-md'>
+              <div className='flex items-center justify-between mb-1'>
+                <span className='text-xs font-medium'>连接状态</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  selectedMetrics.isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`} />
               </div>
-              <span className='text-xs font-bold'>
-                {selectedMetrics.connectionLatency >= 0 ? `${selectedMetrics.connectionLatency}ms` : 'N/A'}
-              </span>
+              <div className='space-y-1 text-xs text-muted-foreground'>
+                <div className='flex justify-between'>
+                  <span>延迟</span>
+                  <span className='font-mono'>
+                    {selectedMetrics.connectionLatency >= 0 ? `${selectedMetrics.connectionLatency}ms` : 'N/A'}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <span>表数</span>
+                  <span className='font-mono'>{selectedMetrics.tableCount}</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span>大小</span>
+                  <span className='font-mono'>{(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
+                </div>
+              </div>
             </div>
-            <div className='flex items-center justify-between p-2 border rounded'>
-              <div className='flex items-center gap-2'>
-                <Database className='w-3 h-3 text-green-500' />
-                <span className='text-xs text-muted-foreground'>表数</span>
+          </div>
+        ) : isVeryNarrow ? (
+          // 很窄屏：垂直卡片
+          <div className='space-y-1.5'>
+            <div className='p-2 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-1.5'>
+                  <Network className='w-3 h-3 text-blue-600' />
+                  <span className='text-xs font-medium'>延迟</span>
+                </div>
+                <span className='text-sm font-bold text-blue-700 dark:text-blue-300'>
+                  {selectedMetrics.connectionLatency >= 0 ? `${selectedMetrics.connectionLatency}ms` : 'N/A'}
+                </span>
               </div>
-              <span className='text-xs font-bold'>{selectedMetrics.tableCount}</span>
             </div>
-            <div className='flex items-center justify-between p-2 border rounded'>
-              <div className='flex items-center gap-2'>
-                <HardDrive className='w-3 h-3 text-orange-500' />
-                <span className='text-xs text-muted-foreground'>大小</span>
+            <div className='grid grid-cols-2 gap-1.5'>
+              <div className='p-2 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800 text-center'>
+                <Database className='w-3 h-3 mx-auto mb-1 text-green-600' />
+                <div className='text-xs font-bold text-green-700 dark:text-green-300'>{selectedMetrics.tableCount}</div>
+                <div className='text-xs text-green-600 dark:text-green-400'>表</div>
               </div>
-              <span className='text-xs font-bold'>
-                {(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB
-              </span>
-            </div>
-            <div className='flex items-center justify-between p-2 border rounded'>
-              <div className='flex items-center gap-2'>
-                <TrendingUp className='w-3 h-3 text-purple-500' />
-                <span className='text-xs text-muted-foreground'>查询</span>
+              <div className='p-2 bg-orange-50 dark:bg-orange-950/20 rounded-md border border-orange-200 dark:border-orange-800 text-center'>
+                <HardDrive className='w-3 h-3 mx-auto mb-1 text-orange-600' />
+                <div className='text-xs font-bold text-orange-700 dark:text-orange-300'>
+                  {(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB
+                </div>
+                <div className='text-xs text-orange-600 dark:text-orange-400'>大小</div>
               </div>
-              <span className='text-xs font-bold'>{selectedMetrics.activeQueries}</span>
             </div>
           </div>
         ) : isNarrow ? (
-          // 窄屏：2x2网格，但更紧凑
-          <div className='grid grid-cols-2 gap-1'>
-            <div className='p-1.5 border rounded text-center'>
-              <Network className='w-3 h-3 mx-auto mb-1 text-blue-500' />
-              <div className='text-xs text-muted-foreground'>延迟</div>
-              <div className='text-xs font-bold'>
+          // 窄屏：优化的2x2网格
+          <div className='grid grid-cols-2 gap-2'>
+            <div className='p-2 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800 text-center'>
+              <Network className='w-4 h-4 mx-auto mb-1 text-blue-600' />
+              <div className='text-sm font-bold text-blue-700 dark:text-blue-300'>
                 {selectedMetrics.connectionLatency >= 0 ? `${selectedMetrics.connectionLatency}ms` : 'N/A'}
               </div>
+              <div className='text-xs text-blue-600 dark:text-blue-400'>延迟</div>
             </div>
-            <div className='p-1.5 border rounded text-center'>
-              <Database className='w-3 h-3 mx-auto mb-1 text-green-500' />
-              <div className='text-xs text-muted-foreground'>表数</div>
-              <div className='text-xs font-bold'>{selectedMetrics.tableCount}</div>
+            <div className='p-2 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800 text-center'>
+              <Database className='w-4 h-4 mx-auto mb-1 text-green-600' />
+              <div className='text-sm font-bold text-green-700 dark:text-green-300'>{selectedMetrics.tableCount}</div>
+              <div className='text-xs text-green-600 dark:text-green-400'>表数</div>
             </div>
-            <div className='p-1.5 border rounded text-center'>
-              <HardDrive className='w-3 h-3 mx-auto mb-1 text-orange-500' />
-              <div className='text-xs text-muted-foreground'>大小</div>
-              <div className='text-xs font-bold'>
+            <div className='p-2 bg-orange-50 dark:bg-orange-950/20 rounded-md border border-orange-200 dark:border-orange-800 text-center'>
+              <HardDrive className='w-4 h-4 mx-auto mb-1 text-orange-600' />
+              <div className='text-sm font-bold text-orange-700 dark:text-orange-300'>
                 {(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB
               </div>
+              <div className='text-xs text-orange-600 dark:text-orange-400'>大小</div>
             </div>
-            <div className='p-1.5 border rounded text-center'>
-              <TrendingUp className='w-3 h-3 mx-auto mb-1 text-purple-500' />
-              <div className='text-xs text-muted-foreground'>查询</div>
-              <div className='text-xs font-bold'>{selectedMetrics.activeQueries}</div>
+            <div className='p-2 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800 text-center'>
+              <TrendingUp className='w-4 h-4 mx-auto mb-1 text-purple-600' />
+              <div className='text-sm font-bold text-purple-700 dark:text-purple-300'>{selectedMetrics.activeQueries}</div>
+              <div className='text-xs text-purple-600 dark:text-purple-400'>查询</div>
             </div>
           </div>
         ) : (
-          // 正常宽度：2x2网格
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='p-2 border rounded text-center'>
-              <Network className='w-4 h-4 mx-auto mb-1 text-blue-500' />
-              <div className='text-xs text-muted-foreground'>延迟</div>
-              <div className='text-sm font-bold'>
+          // 正常宽度：完整卡片布局
+          <div className='grid grid-cols-2 gap-3'>
+            <div className='p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 text-center'>
+              <Network className='w-5 h-5 mx-auto mb-2 text-blue-600' />
+              <div className='text-lg font-bold text-blue-700 dark:text-blue-300'>
                 {selectedMetrics.connectionLatency >= 0 ? `${selectedMetrics.connectionLatency}ms` : 'N/A'}
               </div>
+              <div className='text-sm text-blue-600 dark:text-blue-400'>连接延迟</div>
             </div>
-            <div className='p-2 border rounded text-center'>
-              <Database className='w-4 h-4 mx-auto mb-1 text-green-500' />
-              <div className='text-xs text-muted-foreground'>表数</div>
-              <div className='text-sm font-bold'>{selectedMetrics.tableCount}</div>
+            <div className='p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800 text-center'>
+              <Database className='w-5 h-5 mx-auto mb-2 text-green-600' />
+              <div className='text-lg font-bold text-green-700 dark:text-green-300'>{selectedMetrics.tableCount}</div>
+              <div className='text-sm text-green-600 dark:text-green-400'>数据表数</div>
             </div>
-            <div className='p-2 border rounded text-center'>
-              <HardDrive className='w-4 h-4 mx-auto mb-1 text-orange-500' />
-              <div className='text-xs text-muted-foreground'>大小</div>
-              <div className='text-sm font-bold'>
+            <div className='p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800 text-center'>
+              <HardDrive className='w-5 h-5 mx-auto mb-2 text-orange-600' />
+              <div className='text-lg font-bold text-orange-700 dark:text-orange-300'>
                 {(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB
               </div>
+              <div className='text-sm text-orange-600 dark:text-orange-400'>数据库大小</div>
             </div>
-            <div className='p-2 border rounded text-center'>
-              <TrendingUp className='w-4 h-4 mx-auto mb-1 text-purple-500' />
-              <div className='text-xs text-muted-foreground'>活跃查询</div>
-              <div className='text-sm font-bold'>{selectedMetrics.activeQueries}</div>
+            <div className='p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800 text-center'>
+              <TrendingUp className='w-5 h-5 mx-auto mb-2 text-purple-600' />
+              <div className='text-lg font-bold text-purple-700 dark:text-purple-300'>{selectedMetrics.activeQueries}</div>
+              <div className='text-sm text-purple-600 dark:text-purple-400'>活跃查询</div>
             </div>
           </div>
         )}
 
-        {/* 性能统计 - 响应式布局 */}
-        <div className={`${isVeryNarrow ? 'space-y-1' : 'space-y-2'}`}>
-          <div className={`flex justify-between ${isVeryNarrow ? 'text-xs' : 'text-sm'}`}>
-            <span className='text-muted-foreground'>平均查询时间:</span>
-            <span className='font-medium'>{selectedMetrics.averageQueryTime.toFixed(0)}ms</span>
+        {/* 性能统计 - 全新设计 */}
+        {isUltraNarrow ? (
+          <div className='p-2 bg-muted/30 rounded-md'>
+            <div className='text-xs font-medium mb-2'>性能数据</div>
+            <div className='space-y-1 text-xs'>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>查询时间</span>
+                <span className='font-mono'>{selectedMetrics.averageQueryTime.toFixed(0)}ms</span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>今日查询</span>
+                <span className='font-mono'>{formatValue(selectedMetrics.totalQueriesToday)}</span>
+              </div>
+            </div>
           </div>
-          <div className={`flex justify-between ${isVeryNarrow ? 'text-xs' : 'text-sm'}`}>
-            <span className='text-muted-foreground'>失败查询:</span>
-            <span className='font-medium'>{selectedMetrics.failedQueriesCount}</span>
+        ) : (
+          <div className='space-y-2'>
+            <div className='grid grid-cols-1 gap-2'>
+              <div className='p-2 bg-slate-50 dark:bg-slate-900/50 rounded-md border'>
+                <div className='flex justify-between items-center'>
+                  <span className='text-xs text-muted-foreground'>平均查询时间</span>
+                  <span className='text-sm font-bold font-mono'>{selectedMetrics.averageQueryTime.toFixed(0)}ms</span>
+                </div>
+              </div>
+              
+              <div className='grid grid-cols-2 gap-2'>
+                <div className='p-2 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-200 dark:border-red-800'>
+                  <div className='text-xs text-red-600 dark:text-red-400'>失败查询</div>
+                  <div className='text-sm font-bold text-red-700 dark:text-red-300'>{selectedMetrics.failedQueriesCount}</div>
+                </div>
+                <div className='p-2 bg-slate-50 dark:bg-slate-900/50 rounded-md border'>
+                  <div className='text-xs text-muted-foreground'>记录数</div>
+                  <div className='text-sm font-bold'>{formatValue(selectedMetrics.recordCount)}</div>
+                </div>
+              </div>
+              
+              <div className='p-2 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800'>
+                <div className='flex justify-between items-center'>
+                  <span className='text-xs text-blue-600 dark:text-blue-400'>今日查询总数</span>
+                  <span className='text-sm font-bold text-blue-700 dark:text-blue-300'>{formatValue(selectedMetrics.totalQueriesToday)}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className={`flex justify-between ${isVeryNarrow ? 'text-xs' : 'text-sm'}`}>
-            <span className='text-muted-foreground'>今日查询:</span>
-            <span className='font-medium'>{formatValue(selectedMetrics.totalQueriesToday)}</span>
-          </div>
-          <div className={`flex justify-between ${isVeryNarrow ? 'text-xs' : 'text-sm'}`}>
-            <span className='text-muted-foreground'>记录数:</span>
-            <span className='font-medium'>{formatValue(selectedMetrics.recordCount)}</span>
-          </div>
-        </div>
+        )}
 
         {/* 优化建议 */}
         {selectedMetrics.recommendations.length > 0 && (
@@ -697,46 +735,56 @@ export const MultiSourcePerformanceMonitor: React.FC<
   return (
     <TooltipProvider>
       <div ref={containerRef} className={`h-full flex flex-col ${className}`}>
-        {/* 头部 */}
-        <div className='p-3 border-b bg-muted/30'>
-          <div className='flex items-center justify-between mb-2'>
-            <h2 className='text-sm font-semibold flex items-center gap-2'>
-              <Activity className='w-4 h-4' />
+        {/* 头部 - 响应式设计 */}
+        <div className={`${isUltraNarrow ? 'p-2' : 'p-3'} border-b bg-muted/30`}>
+          <div className={`flex items-center ${isUltraNarrow ? 'flex-col gap-1' : 'justify-between'} mb-2`}>
+            <h2 className={`${isUltraNarrow ? 'text-xs' : 'text-sm'} font-semibold flex items-center gap-2`}>
+              <Activity className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'}`} />
               性能监控
             </h2>
-            <div className='flex items-center gap-1'>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => setCompactMode(!compactMode)}
-                    className='h-6 w-6 p-0'
-                  >
-                    <Eye className='w-3 h-3' />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {compactMode ? '详细视图' : '紧凑视图'}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-          
-          <div className='flex flex-wrap gap-1 text-xs'>
-            <Badge variant='outline' className='text-xs'>
-              {metricsData.length} 个数据源
-            </Badge>
-            <Badge variant='outline' className='text-xs'>
-              {metricsData.filter(m => m.isConnected).length} 个已连接
-            </Badge>
-            {config.autoRefresh && (
-              <Badge variant='default' className='text-xs'>
-                <RefreshCw className='w-2 h-2 mr-1' />
-                自动刷新
-              </Badge>
+            {!isUltraNarrow && (
+              <div className='flex items-center gap-1'>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => setCompactMode(!compactMode)}
+                      className='h-6 w-6 p-0'
+                    >
+                      <Eye className='w-3 h-3' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {compactMode ? '详细视图' : '紧凑视图'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
           </div>
+          
+          {isUltraNarrow ? (
+            <div className='text-center'>
+              <div className='text-xs text-muted-foreground'>
+                {metricsData.length} 源 • {metricsData.filter(m => m.isConnected).length} 连接
+              </div>
+            </div>
+          ) : (
+            <div className='flex flex-wrap gap-1 text-xs'>
+              <Badge variant='outline' className='text-xs'>
+                {metricsData.length} 个数据源
+              </Badge>
+              <Badge variant='outline' className='text-xs'>
+                {metricsData.filter(m => m.isConnected).length} 个已连接
+              </Badge>
+              {config.autoRefresh && (
+                <Badge variant='default' className='text-xs'>
+                  <RefreshCw className='w-2 h-2 mr-1' />
+                  自动刷新
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 主要内容 */}
@@ -769,9 +817,9 @@ export const MultiSourcePerformanceMonitor: React.FC<
                       <Database className='w-6 h-6 mx-auto mb-1 opacity-50' />
                       <p className='text-xs'>暂无数据源</p>
                     </div>
-                  ) : isVeryNarrow ? (
+                  ) : isUltraNarrow ? (
                     renderMinimalDataSources()
-                  ) : (compactMode || isNarrow) ? (
+                  ) : isNarrow ? (
                     renderCompactDataSources()
                   ) : (
                     renderDetailedDataSources()

@@ -28,6 +28,7 @@ import {
   GitBranch,
   Star,
   StarOff,
+  Building,
   Plus,
   Trash2,
   Calendar,
@@ -167,6 +168,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [searchValue, setSearchValue] = useState('');
+  const [treeNodeCache, setTreeNodeCache] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [_connectionLoadingStates, setConnectionLoadingStates] = useState<
@@ -357,6 +359,34 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }
   };
 
+  // 根据节点类型获取图标
+  const getNodeIcon = (nodeType: string, isOpened: boolean = false) => {
+    const baseClasses = `w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`;
+
+    switch (nodeType) {
+      case 'database':
+      case 'Database':
+        return <Database className={baseClasses} />;
+      case 'database3x':
+      case 'Database3x':
+        return <Database className={`w-4 h-4 ${isOpened ? 'text-green-700' : 'text-green-600'}`} />;
+      case 'system_database':
+      case 'SystemDatabase':
+        return <Database className={`w-4 h-4 ${isOpened ? 'text-orange-700' : 'text-orange-600'}`} />;
+      case 'organization':
+      case 'Organization':
+        return <Building className={`w-4 h-4 ${isOpened ? 'text-indigo-700' : 'text-indigo-600'}`} />;
+      case 'bucket':
+      case 'Bucket':
+        return <Database className={`w-4 h-4 ${isOpened ? 'text-cyan-700' : 'text-cyan-600'}`} />;
+      case 'storage_group':
+      case 'StorageGroup':
+        return <Building className={`w-4 h-4 ${isOpened ? 'text-emerald-700' : 'text-emerald-600'}`} />;
+      default:
+        return <Database className={baseClasses} />;
+    }
+  };
+
   // 加载指定连接的数据库列表
   const loadDatabases = useCallback(
     async (connection_id: string): Promise<string[]> => {
@@ -411,10 +441,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           }
         }
 
-        const dbList = await safeTauriInvoke<string[]>('get_databases', {
+        // 使用 get_tree_nodes 获取完整的树节点结构
+        const treeNodes = await safeTauriInvoke<any[]>('get_tree_nodes', {
           connectionId: connection_id,
         });
-        console.log(`✅ 成功加载数据库列表:`, dbList);
+        console.log(`✅ 成功加载树节点:`, treeNodes);
+
+        // 存储完整的树节点信息，用于后续的图标显示
+        setTreeNodeCache(prev => ({
+          ...prev,
+          [connection_id]: treeNodes
+        }));
+
+        // 提取数据库名称用于兼容现有逻辑
+        const dbList = treeNodes.map(node => node.name || node.id);
+        console.log(`✅ 提取的数据库列表:`, dbList);
         return dbList || [];
       } catch (error) {
         console.error(`❌ 加载连接 ${connection_id} 的数据库失败:`, error);
@@ -2082,6 +2123,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               const isExpanded = expandedKeys.includes(databaseKey);
                               const isOpened = isDatabaseOpened(connection_id, db);
 
+                              // 从缓存的树节点信息中获取节点类型
+                              const cachedNodes = treeNodeCache[connection_id] || [];
+                              const treeNode = cachedNodes.find(node => node.name === db);
+                              const nodeType = treeNode?.nodeType || treeNode?.node_type || 'database';
+
                               const nodeData: any = {
                                 title: (
                                   <span className='flex items-center gap-1'>
@@ -2089,11 +2135,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                     {isFav && (
                                       <Star className='w-3 h-3 text-warning fill-current' />
                                     )}
+                                    {treeNode?.isSystem && (
+                                      <span className="text-xs text-gray-500 italic ml-1">system</span>
+                                    )}
                                   </span>
                                 ),
                                 key: databaseKey,
-                                // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
-                                icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+                                // 使用正确的图标类型
+                                icon: getNodeIcon(nodeType, isOpened),
                               };
 
                               if (isOpened) {
