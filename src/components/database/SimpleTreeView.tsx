@@ -81,19 +81,23 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     // 根据节点类型选择图标
     const getNodeIcon = (nodeType: string) => {
       switch (nodeType) {
-        case 'database':
-        case 'system_database':
+        case 'Database':
+        case 'SystemDatabase':
           return '💾';
-        case 'storage_group':
+        case 'StorageGroup':
           return '🏢';
-        case 'retention_policy':
+        case 'RetentionPolicy':
           return '📅';
-        case 'device':
+        case 'Device':
           return '📱';
-        case 'measurement':
+        case 'Measurement':
           return '📊';
-        case 'timeseries':
+        case 'Timeseries':
           return '📈';
+        case 'Field':
+          return '📊';
+        case 'Tag':
+          return '🏷️';
         default:
           return '📄';
       }
@@ -105,18 +109,22 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
         return 'text-orange-600 italic';
       }
       switch (nodeType) {
-        case 'database':
+        case 'Database':
           return 'text-green-600';
-        case 'storage_group':
+        case 'StorageGroup':
           return 'text-emerald-600';
-        case 'retention_policy':
+        case 'RetentionPolicy':
           return 'text-purple-600';
-        case 'device':
+        case 'Device':
           return 'text-blue-500';
-        case 'measurement':
+        case 'Measurement':
           return 'text-green-500';
-        case 'timeseries':
+        case 'Timeseries':
           return 'text-teal-600';
+        case 'Field':
+          return 'text-blue-600';
+        case 'Tag':
+          return 'text-yellow-600';
         default:
           return 'text-gray-700';
       }

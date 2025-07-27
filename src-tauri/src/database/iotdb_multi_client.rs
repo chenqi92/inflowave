@@ -426,7 +426,8 @@ impl IoTDBMultiClient {
         match self.get_databases().await {
             Ok(storage_groups) => {
                 for sg in storage_groups {
-                    let sg_node = TreeNodeFactory::create_storage_group_with_version(sg, version.clone());
+                    let mut sg_node = TreeNodeFactory::create_storage_group(sg);
+                    sg_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
                     nodes.push(sg_node);
                 }
             }
@@ -441,18 +442,26 @@ impl IoTDBMultiClient {
     /// 获取树节点的子节点（懒加载）
     pub async fn get_tree_children(&mut self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::TreeNodeFactory;
+        use crate::models::TreeNodeType;
 
         let mut children = Vec::new();
 
-        match node_type {
-            "storage_group" => {
+        // 解析节点类型
+        let parsed_type = match node_type {
+            "StorageGroup" => TreeNodeType::StorageGroup,
+            "Device" => TreeNodeType::Device,
+            _ => return Ok(children),
+        };
+
+        match parsed_type {
+            TreeNodeType::StorageGroup => {
                 // 获取设备列表
                 match self.get_devices_for_tree(parent_node_id).await {
                     Ok(devices) => {
                         for device in devices {
                             let device_node = TreeNodeFactory::create_device(
-                                device.clone(),
-                                parent_node_id.to_string()
+                                &parent_node_id,
+                                device.clone()
                             );
                             children.push(device_node);
                         }
@@ -462,14 +471,14 @@ impl IoTDBMultiClient {
                     }
                 }
             }
-            "device" => {
+            TreeNodeType::Device => {
                 // 获取时间序列
                 match self.get_timeseries_for_tree(parent_node_id).await {
                     Ok(timeseries) => {
                         for ts in timeseries {
                             let ts_node = TreeNodeFactory::create_timeseries(
-                                ts.clone(),
-                                parent_node_id.to_string()
+                                &parent_node_id,
+                                ts.clone()
                             );
                             children.push(ts_node);
                         }
@@ -503,7 +512,9 @@ impl IoTDBMultiClient {
         if !rows.is_empty() {
             for row in rows {
                 if let Some(device_path) = row.first() {
-                    devices.push(device_path.clone());
+                    if let Some(device_str) = device_path.as_str() {
+                        devices.push(device_str.to_string());
+                    }
                 }
             }
         }
@@ -521,11 +532,13 @@ impl IoTDBMultiClient {
         if !rows.is_empty() {
             for row in rows {
                 if let Some(ts_path) = row.first() {
-                    // 提取时间序列名称（去掉设备路径前缀）
-                    if let Some(ts_name) = ts_path.strip_prefix(&format!("{}.", device_path)) {
-                        timeseries.push(ts_name.to_string());
-                    } else {
-                        timeseries.push(ts_path.clone());
+                    if let Some(ts_str) = ts_path.as_str() {
+                        // 提取时间序列名称（去掉设备路径前缀）
+                        if let Some(ts_name) = ts_str.strip_prefix(&format!("{}.", device_path)) {
+                            timeseries.push(ts_name.to_string());
+                        } else {
+                            timeseries.push(ts_str.to_string());
+                        }
                     }
                 }
             }

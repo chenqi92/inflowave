@@ -113,19 +113,41 @@ impl TreeNodeFactory {
         } else {
             TreeNodeType::Database
         };
-        
-        TreeNode::new(format!("db_{}", name), name, node_type)
-            .as_system()
+
+        let mut node = TreeNode::new(format!("db_{}", name), name, node_type);
+        if is_system {
+            node = node.as_system();
+        }
+        node
+    }
+
+    /// 创建带版本信息的 InfluxDB 1.x 数据库节点
+    pub fn create_influxdb1_database_with_version(name: String, is_system: bool, version: &str) -> TreeNode {
+        let node_type = if is_system {
+            TreeNodeType::SystemDatabase
+        } else {
+            TreeNodeType::Database
+        };
+
+        let mut node = TreeNode::new(format!("db_{}", name), name, node_type)
+            .with_metadata("version".to_string(), serde_json::Value::String(version.to_string()));
+
+        if is_system {
+            node = node.as_system();
+        }
+        node
     }
     
     /// 创建 InfluxDB 1.x 保留策略节点
-    pub fn create_retention_policy(database: &str, name: String) -> TreeNode {
+    pub fn create_retention_policy(name: String, parent_id: String, duration: String, replication: i32) -> TreeNode {
         TreeNode::new(
-            format!("rp_{}_{}", database, name),
+            format!("{}/rp_{}", parent_id, name),
             name,
             TreeNodeType::RetentionPolicy,
         )
-        .with_parent(format!("db_{}", database))
+        .with_parent(parent_id)
+        .with_metadata("duration".to_string(), serde_json::Value::String(duration))
+        .with_metadata("replication".to_string(), serde_json::Value::Number(serde_json::Number::from(replication)))
     }
     
     /// 创建 InfluxDB 2.x 组织节点
@@ -159,24 +181,31 @@ impl TreeNodeFactory {
     pub fn create_storage_group(name: String) -> TreeNode {
         TreeNode::new(format!("sg_{}", name), name, TreeNodeType::StorageGroup)
     }
+
+    /// 创建带版本信息的 IoTDB 存储组节点
+    pub fn create_storage_group_with_version(name: String, version: String) -> TreeNode {
+        TreeNode::new(format!("sg_{}", name), name, TreeNodeType::StorageGroup)
+            .with_metadata("version".to_string(), serde_json::Value::String(version))
+    }
     
     /// 创建 IoTDB 设备节点
-    pub fn create_device(storage_group: &str, name: String) -> TreeNode {
+    pub fn create_device(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
-            format!("device_{}_{}", storage_group, name),
+            format!("{}/device_{}", parent_id, name.replace(".", "_")),
             name,
             TreeNodeType::Device,
         )
-        .with_parent(format!("sg_{}", storage_group))
+        .with_parent(parent_id)
     }
-    
+
     /// 创建 IoTDB 时间序列节点
-    pub fn create_timeseries(device_path: &str, name: String) -> TreeNode {
+    pub fn create_timeseries(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
-            format!("ts_{}_{}", device_path.replace(".", "_"), name),
+            format!("{}/ts_{}", parent_id, name.replace(".", "_")),
             name,
             TreeNodeType::Timeseries,
         )
+        .with_parent(parent_id)
         .as_leaf()
     }
     
@@ -211,26 +240,23 @@ impl TreeNodeFactory {
     }
     
     /// 创建字段节点
-    pub fn create_field(parent_id: String, name: String, data_type: Option<String>) -> TreeNode {
-        let display_name = if let Some(dt) = data_type {
-            format!("{} ({})", name, dt)
-        } else {
-            name.clone()
-        };
-        
+    pub fn create_field(name: String, parent_id: String, field_type: String) -> TreeNode {
+        let display_name = format!("{} ({})", name, field_type);
+
         TreeNode::new(
-            format!("field_{}_{}", parent_id, name),
+            format!("{}/field_{}", parent_id, name),
             display_name,
             TreeNodeType::Field,
         )
         .with_parent(parent_id)
+        .with_metadata("field_type".to_string(), serde_json::Value::String(field_type))
         .as_leaf()
     }
-    
+
     /// 创建标签节点
-    pub fn create_tag(parent_id: String, name: String) -> TreeNode {
+    pub fn create_tag(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
-            format!("tag_{}_{}", parent_id, name),
+            format!("{}/tag_{}", parent_id, name),
             name,
             TreeNodeType::Tag,
         )
