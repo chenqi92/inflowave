@@ -49,8 +49,28 @@ impl DatabaseClient {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.get_databases().await,
             DatabaseClient::InfluxDB2x(client) => {
-                // InfluxDB 2.x/3.x 使用组织和存储桶，返回组织列表
-                client.get_organizations().await
+                // 检查是否为 InfluxDB 3.x
+                let config_version = client.config.version.as_deref().unwrap_or("");
+                let is_v3_from_config = config_version.contains("3.x") || config_version.contains("3.");
+
+                if is_v3_from_config {
+                    info!("根据配置使用 InfluxDB 3.x 数据库列表获取方法");
+                    // InfluxDB 3.x: 直接获取数据库列表
+                    client.get_databases_v3().await
+                } else {
+                    // 尝试检测版本
+                    match client.detect_version().await {
+                        Ok(version) if version.contains("3.x") => {
+                            info!("检测到 InfluxDB 3.x，使用数据库列表获取方法");
+                            client.get_databases_v3().await
+                        }
+                        _ => {
+                            info!("使用 InfluxDB 2.x 组织列表获取方法");
+                            // InfluxDB 2.x: 返回组织列表
+                            client.get_organizations().await
+                        }
+                    }
+                }
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -416,11 +436,12 @@ impl InfluxDB2Client {
     pub async fn test_connection(&self) -> Result<u64> {
         let start = Instant::now();
 
-        // 首先检测版本以确定使用哪种测试方法
-        let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
-        let is_v3 = version.starts_with("3.") || version.contains("3.x");
+        // 首先检查用户配置中的版本信息
+        let config_version = self.config.version.as_deref().unwrap_or("");
+        let is_v3_from_config = config_version.contains("3.x") || config_version.contains("3.");
 
-        if is_v3 {
+        if is_v3_from_config {
+            info!("根据配置识别为 InfluxDB 3.x，使用 3.x 连接测试方法");
             // InfluxDB 3.x: 使用更适合的测试方法
             match self.test_influxdb3_connection().await {
                 Ok(_) => {
@@ -434,16 +455,61 @@ impl InfluxDB2Client {
                 }
             }
         } else {
-            // InfluxDB 2.x: 使用组织列表测试
-            match self.get_organizations().await {
-                Ok(_) => {
-                    let latency = start.elapsed().as_millis() as u64;
-                    info!("InfluxDB 2.x 连接测试成功，延迟: {}ms", latency);
-                    Ok(latency)
+            // 尝试检测版本以确定使用哪种测试方法
+            let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
+            let is_v3 = version.starts_with("3.") || version.contains("3.x");
+
+            if is_v3 {
+                info!("检测到 InfluxDB 3.x，使用 3.x 连接测试方法");
+                // InfluxDB 3.x: 使用更适合的测试方法
+                match self.test_influxdb3_connection().await {
+                    Ok(_) => {
+                        let latency = start.elapsed().as_millis() as u64;
+                        info!("InfluxDB 3.x 连接测试成功，延迟: {}ms", latency);
+                        Ok(latency)
+                    }
+                    Err(e) => {
+                        error!("InfluxDB 3.x 连接测试失败: {}", e);
+                        // 如果 3.x 测试失败，尝试 2.x 方法作为回退
+                        warn!("InfluxDB 3.x 测试失败，尝试 2.x 方法作为回退");
+                        match self.get_organizations().await {
+                            Ok(_) => {
+                                let latency = start.elapsed().as_millis() as u64;
+                                info!("InfluxDB 2.x 回退连接测试成功，延迟: {}ms", latency);
+                                Ok(latency)
+                            }
+                            Err(e2) => {
+                                error!("InfluxDB 2.x 回退连接测试也失败: {}", e2);
+                                Err(anyhow::anyhow!("InfluxDB 连接测试失败: 3.x 方法失败 ({}), 2.x 回退方法也失败 ({})", e, e2))
+                            }
+                        }
+                    }
                 }
-                Err(e) => {
-                    error!("InfluxDB 2.x 连接测试失败: {}", e);
-                    Err(anyhow::anyhow!("InfluxDB 2.x 连接测试失败: {}", e))
+            } else {
+                info!("检测到 InfluxDB 2.x，使用 2.x 连接测试方法");
+                // InfluxDB 2.x: 使用组织列表测试
+                match self.get_organizations().await {
+                    Ok(_) => {
+                        let latency = start.elapsed().as_millis() as u64;
+                        info!("InfluxDB 2.x 连接测试成功，延迟: {}ms", latency);
+                        Ok(latency)
+                    }
+                    Err(e) => {
+                        error!("InfluxDB 2.x 连接测试失败: {}", e);
+                        // 如果 2.x 测试失败，尝试 3.x 方法作为回退
+                        warn!("InfluxDB 2.x 测试失败，尝试 3.x 方法作为回退");
+                        match self.test_influxdb3_connection().await {
+                            Ok(_) => {
+                                let latency = start.elapsed().as_millis() as u64;
+                                info!("InfluxDB 3.x 回退连接测试成功，延迟: {}ms", latency);
+                                Ok(latency)
+                            }
+                            Err(e2) => {
+                                error!("InfluxDB 3.x 回退连接测试也失败: {}", e2);
+                                Err(anyhow::anyhow!("InfluxDB 连接测试失败: 2.x 方法失败 ({}), 3.x 回退方法也失败 ({})", e, e2))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -458,76 +524,119 @@ impl InfluxDB2Client {
         };
 
         if let Some(v2_config) = &self.config.v2_config {
+            let client = reqwest::Client::new();
+
             // 方法1: 尝试 /health 端点（InfluxDB 3.x 通常支持）
             let health_url = format!("{}/health", base_url);
-            let client = reqwest::Client::new();
+            info!("尝试 InfluxDB 3.x /health 端点: {}", health_url);
 
             match client
                 .get(&health_url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
+                .timeout(std::time::Duration::from_secs(10))
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
-                    debug!("InfluxDB 3.x /health 端点测试成功");
+                    info!("InfluxDB 3.x /health 端点测试成功");
                     return Ok(());
                 }
                 Ok(response) => {
-                    debug!("InfluxDB 3.x /health 端点返回: {}", response.status());
+                    warn!("InfluxDB 3.x /health 端点返回: {}", response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("Health 响应内容: {}", text);
+                    }
                 }
                 Err(e) => {
-                    debug!("InfluxDB 3.x /health 端点请求失败: {}", e);
+                    warn!("InfluxDB 3.x /health 端点请求失败: {}", e);
                 }
             }
 
-            // 方法2: 尝试查询数据库列表（如果支持）
-            match self.get_databases_v3().await {
-                Ok(_) => {
-                    debug!("InfluxDB 3.x 数据库列表查询成功");
+            // 方法2: 尝试 /api/v2/buckets 端点（InfluxDB 3.x 可能支持）
+            let buckets_url = format!("{}/api/v2/buckets", base_url);
+            info!("尝试 InfluxDB 3.x /api/v2/buckets 端点: {}", buckets_url);
+
+            match client
+                .get(&buckets_url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .timeout(std::time::Duration::from_secs(10))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    info!("InfluxDB 3.x /api/v2/buckets 端点测试成功");
                     return Ok(());
                 }
+                Ok(response) => {
+                    warn!("InfluxDB 3.x /api/v2/buckets 端点返回: {}", response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("Buckets 响应内容: {}", text);
+                    }
+                }
                 Err(e) => {
-                    debug!("InfluxDB 3.x 数据库列表查询失败: {}", e);
+                    warn!("InfluxDB 3.x /api/v2/buckets 端点请求失败: {}", e);
                 }
             }
 
-            // 方法3: 尝试简单的查询测试
+            // 方法3: 尝试简单的 SQL 查询（InfluxDB 3.x 支持 SQL）
             let query_url = format!("{}/api/v2/query", base_url);
-            let simple_query = "SHOW DATABASES"; // 或者其他简单查询
+            let sql_query = "SHOW DATABASES";
+            info!("尝试 InfluxDB 3.x SQL 查询: {}", sql_query);
+
+            match client
+                .post(&query_url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .header("Content-Type", "application/sql")
+                .body(sql_query)
+                .timeout(std::time::Duration::from_secs(10))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    info!("InfluxDB 3.x SQL 查询测试成功");
+                    return Ok(());
+                }
+                Ok(response) => {
+                    warn!("InfluxDB 3.x SQL 查询返回: {}", response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("SQL 查询响应内容: {}", text);
+                    }
+                }
+                Err(e) => {
+                    warn!("InfluxDB 3.x SQL 查询失败: {}", e);
+                }
+            }
+
+            // 方法4: 尝试 Flux 查询
+            let flux_query = "buckets()";
+            info!("尝试 InfluxDB 3.x Flux 查询: {}", flux_query);
 
             match client
                 .post(&query_url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
                 .header("Content-Type", "application/vnd.flux")
-                .body(simple_query)
+                .body(flux_query)
+                .timeout(std::time::Duration::from_secs(10))
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
-                    debug!("InfluxDB 3.x 查询测试成功");
+                    info!("InfluxDB 3.x Flux 查询测试成功");
                     return Ok(());
                 }
                 Ok(response) => {
-                    debug!("InfluxDB 3.x 查询测试返回: {}", response.status());
+                    warn!("InfluxDB 3.x Flux 查询返回: {}", response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("Flux 查询响应内容: {}", text);
+                    }
                 }
                 Err(e) => {
-                    debug!("InfluxDB 3.x 查询测试失败: {}", e);
-                }
-            }
-
-            // 方法4: 回退到组织测试（某些 InfluxDB 3.x 可能仍支持）
-            match self.get_organizations().await {
-                Ok(_) => {
-                    debug!("InfluxDB 3.x 组织列表查询成功（回退方法）");
-                    return Ok(());
-                }
-                Err(e) => {
-                    debug!("InfluxDB 3.x 组织列表查询失败: {}", e);
+                    warn!("InfluxDB 3.x Flux 查询失败: {}", e);
                 }
             }
         }
 
-        Err(anyhow::anyhow!("InfluxDB 3.x 连接测试失败：所有测试方法都失败"))
+        Err(anyhow::anyhow!("InfluxDB 3.x 连接测试失败：所有测试方法都失败，请检查服务器地址、端口和 API Token"))
     }
 
     /// 执行 Flux 查询
@@ -698,18 +807,123 @@ impl InfluxDB2Client {
         };
 
         if let Some(v2_config) = &self.config.v2_config {
-            // 方法1: 尝试 InfluxDB 3.x 的数据库列表 API
-            let databases_url = format!("{}/api/v2/buckets", base_url); // InfluxDB 3.x 可能仍使用 buckets 端点
             let client = reqwest::Client::new();
 
+            // 方法1: 尝试 SQL 查询获取数据库列表（InfluxDB 3.x Core 主要方法）
+            let query_url = format!("{}/api/v2/query", base_url);
+            let sql_query = "SHOW DATABASES";
+            info!("尝试 InfluxDB 3.x SQL 查询获取数据库列表: {}", sql_query);
+
             match client
-                .get(&databases_url)
+                .post(&query_url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
+                .header("Content-Type", "application/sql")
+                .timeout(std::time::Duration::from_secs(10))
+                .body(sql_query)
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
                     if let Ok(text) = response.text().await {
+                        info!("InfluxDB 3.x SQL 查询成功，响应: {}", text);
+
+                        // 尝试解析 JSON 响应
+                        if let Ok(json_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            let mut databases = Vec::new();
+
+                            // 解析不同格式的响应
+                            if let Some(data) = json_response.get("data") {
+                                if let Some(rows) = data.as_array() {
+                                    for row in rows {
+                                        if let Some(row_array) = row.as_array() {
+                                            if let Some(db_name) = row_array.get(0).and_then(|v| v.as_str()) {
+                                                databases.push(db_name.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 如果上面的解析失败，尝试其他格式
+                            if databases.is_empty() {
+                                if let Some(results) = json_response.get("results") {
+                                    if let Some(results_array) = results.as_array() {
+                                        for result in results_array {
+                                            if let Some(series) = result.get("series") {
+                                                if let Some(series_array) = series.as_array() {
+                                                    for serie in series_array {
+                                                        if let Some(values) = serie.get("values") {
+                                                            if let Some(values_array) = values.as_array() {
+                                                                for value in values_array {
+                                                                    if let Some(value_array) = value.as_array() {
+                                                                        if let Some(db_name) = value_array.get(0).and_then(|v| v.as_str()) {
+                                                                            databases.push(db_name.to_string());
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !databases.is_empty() {
+                                info!("成功解析到 {} 个数据库: {:?}", databases.len(), databases);
+                                return Ok(databases);
+                            }
+                        }
+
+                        // 如果 JSON 解析失败，尝试简单的文本解析
+                        let lines: Vec<&str> = text.lines().collect();
+                        if lines.len() > 1 {
+                            let databases: Vec<String> = lines[1..] // 跳过标题行
+                                .iter()
+                                .filter_map(|line| {
+                                    let trimmed = line.trim();
+                                    if !trimmed.is_empty() && !trimmed.starts_with('-') {
+                                        Some(trimmed.to_string())
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect();
+
+                            if !databases.is_empty() {
+                                info!("通过文本解析获取到 {} 个数据库: {:?}", databases.len(), databases);
+                                return Ok(databases);
+                            }
+                        }
+                    }
+                }
+                Ok(response) => {
+                    warn!("InfluxDB 3.x SQL 查询失败: HTTP {}", response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("错误响应内容: {}", text);
+                    }
+                }
+                Err(e) => {
+                    warn!("InfluxDB 3.x SQL 查询请求失败: {}", e);
+                }
+            }
+
+            // 方法2: 尝试 InfluxDB 3.x 的 buckets 端点（某些版本可能支持）
+            let databases_url = format!("{}/api/v2/buckets", base_url);
+            info!("尝试 InfluxDB 3.x buckets 端点: {}", databases_url);
+
+            match client
+                .get(&databases_url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .timeout(std::time::Duration::from_secs(10))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        info!("InfluxDB 3.x buckets 端点成功，响应: {}", text);
                         if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
                             if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
                                 let db_names: Vec<String> = buckets
@@ -719,6 +933,7 @@ impl InfluxDB2Client {
                                     .collect();
 
                                 if !db_names.is_empty() {
+                                    info!("通过 buckets 端点获取到 {} 个数据库: {:?}", db_names.len(), db_names);
                                     return Ok(db_names);
                                 }
                             }
@@ -726,48 +941,31 @@ impl InfluxDB2Client {
                     }
                 }
                 Ok(response) => {
-                    debug!("获取 InfluxDB 3.x 数据库列表失败: HTTP {}", response.status());
+                    warn!("InfluxDB 3.x buckets 端点失败: HTTP {}", response.status());
                 }
                 Err(e) => {
-                    debug!("获取 InfluxDB 3.x 数据库列表请求失败: {}", e);
-                }
-            }
-
-            // 方法2: 尝试 SQL 查询获取数据库列表
-            let query_url = format!("{}/api/v2/query", base_url);
-            let sql_query = "SHOW DATABASES"; // InfluxDB 3.x 支持 SQL
-
-            match client
-                .post(&query_url)
-                .header("Authorization", format!("Token {}", v2_config.api_token))
-                .header("Content-Type", "application/sql")
-                .body(sql_query)
-                .send()
-                .await
-            {
-                Ok(response) if response.status().is_success() => {
-                    if let Ok(text) = response.text().await {
-                        // 解析 SQL 查询结果
-                        debug!("InfluxDB 3.x SQL 查询结果: {}", text);
-                        // 这里需要根据实际的响应格式解析数据库名称
-                        // 暂时返回一些默认值
-                    }
-                }
-                Ok(response) => {
-                    debug!("InfluxDB 3.x SQL 查询失败: HTTP {}", response.status());
-                }
-                Err(e) => {
-                    debug!("InfluxDB 3.x SQL 查询请求失败: {}", e);
+                    warn!("InfluxDB 3.x buckets 端点请求失败: {}", e);
                 }
             }
         }
 
         // 如果所有查询都失败，返回错误而不是假数据
-        Err(anyhow::anyhow!("无法获取 InfluxDB 3.x 数据库列表：所有 API 端点都无法访问，请检查连接配置和服务状态"))
+        Err(anyhow::anyhow!("无法获取 InfluxDB 3.x 数据库列表：所有 API 端点都无法访问，请检查连接配置、API Token 和服务状态"))
     }
 
     /// 检测 InfluxDB 版本
     pub async fn detect_version(&self) -> Result<String> {
+        // 首先检查用户配置中的版本信息
+        if let Some(config_version) = &self.config.version {
+            if config_version.contains("3.x") || config_version.contains("3.") {
+                info!("从配置中检测到 InfluxDB 3.x 版本: {}", config_version);
+                return Ok("InfluxDB-3.x".to_string());
+            } else if config_version.contains("2.x") || config_version.contains("2.") {
+                info!("从配置中检测到 InfluxDB 2.x 版本: {}", config_version);
+                return Ok("InfluxDB-2.x".to_string());
+            }
+        }
+
         let base_url = if self.config.ssl {
             format!("https://{}:{}", self.config.host, self.config.port)
         } else {
@@ -778,33 +976,50 @@ impl InfluxDB2Client {
         let health_url = format!("{}/health", base_url);
         let client = reqwest::Client::new();
 
-        match client.get(&health_url).send().await {
-            Ok(response) if response.status().is_success() => {
-                if let Ok(text) = response.text().await {
-                    if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
-                        // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
-                        if health_info.get("name").is_some() || health_info.get("message").is_some() {
-                            let version = health_info
-                                .get("version")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("2.x.x");
+        if let Some(v2_config) = &self.config.v2_config {
+            match client
+                .get(&health_url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        debug!("Health 端点响应: {}", text);
+                        if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
+                            // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
+                            if health_info.get("name").is_some() || health_info.get("message").is_some() {
+                                let version = health_info
+                                    .get("version")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("2.x.x");
 
-                            // 根据版本号判断是 2.x 还是 3.x
-                            if version.starts_with("3.") {
-                                return Ok("InfluxDB-3.x".to_string());
-                            } else if version.starts_with("2.") {
-                                return Ok("InfluxDB-2.x".to_string());
-                            } else {
-                                return Ok("InfluxDB-2.x".to_string()); // 默认假设是 2.x
+                                info!("从 /health 端点检测到版本: {}", version);
+
+                                // 根据版本号判断是 2.x 还是 3.x
+                                if version.starts_with("3.") {
+                                    return Ok("InfluxDB-3.x".to_string());
+                                } else if version.starts_with("2.") {
+                                    return Ok("InfluxDB-2.x".to_string());
+                                }
                             }
                         }
                     }
                 }
+                Ok(response) => {
+                    warn!("Health 端点返回状态: {}", response.status());
+                }
+                Err(e) => {
+                    warn!("Health 端点请求失败: {}", e);
+                }
             }
-            _ => {}
         }
 
-        Ok("InfluxDB-2.x".to_string()) // 默认返回 2.x
+        // 如果配置中没有明确版本且 health 检测失败，根据其他线索判断
+        warn!("无法通过 /health 端点检测版本，使用默认判断逻辑");
+
+        // 默认返回 2.x，但记录警告
+        Ok("InfluxDB-2.x".to_string())
     }
 
     /// 生成 InfluxDB 2.x/3.x 数据源树
@@ -813,64 +1028,70 @@ impl InfluxDB2Client {
 
         let mut nodes = Vec::new();
 
-        // 检测版本以确定树结构
-        let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
-        let is_v3 = version.starts_with("3.") || version.contains("3.x");
+        // 首先检查用户配置中的版本信息
+        let config_version = self.config.version.as_deref().unwrap_or("");
+        let is_v3_from_config = config_version.contains("3.x") || config_version.contains("3.");
 
-        if is_v3 {
+        if is_v3_from_config {
+            info!("根据配置生成 InfluxDB 3.x 数据源树");
             // InfluxDB 3.x: 简化架构，直接显示数据库
             match self.get_databases_v3().await {
                 Ok(databases) => {
+                    info!("获取到 {} 个 InfluxDB 3.x 数据库", databases.len());
                     for db_name in databases {
-                        let is_system = db_name.starts_with('_');
+                        let is_system = db_name.starts_with('_') ||
+                                       db_name == "information_schema" ||
+                                       db_name == "iox_catalog";
                         let mut db_node = TreeNodeFactory::create_influxdb3_database(db_name, is_system);
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("InfluxDB-3.x".to_string()));
                         nodes.push(db_node);
                     }
                 }
                 Err(e) => {
-                    log::warn!("获取 InfluxDB 3.x 数据库列表失败: {}", e);
-                    // 回退到存储桶模式
-                    match self.get_buckets().await {
-                        Ok(buckets) => {
-                            for bucket_name in buckets {
-                                let is_system = bucket_name.starts_with('_');
-                                let mut bucket_node = TreeNodeFactory::create_influxdb3_database(bucket_name, is_system);
-                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                                nodes.push(bucket_node);
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("获取存储桶列表失败: {}", e);
-                        }
-                    }
+                    error!("获取 InfluxDB 3.x 数据库列表失败: {}", e);
+                    return Err(e);
                 }
             }
         } else {
-            // InfluxDB 2.x: Organization → Bucket 结构
-            match self.get_organizations().await {
-                Ok(organizations) => {
-                    for org_name in organizations {
-                        let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
-                        org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                        nodes.push(org_node);
+            // 尝试检测版本以确定树结构
+            let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
+            let is_v3 = version.starts_with("3.") || version.contains("3.x");
+
+            if is_v3 {
+                info!("检测到 InfluxDB 3.x，生成简化数据源树");
+                // InfluxDB 3.x: 简化架构，直接显示数据库
+                match self.get_databases_v3().await {
+                    Ok(databases) => {
+                        info!("获取到 {} 个 InfluxDB 3.x 数据库", databases.len());
+                        for db_name in databases {
+                            let is_system = db_name.starts_with('_') ||
+                                           db_name == "information_schema" ||
+                                           db_name == "iox_catalog";
+                            let mut db_node = TreeNodeFactory::create_influxdb3_database(db_name, is_system);
+                            db_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                            nodes.push(db_node);
+                        }
+                    }
+                    Err(e) => {
+                        error!("获取 InfluxDB 3.x 数据库列表失败: {}", e);
+                        return Err(e);
                     }
                 }
-                Err(e) => {
-                    log::warn!("获取组织列表失败: {}", e);
-                    // 如果获取组织失败，尝试直接获取存储桶
-                    match self.get_buckets().await {
-                        Ok(buckets) => {
-                            for bucket_name in buckets {
-                                let is_system = bucket_name.starts_with('_');
-                                let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
-                                bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
-                                nodes.push(bucket_node);
-                            }
+            } else {
+                info!("检测到 InfluxDB 2.x，生成组织-存储桶数据源树");
+                // InfluxDB 2.x: Organization → Bucket 结构
+                match self.get_organizations().await {
+                    Ok(organizations) => {
+                        info!("获取到 {} 个组织", organizations.len());
+                        for org_name in organizations {
+                            let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
+                            org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                            nodes.push(org_node);
                         }
-                        Err(e) => {
-                            log::warn!("获取存储桶列表失败: {}", e);
-                        }
+                    }
+                    Err(e) => {
+                        error!("获取组织列表失败: {}", e);
+                        return Err(e);
                     }
                 }
             }
