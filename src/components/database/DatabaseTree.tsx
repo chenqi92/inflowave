@@ -149,17 +149,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
     loadTreeNodes();
   }, [loadTreeNodes]);
 
-  // 监听刷新事件
-  useEffect(() => {
-    const { dataExplorerRefresh } = require('@/utils/refreshEvents');
 
-    const unsubscribe = dataExplorerRefresh.addListener(() => {
-      console.log('🔄 DatabaseTree 收到刷新事件，强制重新加载树节点');
-      loadTreeNodes(true); // 强制刷新
-    });
-
-    return unsubscribe;
-  }, [loadTreeNodes]);
 
   // 渲染树节点
   const renderTreeNode = (node: TreeNode, level = 0): React.ReactNode => {
@@ -245,7 +235,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       <div className={`p-4 ${className}`}>
         <div className="text-red-600 text-sm mb-2">加载失败: {error}</div>
         <Button
-          onClick={loadTreeNodes}
+          onClick={() => loadTreeNodes()}
           size="sm"
           variant="outline"
           className="w-full"

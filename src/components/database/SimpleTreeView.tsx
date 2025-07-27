@@ -145,21 +145,43 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     // 根据节点类型选择图标
     const getNodeIcon = (nodeType: string) => {
       switch (nodeType) {
+        case 'database':
         case 'Database':
-        case 'SystemDatabase':
           return '💾';
+        case 'database3x':
+        case 'Database3x':
+          return '🗄️';
+        case 'system_database':
+        case 'SystemDatabase':
+          return '🔧';
+        case 'storage_group':
         case 'StorageGroup':
           return '🏢';
+        case 'retention_policy':
         case 'RetentionPolicy':
           return '📅';
+        case 'organization':
+        case 'Organization':
+          return '🏢';
+        case 'bucket':
+        case 'Bucket':
+          return '🪣';
+        case 'system_bucket':
+        case 'SystemBucket':
+          return '⚙️';
+        case 'device':
         case 'Device':
           return '📱';
+        case 'measurement':
         case 'Measurement':
           return '📊';
+        case 'timeseries':
         case 'Timeseries':
           return '📈';
+        case 'field':
         case 'Field':
           return '📊';
+        case 'tag':
         case 'Tag':
           return '🏷️';
         default:

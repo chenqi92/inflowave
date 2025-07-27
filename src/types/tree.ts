@@ -2,30 +2,33 @@
  * 数据源树节点类型定义
  */
 
-export type TreeNodeType = 
+export type TreeNodeType =
   // 通用节点类型
   | 'connection'
-  
+
   // InfluxDB 1.x 节点类型
   | 'database'           // 数据库
   | 'retention_policy'   // 保留策略
-  
+
   // InfluxDB 2.x 节点类型
   | 'organization'       // 组织
   | 'bucket'            // 存储桶
-  
+
+  // InfluxDB 3.x 节点类型（简化架构）
+  | 'database3x'        // InfluxDB 3.x 数据库
+
   // IoTDB 节点类型
   | 'storage_group'     // 存储组/数据库
   | 'device'            // 设备
   | 'timeseries'        // 时间序列
-  
+
   // 通用测量相关
   | 'measurement'       // 测量/表
   | 'field_group'       // 字段分组
   | 'tag_group'         // 标签分组
   | 'field'             // 字段
   | 'tag'               // 标签
-  
+
   // 系统节点
   | 'system_database'   // 系统数据库（如 _internal）
   | 'system_bucket';    // 系统存储桶（如 _monitoring）
@@ -52,6 +55,7 @@ export type DatabaseType = 'InfluxDB' | 'IoTDB' | 'InfluxDB2';
 export const TreeNodeIcons: Record<TreeNodeType, string> = {
   connection: '🔌',
   database: '💾',
+  database3x: '🗄️',
   system_database: '🔧',
   retention_policy: '📅',
   organization: '🏢',
@@ -73,6 +77,7 @@ export const TreeNodeIcons: Record<TreeNodeType, string> = {
 export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
   connection: '数据库连接',
   database: '数据库',
+  database3x: 'InfluxDB 3.x 数据库',
   system_database: '系统数据库',
   retention_policy: '保留策略',
   organization: '组织',
@@ -94,6 +99,7 @@ export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
 export const TreeNodeStyles: Record<TreeNodeType, string> = {
   connection: 'text-blue-600 font-semibold',
   database: 'text-green-600',
+  database3x: 'text-green-700 font-medium',
   system_database: 'text-orange-600 italic',
   retention_policy: 'text-purple-600',
   organization: 'text-indigo-600 font-medium',
