@@ -37,6 +37,7 @@ import NativeMenuHandler from './components/layout/NativeMenuHandler';
 // UI 组件导入
 import { Text, Spin, Layout, Content, Toaster } from '@/components/ui';
 import { DialogManager } from '@/utils/dialog';
+import ConnectionErrorHandler from '@/components/common/ConnectionErrorHandler';
 
 // 主布局组件
 const MainLayout: React.FC = () => {
@@ -550,9 +551,13 @@ const App: React.FC = () => {
           console.log('连接服务初始化成功');
 
           // 初始化前端连接状态，确保所有连接都为断开状态
-          const { initializeConnectionStates } = useConnectionStore.getState();
+          const { initializeConnectionStates, startConnectionSync } = useConnectionStore.getState();
           initializeConnectionStates();
           console.log('前端连接状态初始化完成');
+          
+          // 启动连接配置同步机制
+          startConnectionSync();
+          console.log('连接配置同步机制已启动');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
         }
@@ -622,6 +627,10 @@ const App: React.FC = () => {
     return () => {
       // 应用卸载时清理错误日志器
       errorLogger.cleanup();
+      
+      // 停止连接配置同步机制
+      const { stopConnectionSync } = useConnectionStore.getState();
+      stopConnectionSync();
     };
   }, []);
 
@@ -666,6 +675,7 @@ const App: React.FC = () => {
       <ErrorBoundary>
         <MainLayout />
         <DialogManager />
+        <ConnectionErrorHandler />
         <Toaster position={getToasterPosition() as any} />
 
         {/* 未保存标签页对话框 */}

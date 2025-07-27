@@ -150,6 +150,29 @@ pub async fn get_connection_count(
     Ok(connection_service.get_connection_count().await)
 }
 
+/// 验证连接是否存在
+#[tauri::command(rename_all = "camelCase")]
+pub async fn validate_connection_exists(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<bool, String> {
+    debug!("验证连接是否存在: {}", connection_id);
+    
+    let connection = connection_service.get_connection(&connection_id).await;
+    Ok(connection.is_some())
+}
+
+/// 安全获取连接（不会抛出错误）
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_connection_safe(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<Option<ConnectionConfig>, String> {
+    debug!("安全获取连接: {}", connection_id);
+    
+    Ok(connection_service.get_connection(&connection_id).await)
+}
+
 /// 连接到数据库
 #[tauri::command(rename_all = "camelCase")]
 pub async fn connect_to_database(

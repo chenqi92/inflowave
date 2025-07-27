@@ -601,6 +601,8 @@ async fn main() {
             get_all_connection_statuses,
             health_check_all_connections,
             get_connection_count,
+            validate_connection_exists,
+            get_connection_safe,
             connect_to_database,
             disconnect_from_database,
             start_connection_monitoring,

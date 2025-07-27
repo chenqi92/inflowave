@@ -62,8 +62,14 @@ interface ConnectionState {
   // 状态同步方法
   syncConnectionStates: () => void;
   syncConnectionsToBackend: () => Promise<void>;
+  syncConnectionsFromBackend: () => Promise<void>;
+  startConnectionSync: () => void;
+  stopConnectionSync: () => void;
   initializeConnectionStates: () => void;
   forceRefreshConnections: () => Promise<void>;
+  
+  // 同步状态
+  syncInterval?: NodeJS.Timeout;
 }
 
 // 辅助函数：解析数据库版本字符串，支持多数据库类型
@@ -372,24 +378,66 @@ export const useConnectionStore = create<ConnectionState>()(
           console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
           console.error(`❌ 连接失败 (${id}):`, error);
-          // 更新状态为错误
-          set(state => ({
-            connectionStatuses: {
-              ...state.connectionStatuses,
-              [id]: {
-                id,
-                status: 'error' as const,
-                error: String(error),
-                lastConnected: state.connectionStatuses[id]?.lastConnected,
-                latency: undefined,
+          
+          const errorMessage = String(error);
+          let finalError = errorMessage;
+          let shouldCleanupConnection = false;
+          
+          // 检查是否是连接不存在的错误
+          if (errorMessage.includes('不存在') || 
+              errorMessage.includes('not found') || 
+              errorMessage.includes('not exist')) {
+            finalError = `连接配置已被删除或损坏，请重新创建连接配置`;
+            shouldCleanupConnection = true;
+            console.log(`🧹 检测到无效连接，将清理: ${id}`);
+          }
+          
+          // 如果需要清理连接，从前端状态中移除
+          if (shouldCleanupConnection) {
+            set(state => ({
+              connections: state.connections.filter(conn => conn.id !== id),
+              connectionStatuses: {
+                ...Object.fromEntries(
+                  Object.entries(state.connectionStatuses).filter(([key]) => key !== id)
+                ),
               },
-            },
-            // 确保从已连接列表中移除
-            connectedConnectionIds: state.connectedConnectionIds.filter(
-              connId => connId !== id
-            ),
-          }));
-          throw error;
+              tableConnectionStatuses: {
+                ...Object.fromEntries(
+                  Object.entries(state.tableConnectionStatuses).filter(([key]) => key !== id)
+                ),
+              },
+              connectedConnectionIds: state.connectedConnectionIds.filter(
+                connId => connId !== id
+              ),
+              activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
+            }));
+            
+            // 触发连接列表刷新
+            setTimeout(() => {
+              console.log('🔄 触发连接配置重新加载');
+              get().forceRefreshConnections();
+            }, 100);
+          } else {
+            // 更新状态为错误
+            set(state => ({
+              connectionStatuses: {
+                ...state.connectionStatuses,
+                [id]: {
+                  id,
+                  status: 'error' as const,
+                  error: finalError,
+                  lastConnected: state.connectionStatuses[id]?.lastConnected,
+                  latency: undefined,
+                },
+              },
+              // 确保从已连接列表中移除
+              connectedConnectionIds: state.connectedConnectionIds.filter(
+                connId => connId !== id
+              ),
+            }));
+          }
+          
+          throw new Error(finalError);
         }
       },
 
@@ -883,6 +931,82 @@ export const useConnectionStore = create<ConnectionState>()(
         } catch (error) {
           console.error('❌ 强制刷新连接列表失败:', error);
           throw error;
+        }
+      },
+
+      // 从后端同步连接配置
+      syncConnectionsFromBackend: async () => {
+        try {
+          console.log('🔄 同步后端连接配置...');
+          const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
+          
+          if (!backendConnections) {
+            console.warn('⚠️ 后端返回空连接列表');
+            return;
+          }
+          
+          const backendConnectionIds = new Set(backendConnections.map((conn: ConnectionConfig) => conn.id));
+          
+          // 检查前端连接是否在后端存在
+          const { connections } = get();
+          const invalidConnections: string[] = [];
+          
+          for (const connection of connections) {
+            if (connection.id && !backendConnectionIds.has(connection.id)) {
+              invalidConnections.push(connection.id);
+              console.warn(`⚠️ 发现无效连接: ${connection.id} (${connection.name})`);
+            }
+          }
+          
+          // 清理无效连接
+          if (invalidConnections.length > 0) {
+            console.log(`🧹 清理 ${invalidConnections.length} 个无效连接`);
+            set(state => ({
+              connections: state.connections.filter(conn => conn.id && !invalidConnections.includes(conn.id)),
+              connectionStatuses: Object.fromEntries(
+                Object.entries(state.connectionStatuses).filter(([id]) => !invalidConnections.includes(id))
+              ),
+              tableConnectionStatuses: Object.fromEntries(
+                Object.entries(state.tableConnectionStatuses).filter(([id]) => !invalidConnections.includes(id))
+              ),
+              connectedConnectionIds: state.connectedConnectionIds.filter(
+                id => !invalidConnections.includes(id)
+              ),
+              activeConnectionId: state.activeConnectionId && invalidConnections.includes(state.activeConnectionId) 
+                ? null 
+                : state.activeConnectionId,
+            }));
+          }
+          
+          console.log('✅ 连接配置同步完成');
+        } catch (error) {
+          console.error('❌ 同步连接配置失败:', error);
+        }
+      },
+
+      // 启动定期同步
+      startConnectionSync: () => {
+        console.log('🚀 启动连接配置同步机制');
+        
+        // 立即执行一次同步
+        get().syncConnectionsFromBackend();
+        
+        // 每30秒同步一次
+        const interval = setInterval(() => {
+          get().syncConnectionsFromBackend();
+        }, 30000);
+        
+        // 保存interval ID以便后续清理
+        set(state => ({ ...state, syncInterval: interval }));
+      },
+
+      // 停止定期同步
+      stopConnectionSync: () => {
+        const { syncInterval } = get();
+        if (syncInterval) {
+          console.log('🛑 停止连接配置同步机制');
+          clearInterval(syncInterval);
+          set(state => ({ ...state, syncInterval: undefined }));
         }
       },
     }),
