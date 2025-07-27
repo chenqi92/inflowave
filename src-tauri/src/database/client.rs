@@ -11,7 +11,8 @@ use reqwest;
 /// 数据库客户端枚举 - 解决 async trait 的 dyn 兼容性问题
 #[derive(Debug)]
 pub enum DatabaseClient {
-    InfluxDB(InfluxClient),
+    InfluxDB1x(InfluxClient),
+    InfluxDB2x(InfluxDB2Client),
     IoTDB(Arc<Mutex<IoTDBMultiClient>>),
 }
 
@@ -19,7 +20,8 @@ impl DatabaseClient {
     /// 测试连接
     pub async fn test_connection(&self) -> Result<u64> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.test_connection().await,
+            DatabaseClient::InfluxDB1x(client) => client.test_connection().await,
+            DatabaseClient::InfluxDB2x(client) => client.test_connection().await,
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.test_connection().await
@@ -30,7 +32,11 @@ impl DatabaseClient {
     /// 执行查询
     pub async fn execute_query(&self, query: &str, database: Option<&str>) -> Result<QueryResult> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.execute_query_with_database(query, database).await,
+            DatabaseClient::InfluxDB1x(client) => client.execute_query_with_database(query, database).await,
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x 使用 Flux 查询，不需要 database 参数
+                client.execute_query(query).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.execute_query(query).await
@@ -41,7 +47,11 @@ impl DatabaseClient {
     /// 获取数据库列表
     pub async fn get_databases(&self) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_databases().await,
+            DatabaseClient::InfluxDB1x(client) => client.get_databases().await,
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x 使用组织和存储桶，返回组织列表
+                client.get_organizations().await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_databases().await
@@ -52,7 +62,11 @@ impl DatabaseClient {
     /// 获取表/测量列表
     pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_measurements(database).await,
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x: database 参数是组织名，返回存储桶列表
+                client.get_buckets_for_org(database).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
@@ -63,7 +77,12 @@ impl DatabaseClient {
     /// 获取字段列表
     pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_field_keys(database, table).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, table).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取字段信息
+                // 暂时返回空列表，后续可以实现完整的字段查询
+                Ok(vec![])
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_timeseries(table).await
@@ -74,16 +93,27 @@ impl DatabaseClient {
     /// 获取连接信息
     pub async fn get_connection_info(&self) -> Result<serde_json::Value> {
         match self {
-            DatabaseClient::InfluxDB(client) => {
+            DatabaseClient::InfluxDB1x(client) => {
                 let config = client.get_config();
                 Ok(serde_json::json!({
-                    "type": "influxdb",
+                    "type": "influxdb1x",
                     "version": config.get_version_string(),
                     "host": config.host,
                     "port": config.port,
                     "database": config.database,
                     "ssl": config.ssl,
                     "username": config.username
+                }))
+            },
+            DatabaseClient::InfluxDB2x(client) => {
+                let version = client.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
+                Ok(serde_json::json!({
+                    "type": "influxdb2x",
+                    "version": version,
+                    "host": client.config.host,
+                    "port": client.config.port,
+                    "ssl": client.config.ssl,
+                    "organization": client.config.v2_config.as_ref().map(|c| &c.organization)
                 }))
             },
             DatabaseClient::IoTDB(client) => {
@@ -109,8 +139,12 @@ impl DatabaseClient {
     /// 关闭连接
     pub async fn close(&self) -> Result<()> {
         match self {
-            DatabaseClient::InfluxDB(_) => {
-                debug!("关闭 InfluxDB 连接");
+            DatabaseClient::InfluxDB1x(_) => {
+                debug!("关闭 InfluxDB 1.x 连接");
+                Ok(())
+            },
+            DatabaseClient::InfluxDB2x(_) => {
+                debug!("关闭 InfluxDB 2.x/3.x 连接");
                 Ok(())
             },
             DatabaseClient::IoTDB(client) => {
@@ -123,7 +157,8 @@ impl DatabaseClient {
     /// 获取数据库类型
     pub fn get_database_type(&self) -> DatabaseType {
         match self {
-            DatabaseClient::InfluxDB(_) => DatabaseType::InfluxDB,
+            DatabaseClient::InfluxDB1x(_) => DatabaseType::InfluxDB,
+            DatabaseClient::InfluxDB2x(_) => DatabaseType::InfluxDB,
             DatabaseClient::IoTDB(_) => DatabaseType::IoTDB,
         }
     }
@@ -131,7 +166,8 @@ impl DatabaseClient {
     /// 获取连接配置
     pub async fn get_config(&self) -> ConnectionConfig {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_config().clone(),
+            DatabaseClient::InfluxDB1x(client) => client.get_config().clone(),
+            DatabaseClient::InfluxDB2x(client) => client.config.clone(),
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 client.get_config().clone()
@@ -142,7 +178,11 @@ impl DatabaseClient {
     /// 创建数据库
     pub async fn create_database(&self, database_name: &str) -> Result<()> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.create_database(database_name).await,
+            DatabaseClient::InfluxDB1x(client) => client.create_database(database_name).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x 不支持直接创建数据库，需要创建存储桶
+                Err(anyhow::anyhow!("InfluxDB 2.x/3.x 不支持创建数据库，请使用存储桶管理"))
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let sql = format!("CREATE STORAGE GROUP root.{}", database_name);
@@ -155,7 +195,11 @@ impl DatabaseClient {
     /// 删除数据库
     pub async fn drop_database(&self, database_name: &str) -> Result<()> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.drop_database(database_name).await,
+            DatabaseClient::InfluxDB1x(client) => client.drop_database(database_name).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x 不支持直接删除数据库，需要删除存储桶
+                Err(anyhow::anyhow!("InfluxDB 2.x/3.x 不支持删除数据库，请使用存储桶管理"))
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let sql = format!("DELETE STORAGE GROUP root.{}", database_name);
@@ -168,7 +212,11 @@ impl DatabaseClient {
     /// 获取保留策略
     pub async fn get_retention_policies(&self, database: &str) -> Result<Vec<RetentionPolicy>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_retention_policies(database).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_retention_policies(database).await,
+            DatabaseClient::InfluxDB2x(_) => {
+                // InfluxDB 2.x/3.x 不使用保留策略概念，返回空列表
+                Ok(vec![])
+            },
             DatabaseClient::IoTDB(_) => {
                 // IoTDB 不支持保留策略概念，返回空列表
                 Ok(vec![])
@@ -179,7 +227,12 @@ impl DatabaseClient {
     /// 获取测量/表列表
     pub async fn get_measurements(&self, database: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_measurements(database).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_measurements(database).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取测量值
+                // 暂时返回空列表，后续可以实现完整的测量值查询
+                Ok(vec![])
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
@@ -190,7 +243,12 @@ impl DatabaseClient {
     /// 获取字段键
     pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_field_keys(database, measurement).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, measurement).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取字段信息
+                // 暂时返回空列表，后续可以实现完整的字段查询
+                Ok(vec![])
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_timeseries(measurement).await
@@ -206,7 +264,15 @@ impl DatabaseClient {
     /// 获取表结构信息
     pub async fn get_table_schema(&self, database: &str, measurement: &str) -> Result<TableSchema> {
         match self {
-            DatabaseClient::InfluxDB(client) => client.get_table_schema(database, measurement).await,
+            DatabaseClient::InfluxDB1x(client) => client.get_table_schema(database, measurement).await,
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x: 需要通过 Flux 查询获取表结构
+                // 暂时返回空结构，后续可以实现完整的表结构查询
+                Ok(TableSchema {
+                    tags: vec![],
+                    fields: vec![],
+                })
+            },
             DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持表结构查询，返回空结构
                 Ok(TableSchema {
@@ -220,9 +286,14 @@ impl DatabaseClient {
     /// 写入行协议数据
     pub async fn write_line_protocol(&self, database: &str, line_protocol: &str) -> Result<()> {
         match self {
-            DatabaseClient::InfluxDB(client) => {
+            DatabaseClient::InfluxDB1x(client) => {
                 client.write_line_protocol(database, line_protocol).await?;
                 Ok(())
+            },
+            DatabaseClient::InfluxDB2x(_client) => {
+                // InfluxDB 2.x/3.x: 需要使用不同的写入 API
+                // 暂时不支持，后续可以实现完整的写入功能
+                Err(anyhow::anyhow!("InfluxDB 2.x/3.x 行协议写入暂未实现"))
             },
             DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持行协议写入
@@ -234,8 +305,12 @@ impl DatabaseClient {
     /// 检测数据库版本
     pub async fn detect_version(&self) -> Result<String> {
         match self {
-            DatabaseClient::InfluxDB(client) => {
-                // InfluxDB 版本检测逻辑
+            DatabaseClient::InfluxDB1x(client) => {
+                // InfluxDB 1.x 版本检测逻辑
+                client.detect_version().await
+            },
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x 版本检测逻辑
                 client.detect_version().await
             },
             DatabaseClient::IoTDB(client) => {
@@ -248,8 +323,12 @@ impl DatabaseClient {
     /// 获取数据源树节点
     pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
         match self {
-            DatabaseClient::InfluxDB(client) => {
-                // InfluxDB 树节点生成逻辑
+            DatabaseClient::InfluxDB1x(client) => {
+                // InfluxDB 1.x 树节点生成逻辑
+                client.get_tree_nodes().await
+            },
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x 树节点生成逻辑
                 client.get_tree_nodes().await
             },
             DatabaseClient::IoTDB(client) => {
@@ -262,8 +341,12 @@ impl DatabaseClient {
     /// 获取树节点的子节点（懒加载）
     pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
         match self {
-            DatabaseClient::InfluxDB(client) => {
-                // InfluxDB 子节点获取逻辑
+            DatabaseClient::InfluxDB1x(client) => {
+                // InfluxDB 1.x 子节点获取逻辑
+                client.get_tree_children(parent_node_id, node_type).await
+            },
+            DatabaseClient::InfluxDB2x(client) => {
+                // InfluxDB 2.x/3.x 子节点获取逻辑
                 client.get_tree_children(parent_node_id, node_type).await
             },
             DatabaseClient::IoTDB(client) => {
@@ -275,7 +358,339 @@ impl DatabaseClient {
     }
 }
 
-/// InfluxDB 客户端封装
+/// InfluxDB 2.x/3.x 客户端封装
+#[derive(Debug)]
+pub struct InfluxDB2Client {
+    client: influxdb2::Client,
+    config: ConnectionConfig,
+}
+
+impl InfluxDB2Client {
+    /// 创建新的 InfluxDB 2.x/3.x 客户端实例
+    pub fn new(config: ConnectionConfig) -> Result<Self> {
+        if let Some(v2_config) = &config.v2_config {
+            let host = if config.ssl {
+                format!("https://{}:{}", config.host, config.port)
+            } else {
+                format!("http://{}:{}", config.host, config.port)
+            };
+
+            let client = influxdb2::Client::new(
+                host,
+                &v2_config.organization,
+                &v2_config.api_token
+            );
+
+            info!("创建 InfluxDB 2.x/3.x 客户端: {}:{}", config.host, config.port);
+
+            Ok(Self { client, config })
+        } else {
+            Err(anyhow::anyhow!("缺少 InfluxDB 2.x/3.x 配置 (v2_config)"))
+        }
+    }
+
+    /// 测试连接
+    pub async fn test_connection(&self) -> Result<u64> {
+        let start = Instant::now();
+
+        // 使用 InfluxDB 2.x API 测试连接
+        // 尝试列出组织来验证连接和认证
+        match self.get_organizations().await {
+            Ok(_) => {
+                let latency = start.elapsed().as_millis() as u64;
+                info!("InfluxDB 2.x/3.x 连接测试成功，延迟: {}ms", latency);
+                Ok(latency)
+            }
+            Err(e) => {
+                error!("InfluxDB 2.x/3.x 连接测试失败: {}", e);
+                Err(anyhow::anyhow!("InfluxDB 2.x/3.x 连接测试失败: {}", e))
+            }
+        }
+    }
+
+    /// 执行 Flux 查询
+    pub async fn execute_query(&self, query: &str) -> Result<QueryResult> {
+        let start = Instant::now();
+
+        debug!("执行 Flux 查询: {}", query);
+
+        // 暂时使用简单的实现，不执行实际查询
+        // 后续可以实现完整的 Flux 查询支持
+        let latency = start.elapsed().as_millis() as u64;
+
+        // 创建空的查询结果
+        let query_result = QueryResult {
+            results: vec![], // 暂时返回空结果
+            execution_time: Some(latency),
+            row_count: Some(0),
+            error: None,
+            data: None,
+            columns: None,
+        };
+
+        debug!("Flux 查询模拟执行成功，延迟: {}ms", latency);
+        Ok(query_result)
+    }
+
+    /// 获取组织列表
+    pub async fn get_organizations(&self) -> Result<Vec<String>> {
+        // 使用 HTTP API 获取组织列表
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let url = format!("{}/api/v2/orgs", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(orgs_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(orgs) = orgs_response.get("orgs").and_then(|o| o.as_array()) {
+                                let org_names: Vec<String> = orgs
+                                    .iter()
+                                    .filter_map(|org| org.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(org_names);
+                            }
+                        }
+                    }
+                }
+                Ok(response) => {
+                    return Err(anyhow::anyhow!("获取组织列表失败: HTTP {}", response.status()));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("获取组织列表请求失败: {}", e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织列表"))
+    }
+
+    /// 获取存储桶列表
+    pub async fn get_buckets(&self) -> Result<Vec<String>> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let url = format!("{}/api/v2/buckets", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                Ok(response) => {
+                    return Err(anyhow::anyhow!("获取存储桶列表失败: HTTP {}", response.status()));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("获取存储桶列表请求失败: {}", e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取存储桶列表"))
+    }
+
+    /// 获取特定组织的存储桶列表
+    pub async fn get_buckets_for_org(&self, org_name: &str) -> Result<Vec<String>> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let url = format!("{}/api/v2/buckets?org={}", base_url, org_name);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", v2_config.api_token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                Ok(response) => {
+                    return Err(anyhow::anyhow!("获取组织 {} 的存储桶列表失败: HTTP {}", org_name, response.status()));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("获取组织 {} 的存储桶列表请求失败: {}", org_name, e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表", org_name))
+    }
+
+    /// 检测 InfluxDB 版本
+    pub async fn detect_version(&self) -> Result<String> {
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        // 尝试 InfluxDB 2.x/3.x 的 /health 端点
+        let health_url = format!("{}/health", base_url);
+        let client = reqwest::Client::new();
+
+        match client.get(&health_url).send().await {
+            Ok(response) if response.status().is_success() => {
+                if let Ok(text) = response.text().await {
+                    if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
+                        // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
+                        if health_info.get("name").is_some() || health_info.get("message").is_some() {
+                            let version = health_info
+                                .get("version")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("2.x.x");
+
+                            // 根据版本号判断是 2.x 还是 3.x
+                            if version.starts_with("3.") {
+                                return Ok("InfluxDB-3.x".to_string());
+                            } else if version.starts_with("2.") {
+                                return Ok("InfluxDB-2.x".to_string());
+                            } else {
+                                return Ok("InfluxDB-2.x".to_string()); // 默认假设是 2.x
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok("InfluxDB-2.x".to_string()) // 默认返回 2.x
+    }
+
+    /// 生成 InfluxDB 2.x/3.x 数据源树
+    pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::TreeNodeFactory;
+
+        let mut nodes = Vec::new();
+
+        // 检测版本以确定树结构
+        let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-2.x".to_string());
+
+        // InfluxDB 2.x/3.x: Organization → Bucket 结构
+        match self.get_organizations().await {
+            Ok(organizations) => {
+                for org_name in organizations {
+                    let mut org_node = TreeNodeFactory::create_organization(org_name.clone());
+                    org_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                    nodes.push(org_node);
+                }
+            }
+            Err(e) => {
+                log::warn!("获取组织列表失败: {}", e);
+                // 如果获取组织失败，尝试直接获取存储桶
+                match self.get_buckets().await {
+                    Ok(buckets) => {
+                        for bucket_name in buckets {
+                            let is_system = bucket_name.starts_with('_');
+                            let mut bucket_node = TreeNodeFactory::create_bucket("default", bucket_name, is_system);
+                            bucket_node.metadata.insert("version".to_string(), serde_json::Value::String(version.clone()));
+                            nodes.push(bucket_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取存储桶列表失败: {}", e);
+                    }
+                }
+            }
+        }
+
+        Ok(nodes)
+    }
+
+    /// 获取树节点的子节点（懒加载）
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::{TreeNodeFactory, TreeNodeType};
+
+        let mut children = Vec::new();
+
+        // 解析节点类型
+        let parsed_type = match node_type {
+            "Organization" => TreeNodeType::Organization,
+            "Bucket" => TreeNodeType::Bucket,
+            "SystemBucket" => TreeNodeType::SystemBucket,
+            _ => return Ok(children),
+        };
+
+        match parsed_type {
+            TreeNodeType::Organization => {
+                // InfluxDB 2.x/3.x: 获取组织下的存储桶
+                let org_name = parent_node_id.strip_prefix("org_").unwrap_or(parent_node_id);
+                match self.get_buckets_for_org(org_name).await {
+                    Ok(buckets) => {
+                        for bucket_name in buckets {
+                            let is_system = bucket_name.starts_with('_');
+                            let bucket_node = TreeNodeFactory::create_bucket(org_name, bucket_name, is_system);
+                            children.push(bucket_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取存储桶失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
+                // InfluxDB 2.x/3.x: 获取存储桶下的测量值
+                // 这里可以通过 Flux 查询获取测量值，但需要更复杂的实现
+                // 暂时返回空，后续可以扩展
+                log::debug!("存储桶子节点获取暂未实现");
+            }
+            _ => {}
+        }
+
+        Ok(children)
+    }
+}
+
+/// InfluxDB 1.x 客户端封装
 #[derive(Debug, Clone)]
 pub struct InfluxClient {
     client: Client,
@@ -1320,8 +1735,24 @@ impl DatabaseClientFactory {
     pub fn create_client(config: ConnectionConfig) -> Result<DatabaseClient> {
         match config.db_type {
             DatabaseType::InfluxDB => {
+                // 根据版本选择合适的客户端
+                if let Some(version) = &config.version {
+                    if version.contains("2.") || version.contains("3.") {
+                        // 创建 InfluxDB 2.x/3.x 客户端
+                        let client = InfluxDB2Client::new(config)?;
+                        return Ok(DatabaseClient::InfluxDB2x(client));
+                    }
+                }
+
+                // 检查是否有 v2_config，如果有则使用 2.x 客户端
+                if config.v2_config.is_some() {
+                    let client = InfluxDB2Client::new(config)?;
+                    return Ok(DatabaseClient::InfluxDB2x(client));
+                }
+
+                // 默认使用 InfluxDB 1.x 客户端
                 let client = InfluxClient::new(config)?;
-                Ok(DatabaseClient::InfluxDB(client))
+                Ok(DatabaseClient::InfluxDB1x(client))
             },
             DatabaseType::IoTDB => {
                 let client = IoTDBMultiClient::new(config);

@@ -1,132 +1,165 @@
 /* 字体预览专用样式 - 确保字体选择下拉框正确显示各自字体 */
 
-/* 强制所有字体预览项使用其指定的字体系列 */
-.font-preview-item[data-value="system"] {
+/* 强制所有字体预览项使用其指定的字体系列 - 使用多种选择器确保覆盖 */
+.font-preview-item[data-value="system"],
+[data-radix-collection-item][data-value="system"] {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
-.font-preview-item[data-value="inter"] {
+.font-preview-item[data-value="inter"],
+[data-radix-collection-item][data-value="inter"] {
   font-family: "Inter", sans-serif !important;
 }
 
-.font-preview-item[data-value="roboto"] {
+.font-preview-item[data-value="roboto"],
+[data-radix-collection-item][data-value="roboto"] {
   font-family: "Roboto", sans-serif !important;
 }
 
-.font-preview-item[data-value="open-sans"] {
+.font-preview-item[data-value="open-sans"],
+[data-radix-collection-item][data-value="open-sans"] {
   font-family: "Open Sans", sans-serif !important;
 }
 
-.font-preview-item[data-value="source-sans"] {
+.font-preview-item[data-value="source-sans"],
+[data-radix-collection-item][data-value="source-sans"] {
   font-family: "Source Sans Pro", sans-serif !important;
 }
 
-.font-preview-item[data-value="lato"] {
+.font-preview-item[data-value="lato"],
+[data-radix-collection-item][data-value="lato"] {
   font-family: "Lato", sans-serif !important;
 }
 
-.font-preview-item[data-value="poppins"] {
+.font-preview-item[data-value="poppins"],
+[data-radix-collection-item][data-value="poppins"] {
   font-family: "Poppins", sans-serif !important;
 }
 
-.font-preview-item[data-value="nunito"] {
+.font-preview-item[data-value="nunito"],
+[data-radix-collection-item][data-value="nunito"] {
   font-family: "Nunito", sans-serif !important;
 }
 
-.font-preview-item[data-value="montserrat"] {
+.font-preview-item[data-value="montserrat"],
+[data-radix-collection-item][data-value="montserrat"] {
   font-family: "Montserrat", sans-serif !important;
 }
 
-.font-preview-item[data-value="fira-sans"] {
+.font-preview-item[data-value="fira-sans"],
+[data-radix-collection-item][data-value="fira-sans"] {
   font-family: "Fira Sans", sans-serif !important;
 }
 
-.font-preview-item[data-value="work-sans"] {
+.font-preview-item[data-value="work-sans"],
+[data-radix-collection-item][data-value="work-sans"] {
   font-family: "Work Sans", sans-serif !important;
 }
 
-.font-preview-item[data-value="dm-sans"] {
+.font-preview-item[data-value="dm-sans"],
+[data-radix-collection-item][data-value="dm-sans"] {
   font-family: "DM Sans", sans-serif !important;
 }
 
-.font-preview-item[data-value="ubuntu"] {
+.font-preview-item[data-value="ubuntu"],
+[data-radix-collection-item][data-value="ubuntu"] {
   font-family: "Ubuntu", sans-serif !important;
 }
 
-.font-preview-item[data-value="noto-sans"] {
+.font-preview-item[data-value="noto-sans"],
+[data-radix-collection-item][data-value="noto-sans"] {
   font-family: "Noto Sans", "Noto Sans SC", sans-serif !important;
 }
 
 /* 经典字体 */
-.font-preview-item[data-value="georgia"] {
+.font-preview-item[data-value="georgia"],
+[data-radix-collection-item][data-value="georgia"] {
   font-family: "Georgia", serif !important;
 }
 
-.font-preview-item[data-value="times"] {
+.font-preview-item[data-value="times"],
+[data-radix-collection-item][data-value="times"] {
   font-family: "Times New Roman", serif !important;
 }
 
-.font-preview-item[data-value="arial"] {
+.font-preview-item[data-value="arial"],
+[data-radix-collection-item][data-value="arial"] {
   font-family: Arial, sans-serif !important;
 }
 
-.font-preview-item[data-value="helvetica"] {
+.font-preview-item[data-value="helvetica"],
+[data-radix-collection-item][data-value="helvetica"] {
   font-family: "Helvetica Neue", sans-serif !important;
 }
 
-.font-preview-item[data-value="verdana"] {
+.font-preview-item[data-value="verdana"],
+[data-radix-collection-item][data-value="verdana"] {
   font-family: Verdana, sans-serif !important;
 }
 
-.font-preview-item[data-value="tahoma"] {
+.font-preview-item[data-value="tahoma"],
+[data-radix-collection-item][data-value="tahoma"] {
   font-family: Tahoma, sans-serif !important;
 }
 
-.font-preview-item[data-value="trebuchet"] {
+.font-preview-item[data-value="trebuchet"],
+[data-radix-collection-item][data-value="trebuchet"] {
   font-family: "Trebuchet MS", sans-serif !important;
 }
 
 /* 等宽字体 */
-.font-preview-item[data-value="sf-mono"] {
+.font-preview-item[data-value="sf-mono"],
+[data-radix-collection-item][data-value="sf-mono"] {
   font-family: ui-monospace, "SF Mono", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="jetbrains-mono"] {
+.font-preview-item[data-value="jetbrains-mono"],
+[data-radix-collection-item][data-value="jetbrains-mono"] {
   font-family: "JetBrains Mono", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="source-code-pro"] {
+.font-preview-item[data-value="source-code-pro"],
+[data-radix-collection-item][data-value="source-code-pro"] {
   font-family: "Source Code Pro", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="fira-code"] {
+.font-preview-item[data-value="fira-code"],
+[data-radix-collection-item][data-value="fira-code"] {
   font-family: "Fira Code", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="inconsolata"] {
+.font-preview-item[data-value="inconsolata"],
+[data-radix-collection-item][data-value="inconsolata"] {
   font-family: "Inconsolata", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="roboto-mono"] {
+.font-preview-item[data-value="roboto-mono"],
+[data-radix-collection-item][data-value="roboto-mono"] {
   font-family: "Roboto Mono", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="ubuntu-mono"] {
+.font-preview-item[data-value="ubuntu-mono"],
+[data-radix-collection-item][data-value="ubuntu-mono"] {
   font-family: "Ubuntu Mono", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="cascadia-code"] {
+.font-preview-item[data-value="cascadia-code"],
+[data-radix-collection-item][data-value="cascadia-code"] {
   font-family: "Cascadia Code", Monaco, Consolas, monospace !important;
 }
 
-.font-preview-item[data-value="courier"] {
+.font-preview-item[data-value="courier"],
+[data-radix-collection-item][data-value="courier"] {
   font-family: "Courier New", monospace !important;
 }
 
 /* 确保所有子元素继承字体设置 */
 .font-preview-item *,
 .font-preview-item .font-preview *,
-.font-preview-item .font-preview span {
+.font-preview-item .font-preview span,
+[data-radix-collection-item] *,
+[data-radix-collection-item] .font-preview *,
+[data-radix-collection-item] .font-preview span {
   font-family: inherit !important;
 }
 
@@ -136,16 +169,19 @@
 }
 
 /* 确保 Radix UI Select 组件的文本继承字体 */
-.font-preview-item [data-radix-select-item-text] {
+.font-preview-item [data-radix-select-item-text],
+[data-radix-collection-item] [data-radix-select-item-text] {
   font-family: inherit !important;
 }
 
 /* 确保选中状态也使用正确字体 */
-.font-preview-item[data-state="checked"] {
+.font-preview-item[data-state="checked"],
+[data-radix-collection-item][data-state="checked"] {
   font-family: inherit !important;
 }
 
-.font-preview-item[data-state="checked"] * {
+.font-preview-item[data-state="checked"] *,
+[data-radix-collection-item][data-state="checked"] * {
   font-family: inherit !important;
 }
 
@@ -166,4 +202,89 @@
 .font-tag.serif {
   background-color: rgba(168, 85, 247, 0.1);
   color: rgba(168, 85, 247, 0.8);
+}
+
+/* 添加更强的覆盖规则确保字体在下拉框中正确显示 */
+[data-radix-select-content] [data-radix-select-item],
+[data-radix-select-content] [data-radix-collection-item] {
+  font-family: inherit !important;
+}
+
+/* 强制覆盖所有可能的 Radix UI 组件样式 */
+[data-radix-select-content] .font-preview-item {
+  font-family: inherit !important;
+}
+
+[data-radix-select-content] .font-preview-item * {
+  font-family: inherit !important;
+}
+
+/* 特别针对选择框内容的字体覆盖 */
+.font-selector-content .font-preview-item {
+  font-family: inherit !important;
+}
+
+.font-selector-content [data-radix-collection-item] {
+  font-family: inherit !important;
+}
+
+/* 直接根据value属性强制应用字体 - 使用更具体的选择器 */
+[data-radix-select-content] [data-value="system"],
+[data-radix-select-content] [value="system"] {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+[data-radix-select-content] [data-value="inter"],
+[data-radix-select-content] [value="inter"] {
+  font-family: "Inter", sans-serif !important;
+}
+
+[data-radix-select-content] [data-value="roboto"],
+[data-radix-select-content] [value="roboto"] {
+  font-family: "Roboto", sans-serif !important;
+}
+
+[data-radix-select-content] [data-value="jetbrains-mono"],
+[data-radix-select-content] [value="jetbrains-mono"] {
+  font-family: "JetBrains Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="source-code-pro"],
+[data-radix-select-content] [value="source-code-pro"] {
+  font-family: "Source Code Pro", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="fira-code"],
+[data-radix-select-content] [value="fira-code"] {
+  font-family: "Fira Code", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="inconsolata"],
+[data-radix-select-content] [value="inconsolata"] {
+  font-family: "Inconsolata", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="roboto-mono"],
+[data-radix-select-content] [value="roboto-mono"] {
+  font-family: "Roboto Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="ubuntu-mono"],
+[data-radix-select-content] [value="ubuntu-mono"] {
+  font-family: "Ubuntu Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] [data-value="cascadia-code"],
+[data-radix-select-content] [value="cascadia-code"] {
+  font-family: "Cascadia Code", Monaco, Consolas, monospace !important;
+}
+
+/* 移除可能阻止内联样式生效的全局字体设置 */
+[data-radix-select-content] * {
+  font-family: unset;
+}
+
+/* 确保内联样式具有最高优先级 */
+[data-radix-select-content] [style*="font-family"] {
+  font-family: inherit;
 }

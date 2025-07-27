@@ -21,6 +21,7 @@ tokio = { version = "1.0", features = ["full"] }
 reqwest = { version = "0.11", features = ["json", "native-tls", "stream"], default-features = false }
 futures-util = "0.3"
 influxdb = { version = "0.7", features = ["derive"] }
+influxdb2 = "0.5.2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 anyhow = "1.0"
