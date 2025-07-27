@@ -276,41 +276,46 @@ export class DatabaseVersionDetectionService {
   } {
     const warnings: string[] = [];
     const recommendations: string[] = [];
-    let compatible = true;
+    const compatible = true;
 
     switch (versionInfo.detected_type) {
       case 'influxdb1':
-        if (versionInfo.major_version < 1 || (versionInfo.major_version === 1 && versionInfo.minor_version < 7)) {
-          compatible = false;
+        // 对于 InfluxDB 1.x，检查版本是否过低
+        if (versionInfo.major_version === 1 && versionInfo.minor_version > 0 && versionInfo.minor_version < 7) {
           warnings.push('InfluxDB 1.x 版本过低，建议升级到 1.7 或更高版本');
         }
         recommendations.push('考虑升级到 InfluxDB 2.x 或 3.x 以获得更好的性能和功能');
         break;
 
       case 'influxdb2':
-        if (versionInfo.major_version < 2) {
-          compatible = false;
-          warnings.push('检测到的版本不是 InfluxDB 2.x');
-        } else if (versionInfo.minor_version < 1) {
-          warnings.push('建议升级到 InfluxDB 2.1 或更高版本以获得更好的稳定性');
-        }
-        if (versionInfo.major_version === 2 && versionInfo.minor_version >= 7) {
-          recommendations.push('您使用的是较新的 InfluxDB 2.x 版本，功能完善');
+        // 对于 InfluxDB 2.x，检查次版本号
+        if (versionInfo.major_version === 2) {
+          if (versionInfo.minor_version >= 7) {
+            recommendations.push('您使用的是较新的 InfluxDB 2.x 版本，功能完善');
+          } else if (versionInfo.minor_version < 1) {
+            warnings.push('建议升级到 InfluxDB 2.1 或更高版本以获得更好的稳定性');
+          }
+        } else {
+          // 信任检测逻辑，如果 detected_type 是 influxdb2，就认为是 2.x 兼容版本
+          recommendations.push('已检测到 InfluxDB 2.x 兼容版本');
         }
         break;
 
       case 'influxdb3':
-        if (versionInfo.major_version < 3) {
-          compatible = false;
-          warnings.push('检测到的版本不是 InfluxDB 3.x');
-        } else {
+        // 对于 InfluxDB 3.x
+        if (versionInfo.major_version === 3) {
           recommendations.push('您使用的是最新的 InfluxDB 3.x 版本，支持 SQL 查询和高性能存储');
+        } else {
+          // 信任检测逻辑，如果 detected_type 是 influxdb3，就认为是 3.x 兼容版本
+          recommendations.push('已检测到 InfluxDB 3.x 兼容版本');
         }
         break;
 
       case 'iotdb':
-        if (versionInfo.major_version < 1) {
-          warnings.push('IoTDB 版本较低，可能存在兼容性问题');
+        if (versionInfo.major_version >= 1) {
+          recommendations.push('您使用的是 IoTDB 1.x+ 版本，功能完善');
+        } else if (versionInfo.major_version === 0) {
+          warnings.push('IoTDB 版本较低，建议升级到 1.0 或更高版本');
         }
         recommendations.push('确保 IoTDB 服务正常运行并且网络连接稳定');
         break;

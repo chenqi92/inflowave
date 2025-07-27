@@ -175,15 +175,22 @@ impl DatabaseVersionDetector {
 
             // InfluxDB 2.x 的健康检查应该返回 JSON 格式
             if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
-                // 检查是否包含 InfluxDB 2.x 特有的字段
-                if health_info.get("name").is_some() || health_info.get("message").is_some() {
-                    let version = health_info
-                        .get("version")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("2.x.x")
-                        .to_string();
-
-                    return Ok(self.parse_influxdb_version_info(&version, "influxdb2"));
+                // 更严格地检查是否包含 InfluxDB 2.x/3.x 特有的字段
+                // 必须同时包含 name 和 version 字段才认为是有效的 2.x/3.x 响应
+                if let (Some(name), Some(version_value)) = (health_info.get("name"), health_info.get("version")) {
+                    if let Some(version) = version_value.as_str() {
+                        // 进一步验证 name 字段是否符合 InfluxDB 2.x/3.x 的格式
+                        if let Some(name_str) = name.as_str() {
+                            if name_str.to_lowercase().contains("influx") {
+                                let detected_type = if version.starts_with("3.") {
+                                    "influxdb3"
+                                } else {
+                                    "influxdb2"
+                                };
+                                return Ok(self.parse_influxdb_version_info(version, detected_type));
+                            }
+                        }
+                    }
                 }
             }
 
@@ -231,20 +238,24 @@ impl DatabaseVersionDetector {
                 if let Ok(health_response) = health_response {
                     if health_response.status().is_success() {
                         if let Ok(text) = health_response.text().await {
+                            // 更严格地验证 /health 端点的响应
                             if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
-                                if health_info.get("name").is_some() || health_info.get("message").is_some() {
-                                    // 这是 InfluxDB 2.x/3.x
-                                    let version = health_info
-                                        .get("version")
-                                        .and_then(|v| v.as_str())
-                                        .unwrap_or("2.x.x");
-
-                                    let detected_type = if version.starts_with("3.") {
-                                        "influxdb3"
-                                    } else {
-                                        "influxdb2"
-                                    };
-                                    return Ok(self.parse_influxdb_version_info(version, detected_type));
+                                // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
+                                // 必须同时包含 name 和 version 字段才认为是有效的 2.x/3.x 响应
+                                if let (Some(name), Some(version_value)) = (health_info.get("name"), health_info.get("version")) {
+                                    if let Some(version) = version_value.as_str() {
+                                        // 进一步验证 name 字段是否符合 InfluxDB 2.x/3.x 的格式
+                                        if let Some(name_str) = name.as_str() {
+                                            if name_str.to_lowercase().contains("influx") {
+                                                let detected_type = if version.starts_with("3.") {
+                                                    "influxdb3"
+                                                } else {
+                                                    "influxdb2"
+                                                };
+                                                return Ok(self.parse_influxdb_version_info(version, detected_type));
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -252,7 +263,7 @@ impl DatabaseVersionDetector {
                 }
             }
 
-            // 如果 /health 检测失败，假设是 InfluxDB 1.x
+            // 如果 /health 检测失败或不符合 2.x/3.x 格式，假设是 InfluxDB 1.x
             return Ok(self.parse_influxdb_version_info("1.x.x", "influxdb1"));
         }
 
@@ -305,7 +316,17 @@ impl DatabaseVersionDetector {
 
     /// 解析 InfluxDB 版本信息
     fn parse_influxdb_version_info(&self, version: &str, detected_type: &str) -> DatabaseVersionInfo {
-        let (major, minor, patch) = self.parse_version_string(version);
+        let (mut major, minor, patch) = self.parse_version_string(version);
+
+        // 如果版本字符串包含 "x" 导致解析失败，根据 detected_type 推断主版本号
+        if major == 0 {
+            major = match detected_type {
+                "influxdb1" => 1,
+                "influxdb2" => 2,
+                "influxdb3" => 3,
+                _ => 0,
+            };
+        }
 
         let api_endpoints = match detected_type {
             "influxdb1" => vec!["/ping".to_string(), "/query".to_string()],
@@ -371,9 +392,34 @@ impl DatabaseVersionDetector {
     /// 解析版本字符串
     fn parse_version_string(&self, version: &str) -> (u32, u32, u32) {
         let parts: Vec<&str> = version.split('.').collect();
-        let major = parts.get(0).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let minor = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let patch = parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+
+        // 解析主版本号，处理 "x" 的情况
+        let major = parts.get(0).and_then(|s| {
+            if s == &"x" {
+                None
+            } else {
+                s.parse().ok()
+            }
+        }).unwrap_or(0);
+
+        // 解析次版本号，处理 "x" 的情况
+        let minor = parts.get(1).and_then(|s| {
+            if s == &"x" {
+                None
+            } else {
+                s.parse().ok()
+            }
+        }).unwrap_or(0);
+
+        // 解析补丁版本号，处理 "x" 的情况
+        let patch = parts.get(2).and_then(|s| {
+            if s == &"x" {
+                None
+            } else {
+                s.parse().ok()
+            }
+        }).unwrap_or(0);
+
         (major, minor, patch)
     }
 }

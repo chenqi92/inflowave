@@ -442,54 +442,59 @@ export const MultiSourcePerformanceMonitor: React.FC<
 
   // 渲染监控配置
   const renderMonitoringConfig = () => (
-    <div className='space-y-3'>
+    <div className={`space-y-${isUltraNarrow ? '2' : '3'}`}>
       <div className='flex items-center justify-between'>
-        <Label htmlFor='auto-refresh' className='text-sm font-medium'>
-          自动刷新
+        <Label htmlFor='auto-refresh' className={`${isUltraNarrow ? 'text-xs' : 'text-sm'} font-medium`}>
+          {isUltraNarrow ? '自动' : '自动刷新'}
         </Label>
         <Switch
           id='auto-refresh'
           checked={config.autoRefresh}
           onCheckedChange={checked => updateConfig({ autoRefresh: checked })}
+          className={isUltraNarrow ? 'scale-75' : ''}
         />
       </div>
 
       {config.autoRefresh && (
         <div className='space-y-2'>
-          <Label className='text-xs text-muted-foreground'>刷新间隔</Label>
+          <Label className='text-xs text-muted-foreground'>
+            {isUltraNarrow ? '间隔' : '刷新间隔'}
+          </Label>
           <Select
             value={config.refreshInterval.toString()}
             onValueChange={value =>
               updateConfig({ refreshInterval: parseInt(value) })
             }
           >
-            <SelectTrigger className='h-8'>
+            <SelectTrigger className={isUltraNarrow ? 'h-7 text-xs' : 'h-8'}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='10'>10秒</SelectItem>
-              <SelectItem value='30'>30秒</SelectItem>
-              <SelectItem value='60'>1分钟</SelectItem>
-              <SelectItem value='300'>5分钟</SelectItem>
+              <SelectItem value='10'>{isUltraNarrow ? '10s' : '10秒'}</SelectItem>
+              <SelectItem value='30'>{isUltraNarrow ? '30s' : '30秒'}</SelectItem>
+              <SelectItem value='60'>{isUltraNarrow ? '1m' : '1分钟'}</SelectItem>
+              <SelectItem value='300'>{isUltraNarrow ? '5m' : '5分钟'}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       )}
 
       <div className='space-y-2'>
-        <Label className='text-xs text-muted-foreground'>时间范围</Label>
+        <Label className='text-xs text-muted-foreground'>
+          {isUltraNarrow ? '范围' : '时间范围'}
+        </Label>
         <Select
           value={config.timeRange}
           onValueChange={value => updateConfig({ timeRange: value })}
         >
-          <SelectTrigger className='h-8'>
+          <SelectTrigger className={isUltraNarrow ? 'h-7 text-xs' : 'h-8'}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='1h'>1小时</SelectItem>
-            <SelectItem value='6h'>6小时</SelectItem>
-            <SelectItem value='24h'>24小时</SelectItem>
-            <SelectItem value='7d'>7天</SelectItem>
+            <SelectItem value='1h'>{isUltraNarrow ? '1h' : '1小时'}</SelectItem>
+            <SelectItem value='6h'>{isUltraNarrow ? '6h' : '6小时'}</SelectItem>
+            <SelectItem value='24h'>{isUltraNarrow ? '24h' : '24小时'}</SelectItem>
+            <SelectItem value='7d'>{isUltraNarrow ? '7d' : '7天'}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -497,14 +502,14 @@ export const MultiSourcePerformanceMonitor: React.FC<
       <Button
         onClick={fetchPerformanceData}
         disabled={loading}
-        size='sm'
+        size={isUltraNarrow ? 'sm' : 'sm'}
         variant='outline'
-        className='w-full'
+        className={`w-full ${isUltraNarrow ? 'h-7 text-xs px-2' : ''}`}
       >
         <RefreshCw
-          className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+          className={`${isUltraNarrow ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'} ${loading ? 'animate-spin' : ''}`}
         />
-        手动刷新
+        {isUltraNarrow ? '刷新' : '手动刷新'}
       </Button>
     </div>
   );
@@ -767,7 +772,38 @@ export const MultiSourcePerformanceMonitor: React.FC<
             <div className='text-center'>
               <div className='text-xs text-muted-foreground'>
                 {metricsData.length} 源 • {metricsData.filter(m => m.isConnected).length} 连接
+                {config.autoRefresh && <span> • 自动</span>}
               </div>
+            </div>
+          ) : isVeryNarrow ? (
+            <div className='space-y-1'>
+              <div className='text-xs text-muted-foreground text-center'>
+                {metricsData.length} 源 • {metricsData.filter(m => m.isConnected).length} 连接
+              </div>
+              {config.autoRefresh && (
+                <div className='text-xs text-muted-foreground text-center'>
+                  自动刷新 {config.refreshInterval}s
+                </div>
+              )}
+            </div>
+          ) : isNarrow ? (
+            <div className='space-y-1'>
+              <div className='flex justify-center gap-2'>
+                <Badge variant='outline' className='text-xs px-1 py-0'>
+                  {metricsData.length} 源
+                </Badge>
+                <Badge variant='outline' className='text-xs px-1 py-0'>
+                  {metricsData.filter(m => m.isConnected).length} 连接
+                </Badge>
+              </div>
+              {config.autoRefresh && (
+                <div className='text-center'>
+                  <Badge variant='default' className='text-xs px-1 py-0'>
+                    <RefreshCw className='w-2 h-2 mr-1' />
+                    自动 {config.refreshInterval}s
+                  </Badge>
+                </div>
+              )}
             </div>
           ) : (
             <div className='flex flex-wrap gap-1 text-xs'>
@@ -789,32 +825,34 @@ export const MultiSourcePerformanceMonitor: React.FC<
 
         {/* 主要内容 */}
         <ScrollArea className='flex-1'>
-          <div className='p-3 space-y-4'>
+          <div className={`${isUltraNarrow ? 'p-2' : 'p-3'} space-y-${isUltraNarrow ? '2' : '4'}`}>
             {/* 数据源列表 */}
             <div>
               <div
-                className='flex items-center justify-between cursor-pointer p-2 hover:bg-muted/50 rounded'
+                className={`flex items-center justify-between cursor-pointer ${isUltraNarrow ? 'p-1' : 'p-2'} hover:bg-muted/50 rounded`}
                 onClick={() => toggleSection('datasources')}
               >
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-2 min-w-0 flex-1'>
                   {expandedSections.has('datasources') ? (
-                    <ChevronDown className='w-4 h-4' />
+                    <ChevronDown className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   ) : (
-                    <ChevronRight className='w-4 h-4' />
+                    <ChevronRight className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   )}
-                  <Database className='w-4 h-4' />
-                  <span className='text-sm font-medium'>数据源</span>
+                  <Database className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
+                  <span className={`${isUltraNarrow ? 'text-xs' : 'text-sm'} font-medium truncate`}>
+                    {isUltraNarrow ? '源' : '数据源'}
+                  </span>
                 </div>
-                <Badge variant='secondary' className='text-xs'>
+                <Badge variant='secondary' className={`${isUltraNarrow ? 'text-xs px-1 py-0' : 'text-xs'} flex-shrink-0`}>
                   {metricsData.length}
                 </Badge>
               </div>
               
               {expandedSections.has('datasources') && (
-                <div className='mt-2 pl-6'>
+                <div className={`mt-2 ${isUltraNarrow ? 'pl-3' : 'pl-6'}`}>
                   {metricsData.length === 0 ? (
                     <div className='text-center py-4 text-muted-foreground'>
-                      <Database className='w-6 h-6 mx-auto mb-1 opacity-50' />
+                      <Database className={`${isUltraNarrow ? 'w-4 h-4' : 'w-6 h-6'} mx-auto mb-1 opacity-50`} />
                       <p className='text-xs'>暂无数据源</p>
                     </div>
                   ) : isUltraNarrow ? (
@@ -833,22 +871,24 @@ export const MultiSourcePerformanceMonitor: React.FC<
             {/* 详细指标 */}
             <div>
               <div
-                className='flex items-center justify-between cursor-pointer p-2 hover:bg-muted/50 rounded'
+                className={`flex items-center justify-between cursor-pointer ${isUltraNarrow ? 'p-1' : 'p-2'} hover:bg-muted/50 rounded`}
                 onClick={() => toggleSection('metrics')}
               >
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-2 min-w-0 flex-1'>
                   {expandedSections.has('metrics') ? (
-                    <ChevronDown className='w-4 h-4' />
+                    <ChevronDown className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   ) : (
-                    <ChevronRight className='w-4 h-4' />
+                    <ChevronRight className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   )}
-                  <TrendingUp className='w-4 h-4' />
-                  <span className='text-sm font-medium'>详细指标</span>
+                  <TrendingUp className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
+                  <span className={`${isUltraNarrow ? 'text-xs' : 'text-sm'} font-medium truncate`}>
+                    {isUltraNarrow ? '指标' : '详细指标'}
+                  </span>
                 </div>
               </div>
               
               {expandedSections.has('metrics') && (
-                <div className='mt-2 pl-6'>
+                <div className={`mt-2 ${isUltraNarrow ? 'pl-3' : 'pl-6'}`}>
                   {renderSelectedDataSourceDetails()}
                 </div>
               )}
@@ -859,22 +899,24 @@ export const MultiSourcePerformanceMonitor: React.FC<
             {/* 监控配置 */}
             <div>
               <div
-                className='flex items-center justify-between cursor-pointer p-2 hover:bg-muted/50 rounded'
+                className={`flex items-center justify-between cursor-pointer ${isUltraNarrow ? 'p-1' : 'p-2'} hover:bg-muted/50 rounded`}
                 onClick={() => toggleSection('config')}
               >
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-2 min-w-0 flex-1'>
                   {expandedSections.has('config') ? (
-                    <ChevronDown className='w-4 h-4' />
+                    <ChevronDown className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   ) : (
-                    <ChevronRight className='w-4 h-4' />
+                    <ChevronRight className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
                   )}
-                  <Settings className='w-4 h-4' />
-                  <span className='text-sm font-medium'>监控配置</span>
+                  <Settings className={`${isUltraNarrow ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />
+                  <span className={`${isUltraNarrow ? 'text-xs' : 'text-sm'} font-medium truncate`}>
+                    {isUltraNarrow ? '配置' : '监控配置'}
+                  </span>
                 </div>
               </div>
               
               {expandedSections.has('config') && (
-                <div className='mt-2 pl-6'>
+                <div className={`mt-2 ${isUltraNarrow ? 'pl-3' : 'pl-6'}`}>
                   {renderMonitoringConfig()}
                 </div>
               )}
