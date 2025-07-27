@@ -1,10 +1,10 @@
 import React from 'react';
-import { MultiSourcePerformanceMonitor } from '@/components/performance/MultiSourcePerformanceMonitor';
+import { VerticalPerformanceMonitor } from '@/components/performance/VerticalPerformanceMonitor';
 
 const Performance: React.FC = () => {
   return (
     <div className="h-full">
-      <MultiSourcePerformanceMonitor />
+      <VerticalPerformanceMonitor />
     </div>
   );
 };

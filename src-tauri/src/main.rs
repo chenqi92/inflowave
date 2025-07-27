@@ -780,8 +780,8 @@ async fn main() {
             generate_local_performance_report,
 
             // Multi-source performance monitoring
-            get_multi_source_performance_overview,
-            get_single_source_performance_details,
+            get_opened_datasources_performance,
+            get_datasource_performance_details,
             get_performance_monitoring_config,
             update_performance_monitoring_config,
 

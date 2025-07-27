@@ -1,832 +1,535 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  Button,
-  Progress,
-  Badge,
-  ScrollArea,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui';
+} from '@/components/ui/select';
 import {
-  Activity,
-  Cpu,
-  HardDrive,
-  MemoryStick,
-  Network,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   Database,
-  Zap,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Settings,
-  Eye,
-  BarChart3,
+  RefreshCw,
+  Activity,
+  AlertTriangle,
+  Lightbulb,
+  Wifi,
+  Clock,
+  HardDrive,
 } from 'lucide-react';
-import { useConnectionStore } from '@/store/connection';
-import { useTheme } from '@/components/providers/ThemeProvider';
-import { safeTauriInvoke } from '@/utils/tauri';
-import { showMessage } from '@/utils/message';
-import ReactECharts from 'echarts-for-react';
 
-interface PerformanceMetrics {
-  queryExecutionTime: Array<{ timestamp: string; value: number }>;
-  writeLatency: Array<{ timestamp: string; value: number }>;
-  memoryUsage: Array<{ timestamp: string; value: number }>;
-  cpuUsage: Array<{ timestamp: string; value: number }>;
-  diskIO: {
-    readBytes: number;
-    writeBytes: number;
-    readOps: number;
-    writeOps: number;
-  };
-  networkIO: {
-    bytesIn: number;
-    bytesOut: number;
-    packetsIn: number;
-    packetsOut: number;
-  };
-  storageAnalysis: {
-    totalSize: number;
-    compressionRatio: number;
-    retentionPolicyEffectiveness: number;
-    recommendations: string[];
-  };
+import { useConnectionStore } from '@/store/connection';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { showMessage } from '@/utils/message';
+import { safeTauriInvoke } from '@/utils/tauri';
+
+// 真实的性能指标类型
+interface RealPerformanceMetrics {
+  connectionId: string;
+  connectionName: string;
+  databaseName: string;
+  dbType: string;
+  status: string;
+  timestamp: string;
+  isConnected: boolean;
+  connectionLatency: number;
+  activeQueries: number;
+  totalQueriesToday: number;
+  averageQueryTime: number;
+  slowQueriesCount: number;
+  failedQueriesCount: number;
+  databaseSize: number;
+  tableCount: number;
+  recordCount: number;
+  healthScore: string;
+  issues: string[];
+  recommendations: string[];
 }
 
-interface PerformanceBottleneck {
-  id: string;
-  type: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  description: string;
-  impact: string;
-  recommendation: string;
-  timestamp: Date;
-  status: 'active' | 'resolved' | 'ignored';
+interface PerformanceMonitoringConfig {
+  refreshInterval: number;
+  autoRefresh: boolean;
+  timeRange: string;
+  alertThresholds: {
+    cpuUsage: number;
+    memoryUsage: number;
+    diskUsage: number;
+    queryLatency: number;
+  };
+  enabledMetrics: string[];
 }
 
 interface VerticalPerformanceMonitorProps {
   className?: string;
 }
 
-export const VerticalPerformanceMonitor: React.FC<
-  VerticalPerformanceMonitorProps
-> = ({ className = '' }) => {
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'metrics' | 'bottlenecks'
-  >('overview');
+export const VerticalPerformanceMonitor: React.FC<VerticalPerformanceMonitorProps> = ({
+  className = ''
+}) => {
+
+  // 状态管理
+  const [selectedDataSource, setSelectedDataSource] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30);
-
-  const [timeRange, setTimeRange] = useState('1h');
-
-  const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
-  const [bottlenecks, setBottlenecks] = useState<PerformanceBottleneck[]>([]);
-  const [systemHealth, setSystemHealth] = useState({
-    cpu: 0,
-    memory: 0,
-    disk: 0,
-    network: 0,
-    overall: 0,
+  const [metricsData, setMetricsData] = useState<RealPerformanceMetrics[]>([]);
+  const [config, setConfig] = useState<PerformanceMonitoringConfig>({
+    refreshInterval: 30,
+    autoRefresh: false,
+    timeRange: '1h',
+    alertThresholds: {
+      cpuUsage: 80,
+      memoryUsage: 85,
+      diskUsage: 90,
+      queryLatency: 5000,
+    },
+    enabledMetrics: ['cpu', 'memory', 'disk', 'queries', 'errors'],
   });
 
-  const { activeConnectionId } = useConnectionStore();
-  const { resolvedTheme } = useTheme();
+  // Store hooks
+  const { connections } = useConnectionStore();
+  const { openedDatabases } = useOpenedDatabasesStore();
 
-  // 获取性能指标
-  const fetchMetrics = useCallback(async () => {
-    if (!activeConnectionId) {
-      return;
-    }
-
+  // 获取打开数据源的性能数据
+  const fetchPerformanceData = useCallback(async () => {
     try {
       setLoading(true);
-
-      // 获取性能指标
-      const metricsData = await safeTauriInvoke<PerformanceMetrics>(
-        'get_performance_metrics_result',
+      
+      // 获取打开的数据源列表
+      const openedDataSourcesList = Array.from(openedDatabases);
+      
+      if (openedDataSourcesList.length === 0) {
+        setMetricsData([]);
+        return;
+      }
+      
+      const result = await safeTauriInvoke<RealPerformanceMetrics[]>(
+        'get_opened_datasources_performance',
         {
-          connectionId: activeConnectionId,
-          monitoringMode: 'remote',
-          timeRange,
+          openedDatasources: openedDataSourcesList
         }
       );
 
-      // 获取性能瓶颈
-      const hours =
-        parseInt(timeRange.replace('h', '').replace('d', '')) *
-        (timeRange.includes('d') ? 24 : 1);
-      const startTime = new Date(Date.now() - hours * 60 * 60 * 1000);
-      const endTime = new Date();
-
-      const bottlenecksData = await safeTauriInvoke<PerformanceBottleneck[]>(
-        'detect_performance_bottlenecks_with_mode',
-        {
-          connectionId: activeConnectionId || '',
-          mode: 'remote',
-          timeRange: {
-            start: startTime.toISOString(),
-            end: endTime.toISOString(),
-            hours,
-          },
-        }
-      );
-
-      setMetrics(metricsData);
-      setBottlenecks(bottlenecksData || []);
-
-      // 计算系统健康度
-      const latestCpu =
-        metricsData.cpuUsage[metricsData.cpuUsage.length - 1]?.value || 0;
-      const latestMemory =
-        metricsData.memoryUsage[metricsData.memoryUsage.length - 1]?.value || 0;
-
-      // 修复磁盘使用率计算 - 基于磁盘IO速率
-      const diskUsage = metricsData.diskIO
-        ? Math.min(
-            // 将磁盘IO速率转换为使用率百分比 (假设50MB/s为100%使用率)
-            ((metricsData.diskIO.readBytes + metricsData.diskIO.writeBytes) / (1024 * 1024)) / 50 * 100,
-            100
-          )
-        : 0;
-
-      // 修复网络使用率计算 - 基于网络流量速率
-      const networkUsage = metricsData.networkIO
-        ? Math.min(
-            // 将网络流量速率转换为使用率百分比 (假设5MB/s为100%使用率)
-            ((metricsData.networkIO.bytesIn + metricsData.networkIO.bytesOut) / (1024 * 1024)) / 5 * 100,
-            100
-          )
-        : 0;
-
-      const health = {
-        cpu: latestCpu,
-        memory: latestMemory,
-        disk: diskUsage > 0 ? diskUsage : Math.min((metricsData.diskIO?.readOps || 0) / 20, 100), // 使用IOPS作为备用指标
-        network: networkUsage > 0 ? networkUsage : Math.min((metricsData.networkIO?.packetsIn || 0) / 50, 100), // 使用包数作为备用指标
-        overall: 0,
-      };
-      health.overall =
-        (health.cpu + health.memory + health.disk + health.network) / 4;
-
-      setSystemHealth(health);
+      setMetricsData(result);
+      
+      // 如果没有选中的数据源，选择第一个
+      if (!selectedDataSource && result.length > 0) {
+        const firstSource = result[0];
+        setSelectedDataSource(`${firstSource.connectionId}/${firstSource.databaseName}`);
+      }
     } catch (error) {
-      console.error('获取性能指标失败:', error);
-      showMessage.error('获取远程性能指标失败');
+      console.error('获取性能数据失败:', error);
+      showMessage.error(`获取性能数据失败: ${error}`);
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, timeRange]);
+  }, [openedDatabases, selectedDataSource]);
+
+  // 获取配置
+  const fetchConfig = useCallback(async () => {
+    try {
+      const result = await safeTauriInvoke<PerformanceMonitoringConfig>(
+        'get_performance_monitoring_config'
+      );
+      setConfig(result);
+    } catch (error) {
+      console.error('获取配置失败:', error);
+    }
+  }, []);
+
+  // 更新配置
+  const updateConfig = useCallback(async (newConfig: Partial<PerformanceMonitoringConfig>) => {
+    try {
+      const updatedConfig = { ...config, ...newConfig };
+      await safeTauriInvoke('update_performance_monitoring_config', { config: updatedConfig });
+      setConfig(updatedConfig);
+    } catch (error) {
+      console.error('更新配置失败:', error);
+      showMessage.error(`更新配置失败: ${error}`);
+    }
+  }, [config]);
+
+  // 获取选中数据源的详细信息
+  const getSelectedDataSourceDetails = useCallback(async (datasourceKey: string) => {
+    try {
+      setLoading(true);
+      const result = await safeTauriInvoke<RealPerformanceMetrics>(
+        'get_datasource_performance_details',
+        { datasourceKey }
+      );
+      
+      // 更新该数据源的信息
+      setMetricsData(prev => 
+        prev.map(m => 
+          `${m.connectionId}/${m.databaseName}` === datasourceKey ? result : m
+        )
+      );
+    } catch (error) {
+      console.error('获取详细信息失败:', error);
+      showMessage.error(`获取详细信息失败: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // 自动刷新
   useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(fetchMetrics, refreshInterval * 1000);
+    if (config.autoRefresh) {
+      const interval = setInterval(fetchPerformanceData, config.refreshInterval * 1000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, refreshInterval, fetchMetrics]);
+  }, [config.autoRefresh, config.refreshInterval, fetchPerformanceData]);
 
-  // 初始加载
+  // 初始化
   useEffect(() => {
-    fetchMetrics();
-  }, [fetchMetrics]);
+    fetchConfig();
+    fetchPerformanceData();
+  }, [fetchConfig, fetchPerformanceData]);
 
-  // 生成图表配置
-  const generateChartOption = useCallback(
-    (
-      data: Array<{
-        timestamp: string;
-        value: number;
-      }>,
-      title: string,
-      unit: string = ''
-    ) => {
-      const isDark = resolvedTheme === 'dark';
-
-      return {
-        backgroundColor: 'transparent',
-        textStyle: { color: isDark ? '#ffffff' : '#000000' },
-        tooltip: {
-          trigger: 'axis',
-          backgroundColor: isDark ? '#1f1f1f' : '#ffffff',
-          borderColor: isDark ? '#404040' : '#d9d9d9',
-          textStyle: { color: isDark ? '#ffffff' : '#000000' },
-          formatter: (params: any) => {
-            const point = params[0];
-            const value =
-              typeof point.value === 'number'
-                ? point.value.toFixed(2)
-                : point.value;
-            return `${title}<br/>${point.name}<br/>${value}${unit}`;
-          },
-        },
-        xAxis: {
-          type: 'category',
-          data: data.map(item => new Date(item.timestamp).toLocaleTimeString()),
-          axisLabel: { color: isDark ? '#ffffff' : '#000000', fontSize: 10 },
-          axisLine: { lineStyle: { color: isDark ? '#404040' : '#d9d9d9' } },
-        },
-        yAxis: {
-          type: 'value',
-          axisLabel: { color: isDark ? '#ffffff' : '#000000', fontSize: 10 },
-          axisLine: { lineStyle: { color: isDark ? '#404040' : '#d9d9d9' } },
-          splitLine: { lineStyle: { color: isDark ? '#404040' : '#f0f0f0' } },
-        },
-        series: [
-          {
-            name: title,
-            type: 'line',
-            data: data.map(item => parseFloat(item.value.toFixed(2))),
-            smooth: true,
-            lineStyle: { width: 2 },
-            areaStyle: { opacity: 0.3 },
-          },
-        ],
-        grid: {
-          left: '10%',
-          right: '10%',
-          bottom: '15%',
-          top: '10%',
-        },
-      };
-    },
-    [resolvedTheme]
-  );
-
-  // 过滤瓶颈
-  const filteredBottlenecks = useMemo(() => {
-    return bottlenecks
-      .filter(bottleneck => bottleneck.status === 'active')
-      .sort((a, b) => {
-        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-        return severityOrder[b.severity] - severityOrder[a.severity];
-      });
-  }, [bottlenecks]);
-
-  // 获取健康状态颜色
-  const getHealthColor = (value: number) => {
-    if (value >= 80) return 'text-red-500';
-    if (value >= 60) return 'text-yellow-500';
-    return 'text-green-500';
-  };
-
-  // 获取健康状态图标
-  const getHealthIcon = (value: number) => {
-    if (value >= 80) return <AlertTriangle className='w-4 h-4 text-red-500' />;
-    if (value >= 60)
-      return <AlertTriangle className='w-4 h-4 text-yellow-500' />;
-    return <CheckCircle className='w-4 h-4 text-green-500' />;
-  };
-
-  // 格式化字节
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-  };
-
-  if (!activeConnectionId) {
-    return (
-      <div className='h-full flex flex-col items-center justify-center p-6 text-center'>
-        <Database className='w-12 h-12 text-muted-foreground mb-4' />
-        <h3 className='text-lg font-medium mb-2'>需要连接数据库</h3>
-        <p className='text-sm text-muted-foreground'>
-          请先在连接管理中选择一个活跃的数据库连接
-        </p>
+  // 渲染监控配置
+  const renderMonitoringConfig = () => (
+    <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="auto-refresh" className="text-sm">自动刷新</Label>
+        <Switch
+          id="auto-refresh"
+          checked={config.autoRefresh}
+          onCheckedChange={(checked) => 
+            updateConfig({ autoRefresh: checked })
+          }
+        />
       </div>
-    );
-  }
+      
+      <div className="flex items-center gap-2">
+        <Label className="text-sm">间隔:</Label>
+        <Select
+          value={config.refreshInterval.toString()}
+          onValueChange={(value) => 
+            updateConfig({ refreshInterval: parseInt(value) })
+          }
+        >
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10s</SelectItem>
+            <SelectItem value="30">30s</SelectItem>
+            <SelectItem value="60">1m</SelectItem>
+            <SelectItem value="300">5m</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label className="text-sm">范围:</Label>
+        <Select
+          value={config.timeRange}
+          onValueChange={(value) => 
+            updateConfig({ timeRange: value })
+          }
+        >
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1h">1h</SelectItem>
+            <SelectItem value="6h">6h</SelectItem>
+            <SelectItem value="24h">24h</SelectItem>
+            <SelectItem value="7d">7d</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button 
+        onClick={fetchPerformanceData} 
+        disabled={loading}
+        size="sm"
+        variant="outline"
+      >
+        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+        刷新
+      </Button>
+    </div>
+  );
 
   return (
-    <TooltipProvider>
-      <div className={`h-full flex flex-col bg-background ${className}`}>
-        {/* 头部控制 */}
-        <div className='p-3 border-b'>
-          <div className='flex items-center justify-between mb-3'>
-            <h2 className='text-sm font-semibold'>性能监控</h2>
-            <div className='flex items-center gap-1'>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => setAutoRefresh(!autoRefresh)}
-                    className={`h-7 w-7 p-0 ${autoRefresh ? 'text-green-500' : ''}`}
-                  >
-                    {autoRefresh ? (
-                      <Activity className='w-4 h-4' />
-                    ) : (
-                      <Activity className='w-4 h-4' />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {autoRefresh ? '停止自动刷新' : '开启自动刷新'}
-                </TooltipContent>
-              </Tooltip>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={fetchMetrics}
-                disabled={loading}
-                className='h-7 w-7 p-0'
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-                />
-              </Button>
-            </div>
+    <div className={`h-full flex flex-col ${className}`}>
+      {/* 头部控制栏 */}
+      <div className="p-4 border-b border-border bg-muted/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">性能监控</h2>
+            <p className="text-sm text-muted-foreground">
+              打开数据源的实时性能监控
+            </p>
           </div>
-
-          {/* 控制选项 */}
-          <div className='space-y-2'>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className='h-8 text-xs'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='1h'>最近1小时</SelectItem>
-                <SelectItem value='6h'>最近6小时</SelectItem>
-                <SelectItem value='24h'>最近24小时</SelectItem>
-                <SelectItem value='7d'>最近7天</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              {metricsData.length} 个数据源
+            </Badge>
+            <Badge variant="outline">
+              {metricsData.filter(m => m.isConnected).length} 个已连接
+            </Badge>
+            {config.autoRefresh && (
+              <Badge variant="default">
+                <RefreshCw className="w-3 h-3 mr-1" />
+                自动刷新
+              </Badge>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* 标签页 */}
-        <Tabs
-          value={activeTab}
-          onValueChange={value => setActiveTab(value as any)}
-          className='flex-1 flex flex-col'
-        >
-          <div className='px-3 border-b'>
-            <TabsList className='grid w-full grid-cols-3 h-8'>
-              <TabsTrigger value='overview' className='text-xs'>
-                <Eye className='w-3 h-3 mr-1' />
-                概览
-              </TabsTrigger>
-              <TabsTrigger value='metrics' className='text-xs'>
-                <BarChart3 className='w-3 h-3 mr-1' />
-                指标
-              </TabsTrigger>
-              <TabsTrigger value='bottlenecks' className='text-xs'>
-                <AlertTriangle className='w-3 h-3 mr-1' />
-                瓶颈 ({filteredBottlenecks.length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
+      {/* 监控配置 */}
+      <div className="p-4">
+        {renderMonitoringConfig()}
+      </div>
 
-          <TabsContent value='overview' className='flex-1 mt-0'>
-            <ScrollArea className='h-full'>
-              <div className='p-3 space-y-3'>
-                {loading ? (
-                  <div className='flex items-center justify-center py-8'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary'></div>
-                  </div>
-                ) : (
-                  <>
-                    {/* 系统健康概览 */}
-                    <Card>
-                      <CardHeader className='p-3'>
-                        <div className='flex items-center justify-between'>
-                          <h4 className='text-sm font-medium'>系统健康</h4>
+      {/* 主要内容区域 - 纵向布局 */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* 打开的数据源概览 */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              打开的数据源
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {metricsData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">没有打开的数据源</p>
+                <p className="text-xs">请在左侧数据源树中打开数据库</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {metricsData.map(metrics => {
+                  const datasourceKey = `${metrics.connectionId}/${metrics.databaseName}`;
+                  return (
+                    <div
+                      key={datasourceKey}
+                      className={`p-3 border rounded cursor-pointer transition-colors ${
+                        selectedDataSource === datasourceKey
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        setSelectedDataSource(datasourceKey);
+                        getSelectedDataSourceDetails(datasourceKey);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-medium text-sm">{metrics.connectionName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {metrics.databaseName} • {metrics.dbType}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant={metrics.isConnected ? 'default' : 'secondary'} className="text-xs">
+                            {metrics.isConnected ? '已连接' : '未连接'}
+                          </Badge>
                           <Badge
                             variant={
-                              systemHealth.overall >= 80
-                                ? 'destructive'
-                                : systemHealth.overall >= 60
-                                  ? 'secondary'
-                                  : 'default'
+                              metrics.healthScore === 'good' ? 'default' :
+                              metrics.healthScore === 'warning' ? 'secondary' : 'destructive'
                             }
+                            className="text-xs"
                           >
-                            {systemHealth.overall.toFixed(0)}%
+                            {metrics.healthScore === 'good' ? '良好' :
+                             metrics.healthScore === 'warning' ? '警告' :
+                             metrics.healthScore === 'critical' ? '严重' : '未知'}
                           </Badge>
                         </div>
-                      </CardHeader>
-                      <CardContent className='p-3 pt-0 space-y-3'>
-                        {/* CPU */}
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
-                            <Cpu className='w-4 h-4 text-blue-500' />
-                            <span className='text-xs'>CPU</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Progress
-                              value={systemHealth.cpu}
-                              className='w-16 h-2'
-                            />
-                            <span
-                              className={`text-xs ${getHealthColor(systemHealth.cpu)}`}
-                            >
-                              {systemHealth.cpu.toFixed(1)}%
-                            </span>
-                          </div>
+                      </div>
+
+                      {/* 关键指标预览 */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">延迟: </span>
+                          <span className={metrics.connectionLatency > 500 ? 'text-red-500' : 'text-green-500'}>
+                            {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency.toFixed(0)}ms` : 'N/A'}
+                          </span>
                         </div>
-
-                        {/* 内存 */}
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
-                            <MemoryStick className='w-4 h-4 text-green-500' />
-                            <span className='text-xs'>内存</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Progress
-                              value={systemHealth.memory}
-                              className='w-16 h-2'
-                            />
-                            <span
-                              className={`text-xs ${getHealthColor(systemHealth.memory)}`}
-                            >
-                              {systemHealth.memory.toFixed(1)}%
-                            </span>
-                          </div>
+                        <div>
+                          <span className="text-muted-foreground">表数: </span>
+                          <span>{metrics.tableCount}</span>
                         </div>
-
-                        {/* 磁盘 */}
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
-                            <HardDrive className='w-4 h-4 text-purple-500' />
-                            <span className='text-xs'>磁盘</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Progress
-                              value={systemHealth.disk}
-                              className='w-16 h-2'
-                            />
-                            <span
-                              className={`text-xs ${getHealthColor(systemHealth.disk)}`}
-                            >
-                              {systemHealth.disk.toFixed(1)}%
-                            </span>
-                          </div>
+                        <div>
+                          <span className="text-muted-foreground">大小: </span>
+                          <span>{(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
                         </div>
-
-                        {/* 网络 */}
-                        <div className='flex items-center justify-between'>
-                          <div className='flex items-center gap-2'>
-                            <Network className='w-4 h-4 text-orange-500' />
-                            <span className='text-xs'>网络</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Progress
-                              value={systemHealth.network}
-                              className='w-16 h-2'
-                            />
-                            <span
-                              className={`text-xs ${getHealthColor(systemHealth.network)}`}
-                            >
-                              {systemHealth.network.toFixed(1)}%
-                            </span>
-                          </div>
+                        <div>
+                          <span className="text-muted-foreground">记录: </span>
+                          <span>{metrics.recordCount.toLocaleString()}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* 关键指标 */}
-                    {metrics && (
-                      <Card>
-                        <CardHeader className='p-3'>
-                          <h4 className='text-sm font-medium'>关键指标</h4>
-                        </CardHeader>
-                        <CardContent className='p-3 pt-0 space-y-2'>
-                          <div className='grid grid-cols-2 gap-2 text-xs'>
-                            <div className='text-center p-2 bg-muted/50 rounded'>
-                              <div className='font-medium'>查询延迟</div>
-                              <div className='text-muted-foreground'>
-                                {metrics.queryExecutionTime.length > 0
-                                  ? `${metrics.queryExecutionTime[metrics.queryExecutionTime.length - 1].value.toFixed(0)}ms`
-                                  : 'N/A'}
-                              </div>
-                            </div>
-                            <div className='text-center p-2 bg-muted/50 rounded'>
-                              <div className='font-medium'>写入延迟</div>
-                              <div className='text-muted-foreground'>
-                                {metrics.writeLatency.length > 0
-                                  ? `${metrics.writeLatency[metrics.writeLatency.length - 1].value.toFixed(0)}ms`
-                                  : 'N/A'}
-                              </div>
-                            </div>
-                            <div className='text-center p-2 bg-muted/50 rounded'>
-                              <div className='font-medium'>磁盘读取</div>
-                              <div className='text-muted-foreground'>
-                                {metrics.diskIO
-                                  ? `${formatBytes(metrics.diskIO.readBytes)}/s`
-                                  : 'N/A'}
-                              </div>
-                            </div>
-                            <div className='text-center p-2 bg-muted/50 rounded'>
-                              <div className='font-medium'>网络流入</div>
-                              <div className='text-muted-foreground'>
-                                {metrics.networkIO
-                                  ? `${formatBytes(metrics.networkIO.bytesIn)}/s`
-                                  : 'N/A'}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* 活跃瓶颈 */}
-                    {filteredBottlenecks.length > 0 && (
-                      <Card>
-                        <CardHeader className='p-3'>
-                          <h4 className='text-sm font-medium'>活跃瓶颈</h4>
-                        </CardHeader>
-                        <CardContent className='p-3 pt-0 space-y-2'>
-                          {filteredBottlenecks.slice(0, 3).map(bottleneck => (
-                            <div
-                              key={bottleneck.id}
-                              className='flex items-start gap-2 p-2 bg-muted/50 rounded'
-                            >
-                              <div className='mt-0.5'>
-                                {bottleneck.severity === 'critical' && (
-                                  <AlertTriangle className='w-3 h-3 text-red-500' />
-                                )}
-                                {bottleneck.severity === 'high' && (
-                                  <AlertTriangle className='w-3 h-3 text-orange-500' />
-                                )}
-                                {bottleneck.severity === 'medium' && (
-                                  <AlertTriangle className='w-3 h-3 text-yellow-500' />
-                                )}
-                                {bottleneck.severity === 'low' && (
-                                  <AlertTriangle className='w-3 h-3 text-blue-500' />
-                                )}
-                              </div>
-                              <div className='flex-1 min-w-0'>
-                                <div className='text-xs font-medium truncate'>
-                                  {bottleneck.title}
-                                </div>
-                                <div className='text-xs text-muted-foreground truncate'>
-                                  {bottleneck.description}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          {filteredBottlenecks.length > 3 && (
-                            <div className='text-xs text-center text-muted-foreground'>
-                              还有 {filteredBottlenecks.length - 3} 个瓶颈...
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </>
-                )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </ScrollArea>
-          </TabsContent>
+            )}
+          </CardContent>
+        </Card>
 
-          <TabsContent value='metrics' className='flex-1 mt-0'>
-            <ScrollArea className='h-full'>
-              <div className='p-3 space-y-3'>
-                {loading ? (
-                  <div className='flex items-center justify-center py-8'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary'></div>
-                  </div>
-                ) : metrics ? (
-                  <>
-                    {/* CPU 使用率 */}
-                    {metrics.cpuUsage.length > 0 && (
-                      <Card>
-                        <CardHeader className='p-3'>
-                          <h4 className='text-sm font-medium flex items-center gap-2'>
-                            <Cpu className='w-4 h-4 text-blue-500' />
-                            CPU 使用率
-                          </h4>
-                        </CardHeader>
-                        <CardContent className='p-3 pt-0'>
-                          <div className='h-32'>
-                            <ReactECharts
-                              option={generateChartOption(
-                                metrics.cpuUsage,
-                                'CPU 使用率',
-                                '%'
-                              )}
-                              style={{ height: '100%', width: '100%' }}
-                              opts={{ renderer: 'canvas' }}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+        {/* 选中数据源的详细信息 */}
+        {selectedDataSource && (
+          (() => {
+            const selectedMetrics = metricsData.find(m =>
+              `${m.connectionId}/${m.databaseName}` === selectedDataSource
+            );
 
-                    {/* 内存使用率 */}
-                    {metrics.memoryUsage.length > 0 && (
-                      <Card>
-                        <CardHeader className='p-3'>
-                          <h4 className='text-sm font-medium flex items-center gap-2'>
-                            <MemoryStick className='w-4 h-4 text-green-500' />
-                            内存使用率
-                          </h4>
-                        </CardHeader>
-                        <CardContent className='p-3 pt-0'>
-                          <div className='h-32'>
-                            <ReactECharts
-                              option={generateChartOption(
-                                metrics.memoryUsage,
-                                '内存使用率',
-                                '%'
-                              )}
-                              style={{ height: '100%', width: '100%' }}
-                              opts={{ renderer: 'canvas' }}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+            if (!selectedMetrics) {
+              return (
+                <Card>
+                  <CardContent className="text-center py-8 text-muted-foreground">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>未找到选中数据源的信息</p>
+                  </CardContent>
+                </Card>
+              );
+            }
 
-                    {/* 查询执行时间 */}
-                    <Card>
-                      <CardHeader className='p-3'>
-                        <h4 className='text-sm font-medium flex items-center gap-2'>
-                          <Clock className='w-4 h-4 text-purple-500' />
-                          查询执行时间
-                        </h4>
-                      </CardHeader>
-                      <CardContent className='p-3 pt-0'>
-                        {metrics.queryExecutionTime.length > 0 ? (
-                          <div className='h-32'>
-                            <ReactECharts
-                              option={generateChartOption(
-                                metrics.queryExecutionTime,
-                                '查询执行时间',
-                                'ms'
-                              )}
-                              style={{ height: '100%', width: '100%' }}
-                              opts={{ renderer: 'canvas' }}
-                            />
-                          </div>
-                        ) : (
-                          <div className='h-32 flex items-center justify-center text-muted-foreground'>
-                            <div className='text-center'>
-                              <Clock className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                              <div className='text-sm'>
-                                暂无查询执行时间数据
-                              </div>
-                              <div className='text-xs'>
-                                请检查数据库连接状态
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div>
+                      <span>{selectedMetrics.connectionName}</span>
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        / {selectedMetrics.databaseName}
+                      </span>
+                    </div>
+                    <Badge
+                      variant={
+                        selectedMetrics.healthScore === 'good' ? 'default' :
+                        selectedMetrics.healthScore === 'warning' ? 'secondary' : 'destructive'
+                      }
+                    >
+                      {selectedMetrics.healthScore === 'good' ? '健康' :
+                       selectedMetrics.healthScore === 'warning' ? '警告' :
+                       selectedMetrics.healthScore === 'critical' ? '严重' : '未知'}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* 连接状态 */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-3 border rounded">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Wifi className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm font-medium">连接状态</span>
+                      </div>
+                      <div className="text-lg font-bold">
+                        {selectedMetrics.isConnected ? '已连接' : '未连接'}
+                      </div>
+                    </div>
 
-                    {/* 写入延迟 */}
-                    <Card>
-                      <CardHeader className='p-3'>
-                        <h4 className='text-sm font-medium flex items-center gap-2'>
-                          <Zap className='w-4 h-4 text-orange-500' />
-                          写入延迟
-                        </h4>
-                      </CardHeader>
-                      <CardContent className='p-3 pt-0'>
-                        {metrics.writeLatency.length > 0 ? (
-                          <div className='h-32'>
-                            <ReactECharts
-                              option={generateChartOption(
-                                metrics.writeLatency,
-                                '写入延迟',
-                                'ms'
-                              )}
-                              style={{ height: '100%', width: '100%' }}
-                              opts={{ renderer: 'canvas' }}
-                            />
-                          </div>
-                        ) : (
-                          <div className='h-32 flex items-center justify-center text-muted-foreground'>
-                            <div className='text-center'>
-                              <Zap className='w-8 h-8 mx-auto mb-2 opacity-50' />
-                              <div className='text-sm'>暂无写入延迟数据</div>
-                              <div className='text-xs'>
-                                请检查数据库连接状态
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </>
-                ) : (
-                  <div className='flex flex-col items-center justify-center py-8 text-center'>
-                    <Activity className='w-8 h-8 text-muted-foreground mb-2' />
-                    <p className='text-sm text-muted-foreground'>
-                      暂无性能指标数据
-                    </p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
+                    <div className="p-3 border rounded">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="w-4 h-4 text-green-500" />
+                        <span className="text-sm font-medium">延迟</span>
+                      </div>
+                      <div className="text-lg font-bold">
+                        {selectedMetrics.connectionLatency >= 0 ?
+                          `${selectedMetrics.connectionLatency.toFixed(0)}ms` : 'N/A'}
+                      </div>
+                    </div>
 
-          <TabsContent value='bottlenecks' className='flex-1 mt-0'>
-            <ScrollArea className='h-full'>
-              <div className='p-3'>
-                {loading ? (
-                  <div className='flex items-center justify-center py-8'>
-                    <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary'></div>
+                    <div className="p-3 border rounded">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Database className="w-4 h-4 text-orange-500" />
+                        <span className="text-sm font-medium">表数量</span>
+                      </div>
+                      <div className="text-lg font-bold">{selectedMetrics.tableCount}</div>
+                    </div>
+
+                    <div className="p-3 border rounded">
+                      <div className="flex items-center gap-2 mb-1">
+                        <HardDrive className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm font-medium">数据库大小</span>
+                      </div>
+                      <div className="text-lg font-bold">
+                        {(selectedMetrics.databaseSize / 1024 / 1024).toFixed(1)}MB
+                      </div>
+                    </div>
                   </div>
-                ) : filteredBottlenecks.length > 0 ? (
-                  <div className='space-y-3'>
-                    {filteredBottlenecks.map(bottleneck => (
-                      <Card key={bottleneck.id}>
-                        <CardContent className='p-3'>
-                          <div className='flex items-start gap-3'>
-                            <div className='mt-0.5'>
-                              {bottleneck.severity === 'critical' && (
-                                <AlertTriangle className='w-4 h-4 text-red-500' />
-                              )}
-                              {bottleneck.severity === 'high' && (
-                                <AlertTriangle className='w-4 h-4 text-orange-500' />
-                              )}
-                              {bottleneck.severity === 'medium' && (
-                                <AlertTriangle className='w-4 h-4 text-yellow-500' />
-                              )}
-                              {bottleneck.severity === 'low' && (
-                                <AlertTriangle className='w-4 h-4 text-blue-500' />
-                              )}
-                            </div>
-                            <div className='flex-1 min-w-0'>
-                              <div className='flex items-center justify-between mb-1'>
-                                <h5 className='text-sm font-medium truncate'>
-                                  {bottleneck.title}
-                                </h5>
-                                <Badge
-                                  variant={
-                                    bottleneck.severity === 'critical'
-                                      ? 'destructive'
-                                      : bottleneck.severity === 'high'
-                                        ? 'secondary'
-                                        : 'outline'
-                                  }
-                                >
-                                  {bottleneck.severity}
-                                </Badge>
-                              </div>
-                              <p className='text-xs text-muted-foreground mb-2'>
-                                {bottleneck.description}
-                              </p>
-                              <div className='text-xs'>
-                                <div className='mb-1'>
-                                  <span className='font-medium'>影响：</span>
-                                  <span className='text-muted-foreground'>
-                                    {bottleneck.impact}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className='font-medium'>建议：</span>
-                                  <span className='text-muted-foreground'>
-                                    {bottleneck.recommendation}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+
+                  {/* 查询统计 */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-3 border rounded">
+                      <div className="text-sm font-medium mb-1">记录数量</div>
+                      <div className="text-lg font-bold">{selectedMetrics.recordCount.toLocaleString()}</div>
+                    </div>
+
+                    <div className="p-3 border rounded">
+                      <div className="text-sm font-medium mb-1">活跃查询</div>
+                      <div className="text-lg font-bold">{selectedMetrics.activeQueries}</div>
+                    </div>
+
+                    <div className="p-3 border rounded">
+                      <div className="text-sm font-medium mb-1">今日查询</div>
+                      <div className="text-lg font-bold">{selectedMetrics.totalQueriesToday}</div>
+                    </div>
+
+                    <div className="p-3 border rounded">
+                      <div className="text-sm font-medium mb-1">平均响应</div>
+                      <div className="text-lg font-bold">
+                        {selectedMetrics.averageQueryTime.toFixed(0)}ms
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 问题和建议 */}
+                  {(selectedMetrics.issues.length > 0 || selectedMetrics.recommendations.length > 0) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedMetrics.issues.length > 0 && (
+                        <div className="p-3 border rounded bg-red-50 dark:bg-red-950/20">
+                          <div className="text-sm font-medium mb-2 flex items-center gap-2 text-red-700 dark:text-red-400">
+                            <AlertTriangle className="w-4 h-4" />
+                            发现问题
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className='flex flex-col items-center justify-center py-8 text-center'>
-                    <CheckCircle className='w-8 h-8 text-green-500 mb-2' />
-                    <p className='text-sm text-muted-foreground'>
-                      暂无性能瓶颈
-                    </p>
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      系统运行良好
-                    </p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+                          <ul className="space-y-1">
+                            {selectedMetrics.issues.map((issue, index) => (
+                              <li key={index} className="text-sm text-red-600 dark:text-red-300">
+                                • {issue}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {selectedMetrics.recommendations.length > 0 && (
+                        <div className="p-3 border rounded bg-blue-50 dark:bg-blue-950/20">
+                          <div className="text-sm font-medium mb-2 flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                            <Lightbulb className="w-4 h-4" />
+                            优化建议
+                          </div>
+                          <ul className="space-y-1">
+                            {selectedMetrics.recommendations.map((rec, index) => (
+                              <li key={index} className="text-sm text-blue-600 dark:text-blue-300">
+                                • {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()
+        )}
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
-
-export default VerticalPerformanceMonitor;

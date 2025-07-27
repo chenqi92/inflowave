@@ -26,20 +26,26 @@ import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-// 简化的性能指标类型
-interface SimplePerformanceMetrics {
+// 真实的性能指标类型
+interface RealPerformanceMetrics {
   connectionId: string;
   connectionName: string;
+  databaseName: string;
   dbType: string;
   status: string;
   timestamp: string;
-  cpuUsage: number;
-  memoryUsage: number;
-  diskUsage: number;
-  queryCount: number;
+  isConnected: boolean;
+  connectionLatency: number;
+  activeQueries: number;
+  totalQueriesToday: number;
   averageQueryTime: number;
-  errorRate: number;
+  slowQueriesCount: number;
+  failedQueriesCount: number;
+  databaseSize: number;
+  tableCount: number;
+  recordCount: number;
   healthScore: string;
+  issues: string[];
   recommendations: string[];
 }
 
@@ -64,10 +70,9 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
   className = '' 
 }) => {
   // 状态管理
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'alerts'>('overview');
   const [selectedDataSource, setSelectedDataSource] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [metricsData, setMetricsData] = useState<SimplePerformanceMetrics[]>([]);
+  const [metricsData, setMetricsData] = useState<RealPerformanceMetrics[]>([]);
   const [config, setConfig] = useState<PerformanceMonitoringConfig>({
     refreshInterval: 30,
     autoRefresh: false,
@@ -82,25 +87,35 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
   });
 
   // Store hooks
-  const { connections, connectedConnectionIds } = useConnectionStore();
+  const { connections } = useConnectionStore();
+  const { openedDatabases } = useOpenedDatabasesStore();
 
-  // 获取性能指标数据
+  // 获取打开数据源的性能数据
   const fetchPerformanceData = useCallback(async () => {
     try {
       setLoading(true);
 
-      const result = await safeTauriInvoke<SimplePerformanceMetrics[]>(
-        'get_multi_source_performance_overview'
+      // 获取打开的数据源列表
+      const openedDataSourcesList = Array.from(openedDatabases);
+
+      if (openedDataSourcesList.length === 0) {
+        setMetricsData([]);
+        return;
+      }
+
+      const result = await safeTauriInvoke<RealPerformanceMetrics[]>(
+        'get_opened_datasources_performance',
+        {
+          openedDatasources: openedDataSourcesList
+        }
       );
 
       setMetricsData(result);
 
-      // 如果没有选中的数据源，选择第一个活跃的
+      // 如果没有选中的数据源，选择第一个
       if (!selectedDataSource && result.length > 0) {
-        const activeSource = result.find(m => m.status === 'connected');
-        if (activeSource) {
-          setSelectedDataSource(activeSource.connectionId);
-        }
+        const firstSource = result[0];
+        setSelectedDataSource(`${firstSource.connectionId}/${firstSource.databaseName}`);
       }
     } catch (error) {
       console.error('获取性能数据失败:', error);
@@ -108,7 +123,7 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
     } finally {
       setLoading(false);
     }
-  }, [selectedDataSource]);
+  }, [openedDatabases, selectedDataSource]);
 
   // 获取配置
   const fetchConfig = useCallback(async () => {
@@ -149,17 +164,19 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
   }, [fetchConfig, fetchPerformanceData]);
 
   // 获取选中数据源的详细信息
-  const getSelectedDataSourceDetails = useCallback(async (connectionId: string) => {
+  const getSelectedDataSourceDetails = useCallback(async (datasourceKey: string) => {
     try {
       setLoading(true);
-      const result = await safeTauriInvoke<SimplePerformanceMetrics>(
-        'get_single_source_performance_details',
-        { connectionId }
+      const result = await safeTauriInvoke<RealPerformanceMetrics>(
+        'get_datasource_performance_details',
+        { datasourceKey }
       );
 
       // 更新该数据源的信息
       setMetricsData(prev =>
-        prev.map(m => m.connectionId === connectionId ? result : m)
+        prev.map(m =>
+          `${m.connectionId}/${m.databaseName}` === datasourceKey ? result : m
+        )
       );
     } catch (error) {
       console.error('获取详细信息失败:', error);
@@ -169,83 +186,88 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
     }
   }, []);
 
-  // 渲染数据源选择器
-  const renderDataSourceSelector = () => (
+  // 渲染打开的数据源列表
+  const renderOpenedDataSources = () => (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Database className="w-4 h-4" />
-          数据源监控
+          打开的数据源
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {metricsData.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">没有可监控的数据源</p>
-            <p className="text-xs">请先连接数据库</p>
+            <p className="text-sm">没有打开的数据源</p>
+            <p className="text-xs">请在左侧数据源树中打开数据库</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {metricsData.map(metrics => (
-              <div
-                key={metrics.connectionId}
-                className={`p-3 border rounded cursor-pointer transition-colors ${
-                  selectedDataSource === metrics.connectionId
-                    ? 'border-primary bg-primary/5'
-                    : 'hover:bg-muted/50'
-                }`}
-                onClick={() => {
-                  setSelectedDataSource(metrics.connectionId);
-                  getSelectedDataSourceDetails(metrics.connectionId);
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-sm">{metrics.connectionName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {metrics.dbType} • {metrics.queryCount} 查询
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {metricsData.map(metrics => {
+              const datasourceKey = `${metrics.connectionId}/${metrics.databaseName}`;
+              return (
+                <div
+                  key={datasourceKey}
+                  className={`p-3 border rounded cursor-pointer transition-colors ${
+                    selectedDataSource === datasourceKey
+                      ? 'border-primary bg-primary/5'
+                      : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => {
+                    setSelectedDataSource(datasourceKey);
+                    getSelectedDataSourceDetails(datasourceKey);
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="font-medium text-sm">{metrics.connectionName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {metrics.databaseName} • {metrics.dbType}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant={metrics.isConnected ? 'default' : 'secondary'} className="text-xs">
+                        {metrics.isConnected ? '已连接' : '未连接'}
+                      </Badge>
+                      <Badge
+                        variant={
+                          metrics.healthScore === 'good' ? 'default' :
+                          metrics.healthScore === 'warning' ? 'secondary' : 'destructive'
+                        }
+                        className="text-xs"
+                      >
+                        {metrics.healthScore === 'good' ? '良好' :
+                         metrics.healthScore === 'warning' ? '警告' :
+                         metrics.healthScore === 'critical' ? '严重' : '未知'}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={metrics.status === 'connected' ? 'default' : 'secondary'}>
-                      {metrics.status === 'connected' ? '已连接' : '未连接'}
-                    </Badge>
-                    <Badge
-                      variant={
-                        metrics.healthScore === 'good' ? 'default' :
-                        metrics.healthScore === 'warning' ? 'secondary' : 'destructive'
-                      }
-                    >
-                      {metrics.healthScore === 'good' ? '良好' :
-                       metrics.healthScore === 'warning' ? '警告' : '严重'}
-                    </Badge>
-                  </div>
-                </div>
 
-                {/* 简单的指标预览 */}
-                <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">CPU: </span>
-                    <span className={metrics.cpuUsage > 80 ? 'text-red-500' : 'text-green-500'}>
-                      {metrics.cpuUsage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">内存: </span>
-                    <span className={metrics.memoryUsage > 85 ? 'text-red-500' : 'text-green-500'}>
-                      {metrics.memoryUsage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">延迟: </span>
-                    <span className={metrics.averageQueryTime > 1000 ? 'text-red-500' : 'text-green-500'}>
-                      {metrics.averageQueryTime.toFixed(0)}ms
-                    </span>
+                  {/* 关键指标预览 */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">延迟: </span>
+                      <span className={metrics.connectionLatency > 500 ? 'text-red-500' : 'text-green-500'}>
+                        {metrics.connectionLatency >= 0 ? `${metrics.connectionLatency.toFixed(0)}ms` : 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">表数: </span>
+                      <span>{metrics.tableCount}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">大小: </span>
+                      <span>{(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">记录: </span>
+                      <span>{metrics.recordCount.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -254,76 +276,68 @@ export const MultiSourcePerformanceMonitor: React.FC<MultiSourcePerformanceMonit
 
   // 渲染监控配置
   const renderMonitoringConfig = () => (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          监控配置
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="auto-refresh">自动刷新</Label>
-          <Switch
-            id="auto-refresh"
-            checked={config.autoRefresh}
-            onCheckedChange={(checked) =>
-              updateConfig({ autoRefresh: checked })
-            }
-          />
-        </div>
+    <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="auto-refresh" className="text-sm">自动刷新</Label>
+        <Switch
+          id="auto-refresh"
+          checked={config.autoRefresh}
+          onCheckedChange={(checked) =>
+            updateConfig({ autoRefresh: checked })
+          }
+        />
+      </div>
 
-        <div className="space-y-2">
-          <Label>刷新间隔</Label>
-          <Select
-            value={config.refreshInterval.toString()}
-            onValueChange={(value) =>
-              updateConfig({ refreshInterval: parseInt(value) })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10 秒</SelectItem>
-              <SelectItem value="30">30 秒</SelectItem>
-              <SelectItem value="60">1 分钟</SelectItem>
-              <SelectItem value="300">5 分钟</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>时间范围</Label>
-          <Select
-            value={config.timeRange}
-            onValueChange={(value) =>
-              updateConfig({ timeRange: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1h">1 小时</SelectItem>
-              <SelectItem value="6h">6 小时</SelectItem>
-              <SelectItem value="24h">24 小时</SelectItem>
-              <SelectItem value="7d">7 天</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          onClick={fetchPerformanceData}
-          disabled={loading}
-          className="w-full"
-          size="sm"
+      <div className="flex items-center gap-2">
+        <Label className="text-sm">间隔:</Label>
+        <Select
+          value={config.refreshInterval.toString()}
+          onValueChange={(value) =>
+            updateConfig({ refreshInterval: parseInt(value) })
+          }
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          立即刷新
-        </Button>
-      </CardContent>
-    </Card>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10s</SelectItem>
+            <SelectItem value="30">30s</SelectItem>
+            <SelectItem value="60">1m</SelectItem>
+            <SelectItem value="300">5m</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Label className="text-sm">范围:</Label>
+        <Select
+          value={config.timeRange}
+          onValueChange={(value) =>
+            updateConfig({ timeRange: value })
+          }
+        >
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1h">1h</SelectItem>
+            <SelectItem value="6h">6h</SelectItem>
+            <SelectItem value="24h">24h</SelectItem>
+            <SelectItem value="7d">7d</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button
+        onClick={fetchPerformanceData}
+        disabled={loading}
+        size="sm"
+        variant="outline"
+      >
+        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+        刷新
+      </Button>
+    </div>
   );
 
   return (
