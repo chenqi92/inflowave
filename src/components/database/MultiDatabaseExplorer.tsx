@@ -60,6 +60,9 @@ import type { ConnectionConfig, DatabaseType } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { getDatabaseIcon as getUnifiedDatabaseIcon } from '@/utils/databaseIcons';
+import { DatabaseExplorerContextMenu } from './DatabaseExplorerContextMenu';
+import { InfluxDBTreeHandler } from './InfluxDBTreeHandler';
+import { writeToClipboard } from '@/utils/clipboard';
 
 // 数据节点接口
 interface DataSourceNode {
@@ -154,9 +157,14 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       title: (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2">
-            {getDatabaseIcon(connection.dbType || 'influxdb')}
+            {/* 连接状态圆点 - 默认为暗色，连接后变亮 */}
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500' : 'bg-gray-300'
+              }`}
+            />
             <span className="font-medium">{connection.name}</span>
-            <Badge 
+            <Badge
               variant={isConnected ? 'default' : 'secondary'}
               className="text-xs"
             >
@@ -164,13 +172,12 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
             </Badge>
           </div>
           <div className="flex items-center space-x-1">
-            <div 
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500' : 'bg-gray-400'
-              }`} 
-            />
             {connection.id && isFavorite(`connection:${connection.id}`) && (
               <Star className="w-3 h-3 text-yellow-500 fill-current" />
+            )}
+            {/* 刷新状态指示器 */}
+            {connection.id && loadingNodes.has(`connection:${connection.id}`) && (
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             )}
           </div>
         </div>
@@ -183,7 +190,7 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       connectionId: connection.id,
       metadata: { connection, isConnected, status },
     };
-  }, [isConnectionConnected, getConnectionStatus, getDatabaseIcon, isFavorite]);
+  }, [isConnectionConnected, getConnectionStatus, getDatabaseIcon, isFavorite, loadingNodes]);
 
   // 构建数据库节点（InfluxDB/IoTDB 存储组）
   const buildDatabaseNode = useCallback((
@@ -198,12 +205,17 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       title: (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2">
-            {getNodeTypeIcon(nodeType)}
             <span>{databaseName}</span>
           </div>
-          {isFavorite(`database:${connectionId}:${databaseName}`) && (
-            <Star className="w-3 h-3 text-yellow-500 fill-current" />
-          )}
+          <div className="flex items-center space-x-1">
+            {isFavorite(`database:${connectionId}:${databaseName}`) && (
+              <Star className="w-3 h-3 text-yellow-500 fill-current" />
+            )}
+            {/* 刷新状态指示器 */}
+            {loadingNodes.has(`database:${connectionId}:${databaseName}`) && (
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            )}
+          </div>
         </div>
       ),
       children: [],
@@ -215,7 +227,7 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       database: databaseName,
       metadata: { databaseName },
     };
-  }, [getNodeTypeIcon, isFavorite]);
+  }, [getNodeTypeIcon, isFavorite, loadingNodes]);
 
   // 构建表/设备节点
   const buildTableNode = useCallback((
@@ -231,12 +243,17 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       title: (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2">
-            {getNodeTypeIcon(nodeType)}
             <span>{tableName}</span>
           </div>
-          {isFavorite(`table:${connectionId}:${database}:${tableName}`) && (
-            <Star className="w-3 h-3 text-yellow-500 fill-current" />
-          )}
+          <div className="flex items-center space-x-1">
+            {isFavorite(`table:${connectionId}:${database}:${tableName}`) && (
+              <Star className="w-3 h-3 text-yellow-500 fill-current" />
+            )}
+            {/* 刷新状态指示器 */}
+            {loadingNodes.has(`table:${connectionId}:${database}:${tableName}`) && (
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            )}
+          </div>
         </div>
       ),
       children: [],
@@ -249,7 +266,7 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
       table: tableName,
       metadata: { tableName },
     };
-  }, [getNodeTypeIcon, isFavorite]);
+  }, [getNodeTypeIcon, isFavorite, loadingNodes]);
 
   // 构建字段/时间序列节点
   const buildFieldNode = useCallback((
@@ -458,6 +475,124 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
     buildTreeData();
   }, [buildTreeData, refreshTrigger]);
 
+  // 处理右键菜单事件
+  const handleRightClick = useCallback((info: any) => {
+    const { node } = info;
+    const nodeData = node as DataSourceNode;
+
+    console.log('🖱️ 右键点击节点:', nodeData);
+    // 右键菜单将通过 DatabaseExplorerContextMenu 组件处理
+  }, []);
+
+  // 处理右键菜单动作
+  const handleContextMenuAction = useCallback(async (action: string, nodeData: DataSourceNode) => {
+    console.log('🎯 执行右键菜单动作:', action, nodeData);
+
+    try {
+      switch (action) {
+        case 'connect':
+          if (nodeData.connectionId) {
+            await safeTauriInvoke('connect_database', { connectionId: nodeData.connectionId });
+            showMessage.success('连接成功');
+            buildTreeData();
+          }
+          break;
+
+        case 'disconnect':
+          if (nodeData.connectionId) {
+            await safeTauriInvoke('disconnect_database', { connectionId: nodeData.connectionId });
+            showMessage.success('已断开连接');
+            buildTreeData();
+          }
+          break;
+
+        case 'refresh':
+          if (nodeData.nodeType === 'connection') {
+            buildTreeData();
+          } else {
+            await handleExpand([nodeData.key], { expanded: true, node: nodeData });
+          }
+          break;
+
+        case 'edit':
+          if (nodeData.metadata?.connection && onEditConnection) {
+            onEditConnection(nodeData.metadata.connection);
+          }
+          break;
+
+        case 'favorite':
+          if (nodeData.key) {
+            const name = nodeData.nodeType === 'connection' ? nodeData.metadata?.connection?.name :
+                        nodeData.nodeType === 'database' ? nodeData.database :
+                        nodeData.table || '';
+            const path = nodeData.nodeType === 'connection' ? nodeData.connectionId || '' :
+                        nodeData.nodeType === 'database' ? `${nodeData.connectionId}/${nodeData.database}` :
+                        `${nodeData.connectionId}/${nodeData.database}/${nodeData.table}`;
+
+            addFavorite({
+              type: nodeData.nodeType === 'connection' ? 'connection' :
+                    nodeData.nodeType === 'database' ? 'database' : 'table',
+              connectionId: nodeData.connectionId || '',
+              database: nodeData.database,
+              table: nodeData.table,
+              name: name || '',
+              path: path,
+            });
+            showMessage.success('已添加到收藏');
+          }
+          break;
+
+        case 'unfavorite':
+          if (nodeData.key) {
+            removeFavorite(nodeData.key);
+            showMessage.success('已从收藏中移除');
+          }
+          break;
+
+        case 'copy_name':
+          if (nodeData.nodeType === 'table' && nodeData.table) {
+            await writeToClipboard(nodeData.table);
+            showMessage.success('表名已复制到剪贴板');
+          } else if (nodeData.nodeType === 'database' && nodeData.database) {
+            await writeToClipboard(nodeData.database);
+            showMessage.success('数据库名已复制到剪贴板');
+          }
+          break;
+
+        case 'copy_query':
+          if (nodeData.nodeType === 'table' && nodeData.database && nodeData.table) {
+            const query = generateDefaultQuery(nodeData.dbType || 'influxdb', nodeData.database, nodeData.table);
+            await writeToClipboard(query);
+            showMessage.success('查询语句已复制到剪贴板');
+          }
+          break;
+
+        case 'browse':
+          if (nodeData.nodeType === 'table' && nodeData.connectionId && nodeData.database && nodeData.table) {
+            if (onCreateDataBrowserTab) {
+              onCreateDataBrowserTab(nodeData.connectionId, nodeData.database, nodeData.table);
+            }
+          }
+          break;
+
+        case 'query':
+          if (nodeData.nodeType === 'table' && nodeData.database && nodeData.table) {
+            const query = generateDefaultQuery(nodeData.dbType || 'influxdb', nodeData.database, nodeData.table);
+            if (onCreateQueryTab) {
+              onCreateQueryTab(query, nodeData.database);
+            }
+          }
+          break;
+
+        default:
+          console.log('未处理的右键菜单动作:', action);
+      }
+    } catch (error) {
+      console.error('执行右键菜单动作失败:', error);
+      showMessage.error(`操作失败: ${error}`);
+    }
+  }, [addFavorite, removeFavorite, onEditConnection, onCreateDataBrowserTab, onCreateQueryTab, buildTreeData, handleExpand]);
+
   // 处理节点双击
   const handleDoubleClick = useCallback(async (info: { node: TreeNode }) => {
     const { node } = info;
@@ -465,7 +600,36 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
 
     console.log('双击节点:', nodeData);
 
-    if (nodeData.nodeType === 'table' && nodeData.connectionId && nodeData.database && nodeData.table) {
+    if (nodeData.nodeType === 'connection' && nodeData.connectionId) {
+      // 双击连接节点，连接数据库并展开树节点
+      try {
+        console.log(`🔗 双击连接节点，开始连接: ${nodeData.connectionId}`);
+
+        // 设置加载状态
+        setLoadingNodes(prev => new Set([...prev, nodeData.key]));
+
+        // 连接数据库
+        await safeTauriInvoke('connect_database', { connectionId: nodeData.connectionId });
+        console.log(`✅ 连接成功: ${nodeData.connectionId}`);
+
+        // 展开连接节点
+        if (!expandedKeys.includes(nodeData.key)) {
+          await handleExpand([...expandedKeys, nodeData.key], { expanded: true, node: nodeData });
+        }
+
+        showMessage.success('连接成功');
+      } catch (error) {
+        console.error(`❌ 连接失败: ${nodeData.connectionId}`, error);
+        showMessage.error(`连接失败: ${error}`);
+      } finally {
+        // 清除加载状态
+        setLoadingNodes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(nodeData.key);
+          return newSet;
+        });
+      }
+    } else if (nodeData.nodeType === 'table' && nodeData.connectionId && nodeData.database && nodeData.table) {
       // 双击表节点，创建数据浏览标签页
       if (onCreateDataBrowserTab) {
         onCreateDataBrowserTab(nodeData.connectionId, nodeData.database, nodeData.table);
@@ -528,18 +692,6 @@ export const MultiDatabaseExplorer: React.FC<MultiDatabaseExplorerProps> = ({
     }
   }, []);
 
-  // 处理右键菜单
-  const handleRightClick = useCallback((info: { node: TreeNode; event?: React.MouseEvent }) => {
-    const { node, event } = info;
-    event?.preventDefault();
-    event?.stopPropagation();
-
-    const nodeData = node as DataSourceNode;
-    console.log('右键点击节点:', nodeData);
-
-    // TODO: 实现右键菜单逻辑
-    // 根据节点类型显示不同的菜单选项
-  }, []);
 
   // 搜索过滤
   const filteredTreeData = useMemo(() => {

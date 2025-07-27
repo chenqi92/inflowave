@@ -14,7 +14,7 @@ import {
     Layout,
     Header,
 } from '@/components/ui';
-import DatabaseExplorer from './DatabaseExplorer';
+import { MultiDatabaseExplorer } from '../database/MultiDatabaseExplorer';
 import MainToolbar from './MainToolbar';
 import TabEditorRefactored, {TabEditorRef} from './TabEditorRefactored';
 import EnhancedResultPanel from './EnhancedResultPanel';
@@ -505,6 +505,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         }
     };
 
+    // 处理编辑连接事件
+    const handleEditConnection = (connection: any) => {
+        // 切换到连接管理视图
+        setCurrentView('connections');
+
+        // 可以在这里添加更多的连接编辑逻辑
+        console.log('编辑连接:', connection);
+    };
+
     // 获取当前视图
     const getCurrentView = (): string => currentView;
 
@@ -676,17 +685,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                         )}
                     >
                         <div className='h-full'>
-                            <DatabaseExplorer
+                            <MultiDatabaseExplorer
                                 collapsed={leftPanelCollapsed}
                                 refreshTrigger={refreshTrigger}
                                 onTableDoubleClick={handleTableDoubleClick}
                                 onCreateDataBrowserTab={handleCreateDataBrowserTab}
                                 onCreateQueryTab={handleCreateQueryTab}
                                 onCreateAndExecuteQuery={handleCreateAndExecuteQuery}
-                                onViewChange={handleViewChange}
-                                onGetCurrentView={getCurrentView}
-                                onExpandedDatabasesChange={setExpandedDatabases}
-                                currentTimeRange={currentTimeRange}
+                                onEditConnection={handleEditConnection}
                             />
                         </div>
                     </ResizablePanel>

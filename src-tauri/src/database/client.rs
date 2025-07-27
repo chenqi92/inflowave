@@ -822,6 +822,8 @@ impl InfluxDB2Client {
 
     /// 获取特定组织的存储桶列表
     pub async fn get_buckets_for_org(&self, org_name: &str) -> Result<Vec<String>> {
+        info!("开始获取组织 {} 的存储桶列表", org_name);
+
         let base_url = if self.config.ssl {
             format!("https://{}:{}", self.config.host, self.config.port)
         } else {
@@ -830,16 +832,20 @@ impl InfluxDB2Client {
 
         if let Some(v2_config) = &self.config.v2_config {
             let url = format!("{}/api/v2/buckets?org={}", base_url, org_name);
+            info!("请求存储桶列表 URL: {}", url);
+            info!("使用的 API Token: {}...", &v2_config.api_token.chars().take(10).collect::<String>());
             let client = reqwest::Client::new();
 
             match client
                 .get(&url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
+                .timeout(std::time::Duration::from_secs(10))
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
                     if let Ok(text) = response.text().await {
+                        debug!("存储桶列表响应: {}", text);
                         if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
                             if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
                                 let bucket_names: Vec<String> = buckets
@@ -847,18 +853,30 @@ impl InfluxDB2Client {
                                     .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
                                     .map(|s| s.to_string())
                                     .collect();
+                                info!("成功获取组织 {} 的 {} 个存储桶: {:?}", org_name, bucket_names.len(), bucket_names);
                                 return Ok(bucket_names);
+                            } else {
+                                warn!("响应中没有找到 buckets 数组");
                             }
+                        } else {
+                            warn!("无法解析存储桶列表响应为 JSON");
                         }
+                    } else {
+                        warn!("无法读取存储桶列表响应文本");
                     }
                 }
                 Ok(response) => {
                     warn!("获取组织 {} 的存储桶列表失败: HTTP {}", org_name, response.status());
+                    if let Ok(text) = response.text().await {
+                        debug!("错误响应内容: {}", text);
+                    }
                 }
                 Err(e) => {
-                    warn!("获取组织 {} 的存储桶列表请求失败: {}", org_name, e);
+                    error!("获取组织 {} 的存储桶列表请求失败: {}", org_name, e);
                 }
             }
+        } else {
+            error!("缺少 v2_config 配置，无法获取存储桶列表");
         }
 
         // 如果所有查询都失败，返回错误而不是假数据
