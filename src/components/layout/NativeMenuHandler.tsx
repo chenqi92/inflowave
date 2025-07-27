@@ -503,12 +503,36 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'cut':
-        // 安全的剪切操作 - 避免使用execCommand
+        // 安全的剪切操作 - 只处理菜单触发的剪切，不干扰键盘快捷键
         console.log('🎯 原生菜单触发剪切操作');
         try {
-          // 检查当前焦点元素是否是Monaco编辑器
+          // 检查当前焦点元素
           const activeElement = document.activeElement;
-          if (activeElement && activeElement.closest('.monaco-editor')) {
+
+          // 如果是输入元素，使用选择文本剪切
+          if (activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            (activeElement as HTMLElement).isContentEditable
+          )) {
+            // 对于输入元素，获取选中的文本并剪切
+            const inputElement = activeElement as HTMLInputElement | HTMLTextAreaElement;
+            const start = inputElement.selectionStart || 0;
+            const end = inputElement.selectionEnd || 0;
+            const selectedText = inputElement.value.substring(start, end);
+            if (selectedText) {
+              // 复制到剪贴板
+              import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                writeToClipboard(selectedText, { showSuccess: false });
+              });
+              // 删除选中的文本
+              const newValue = inputElement.value.substring(0, start) + inputElement.value.substring(end);
+              inputElement.value = newValue;
+              inputElement.selectionStart = inputElement.selectionEnd = start;
+              // 触发input事件
+              inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          } else if (activeElement && activeElement.closest('.monaco-editor')) {
             // 如果是Monaco编辑器，触发自定义剪切事件
             const cutEvent = new CustomEvent('monaco-cut', { bubbles: true });
             activeElement.dispatchEvent(cutEvent);
@@ -516,7 +540,6 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             // 对于其他元素，尝试安全的剪切操作
             const selection = window.getSelection();
             if (selection && selection.toString()) {
-              // 使用安全的剪贴板API
               import('@/utils/clipboard').then(({ writeToClipboard }) => {
                 writeToClipboard(selection.toString(), { showSuccess: false });
                 // 删除选中的文本（如果可能）
@@ -531,20 +554,37 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'copy':
-        // 安全的复制操作 - 避免触发剪贴板权限
+        // 安全的复制操作 - 只处理菜单触发的复制，不干扰键盘快捷键
         console.log('🎯 原生菜单触发复制操作');
         try {
-          // 检查当前焦点元素是否是Monaco编辑器
+          // 检查当前焦点元素
           const activeElement = document.activeElement;
-          if (activeElement && activeElement.closest('.monaco-editor')) {
+
+          // 如果是输入元素，使用选择文本复制
+          if (activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            (activeElement as HTMLElement).isContentEditable
+          )) {
+            // 对于输入元素，获取选中的文本并复制
+            const inputElement = activeElement as HTMLInputElement | HTMLTextAreaElement;
+            const selectedText = inputElement.value.substring(
+              inputElement.selectionStart || 0,
+              inputElement.selectionEnd || 0
+            );
+            if (selectedText) {
+              import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                writeToClipboard(selectedText, { showSuccess: false });
+              });
+            }
+          } else if (activeElement && activeElement.closest('.monaco-editor')) {
             // 如果是Monaco编辑器，触发自定义复制事件
             const copyEvent = new CustomEvent('monaco-copy', { bubbles: true });
             activeElement.dispatchEvent(copyEvent);
           } else {
-            // 对于其他元素，尝试安全的复制操作
+            // 对于其他元素，复制选中的文本
             const selection = window.getSelection();
             if (selection && selection.toString()) {
-              // 使用安全的剪贴板API
               import('@/utils/clipboard').then(({ writeToClipboard }) => {
                 writeToClipboard(selection.toString(), { showSuccess: false });
               });
@@ -557,12 +597,36 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         break;
 
       case 'paste':
-        // 安全的粘贴操作 - 避免触发剪贴板权限
+        // 安全的粘贴操作 - 只处理菜单触发的粘贴，不干扰键盘快捷键
         console.log('🎯 原生菜单触发粘贴操作');
         try {
-          // 检查当前焦点元素是否是Monaco编辑器
+          // 检查当前焦点元素
           const activeElement = document.activeElement;
-          if (activeElement && activeElement.closest('.monaco-editor')) {
+
+          // 如果是输入元素，从剪贴板读取并粘贴
+          if (activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            (activeElement as HTMLElement).isContentEditable
+          )) {
+            // 对于输入元素，从剪贴板读取文本并插入
+            import('@/utils/clipboard').then(({ readFromClipboard }) => {
+              readFromClipboard({ showError: false }).then(text => {
+                if (text && activeElement && 'value' in activeElement) {
+                  const inputElement = activeElement as HTMLInputElement | HTMLTextAreaElement;
+                  const start = inputElement.selectionStart || 0;
+                  const end = inputElement.selectionEnd || 0;
+                  const currentValue = inputElement.value;
+                  const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+                  inputElement.value = newValue;
+                  inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
+                  // 触发input事件
+                  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+                  inputElement.focus();
+                }
+              });
+            });
+          } else if (activeElement && activeElement.closest('.monaco-editor')) {
             // 如果是Monaco编辑器，触发自定义粘贴事件
             const pasteEvent = new CustomEvent('monaco-paste', { bubbles: true });
             activeElement.dispatchEvent(pasteEvent);
@@ -572,9 +636,15 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
               readFromClipboard({ showError: false }).then(text => {
                 if (text && activeElement && 'value' in activeElement) {
                   // 如果是输入元素，设置值
-                  (activeElement as HTMLInputElement).value = text;
+                  const inputElement = activeElement as HTMLInputElement;
+                  const start = inputElement.selectionStart || 0;
+                  const end = inputElement.selectionEnd || 0;
+                  const currentValue = inputElement.value;
+                  const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+                  inputElement.value = newValue;
+                  inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
                   // 触发input事件
-                  activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
                 }
               });
             });

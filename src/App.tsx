@@ -20,6 +20,7 @@ import { useAppNotifications } from './hooks/useAppNotifications';
 import { consoleLogger } from './utils/consoleLogger';
 import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
+import { initializeInputClipboardHandler } from './utils/inputClipboardHandler';
 import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
 import type { EditorTab } from '@components/editor';
@@ -55,6 +56,12 @@ const MainLayout: React.FC = () => {
 
   // 初始化应用通知
   useAppNotifications();
+
+  // 初始化输入框剪贴板处理器
+  useEffect(() => {
+    const cleanup = initializeInputClipboardHandler();
+    return cleanup;
+  }, []);
 
 
   // 检查是否显示用户指引

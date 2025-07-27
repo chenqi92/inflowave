@@ -650,32 +650,54 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
             }
           };
 
-          // 尝试使用 Object.defineProperty 重写
-          try {
-            // 尝试替换navigator.clipboard
-            Object.defineProperty(navigator, 'clipboard', {
-              value: safeClipboard,
-              writable: false,
-              configurable: true
-            });
-
-            console.log('✅ Monaco编辑器剪贴板功能已安全重写');
-          } catch (defineError) {
-            console.warn('⚠️ 无法重写clipboard属性，尝试替换方法:', defineError);
-
-            // 如果无法重写整个对象，尝试替换方法
-            try {
-              if (typeof navigator.clipboard.writeText === 'function') {
-                (navigator.clipboard as any).writeText = safeClipboard.writeText;
+          // 为 Monaco Editor 添加专门的键盘快捷键处理
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
+            console.log('🔄 Monaco Editor 复制操作');
+            const selection = editor.getSelection();
+            if (selection && !selection.isEmpty()) {
+              const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+              if (selectedText) {
+                safeClipboard.writeText(selectedText);
               }
-              if (typeof navigator.clipboard.readText === 'function') {
-                (navigator.clipboard as any).readText = safeClipboard.readText;
-              }
-              console.log('✅ 剪贴板方法替换成功');
-            } catch (methodError) {
-              console.warn('⚠️ 剪贴板方法替换失败:', methodError);
             }
-          }
+          });
+
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, async () => {
+            console.log('🔄 Monaco Editor 粘贴操作');
+            try {
+              const text = await safeClipboard.readText();
+              if (text) {
+                const selection = editor.getSelection();
+                if (selection) {
+                  editor.executeEdits('paste', [{
+                    range: selection,
+                    text: text,
+                    forceMoveMarkers: true
+                  }]);
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Monaco Editor 粘贴失败:', error);
+            }
+          });
+
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
+            console.log('🔄 Monaco Editor 剪切操作');
+            const selection = editor.getSelection();
+            if (selection && !selection.isEmpty()) {
+              const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+              if (selectedText) {
+                safeClipboard.writeText(selectedText);
+                editor.executeEdits('cut', [{
+                  range: selection,
+                  text: '',
+                  forceMoveMarkers: true
+                }]);
+              }
+            }
+          });
+
+          console.log('✅ Monaco Editor 专用剪贴板快捷键已设置');
         }
       } catch (clipboardError) {
         console.warn('⚠️ 重写剪贴板功能失败:', clipboardError);

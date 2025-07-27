@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FontPreview from './FontPreview';
 import FontCategoryLabel from './FontCategoryLabel';
+import { useFontLoader } from '@/hooks/useFontLoader';
 
 interface FontOption {
   value: string;
@@ -118,6 +119,13 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
 
   const selectedFont = fontOptions.find(font => font.value === value);
 
+  // 使用字体加载器来确保字体已加载 - 使用 useMemo 确保数组稳定性
+  const fontFamilies = useMemo(() =>
+    fontOptions.map(font => font.name).filter(name => name !== '系统默认'),
+    [] // 空依赖数组，因为 fontOptions 是静态的
+  );
+  const fontStatus = useFontLoader(fontFamilies);
+
   // 按分类分组字体
   const groupedFonts = fontOptions.reduce((groups, font) => {
     if (!groups[font.category]) {
@@ -204,6 +212,13 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
 
       {/* 下拉内容 */}
       {isOpen && (
+        !fontStatus.loaded ? (
+          <div className="absolute top-full left-0 z-50 w-full mt-1 p-3 rounded-md border bg-popover text-popover-foreground shadow-md">
+            <div className="text-sm text-muted-foreground">
+              {fontStatus.error ? '字体加载失败' : '正在加载字体...'}
+            </div>
+          </div>
+        ) : (
         <div 
           ref={listRef}
           className="absolute top-full left-0 z-50 w-full mt-1 max-h-[300px] overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
@@ -228,7 +243,7 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
                   <div
                     key={font.value}
                     className={cn(
-                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-3 text-sm outline-none transition-colors font-dropdown-option",
+                      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-3 text-sm outline-none transition-colors font-dropdown-option force-font-family",
                       "hover:bg-accent hover:text-accent-foreground",
                       highlightedIndex === globalIndex && "bg-accent text-accent-foreground",
                       value === font.value && "bg-accent/50"
@@ -263,6 +278,7 @@ const CustomFontSelector: React.FC<CustomFontSelectorProps> = ({
             </div>
           ))}
         </div>
+        )
       )}
     </div>
   );

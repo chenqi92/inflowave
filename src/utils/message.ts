@@ -582,7 +582,7 @@ export const specialMessage = {
         const friendlyError = getDatabaseConnectionError(error);
         const result = showNotification.error({
             message: friendlyError.title,
-            description: `连接 ${name} 失败: ${friendlyError.message}${friendlyError.suggestion ? '\n建议：' + friendlyError.suggestion : ''}`,
+            description: `连接 ${name} 失败: ${friendlyError.message}${friendlyError.suggestion ? `\n建议：${  friendlyError.suggestion}` : ''}`,
             duration: 6,
             action: {
                 label: '重试',

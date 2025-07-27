@@ -259,3 +259,40 @@ body div[role="option"][style*="fontFamily"] * {
 body div[role="option"][style*="fontFamily"] .font-preview * {
   font-family: inherit !important;
 }
+
+/* 极高优先级的字体覆盖 - 针对所有可能的UI库类 */
+html body div[role="listbox"] div[role="option"] * {
+  font-family: inherit !important;
+}
+
+html body div[role="listbox"] div[role="option"].font-dropdown-option * {
+  font-family: inherit !important;
+}
+
+/* 针对特定的popover样式 */
+.bg-popover div[role="option"] * {
+  font-family: inherit !important;
+}
+
+/* 专门的字体强制应用类 */
+.force-font-family {
+  font-family: inherit !important;
+}
+
+.force-font-family * {
+  font-family: inherit !important;
+}
+
+.force-font-family span,
+.force-font-family div {
+  font-family: inherit !important;
+}
+
+/* 最高优先级的字体覆盖 */
+html body * .force-font-family {
+  font-family: inherit !important;
+}
+
+html body * .force-font-family * {
+  font-family: inherit !important;
+}

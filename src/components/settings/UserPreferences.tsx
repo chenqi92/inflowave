@@ -19,7 +19,6 @@ import {
 import FontPreview from './FontPreview';
 import FontCategoryLabel from './FontCategoryLabel';
 import CustomFontSelector from './CustomFontSelector';
-// 测试组件已移除
 import { showMessage } from '@/utils/message';
 import {
   Settings,
@@ -854,16 +853,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             value={field.value}
                             onValueChange={(value) => {
                               field.onChange(value);
-                              // 立即应用字体变化
-                              const currentValues = form.getValues();
-                              const updatedValues = {
-                                ...currentValues,
-                                accessibility: {
-                                  ...currentValues.accessibility,
-                                  font_family: value
-                                }
-                              };
-                              savePreferences(updatedValues);
+                              // 移除立即保存逻辑，避免无限循环
+                              // 字体变化将通过表单的正常提交流程保存
                             }}
                           />
                         </FormControl>
@@ -872,7 +863,6 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                   />
                 </div>
                 
-
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}
