@@ -279,12 +279,58 @@
   font-family: "Cascadia Code", Monaco, Consolas, monospace !important;
 }
 
-/* 移除可能阻止内联样式生效的全局字体设置 */
+/* 重置 Radix UI Select 的默认字体设置 */
 [data-radix-select-content] * {
-  font-family: unset;
+  font-family: inherit !important;
 }
 
-/* 确保内联样式具有最高优先级 */
-[data-radix-select-content] [style*="font-family"] {
-  font-family: inherit;
+/* 特别针对 SelectPrimitive.ItemText 的样式覆盖 */
+[data-radix-select-content] [data-radix-select-item-text] {
+  font-family: inherit !important;
+}
+
+/* 强制应用内联样式到所有子元素 */
+.font-preview-item * {
+  font-family: inherit !important;
+}
+
+/* 最高优先级：直接针对每个字体值的完整路径 */
+[data-radix-select-content] .font-preview-item[data-value="system"] *,
+[data-radix-select-content] .font-preview-item[style*="system-ui"] * {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="jetbrains-mono"] *,
+[data-radix-select-content] .font-preview-item[style*="JetBrains Mono"] * {
+  font-family: "JetBrains Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="source-code-pro"] *,
+[data-radix-select-content] .font-preview-item[style*="Source Code Pro"] * {
+  font-family: "Source Code Pro", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="fira-code"] *,
+[data-radix-select-content] .font-preview-item[style*="Fira Code"] * {
+  font-family: "Fira Code", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="inconsolata"] *,
+[data-radix-select-content] .font-preview-item[style*="Inconsolata"] * {
+  font-family: "Inconsolata", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="roboto-mono"] *,
+[data-radix-select-content] .font-preview-item[style*="Roboto Mono"] * {
+  font-family: "Roboto Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="ubuntu-mono"] *,
+[data-radix-select-content] .font-preview-item[style*="Ubuntu Mono"] * {
+  font-family: "Ubuntu Mono", Monaco, Consolas, monospace !important;
+}
+
+[data-radix-select-content] .font-preview-item[data-value="cascadia-code"] *,
+[data-radix-select-content] .font-preview-item[style*="Cascadia Code"] * {
+  font-family: "Cascadia Code", Monaco, Consolas, monospace !important;
 }

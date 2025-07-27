@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import FontPreview from './FontPreview';
 import FontCategoryLabel from './FontCategoryLabel';
+import CustomFontSelector from './CustomFontSelector';
 import { showMessage } from '@/utils/message';
 import {
   Settings,
@@ -847,136 +848,24 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>字体系列</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // 立即应用字体变化
-                            const currentValues = form.getValues();
-                            const updatedValues = {
-                              ...currentValues,
-                              accessibility: {
-                                ...currentValues.accessibility,
-                                font_family: value
-                              }
-                            };
-                            savePreferences(updatedValues);
-                          }}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className='h-10'>
-                              <SelectValue placeholder='选择字体系列' />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-h-[300px] font-selector-content" sideOffset={2} align="start">
-                            {/* 系统字体 */}
-                            <SelectItem 
-                              value='system' 
-                              className="font-preview-item"
-                              data-value="system"
-                              style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important' }}
-                            >
-                              <FontPreview 
-                                fontFamily='system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' 
-                                name="系统默认" 
-                              />
-                            </SelectItem>
-                            
-
-                            <FontCategoryLabel>现代无衬线字体</FontCategoryLabel>
-                            <SelectItem value='inter' className="font-preview-item" data-value="inter" style={{ fontFamily: '"Inter", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Inter", sans-serif' name="Inter" />
-                            </SelectItem>
-                            <SelectItem value='roboto' className="font-preview-item" data-value="roboto" style={{ fontFamily: '"Roboto", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Roboto", sans-serif' name="Roboto" />
-                            </SelectItem>
-                            <SelectItem value='open-sans' className="font-preview-item" data-value="open-sans" style={{ fontFamily: '"Open Sans", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Open Sans", sans-serif' name="Open Sans" />
-                            </SelectItem>
-                            <SelectItem value='source-sans' className="font-preview-item" data-value="source-sans" style={{ fontFamily: '"Source Sans Pro", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Source Sans Pro", sans-serif' name="Source Sans Pro" />
-                            </SelectItem>
-                            <SelectItem value='lato' className="font-preview-item" data-value="lato" style={{ fontFamily: '"Lato", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Lato", sans-serif' name="Lato" />
-                            </SelectItem>
-                            <SelectItem value='poppins' className="font-preview-item" data-value="poppins" style={{ fontFamily: '"Poppins", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Poppins", sans-serif' name="Poppins" />
-                            </SelectItem>
-                            <SelectItem value='nunito' className="font-preview-item" data-value="nunito" style={{ fontFamily: '"Nunito", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Nunito", sans-serif' name="Nunito" />
-                            </SelectItem>
-                            <SelectItem value='montserrat' className="font-preview-item" data-value="montserrat" style={{ fontFamily: '"Montserrat", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Montserrat", sans-serif' name="Montserrat" />
-                            </SelectItem>
-                            <SelectItem value='fira-sans' className="font-preview-item" data-value="fira-sans" style={{ fontFamily: '"Fira Sans", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Fira Sans", sans-serif' name="Fira Sans" />
-                            </SelectItem>
-                            <SelectItem value='work-sans' className="font-preview-item" data-value="work-sans" style={{ fontFamily: '"Work Sans", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Work Sans", sans-serif' name="Work Sans" />
-                            </SelectItem>
-                            <SelectItem value='dm-sans' className="font-preview-item" data-value="dm-sans" style={{ fontFamily: '"DM Sans", sans-serif !important' }}>
-                              <FontPreview fontFamily='"DM Sans", sans-serif' name="DM Sans" />
-                            </SelectItem>
-                            <SelectItem value='ubuntu' className="font-preview-item" data-value="ubuntu" style={{ fontFamily: '"Ubuntu", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Ubuntu", sans-serif' name="Ubuntu" />
-                            </SelectItem>
-                            <SelectItem value='noto-sans' className="font-preview-item" data-value="noto-sans" style={{ fontFamily: '"Noto Sans", "Noto Sans SC", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Noto Sans", "Noto Sans SC", sans-serif' name="Noto Sans" />
-                            </SelectItem>
-
-                            <FontCategoryLabel>经典字体</FontCategoryLabel>
-                            <SelectItem value='georgia' className="font-preview-item" data-value="georgia" style={{ fontFamily: '"Georgia", serif !important' }}>
-                              <FontPreview fontFamily='"Georgia", serif' name="Georgia" />
-                            </SelectItem>
-                            <SelectItem value='times' className="font-preview-item" data-value="times" style={{ fontFamily: '"Times New Roman", serif !important' }}>
-                              <FontPreview fontFamily='"Times New Roman", serif' name="Times New Roman" />
-                            </SelectItem>
-                            <SelectItem value='arial' className="font-preview-item" data-value="arial" style={{ fontFamily: 'Arial, sans-serif !important' }}>
-                              <FontPreview fontFamily='Arial, sans-serif' name="Arial" />
-                            </SelectItem>
-                            <SelectItem value='helvetica' className="font-preview-item" data-value="helvetica" style={{ fontFamily: '"Helvetica Neue", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Helvetica Neue", sans-serif' name="Helvetica" />
-                            </SelectItem>
-                            <SelectItem value='verdana' className="font-preview-item" data-value="verdana" style={{ fontFamily: 'Verdana, sans-serif !important' }}>
-                              <FontPreview fontFamily='Verdana, sans-serif' name="Verdana" />
-                            </SelectItem>
-                            <SelectItem value='tahoma' className="font-preview-item" data-value="tahoma" style={{ fontFamily: 'Tahoma, sans-serif !important' }}>
-                              <FontPreview fontFamily='Tahoma, sans-serif' name="Tahoma" />
-                            </SelectItem>
-                            <SelectItem value='trebuchet' className="font-preview-item" data-value="trebuchet" style={{ fontFamily: '"Trebuchet MS", sans-serif !important' }}>
-                              <FontPreview fontFamily='"Trebuchet MS", sans-serif' name="Trebuchet MS" />
-                            </SelectItem>
-
-                            <FontCategoryLabel>等宽字体</FontCategoryLabel>
-                            <SelectItem value='sf-mono' className="font-preview-item" data-value="sf-mono" style={{ fontFamily: 'ui-monospace, "SF Mono", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='ui-monospace, "SF Mono", Monaco, Consolas, monospace' name="SF Mono" />
-                            </SelectItem>
-                            <SelectItem value='jetbrains-mono' className="font-preview-item" data-value="jetbrains-mono" style={{ fontFamily: '"JetBrains Mono", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"JetBrains Mono", Monaco, Consolas, monospace' name="JetBrains Mono" />
-                            </SelectItem>
-                            <SelectItem value='source-code-pro' className="font-preview-item" data-value="source-code-pro" style={{ fontFamily: '"Source Code Pro", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Source Code Pro", Monaco, Consolas, monospace' name="Source Code Pro" />
-                            </SelectItem>
-                            <SelectItem value='fira-code' className="font-preview-item" data-value="fira-code" style={{ fontFamily: '"Fira Code", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Fira Code", Monaco, Consolas, monospace' name="Fira Code" />
-                            </SelectItem>
-                            <SelectItem value='inconsolata' className="font-preview-item" data-value="inconsolata" style={{ fontFamily: '"Inconsolata", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Inconsolata", Monaco, Consolas, monospace' name="Inconsolata" />
-                            </SelectItem>
-                            <SelectItem value='roboto-mono' className="font-preview-item" data-value="roboto-mono" style={{ fontFamily: '"Roboto Mono", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Roboto Mono", Monaco, Consolas, monospace' name="Roboto Mono" />
-                            </SelectItem>
-                            <SelectItem value='ubuntu-mono' className="font-preview-item" data-value="ubuntu-mono" style={{ fontFamily: '"Ubuntu Mono", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Ubuntu Mono", Monaco, Consolas, monospace' name="Ubuntu Mono" />
-                            </SelectItem>
-                            <SelectItem value='cascadia-code' className="font-preview-item" data-value="cascadia-code" style={{ fontFamily: '"Cascadia Code", Monaco, Consolas, monospace !important' }}>
-                              <FontPreview fontFamily='"Cascadia Code", Monaco, Consolas, monospace' name="Cascadia Code" />
-                            </SelectItem>
-                            <SelectItem value='courier' className="font-preview-item" data-value="courier" style={{ fontFamily: '"Courier New", monospace !important' }}>
-                              <FontPreview fontFamily='"Courier New", monospace' name="Courier New" />
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <CustomFontSelector
+                            value={field.value}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // 立即应用字体变化
+                              const currentValues = form.getValues();
+                              const updatedValues = {
+                                ...currentValues,
+                                accessibility: {
+                                  ...currentValues.accessibility,
+                                  font_family: value
+                                }
+                              };
+                              savePreferences(updatedValues);
+                            }}
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

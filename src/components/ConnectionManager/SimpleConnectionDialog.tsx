@@ -730,44 +730,126 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
 
 
-        <div className='space-y-1'>
-          <Label className='block text-sm font-medium text-foreground'>
-            数据库类型 <span className='text-destructive'>*</span>
-          </Label>
-          <Select
-            value={formData.dbType}
-            onValueChange={value => {
-              handleInputChange('dbType', value);
-              // 根据数据库类型设置默认值
-              if (value === 'influxdb') {
-                handleInputChange('port', 8086);
-              } else if (value === 'iotdb') {
-                handleInputChange('port', 6667);
-              }
-            }}
-          >
-            <SelectTrigger className='h-9'>
-              <SelectValue placeholder='选择数据库类型'>
-                {formData.dbType && (
-                  <div className="flex items-center gap-2">
-                    {getDatabaseIcon(formData.dbType)}
-                    <span>{formData.dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}</span>
-                  </div>
-                )}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='influxdb'>
-                {renderDatabaseOption('influxdb')}
-              </SelectItem>
-              <SelectItem value='iotdb'>
-                {renderDatabaseOption('iotdb')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <p className='text-xs text-muted-foreground'>
-            版本信息将在保存连接时自动检测
-          </p>
+        <div className='grid grid-cols-2 gap-4'>
+          <div className='space-y-1'>
+            <Label className='block text-sm font-medium text-foreground'>
+              数据库类型 <span className='text-destructive'>*</span>
+            </Label>
+            <Select
+              value={formData.dbType}
+              onValueChange={value => {
+                handleInputChange('dbType', value);
+                // 根据数据库类型设置默认值
+                if (value === 'influxdb') {
+                  handleInputChange('port', 8086);
+                  handleInputChange('version', '1.x'); // 默认选择 1.x
+                } else if (value === 'iotdb') {
+                  handleInputChange('port', 6667);
+                  handleInputChange('version', '1.x'); // IoTDB 只有一个版本
+                }
+              }}
+            >
+              <SelectTrigger className='h-9'>
+                <SelectValue placeholder='选择数据库类型'>
+                  {formData.dbType && (
+                    <div className="flex items-center gap-2">
+                      {getDatabaseIcon(formData.dbType)}
+                      <span>{formData.dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}</span>
+                    </div>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='influxdb'>
+                  {renderDatabaseOption('influxdb')}
+                </SelectItem>
+                <SelectItem value='iotdb'>
+                  {renderDatabaseOption('iotdb')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* InfluxDB 版本选择器 */}
+          {formData.dbType === 'influxdb' && (
+            <div className='space-y-1'>
+              <Label className='block text-sm font-medium text-foreground'>
+                版本 <span className='text-destructive'>*</span>
+              </Label>
+              <Select
+                value={formData.version}
+                onValueChange={value => {
+                  handleInputChange('version', value);
+                  // 根据版本清空相关字段
+                  if (value === '1.x') {
+                    handleInputChange('apiToken', '');
+                    handleInputChange('organization', '');
+                    handleInputChange('bucket', '');
+                    handleInputChange('v1CompatibilityApi', false);
+                  } else {
+                    handleInputChange('username', '');
+                    handleInputChange('password', '');
+                    handleInputChange('retentionPolicy', '');
+                  }
+                }}
+              >
+                <SelectTrigger className='h-9'>
+                  <SelectValue placeholder='选择版本'>
+                    {formData.version && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {formData.version}
+                        </span>
+                        <span>
+                          {formData.version === '1.x' && 'InfluxDB 1.x (InfluxQL)'}
+                          {formData.version === '2.x' && 'InfluxDB 2.x (Flux)'}
+                          {formData.version === '3.x' && 'InfluxDB 3.x (SQL + Flux)'}
+                        </span>
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='1.x'>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                        1.x
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">InfluxDB 1.x</span>
+                        <span className="text-xs text-muted-foreground">InfluxQL 查询语言</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value='2.x'>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">
+                        2.x
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">InfluxDB 2.x</span>
+                        <span className="text-xs text-muted-foreground">Flux 查询语言，API Token 认证</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value='3.x'>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">
+                        3.x
+                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">InfluxDB 3.x</span>
+                        <span className="text-xs text-muted-foreground">SQL + Flux，高性能</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className='text-xs text-muted-foreground'>
+                不同版本使用不同的认证方式和查询语言
+              </p>
+            </div>
+          )}
         </div>
 
 
@@ -824,39 +906,63 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           </div>
 
+          {/* InfluxDB 1.x 认证配置 */}
           {formData.version === '1.x' && (
-            <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  用户名
-                </Label>
-                <Input
-                  placeholder='可选'
-                  value={formData.username}
-                  onChange={e => handleInputChange('username', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                  className='h-9'
-                />
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 pb-2 border-b'>
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                  1.x
+                </span>
+                <h4 className='text-sm font-medium text-foreground'>用户名/密码认证</h4>
               </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    用户名
+                  </Label>
+                  <Input
+                    placeholder='可选，如 admin'
+                    value={formData.username}
+                    onChange={e => handleInputChange('username', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                    className='h-9'
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    留空表示匿名访问
+                  </p>
+                </div>
 
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  密码
-                </Label>
-                <Input
-                  type='password'
-                  placeholder='可选'
-                  value={formData.password}
-                  onChange={e => handleInputChange('password', e.target.value)}
-                  className='h-9'
-                />
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    密码
+                  </Label>
+                  <Input
+                    type='password'
+                    placeholder='可选'
+                    value={formData.password}
+                    onChange={e => handleInputChange('password', e.target.value)}
+                    className='h-9'
+                  />
+                </div>
               </div>
             </div>
           )}
 
+          {/* InfluxDB 2.x/3.x 认证配置 */}
           {(formData.version === '2.x' || formData.version === '3.x') && (
             <div className='space-y-4'>
+              <div className='flex items-center gap-2 pb-2 border-b'>
+                <span className={`text-xs px-2 py-1 rounded font-medium ${
+                  formData.version === '2.x'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-purple-100 text-purple-800'
+                }`}>
+                  {formData.version}
+                </span>
+                <h4 className='text-sm font-medium text-foreground'>API Token 认证</h4>
+              </div>
+
               <div className='space-y-1'>
                 <Label className='block text-sm font-medium text-foreground'>
                   API 令牌 <span className='text-destructive'>*</span>
@@ -875,6 +981,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {errors.apiToken && (
                   <div className='text-xs text-destructive mt-1'>{errors.apiToken}</div>
                 )}
+                <p className='text-xs text-muted-foreground'>
+                  在 InfluxDB UI 中生成的 API Token，具有读写权限
+                </p>
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
@@ -883,7 +992,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     组织 ID/名称 <span className='text-destructive'>*</span>
                   </Label>
                   <Input
-                    placeholder='组织 ID 或名称'
+                    placeholder='如: myorg 或 org-id'
                     value={formData.organization}
                     onChange={e => handleInputChange('organization', e.target.value)}
                     autoCapitalize='off'
@@ -897,76 +1006,133 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   {errors.organization && (
                     <div className='text-xs text-destructive mt-1'>{errors.organization}</div>
                   )}
+                  <p className='text-xs text-muted-foreground'>
+                    组织名称或 ID
+                  </p>
                 </div>
 
                 <div className='space-y-1'>
                   <Label className='block text-sm font-medium text-foreground'>
-                    桶名称
+                    默认存储桶
                   </Label>
                   <Input
-                    placeholder='可选，默认桶'
+                    placeholder='如: mybucket'
                     value={formData.bucket}
                     onChange={e => handleInputChange('bucket', e.target.value)}
                     autoCapitalize='off'
                     autoCorrect='off'
                     className='h-9'
                   />
+                  <p className='text-xs text-muted-foreground'>
+                    可选，连接后默认选择的存储桶
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 数据库配置和V1兼容API合并为一行 */}
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                {formData.version === '1.x' ? '默认数据库' : '默认数据库'}
-              </Label>
-              <Input
-                placeholder={formData.version === '1.x' ? '可选，连接后默认选择的数据库' : '可选'}
-                value={formData.database}
-                onChange={e => handleInputChange('database', e.target.value)}
-                autoCapitalize='off'
-                autoCorrect='off'
-                className='h-9'
-              />
-            </div>
-
-            {formData.version === '1.x' ? (
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  默认保留策略
-                </Label>
-                <Input
-                  placeholder='可选，如 autogen'
-                  value={formData.retentionPolicy}
-                  onChange={e => handleInputChange('retentionPolicy', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                  className='h-9'
-                />
+          {/* 版本特定配置 */}
+          {formData.version === '1.x' && (
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 pb-2 border-b'>
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                  1.x
+                </span>
+                <h4 className='text-sm font-medium text-foreground'>数据库配置</h4>
               </div>
-            ) : (
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
-                  V1 兼容 API
-                </Label>
-                <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                  <Switch
-                    id='v1-compat-switch'
-                    checked={formData.v1CompatibilityApi}
-                    onCheckedChange={checked => handleInputChange('v1CompatibilityApi', checked)}
-                  />
-                  <Label
-                    htmlFor='v1-compat-switch'
-                    className='text-sm font-medium cursor-pointer'
-                  >
-                    {formData.v1CompatibilityApi ? '已启用 V1 兼容 API' : '启用 V1 兼容 API'}
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    默认数据库
                   </Label>
+                  <Input
+                    placeholder='如: mydb'
+                    value={formData.database}
+                    onChange={e => handleInputChange('database', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                    className='h-9'
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    可选，连接后默认选择的数据库
+                  </p>
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    默认保留策略
+                  </Label>
+                  <Input
+                    placeholder='如: autogen'
+                    value={formData.retentionPolicy}
+                    onChange={e => handleInputChange('retentionPolicy', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                    className='h-9'
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    可选，默认保留策略名称
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {(formData.version === '2.x' || formData.version === '3.x') && (
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 pb-2 border-b'>
+                <span className={`text-xs px-2 py-1 rounded font-medium ${
+                  formData.version === '2.x'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-purple-100 text-purple-800'
+                }`}>
+                  {formData.version}
+                </span>
+                <h4 className='text-sm font-medium text-foreground'>兼容性配置</h4>
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    V1 兼容 API
+                  </Label>
+                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                    <Switch
+                      id='v1-compat-switch'
+                      checked={formData.v1CompatibilityApi}
+                      onCheckedChange={checked => handleInputChange('v1CompatibilityApi', checked)}
+                    />
+                    <Label
+                      htmlFor='v1-compat-switch'
+                      className='text-sm font-medium cursor-pointer'
+                    >
+                      {formData.v1CompatibilityApi ? '已启用 V1 兼容 API' : '启用 V1 兼容 API'}
+                    </Label>
+                  </div>
+                  <p className='text-xs text-muted-foreground'>
+                    启用后可使用 InfluxQL 查询语言
+                  </p>
+                </div>
+
+                <div className='space-y-1'>
+                  <Label className='block text-sm font-medium text-foreground'>
+                    默认数据库
+                  </Label>
+                  <Input
+                    placeholder='可选，用于 V1 兼容 API'
+                    value={formData.database}
+                    onChange={e => handleInputChange('database', e.target.value)}
+                    autoCapitalize='off'
+                    autoCorrect='off'
+                    className='h-9'
+                    disabled={!formData.v1CompatibilityApi}
+                  />
+                  <p className='text-xs text-muted-foreground'>
+                    仅在启用 V1 兼容 API 时有效
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* 高级配置 Tab */}
