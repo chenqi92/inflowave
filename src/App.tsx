@@ -120,6 +120,19 @@ const MainLayout: React.FC = () => {
 
       // 如果是输入元素中的系统快捷键，完全不处理
       if (isInputElement && isSystemClipboard) {
+        // 对于非Monaco编辑器的输入元素，确保粘贴事件正常工作
+        if (e.key.toLowerCase() === 'v' && (e.ctrlKey || e.metaKey) && !target.closest('.monaco-editor')) {
+          // 让原生粘贴事件处理，但添加一个延迟检查以防止空白覆盖
+          setTimeout(() => {
+            if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+              const currentValue = target.value;
+              if (currentValue === '' || currentValue.trim() === '') {
+                console.warn('检测到可能的空白粘贴，尝试从剪贴板重新获取内容');
+                // 这里可以添加重新获取剪贴板内容的逻辑
+              }
+            }
+          }, 10);
+        }
         return;
       }
 

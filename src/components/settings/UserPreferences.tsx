@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Form,
@@ -292,6 +292,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     null
   );
   const [editingKeys, setEditingKeys] = useState<string[]>([]);
+  const [fontSaveTimeout, setFontSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const form = useForm<UserPreferences>({
     defaultValues: {
@@ -478,6 +479,22 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     }
   };
 
+  // 防抖的字体保存函数
+  const debouncedFontSave = useCallback((values: UserPreferences) => {
+    // 清除之前的超时
+    if (fontSaveTimeout) {
+      clearTimeout(fontSaveTimeout);
+    }
+
+    // 设置新的超时
+    const timeout = setTimeout(() => {
+      console.log('防抖保存字体设置:', values.accessibility.font_family);
+      savePreferences(values);
+    }, 300); // 300ms 防抖
+
+    setFontSaveTimeout(timeout);
+  }, [fontSaveTimeout]);
+
   // 保存用户偏好
   const savePreferences = async (values: UserPreferences) => {
     console.log('保存用户偏好被调用，数据:', values);
@@ -604,6 +621,15 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   useEffect(() => {
     loadPreferences();
   }, []);
+
+  // 清理超时
+  useEffect(() => {
+    return () => {
+      if (fontSaveTimeout) {
+        clearTimeout(fontSaveTimeout);
+      }
+    };
+  }, [fontSaveTimeout]);
 
   // 监听表单字段变化以调试布局字段问题
   const watchedLayout = form.watch('workspace.layout');
@@ -853,8 +879,16 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             value={field.value}
                             onValueChange={(value) => {
                               field.onChange(value);
-                              // 移除立即保存逻辑，避免无限循环
-                              // 字体变化将通过表单的正常提交流程保存
+                              // 立即应用字体变化 - 使用防抖避免无限循环
+                              const currentValues = form.getValues();
+                              const updatedValues = {
+                                ...currentValues,
+                                accessibility: {
+                                  ...currentValues.accessibility,
+                                  font_family: value
+                                }
+                              };
+                              debouncedFontSave(updatedValues);
                             }}
                           />
                         </FormControl>

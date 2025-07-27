@@ -603,51 +603,29 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           // 检查当前焦点元素
           const activeElement = document.activeElement;
 
-          // 如果是输入元素，从剪贴板读取并粘贴
-          if (activeElement && (
-            activeElement.tagName === 'INPUT' ||
-            activeElement.tagName === 'TEXTAREA' ||
-            (activeElement as HTMLElement).isContentEditable
-          )) {
-            // 对于输入元素，从剪贴板读取文本并插入
-            import('@/utils/clipboard').then(({ readFromClipboard }) => {
-              readFromClipboard({ showError: false }).then(text => {
-                if (text && activeElement && 'value' in activeElement) {
-                  const inputElement = activeElement as HTMLInputElement | HTMLTextAreaElement;
-                  const start = inputElement.selectionStart || 0;
-                  const end = inputElement.selectionEnd || 0;
-                  const currentValue = inputElement.value;
-                  const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
-                  inputElement.value = newValue;
-                  inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
-                  // 触发input事件
-                  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-                  inputElement.focus();
-                }
-              });
-            });
-          } else if (activeElement && activeElement.closest('.monaco-editor')) {
+          // 只处理Monaco编辑器的粘贴，其他输入框由 inputClipboardHandler 处理
+          if (activeElement && activeElement.closest('.monaco-editor')) {
             // 如果是Monaco编辑器，触发自定义粘贴事件
             const pasteEvent = new CustomEvent('monaco-paste', { bubbles: true });
             activeElement.dispatchEvent(pasteEvent);
+            console.log('Monaco编辑器粘贴事件已触发');
           } else {
-            // 对于其他元素，尝试安全的粘贴操作
-            import('@/utils/clipboard').then(({ readFromClipboard }) => {
-              readFromClipboard({ showError: false }).then(text => {
-                if (text && activeElement && 'value' in activeElement) {
-                  // 如果是输入元素，设置值
-                  const inputElement = activeElement as HTMLInputElement;
-                  const start = inputElement.selectionStart || 0;
-                  const end = inputElement.selectionEnd || 0;
-                  const currentValue = inputElement.value;
-                  const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
-                  inputElement.value = newValue;
-                  inputElement.selectionStart = inputElement.selectionEnd = start + text.length;
-                  // 触发input事件
-                  inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-                }
+            // 对于其他输入元素，不在这里处理，让 inputClipboardHandler 处理
+            console.log('非Monaco编辑器元素，由 inputClipboardHandler 处理粘贴');
+            // 触发键盘事件让 inputClipboardHandler 处理
+            if (activeElement && (
+              activeElement.tagName === 'INPUT' ||
+              activeElement.tagName === 'TEXTAREA' ||
+              (activeElement as HTMLElement).isContentEditable
+            )) {
+              const keyEvent = new KeyboardEvent('keydown', {
+                key: 'v',
+                ctrlKey: true,
+                bubbles: true,
+                cancelable: true
               });
-            });
+              activeElement.dispatchEvent(keyEvent);
+            }
           }
         } catch (error) {
           console.warn('⚠️ 粘贴操作失败:', error);
