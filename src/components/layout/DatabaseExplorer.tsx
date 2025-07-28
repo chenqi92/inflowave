@@ -50,7 +50,7 @@ import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
 import {SimpleTreeView} from '@/components/database/SimpleTreeView';
-import {DatabaseIcon} from '@/components/common/DatabaseIcon';
+import {DatabaseIcon, isOpenableNode} from '@/components/common/DatabaseIcon';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
@@ -346,10 +346,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const normalizedType = nodeType.toLowerCase().replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
         const colorClass = isOpened ? 'text-purple-600' : 'text-muted-foreground';
 
+        // 只对可打开的节点使用 isOpen 状态
+        const canOpen = isOpenableNode(normalizedType as any);
+
         return (
             <DatabaseIcon
                 nodeType={normalizedType as any}
                 size={16}
+                isOpen={canOpen && isOpened}
                 className={colorClass}
             />
         );
@@ -593,6 +597,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 <DatabaseIcon
                                     nodeType="database"
                                     size={16}
+                                    isOpen={isOpened}
                                     className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
                                 />
                             ),
@@ -1310,12 +1315,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                     };
                                                 });
 
+                                                const isOpened = isDatabaseOpened(connectionId, database);
                                                 return {
                                                     ...dbNode,
                                                     icon: (
                                                         <DatabaseIcon
                                                             nodeType="database"
                                                             size={16}
+                                                            isOpen={isOpened}
                                                             className="text-purple-600"
                                                         />
                                                     ),

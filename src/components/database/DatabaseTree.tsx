@@ -4,7 +4,7 @@ import { ChevronRight, ChevronDown, Loader2, RefreshCw, Eye, EyeOff } from 'luci
 import { Button } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { TreeNode, TreeNodeType, TreeNodeStyles, TreeNodeDescriptions, isSystemNode, TreeNodeUtils } from '@/types/tree';
-import { DatabaseIcon } from '@/components/common/DatabaseIcon';
+import { DatabaseIcon, isOpenableNode } from '@/components/common/DatabaseIcon';
 import { useConnection } from '@/hooks/useConnection';
 
 interface DatabaseTreeProps {
@@ -210,7 +210,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                 </div>
 
                 {/* 节点图标 */}
-                <div className="mr-2">
+                <div className="mr-2 flex items-center justify-center" style={{ height: '20px' }}>
                   <DatabaseIcon
                     nodeType={node.nodeType}
                     size={16}
@@ -218,6 +218,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                     dbType={dbType}
                     dbVersion={dbVersion}
                     isConnected={true}
+                    isOpen={isOpenableNode(node.nodeType) && isExpanded}
                   />
                 </div>
 

@@ -1,28 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="openState" x="-50%" y="-50%" width="200%" height="200%">
-      <!-- 外发光效果 -->
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-      <feFlood flood-color="#60A5FA" flood-opacity="0.4"/>
-      <feComposite in="SourceGraphic" in2="coloredBlur" operator="over"/>
-      
-      <!-- 内阴影效果 -->
-      <feDropShadow dx="0" dy="0" stdDeviation="1" flood-color="rgba(96, 165, 250, 0.3)"/>
-      
-      <!-- 亮度增强 -->
-      <feComponentTransfer>
-        <feFuncA type="discrete" tableValues="0 .5 .5 .7 .7 .8 .9 1"/>
-      </feComponentTransfer>
+    <filter id="openGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1" flood-color="#60A5FA" flood-opacity="0.6"/>
     </filter>
-    
-    <!-- 添加一个小的打开指示器 -->
-    <circle id="openIndicator" cx="12" cy="4" r="2" fill="#60A5FA" opacity="0.8" filter="url(#openState)">
-      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
-    </circle>
   </defs>
-  <rect width="16" height="16" rx="2" fill="transparent" filter="url(#openState)"/>
-  <rect x="2" y="2" width="12" height="12" fill="none" stroke="#93C5FD" stroke-width="1" filter="url(#openState)"/>
-    <path d="M2 5h12M5 2v12" stroke="#93C5FD" stroke-width="1" filter="url(#openState)"/>
-    <circle cx="8" cy="8" r="2" fill="none" stroke="#93C5FD" stroke-width="1" filter="url(#openState)"/>
-<use href="#openIndicator"/></svg>
+  
+  <rect width="16" height="16" rx="2" fill="transparent" / filter="url(#openGlow)">
+  <rect x="2" y="2" width="12" height="12" fill="none" stroke="#60A5FA" stroke-width="1" / filter="url(#openGlow)">
+    <path d="M2 5h12M5 2v12" stroke="#60A5FA" stroke-width="1" / filter="url(#openGlow)">
+    <circle cx="8" cy="8" r="2" fill="none" stroke="#60A5FA" stroke-width="1" / filter="url(#openGlow)">
+</svg>

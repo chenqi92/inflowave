@@ -39,6 +39,7 @@ const getBrandIconPath = (dbType: string, isConnected: boolean, dbVersion?: stri
 // 可双击打开的节点类型
 const OPENABLE_NODE_TYPES: TreeNodeType[] = [
   'database',
+  'system_database',
   'database3x',
   'bucket',
   'system_bucket',
