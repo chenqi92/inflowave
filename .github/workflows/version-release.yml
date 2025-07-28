@@ -27,56 +27,52 @@ jobs:
 
       - name: Check if version should trigger release
         id: check
+        shell: bash
         run: |
           # 获取当前版本
           VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-          # 检查是否是package.json变更触发的
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
           if [ "${{ github.event_name }}" = "push" ]; then
-            # 检查package.json是否在本次提交中被修改
-            if git diff --name-only HEAD~1 HEAD | grep -q "package.json"; then
+            # 确认是 package.json 变更触发
+            if git diff --name-only HEAD~1 HEAD | grep -q "^package\.json$"; then
               echo "📝 package.json was modified in this commit"
-              
-              # 检查版本号是否真的变更了
-              PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version" || echo "0.0.0")
+
+              PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version" || echo "0.0.0")
               echo "Previous version: $PREV_VERSION"
-              echo "Current version: $VERSION"
-              
+              echo "Current version:  $VERSION"
+
               if [ "$VERSION" != "$PREV_VERSION" ]; then
                 echo "✅ Version changed from $PREV_VERSION to $VERSION"
-                
-                # 检查标签是否存在
                 if git tag -l | grep -q "^v$VERSION$"; then
-                  echo "tag_exists=true" >> $GITHUB_OUTPUT
-                  echo "should_release=false" >> $GITHUB_OUTPUT
+                  echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+                  echo "should_release=false" >> "$GITHUB_OUTPUT"
                   echo "⚠️ Tag v$VERSION already exists, skipping release"
                 else
-                  echo "tag_exists=false" >> $GITHUB_OUTPUT
-                  echo "should_release=true" >> $GITHUB_OUTPUT
+                  echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+                  echo "should_release=true" >> "$GITHUB_OUTPUT"
                   echo "🚀 Will create release for v$VERSION"
                 fi
               else
-                echo "should_release=false" >> $GITHUB_OUTPUT
+                echo "should_release=false" >> "$GITHUB_OUTPUT"
                 echo "⏭️ Version unchanged, skipping release"
               fi
             else
-              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
               echo "⏭️ package.json not modified, skipping release"
             fi
           else
-            # 手动触发的情况
+            # 手动触发
             if git tag -l | grep -q "^v$VERSION$"; then
-              echo "tag_exists=true" >> $GITHUB_OUTPUT
-              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
               echo "⚠️ Tag v$VERSION already exists, skipping release"
             else
-              echo "tag_exists=false" >> $GITHUB_OUTPUT
-              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+              echo "should_release=true" >> "$GITHUB_OUTPUT"
               echo "✅ Manual trigger: will create release for v$VERSION"
             fi
           fi
-        shell: bash
 
   # 准备发布说明
   prepare-release-notes:
@@ -87,63 +83,60 @@ jobs:
       release_body: ${{ steps.generate.outputs.release_body }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-      
+
       - name: Generate release notes
         id: generate
+        shell: bash
         run: |
-          # 使用外部脚本生成release notes
           RELEASE_BODY=$(node scripts/generate-release-notes.cjs)
-          
-          # 输出到GitHub Actions
           {
             echo 'release_body<<EOF'
             echo "$RELEASE_BODY"
             echo 'EOF'
-          } >> $GITHUB_OUTPUT
-        shell: bash
+          } >> "$GITHUB_OUTPUT"
 
   # 全平台全架构构建
   build-release:
-    needs: [detect-version, prepare-release-notes]
+    needs: [ detect-version, prepare-release-notes ]
     if: needs.detect-version.outputs.should_release == 'true'
     strategy:
       fail-fast: false
       matrix:
         include:
           # Windows
-          - platform: 'windows-latest'
-            target: 'x86_64-pc-windows-msvc'
-            arch: 'x64'
-            rust_target: 'x86_64-pc-windows-msvc'
-          - platform: 'windows-latest'
-            target: 'i686-pc-windows-msvc'
-            arch: 'x86'
-            rust_target: 'i686-pc-windows-msvc'
-          
-          # macOS - 移除不支持的 universal-apple-darwin
-          - platform: 'macos-latest'
-            target: 'x86_64-apple-darwin'
-            arch: 'x64'
-            rust_target: 'x86_64-apple-darwin'
-          - platform: 'macos-latest'
-            target: 'aarch64-apple-darwin'
-            arch: 'arm64'
-            rust_target: 'aarch64-apple-darwin'
-          
-          # Linux - 支持 x64 和 ARM64 架构
-          - platform: 'ubuntu-22.04'
-            target: 'x86_64-unknown-linux-gnu'
-            arch: 'x64'
-            rust_target: 'x86_64-unknown-linux-gnu'
-          - platform: 'ubuntu-22.04'
-            target: 'aarch64-unknown-linux-gnu'
-            arch: 'arm64'
-            rust_target: 'aarch64-unknown-linux-gnu'
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            rust_target: x86_64-pc-windows-msvc
+          - platform: windows-latest
+            target: i686-pc-windows-msvc
+            arch: x86
+            rust_target: i686-pc-windows-msvc
+
+          # macOS
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            rust_target: x86_64-apple-darwin
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
+            rust_target: aarch64-apple-darwin
+
+          # Linux
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            arch: x64
+            rust_target: x86_64-unknown-linux-gnu
+          - platform: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            arch: arm64
+            rust_target: aarch64-unknown-linux-gnu
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -151,152 +144,139 @@ jobs:
 
       - name: Install dependencies (Linux)
         if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
         run: |
-          # 刷新包缓存和清理
+          set -euxo pipefail
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
           sudo apt-get update
-          
-          # 安装基础编译依赖
-          sudo apt-get install -y build-essential curl wget gnupg software-properties-common
-          
-          # 安装 glib-sys 和 GTK 相关依赖
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
-            pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
-            libxdo-dev libssl-dev \
-            libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev \
-            libffi-dev
-          
-          # 验证 glib pkg-config 文件
-          echo "🔍 检查 glib pkg-config 文件..."
-          find /usr -name "glib-2.0.pc" 2>/dev/null | head -5
-          pkg-config --exists glib-2.0 && echo "✅ glib-2.0 pkg-config 可用" || echo "❌ glib-2.0 pkg-config 不可用"
-          
-          # 设置和验证 pkg-config 路径
-          echo "📋 设置 pkg-config 环境变量..."
-          export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
-          
-          echo "📋 当前 PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-          echo "📋 pkg-config 库列表:"
-          pkg-config --list-all | grep glib || echo "❌ 未找到 glib 相关库"
-          
-          # 尝试手动检查 glib 版本
-          pkg-config --modversion glib-2.0 || echo "❌ 无法获取 glib-2.0 版本"
-          
-          # ARM64 交叉编译设置
+
+          # 基础依赖（参考 Tauri v2）
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            build-essential \
+            curl wget file \
+            pkg-config \
+            libssl-dev \
+            libxdo-dev \
+            patchelf \
+            libglib2.0-dev
+
+          echo "🔍 检查 glib pkg-config..."
+          find /usr -name "glib-2.0.pc" 2>/dev/null | head -5 || true
+          pkg-config --exists glib-2.0 && pkg-config --modversion glib-2.0 || echo "⚠️ glib-2.0 not found by pkg-config"
+
+          # ARM64 交叉编译
           if [[ "${{ matrix.rust_target }}" == "aarch64-unknown-linux-gnu" ]]; then
-            echo "🔧 设置 ARM64 交叉编译环境..."
-            
-            # 添加 ARM64 架构
+            echo "🔧 配置 ARM64 交叉编译多架构源..."
             sudo dpkg --add-architecture arm64
-            
-            # 备份原始 sources.list
-            sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
-            
-            # 配置多架构源
-            {
-              echo "# AMD64 (默认架构)"
-              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse"
-              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse"
-              echo "deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse"
-              echo ""
-              echo "# ARM64 架构"
-              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse"
-              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse"
-              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse"
-            } | sudo tee /etc/apt/sources.list
-            
-            # 更新包列表
-            sudo apt-get update || true
-            
-            # 安装交叉编译工具链
-            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-            
-            # 尝试安装 ARM64 开发库（允许失败）
-            sudo apt-get install -y \
-              libwebkit2gtk-4.1-dev:arm64 \
-              libgtk-3-dev:arm64 \
-              libglib2.0-dev:arm64 \
-              libgdk-pixbuf2.0-dev:arm64 \
-              libpango1.0-dev:arm64 \
-              libatk1.0-dev:arm64 \
-              libssl-dev:arm64 \
-              libayatana-appindicator3-dev:arm64 \
-              librsvg2-dev:arm64 || {
-                echo "⚠️ 部分 ARM64 库安装失败，将使用系统库进行交叉编译"
-              }
-          fi
-        shell: bash
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_target }}
+            # 追加多架构源，避免覆盖系统默认源
+            sudo tee /etc/apt/sources.list.d/multiarch-arm64.list >/dev/null <<'EOF'
+# amd64
+  deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
+  deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
+  deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+  # arm64
+  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse
+  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse
+  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse
+  EOF
+  
+  sudo apt-get update || true
+  sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  
+  # 尝试安装 ARM64 dev 库；失败不终止
+  sudo apt-get install -y --no-install-recommends \
+  libwebkit2gtk-4.1-dev:arm64 \
+  libgtk-3-dev:arm64 \
+  libglib2.0-dev:arm64 \
+  libgdk-pixbuf2.0-dev:arm64 \
+  libpango1.0-dev:arm64 \
+  libatk1.0-dev:arm64 \
+  libssl-dev:arm64 \
+  libayatana-appindicator3-dev:arm64 \
+  librsvg2-dev:arm64 || echo "⚠️ 部分 ARM64 dev 包安装失败，继续构建"
+  fi
 
-      - name: Setup additional macOS targets
-        if: matrix.platform == 'macos-latest'
-        run: |
-          rustup target add aarch64-apple-darwin
-          rustup target add x86_64-apple-darwin
+- name: Setup Rust
+  uses: dtolnay/rust-toolchain@stable
+  with:
+    targets: ${{ matrix.rust_target }}
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
+- name: Setup additional macOS targets
+  if: matrix.platform == 'macos-latest'
+  shell: bash
+  run: |
+    rustup target add aarch64-apple-darwin
+    rustup target add x86_64-apple-darwin
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'npm'
+- name: Rust cache
+  uses: swatinem/rust-cache@v2
+  with:
+    workspaces: ./src-tauri -> target
 
-      - name: Install frontend dependencies
-        run: npm ci
+- name: Setup Node.js
+  uses: actions/setup-node@v4
+  with:
+    node-version: 'lts/*'
+    cache: npm
 
-      - name: Download fonts for offline use
-        run: |
-          echo "📦 下载字体文件用于离线使用..."
-          node scripts/download-fonts-ci.cjs
-          echo "✅ 字体下载完成"
+- name: Install frontend dependencies
+  run: npm ci
 
-      - name: Build Standard Mode
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-          ENABLE_EMBEDDED_SERVER: false
-          DISABLE_CONSOLE_LOGS: true
-          # 设置语言环境
-          LANG: ${{ matrix.platform == 'windows-latest' && 'zh_CN.UTF-8' || 'zh_CN.UTF-8' }}
-          LC_ALL: ${{ matrix.platform == 'windows-latest' && 'zh_CN.UTF-8' || 'zh_CN.UTF-8' }}
-          # 跨编译环境变量
-          PKG_CONFIG_ALLOW_CROSS: 1
-          PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: 1
-          PKG_CONFIG_PATH: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' }}
-          PKG_CONFIG_LIBDIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
-          PKG_CONFIG_SYSROOT_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
-          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.13' || '' }}
-          # ARM64 交叉编译环境变量
-          CC_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
-          CXX_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-g++' || '' }}
-          AR_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-ar' || '' }}
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
-          # OpenSSL 交叉编译配置
-          OPENSSL_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-          OPENSSL_LIB_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-          OPENSSL_INCLUDE_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
-          # glib-sys 特定环境变量
-          GLIB_SYS_USE_PKG_CONFIG: 1
-          GOBJECT_SYS_USE_PKG_CONFIG: 1
-          GIO_SYS_USE_PKG_CONFIG: 1
-          # AppImage 优化配置
-          APPIMAGE_EXTRACT_AND_RUN: 1
-        with:
-          tagName: v${{ needs.detect-version.outputs.version }}
-          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
-          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
-          releaseDraft: false
-          prerelease: false
-          args: --target ${{ matrix.rust_target }}
+- name: Download fonts for offline use
+  shell: bash
+  run: |
+    echo "📦 下载字体文件用于离线使用..."
+    node scripts/download-fonts-ci.cjs
+    echo "✅ 字体下载完成"
 
+- name: Build Standard Mode
+  uses: tauri-apps/tauri-action@v0
+  env:
+    GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+    ENABLE_EMBEDDED_SERVER: false
+    DISABLE_CONSOLE_LOGS: true
+
+    LANG: zh_CN.UTF-8
+    LC_ALL: zh_CN.UTF-8
+
+    # 跨编译
+    PKG_CONFIG_ALLOW_CROSS: 1
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: 1
+    PKG_CONFIG_PATH: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' }}
+    PKG_CONFIG_LIBDIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
+    PKG_CONFIG_SYSROOT_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
+
+    # 与 tauri 配置一致
+    MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.15' || '' }}
+
+    # ARM64 工具链
+    CC_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+    CXX_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-g++' || '' }}
+    AR_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-ar' || '' }}
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+
+    # OpenSSL（如使用）
+    OPENSSL_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
+    OPENSSL_LIB_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
+    OPENSSL_INCLUDE_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
+
+    # glib 系列
+    GLIB_SYS_USE_PKG_CONFIG: 1
+    GOBJECT_SYS_USE_PKG_CONFIG: 1
+    GIO_SYS_USE_PKG_CONFIG: 1
+
+    # AppImage 优化
+    APPIMAGE_EXTRACT_AND_RUN: 1
+  with:
+    tagName: v${{ needs.detect-version.outputs.version }}
+    releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+    releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+    releaseDraft: false
+    prerelease: false
+    args: --target ${{ matrix.rust_target }}
