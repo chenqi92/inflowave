@@ -1,9 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="16" height="16" rx="2" fill="transparent"/>
-  <path d="M2 3h10l2 2v8H2V3z" fill="none" stroke="#D1D5DB" stroke-width="1"/>
-    <path d="M2 5h12" stroke="#D1D5DB" stroke-width="1"/>
-    <circle cx="5" cy="8" r="1" fill="#D1D5DB"/>
-    <circle cx="8" cy="8" r="1" fill="#D1D5DB"/>
-    <circle cx="11" cy="8" r="1" fill="#D1D5DB"/>
-</svg>
+<svg t="1753712257978" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="163647" width="16" height="16"><path d="M796.586667 85.333333H227.413333L85.333333 298.666667h853.333334l-142.08-213.333334zM85.333333 512h853.333334V341.333333H85.333333z m663.893334-128h94.72v85.333333h-94.72zM85.333333 725.333333h853.333334v-170.666666H85.333333z m663.893334-128h94.72v85.333334h-94.72zM85.333333 938.666667h853.333334v-170.666667H85.333333z m663.893334-128h94.72v85.333333h-94.72z" fill="#D1D5DB" p-id="163648"></path></svg>

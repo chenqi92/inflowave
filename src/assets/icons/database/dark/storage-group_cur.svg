@@ -1,15 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <filter id="openGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="0" stdDeviation="1" flood-color="#60A5FA" flood-opacity="0.6"/>
-    </filter>
-  </defs>
-  
-  <rect width="16" height="16" rx="2" fill="transparent" / filter="url(#openGlow)">
-  <path d="M2 3h10l2 2v8H2V3z" fill="none" stroke="#60A5FA" stroke-width="1" / filter="url(#openGlow)">
-    <path d="M2 5h12" stroke="#60A5FA" stroke-width="1" / filter="url(#openGlow)">
-    <circle cx="5" cy="8" r="1" fill="#60A5FA" / filter="url(#openGlow)">
-    <circle cx="8" cy="8" r="1" fill="#60A5FA" / filter="url(#openGlow)">
-    <circle cx="11" cy="8" r="1" fill="#60A5FA" / filter="url(#openGlow)">
-</svg>
+<svg t="1753712257978" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="163647" width="16" height="16"><path d="M796.586667 85.333333H227.413333L85.333333 298.666667h853.333334l-142.08-213.333334zM85.333333 512h853.333334V341.333333H85.333333z m663.893334-128h94.72v85.333333h-94.72zM85.333333 725.333333h853.333334v-170.666666H85.333333z m663.893334-128h94.72v85.333334h-94.72zM85.333333 938.666667h853.333334v-170.666667H85.333333z m663.893334-128h94.72v85.333333h-94.72z" fill="#1296db" p-id="163648"></path></svg>

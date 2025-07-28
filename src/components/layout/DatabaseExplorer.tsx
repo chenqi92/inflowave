@@ -341,17 +341,146 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
 
     // 根据节点类型获取图标
+    // 根据连接类型确定数据库节点的图标类型
+    const getDatabaseNodeType = (connectionId: string | undefined, databaseName: string | undefined) => {
+        if (!connectionId || !databaseName) return 'database';
+        const connection = connections.find(c => c.id === connectionId);
+        if (!connection) return 'database';
+
+        const dbType = connection.dbType?.toLowerCase();
+
+        // 根据数据库类型和名称确定节点类型
+        switch (dbType) {
+            case 'influxdb1':
+            case 'influxdb':
+                // InfluxDB 1.x 系统数据库
+                if (databaseName === '_internal' || databaseName.startsWith('_')) {
+                    return 'system_database';
+                }
+                return 'database';
+
+            case 'influxdb2':
+                // InfluxDB 2.x 中第一级是 organization，第二级才是 bucket
+                // 这里的 databaseName 实际上是 organization name
+                return 'organization';
+
+            case 'influxdb3':
+                return 'database3x';
+
+            case 'iotdb':
+                // IoTDB 中数据库实际上是 storage group
+                return 'storage_group';
+
+            default:
+                return 'database';
+        }
+    };
+
+    // 根据连接类型确定表/测量节点的图标类型
+    const getTableNodeType = (connectionId: string | undefined) => {
+        if (!connectionId) return 'measurement';
+        const connection = connections.find(c => c.id === connectionId);
+        if (!connection) return 'measurement';
+
+        const dbType = connection.dbType?.toLowerCase();
+
+        switch (dbType) {
+            case 'influxdb1':
+            case 'influxdb':
+            case 'influxdb2':
+                return 'measurement';
+
+            case 'influxdb3':
+                return 'table';
+
+            case 'iotdb':
+                return 'timeseries';
+
+            default:
+                return 'measurement';
+        }
+    };
+
     const getNodeIcon = (nodeType: string, isOpened: boolean = false) => {
-        // 直接使用节点类型，不进行映射，保持原始类型以区分不同图标
-        const normalizedType = nodeType.toLowerCase().replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
+        // 节点类型映射 - 将后端返回的类型映射到我们的图标类型
+        const typeMapping: Record<string, string> = {
+            // 数据库类型
+            'database': 'database',
+            'Database': 'database',
+            'system_database': 'system_database',
+            'SystemDatabase': 'system_database',
+            'database3x': 'database3x',
+            'Database3x': 'database3x',
+
+            // InfluxDB 2.x 类型
+            'bucket': 'bucket',
+            'Bucket': 'bucket',
+            'system_bucket': 'system_bucket',
+            'SystemBucket': 'system_bucket',
+            'organization': 'organization',
+            'Organization': 'organization',
+
+            // 测量和表
+            'measurement': 'measurement',
+            'Measurement': 'measurement',
+            'table': 'table',
+            'Table': 'table',
+
+            // IoTDB 类型
+            'storage_group': 'storage_group',
+            'StorageGroup': 'storage_group',
+            'device': 'device',
+            'Device': 'device',
+            'timeseries': 'timeseries',
+            'TimeSeries': 'timeseries',
+            'aligned_timeseries': 'aligned_timeseries',
+            'AlignedTimeSeries': 'aligned_timeseries',
+
+            // 字段和标签
+            'field': 'field',
+            'Field': 'field',
+            'tag': 'tag',
+            'Tag': 'tag',
+            'column': 'column',
+            'Column': 'column',
+
+            // 用户和权限
+            'user': 'user1x',
+            'User': 'user1x',
+            'user1x': 'user1x',
+            'user2x': 'user2x',
+            'privilege': 'privilege',
+            'Privilege': 'privilege',
+            'authorization': 'authorization',
+            'Authorization': 'authorization',
+
+            // 其他类型
+            'index': 'index',
+            'Index': 'index',
+            'view': 'view',
+            'View': 'view',
+            'schema': 'schema',
+            'Schema': 'schema',
+            'namespace': 'namespace',
+            'Namespace': 'namespace',
+            'function': 'function',
+            'Function': 'function',
+            'procedure': 'procedure',
+            'Procedure': 'procedure',
+            'trigger': 'trigger',
+            'Trigger': 'trigger',
+        };
+
+        // 获取映射后的类型，如果没有映射则使用原类型的小写版本
+        const mappedType = typeMapping[nodeType] || nodeType.toLowerCase().replace(/([a-z])([A-Z])/g, '$1_$2');
         const colorClass = isOpened ? 'text-purple-600' : 'text-muted-foreground';
 
         // 只对可打开的节点使用 isOpen 状态
-        const canOpen = isOpenableNode(normalizedType as any);
+        const canOpen = isOpenableNode(mappedType as any);
 
         return (
             <DatabaseIcon
-                nodeType={normalizedType as any}
+                nodeType={mappedType as any}
                 size={16}
                 isOpen={canOpen && isOpened}
                 className={colorClass}
@@ -595,7 +724,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
                             icon: (
                                 <DatabaseIcon
-                                    nodeType="database"
+                                    nodeType={getDatabaseNodeType(connection.id, db) as any}
                                     size={16}
                                     isOpen={isOpened}
                                     className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
@@ -1305,7 +1434,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                         key: `table|${connectionId}|${database}|${table}`,
                                                         icon: (
                                                             <DatabaseIcon
-                                                                nodeType="table"
+                                                                nodeType={getTableNodeType(connectionId) as any}
                                                                 size={16}
                                                                 className="text-blue-600"
                                                             />
@@ -1320,7 +1449,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                     ...dbNode,
                                                     icon: (
                                                         <DatabaseIcon
-                                                            nodeType="database"
+                                                            nodeType={getDatabaseNodeType(connectionId, database) as any}
                                                             size={16}
                                                             isOpen={isOpened}
                                                             className="text-purple-600"
@@ -1388,7 +1517,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                         key: `table|${connectionId}|${database}|${table}`,
                                                         icon: (
                                                             <DatabaseIcon
-                                                                nodeType="table"
+                                                                nodeType={getTableNodeType(connectionId) as any}
                                                                 size={16}
                                                                 className="text-blue-600"
                                                             />
@@ -1402,8 +1531,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                     ...dbNode,
                                                     icon: (
                                                         <DatabaseIcon
-                                                            nodeType="database"
+                                                            nodeType={getDatabaseNodeType(connectionId, database) as any}
                                                             size={16}
+                                                            isOpen={isDatabaseOpened(connectionId, database)}
                                                             className="text-purple-600"
                                                         />
                                                     ),
@@ -1696,8 +1826,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                     ...dbNode,
                                                     icon: (
                                                         <DatabaseIcon
-                                                            nodeType="database"
+                                                            nodeType={getDatabaseNodeType(contextMenuTarget?.connectionId, contextMenuTarget?.database) as any}
                                                             size={16}
+                                                            isOpen={false}
                                                             className="text-muted-foreground"
                                                         />
                                                     ),
@@ -2404,8 +2535,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                         // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
                                         icon: (
                                             <DatabaseIcon
-                                                nodeType="database"
+                                                nodeType={getDatabaseNodeType(connection_id, databaseName) as any}
                                                 size={16}
+                                                isOpen={isOpened}
                                                 className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
                                             />
                                         ),
