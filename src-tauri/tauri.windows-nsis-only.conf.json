@@ -62,7 +62,7 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "Auto",
+        "theme": "auto",
         "titleBarStyle": "Visible",
         "maximized": false,
         "visible": true,
