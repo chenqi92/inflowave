@@ -76,6 +76,13 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
+      "wix": {
+        "language": [
+          "zh-CN"
+        ],
+        "template": "./wix/main.wxs",
+        "license": "./wix/license.rtf"
+      },
       "nsis": {
         "languages": [
           "English",

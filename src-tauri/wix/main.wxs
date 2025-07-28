@@ -103,12 +103,18 @@
 
     <!-- 安装界面 -->
     <UI>
-      <UIRef Id="WixUI_FeatureTree" />
+      <!-- 使用InstallDir UI，提供简洁的安装流程 -->
+      <UIRef Id="WixUI_InstallDir" />
       <UIRef Id="WixUI_ErrorProgressText" />
       
-      <!-- 许可协议对话框 -->
-      <Publish Dialog="LicenseAgreementDlg" Control="Print" 
-               Event="DoAction" Value="WixPrintEula">1</Publish>
+      <!-- 设置默认安装目录属性 -->
+      <Property Id="WIXUI_INSTALLDIR" Value="APPLICATIONFOLDER" />
+      
+      <!-- 跳过许可协议对话框以减少点击步骤 -->
+      <Publish Dialog="WelcomeDlg" Control="Next" 
+               Event="NewDialog" Value="InstallDirDlg" Order="2">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Back" 
+               Event="NewDialog" Value="WelcomeDlg" Order="2">1</Publish>
       
       <!-- 启动应用程序选项 -->
       <Publish Dialog="ExitDialog" Control="Finish" 
@@ -120,7 +126,19 @@
     <!-- 启动应用程序的自定义动作 -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchApp)" />
     
+    <!-- 自定义动作：启动应用程序 -->
+    <CustomAction Id="LaunchApplication" 
+                  FileKey="{{main_binary_name}}.exe" 
+                  ExeCommand="" 
+                  Execute="immediate" 
+                  Impersonate="yes" 
+                  Return="asyncNoWait" />
+    
     <!-- WiX 变量 -->
     <WixVariable Id="WixUILicenseRtf" Value="wix\license.rtf" />
+    
+    <!-- 减少用户提示的属性设置 -->
+    <Property Id="ALLUSERS" Value="2" />
+    <Property Id="MSIINSTALLPERUSER" Value="1" />
   </Product>
 </Wix>
