@@ -63,13 +63,13 @@ const isOpenableNode = (nodeType: TreeNodeType): boolean => {
 const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', isOpen: boolean = false): string => {
   const iconMap: Record<string, string> = {
     // 数据库相关
-    'database': isOpen ? 'database-open.svg' : 'database.svg',
-    'system_database': 'database-system.svg',
-    'database3x': isOpen ? 'database3x-open.svg' : 'database3x.svg',
+    'database': isOpen ? 'database_cur.svg' : 'database.svg',
+    'system_database': isOpen ? 'database-system_cur.svg' : 'database-system.svg',
+    'database3x': isOpen ? 'database3x_cur.svg' : 'database3x.svg',
 
     // 表和测量相关
-    'table': isOpen ? 'table-open.svg' : 'table.svg',
-    'measurement': isOpen ? 'measurement-open.svg' : 'measurement.svg',
+    'table': isOpen ? 'table_cur.svg' : 'table.svg',
+    'measurement': isOpen ? 'measurement_cur.svg' : 'measurement.svg',
     'column': 'column.svg',
     'field': 'field.svg',
     'field_group': 'field-group.svg',
@@ -78,8 +78,8 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
 
     // 索引和视图
     'index': 'index.svg',
-    'view': isOpen ? 'view-open.svg' : 'view.svg',
-    'materialized_view': isOpen ? 'materialized-view-open.svg' : 'materialized-view.svg',
+    'view': isOpen ? 'view_cur.svg' : 'view.svg',
+    'materialized_view': isOpen ? 'materialized-view_cur.svg' : 'materialized-view.svg',
 
     // 用户和权限
     'user1x': 'user1x.svg',
@@ -88,11 +88,11 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
     'privilege': 'privilege.svg',
 
     // InfluxDB 2.x 特有
-    'bucket': isOpen ? 'bucket-open.svg' : 'bucket.svg',
-    'system_bucket': isOpen ? 'system-bucket-open.svg' : 'system-bucket.svg',
-    'organization': isOpen ? 'organization-open.svg' : 'organization.svg',
+    'bucket': isOpen ? 'bucket_cur.svg' : 'bucket.svg',
+    'system_bucket': isOpen ? 'system-bucket_cur.svg' : 'system-bucket.svg',
+    'organization': isOpen ? 'organization_cur.svg' : 'organization.svg',
     'task': 'task.svg',
-    'dashboard': isOpen ? 'dashboard-open.svg' : 'dashboard.svg',
+    'dashboard': isOpen ? 'dashboard_cur.svg' : 'dashboard.svg',
     'cell': 'cell.svg',
     'variable': 'variable.svg',
     'check': 'check.svg',
@@ -103,8 +103,8 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
     'label': 'label.svg',
 
     // IoTDB 特有
-    'storage_group': isOpen ? 'storage-group-open.svg' : 'storage-group.svg',
-    'device': isOpen ? 'device-open.svg' : 'device.svg',
+    'storage_group': isOpen ? 'storage-group_cur.svg' : 'storage-group.svg',
+    'device': isOpen ? 'device_cur.svg' : 'device.svg',
     'timeseries': 'timeseries.svg',
     'aligned_timeseries': 'aligned-timeseries.svg',
     'attribute_group': 'attribute-group.svg',
@@ -124,8 +124,8 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
     'procedure': 'procedure.svg',
     'trigger': 'trigger.svg',
     'trigger3x': 'trigger3x.svg',
-    'namespace': isOpen ? 'namespace-open.svg' : 'namespace.svg',
-    'schema': isOpen ? 'schema-open.svg' : 'schema.svg',
+    'namespace': isOpen ? 'namespace_cur.svg' : 'namespace.svg',
+    'schema': isOpen ? 'schema_cur.svg' : 'schema.svg',
     'partition': 'partition.svg',
     'shard': 'shard.svg',
     'shard_group': 'shard-group.svg',

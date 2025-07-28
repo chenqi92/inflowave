@@ -53,19 +53,21 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   // 数据库相关
   'database': {
     fileName: 'database.svg',
-    openFileName: 'database-open.svg',
+    openFileName: 'database_cur.svg',
     description: '数据库',
     databases: ['influxdb1'],
     isOpenable: true,
   },
   'system_database': {
     fileName: 'database-system.svg',
+    openFileName: 'database-system_cur.svg',
     description: '系统数据库',
     databases: ['influxdb1'],
+    isOpenable: true,
   },
   'database3x': {
     fileName: 'database3x.svg',
-    openFileName: 'database3x-open.svg',
+    openFileName: 'database3x_cur.svg',
     description: 'InfluxDB 3.x 数据库',
     databases: ['influxdb3'],
     isOpenable: true,
@@ -74,14 +76,14 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   // 表和测量相关
   'table': {
     fileName: 'table.svg',
-    openFileName: 'table-open.svg',
+    openFileName: 'table_cur.svg',
     description: '数据表',
     databases: ['influxdb3'],
     isOpenable: true,
   },
   'measurement': {
     fileName: 'measurement.svg',
-    openFileName: 'measurement-open.svg',
+    openFileName: 'measurement_cur.svg',
     description: '测量',
     databases: ['influxdb1', 'influxdb2'],
     isOpenable: true,
