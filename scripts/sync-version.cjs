@@ -7,7 +7,12 @@ const path = require('path');
  * 统一版本管理脚本
  * 一次性更新所有文件中的版本号:
  * - package.json
- * - tauri.conf.json  
+ * - tauri.conf.json
+ * - tauri.arm64.conf.json
+ * - tauri.windows-nsis-only.conf.json
+ * - tauri.linux.conf.json
+ * - tauri.macos.conf.json
+ * - tauri.windows.conf.json
  * - Cargo.toml
  * - README.md (中文)
  * - README-en.md (英文)
@@ -16,6 +21,11 @@ const path = require('path');
 const rootDir = path.join(__dirname, '..');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
+const tauriArm64ConfigPath = path.join(rootDir, 'src-tauri', 'tauri.arm64.conf.json');
+const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis-only.conf.json');
+const tauriLinuxConfigPath = path.join(rootDir, 'src-tauri', 'tauri.linux.conf.json');
+const tauriMacosConfigPath = path.join(rootDir, 'src-tauri', 'tauri.macos.conf.json');
+const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.conf.json');
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
 const readmeEnPath = path.join(rootDir, 'README-en.md');
@@ -39,13 +49,50 @@ function updatePackageJson(version) {
 }
 
 /**
- * 更新 tauri.conf.json 版本
+ * 更新单个 Tauri 配置文件版本
+ */
+function updateSingleTauriConfig(configPath, version) {
+    if (!fs.existsSync(configPath)) {
+        console.warn(`⚠️ 配置文件不存在: ${path.basename(configPath)}`);
+        return false;
+    }
+    
+    try {
+        const tauriConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        tauriConfig.version = version;
+        fs.writeFileSync(configPath, `${JSON.stringify(tauriConfig, null, 2)}\n`);
+        console.log(`✅ 更新 ${path.basename(configPath)} 版本为: ${version}`);
+        return true;
+    } catch (error) {
+        console.error(`❌ 更新 ${path.basename(configPath)} 失败:`, error.message);
+        return false;
+    }
+}
+
+/**
+ * 更新所有 Tauri 配置文件版本
  */
 function updateTauriConfig(version) {
-    const tauriConfig = JSON.parse(fs.readFileSync(tauriConfigPath, 'utf8'));
-    tauriConfig.version = version;
-    fs.writeFileSync(tauriConfigPath, `${JSON.stringify(tauriConfig, null, 2)}\n`);
-    console.log(`✅ 更新 tauri.conf.json 版本为: ${version}`);
+    console.log('📦 更新Tauri配置文件...');
+    
+    const tauriConfigFiles = [
+        { path: tauriConfigPath, name: 'tauri.conf.json' },
+        { path: tauriArm64ConfigPath, name: 'tauri.arm64.conf.json' },
+        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis-only.conf.json' },
+        { path: tauriLinuxConfigPath, name: 'tauri.linux.conf.json' },
+        { path: tauriMacosConfigPath, name: 'tauri.macos.conf.json' },
+        { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json' }
+    ];
+    
+    let successCount = 0;
+    tauriConfigFiles.forEach(config => {
+        if (updateSingleTauriConfig(config.path, version)) {
+            successCount++;
+        }
+    });
+    
+    console.log(`📦 Tauri配置文件更新完成: ${successCount}/${tauriConfigFiles.length} 个文件`);
+    return successCount;
 }
 
 /**
@@ -137,18 +184,38 @@ function isValidVersion(version) {
 }
 
 /**
+ * 读取单个 Tauri 配置文件版本
+ */
+function getSingleTauriVersion(configPath) {
+    if (!fs.existsSync(configPath)) {
+        return 'not found';
+    }
+    
+    try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        return config.version || 'unknown';
+    } catch (error) {
+        return 'invalid';
+    }
+}
+
+/**
  * 获取所有文件当前版本
  */
 function getAllVersions() {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const tauriConfig = JSON.parse(fs.readFileSync(tauriConfigPath, 'utf8'));
     const cargoContent = fs.readFileSync(cargoTomlPath, 'utf8');
     const cargoMatch = cargoContent.match(/^version\s*=\s*"([^"]*)"/m);
     const cargoVersion = cargoMatch ? cargoMatch[1] : 'unknown';
 
     return {
         packageJson: packageJson.version,
-        tauriConfig: tauriConfig.version,
+        tauriConfig: getSingleTauriVersion(tauriConfigPath),
+        tauriArm64Config: getSingleTauriVersion(tauriArm64ConfigPath),
+        tauriWindowsNsisConfig: getSingleTauriVersion(tauriWindowsNsisConfigPath),
+        tauriLinuxConfig: getSingleTauriVersion(tauriLinuxConfigPath),
+        tauriMacosConfig: getSingleTauriVersion(tauriMacosConfigPath),
+        tauriWindowsConfig: getSingleTauriVersion(tauriWindowsConfigPath),
         cargoToml: cargoVersion
     };
 }
@@ -160,9 +227,20 @@ function checkVersionConsistency() {
     const versions = getAllVersions();
     const packageVersion = versions.packageJson;
     
+    // 检查所有有效的Tauri配置文件版本是否与package.json一致
+    const tauriVersions = [
+        versions.tauriConfig,
+        versions.tauriArm64Config,
+        versions.tauriWindowsNsisConfig,
+        versions.tauriLinuxConfig,
+        versions.tauriMacosConfig,
+        versions.tauriWindowsConfig
+    ];
+    
+    const validTauriVersions = tauriVersions.filter(v => v !== 'not found' && v !== 'invalid');
     const isConsistent = 
-        versions.tauriConfig === packageVersion && 
-        versions.cargoToml === packageVersion;
+        versions.cargoToml === packageVersion && 
+        validTauriVersions.every(v => v === packageVersion);
     
     return { isConsistent, versions, packageVersion };
 }
@@ -176,9 +254,14 @@ function syncVersions(targetVersion = null) {
     const { isConsistent, versions, packageVersion } = checkVersionConsistency();
     
     console.log('📋 当前版本状态:');
-    console.log(`  package.json:    ${versions.packageJson}`);
-    console.log(`  tauri.conf.json: ${versions.tauriConfig}`);
-    console.log(`  Cargo.toml:      ${versions.cargoToml}`);
+    console.log(`  package.json:                    ${versions.packageJson}`);
+    console.log(`  tauri.conf.json:                 ${versions.tauriConfig}`);
+    console.log(`  tauri.arm64.conf.json:           ${versions.tauriArm64Config}`);
+    console.log(`  tauri.windows-nsis-only.conf.json: ${versions.tauriWindowsNsisConfig}`);
+    console.log(`  tauri.linux.conf.json:           ${versions.tauriLinuxConfig}`);
+    console.log(`  tauri.macos.conf.json:           ${versions.tauriMacosConfig}`);
+    console.log(`  tauri.windows.conf.json:         ${versions.tauriWindowsConfig}`);
+    console.log(`  Cargo.toml:                      ${versions.cargoToml}`);
     
     const finalVersion = targetVersion || packageVersion;
     
@@ -290,9 +373,14 @@ function main() {
         case 'check': {
             const { isConsistent, versions } = checkVersionConsistency();
             console.log('📋 版本检查结果:');
-            console.log(`  package.json:    ${versions.packageJson}`);
-            console.log(`  tauri.conf.json: ${versions.tauriConfig}`);
-            console.log(`  Cargo.toml:      ${versions.cargoToml}`);
+            console.log(`  package.json:                    ${versions.packageJson}`);
+            console.log(`  tauri.conf.json:                 ${versions.tauriConfig}`);
+            console.log(`  tauri.arm64.conf.json:           ${versions.tauriArm64Config}`);
+            console.log(`  tauri.windows-nsis-only.conf.json: ${versions.tauriWindowsNsisConfig}`);
+            console.log(`  tauri.linux.conf.json:           ${versions.tauriLinuxConfig}`);
+            console.log(`  tauri.macos.conf.json:           ${versions.tauriMacosConfig}`);
+            console.log(`  tauri.windows.conf.json:         ${versions.tauriWindowsConfig}`);
+            console.log(`  Cargo.toml:                      ${versions.cargoToml}`);
             console.log(`  状态: ${isConsistent ? '✅ 统一' : '❌ 不统一'}`);
             break;
         }
@@ -331,7 +419,12 @@ function main() {
 🎯 功能:
   一次性更新所有文件中的版本号，包括:
   • package.json
-  • tauri.conf.json  
+  • tauri.conf.json
+  • tauri.arm64.conf.json
+  • tauri.windows-nsis-only.conf.json
+  • tauri.linux.conf.json
+  • tauri.macos.conf.json
+  • tauri.windows.conf.json
   • Cargo.toml
   • README.md (中文)
   • README-en.md (英文)

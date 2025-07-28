@@ -24,7 +24,7 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "auto",
+        "theme": "Light",
         "titleBarStyle": "Visible",
         "maximized": false,
         "visible": true,
@@ -76,13 +76,6 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
-      "wix": {
-        "language": [
-          "zh-CN"
-        ],
-        "template": "./wix/main.wxs",
-        "license": "./wix/license.rtf"
-      },
       "nsis": {
         "languages": [
           "English",
