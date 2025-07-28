@@ -1,6 +1,6 @@
 [package]
 name = "InfloWave"
-version = "0.3.8"
+version = "0.3.9"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"
