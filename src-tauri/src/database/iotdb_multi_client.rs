@@ -666,12 +666,8 @@ impl IoTDBMultiClient {
         let query = if storage_group.is_empty() {
             "SHOW DEVICES".to_string()
         } else {
-            // 对存储组名称进行转义，处理包含特殊字符的情况
-            let escaped_sg = if storage_group.contains(':') || storage_group.contains('-') || storage_group.contains(' ') {
-                format!("`{}`", storage_group)
-            } else {
-                storage_group.to_string()
-            };
+            // 对存储组名称进行转义，处理包含特殊字符（包括emoji）的情况
+            let escaped_sg = self.escape_identifier(storage_group);
             format!("SHOW DEVICES {}.**", escaped_sg)
         };
 
@@ -696,12 +692,8 @@ impl IoTDBMultiClient {
 
     /// 获取时间序列列表（用于树节点）
     async fn get_timeseries_for_tree(&mut self, device_path: &str) -> Result<Vec<String>> {
-        // 对设备路径进行转义，处理包含特殊字符的情况
-        let escaped_path = if device_path.contains(':') || device_path.contains('-') || device_path.contains(' ') {
-            format!("`{}`", device_path)
-        } else {
-            device_path.to_string()
-        };
+        // 对设备路径进行转义，处理包含特殊字符（包括emoji）的情况
+        let escaped_path = self.escape_identifier(device_path);
         let query = format!("SHOW TIMESERIES {}.**", escaped_path);
 
         debug!("IoTDB 时间序列查询: {}", query);
@@ -808,6 +800,22 @@ impl IoTDBMultiClient {
         }
 
         Ok(aligned_ts)
+    }
+
+    /// 转义标识符，处理包含特殊字符的情况
+    fn escape_identifier(&self, identifier: &str) -> String {
+        // 检查是否包含需要转义的字符
+        let needs_escape = identifier.chars().any(|c| {
+            // 检查是否包含特殊字符、空格、emoji等
+            !c.is_ascii_alphanumeric() && c != '_' && c != '.'
+        });
+
+        if needs_escape {
+            // 使用反引号转义
+            format!("`{}`", identifier.replace("`", "``"))
+        } else {
+            identifier.to_string()
+        }
     }
 
     /// 获取设备模板

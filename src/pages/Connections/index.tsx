@@ -191,11 +191,8 @@ const Connections: React.FC = () => {
 
       handleCloseDialog();
 
-      // 延迟强制刷新以确保后端状态已更新
-      setTimeout(async () => {
-        console.log('🔄 强制刷新连接列表');
-        await forceRefreshConnections();
-      }, 100);
+      // 不需要在这里强制刷新，因为DatabaseExplorer会监听连接配置变化自动刷新
+      console.log('✅ 连接保存完成，等待DatabaseExplorer自动刷新');
 
     } catch (error) {
       console.error('❌ 保存连接配置失败:', error);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Tree,
@@ -284,43 +284,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       // 关闭对话框
       handleCloseConnectionDialog();
 
-      // 多重刷新策略确保新连接显示
-      const refreshStrategies = [
-        // 立即刷新数据源树
-        () => {
-          console.log('🔄 立即刷新数据源树');
-          buildCompleteTreeData(true);
-        },
-        // 延迟刷新确保数据同步
-        () => setTimeout(async () => {
-          console.log('🔄 延迟刷新数据源树以显示新连接');
-          try {
-            await buildCompleteTreeData(true);
-            console.log('✅ 数据源树延迟刷新完成');
-          } catch (error) {
-            console.error('❌ 数据源树延迟刷新失败:', error);
-          }
-        }, 500),
-        // 最终确认刷新
-        () => setTimeout(async () => {
-          console.log('🔄 最终确认刷新数据源树');
-          try {
-            await buildCompleteTreeData(true);
-            console.log('✅ 最终刷新完成');
-          } catch (error) {
-            console.error('❌ 最终刷新失败:', error);
-          }
-        }, 1500)
-      ];
+      // 简化刷新策略，避免竞态条件
+      console.log('🔄 新连接保存成功，等待连接状态同步后刷新树');
 
-      // 执行所有刷新策略
-      for (const strategy of refreshStrategies) {
+      // 等待一小段时间让连接状态同步，然后刷新树
+      setTimeout(async () => {
         try {
-          await strategy();
+          console.log('🔄 开始刷新数据源树以显示新连接');
+          await buildCompleteTreeData(true);
+          console.log('✅ 数据源树刷新完成');
         } catch (error) {
-          console.error('❌ 刷新策略执行失败:', error);
+          console.error('❌ 数据源树刷新失败:', error);
         }
-      }
+      }, 300);
 
     } catch (error) {
       console.error('连接保存失败:', error);
@@ -1389,12 +1365,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             newKeys: newExpandedKeys,
             databaseKey
           });
+
+          // 立即更新展开状态，提供即时反馈
           setExpandedKeys(newExpandedKeys);
           showMessage.info(`正在加载数据库 "${database}" 的表列表...`);
 
-          // 手动加载表数据并更新树形结构
-          try {
-            const tables = await loadTables(connectionId, database);
+          // 异步加载表数据，不阻塞UI
+          loadTables(connectionId, database).then(tables => {
             console.log(`✅ 成功加载数据库 "${database}" 的表列表:`, tables);
 
             // 更新树形数据，为该数据库添加表节点
@@ -1441,12 +1418,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             });
 
             showMessage.success(`已加载数据库 "${database}" 的 ${tables.length} 个表`);
-          } catch (error) {
+          }).catch(error => {
             console.error('❌ 加载表列表失败:', error);
             showMessage.error(`加载数据库 "${database}" 的表列表失败`);
             // 如果加载失败，回滚展开状态
-            setExpandedKeys(expandedKeys);
-          }
+            const rollbackKeys = expandedKeys.filter(k => k !== databaseKey);
+            setExpandedKeys(rollbackKeys);
+          });
         } else {
           // 如果数据库已经展开，则收起数据库节点
           const newExpandedKeys = expandedKeys.filter(k => k !== databaseKey);
@@ -2303,27 +2281,34 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const prevConnectionsRef = useRef<typeof connections>([]);
   useEffect(() => {
     const prevConnections = prevConnectionsRef.current;
-    
+
     // 检查是否是连接增删改操作（而不是连接状态变化）
-    const isConfigChange = 
+    const isConfigChange =
       prevConnections.length !== connections.length ||
       prevConnections.some((prev, index) => {
         const current = connections[index];
         return !current || prev.id !== current.id || prev.name !== current.name;
       });
-    
+
     if (isConfigChange) {
       console.log(`🔄 DatabaseExplorer: 连接配置发生变化，需要重建树`);
       console.log(
         `🔗 所有连接 (${connections.length}):`,
         connections.map(c => `${c.name} (${c.id})`)
       );
-      // 配置变化时不显示全局 loading，因为这通常是由连接操作引起的
-      buildCompleteTreeData(false);
+
+      // 新增连接时，延迟一点时间确保连接状态已同步
+      const hasNewConnection = connections.length > prevConnections.length;
+      const delay = hasNewConnection ? 200 : 0;
+
+      setTimeout(() => {
+        console.log(`🔄 开始重建树形数据 (延迟${delay}ms)`);
+        buildCompleteTreeData(false); // 配置变化时不显示全局 loading
+      }, delay);
     } else {
       console.log(`👀 DatabaseExplorer: 连接配置无变化，跳过重建`);
     }
-    
+
     prevConnectionsRef.current = connections;
   }, [connections, buildCompleteTreeData]);
 
