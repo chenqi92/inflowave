@@ -41,7 +41,7 @@ import {
 import { showMessage } from '@/utils/message';
 import { VersionDetectionDialog } from './VersionDetectionDialog';
 import { getDatabaseIcon, renderDatabaseOption } from '@/utils/databaseIcons';
-import { getDatabaseBrandIcon } from '@/utils/databaseIconMap';
+import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -135,7 +135,7 @@ const renderVersionOption = (version: string, dbType: string) => {
         alt={`${version} icon`}
         className="w-4 h-4"
       />
-      <div className='flex flex-col'>
+      <div className='flex flex-col text-left'>
         <span className='font-medium'>
           {dbType === 'influxdb' ? `InfluxDB ${version}` : 'Apache IoTDB'}
         </span>

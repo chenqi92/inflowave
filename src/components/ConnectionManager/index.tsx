@@ -29,7 +29,7 @@ import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
 import ContextMenu from '@/components/common/ContextMenu';
-import { getDatabaseBrandIcon } from '@/utils/databaseIconMap';
+import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {

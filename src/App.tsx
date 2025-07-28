@@ -222,6 +222,7 @@ const MainLayout: React.FC = () => {
 
         {/* IoTDB 测试页面 */}
         <Route path='/iotdb-test' element={<DataGripStyleLayout />} />
+
       </Routes>
 
       {/* 用户指引弹框 */}

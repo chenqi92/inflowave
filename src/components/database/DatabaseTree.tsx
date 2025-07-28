@@ -35,6 +35,9 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   const dbType = connection?.dbType || 'influxdb';
   const dbVersion = connection?.version || '1.x';
 
+  // 调试信息
+  console.log(`DatabaseTree: connectionId=${connectionId}, dbType=${dbType}, dbVersion=${dbVersion}, connection=`, connection);
+
   // 加载树节点
   const loadTreeNodes = useCallback(async (forceRefresh = false) => {
     if (!connectionId) return;
