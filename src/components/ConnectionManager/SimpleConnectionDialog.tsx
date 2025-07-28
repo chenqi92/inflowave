@@ -1314,154 +1314,195 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
           {/* IoTDB 特定配置 */}
           {formData.dbType === 'iotdb' && (
-            <div className='space-y-4'>
-              <div className='text-sm font-medium text-foreground border-b pb-2'>
+            <div className='space-y-6'>
+              <div className='text-lg font-medium text-foreground border-b pb-2'>
                 IoTDB 特定配置
               </div>
 
-              <div className='grid grid-cols-3 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    会话池大小
-                  </Label>
-                  <InputNumber
-                    placeholder='5'
-                    value={formData.sessionPoolSize}
-                    onChange={value =>
-                      handleInputChange('sessionPoolSize', value || 5)
-                    }
-                    className='w-full h-9'
-                    min={1}
-                    max={50}
-                    controls={false}
-                  />
-                </div>
-
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    获取大小
-                  </Label>
-                  <InputNumber
-                    placeholder='10000'
-                    value={formData.fetchSize}
-                    onChange={value =>
-                      handleInputChange('fetchSize', value || 10000)
-                    }
-                    className='w-full h-9'
-                    min={100}
-                    max={100000}
-                    controls={false}
-                  />
-                </div>
-
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    时区
-                  </Label>
-                  <Select
-                    value={formData.timeZone}
-                    onValueChange={value =>
-                      handleInputChange('timeZone', value)
-                    }
-                  >
-                    <SelectTrigger className='h-9'>
-                      <SelectValue placeholder='选择时区' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='Asia/Shanghai'>
-                        Asia/Shanghai
-                      </SelectItem>
-                      <SelectItem value='UTC'>UTC</SelectItem>
-                      <SelectItem value='America/New_York'>
-                        America/New_York
-                      </SelectItem>
-                      <SelectItem value='Europe/London'>
-                        Europe/London
-                      </SelectItem>
-                      <SelectItem value='Asia/Tokyo'>Asia/Tokyo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    最大重试次数
-                  </Label>
-                  <InputNumber
-                    placeholder='3'
-                    value={formData.maxRetryCount}
-                    onChange={value =>
-                      handleInputChange('maxRetryCount', value || 3)
-                    }
-                    className='w-full h-9'
-                    min={0}
-                    max={10}
-                    controls={false}
-                  />
-                </div>
-
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    重试间隔(毫秒)
-                  </Label>
-                  <InputNumber
-                    placeholder='1000'
-                    value={formData.retryIntervalMs}
-                    onChange={value =>
-                      handleInputChange('retryIntervalMs', value || 1000)
-                    }
-                    className='w-full h-9'
-                    min={100}
-                    max={10000}
-                    controls={false}
-                  />
-                </div>
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    启用压缩
-                  </Label>
-                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                    <Switch
-                      id='compression-switch'
-                      checked={formData.enableCompression}
-                      onCheckedChange={checked =>
-                        handleInputChange('enableCompression', checked)
-                      }
-                    />
-                    <Label
-                      htmlFor='compression-switch'
-                      className='text-sm font-medium cursor-pointer'
-                    >
-                      {formData.enableCompression ? '已启用压缩' : '启用压缩'}
+              {/* 连接配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  连接配置
+                </h4>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      会话池大小
                     </Label>
+                    <InputNumber
+                      placeholder='5'
+                      value={formData.sessionPoolSize}
+                      onChange={value =>
+                        handleInputChange('sessionPoolSize', value || 5)
+                      }
+                      className='w-full h-9'
+                      min={1}
+                      max={100}
+                      controls={false}
+                    />
+                    <div className='text-xs text-muted-foreground'>
+                      同时维护的会话连接数量，建议1-20
+                    </div>
+                  </div>
+
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      时区设置
+                    </Label>
+                    <Select
+                      value={formData.timeZone}
+                      onValueChange={value =>
+                        handleInputChange('timeZone', value)
+                      }
+                    >
+                      <SelectTrigger className='h-9'>
+                        <SelectValue placeholder='选择时区' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='Asia/Shanghai'>
+                          Asia/Shanghai (北京时间)
+                        </SelectItem>
+                        <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
+                        <SelectItem value='America/New_York'>
+                          America/New_York (美东时间)
+                        </SelectItem>
+                        <SelectItem value='Europe/London'>
+                          Europe/London (伦敦时间)
+                        </SelectItem>
+                        <SelectItem value='Asia/Tokyo'>
+                          Asia/Tokyo (东京时间)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className='text-xs text-muted-foreground'>
+                      时间序列数据的时区设置
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 性能配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  性能配置
+                </h4>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      数据获取大小
+                    </Label>
+                    <InputNumber
+                      placeholder='10000'
+                      value={formData.fetchSize}
+                      onChange={value =>
+                        handleInputChange('fetchSize', value || 10000)
+                      }
+                      className='w-full h-9'
+                      min={100}
+                      max={1000000}
+                      controls={false}
+                    />
+                    <div className='text-xs text-muted-foreground'>
+                      单次查询返回的最大记录数，建议1000-50000
+                    </div>
+                  </div>
+
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      启用数据压缩
+                    </Label>
+                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                      <Switch
+                        id='compression-switch'
+                        checked={formData.enableCompression}
+                        onCheckedChange={checked =>
+                          handleInputChange('enableCompression', checked)
+                        }
+                      />
+                      <Label
+                        htmlFor='compression-switch'
+                        className='text-sm font-medium cursor-pointer'
+                      >
+                        {formData.enableCompression ? '已启用' : '已禁用'}
+                      </Label>
+                    </div>
+                    <div className='text-xs text-muted-foreground'>
+                      启用后可减少网络传输数据量，提高查询性能
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 重试和重定向配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  重试和重定向配置
+                </h4>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      最大重试次数
+                    </Label>
+                    <InputNumber
+                      placeholder='3'
+                      value={formData.maxRetryCount}
+                      onChange={value =>
+                        handleInputChange('maxRetryCount', value || 3)
+                      }
+                      className='w-full h-9'
+                      min={0}
+                      max={20}
+                      controls={false}
+                    />
+                    <div className='text-xs text-muted-foreground'>
+                      连接失败时的重试次数，0表示不重试
+                    </div>
+                  </div>
+
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      重试间隔(毫秒)
+                    </Label>
+                    <InputNumber
+                      placeholder='1000'
+                      value={formData.retryIntervalMs}
+                      onChange={value =>
+                        handleInputChange('retryIntervalMs', value || 1000)
+                      }
+                      className='w-full h-9'
+                      min={100}
+                      max={30000}
+                      controls={false}
+                    />
+                    <div className='text-xs text-muted-foreground'>
+                      两次重试之间的等待时间
+                    </div>
                   </div>
                 </div>
 
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    启用重定向
-                  </Label>
-                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                    <Switch
-                      id='redirection-switch'
-                      checked={formData.enableRedirection}
-                      onCheckedChange={checked =>
-                        handleInputChange('enableRedirection', checked)
-                      }
-                    />
-                    <Label
-                      htmlFor='redirection-switch'
-                      className='text-sm font-medium cursor-pointer'
-                    >
-                      {formData.enableRedirection
-                        ? '已启用重定向'
-                        : '启用重定向'}
+                <div className='grid grid-cols-1 gap-4'>
+                  <div className='space-y-1'>
+                    <Label className='block text-sm font-medium text-foreground'>
+                      启用自动重定向
                     </Label>
+                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                      <Switch
+                        id='redirection-switch'
+                        checked={formData.enableRedirection}
+                        onCheckedChange={checked =>
+                          handleInputChange('enableRedirection', checked)
+                        }
+                      />
+                      <Label
+                        htmlFor='redirection-switch'
+                        className='text-sm font-medium cursor-pointer'
+                      >
+                        {formData.enableRedirection ? '已启用' : '已禁用'}
+                      </Label>
+                    </div>
+                    <div className='text-xs text-muted-foreground'>
+                      在集群环境中自动重定向到正确的节点
+                    </div>
                   </div>
                 </div>
               </div>

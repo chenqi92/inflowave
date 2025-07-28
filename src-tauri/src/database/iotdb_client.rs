@@ -526,7 +526,9 @@ impl IoTDBHttpClient {
         let query = if storage_group.is_empty() {
             "SHOW DEVICES".to_string()
         } else {
-            format!("SHOW DEVICES {}.** ", storage_group)
+            // 对存储组名称进行转义，处理包含特殊字符（包括emoji）的情况
+            let escaped_sg = self.escape_identifier(storage_group);
+            format!("SHOW DEVICES {}.** ", escaped_sg)
         };
 
         let result = self.execute_query(&query, None).await?;
@@ -550,6 +552,22 @@ impl IoTDBHttpClient {
 
         // 如果查询失败，返回错误而不是假数据
         Err(anyhow::anyhow!("无法获取存储组 {} 的设备列表：查询失败，请检查存储组是否存在", storage_group))
+    }
+
+    /// 转义标识符，处理包含特殊字符的情况
+    fn escape_identifier(&self, identifier: &str) -> String {
+        // 检查是否包含需要转义的字符
+        let needs_escape = identifier.chars().any(|c| {
+            // 检查是否包含特殊字符、空格、emoji等
+            !c.is_ascii_alphanumeric() && c != '_' && c != '.'
+        });
+
+        if needs_escape {
+            // 使用反引号转义
+            format!("`{}`", identifier.replace("`", "``"))
+        } else {
+            identifier.to_string()
+        }
     }
 
     /// 获取时间序列列表
