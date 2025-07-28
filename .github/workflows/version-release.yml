@@ -283,9 +283,9 @@ jobs:
           AR_aarch64_unknown_linux_gnu: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-ar' || '' }}
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
           # OpenSSL 交叉编译配置
-          OPENSSL_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-          OPENSSL_LIB_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-          OPENSSL_INCLUDE_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
+          OPENSSL_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '/usr' }}
+          OPENSSL_LIB_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '/usr/lib/x86_64-linux-gnu' }}
+          OPENSSL_INCLUDE_DIR: ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '/usr/include' }}
           # glib-sys 特定环境变量
           GLIB_SYS_USE_PKG_CONFIG: 1
           GOBJECT_SYS_USE_PKG_CONFIG: 1
