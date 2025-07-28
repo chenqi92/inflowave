@@ -1,30 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*" Name="{{product_name}}" Language="2052" Version="{{version}}" Manufacturer="{{manufacturer}}" UpgradeCode="{{upgrade_code}}">
-    <Package InstallerVersion="200" Compressed="yes" />
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <Media Id="1" Cabinet="{{product_name}}.cab" EmbedCab="yes" />
-    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes" />
+    
+    <!-- 升级和降级检测 -->
+    <MajorUpgrade Schedule="afterInstallInitialize" 
+                  AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
 
+    <!-- 系统要求检查 -->
+    <Condition Message="此软件需要 Windows 10 或更高版本。">
+      <![CDATA[Installed OR (VersionNT >= 1000)]]>
+    </Condition>
+
+    <!-- 目录结构 -->
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="{{program_files_dir}}">
         <Directory Id="APPLICATIONFOLDER" Name="{{product_name}}">
+          <!-- 主程序文件 -->
           {{#each binaries}}
           <Component Id="{{guid}}" Guid="{{guid}}">
             <File Id="{{id}}" Source="{{source}}" KeyPath="yes" />
           </Component>
           {{/each}}
+          
+          <!-- 配置文件夹 -->
+          <Directory Id="ConfigFolder" Name="config">
+            <Component Id="ConfigFolderComp" Guid="*">
+              <CreateFolder />
+              <RemoveFolder Id="RemoveConfigFolder" On="uninstall" />
+              <RegistryValue Root="HKCU" Key="Software\{{manufacturer}}\{{product_name}}" 
+                           Name="ConfigPath" Type="string" Value="[ConfigFolder]" KeyPath="yes" />
+            </Component>
+          </Directory>
         </Directory>
+      </Directory>
+      
+      <!-- 开始菜单 -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="{{product_name}}">
+          <Component Id="ApplicationShortcut" Guid="*">
+            <Shortcut Id="ApplicationStartMenuShortcut"
+                     Name="{{product_name}}"
+                     Description="!(loc.ApplicationDescription)"
+                     Target="[APPLICATIONFOLDER]{{product_name}}.exe"
+                     WorkingDirectory="APPLICATIONFOLDER"
+                     Icon="ProductIcon" />
+            <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\{{manufacturer}}\{{product_name}}" 
+                         Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+      
+      <!-- 桌面快捷方式 -->
+      <Directory Id="DesktopFolder">
+        <Component Id="DesktopShortcut" Guid="*">
+          <Shortcut Id="ApplicationDesktopShortcut"
+                   Name="{{product_name}}"
+                   Description="!(loc.ApplicationDescription)"
+                   Target="[APPLICATIONFOLDER]{{product_name}}.exe"
+                   WorkingDirectory="APPLICATIONFOLDER"
+                   Icon="ProductIcon" />
+          <RegistryValue Root="HKCU" Key="Software\{{manufacturer}}\{{product_name}}" 
+                       Name="Desktop" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
       </Directory>
     </Directory>
 
-    <Feature Id="MainApplication" Title="Main Application" Level="1">
+    <!-- 图标定义 -->
+    <Icon Id="ProductIcon" SourceFile="icons\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+
+    <!-- 功能组件 -->
+    <Feature Id="MainApplicationFeature" 
+             Title="!(loc.MainApplicationFeatureTitle)" 
+             Description="!(loc.MainApplicationFeatureDescription)" 
+             Level="1"
+             ConfigurableDirectory="APPLICATIONFOLDER">
       {{#each binaries}}
       <ComponentRef Id="{{guid}}" />
       {{/each}}
+      <ComponentRef Id="ConfigFolderComp" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+    
+    <Feature Id="DesktopShortcutFeature" 
+             Title="!(loc.DesktopShortcutFeatureTitle)" 
+             Description="!(loc.DesktopShortcutFeatureDescription)" 
+             Level="1">
+      <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
+    <!-- 应用程序属性 -->
+    <Property Id="ARPSIZE" Value="51200" />
+    <Property Id="ARPCOMMENTS" Value="!(loc.ApplicationDescription)" />
+    <Property Id="ARPCONTACT" Value="https://github.com/chenqi92/inflowave" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/chenqi92/inflowave/wiki" />
+    <Property Id="ARPURLINFOABOUT" Value="https://allbs.cn" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <!-- 安装界面 -->
     <UI>
-      <UIRef Id="WixUI_Minimal" />
+      <UIRef Id="WixUI_FeatureTree" />
+      <UIRef Id="WixUI_ErrorProgressText" />
+      
+      <!-- 许可协议对话框 -->
+      <Publish Dialog="LicenseAgreementDlg" Control="Print" 
+               Event="DoAction" Value="WixPrintEula">1</Publish>
+      
+      <!-- 启动应用程序选项 -->
+      <Publish Dialog="ExitDialog" Control="Finish" 
+               Event="DoAction" Value="LaunchApplication">
+               WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
+      </Publish>
     </UI>
+
+    <!-- 启动应用程序的自定义动作 -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchApp)" />
+    
+    <!-- WiX 变量 -->
+    <WixVariable Id="WixUILicenseRtf" Value="wix\license.rtf" />
   </Product>
 </Wix>

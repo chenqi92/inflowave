@@ -269,6 +269,8 @@ jobs:
           echo "✅ 字体下载完成"
 
       - name: Build Standard Mode
+        id: standard_build
+        continue-on-error: ${{ matrix.platform == 'windows-latest' }}
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -305,5 +307,20 @@ jobs:
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.rust_target }}
+          args: --target ${{ matrix.rust_target }} ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '--config src-tauri/tauri.arm64.conf.json' || '' }}
+
+      - name: Build Windows NSIS Fallback
+        if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-nsis-only.conf.json
 
