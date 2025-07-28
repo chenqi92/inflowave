@@ -5,19 +5,19 @@ import { TreeNodeType } from '@/types/tree';
  */
 
 // 预加载所有light主题图标
-const lightIcons = import.meta.glob('/src/assets/icons/database/light/*.svg', {
+const lightIcons = import.meta.glob('../assets/icons/database/light/*.svg', {
   query: '?url',
   eager: true
 }) as Record<string, { default: string }>;
 
-// 预加载所有dark主题图标  
-const darkIcons = import.meta.glob('/src/assets/icons/database/dark/*.svg', {
-  query: '?url', 
+// 预加载所有dark主题图标
+const darkIcons = import.meta.glob('../assets/icons/database/dark/*.svg', {
+  query: '?url',
   eager: true
 }) as Record<string, { default: string }>;
 
 // 预加载所有品牌图标
-const brandIcons = import.meta.glob('/src/assets/icons/database/brands/*.svg', {
+const brandIcons = import.meta.glob('../assets/icons/database/brands/*.svg', {
   query: '?url',
   eager: true
 }) as Record<string, { default: string }>;
@@ -204,7 +204,7 @@ export const getThemeAwareIcon = (nodeType: TreeNodeType, isConnected?: boolean)
   if (iconConfig && iconConfig[theme]) {
     return iconConfig[theme];
   }
-  
+
   // 回退到默认图标
   const defaultIcon = DatabaseIconMap['default'];
   return defaultIcon?.[theme] || '';
@@ -222,10 +222,23 @@ export const getIconDescription = (nodeType: TreeNodeType): string => {
  * 获取数据库品牌图标URL
  */
 export const getDatabaseBrandIcon = (dbType: string, dbVersion?: string): string => {
-  if (dbType === 'influxdb' && dbVersion) {
+  // 标准化数据库类型名称
+  const normalizedDbType = dbType.toLowerCase();
+
+  // 处理InfluxDB的不同版本
+  if (normalizedDbType === 'influxdb' && dbVersion) {
     const versionKey = `influxdb-${dbVersion}`;
     return DatabaseBrandIconMap[versionKey] || DatabaseBrandIconMap['influxdb-1x'];
   }
-  
-  return DatabaseBrandIconMap[dbType] || DatabaseBrandIconMap['database-generic'];
+
+  // 处理特殊的数据库类型映射
+  const typeMapping: Record<string, string> = {
+    'influxdb': 'influxdb-1x',
+    'influxdb2': 'influxdb-2x',
+    'influxdb3': 'influxdb-3x',
+    'iotdb': 'iotdb'
+  };
+
+  const mappedType = typeMapping[normalizedDbType] || 'database-generic';
+  return DatabaseBrandIconMap[mappedType] || DatabaseBrandIconMap['database-generic'];
 };

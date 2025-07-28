@@ -50,7 +50,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { SimpleTreeView } from '@/components/database/SimpleTreeView';
-import { getDatabaseIcon } from '@/utils/databaseIcons';
+import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
@@ -337,30 +337,33 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 根据节点类型获取图标
   const getNodeIcon = (nodeType: string, isOpened: boolean = false) => {
-    const baseClasses = `w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`;
+    // 将节点类型映射到我们的TreeNodeType
+    const mapNodeType = (type: string): string => {
+      switch (type.toLowerCase()) {
+        case 'database':
+        case 'database3x':
+        case 'system_database':
+          return 'database';
+        case 'organization':
+        case 'storage_group':
+          return 'organization';
+        case 'bucket':
+          return 'bucket';
+        default:
+          return 'database';
+      }
+    };
 
-    switch (nodeType) {
-      case 'database':
-      case 'Database':
-        return <Database className={baseClasses} />;
-      case 'database3x':
-      case 'Database3x':
-        return <Database className={`w-4 h-4 ${isOpened ? 'text-green-700' : 'text-green-600'}`} />;
-      case 'system_database':
-      case 'SystemDatabase':
-        return <Database className={`w-4 h-4 ${isOpened ? 'text-orange-700' : 'text-orange-600'}`} />;
-      case 'organization':
-      case 'Organization':
-        return <Building className={`w-4 h-4 ${isOpened ? 'text-indigo-700' : 'text-indigo-600'}`} />;
-      case 'bucket':
-      case 'Bucket':
-        return <Database className={`w-4 h-4 ${isOpened ? 'text-cyan-700' : 'text-cyan-600'}`} />;
-      case 'storage_group':
-      case 'StorageGroup':
-        return <Building className={`w-4 h-4 ${isOpened ? 'text-emerald-700' : 'text-emerald-600'}`} />;
-      default:
-        return <Database className={baseClasses} />;
-    }
+    const mappedType = mapNodeType(nodeType);
+    const colorClass = isOpened ? 'text-purple-600' : 'text-muted-foreground';
+
+    return (
+      <DatabaseIcon
+        nodeType={mappedType as any}
+        size={16}
+        className={colorClass}
+      />
+    );
   };
 
   // 加载指定连接的数据库列表
@@ -592,10 +595,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           </div>
         ),
         key: `connection-${connection.id}`,
-        icon: isConnected ? (
-          getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-success')
-        ) : (
-          getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-muted-foreground')
+        icon: (
+          <DatabaseIcon
+            nodeType="connection"
+            dbType={connection.dbType || 'influxdb'}
+            isConnected={isConnected}
+            size={16}
+            className={isConnected ? 'text-success' : 'text-muted-foreground'}
+          />
         ),
         // 只有连接状态才设置children数组，未连接状态不设置（这样就不会显示收缩按钮）
         ...(isConnected ? { children: [] } : { isLeaf: true }),
@@ -627,7 +634,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               ),
               key: databaseKey,
               // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
-              icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+              icon: (
+                <DatabaseIcon
+                  nodeType="database"
+                  size={16}
+                  className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
+                />
+              ),
             };
 
             if (isOpened) {
@@ -1327,7 +1340,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               </div>
                             ),
                             key: `table|${connectionId}|${database}|${table}`,
-                            icon: <Table className='w-4 h-4 text-blue-600' />,
+                            icon: (
+                              <DatabaseIcon
+                                nodeType="table"
+                                size={16}
+                                className="text-blue-600"
+                              />
+                            ),
                             isLeaf: false, // 表应该有展开按钮以显示tags和fields
                             children: [], // 空数组表示有子节点但未加载
                           };
@@ -1335,7 +1354,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         return {
                           ...dbNode,
-                          icon: <Database className='w-4 h-4 text-purple-600' />,
+                          icon: (
+                            <DatabaseIcon
+                              nodeType="database"
+                              size={16}
+                              className="text-purple-600"
+                            />
+                          ),
                           isLeaf: false,
                           children: tableNodes,
                         };
@@ -1395,7 +1420,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                               </div>
                             ),
                             key: `table|${connectionId}|${database}|${table}`,
-                            icon: <Table className='w-4 h-4 text-blue-600' />,
+                            icon: (
+                              <DatabaseIcon
+                                nodeType="table"
+                                size={16}
+                                className="text-blue-600"
+                              />
+                            ),
                             isLeaf: false, // 修复：表应该有展开按钮以显示tags和fields
                             children: [], // 空数组表示有子节点但未加载
                           };
@@ -1403,7 +1434,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         return {
                           ...dbNode,
-                          icon: <Database className='w-4 h-4 text-purple-600' />,
+                          icon: (
+                            <DatabaseIcon
+                              nodeType="database"
+                              size={16}
+                              className="text-purple-600"
+                            />
+                          ),
                           isLeaf: false,
                           children: tableNodes,
                         };
@@ -1691,7 +1728,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                       if (dbNode.key === `database|${contextMenuTarget.connectionId}|${contextMenuTarget.database}`) {
                         return {
                           ...dbNode,
-                          icon: <Database className='w-4 h-4 text-muted-foreground' />,
+                          icon: (
+                            <DatabaseIcon
+                              nodeType="database"
+                              size={16}
+                              className="text-muted-foreground"
+                            />
+                          ),
                           isLeaf: true, // 关闭后不能展开
                           children: undefined, // 清除子节点
                         };
@@ -2246,10 +2289,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                   )}
                 </div>
               ),
-              icon: isConnected ? (
-                getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-success')
-              ) : (
-                getDatabaseIcon(connection.dbType || 'influxdb', 'w-4 h-4 text-muted-foreground')
+              icon: (
+                <DatabaseIcon
+                  nodeType="connection"
+                  dbType={connection.dbType || 'influxdb'}
+                  isConnected={isConnected}
+                  size={16}
+                  className={isConnected ? 'text-success' : 'text-muted-foreground'}
+                />
               ),
               // 根据连接状态决定是否显示收缩按钮
               ...(isConnected ? { children: node.children || [] } : { isLeaf: true }),
@@ -2393,7 +2440,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     ),
                     key: databaseKey,
                     // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
-                    icon: <Database className={`w-4 h-4 ${isOpened ? 'text-purple-600' : 'text-muted-foreground'}`} />,
+                    icon: (
+                      <DatabaseIcon
+                        nodeType="database"
+                        size={16}
+                        className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
+                      />
+                    ),
                   };
 
                   if (isOpened) {

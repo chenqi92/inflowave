@@ -45,12 +45,12 @@
 ### 🔍 如何选择适合的版本
 
 #### Windows 用户
-- **推荐**: 📥 **[InfloWave_0.4.1_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.4.1/InfloWave_0.4.1_x64_zh-CN.msi)** 
+- **推荐**: 📥 **[InfloWave_0.4.1_x64_en-US.msi](https://github.com/chenqi92/inflowave/releases/download/v0.4.1/InfloWave_0.4.1_x64_en-US.msi)** 
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 支持大部分现代 Windows 系统
   - ✅ MSI 格式，安装简单可靠
 
-- **兼容版**: 📥 **[InfloWave_0.4.1_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.4.1/InfloWave_0.4.1_x86_zh-CN.msi)**
+- **兼容版**: 📥 **[InfloWave_0.4.1_x86_en-US.msi](https://github.com/chenqi92/inflowave/releases/download/v0.4.1/InfloWave_0.4.1_x86_en-US.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
