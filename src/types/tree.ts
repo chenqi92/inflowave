@@ -93,72 +93,8 @@ export interface TreeNode {
 
 export type DatabaseType = 'InfluxDB' | 'IoTDB' | 'InfluxDB2';
 
-/**
- * 树节点图标映射
- */
-export const TreeNodeIcons: Record<TreeNodeType, string> = {
-  connection: '🔌',
-  // InfluxDB 1.x 图标
-  database: '💾',
-  system_database: '🔧',
-  retention_policy: '📅',
-  series: '📈',
-  continuous_query: '🔄',
-  shard: '🧩',
-  shard_group: '📦',
-  user1x: '👤',
-  privilege: '🔐',
-  // InfluxDB 2.x 图标
-  organization: '🏢',
-  bucket: '🪣',
-  system_bucket: '⚙️',
-  task: '⚡',
-  dashboard: '📊',
-  cell: '📋',
-  variable: '🔤',
-  check: '✅',
-  notification_rule: '🔔',
-  notification_endpoint: '📡',
-  scraper: '🕷️',
-  telegraf: '📊',
-  authorization: '🔑',
-  user2x: '👤',
-  label: '🏷️',
-  // InfluxDB 3.x 图标
-  database3x: '🗄️',
-  schema: '📋',
-  table: '📊',
-  column: '📏',
-  index: '🔍',
-  partition: '🗂️',
-  view: '👁️',
-  materialized_view: '💎',
-  function3x: '⚙️',
-  procedure: '🔧',
-  trigger3x: '🔔',
-  namespace: '📁',
-  storage_group: '🏢',
-  device: '📱',
-  timeseries: '📊',
-  aligned_timeseries: '📊',
-  template: '📋',
-  function: '⚙️',
-  trigger: '🔔',
-  system_info: '🔧',
-  version_info: '📋',
-  storage_engine_info: '💾',
-  cluster_info: '🌐',
-  schema_template: '📋',
-  data_type: '🔢',
-  encoding: '🔧',
-  compression: '📦',
-  attribute_group: '📝',
-  measurement: '📊',
-  field_group: '📈',
-  tag_group: '🏷️',
-  field: '📊',
-  tag: '🏷️',
-};
+
+
 
 /**
  * 树节点描述映射
@@ -368,11 +304,11 @@ export function normalizeNodeType(nodeType: string): TreeNodeType {
 }
 
 /**
- * 获取节点类型的图标
+ * 获取节点类型的图标 - 现在由DatabaseIcon组件处理
  */
 export function getNodeIcon(nodeType: string): string {
-  const normalized = normalizeNodeType(nodeType);
-  return TreeNodeIcons[normalized] || '📄';
+  // 图标现在由DatabaseIcon组件和SVG系统处理
+  return '';
 }
 
 /**

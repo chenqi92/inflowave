@@ -258,7 +258,7 @@ impl TreeNodeFactory {
     pub fn create_system_database(name: String) -> TreeNode {
         TreeNode::new(
             format!("sysdb_{}", name),
-            format!("🔧 {}", name),
+            name,
             TreeNodeType::SystemDatabase,
         )
         .as_system()
@@ -268,7 +268,7 @@ impl TreeNodeFactory {
     pub fn create_series(name: String, parent_id: String, tags: std::collections::HashMap<String, String>) -> TreeNode {
         let mut node = TreeNode::new(
             format!("{}/series_{}", parent_id, name.replace(".", "_")),
-            format!("📈 {}", name),
+            name.clone(),
             TreeNodeType::Series,
         )
         .with_parent(parent_id);
@@ -285,7 +285,7 @@ impl TreeNodeFactory {
     pub fn create_continuous_query(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/cq_{}", parent_id, name),
-            format!("🔄 {}", name),
+            name,
             TreeNodeType::ContinuousQuery,
         )
         .with_parent(parent_id)
@@ -296,7 +296,7 @@ impl TreeNodeFactory {
     pub fn create_user1x(name: String, admin: bool) -> TreeNode {
         TreeNode::new(
             format!("user1x_{}", name),
-            format!("👤 {} {}", name, if admin { "(Admin)" } else { "" }),
+            format!("{} {}", name, if admin { "(Admin)" } else { "" }),
             TreeNodeType::User1x,
         )
         .with_metadata("admin".to_string(), serde_json::Value::Bool(admin))
@@ -309,7 +309,7 @@ impl TreeNodeFactory {
     pub fn create_task(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/task_{}", parent_id, name),
-            format!("⚡ {}", name),
+            name,
             TreeNodeType::Task,
         )
         .with_parent(parent_id)
@@ -320,7 +320,7 @@ impl TreeNodeFactory {
     pub fn create_dashboard(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/dashboard_{}", parent_id, name),
-            format!("📊 {}", name),
+            name,
             TreeNodeType::Dashboard,
         )
         .with_parent(parent_id)
@@ -330,7 +330,7 @@ impl TreeNodeFactory {
     pub fn create_user2x(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/user2x_{}", parent_id, name),
-            format!("👤 {}", name),
+            name,
             TreeNodeType::User2x,
         )
         .with_parent(parent_id)
@@ -343,7 +343,7 @@ impl TreeNodeFactory {
     pub fn create_schema(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/schema_{}", parent_id, name),
-            format!("📋 {}", name),
+            name,
             TreeNodeType::Schema,
         )
         .with_parent(parent_id)
@@ -353,7 +353,7 @@ impl TreeNodeFactory {
     pub fn create_table(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/table_{}", parent_id, name),
-            format!("📊 {}", name),
+            name,
             TreeNodeType::Table,
         )
         .with_parent(parent_id)
@@ -363,7 +363,7 @@ impl TreeNodeFactory {
     pub fn create_column(name: String, data_type: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/column_{}", parent_id, name),
-            format!("📏 {} ({})", name, data_type),
+            format!("{} ({})", name, data_type),
             TreeNodeType::Column,
         )
         .with_parent(parent_id)
@@ -375,7 +375,7 @@ impl TreeNodeFactory {
     pub fn create_view(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/view_{}", parent_id, name),
-            format!("👁️ {}", name),
+            name,
             TreeNodeType::View,
         )
         .with_parent(parent_id)
@@ -444,7 +444,7 @@ impl TreeNodeFactory {
     pub fn create_aligned_timeseries(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/aligned_ts_{}", parent_id, name.replace(".", "_")),
-            format!("📊 {} (Aligned)", name),
+            format!("{} (Aligned)", name),
             TreeNodeType::AlignedTimeseries,
         )
         .with_parent(parent_id)
@@ -454,7 +454,7 @@ impl TreeNodeFactory {
     pub fn create_template(name: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/template_{}", parent_id, name.replace(".", "_")),
-            format!("📋 {}", name),
+            name,
             TreeNodeType::Template,
         )
         .with_parent(parent_id)
@@ -464,7 +464,7 @@ impl TreeNodeFactory {
     pub fn create_system_info() -> TreeNode {
         TreeNode::new(
             "system_info".to_string(),
-            "🔧 System Information".to_string(),
+            "System Information".to_string(),
             TreeNodeType::SystemInfo,
         )
         .as_system()
@@ -474,7 +474,7 @@ impl TreeNodeFactory {
     pub fn create_version_info(version: String) -> TreeNode {
         TreeNode::new(
             "version_info".to_string(),
-            format!("📋 Version: {}", version),
+            format!("Version: {}", version),
             TreeNodeType::VersionInfo,
         )
         .with_parent("system_info".to_string())
@@ -487,7 +487,7 @@ impl TreeNodeFactory {
     pub fn create_storage_engine_info() -> TreeNode {
         TreeNode::new(
             "storage_engine_info".to_string(),
-            "💾 Storage Engine".to_string(),
+            "Storage Engine".to_string(),
             TreeNodeType::StorageEngineInfo,
         )
         .with_parent("system_info".to_string())
@@ -498,7 +498,7 @@ impl TreeNodeFactory {
     pub fn create_cluster_info() -> TreeNode {
         TreeNode::new(
             "cluster_info".to_string(),
-            "🌐 Cluster Information".to_string(),
+            "Cluster Information".to_string(),
             TreeNodeType::ClusterInfo,
         )
         .with_parent("system_info".to_string())
@@ -509,7 +509,7 @@ impl TreeNodeFactory {
     pub fn create_schema_template(name: String) -> TreeNode {
         TreeNode::new(
             format!("schema_template_{}", name),
-            format!("📋 Template: {}", name),
+            format!("Template: {}", name),
             TreeNodeType::SchemaTemplate,
         )
     }
@@ -518,7 +518,7 @@ impl TreeNodeFactory {
     pub fn create_data_type_info(data_type: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/datatype", parent_id),
-            format!("🔢 Type: {}", data_type),
+            format!("Type: {}", data_type),
             TreeNodeType::DataType,
         )
         .with_parent(parent_id)
@@ -530,7 +530,7 @@ impl TreeNodeFactory {
     pub fn create_encoding_info(encoding: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/encoding", parent_id),
-            format!("🔧 Encoding: {}", encoding),
+            format!("Encoding: {}", encoding),
             TreeNodeType::Encoding,
         )
         .with_parent(parent_id)
@@ -542,7 +542,7 @@ impl TreeNodeFactory {
     pub fn create_compression_info(compression: String, parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("{}/compression", parent_id),
-            format!("📦 Compression: {}", compression),
+            format!("Compression: {}", compression),
             TreeNodeType::Compression,
         )
         .with_parent(parent_id)
@@ -564,7 +564,7 @@ impl TreeNodeFactory {
     pub fn create_field_group(parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("fields_{}", parent_id),
-            "📈 Fields".to_string(),
+            "Fields".to_string(),
             TreeNodeType::FieldGroup,
         )
         .with_parent(parent_id)
@@ -574,7 +574,7 @@ impl TreeNodeFactory {
     pub fn create_tag_group(parent_id: String) -> TreeNode {
         TreeNode::new(
             format!("tags_{}", parent_id),
-            "🏷️ Tags".to_string(),
+            "Tags".to_string(),
             TreeNodeType::TagGroup,
         )
         .with_parent(parent_id)
@@ -606,72 +606,11 @@ impl TreeNodeFactory {
     }
 }
 
-/// 树节点图标映射
+/// 树节点图标映射 - 现在由前端完全负责图标渲染
 impl TreeNodeType {
     pub fn get_icon(&self) -> &'static str {
-        match self {
-            TreeNodeType::Connection => "🔌",
-            // InfluxDB 1.x 图标
-            TreeNodeType::Database => "💾",
-            TreeNodeType::SystemDatabase => "🔧",
-            TreeNodeType::RetentionPolicy => "📅",
-            TreeNodeType::Series => "📈",
-            TreeNodeType::ContinuousQuery => "🔄",
-            TreeNodeType::Shard => "🧩",
-            TreeNodeType::ShardGroup => "📦",
-            TreeNodeType::User1x => "👤",
-            TreeNodeType::Privilege => "🔐",
-            // InfluxDB 2.x 图标
-            TreeNodeType::Organization => "🏢",
-            TreeNodeType::Bucket => "🪣",
-            TreeNodeType::SystemBucket => "⚙️",
-            TreeNodeType::Task => "⚡",
-            TreeNodeType::Dashboard => "📊",
-            TreeNodeType::Cell => "📋",
-            TreeNodeType::Variable => "🔤",
-            TreeNodeType::Check => "✅",
-            TreeNodeType::NotificationRule => "🔔",
-            TreeNodeType::NotificationEndpoint => "📡",
-            TreeNodeType::Scraper => "🕷️",
-            TreeNodeType::Telegraf => "📊",
-            TreeNodeType::Authorization => "🔑",
-            TreeNodeType::User2x => "👤",
-            TreeNodeType::Label => "🏷️",
-            // InfluxDB 3.x 图标
-            TreeNodeType::Database3x => "🗄️",
-            TreeNodeType::Schema => "📋",
-            TreeNodeType::Table => "📊",
-            TreeNodeType::Column => "📏",
-            TreeNodeType::Index => "🔍",
-            TreeNodeType::Partition => "🗂️",
-            TreeNodeType::View => "👁️",
-            TreeNodeType::MaterializedView => "💎",
-            TreeNodeType::Function3x => "⚙️",
-            TreeNodeType::Procedure => "🔧",
-            TreeNodeType::Trigger3x => "🔔",
-            TreeNodeType::Namespace => "📁",
-            TreeNodeType::StorageGroup => "🏢",
-            TreeNodeType::Device => "📱",
-            TreeNodeType::Timeseries => "📊",
-            TreeNodeType::AlignedTimeseries => "📊",
-            TreeNodeType::Template => "📋",
-            TreeNodeType::Function => "⚙️",
-            TreeNodeType::Trigger => "🔔",
-            TreeNodeType::SystemInfo => "🔧",
-            TreeNodeType::VersionInfo => "📋",
-            TreeNodeType::StorageEngineInfo => "💾",
-            TreeNodeType::ClusterInfo => "🌐",
-            TreeNodeType::SchemaTemplate => "📋",
-            TreeNodeType::DataType => "🔢",
-            TreeNodeType::Encoding => "🔧",
-            TreeNodeType::Compression => "📦",
-            TreeNodeType::AttributeGroup => "📝",
-            TreeNodeType::Measurement => "📊",
-            TreeNodeType::FieldGroup => "📈",
-            TreeNodeType::TagGroup => "🏷️",
-            TreeNodeType::Field => "📊",
-            TreeNodeType::Tag => "🏷️",
-        }
+        // 返回空字符串，图标由前端SVG系统处理
+        ""
     }
     
     pub fn get_description(&self) -> &'static str {
